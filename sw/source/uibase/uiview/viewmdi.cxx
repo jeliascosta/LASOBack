@@ -102,10 +102,10 @@ void SwView::SetZoom_( const Size &rEditSize, SvxZoomType eZoomType,
         if (pPostItMgr->HasNotes() && pPostItMgr->ShowNotes())
             aPageSize.Width() += pPostItMgr->GetSidebarWidth() + pPostItMgr->GetSidebarBorderWidth();
 
-        const MapMode aTmpMap( MAP_TWIP );
+        const MapMode aTmpMap( MapUnit::MapTwip );
         const Size aWindowSize( GetEditWin().PixelToLogic( rEditSize, aTmpMap ) );
 
-        if( nsUseOnPage::PD_MIRROR == rDesc.GetUseOn() )    // mirrored pages
+        if( UseOnPage::Mirror == rDesc.GetUseOn() )    // mirrored pages
         {
             const SvxLRSpaceItem &rLeftLRSpace = rDesc.GetLeft().GetLRSpace();
             aPageSize.Width() += std::abs( long(rLeftLRSpace.GetLeft()) - long(rLRSpace.GetLeft()) );
@@ -258,7 +258,7 @@ void SwView::SetViewLayout( sal_uInt16 nColumns, bool bBookMode, bool bViewOnly 
 
 // Scrollbar - Handler
 
-IMPL_LINK_TYPED( SwView, WindowChildEventListener, VclWindowEvent&, rEvent, void )
+IMPL_LINK( SwView, WindowChildEventListener, VclWindowEvent&, rEvent, void )
 {
     OSL_ENSURE( rEvent.GetWindow(), "Window???" );
     vcl::Window* pChildWin = static_cast< vcl::Window* >( rEvent.GetData() );
@@ -304,7 +304,7 @@ void SwView::CreateScrollbar( bool bHori )
         ppScrollbar->ExtendedShow();
 }
 
-IMPL_LINK_TYPED( SwView, MoveNavigationHdl, void*, p, void )
+IMPL_LINK( SwView, MoveNavigationHdl, void*, p, void )
 {
     bool* pbNext = static_cast<bool*>(p);
     if ( !pbNext )
@@ -319,9 +319,9 @@ IMPL_LINK_TYPED( SwView, MoveNavigationHdl, void*, p, void )
         case NID_TBL :
             rSh.EnterStdMode();
             if(bNext)
-                rSh.MoveTable(fnTableNext, fnTableStart);
+                rSh.MoveTable(GotoNextTable, fnTableStart);
             else
-                rSh.MoveTable(fnTablePrev, fnTableStart);
+                rSh.MoveTable(GotoPrevTable, fnTableStart);
         break;
         case NID_FRM :
         case NID_GRF:
@@ -352,9 +352,9 @@ IMPL_LINK_TYPED( SwView, MoveNavigationHdl, void*, p, void )
         case NID_REG :
             rSh.EnterStdMode();
             if(bNext)
-                rSh.MoveRegion(fnRegionNext, fnRegionStart);
+                rSh.MoveRegion(GotoNextRegion, fnRegionStart);
             else
-                rSh.MoveRegion(fnRegionPrev, fnRegionStart);
+                rSh.MoveRegion(GotoPrevRegion, fnRegionStart);
 
         break;
         case NID_BKM :
@@ -384,7 +384,7 @@ IMPL_LINK_TYPED( SwView, MoveNavigationHdl, void*, p, void )
 
             // collect navigator reminders
             IDocumentMarkAccess* const pMarkAccess = rSh.getIDocumentMarkAccess();
-            ::std::vector< const ::sw::mark::IMark* > vNavMarks;
+            std::vector< const ::sw::mark::IMark* > vNavMarks;
             for( IDocumentMarkAccess::const_iterator_t ppMark = pMarkAccess->getAllMarksBegin();
                 ppMark != pMarkAccess->getAllMarksEnd();
                 ++ppMark)
@@ -518,7 +518,7 @@ int SwView::KillVRuler()
     return 1;
 }
 
-IMPL_LINK_TYPED( SwView, ExecRulerClick, Ruler *, pRuler, void )
+IMPL_LINK( SwView, ExecRulerClick, Ruler *, pRuler, void )
 {
     OUString sDefPage;
     switch( pRuler->GetClickType() )

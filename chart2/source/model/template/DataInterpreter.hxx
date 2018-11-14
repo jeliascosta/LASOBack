@@ -33,10 +33,7 @@ class DataInterpreter : public ::cppu::WeakImplHelper<
 {
 public:
     explicit DataInterpreter( const css::uno::Reference< css::uno::XComponentContext > & xContext );
-    virtual ~DataInterpreter();
-
-    const css::uno::Reference< css::uno::XComponentContext >&
-        GetComponentContext() const { return m_xContext;}
+    virtual ~DataInterpreter() override;
 
     /// XServiceInfo declarations
     virtual OUString SAL_CALL getImplementationName()
@@ -45,9 +42,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // convenience methods
     static  OUString GetRole( const css::uno::Reference< css::chart2::data::XDataSequence > & xSeq );

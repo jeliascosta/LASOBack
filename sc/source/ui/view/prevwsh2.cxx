@@ -18,7 +18,7 @@
  */
 
 #include <svx/svdmodel.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 
 #include "prevwsh.hxx"
 #include "docsh.hxx"
@@ -30,9 +30,24 @@ void ScPreviewShell::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
     bool bDataChanged = false;
 
-    if (dynamic_cast<const SfxSimpleHint*>(&rHint))
+    if (const ScPaintHint* pPaintHint = dynamic_cast<const ScPaintHint*>(&rHint))
     {
-        switch ( static_cast<const SfxSimpleHint&>(rHint).GetId() )
+        if ( pPaintHint->GetPrintFlag() )
+        {
+            PaintPartFlags nParts = pPaintHint->GetParts();
+            if (nParts & ( PaintPartFlags::Grid | PaintPartFlags::Left | PaintPartFlags::Top | PaintPartFlags::Size ))
+                bDataChanged = true;
+        }
+    }
+    else if (dynamic_cast<const SdrHint*>(&rHint))
+    {
+        // SdrHints are no longer used for invalidating, thus react on objectchange instead
+        if(SdrHintKind::ObjectChange == static_cast<const SdrHint&>(rHint).GetKind())
+            bDataChanged = true;
+    }
+    else
+    {
+        switch ( rHint.GetId() )
         {
             case FID_DATACHANGED:
             case SID_SCPRINTOPTIONS:
@@ -46,21 +61,6 @@ void ScPreviewShell::Notify( SfxBroadcaster&, const SfxHint& rHint )
                 }
                 break;
         }
-    }
-    else if (dynamic_cast<const ScPaintHint*>(&rHint))
-    {
-        if ( static_cast<const ScPaintHint&>(rHint).GetPrintFlag() )
-        {
-            sal_uInt16 nParts = static_cast<const ScPaintHint&>(rHint).GetParts();
-            if (nParts & ( PAINT_GRID | PAINT_LEFT | PAINT_TOP | PAINT_SIZE ))
-                bDataChanged = true;
-        }
-    }
-    else if (dynamic_cast<const SdrHint*>(&rHint))
-    {
-        // SdrHints are no longer used for invalidating, thus react on objectchange instead
-        if(HINT_OBJCHG == static_cast<const SdrHint&>(rHint).GetKind())
-            bDataChanged = true;
     }
 
     if (bDataChanged)

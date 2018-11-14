@@ -56,8 +56,8 @@ private:
 
     void            Init();
 
-    DECL_LINK_TYPED( CancelBtnHdl, Button*, void );
-    DECL_LINK_TYPED( OkBtnHdl, Button*, void );
+    DECL_LINK( CancelBtnHdl, Button*, void );
+    DECL_LINK( OkBtnHdl, Button*, void );
 
 protected:
 
@@ -65,7 +65,7 @@ protected:
 
 public:
                     ScSimpleRefDlg( SfxBindings* pB, SfxChildWindow* pCW, vcl::Window* pParent);
-    virtual        ~ScSimpleRefDlg();
+    virtual        ~ScSimpleRefDlg() override;
     virtual void    dispose() override;
 
     virtual void    SetReference( const ScRange& rRef, ScDocument* pDoc ) override;

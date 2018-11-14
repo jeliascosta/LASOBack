@@ -82,11 +82,11 @@ class ODatabaseSource   :public ModelDependentComponent // must be first
 
 private:
     using ODatabaseSource_Base::rBHelper;
-    css::uno::Reference<OBookmarkContainer> m_xBookmarks;
+    rtl::Reference<OBookmarkContainer> m_xBookmarks;
     ::comphelper::OInterfaceContainerHelper2       m_aFlushListeners;
 
 private:
-    virtual ~ODatabaseSource();
+    virtual ~ODatabaseSource() override;
 
 public:
     explicit ODatabaseSource( const ::rtl::Reference< ODatabaseModelImpl >& _pImpl );
@@ -148,7 +148,7 @@ public:
                             css::uno::Any & rOldValue,
                             sal_Int32 nHandle,
                             const css::uno::Any& rValue )
-                                throw (css::lang::IllegalArgumentException) override;
+                                throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setFastPropertyValue_NoBroadcast(
                                 sal_Int32 nHandle,
                                 const css::uno::Any& rValue

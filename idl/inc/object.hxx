@@ -43,7 +43,7 @@ public:
     void            SetClass( SvMetaClass * pClass )
                     { xClass = pClass; }
     SvMetaClass *   GetClass() const
-                    { return xClass; }
+                    { return xClass.get(); }
 };
 
 
@@ -64,7 +64,7 @@ private:
     static sal_uInt16       WriteSlotParamArray( SvIdlDataBase & rBase,
                                             SvSlotElementList & rSlotList,
                                             SvStream & rOutStm );
-    static sal_uInt16       WriteSlots( const OString& rShellName, sal_uInt16 nCount,
+    static sal_uInt16       WriteSlots( const OString& rShellName,
                                     SvSlotElementList & rSlotList,
                                     SvIdlDataBase & rBase,
                                     SvStream & rOutStm );

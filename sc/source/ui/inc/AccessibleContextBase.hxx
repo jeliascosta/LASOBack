@@ -36,10 +36,10 @@
 #include <cppuhelper/interfacecontainer.h>
 
 #include <svl/lstner.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <cppuhelper/compbase5.hxx>
 #include <cppuhelper/implbase1.hxx>
 #include <comphelper/servicehelper.hxx>
-#include <comphelper/broadcasthelper.hxx>
 
 class Rectangle;
 
@@ -61,7 +61,7 @@ typedef cppu::ImplHelper1<
                 > ScAccessibleContextBaseImplEvent;
 
 class ScAccessibleContextBase
-    :   public comphelper::OBaseMutex,
+    :   public cppu::BaseMutex,
         public ScAccessibleContextBaseWeakImpl,
         public ScAccessibleContextBaseImplEvent,
         public SfxListener
@@ -75,7 +75,7 @@ public:
     virtual void Init();
     virtual void SAL_CALL disposing() override;
 protected:
-    virtual ~ScAccessibleContextBase();
+    virtual ~ScAccessibleContextBase() override;
 public:
 
     bool SAL_CALL isShowing(  )

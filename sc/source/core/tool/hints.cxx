@@ -21,7 +21,7 @@
 
 // ScPaintHint - info what has to be repainted
 
-ScPaintHint::ScPaintHint( const ScRange& rRng, sal_uInt16 nPaint ) :
+ScPaintHint::ScPaintHint( const ScRange& rRng, PaintPartFlags nPaint ) :
     aRange( rRng ),
     nParts( nPaint ),
     bPrint( true )
@@ -45,12 +45,6 @@ ScUpdateRefHint::ScUpdateRefHint( UpdateRefMode eMode, const ScRange& rR,
 }
 
 ScUpdateRefHint::~ScUpdateRefHint()
-{
-}
-
-// ScPointerChangedHint - pointer has become invalid
-
-ScPointerChangedHint::~ScPointerChangedHint()
 {
 }
 

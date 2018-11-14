@@ -31,26 +31,12 @@
 
 class SfxPickList : public SfxListener
 {
-    struct PickListEntry
-    {
-        PickListEntry( const OUString& _aName, const OUString& _aFilter ) :
-            aName( _aName ), aFilter( _aFilter ) {}
-
-        OUString aName;
-        OUString aFilter;
-    };
-
-    std::vector< PickListEntry* >   m_aPicklistVector;
     sal_uInt32                      m_nAllowedMenuSize;
     css::uno::Reference< css::util::XStringWidth > m_xStringLength;
 
                             SfxPickList( sal_uInt32 nMenuSize );
-                            virtual ~SfxPickList();
+                            virtual ~SfxPickList() override;
 
-    void                    CreatePicklistMenuTitle( Menu* pMenu, sal_uInt16 nItemId, const OUString& aURL, sal_uInt32 nNo );
-    PickListEntry*          GetPickListEntry( sal_uInt32 nIndex );
-    void                    CreatePickListEntries();
-    void                    RemovePickListEntries();
     /**
      * Adds the given document to the pick list (recent documents) if it satisfies
        certain requirements, e.g. being writable. Check implementation for requirement
@@ -61,8 +47,6 @@ class SfxPickList : public SfxListener
     public:
         static SfxPickList& Get();
         static void ensure() { Get(); }
-
-        static void         ExecuteEntry( sal_uInt32 nIndex );
 
         virtual void        Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 };

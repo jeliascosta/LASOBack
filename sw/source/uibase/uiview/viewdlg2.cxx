@@ -54,7 +54,7 @@ void SwView::ExecDlgExt(SfxRequest &rReq)
             SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
             assert(pFact && "SwAbstractDialogFactory fail!");
 
-            std::unique_ptr<VclAbstractDialog> pDialog(pFact->CreateSwCaptionDialog( pMDI, *this, DLG_CAPTION ));
+            ScopedVclPtr<VclAbstractDialog> pDialog(pFact->CreateSwCaptionDialog( pMDI, *this ));
             assert(pDialog && "Dialog creation failed!");
             if ( pDialog )
             {
@@ -66,7 +66,7 @@ void SwView::ExecDlgExt(SfxRequest &rReq)
         {
             SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
             assert(pFact && "Dialog creation failed!");
-            std::unique_ptr<AbstractInsFootNoteDlg> pDlg(pFact->CreateInsFootNoteDlg(
+            ScopedVclPtr<AbstractInsFootNoteDlg> pDlg(pFact->CreateInsFootNoteDlg(
                 pMDI, *m_pWrtShell, true));
             assert(pDlg && "Dialog creation failed!");
 
@@ -102,7 +102,7 @@ void SwView::InsertCaption(const InsCaptionOpt *pOpt)
     SwWrtShell &rSh = GetWrtShell();
     if(!rName.isEmpty())
     {
-        sal_uInt16 nPoolId = SwStyleNameMapper::GetPoolIdFromUIName(rName, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL);
+        sal_uInt16 nPoolId = SwStyleNameMapper::GetPoolIdFromUIName(rName, SwGetPoolIdFromName::TxtColl);
         if( USHRT_MAX != nPoolId )
             rSh.GetTextCollFromPool(nPoolId);
             // Pool template does not exist: Does it exist on the document?
@@ -118,10 +118,10 @@ void SwView::InsertCaption(const InsCaptionOpt *pOpt)
     if (eType & nsSelectionType::SEL_OLE)
         eType = nsSelectionType::SEL_GRF;
 
-    const SwLabelType eT = eType & nsSelectionType::SEL_TBL ? LTYPE_TABLE :
-                      eType & nsSelectionType::SEL_FRM ? LTYPE_FLY :
-                      eType == nsSelectionType::SEL_TXT ? LTYPE_FLY :
-                      eType & nsSelectionType::SEL_DRW ? LTYPE_DRAW :
+    const SwLabelType eT = (eType & nsSelectionType::SEL_TBL) ? LTYPE_TABLE :
+                      (eType & nsSelectionType::SEL_FRM) ? LTYPE_FLY :
+                      (eType == nsSelectionType::SEL_TXT) ? LTYPE_FLY :
+                      (eType & nsSelectionType::SEL_DRW) ? LTYPE_DRAW :
                                                     LTYPE_OBJECT;
 
     SwFieldMgr aMgr(&rSh);

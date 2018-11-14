@@ -41,7 +41,7 @@ public:
     Deck(const DeckDescriptor& rDeckDescriptor,
          vcl::Window* pParentWindow,
          const std::function<void()>& rCloserAction);
-    virtual ~Deck();
+    virtual ~Deck() override;
     virtual void dispose() override;
 
     const OUString& GetId() const { return msId; }
@@ -91,7 +91,7 @@ private:
     VclPtr<vcl::Window> mpFiller;
     VclPtr<ScrollBar> mpVerticalScrollBar;
 
-    DECL_LINK_TYPED(HandleVerticalScrollBarChange, ScrollBar*, void);
+    DECL_LINK(HandleVerticalScrollBarChange, ScrollBar*, void);
     bool ProcessWheelEvent(CommandEvent* pCommandEvent);
 
 };

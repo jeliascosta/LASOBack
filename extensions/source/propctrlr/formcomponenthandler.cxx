@@ -95,10 +95,10 @@
 #include <svx/svxids.hrc>
 #include <toolkit/helper/vclunohelper.hxx>
 #include <tools/diagnose_ex.h>
+#include <tools/resary.hxx>
 #include <vcl/msgbox.hxx>
 #include <vcl/stdtext.hxx>
 #include <vcl/wrkwin.hxx>
-#include <tools/StringListResource.hxx>
 #include <sal/macros.h>
 
 #include <limits>
@@ -220,12 +220,10 @@ namespace pcr
             if ( (eType == TypeClass_STRING || eType == TypeClass_SEQUENCE) &&
                     lcl_isLanguageDependentProperty( _rPropertyName ) )
             {
-                static const char s_sResourceResolverPropName[] = "ResourceResolver";
-
                 Reference< resource::XStringResourceResolver > xStringResourceResolver;
                 try
                 {
-                    xStringResourceResolver.set( _xComponent->getPropertyValue( s_sResourceResolverPropName ),UNO_QUERY);
+                    xStringResourceResolver.set( _xComponent->getPropertyValue( "ResourceResolver" ),UNO_QUERY);
                     if( xStringResourceResolver.is() &&
                         xStringResourceResolver->getLocales().getLength() > 0 )
                     {
@@ -373,7 +371,6 @@ namespace pcr
                     else if( eType == TypeClass_SEQUENCE )
                     {
                         static const char aDot[] = ".";
-                        static const char aEsc[] = "&";
 
                         // Put strings into resource using new ids
                         Sequence< OUString > aNewStrings;
@@ -384,13 +381,13 @@ namespace pcr
 
                         // Create new Ids
                         std::unique_ptr<OUString[]> pNewPureIds(new OUString[nNewCount]);
-                        OUString aIdStrBase = aDot;
                         Any aNameAny = m_xComponent->getPropertyValue(PROPERTY_NAME);
                         OUString sControlName;
                         aNameAny >>= sControlName;
-                        aIdStrBase += sControlName;
-                        aIdStrBase += aDot;
-                        aIdStrBase += _rPropertyName;
+                        OUString aIdStrBase = aDot
+                                            + sControlName
+                                            + aDot
+                                            + _rPropertyName;
                         sal_Int32 i;
                         OUString aDummyStr;
                         for ( i = 0; i < nNewCount; ++i )
@@ -456,9 +453,7 @@ namespace pcr
                             OUString aStr = pNewStrings[i];
                             xStringResourceManager->setString( aPureIdStr, aStr );
 
-                            OUString aIdStr = aEsc;
-                            aIdStr += aPureIdStr;
-                            pNewIdStrings[i] = aIdStr;
+                            pNewIdStrings[i] = "&" + aPureIdStr;
                         }
                         aValue <<= aNewIdStrings;
 
@@ -545,10 +540,9 @@ namespace pcr
             OUString sControlValue;
             OSL_VERIFY( _rControlValue >>= sControlValue );
 
-            ::std::vector< OUString > aListEntries;
-            tools::StringListResource aRes( PcrRes( RID_RSC_ENUM_SHOWHIDE ), aListEntries );
-            OSL_ENSURE( aListEntries.size() == 2, "FormComponentPropertyHandler::convertToPropertyValue: broken resource for Show/Hide!" );
-            bool bShow = ( aListEntries.size() < 2 ) || ( sControlValue == aListEntries[1] );
+            ResStringArray aListEntries(PcrRes(RID_RSC_ENUM_SHOWHIDE));
+            OSL_ENSURE( aListEntries.Count() == 2, "FormComponentPropertyHandler::convertToPropertyValue: broken resource for Show/Hide!" );
+            bool bShow = ( aListEntries.Count() < 2 ) || ( sControlValue == aListEntries.GetString(1) );
 
             aPropertyValue <<= bShow;
         }
@@ -651,15 +645,14 @@ namespace pcr
         case PROPERTY_ID_SHOW_RECORDACTIONS:
         case PROPERTY_ID_SHOW_FILTERSORT:
         {
-            ::std::vector< OUString > aListEntries;
-            tools::StringListResource aRes( PcrRes( RID_RSC_ENUM_SHOWHIDE ), aListEntries );
-            OSL_ENSURE( aListEntries.size() == 2, "FormComponentPropertyHandler::convertToControlValue: broken resource for Show/Hide!" );
+            ResStringArray aListEntries(PcrRes(RID_RSC_ENUM_SHOWHIDE));
+            OSL_ENSURE( aListEntries.Count() == 2, "FormComponentPropertyHandler::convertToControlValue: broken resource for Show/Hide!" );
 
-            if ( aListEntries.size() == 2 )
+            if (aListEntries.Count() == 2)
             {
                 OUString sControlValue =     ::comphelper::getBOOL( _rPropertyValue )
-                                                ?   aListEntries[1]
-                                                :   aListEntries[0];
+                                                ?   aListEntries.GetString(1)
+                                                :   aListEntries.GetString(0);
                 aControlValue <<= sControlValue;
             }
         }
@@ -829,21 +822,6 @@ namespace pcr
         if ( m_xComponent.is() )
             m_xComponent->removePropertyChangeListener( OUString(), _rxListener );
         FormComponentPropertyHandler_Base::removePropertyChangeListener( _rxListener );
-    }
-
-
-    void FormComponentPropertyHandler::onNewComponent()
-    {
-        FormComponentPropertyHandler_Base::onNewComponent();
-        if ( !m_xComponentPropertyInfo.is() && m_xComponent.is() )
-            throw NullPointerException();
-
-        m_xPropertyState.set( m_xComponent, UNO_QUERY );
-        m_eComponentClass = eUnknown;
-        m_bComponentIsSubForm = m_bHaveListSource = m_bHaveCommand = false;
-        m_nClassId = 0;
-
-        impl_initComponentMetaData_throw();
     }
 
 
@@ -1048,7 +1026,7 @@ namespace pcr
         case PROPERTY_ID_TARGET_URL:
         case PROPERTY_ID_IMAGE_URL:
         {
-            aDescriptor.Control = new OFileUrlControl( impl_getDefaultDialogParent_nothrow(), WB_TABSTOP | WB_BORDER );
+            aDescriptor.Control = new OFileUrlControl( impl_getDefaultDialogParent_nothrow() );
 
             aDescriptor.PrimaryButtonId = PROPERTY_ID_TARGET_URL == nPropId
                 ? OUString(UID_PROP_DLG_ATTR_TARGET_URL)
@@ -1125,7 +1103,7 @@ namespace pcr
 
                     if ( bIsFormatKey )
                     {
-                        OFormatSampleControl* pControl = new OFormatSampleControl( impl_getDefaultDialogParent_nothrow(), WB_READONLY | WB_TABSTOP | WB_BORDER );
+                        OFormatSampleControl* pControl = new OFormatSampleControl( impl_getDefaultDialogParent_nothrow() );
                         aDescriptor.Control = pControl;
                         pControl->SetFormatSupplier( pSupplier );
 
@@ -1252,9 +1230,9 @@ namespace pcr
                 )
                 nResId = RID_RSC_ENUM_SHOWHIDE;
 
-            ::std::vector< OUString > aListEntries;
-            tools::StringListResource aRes(PcrRes(nResId),aListEntries);
-            aDescriptor.Control = PropertyHandlerHelper::createListBoxControl( _rxControlFactory, aListEntries, false, false );
+            PcrRes aRes(nResId);
+            ResStringArray aListEntries(aRes);
+            aDescriptor.Control = PropertyHandlerHelper::createListBoxControl(_rxControlFactory, aListEntries, false, false);
             bNeedDefaultStringIfVoidAllowed = true;
         }
 
@@ -1309,7 +1287,7 @@ namespace pcr
         {
             case PROPERTY_ID_REPEAT_DELAY:
             {
-                OTimeDurationControl* pControl = new OTimeDurationControl( impl_getDefaultDialogParent_nothrow(), WB_BORDER | WB_TABSTOP );
+                OTimeDurationControl* pControl = new OTimeDurationControl( impl_getDefaultDialogParent_nothrow() );
                 aDescriptor.Control = pControl;
 
                 pControl->setMinValue( Optional< double >( true, 0 ) );
@@ -1391,7 +1369,7 @@ namespace pcr
         if ( ( aProperty.Attributes & PropertyAttribute::MAYBEVOID ) != 0 )
         {
             // insert the string "Default" string, if necessary
-            if ( bNeedDefaultStringIfVoidAllowed || ( nControlType == PropertyControlType::ColorListBox ) )
+            if (bNeedDefaultStringIfVoidAllowed)
             {
                 Reference< XStringListControl > xStringList( aDescriptor.Control, UNO_QUERY_THROW );
                 xStringList->prependListEntry( m_sDefaultValueString );
@@ -1542,7 +1520,7 @@ namespace pcr
         // ----- DataSourceName -----
         case PROPERTY_ID_DATASOURCE:
             // reset the connection, now that we have a new data source
-            impl_clearRowsetConnection_nothrow();
+            m_xRowSetConnection.clear();
 
             // available list source values (tables or queries) might have changed
             if ( !_bFirstTimeInit && m_bHaveListSource )
@@ -2023,11 +2001,19 @@ namespace pcr
     }
 
 
-    void FormComponentPropertyHandler::impl_initComponentMetaData_throw()
+    void FormComponentPropertyHandler::onNewComponent()
     {
+        FormComponentPropertyHandler_Base::onNewComponent();
+        if ( !m_xComponentPropertyInfo.is() && m_xComponent.is() )
+            throw NullPointerException();
+
+        m_xPropertyState.set( m_xComponent, UNO_QUERY );
+        m_eComponentClass = eUnknown;
+        m_bComponentIsSubForm = m_bHaveListSource = m_bHaveCommand = false;
+        m_nClassId = 0;
+
         try
         {
-
             // component class
             m_eComponentClass = eUnknown;
 
@@ -2071,7 +2057,7 @@ namespace pcr
         }
         catch( const Exception& )
         {
-            OSL_FAIL( "FormComponentPropertyHandler::impl_initComponentMetaData_throw: caught an exception!" );
+            OSL_FAIL( "FormComponentPropertyHandler::onNewComponent: caught an exception!" );
             DBG_UNHANDLED_EXCEPTION();
         }
     }
@@ -2368,12 +2354,6 @@ namespace pcr
             OSL_FAIL( "FormComponentPropertyHandler::impl_initFieldList_nothrow: caught an exception!" );
             DBG_UNHANDLED_EXCEPTION();
         }
-    }
-
-
-    void FormComponentPropertyHandler::impl_clearRowsetConnection_nothrow()
-    {
-        m_xRowSetConnection.clear();
     }
 
 
@@ -2725,7 +2705,7 @@ namespace pcr
             if ( !fnCreatePage )
                 throw RuntimeException();   // caught below
 
-            SfxTabPage* pPage = (*fnCreatePage)( xDialog->get_content_area(), &aCoreSet );
+            VclPtr<SfxTabPage> pPage = (*fnCreatePage)( xDialog->get_content_area(), &aCoreSet );
             xDialog->SetTabPage( pPage );
 
             _rClearBeforeDialog.clear();
@@ -3224,7 +3204,7 @@ namespace pcr
     }
 
 
-    IMPL_LINK_NOARG_TYPED( FormComponentPropertyHandler, OnDesignerClosed, SQLCommandDesigner&, void )
+    IMPL_LINK_NOARG( FormComponentPropertyHandler, OnDesignerClosed, SQLCommandDesigner&, void )
     {
         OSL_ENSURE( m_xBrowserUI.is() && m_xCommandDesigner.is(), "FormComponentPropertyHandler::OnDesignerClosed: too many NULLs!" );
         if ( m_xBrowserUI.is() && m_xCommandDesigner.is() )

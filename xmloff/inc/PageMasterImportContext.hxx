@@ -44,8 +44,8 @@ public:
             const OUString& rLName,
             const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
             SvXMLStylesContext& rStyles,
-            bool bDefaultStyle=false);
-    virtual ~PageStyleContext();
+            bool bDefaultStyle);
+    virtual ~PageStyleContext() override;
 
     virtual SvXMLImportContext *CreateChildContext(
             sal_uInt16 nPrefix,

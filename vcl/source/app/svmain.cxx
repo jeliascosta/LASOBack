@@ -30,6 +30,7 @@
 #include <tools/resmgr.hxx>
 
 #include <comphelper/processfactory.hxx>
+#include <comphelper/asyncnotification.hxx>
 
 #include <unotools/syslocaleoptions.hxx>
 #include <vcl/svapp.hxx>
@@ -37,7 +38,7 @@
 #include <vcl/cvtgrf.hxx>
 #include <vcl/scheduler.hxx>
 #include <vcl/image.hxx>
-#include <vcl/implimagetree.hxx>
+#include <vcl/ImageTree.hxx>
 #include <vcl/settings.hxx>
 #include <vcl/unowrap.hxx>
 #include <vcl/commandinfoprovider.hxx>
@@ -63,7 +64,6 @@
 #include <vcl/svmain.hxx>
 #include "dbggui.hxx"
 #include "accmgr.hxx"
-#include "idlemgr.hxx"
 #include "outdev.h"
 #include "fontinstance.hxx"
 #include "PhysicalFontCollection.hxx"
@@ -72,7 +72,7 @@
 #include "salsys.hxx"
 #include "saltimer.hxx"
 #include "salimestatus.hxx"
-#include "xconnection.hxx"
+#include "displayconnectiondispatch.hxx"
 
 #include <config_features.h>
 #if HAVE_FEATURE_OPENGL
@@ -97,9 +97,13 @@
 #endif
 
 //ADD LIBRAS
+#include "LASO.hxx"
 #include <fstream>
 #ifdef _WIN32
-#include <tchar.h>
+	#include <tchar.h>
+#endif
+#ifdef LINUX
+	#include <cstdlib>
 #endif
 //END LIBRAS
 
@@ -179,7 +183,7 @@ int ImplSVMain()
     // The 'real' SVMain()
     ImplSVData* pSVData = ImplGetSVData();
 
-    DBG_ASSERT( pSVData->mpApp, "no instance of class Application" );
+    SAL_WARN_IF( !pSVData->mpApp, "vcl", "no instance of class Application" );
 
     int nReturn = EXIT_FAILURE;
 
@@ -277,31 +281,35 @@ static bool isInitVCL()
 
 //ADD LIBRAS
 #ifdef _WIN32
-PROCESS_INFORMATION process_info;
+	PROCESS_INFORMATION process_info;
 #endif
 //END LIBRAS
 bool InitVCL()
 {
     if( pExceptionHandler != nullptr )
         return false;
-	
+
 	//ADD LIBRAS
-	std::ofstream ofs ("C:\\ProgramData\\LASO.log",
+	std::ofstream ofs (LASO_LOG_PATH,
 						std::ofstream::out|std::ofstream::trunc);
 	ofs.close();
-	std::ofstream debug ("C:\\ProgramData\\LASO_DEBUG.log",
+	std::ofstream debug (DBG_LASO_LOG_PATH,
 						std::ofstream::out|std::ofstream::trunc);
 	debug.close();
+	#ifdef LINUX
+		system("xterm&");
+	#endif
 	#ifdef _WIN32
-	STARTUPINFO info={sizeof(info)};
-	const TCHAR* target = _T("LIBRASOffice.exe");
 
-	/*CreateProcess(target, NULL, NULL, NULL, TRUE, 0, NULL, NULL, &info, &process_info);
-	{
-		WaitForSingleObject(process_info.hProcess, INFINITE);
-		CloseHandle(process_info.hProcess);
-		CloseHandle(process_info.hThread);
-	}*/
+		STARTUPINFO info={sizeof(info)};
+		const TCHAR* target = _T("LIBRASOffice.exe");
+
+		CreateProcess(target, NULL, NULL, NULL, TRUE, 0, NULL, NULL, &info, &process_info);
+		{
+			WaitForSingleObject(process_info.hProcess, INFINITE);
+			CloseHandle(process_info.hProcess);
+			CloseHandle(process_info.hThread);
+		}
 	#endif
 	//END LIBRAS
 	
@@ -395,13 +403,17 @@ void DeInitVCL()
 {
 	//ADD LIBRAS
 	#ifdef _WIN32
-	CloseHandle(process_info.hProcess);
-    CloseHandle(process_info.hThread);
+		CloseHandle(process_info.hProcess);
+		CloseHandle(process_info.hThread);
 	
-	system ("taskkill /F /IM javaw.exe /T");
+		system ("taskkill /F /IM javaw.exe /T");
 	#endif
 	//END LIBRAS
 	
+    {
+        SolarMutexReleaser r; // unblock threads blocked on that so we can join
+        ::comphelper::JoinAsyncEventNotifiers();
+    }
     ImplSVData* pSVData = ImplGetSVData();
     // lp#1560328: clear cache before disposing rest of VCL
     if(pSVData->mpBlendFrameCache)
@@ -437,10 +449,10 @@ void DeInitVCL()
             aBuf.append( "\n" );
         }
     }
-    DBG_ASSERT( nBadTopWindows==0, aBuf.getStr() );
+    SAL_WARN_IF( nBadTopWindows!=0, "vcl", aBuf.getStr() );
 #endif
 
-    ImplImageTree::get().shutDown();
+    ImageTree::get().shutdown();
 
     osl_removeSignalHandler( pExceptionHandler);
     pExceptionHandler = nullptr;
@@ -454,11 +466,6 @@ void DeInitVCL()
         pSVData->mpSettingsConfigItem = nullptr;
     }
 
-    if ( pSVData->maAppData.mpIdleMgr )
-    {
-        delete pSVData->maAppData.mpIdleMgr;
-        pSVData->maAppData.mpIdleMgr = nullptr;
-    }
     Scheduler::ImplDeInitScheduler();
 
     if ( pSVData->maWinData.mpMsgBoxImgList )
@@ -490,16 +497,6 @@ void DeInitVCL()
     {
         delete pSVData->maCtrlData.mpSplitVPinImgList;
         pSVData->maCtrlData.mpSplitVPinImgList = nullptr;
-    }
-    if ( pSVData->maCtrlData.mpSplitHArwImgList )
-    {
-        delete pSVData->maCtrlData.mpSplitHArwImgList;
-        pSVData->maCtrlData.mpSplitHArwImgList = nullptr;
-    }
-    if ( pSVData->maCtrlData.mpSplitVArwImgList )
-    {
-        delete pSVData->maCtrlData.mpSplitVArwImgList;
-        pSVData->maCtrlData.mpSplitVArwImgList = nullptr;
     }
     if ( pSVData->maCtrlData.mpDisclosurePlus )
     {
@@ -661,14 +658,14 @@ struct WorkerThreadData
 };
 
 #ifdef _WIN32
-static HANDLE hThreadID = 0;
-static unsigned __stdcall _threadmain( void *pArgs )
+static HANDLE hThreadID = nullptr;
+static unsigned __stdcall threadmain( void *pArgs )
 {
     OleInitialize( nullptr );
     static_cast<WorkerThreadData*>(pArgs)->pWorker( static_cast<WorkerThreadData*>(pArgs)->pThreadData );
     delete static_cast<WorkerThreadData*>(pArgs);
     OleUninitialize();
-    hThreadID = 0;
+    hThreadID = nullptr;
     return 0;
 }
 #else
@@ -690,13 +687,13 @@ void CreateMainLoopThread( oslWorkerFunction pWorker, void * pThreadData )
     // sal thread always call CoInitializeEx, so a system dependent implementation is necessary
 
     unsigned uThreadID;
-    hThreadID = (HANDLE)_beginthreadex(
-        NULL,       // no security handle
+    hThreadID = reinterpret_cast<HANDLE>(_beginthreadex(
+        nullptr,       // no security handle
         0,          // stacksize 0 means default
-        _threadmain,    // thread worker function
+        threadmain,    // thread worker function
         new WorkerThreadData( pWorker, pThreadData ),       // arguments for worker function
         0,          // 0 means: create immediately otherwise use CREATE_SUSPENDED
-        &uThreadID );   // thread id to fill
+        &uThreadID ));   // thread id to fill
 #else
     hThreadID = osl_createThread( MainWorkerFunction, new WorkerThreadData( pWorker, pThreadData ) );
 #endif

@@ -179,6 +179,11 @@ interface _Annotation
         DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
+    SID_EMOJI_CONTROL
+    [
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
+    ]
+
     SID_ATTR_PARA_LRSPACE
     [
         ExecMethod = Exec;
@@ -201,11 +206,13 @@ interface _Annotation
     [
         ExecMethod = Exec;
         StateMethod = GetState;
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
     SID_PARASPACE_DECREASE
     [
         ExecMethod = Exec;
         StateMethod = GetState;
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     FN_INSERT_STRING

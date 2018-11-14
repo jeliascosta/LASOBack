@@ -253,7 +253,7 @@ public:
             m_aFlag.release();
         }
 
-    virtual ~myThread()
+    virtual ~myThread() override
         {
             if (isRunning())
             {
@@ -317,7 +317,7 @@ protected:
         }
 public:
 
-    virtual ~OCountThread()
+    virtual ~OCountThread() override
         {
             if (isRunning())
             {
@@ -359,7 +359,7 @@ public:
         {
                 t_print("new thread id %u!\n", (unsigned) getIdentifier());
         }
-    virtual ~ONoScheduleThread()
+    virtual ~ONoScheduleThread() override
         {
             if (isRunning())
             {
@@ -400,7 +400,7 @@ protected:
         }
 public:
 
-    virtual ~OAddThread()
+    virtual ~OAddThread() override
         {
             if (isRunning())
             {
@@ -1382,9 +1382,9 @@ namespace osl_Thread
 #else
 // LLA: Linux
 // NO_PTHREAD_PRIORITY ???
-                CPPUNIT_ASSERT_MESSAGE(
+                CPPUNIT_ASSERT_EQUAL_MESSAGE(
                     "getPriority",
-                    aPriority == osl_Thread_PriorityNormal
+                    osl_Thread_PriorityNormal, aPriority
                     );
 #endif
             }
@@ -1538,9 +1538,9 @@ namespace osl_Thread
                 t_print("later value = %d\n", (int) nLaterValue);
                 // if value and latervalue not equal, than the thread would not suspended
 
-                CPPUNIT_ASSERT_MESSAGE(
+                CPPUNIT_ASSERT_EQUAL_MESSAGE(
                     "Schedule: suspend works.",
-                    nLaterValue == nValue
+                    nValue, nLaterValue
                     );
 
                 aThread->resume();
@@ -1611,9 +1611,9 @@ namespace osl_Thread
 
                 t_print(" value term = %d\n", (int) nValue_term);
 
-                CPPUNIT_ASSERT_MESSAGE(
+                CPPUNIT_ASSERT_EQUAL_MESSAGE(
                     "Schedule: don't schedule in thread run method, terminate failed.",
-                    nValue_term == 10
+                    static_cast<sal_Int32>(10), nValue_term
                     );
             }
 
@@ -1677,7 +1677,7 @@ private:
             ThreadHelper::thread_sleep_tenth_sec(3);
         }
 public:
-    virtual ~myKeyThread()
+    virtual ~myKeyThread() override
         {
             if (isRunning())
             {
@@ -1705,7 +1705,7 @@ private:
         }
 
 public:
-    virtual ~idThread()
+    virtual ~idThread() override
         {
             if (isRunning())
             {
@@ -1843,8 +1843,7 @@ namespace osl_ThreadData
         void getData_001()
             {
                 char* pc = new char[2];
-                char nData[] = "i";
-                strcpy(pc, nData);
+                strcpy(pc, "i");
                 myThreadData.setData(pc);
 
                 myKeyThread aThread1('c');

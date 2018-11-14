@@ -34,6 +34,7 @@ class Fraction;
 class ScStyleSheet;
 class SvNumberFormatter;
 class ScDocument;
+enum class ScRotateDir : sal_uInt8;
 
 ///  how to treat COL_AUTO in GetFont:
 
@@ -52,13 +53,14 @@ class SC_DLLPUBLIC ScPatternAttr: public SfxSetItem
 {
     OUString*       pName;
     ScStyleSheet*   pStyle;
+    sal_uInt64      mnKey;
 public:
                             ScPatternAttr(SfxItemSet* pItemSet, const OUString& rStyleName);
-                            ScPatternAttr(SfxItemSet* pItemSet, ScStyleSheet* pStyleSheet = nullptr);
+                            ScPatternAttr(SfxItemSet* pItemSet);
                             ScPatternAttr(SfxItemPool* pItemPool);
                             ScPatternAttr(const ScPatternAttr& rPatternAttr);
 
-                            virtual ~ScPatternAttr();
+                            virtual ~ScPatternAttr() override;
 
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual SfxPoolItem*    Create(SvStream& rStream, sal_uInt16 nVersion) const override;
@@ -78,7 +80,7 @@ public:
 
     void                    DeleteUnchanged( const ScPatternAttr* pOldAttrs );
 
-    static SvxCellOrientation GetCellOrientation( const SfxItemSet& rItemSet, const SfxItemSet* pCondSet = nullptr );
+    static SvxCellOrientation GetCellOrientation( const SfxItemSet& rItemSet, const SfxItemSet* pCondSet );
     SvxCellOrientation      GetCellOrientation( const SfxItemSet* pCondSet = nullptr ) const;
 
     /** Static helper function to fill a font object from the passed item set. */
@@ -131,7 +133,10 @@ public:
                                                 const SfxItemSet* pCondSet ) const;
 
     long                    GetRotateVal( const SfxItemSet* pCondSet ) const;
-    sal_uInt8                   GetRotateDir( const SfxItemSet* pCondSet ) const;
+    ScRotateDir             GetRotateDir( const SfxItemSet* pCondSet ) const;
+
+    void                    SetKey(sal_uInt64 nKey);
+    sal_uInt64              GetKey() const;
 };
 
 #endif

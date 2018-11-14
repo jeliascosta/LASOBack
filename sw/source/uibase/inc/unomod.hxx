@@ -48,7 +48,7 @@ class SwXModule : public cppu::WeakImplHelper
     css::uno::Reference< css::beans::XPropertySet >     mxPrintSettings;
 
 protected:
-    virtual ~SwXModule();
+    virtual ~SwXModule() override;
 public:
     SwXModule();
 
@@ -112,7 +112,7 @@ protected:
         throw(css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException ) override;
 
     virtual ~SwXPrintSettings()
-        throw();
+        throw() override;
 public:
     SwXPrintSettings( SwXPrintSettingsType eType, SwDoc * pDoc = nullptr );
 
@@ -133,7 +133,7 @@ protected:
     SwView*                     pView;
     SwViewOption*       mpViewOption;
     const SwViewOption*         mpConstViewOption;
-    bool                    bObjectValid:1, bWeb:1, mbApplyZoom;
+    bool                    bObjectValid:1, mbApplyZoom;
 
     FieldUnit   eHRulerUnit;
     bool    mbApplyHRulerMetric;
@@ -174,7 +174,7 @@ protected:
         throw(css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException ) override;
 
     virtual ~SwXViewSettings()
-        throw();
+        throw() override;
 public:
     SwXViewSettings(SwView*  pView);
 

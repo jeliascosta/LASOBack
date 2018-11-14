@@ -38,7 +38,7 @@
 #include <dispatch/popupmenudispatcher.hxx>
 #include <dispatch/servicehandler.hxx>
 #include <dispatch/dispatchdisabler.hxx>
-#include <services/dispatchhelper.hxx>
+#include <framework/dispatchhelper.hxx>
 #include <recording/dispatchrecorder.hxx>
 #include <recording/dispatchrecordersupplier.hxx>
 #include <services/uriabbreviation.hxx>
@@ -49,7 +49,9 @@
 #include <uielement/langselectionmenucontroller.hxx>
 #include <uielement/macrosmenucontroller.hxx>
 #include <uielement/newmenucontroller.hxx>
+#include <uielement/toolbarmodemenucontroller.hxx>
 #include <uielement/toolbarsmenucontroller.hxx>
+#include <uielement/notebookbarmenucontroller.hxx>
 
 COMPONENTGETFACTORY ( fwl,
                         IFFACTORY( ::framework::MediaTypeDetectionHelper                )
@@ -60,7 +62,9 @@ COMPONENTGETFACTORY ( fwl,
                         IFFACTORY( ::framework::DispatchDisabler                        )   else
                         IFFACTORY( ::framework::DispatchRecorder                        )   else
                         IFFACTORY( ::framework::DispatchRecorderSupplier                )   else
+                        IFFACTORY( ::framework::ToolbarModeMenuController               )   else
                         IFFACTORY( ::framework::ToolbarsMenuController                  )   else
+                        IFFACTORY( ::framework::NotebookbarMenuController               )   else
                         IFFACTORY( ::framework::FontMenuController                      )   else
                         IFFACTORY( ::framework::MacrosMenuController                    )   else
                         IFFACTORY( ::framework::NewMenuController                       )   else

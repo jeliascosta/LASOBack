@@ -51,23 +51,8 @@ namespace ucbhelper
  */
 struct ResultSetColumnData
 {
-    /** @see ResultSetMetaData::isAutoIncrement */
-    bool        isAutoIncrement;
-
     /** @see ResultSetMetaData::isCaseSensitive */
     bool        isCaseSensitive;
-
-    /** @see ResultSetMetaData::isSearchable */
-    bool        isSearchable;
-
-    /** @see ResultSetMetaData::isCurrency */
-    bool        isCurrency;
-
-    /** @see ResultSetMetaData::isNullable */
-    sal_Int32       isNullable;
-
-    /** @see ResultSetMetaData::isSigned */
-    bool        isSigned;
 
     /** @see ResultSetMetaData::getColumnDisplaySize */
     sal_Int32       columnDisplaySize;
@@ -78,12 +63,6 @@ struct ResultSetColumnData
     /** @see ResultSetMetaData::getSchemaName */
     OUString schemaName;
 
-    /** @see ResultSetMetaData::getPrecision */
-    sal_Int32       precision;
-
-    /** @see ResultSetMetaData::getScale */
-    sal_Int32       scale;
-
     /** @see ResultSetMetaData::getTableName */
     OUString tableName;
 
@@ -92,15 +71,6 @@ struct ResultSetColumnData
 
     /** @see ResultSetMetaData::getColumnTypeName */
     OUString columnTypeName;
-
-    /** @see ResultSetMetaData::isReadOnly */
-    bool        isReadOnly;
-
-    /** @see ResultSetMetaData::isWritable */
-    bool        isWritable;
-
-    /** @see ResultSetMetaData::isDefinitelyWritable */
-    bool        isDefinitelyWritable;
 
     /** @see ResultSetMetaData::getColumnServiceName */
     OUString columnServiceName;
@@ -112,18 +82,8 @@ struct ResultSetColumnData
 //       may heavily depend on the behaviour of the default constructor.
 
 ResultSetColumnData::ResultSetColumnData()
-: isAutoIncrement( false ),
-  isCaseSensitive( true ),
-  isSearchable( false ),
-  isCurrency( false ),
-  isNullable( css::sdbc::ColumnValue::NULLABLE ),
-  isSigned( false ),
-  columnDisplaySize( 16 ),
-  precision( -1 ),
-  scale( 0 ),
-  isReadOnly( true ),
-  isWritable( false ),
-  isDefinitelyWritable( false )
+: isCaseSensitive( true ),
+  columnDisplaySize( 16 )
 {
 }
 
@@ -145,7 +105,6 @@ private:
 protected:
     css::uno::Reference< css::uno::XComponentContext >    m_xContext;
     css::uno::Sequence< css::beans::Property >            m_aProps;
-    bool m_bReadOnly;
 
 public:
 
@@ -181,7 +140,7 @@ public:
     /**
       * Destructor.
       */
-    virtual ~ResultSetMetaData();
+    virtual ~ResultSetMetaData() override;
 
     // XInterface
     virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )

@@ -30,6 +30,7 @@
 #include <com/sun/star/xml/sax/XFastParser.hpp>
 #include <com/sun/star/xml/sax/XFastSAXSerializable.hpp>
 #include <com/sun/star/document/XDocumentProperties.hpp>
+#include <o3tl/any.hxx>
 #include <unotools/mediadescriptor.hxx>
 #include <unotools/docinfohelper.hxx>
 #include <sax/fshelper.hxx>
@@ -145,7 +146,10 @@ struct NamespaceIds: public rtl::StaticWithInit<
             {"http://schemas.microsoft.com/office/powerpoint/2010/main",
              NMSP_p14},
             {"http://schemas.microsoft.com/office/powerpoint/2012/main",
-             NMSP_p15}};
+             NMSP_p15},
+            {"http://schemas.microsoft.com/office/spreadsheetml/2011/1/ac",
+             NMSP_x12ac},
+        };
     }
 };
 
@@ -236,7 +240,7 @@ void XmlFilterBase::checkDocumentProperties(const Reference<XDocumentProperties>
     if (!aValue.startsWithIgnoreAsciiCase("12."))
         return;
 
-    SAL_WARN("oox", "a MSO 2007 document");
+    SAL_INFO("oox", "a MSO 2007 document");
     mbMSO2007 = true;
 }
 
@@ -246,7 +250,7 @@ void XmlFilterBase::importDocumentProperties()
     MediaDescriptor aMediaDesc( getMediaDescriptor() );
     Reference< XInputStream > xInputStream;
     Reference< XComponentContext > xContext = getComponentContext();
-    Reference< ::oox::core::FilterDetect > xDetector( new ::oox::core::FilterDetect( xContext ) );
+    rtl::Reference< ::oox::core::FilterDetect > xDetector( new ::oox::core::FilterDetect( xContext ) );
     xInputStream = xDetector->extractUnencryptedPackage( aMediaDesc );
     Reference< XComponent > xModel( getModel(), UNO_QUERY );
     Reference< XStorage > xDocumentStorage (
@@ -763,8 +767,7 @@ writeCustomProperties( XmlFilterBase& rSelf, const Reference< XDocumentPropertie
                 break;
                 case TypeClass_BOOLEAN:
                 {
-                    bool val ;
-                    val = *static_cast<sal_Bool const *>(( aprop[n].Value ).getValue());
+                    bool val = *o3tl::forceAccess<bool>(aprop[n].Value);
                     writeElement( pAppProps, FSNS( XML_vt, XML_bool ), val ? 1 : 0);
                 }
                 break;
@@ -804,7 +807,7 @@ writeCustomProperties( XmlFilterBase& rSelf, const Reference< XDocumentPropertie
     pAppProps->endElement( XML_Properties );
 }
 
-XmlFilterBase& XmlFilterBase::exportDocumentProperties( const Reference< XDocumentProperties >& xProperties )
+void XmlFilterBase::exportDocumentProperties( const Reference< XDocumentProperties >& xProperties )
 {
     if( xProperties.is() )
     {
@@ -812,7 +815,6 @@ XmlFilterBase& XmlFilterBase::exportDocumentProperties( const Reference< XDocume
         writeAppProperties( *this, xProperties );
         writeCustomProperties( *this, xProperties );
     }
-    return *this;
 }
 
 // protected ------------------------------------------------------------------
@@ -822,7 +824,7 @@ Reference< XInputStream > XmlFilterBase::implGetInputStream( MediaDescriptor& rM
     /*  Get the input stream directly from the media descriptor, or decrypt the
         package again. The latter is needed e.g. when the document is reloaded.
         All this is implemented in the detector service. */
-    Reference< FilterDetect > xDetector( new FilterDetect( getComponentContext() ) );
+    rtl::Reference< FilterDetect > xDetector( new FilterDetect( getComponentContext() ) );
     return xDetector->extractUnencryptedPackage( rMediaDesc );
 }
 

@@ -26,8 +26,11 @@
 
 ScUndoDraw::ScUndoDraw( SfxUndoAction* pUndo, ScDocShell* pDocSh ) :
     pDrawUndo( pUndo ),
-    pDocShell( pDocSh )
+    pDocShell( pDocSh ),
+    mnViewShellId( -1 )
 {
+    if (ScTabViewShell* pViewShell = ScTabViewShell::GetActiveViewShell())
+        mnViewShellId = pViewShell->GetViewShellId();
 }
 
 ScUndoDraw::~ScUndoDraw()
@@ -47,6 +50,11 @@ OUString ScUndoDraw::GetComment() const
     return OUString();
 }
 
+sal_Int32 ScUndoDraw::GetViewShellId() const
+{
+    return mnViewShellId;
+}
+
 OUString ScUndoDraw::GetRepeatComment(SfxRepeatTarget& rTarget) const
 {
     if (pDrawUndo)
@@ -60,14 +68,6 @@ sal_uInt16 ScUndoDraw::GetId() const
         return pDrawUndo->GetId();
     else
         return 0;
-}
-
-void ScUndoDraw::SetLinkToSfxLinkUndoAction(SfxLinkUndoAction* pSfxLinkUndoAction)
-{
-    if (pDrawUndo)
-        pDrawUndo->SetLinkToSfxLinkUndoAction(pSfxLinkUndoAction);
-    else
-        SetLinkToSfxLinkUndoAction(pSfxLinkUndoAction);
 }
 
 bool  ScUndoDraw::Merge( SfxUndoAction* pNextAction )

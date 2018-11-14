@@ -89,16 +89,16 @@ class SW_DLLPUBLIC SwOneExampleFrame
 
     static  bool    bShowServiceNotAvailableMessage;
 
-    DECL_DLLPRIVATE_LINK_TYPED( TimeoutHdl, Idle*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( PopupHdl, Menu*, bool );
+    DECL_DLLPRIVATE_LINK( TimeoutHdl, Idle*, void );
+    DECL_DLLPRIVATE_LINK( PopupHdl, Menu*, bool );
 
     SAL_DLLPRIVATE void  CreateControl();
     SAL_DLLPRIVATE void  DisposeControl();
 
 public:
     SwOneExampleFrame(vcl::Window& rWin,
-                    sal_uInt32 nStyleFlags = EX_SHOW_ONLINE_LAYOUT,
-                    const Link<SwOneExampleFrame&,void>* pInitalizedLink = nullptr,
+                    sal_uInt32 nStyleFlags,
+                    const Link<SwOneExampleFrame&,void>* pInitalizedLink,
                     const OUString* pURL = nullptr);
     ~SwOneExampleFrame();
 

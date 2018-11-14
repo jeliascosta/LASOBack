@@ -646,7 +646,7 @@ static void lcl_html_OutSectionStartTag( SwHTMLWriter& rHTMLWrt,
             if( nGutter && Application::GetDefaultDevice() )
             {
                 nGutter = (sal_uInt16)Application::GetDefaultDevice()
-                                ->LogicToPixel( Size(nGutter, 0), MapMode(MAP_TWIP) ).Width();
+                                ->LogicToPixel( Size(nGutter, 0), MapMode(MapUnit::MapTwip) ).Width();
             }
             sOut.append(" " OOO_STRING_SVTOOLS_HTML_O_gutter "=\"" + OString::number(nGutter) + "\"");
         }
@@ -1177,7 +1177,7 @@ void SwHTMLWriter::OutImplicitMark( const OUString& rMark,
 {
     if( !rMark.isEmpty() && !m_aImplicitMarks.empty() )
     {
-        OUString sMark(rMark + OUStringLiteral1<cMarkSeparator>() + OUString::createFromAscii(pMarkType));
+        OUString sMark(rMark + OUStringLiteral1(cMarkSeparator) + OUString::createFromAscii(pMarkType));
         if( 0 != m_aImplicitMarks.erase( sMark ) )
         {
             OutAnchor(sMark.replace('?', '_')); // '?' causes problems in IE/Netscape 5
@@ -1191,7 +1191,7 @@ OUString SwHTMLWriter::convertHyperlinkHRefValue(const OUString& rURL)
     sal_Int32 nPos = sURL.lastIndexOf(cMarkSeparator);
     if (nPos != -1)
     {
-        OUString sCompare(comphelper::string::remove(sURL.copy(nPos + 1), ' '));
+        OUString sCompare = sURL.copy(nPos + 1).replaceAll(" ", "");
         if (!sCompare.isEmpty())
         {
             sCompare = sCompare.toAsciiLowerCase();

@@ -91,7 +91,7 @@ namespace svt
     public:
 
         CellController(Control* pW);
-        virtual ~CellController();
+        virtual ~CellController() override;
 
         Control& GetWindow() const { return *const_cast< CellController* >( this )->pWindow; }
 
@@ -237,7 +237,7 @@ namespace svt
     public:
         EditCellController( Edit* _pEdit );
         EditCellController( IEditImplementation* _pImplementation );
-        virtual ~EditCellController( );
+        virtual ~EditCellController( ) override;
 
         const IEditImplementation* GetEditImplementation( ) const { return m_pEditImplementation; }
               IEditImplementation* GetEditImplementation( )       { return m_pEditImplementation; }
@@ -249,7 +249,7 @@ namespace svt
     protected:
         virtual bool MoveAllowed(const KeyEvent& rEvt) const override;
     private:
-        DECL_LINK_TYPED(ModifyHdl, Edit&, void);
+        DECL_LINK(ModifyHdl, Edit&, void);
     };
 
 
@@ -269,7 +269,7 @@ namespace svt
     protected:
         virtual bool MoveAllowed(const KeyEvent& rEvt) const override;
     private:
-        DECL_LINK_TYPED(ModifyHdl, Edit&, void);
+        DECL_LINK(ModifyHdl, Edit&, void);
     };
 
 
@@ -284,7 +284,7 @@ namespace svt
 
     public:
         CheckBoxControl(vcl::Window* pParent);
-        virtual ~CheckBoxControl();
+        virtual ~CheckBoxControl() override;
         virtual void dispose() override;
 
         virtual void GetFocus() override;
@@ -302,7 +302,7 @@ namespace svt
         CheckBox&   GetBox() {return *pBox;};
 
     private:
-        DECL_LINK_TYPED( OnClick, Button*, void );
+        DECL_LINK( OnClick, Button*, void );
     };
 
 
@@ -321,7 +321,7 @@ namespace svt
     protected:
         virtual bool WantMouseEvent() const override;
     private:
-        DECL_LINK_TYPED(ModifyHdl, LinkParamNone*, void);
+        DECL_LINK(ModifyHdl, LinkParamNone*, void);
     };
 
 
@@ -354,7 +354,7 @@ namespace svt
     protected:
         virtual bool MoveAllowed(const KeyEvent& rEvt) const override;
     private:
-        DECL_LINK_TYPED(ModifyHdl, Edit&, void);
+        DECL_LINK(ModifyHdl, Edit&, void);
     };
 
 
@@ -388,7 +388,7 @@ namespace svt
     protected:
         virtual bool MoveAllowed(const KeyEvent& rEvt) const override;
     private:
-        DECL_LINK_TYPED(ListBoxSelectHdl, ListBox&, void);
+        DECL_LINK(ListBoxSelectHdl, ListBox&, void);
     };
 
 
@@ -542,7 +542,6 @@ namespace svt
 
         // callbacks for the data window
         virtual void    ImplStartTracking() override;
-        virtual void    ImplTracking() override;
         virtual void    ImplEndTracking() override;
 
         // when changing a row:
@@ -572,7 +571,7 @@ namespace svt
         // inserting columns
         // if you don't set a width, this will be calculated automatically
         // if the id isn't set the smallest unused will do it ...
-        virtual sal_uInt16 AppendColumn(const OUString& rName, sal_uInt16 nWidth = 0, sal_uInt16 nPos = HEADERBAR_APPEND, sal_uInt16 nId = (sal_uInt16)-1);
+        virtual sal_uInt16 AppendColumn(const OUString& rName, sal_uInt16 nWidth, sal_uInt16 nPos = HEADERBAR_APPEND, sal_uInt16 nId = (sal_uInt16)-1);
 
         // called whenever (Shift)Tab or Enter is pressed. If true is returned, these keys
         // result in traveling to the next or to th previous cell
@@ -586,9 +585,8 @@ namespace svt
             // secure starting of StartEditHdl
 
     public:
-        EditBrowseBox(vcl::Window* pParent, EditBrowseBoxFlags nBrowserFlags = EditBrowseBoxFlags::NONE, WinBits nBits = WB_TABSTOP, BrowserMode nMode = BrowserMode::NONE );
-        EditBrowseBox(vcl::Window* pParent, const ResId& rId, EditBrowseBoxFlags nBrowserFlags = EditBrowseBoxFlags::NONE, BrowserMode nMode = BrowserMode::NONE );
-        virtual ~EditBrowseBox();
+        EditBrowseBox(vcl::Window* pParent, EditBrowseBoxFlags nBrowserFlags, WinBits nBits = WB_TABSTOP, BrowserMode nMode = BrowserMode::NONE );
+        virtual ~EditBrowseBox() override;
         virtual void dispose() override;
 
         bool IsEditing() const {return aController.Is();}
@@ -608,16 +606,6 @@ namespace svt
         virtual void DeactivateCell(bool bUpdate = true);
         // Children ---------------------------------------------------------------
 
-        /** Creates the accessible object of a data table cell.
-        @param nRow
-            The row index of the cell.
-        @param nColumnId
-            The column ID of the cell.
-        @return
-            The XAccessible interface of the specified cell. */
-        virtual css::uno::Reference< css::accessibility::XAccessible >
-        CreateAccessibleCell( sal_Int32 nRow, sal_uInt16 nColumnPos ) override;
-
         /** @return  The count of additional controls of the control area. */
         virtual sal_Int32 GetAccessibleControlCount() const override;
 
@@ -628,14 +616,6 @@ namespace svt
                 The XAccessible interface of the specified control. */
         virtual css::uno::Reference< css::accessibility::XAccessible >
         CreateAccessibleControl( sal_Int32 nIndex ) override;
-
-        /** Creates the accessible object of a column header.
-            @param nColumnId
-                The column ID of the header.
-            @return
-                The XAccessible interface of the specified column header. */
-        virtual css::uno::Reference< css::accessibility::XAccessible >
-        CreateAccessibleRowHeader( sal_Int32 _nRow ) override;
 
         /** Sets focus to current cell of the data table. */
         virtual void GrabTableFocus() override;
@@ -654,16 +634,15 @@ namespace svt
         using Control::ImplInitSettings;
         SVT_DLLPRIVATE void ImplInitSettings( bool bFont, bool bForeground, bool bBackground );
         SVT_DLLPRIVATE void DetermineFocus( const GetFocusFlags _nGetFocusFlags = GetFocusFlags::NONE);
-        static inline void HideAndDisable(CellControllerRef& rController);
         inline void EnableAndShow() const;
 
         SVT_DLLPRIVATE void implActivateCellOnMouseEvent(const BrowserMouseEvent& _rEvt, bool _bUp);
         SVT_DLLPRIVATE void impl_construct();
 
-        DECL_DLLPRIVATE_LINK_TYPED( ModifyHdl, LinkParamNone*, void );
-        DECL_DLLPRIVATE_LINK_TYPED( StartEditHdl, void*, void );
-        DECL_DLLPRIVATE_LINK_TYPED( EndEditHdl, void*, void );
-        DECL_DLLPRIVATE_LINK_TYPED( CellModifiedHdl, void*, void );
+        DECL_DLLPRIVATE_LINK( ModifyHdl, LinkParamNone*, void );
+        DECL_DLLPRIVATE_LINK( StartEditHdl, void*, void );
+        DECL_DLLPRIVATE_LINK( EndEditHdl, void*, void );
+        DECL_DLLPRIVATE_LINK( CellModifiedHdl, void*, void );
     };
 
 

@@ -36,6 +36,7 @@
 #include <oox/export/vmlexport.hxx>
 #include <oox/export/chartexport.hxx>
 #include <oox/export/shapes.hxx>
+#include <oox/helper/propertyset.hxx>
 
 #include <map>
 #include <algorithm>
@@ -350,7 +351,7 @@ void DocxExport::DoFormText(const SwInputField* /*pField*/)
     OSL_TRACE( "TODO DocxExport::ForFormText()" );
 }
 
-OString DocxExport::OutputChart( uno::Reference< frame::XModel >& xModel, sal_Int32 nCount, ::sax_fastparser::FSHelperPtr m_pSerializer )
+OString DocxExport::OutputChart( uno::Reference< frame::XModel >& xModel, sal_Int32 nCount, ::sax_fastparser::FSHelperPtr const & m_pSerializer )
 {
     OUString aFileName = "charts/chart" + OUString::number(nCount) + ".xml";
     OUString sId = m_pFilter->addRelation( m_pSerializer->getOutputStream(),
@@ -429,7 +430,7 @@ void DocxExport::OutputDML(uno::Reference<drawing::XShape>& xShape)
 void DocxExport::ExportDocument_Impl()
 {
     // Set the 'Track Revisions' flag in the settings structure
-    m_aSettings.trackRevisions = 0 != ( nsRedlineMode_t::REDLINE_ON & m_nOrigRedlineMode );
+    m_aSettings.trackRevisions = bool( RedlineFlags::On & m_nOrigRedlineFlags );
 
     InitStyles();
 
@@ -507,6 +508,10 @@ void DocxExport::OutputEndNode( const SwEndNode& rEndNode )
 
             AttrOutput().SectionBreak( msword::PageBreak, m_pSections->CurrentSectionInfo( ) );
             m_pSections->AppendSection( m_pAktPageDesc, pParentFormat, nRstLnNum );
+        }
+        else
+        {
+            AttrOutput().SectionBreaks( rEndNode );
         }
     }
     else if (TXT_MAINTEXT == m_nTextTyp && rEndNode.StartOfSectionNode()->IsTableNode())
@@ -860,7 +865,13 @@ void DocxExport::WriteSettings()
     {
         pFS->singleElementNS( XML_w, XML_documentProtection, FSNS(XML_w, XML_edit), "forms", FSNS(XML_w, XML_enforcement), "1",  FSEND );
     }
-
+    // Do not justify lines with manual break
+    if( m_pDoc->getIDocumentSettingAccess().get( DocumentSettingId::DO_NOT_JUSTIFY_LINES_WITH_MANUAL_BREAK ))
+    {
+        pFS->startElementNS( XML_w, XML_compat, FSEND );
+        pFS->singleElementNS( XML_w, XML_doNotExpandShiftReturn, FSEND );
+        pFS->endElementNS( XML_w, XML_compat );
+    }
     // Automatic hyphenation: it's a global setting in Word, it's a paragraph setting in Writer.
     // Use the setting from the default style.
     SwTextFormatColl* pColl = m_pDoc->getIDocumentStylePoolAccess().GetTextCollFromPool(RES_POOLCOLL_STANDARD, /*bRegardLanguage=*/false);
@@ -944,7 +955,6 @@ void DocxExport::WriteSettings()
                         FSNS( XML_w, XML_val ),  OUStringToOString(aValue, RTL_TEXTENCODING_UTF8).getStr(),
                         FSEND);
                 }
-
                 pFS->endElementNS( XML_w, XML_compat );
             }
         }
@@ -958,7 +968,6 @@ void DocxExport::WriteSettings()
                               FSNS( XML_w, XML_edit ), "forms",
                               FSEND );
     }
-
     pFS->endElementNS( XML_w, XML_settings );
 }
 
@@ -1307,7 +1316,7 @@ void DocxExport::WriteEmbeddings()
 bool DocxExport::isMirroredMargin()
 {
     bool bMirroredMargins = false;
-    if ( nsUseOnPage::PD_MIRROR == (nsUseOnPage::PD_MIRROR & m_pDoc->GetPageDesc(0).ReadUseOn()) )
+    if ( UseOnPage::Mirror == (UseOnPage::Mirror & m_pDoc->GetPageDesc(0).ReadUseOn()) )
     {
         bMirroredMargins = true;
     }
@@ -1427,7 +1436,7 @@ void DocxExport::WriteOutliner(const OutlinerParaObject& rParaObj, sal_uInt8 nTy
     }
 }
 
-void DocxExport::SetFS( ::sax_fastparser::FSHelperPtr pFS )
+void DocxExport::SetFS( ::sax_fastparser::FSHelperPtr const & pFS )
 {
     mpFS = pFS;
 }

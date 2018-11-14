@@ -31,11 +31,9 @@
 #include <oox/helper/attributelist.hxx>
 #include <oox/vml/vmlshape.hxx>
 #include "addressconverter.hxx"
-#include "biffinputstream.hxx"
 #include "drawingfragment.hxx"
 #include <svx/sdtaitm.hxx>
 #include "unitconverter.hxx"
-#include "drawingmanager.hxx"
 
 #include <com/sun/star/text/XText.hpp>
 
@@ -89,7 +87,6 @@ CommentModel::CommentModel()
     , mbRowHidden(false)
     , mnTHA(0)
     , mnTVA(0)
-    , mbVisible( false )
 {
 }
 
@@ -125,7 +122,7 @@ void Comment::importComment( SequenceInputStream& rStrm )
     AddressConverter::convertToCellRangeUnchecked( maModel.maRange, aBinRange, getSheetIndex() );
 }
 
-RichStringRef Comment::createText()
+RichStringRef const & Comment::createText()
 {
     maModel.mxText.reset( new RichString( *this ) );
     return maModel.mxText;
@@ -153,37 +150,25 @@ void Comment::finalizeImport()
 
         // convert shape formatting and visibility
         bool bVisible = true;
-        switch( getFilterType() )
+        // Add shape formatting properties (autoFill, colHidden and rowHidden are dropped)
+        PropertySet aCommentPr( xAnnoShape );
+        aCommentPr.setProperty( PROP_TextFitToSize, maModel.mbAutoScale );
+        aCommentPr.setProperty( PROP_MoveProtect, maModel.mbLocked );
+        aCommentPr.setProperty( PROP_TextHorizontalAdjust, lcl_ToHorizAlign( maModel.mnTHA ) );
+        aCommentPr.setProperty( PROP_TextVerticalAdjust, lcl_ToVertAlign( maModel.mnTVA ) );
+        if( maModel.maAnchor.Width > 0 && maModel.maAnchor.Height > 0 )
         {
-            case FILTER_OOXML:
-                {
-                    // Add shape formatting properties (autoFill, colHidden and rowHidden are dropped)
-                    PropertySet aCommentPr( xAnnoShape );
-                    aCommentPr.setProperty( PROP_TextFitToSize, maModel.mbAutoScale );
-                    aCommentPr.setProperty( PROP_MoveProtect, maModel.mbLocked );
-                    aCommentPr.setProperty( PROP_TextHorizontalAdjust, lcl_ToHorizAlign( maModel.mnTHA ) );
-                    aCommentPr.setProperty( PROP_TextVerticalAdjust, lcl_ToVertAlign( maModel.mnTVA ) );
-                    if( maModel.maAnchor.Width > 0 && maModel.maAnchor.Height > 0 )
-                    {
-                        xAnnoShape->setPosition( css::awt::Point( maModel.maAnchor.X, maModel.maAnchor.Y ) );
-                        xAnnoShape->setSize( css::awt::Size( maModel.maAnchor.Width, maModel.maAnchor.Height ) );
-                    }
+            xAnnoShape->setPosition( css::awt::Point( maModel.maAnchor.X, maModel.maAnchor.Y ) );
+            xAnnoShape->setSize( css::awt::Size( maModel.maAnchor.Width, maModel.maAnchor.Height ) );
+        }
 
-                    // convert shape formatting and visibility
-                    if( const ::oox::vml::ShapeBase* pNoteShape = getVmlDrawing().getNoteShape( aNotePos ) )
-                    {
-                        // position and formatting
-                        pNoteShape->convertFormatting( xAnnoShape );
-                        // visibility
-                        bVisible = pNoteShape->getTypeModel().mbVisible;
-                    }
-                }
-            break;
-            case FILTER_BIFF:
-                bVisible = maModel.mbVisible;
-            break;
-            case FILTER_UNKNOWN:
-            break;
+        // convert shape formatting and visibility
+        if( const ::oox::vml::ShapeBase* pNoteShape = getVmlDrawing().getNoteShape( aNotePos ) )
+        {
+            // position and formatting
+            pNoteShape->convertFormatting( xAnnoShape );
+            // visibility
+            bVisible = pNoteShape->getTypeModel().mbVisible;
         }
         xAnno->setIsVisible( bVisible );
 

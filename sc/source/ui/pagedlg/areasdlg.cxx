@@ -216,8 +216,7 @@ void ScPrintAreasDlg::AddRefEntry()
     if ( pRefInputEdit == pEdPrintArea )
     {
         const sal_Unicode sep = ScCompiler::GetNativeSymbolChar(ocSep);
-        OUString aVal = pEdPrintArea->GetText();
-        aVal += OUString(sep);
+        OUString aVal = pEdPrintArea->GetText() + OUStringLiteral1(sep);
         pEdPrintArea->SetText(aVal);
 
         sal_Int32 nLen = aVal.getLength();
@@ -286,7 +285,7 @@ void ScPrintAreasDlg::Impl_Reset()
         if (pPrintRange)
         {
             if ( !aStrRange.isEmpty() )
-                aStrRange += OUString(sep);
+                aStrRange += OUStringLiteral1(sep);
             aOne = pPrintRange->Format(ScRefFlags::RANGE_ABS, pDoc, eConv);
             aStrRange += aOne;
         }
@@ -413,7 +412,7 @@ void ScPrintAreasDlg::Impl_FillLists()
     else
     {
         ScRangeListRef aList( new ScRangeList );
-        pViewData->GetMarkData().FillRangeListWithMarks( aList, false );
+        pViewData->GetMarkData().FillRangeListWithMarks( aList.get(), false );
         aList->Format(aStrRange, ScRefFlags::RANGE_ABS, pDoc, eConv);
     }
 
@@ -469,7 +468,7 @@ void ScPrintAreasDlg::Impl_FillLists()
 
 // Handler:
 
-IMPL_LINK_TYPED( ScPrintAreasDlg, Impl_BtnHdl, Button*, pBtn, void )
+IMPL_LINK( ScPrintAreasDlg, Impl_BtnHdl, Button*, pBtn, void )
 {
     if ( pBtnOk == pBtn )
     {
@@ -517,7 +516,7 @@ IMPL_LINK_TYPED( ScPrintAreasDlg, Impl_BtnHdl, Button*, pBtn, void )
         Close();
 }
 
-IMPL_LINK_TYPED( ScPrintAreasDlg, Impl_GetFocusHdl, Control&, rCtrl, void )
+IMPL_LINK( ScPrintAreasDlg, Impl_GetFocusHdl, Control&, rCtrl, void )
 {
     if ( &rCtrl ==static_cast<Control *>(pEdPrintArea) ||
          &rCtrl ==static_cast<Control *>(pEdRepeatRow) ||
@@ -539,7 +538,7 @@ IMPL_LINK_TYPED( ScPrintAreasDlg, Impl_GetFocusHdl, Control&, rCtrl, void )
     }
 }
 
-IMPL_LINK_TYPED( ScPrintAreasDlg, Impl_SelectHdl, ListBox&, rLb, void )
+IMPL_LINK( ScPrintAreasDlg, Impl_SelectHdl, ListBox&, rLb, void )
 {
     ListBox* pLb = &rLb;
     const sal_Int32 nSelPos = pLb->GetSelectEntryPos();
@@ -574,7 +573,7 @@ IMPL_LINK_TYPED( ScPrintAreasDlg, Impl_SelectHdl, ListBox&, rLb, void )
         pEd->SetText( *static_cast< OUString* >( pLb->GetEntryData( nSelPos ) ) );
 }
 
-IMPL_LINK_TYPED( ScPrintAreasDlg, Impl_ModifyHdl, Edit&, rEd, void )
+IMPL_LINK( ScPrintAreasDlg, Impl_ModifyHdl, Edit&, rEd, void )
 {
     ListBox* pLb = nullptr;
 
@@ -771,7 +770,7 @@ static bool lcl_CheckRepeatString( const OUString& rStr, ScDocument* pDoc, bool 
             bEndPos = true;
         }
         else
-            aBuf += OUString(c);
+            aBuf += OUStringLiteral1(c);
     }
 
     if (!aBuf.isEmpty())

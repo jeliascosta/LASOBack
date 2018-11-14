@@ -140,7 +140,7 @@ namespace {
     {
     public:
         GraphicExporter();
-        virtual ~GraphicExporter();
+        virtual ~GraphicExporter() override;
 
         // XFilter
         virtual sal_Bool SAL_CALL filter( const Sequence< PropertyValue >& aDescriptor ) throw(RuntimeException, std::exception) override;
@@ -160,7 +160,7 @@ namespace {
 
         VclPtr<VirtualDevice> CreatePageVDev( SdrPage* pPage, sal_uIntPtr nWidthPixel, sal_uIntPtr nHeightPixel ) const;
 
-        DECL_LINK_TYPED( CalcFieldValueHdl, EditFieldInfo*, void );
+        DECL_LINK( CalcFieldValueHdl, EditFieldInfo*, void );
 
         void ParseSettings( const Sequence< PropertyValue >& aDescriptor, ExportSettings& rSettings );
         bool GetGraphic( ExportSettings& rSettings, Graphic& aGraphic, bool bVectorType );
@@ -194,7 +194,7 @@ namespace {
             {
                 // use 100th mm for primitive bitmap converter tool, input is pixel
                 // use a real OutDev to get the correct DPI, the static LogicToLogic assumes 72dpi which is wrong (!)
-                const Size aSize100th(Application::GetDefaultDevice()->PixelToLogic(*pSize, MapMode(MAP_100TH_MM)));
+                const Size aSize100th(Application::GetDefaultDevice()->PixelToLogic(*pSize, MapMode(MapUnit::Map100thMM)));
 
                 aRange.expand(basegfx::B2DPoint(aSize100th.Width(), aSize100th.Height()));
 
@@ -205,7 +205,7 @@ namespace {
             else
             {
                 // use 100th mm for primitive bitmap converter tool
-                const Size aSize100th(OutputDevice::LogicToLogic(rMtf.GetPrefSize(), rMtf.GetPrefMapMode(), MapMode(MAP_100TH_MM)));
+                const Size aSize100th(OutputDevice::LogicToLogic(rMtf.GetPrefSize(), rMtf.GetPrefMapMode(), MapMode(MapUnit::Map100thMM)));
 
                 aRange.expand(basegfx::B2DPoint(aSize100th.Width(), aSize100th.Height()));
             }
@@ -283,7 +283,7 @@ class ImplExportCheckVisisbilityRedirector : public sdr::contact::ViewObjectCont
 {
 public:
     explicit ImplExportCheckVisisbilityRedirector( SdrPage* pCurrentPage );
-    virtual ~ImplExportCheckVisisbilityRedirector();
+    virtual ~ImplExportCheckVisisbilityRedirector() override;
 
     virtual drawinglayer::primitive2d::Primitive2DContainer createRedirectedPrimitive2DSequence(
         const sdr::contact::ViewObjectContact& rOriginal,
@@ -337,7 +337,7 @@ GraphicExporter::~GraphicExporter()
 {
 }
 
-IMPL_LINK_TYPED(GraphicExporter, CalcFieldValueHdl, EditFieldInfo*, pInfo, void)
+IMPL_LINK(GraphicExporter, CalcFieldValueHdl, EditFieldInfo*, pInfo, void)
 {
     if( pInfo )
     {
@@ -355,19 +355,19 @@ IMPL_LINK_TYPED(GraphicExporter, CalcFieldValueHdl, EditFieldInfo*, pInfo, void)
 
                 switch(mpDoc->GetPageNumType())
                 {
-                    case SVX_CHARS_UPPER_LETTER:
-                        aPageNumValue += OUString( (sal_Unicode)(char)((mnPageNumber - 1) % 26 + 'A') );
+                    case css::style::NumberingType::CHARS_UPPER_LETTER:
+                        aPageNumValue += OUStringLiteral1( (mnPageNumber - 1) % 26 + 'A' );
                         break;
-                    case SVX_CHARS_LOWER_LETTER:
-                        aPageNumValue += OUString( (sal_Unicode)(char)((mnPageNumber - 1) % 26 + 'a') );
+                    case css::style::NumberingType::CHARS_LOWER_LETTER:
+                        aPageNumValue += OUStringLiteral1( (mnPageNumber - 1) % 26 + 'a' );
                         break;
-                    case SVX_ROMAN_UPPER:
+                    case css::style::NumberingType::ROMAN_UPPER:
                         bUpper = true;
                         SAL_FALLTHROUGH;
-                    case SVX_ROMAN_LOWER:
+                    case css::style::NumberingType::ROMAN_LOWER:
                         aPageNumValue += SvxNumberFormat::CreateRomanString(mnPageNumber, bUpper);
                         break;
-                    case SVX_NUMBER_NONE:
+                    case css::style::NumberingType::NUMBER_NONE:
                         aPageNumValue = " ";
                         break;
                     default:
@@ -394,7 +394,7 @@ IMPL_LINK_TYPED(GraphicExporter, CalcFieldValueHdl, EditFieldInfo*, pInfo, void)
 VclPtr<VirtualDevice> GraphicExporter::CreatePageVDev( SdrPage* pPage, sal_uIntPtr nWidthPixel, sal_uIntPtr nHeightPixel ) const
 {
     VclPtr<VirtualDevice>  pVDev = VclPtr<VirtualDevice>::Create();
-    MapMode         aMM( MAP_100TH_MM );
+    MapMode         aMM( MapUnit::Map100thMM );
 
     Point aPoint( 0, 0 );
     Size aPageSize(pPage->GetSize());
@@ -745,7 +745,7 @@ bool GraphicExporter::GetGraphic( ExportSettings& rSettings, Graphic& aGraphic, 
                 pView->ShowSdrPage( pPage );
 
                 // tdf#96922 completely deactivate EditView PageVisualization, including
-                // PageBackground (formally 'wiese').
+                // PageBackground (formerly 'wiese').
                 pView->SetPagePaintingAllowed(false);
 
                 const Point aNewOrg( pPage->GetLftBorder(), pPage->GetUppBorder() );
@@ -834,7 +834,7 @@ bool GraphicExporter::GetGraphic( ExportSettings& rSettings, Graphic& aGraphic, 
                 if( pObj && dynamic_cast<const SdrGrafObj*>( pObj) != nullptr && !static_cast<SdrGrafObj*>(pObj)->HasText() )
                 {
                     aGraphic = static_cast<SdrGrafObj*>(pObj)->GetTransformedGraphic();
-                    if ( aGraphic.GetType() == GRAPHIC_BITMAP )
+                    if ( aGraphic.GetType() == GraphicType::Bitmap )
                     {
                         Size aSizePixel( aGraphic.GetSizePixel() );
                         if( rSettings.mnWidth && rSettings.mnHeight &&

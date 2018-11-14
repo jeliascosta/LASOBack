@@ -113,13 +113,13 @@ protected:
 public:
     explicit ScXMLCellExportPropertyMapper(
             const rtl::Reference< XMLPropertySetMapper >& rMapper );
-    virtual ~ScXMLCellExportPropertyMapper();
+    virtual ~ScXMLCellExportPropertyMapper() override;
     virtual void handleElementItem(
             SvXMLExport& rExport,
             const XMLPropertyState& rProperty,
             SvXmlExportFlags nFlags,
-            const ::std::vector< XMLPropertyState > *pProperties = nullptr,
-            sal_uInt32 nIdx = 0 ) const override;
+            const ::std::vector< XMLPropertyState > *pProperties,
+            sal_uInt32 nIdx ) const override;
 
     /** this method is called for every item that has the MID_FLAG_SPECIAL_ITEM_EXPORT flag set */
     virtual void handleSpecialItem(
@@ -127,8 +127,8 @@ public:
             const XMLPropertyState& rProperty,
             const SvXMLUnitConverter& rUnitConverter,
             const SvXMLNamespaceMap& rNamespaceMap,
-            const ::std::vector< XMLPropertyState > *pProperties = nullptr,
-            sal_uInt32 nIdx = 0 ) const override;
+            const ::std::vector< XMLPropertyState > *pProperties,
+            sal_uInt32 nIdx ) const override;
 };
 
 class ScXMLRowExportPropertyMapper : public SvXMLExportPropertyMapper
@@ -142,7 +142,7 @@ protected:
 public:
     explicit ScXMLRowExportPropertyMapper(
             const rtl::Reference< XMLPropertySetMapper >& rMapper );
-    virtual ~ScXMLRowExportPropertyMapper();
+    virtual ~ScXMLRowExportPropertyMapper() override;
 };
 
 class ScXMLColumnExportPropertyMapper : public SvXMLExportPropertyMapper
@@ -150,7 +150,7 @@ class ScXMLColumnExportPropertyMapper : public SvXMLExportPropertyMapper
 public:
     explicit ScXMLColumnExportPropertyMapper(
             const rtl::Reference< XMLPropertySetMapper >& rMapper );
-    virtual ~ScXMLColumnExportPropertyMapper();
+    virtual ~ScXMLColumnExportPropertyMapper() override;
 
     /** this method is called for every item that has the MID_FLAG_SPECIAL_ITEM_EXPORT flag set */
     virtual void handleSpecialItem(
@@ -158,8 +158,8 @@ public:
             const XMLPropertyState& rProperty,
             const SvXMLUnitConverter& rUnitConverter,
             const SvXMLNamespaceMap& rNamespaceMap,
-            const ::std::vector< XMLPropertyState > *pProperties = nullptr,
-            sal_uInt32 nIdx = 0 ) const override;
+            const ::std::vector< XMLPropertyState > *pProperties,
+            sal_uInt32 nIdx ) const override;
 };
 
 class ScXMLTableExportPropertyMapper : public SvXMLExportPropertyMapper
@@ -168,7 +168,7 @@ protected:
 public:
     explicit ScXMLTableExportPropertyMapper(
             const rtl::Reference< XMLPropertySetMapper >& rMapper );
-    virtual ~ScXMLTableExportPropertyMapper();
+    virtual ~ScXMLTableExportPropertyMapper() override;
 
     /** this method is called for every item that has the MID_FLAG_SPECIAL_ITEM_EXPORT flag set */
     virtual void handleSpecialItem(
@@ -176,8 +176,8 @@ public:
             const XMLPropertyState& rProperty,
             const SvXMLUnitConverter& rUnitConverter,
             const SvXMLNamespaceMap& rNamespaceMap,
-            const ::std::vector< XMLPropertyState > *pProperties = nullptr,
-            sal_uInt32 nIdx = 0 ) const override;
+            const ::std::vector< XMLPropertyState > *pProperties,
+            sal_uInt32 nIdx ) const override;
 };
 
 class ScXMLAutoStylePoolP : public SvXMLAutoStylePoolP
@@ -204,7 +204,7 @@ class ScXMLAutoStylePoolP : public SvXMLAutoStylePoolP
 
 public:
     explicit ScXMLAutoStylePoolP(ScXMLExport& rScXMLExport);
-    virtual ~ScXMLAutoStylePoolP();
+    virtual ~ScXMLAutoStylePoolP() override;
 };
 
 class ScXMLStyleExport : public XMLStyleExport
@@ -217,22 +217,22 @@ public:
     ScXMLStyleExport(
         SvXMLExport& rExp,
         const OUString& rPoolStyleName,
-        SvXMLAutoStylePoolP *pAutoStyleP=nullptr );
-    virtual ~ScXMLStyleExport();
+        SvXMLAutoStylePoolP *pAutoStyleP );
+    virtual ~ScXMLStyleExport() override;
 };
 
 class XMLScPropHdlFactory : public XMLPropertyHandlerFactory
 {
 public:
     XMLScPropHdlFactory();
-    virtual ~XMLScPropHdlFactory();
+    virtual ~XMLScPropHdlFactory() override;
     virtual const XMLPropertyHandler* GetPropertyHandler( sal_Int32 nType ) const override;
 };
 
 class XmlScPropHdl_CellProtection : public XMLPropertyHandler
 {
 public:
-    virtual ~XmlScPropHdl_CellProtection();
+    virtual ~XmlScPropHdl_CellProtection() override;
     virtual bool equals( const css::uno::Any& r1, const css::uno::Any& r2 ) const override;
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
@@ -241,7 +241,7 @@ public:
 class XmlScPropHdl_PrintContent : public XMLPropertyHandler
 {
 public:
-    virtual ~XmlScPropHdl_PrintContent();
+    virtual ~XmlScPropHdl_PrintContent() override;
     virtual bool equals( const css::uno::Any& r1, const css::uno::Any& r2 ) const override;
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
@@ -250,7 +250,7 @@ public:
 class XmlScPropHdl_JustifyMethod : public XMLPropertyHandler
 {
 public:
-    virtual ~XmlScPropHdl_JustifyMethod();
+    virtual ~XmlScPropHdl_JustifyMethod() override;
     virtual bool equals( const css::uno::Any& r1, const css::uno::Any& r2 ) const override;
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
@@ -259,7 +259,7 @@ public:
 class XmlScPropHdl_HoriJustify : public XMLPropertyHandler
 {
 public:
-    virtual ~XmlScPropHdl_HoriJustify();
+    virtual ~XmlScPropHdl_HoriJustify() override;
     virtual bool equals( const css::uno::Any& r1, const css::uno::Any& r2 ) const override;
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
@@ -268,7 +268,7 @@ public:
 class XmlScPropHdl_HoriJustifySource : public XMLPropertyHandler
 {
 public:
-    virtual ~XmlScPropHdl_HoriJustifySource();
+    virtual ~XmlScPropHdl_HoriJustifySource() override;
     virtual bool equals( const css::uno::Any& r1, const css::uno::Any& r2 ) const override;
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
@@ -277,7 +277,7 @@ public:
 class XmlScPropHdl_HoriJustifyRepeat : public XMLPropertyHandler
 {
 public:
-    virtual ~XmlScPropHdl_HoriJustifyRepeat();
+    virtual ~XmlScPropHdl_HoriJustifyRepeat() override;
     virtual bool equals( const css::uno::Any& r1, const css::uno::Any& r2 ) const override;
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
@@ -286,7 +286,7 @@ public:
 class XmlScPropHdl_Orientation : public XMLPropertyHandler
 {
 public:
-    virtual ~XmlScPropHdl_Orientation();
+    virtual ~XmlScPropHdl_Orientation() override;
     virtual bool equals( const css::uno::Any& r1, const css::uno::Any& r2 ) const override;
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
@@ -295,7 +295,7 @@ public:
 class XmlScPropHdl_RotateAngle : public XMLPropertyHandler
 {
 public:
-    virtual ~XmlScPropHdl_RotateAngle();
+    virtual ~XmlScPropHdl_RotateAngle() override;
     virtual bool equals( const css::uno::Any& r1, const css::uno::Any& r2 ) const override;
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
@@ -304,7 +304,7 @@ public:
 class XmlScPropHdl_RotateReference : public XMLPropertyHandler
 {
 public:
-    virtual ~XmlScPropHdl_RotateReference();
+    virtual ~XmlScPropHdl_RotateReference() override;
     virtual bool equals( const css::uno::Any& r1, const css::uno::Any& r2 ) const override;
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
@@ -313,7 +313,7 @@ public:
 class XmlScPropHdl_VertJustify : public XMLPropertyHandler
 {
 public:
-    virtual ~XmlScPropHdl_VertJustify();
+    virtual ~XmlScPropHdl_VertJustify() override;
     virtual bool equals( const css::uno::Any& r1, const css::uno::Any& r2 ) const override;
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
@@ -322,7 +322,7 @@ public:
 class XmlScPropHdl_BreakBefore : public XMLPropertyHandler
 {
 public:
-    virtual ~XmlScPropHdl_BreakBefore();
+    virtual ~XmlScPropHdl_BreakBefore() override;
     virtual bool equals( const css::uno::Any& r1, const css::uno::Any& r2 ) const override;
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
@@ -331,7 +331,7 @@ public:
 class XmlScPropHdl_IsTextWrapped : public XMLPropertyHandler
 {
 public:
-    virtual ~XmlScPropHdl_IsTextWrapped();
+    virtual ~XmlScPropHdl_IsTextWrapped() override;
     virtual bool equals( const css::uno::Any& r1, const css::uno::Any& r2 ) const override;
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
@@ -340,7 +340,7 @@ public:
 class XmlScPropHdl_IsEqual : public XMLPropertyHandler
 {
 public:
-    virtual ~XmlScPropHdl_IsEqual() {}
+    virtual ~XmlScPropHdl_IsEqual() override {}
     virtual bool equals( const css::uno::Any& /* r1 */, const css::uno::Any& /* r2 */ ) const override { return true; }
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
@@ -349,7 +349,7 @@ public:
 class XmlScPropHdl_Vertical : public XMLPropertyHandler
 {
 public:
-    virtual ~XmlScPropHdl_Vertical();
+    virtual ~XmlScPropHdl_Vertical() override;
     virtual bool equals( const css::uno::Any& r1, const css::uno::Any& r2 ) const override;
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;

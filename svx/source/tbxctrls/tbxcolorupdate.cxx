@@ -29,17 +29,6 @@
 
 namespace svx
 {
-    //= ToolboxButtonColorUpdater
-
-    /* Note:
-       The initial color shown on the button is set in /core/svx/source/tbxctrls/tbxcolorupdate.cxx
-       (ToolboxButtonColorUpdater::ToolboxButtonColorUpdater()) .
-       The initial color used by the button is set in /core/svx/source/tbxctrls/tbcontrl.cxx
-       (SvxColorToolBoxControl::SvxColorToolBoxControl())
-       and in case of writer for text(background)color also in /core/sw/source/uibase/docvw/edtwin.cxx
-       (SwEditWin::m_aTextBackColor and SwEditWin::m_aTextColor)
-     */
-
     ToolboxButtonColorUpdater::ToolboxButtonColorUpdater(
         sal_uInt16 nId, sal_uInt16 nTbxBtnId, ToolBox* pToolBox)
         : mnBtnId(nTbxBtnId)
@@ -59,11 +48,12 @@ namespace svx
                 Update(COL_BLUE);
                 break;
             case SID_ATTR_CHAR_COLOR_BACKGROUND:
+            case SID_ATTR_CHAR_BACK_COLOR:
             case SID_BACKGROUND_COLOR:
                 Update(COL_YELLOW);
                 break;
             case SID_ATTR_LINE_COLOR:
-                Update(COL_BLACK);
+                Update(COL_DEFAULT_SHAPE_STROKE);
                 break;
             case SID_ATTR_FILL_COLOR:
                 Update(COL_DEFAULT_SHAPE_FILLING);
@@ -78,7 +68,7 @@ namespace svx
 
     void ToolboxButtonColorUpdater::Update(const Color& rColor, bool bForceUpdate)
     {
-        Image aImage(mpTbx->GetItemImageOriginal(mnBtnId));
+        Image aImage(mpTbx->GetItemImage(mnBtnId));
         Size aItemSize(mpTbx->GetItemContentSize(mnBtnId));
 
         const bool bSizeChanged = (maBmpSize != aItemSize);

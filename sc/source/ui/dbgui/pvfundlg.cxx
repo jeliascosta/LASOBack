@@ -100,6 +100,7 @@ static const PivotFunc spnFunctions[] =
     PivotFunc::Sum,
     PivotFunc::Count,
     PivotFunc::Average,
+    PivotFunc::Median,
     PivotFunc::Max,
     PivotFunc::Min,
     PivotFunc::Product,
@@ -189,6 +190,7 @@ void ScDPFunctionListBox::FillFunctionNames()
     ResStringArray aArr( ScResId( SCSTR_DPFUNCLISTBOX ) );
     for( sal_uInt16 nIndex = 0, nCount = sal::static_int_cast<sal_uInt16>(aArr.Count()); nIndex < nCount; ++nIndex )
         InsertEntry( aArr.GetString( nIndex ) );
+    assert(GetEntryCount() == SAL_N_ELEMENTS(spnFunctions));
 }
 
 ScDPFunctionDlg::ScDPFunctionDlg(
@@ -361,7 +363,7 @@ sal_Int32 ScDPFunctionDlg::FindBaseItemPos( const OUString& rEntry, sal_Int32 nS
     return bFound ? nPos : LISTBOX_ENTRY_NOTFOUND;
 }
 
-IMPL_LINK_TYPED( ScDPFunctionDlg, SelectHdl, ListBox&, rLBox, void )
+IMPL_LINK( ScDPFunctionDlg, SelectHdl, ListBox&, rLBox, void )
 {
     if( &rLBox == mpLbType )
     {
@@ -418,7 +420,7 @@ IMPL_LINK_TYPED( ScDPFunctionDlg, SelectHdl, ListBox&, rLBox, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ScDPFunctionDlg, DblClickHdl, ListBox&, void)
+IMPL_LINK_NOARG(ScDPFunctionDlg, DblClickHdl, ListBox&, void)
 {
     mpBtnOk->Click();
 }
@@ -520,17 +522,17 @@ void ScDPSubtotalDlg::Init( const ScDPLabelData& rLabelData, const ScPivotFuncDa
     mpBtnOptions->SetClickHdl( LINK( this, ScDPSubtotalDlg, ClickHdl ) );
 }
 
-IMPL_LINK_TYPED( ScDPSubtotalDlg, RadioClickHdl, Button*, pBtn, void )
+IMPL_LINK( ScDPSubtotalDlg, RadioClickHdl, Button*, pBtn, void )
 {
     mpLbFunc->Enable( pBtn == mpRbUser );
 }
 
-IMPL_LINK_NOARG_TYPED(ScDPSubtotalDlg, DblClickHdl, ListBox&, void)
+IMPL_LINK_NOARG(ScDPSubtotalDlg, DblClickHdl, ListBox&, void)
 {
     mpBtnOk->Click();
 }
 
-IMPL_LINK_TYPED( ScDPSubtotalDlg, ClickHdl, Button*, pBtn, void )
+IMPL_LINK( ScDPSubtotalDlg, ClickHdl, Button*, pBtn, void )
 {
     if (pBtn == mpBtnOptions)
     {
@@ -789,12 +791,12 @@ sal_Int32 ScDPSubtotalOptDlg::FindListBoxEntry(
     return bFound ? nPos : LISTBOX_ENTRY_NOTFOUND;
 }
 
-IMPL_LINK_TYPED( ScDPSubtotalOptDlg, RadioClickHdl, Button*, pBtn, void )
+IMPL_LINK( ScDPSubtotalOptDlg, RadioClickHdl, Button*, pBtn, void )
 {
     m_pLbSortBy->Enable( pBtn != m_pRbSortMan );
 }
 
-IMPL_LINK_TYPED( ScDPSubtotalOptDlg, CheckHdl, Button*, pCBox, void )
+IMPL_LINK( ScDPSubtotalOptDlg, CheckHdl, Button*, pCBox, void )
 {
     if (pCBox == m_pCbShow)
     {
@@ -810,7 +812,7 @@ IMPL_LINK_TYPED( ScDPSubtotalOptDlg, CheckHdl, Button*, pCBox, void )
     }
 }
 
-IMPL_LINK_TYPED( ScDPSubtotalOptDlg, SelectHdl, ListBox&, rLBox, void )
+IMPL_LINK( ScDPSubtotalOptDlg, SelectHdl, ListBox&, rLBox, void )
 {
     if (&rLBox == m_pLbHierarchy)
     {
@@ -887,7 +889,7 @@ OUString ScDPShowDetailDlg::GetDimensionName() const
     return mrDPObj.GetDimName(nDim, bIsDataLayout);
 }
 
-IMPL_LINK_TYPED( ScDPShowDetailDlg, DblClickHdl, ListBox&, rLBox, void )
+IMPL_LINK( ScDPShowDetailDlg, DblClickHdl, ListBox&, rLBox, void )
 {
     if( &rLBox == mpLbDims )
         mpBtnOk->Click();

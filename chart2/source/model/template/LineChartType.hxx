@@ -29,7 +29,7 @@ class LineChartType : public ChartType
 {
 public:
     explicit LineChartType( css::uno::Reference< css::uno::XComponentContext > const & xContext );
-    virtual ~LineChartType();
+    virtual ~LineChartType() override;
 
     virtual OUString SAL_CALL
         getImplementationName()
@@ -40,9 +40,6 @@ public:
     virtual css::uno::Sequence< OUString > SAL_CALL
         getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString >
-        getSupportedServiceNames_Static();
 
 protected:
     explicit LineChartType( const LineChartType & rOther );

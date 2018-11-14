@@ -260,12 +260,12 @@ uno::Sequence< beans::PropertyValue > SAL_CALL SfxPrintHelper::getPrinter() thro
 
     // search for any view of this document that is currently printing
     const Printer *pPrinter = nullptr;
-    SfxViewFrame *pViewFrm = m_pData->m_pObjectShell.Is() ? SfxViewFrame::GetFirst( m_pData->m_pObjectShell, false ) : nullptr;
+    SfxViewFrame *pViewFrm = m_pData->m_pObjectShell.Is() ? SfxViewFrame::GetFirst( m_pData->m_pObjectShell.get(), false ) : nullptr;
     SfxViewFrame* pFirst = pViewFrm;
     while ( pViewFrm && !pPrinter )
     {
         pPrinter = pViewFrm->GetViewShell()->GetActivePrinter();
-        pViewFrm = SfxViewFrame::GetNext( *pViewFrm, m_pData->m_pObjectShell, false );
+        pViewFrm = SfxViewFrame::GetNext( *pViewFrm, m_pData->m_pObjectShell.get(), false );
     }
 
     // if no view is printing currently, use the permanent SfxPrinter instance
@@ -278,13 +278,13 @@ uno::Sequence< beans::PropertyValue > SAL_CALL SfxPrintHelper::getPrinter() thro
     uno::Sequence< beans::PropertyValue > aPrinter(8);
 
     aPrinter.getArray()[7].Name = "CanSetPaperSize";
-    aPrinter.getArray()[7].Value <<= ( pPrinter->HasSupport( SUPPORT_SET_PAPERSIZE ) );
+    aPrinter.getArray()[7].Value <<= ( pPrinter->HasSupport( PrinterSupport::SetPaperSize ) );
 
     aPrinter.getArray()[6].Name = "CanSetPaperFormat";
-    aPrinter.getArray()[6].Value <<= ( pPrinter->HasSupport( SUPPORT_SET_PAPER ) );
+    aPrinter.getArray()[6].Value <<= ( pPrinter->HasSupport( PrinterSupport::SetPaper ) );
 
     aPrinter.getArray()[5].Name = "CanSetPaperOrientation";
-    aPrinter.getArray()[5].Value <<= ( pPrinter->HasSupport( SUPPORT_SET_ORIENTATION ) );
+    aPrinter.getArray()[5].Value <<= ( pPrinter->HasSupport( PrinterSupport::SetOrientation ) );
 
     aPrinter.getArray()[4].Name = "IsBusy";
     aPrinter.getArray()[4].Value <<= ( pPrinter->IsPrinting() );
@@ -320,7 +320,7 @@ void SfxPrintHelper::impl_setPrinter(const uno::Sequence< beans::PropertyValue >
 {
     // Get old Printer
     SfxViewFrame *pViewFrm = m_pData->m_pObjectShell.Is() ?
-                                SfxViewFrame::GetFirst( m_pData->m_pObjectShell, false ) : nullptr;
+                                SfxViewFrame::GetFirst( m_pData->m_pObjectShell.get(), false ) : nullptr;
     if ( !pViewFrm )
         return;
 
@@ -436,7 +436,7 @@ void SfxPrintHelper::impl_setPrinter(const uno::Sequence< beans::PropertyValue >
     {
         // Bug 56929 - MapMode of 100mm which recalculated when
         // the device is set. Additionally only set if they were really changed.
-        aSetPaperSize = pPrinter->LogicToPixel( aSetPaperSize, MAP_100TH_MM );
+        aSetPaperSize = pPrinter->LogicToPixel( aSetPaperSize, MapUnit::Map100thMM );
         if( aSetPaperSize != pPrinter->GetPaperSizePixel() )
         {
             pPrinter->SetPaperSizeUser( pPrinter->PixelToLogic( aSetPaperSize ) );
@@ -595,7 +595,7 @@ void SAL_CALL SfxPrintHelper::print(const uno::Sequence< beans::PropertyValue >&
 
     // get view for sfx printing capabilities
     SfxViewFrame *pViewFrm = m_pData->m_pObjectShell.Is() ?
-                                SfxViewFrame::GetFirst( m_pData->m_pObjectShell, false ) : nullptr;
+                                SfxViewFrame::GetFirst( m_pData->m_pObjectShell.get(), false ) : nullptr;
     if ( !pViewFrm )
         return;
     SfxViewShell* pView = pViewFrm->GetViewShell();
@@ -644,7 +644,7 @@ void SAL_CALL SfxPrintHelper::print(const uno::Sequence< beans::PropertyValue >&
                 // We try to convert it to a file URL. If its possible
                 // we put the system path to the item set and let vcl work with it.
                 // No ucb or thread will be necessary then. In case it couldnt be
-                // converted its not an URL nor a system path. Then we can't accept
+                // converted it's not an URL nor a system path. Then we can't accept
                 // this parameter and have to throw an exception.
                 const OUString& sSystemPath(sTemp);
                 OUString sFileURL;
@@ -796,7 +796,7 @@ void SAL_CALL SfxPrintHelper::print(const uno::Sequence< beans::PropertyValue >&
 void IMPL_PrintListener_DataContainer::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
     const SfxPrintingHint* pPrintHint = dynamic_cast<const SfxPrintingHint*>(&rHint);
-    if ( &rBC != m_pObjectShell
+    if ( &rBC != m_pObjectShell.get()
         || !pPrintHint
         || pPrintHint->GetWhich() == SFX_PRINTABLESTATE_CANCELJOB )
         return;

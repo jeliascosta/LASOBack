@@ -175,8 +175,7 @@ namespace accessibility
 
         if( &rBroadcaster == mpOutliner )
         {
-            const SfxSimpleHint* pHint = dynamic_cast< const SfxSimpleHint * >( &rHint );
-            if( pHint && (pHint->GetId() == SFX_HINT_DYING) )
+            if( rHint.GetId() == SFX_HINT_DYING )
             {
                 bDispose = true;
                 mpOutliner = nullptr;
@@ -186,7 +185,7 @@ namespace accessibility
         {
             const SdrHint* pSdrHint = dynamic_cast< const SdrHint* >( &rHint );
 
-            if( pSdrHint && ( pSdrHint->GetKind() == HINT_MODELCLEARED ) )
+            if( pSdrHint && ( pSdrHint->GetKind() == SdrHintKind::ModelCleared ) )
             {
                 // model is dying under us, going defunc
                 bDispose = true;
@@ -203,7 +202,7 @@ namespace accessibility
         }
     }
 
-    IMPL_LINK_TYPED(AccessibleOutlineEditSource, NotifyHdl, EENotify&, rNotify, void)
+    IMPL_LINK(AccessibleOutlineEditSource, NotifyHdl, EENotify&, rNotify, void)
     {
         ::std::unique_ptr< SfxHint > aHint( SvxEditSourceHelper::EENotification2Hint( &rNotify) );
 

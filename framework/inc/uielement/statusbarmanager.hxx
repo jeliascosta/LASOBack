@@ -43,7 +43,7 @@ namespace framework
 {
 
 class FrameworkStatusBar;
-class StatusBarManager : public ::cppu::WeakImplHelper<
+class StatusBarManager final: public ::cppu::WeakImplHelper<
                                    css::frame::XFrameActionListener,
                                    css::lang::XComponent,
                                    css::ui::XUIConfigurationListener >
@@ -55,7 +55,7 @@ class StatusBarManager : public ::cppu::WeakImplHelper<
         StatusBarManager( const css::uno::Reference< css::uno::XComponentContext >& rxContext,
                           const css::uno::Reference< css::frame::XFrame >& rFrame,
                           StatusBar* pStatusBar );
-        virtual ~StatusBarManager();
+        virtual ~StatusBarManager() override;
 
         StatusBar* GetStatusBar() const;
 
@@ -77,23 +77,21 @@ class StatusBarManager : public ::cppu::WeakImplHelper<
 
         void FillStatusBar( const css::uno::Reference< css::container::XIndexAccess >& rStatusBarData );
 
-    protected:
+    private:
         void DataChanged( const DataChangedEvent& rDCEvt );
         void UserDraw( const UserDrawEvent& rUDEvt );
         void Command( const CommandEvent& rEvt );
         void MouseMove( const MouseEvent& rMEvt );
         void MouseButtonDown( const MouseEvent& rMEvt );
         void MouseButtonUp( const MouseEvent& rMEvt );
-        DECL_LINK_TYPED(Click, StatusBar*, void);
-        DECL_LINK_TYPED(DoubleClick, StatusBar*, void);
+        DECL_LINK(Click, StatusBar*, void);
+        DECL_LINK(DoubleClick, StatusBar*, void);
 
         void RemoveControllers();
         void CreateControllers();
         void UpdateControllers();
-        void AddFrameActionListener();
         void MouseButton( const MouseEvent& rMEvt ,sal_Bool ( SAL_CALL css::frame::XStatusbarController::*_pMethod )(const css::awt::MouseEvent&));
 
-    protected:
         typedef std::map< sal_uInt16, css::uno::Reference< css::frame::XStatusbarController > > StatusBarControllerMap;
 
         bool                                                                  m_bDisposed : 1,

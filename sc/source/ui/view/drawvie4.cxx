@@ -70,7 +70,7 @@ void ScDrawView::CheckOle( const SdrMarkList& rMarkList, bool& rAnyOle, bool& rO
         }
         else if ( dynamic_cast<const SdrObjGroup*>( pObj) !=  nullptr )
         {
-            SdrObjListIter aIter( *pObj, IM_DEEPNOGROUPS );
+            SdrObjListIter aIter( *pObj, SdrIterMode::DeepNoGroups );
             SdrObject* pSubObj = aIter.Next();
             while (pSubObj)
             {
@@ -107,7 +107,7 @@ void ScDrawView::BeginDrag( vcl::Window* pWindow, const Point& rStartPos )
             aDragShellRef = new ScDocShell;     // DocShell needs a Ref immediately
             aDragShellRef->DoInitNew();
         }
-        ScDrawLayer::SetGlobalDrawPersist(aDragShellRef);
+        ScDrawLayer::SetGlobalDrawPersist( aDragShellRef.get() );
         SdrModel* pModel = GetMarkedObjModel();
         ScDrawLayer::SetGlobalDrawPersist(nullptr);
 
@@ -126,7 +126,7 @@ void ScDrawView::BeginDrag( vcl::Window* pWindow, const Point& rStartPos )
         ScDrawTransferObj* pTransferObj = new ScDrawTransferObj( pModel, pDocSh, aObjDesc );
         uno::Reference<datatransfer::XTransferable> xTransferable( pTransferObj );
 
-        pTransferObj->SetDrawPersist( &aDragShellRef );    // keep persist for ole objects alive
+        pTransferObj->SetDrawPersist( aDragShellRef.get() );    // keep persist for ole objects alive
         pTransferObj->SetDragSource( this );               // copies selection
 
         SC_MOD()->SetDragObject( nullptr, pTransferObj );     // for internal D&D
@@ -136,7 +136,7 @@ void ScDrawView::BeginDrag( vcl::Window* pWindow, const Point& rStartPos )
 
 namespace {
 
-void getRangeFromDataSource( uno::Reference< chart2::data::XDataSource > xDataSource, std::vector<OUString>& rRangeRep)
+void getRangeFromDataSource( uno::Reference< chart2::data::XDataSource > const & xDataSource, std::vector<OUString>& rRangeRep)
 {
     uno::Sequence<uno::Reference<chart2::data::XLabeledDataSequence> > xSeqs = xDataSource->getDataSequences();
     for (sal_Int32 i = 0, n = xSeqs.getLength(); i < n; ++i)
@@ -251,7 +251,7 @@ void getChartSourceRanges(ScDocument* pDoc, const SdrMarkList& rObjs, std::vecto
             break;
             case OBJ_GRUP:
             {
-                SdrObjListIter aIter(*pObj, IM_DEEPNOGROUPS);
+                SdrObjListIter aIter(*pObj, SdrIterMode::DeepNoGroups);
                 for (SdrObject* pSubObj = aIter.Next(); pSubObj; pSubObj = aIter.Next())
                 {
                     if (pSubObj->GetObjIdentifier() != OBJ_OLE2)
@@ -273,7 +273,7 @@ void getChartSourceRanges(ScDocument* pDoc, const SdrMarkList& rObjs, std::vecto
     {
         ScRangeList aRange;
         ScAddress aAddr;
-        if (aRange.Parse(*it, pDoc, ScRefFlags::VALID, pDoc->GetAddressConvention()) & ScRefFlags::VALID)
+        if (aRange.Parse(*it, pDoc, pDoc->GetAddressConvention()) & ScRefFlags::VALID)
         {
             for(size_t i = 0; i < aRange.size(); ++i)
                 rRanges.push_back(*aRange[i]);
@@ -472,7 +472,7 @@ void ScDrawView::SetMarkedOriginalSize()
 
                 if ( nAspect == embed::Aspects::MSOLE_ICON )
                 {
-                    MapMode aMapMode( MAP_100TH_MM );
+                    MapMode aMapMode( MapUnit::Map100thMM );
                     aOriginalSize = static_cast<SdrOle2Obj*>(pObj)->GetOrigObjSize( &aMapMode );
                     bDo = true;
                 }
@@ -485,7 +485,7 @@ void ScDrawView::SetMarkedOriginalSize()
                         aSz = xObj->getVisualAreaSize( static_cast<SdrOle2Obj*>(pObj)->GetAspect() );
                         aOriginalSize = OutputDevice::LogicToLogic(
                                             Size( aSz.Width, aSz.Height ),
-                                            aUnit, MAP_100TH_MM );
+                                            aUnit, MapUnit::Map100thMM );
                         bDo = true;
                     } catch( embed::NoVisualAreaSizeException& )
                     {
@@ -499,8 +499,8 @@ void ScDrawView::SetMarkedOriginalSize()
             const Graphic& rGraphic = static_cast<SdrGrafObj*>(pObj)->GetGraphic();
 
             MapMode aSourceMap = rGraphic.GetPrefMapMode();
-            MapMode aDestMap( MAP_100TH_MM );
-            if (aSourceMap.GetMapUnit() == MAP_PIXEL)
+            MapMode aDestMap( MapUnit::Map100thMM );
+            if (aSourceMap.GetMapUnit() == MapUnit::MapPixel)
             {
                 // consider pixel correction, so that the bitmap is correct on the screen
                 Fraction aNormScaleX, aNormScaleY;

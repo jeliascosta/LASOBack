@@ -58,11 +58,6 @@ FuConstruct::~FuConstruct()
 {
 }
 
-sal_uInt8 FuConstruct::Command(const CommandEvent& rCEvt)
-{
-    return FuDraw::Command( rCEvt );
-}
-
 // Calculate and return offset at current zoom. rInOutPos is adjusted by
 // the calculated offset. rInOutPos now points to the position than when
 // scaled to 100% actually would be at the position you see at the current zoom
@@ -339,28 +334,6 @@ bool FuConstruct::KeyInput(const KeyEvent& rKEvt)
     }
 
     return bReturn;
-}
-
-/*************************************************************************
-|*
-|* Function aktivieren
-|*
-\************************************************************************/
-
-void FuConstruct::Activate()
-{
-    FuDraw::Activate();
-}
-
-/*************************************************************************
-|*
-|* Function deaktivieren
-|*
-\************************************************************************/
-
-void FuConstruct::Deactivate()
-{
-    FuDraw::Deactivate();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

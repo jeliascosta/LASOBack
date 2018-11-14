@@ -33,17 +33,16 @@ public:
     ScRangeList();
     ScRangeList( const ScRangeList& rList );
     ScRangeList( const ScRange& rRange );
-    virtual ~ScRangeList();
+    virtual ~ScRangeList() override;
 
     ScRangeList& operator=(const ScRangeList& rList);
     void Append( const ScRange& rRange );
 
-    ScRefFlags Parse( const OUString&, ScDocument* = nullptr,
-                      ScRefFlags nMask = ScRefFlags::VALID,
+    ScRefFlags Parse( const OUString&, ScDocument*,
                       formula::FormulaGrammar::AddressConvention eConv = formula::FormulaGrammar::CONV_OOO,
                       SCTAB nDefaultTab = 0, sal_Unicode cDelimiter = 0 );
 
-    void            Format( OUString&, ScRefFlags nFlags = ScRefFlags::ZERO, ScDocument* = nullptr,
+    void            Format( OUString&, ScRefFlags nFlags, ScDocument* = nullptr,
                             formula::FormulaGrammar::AddressConvention eConv = formula::FormulaGrammar::CONV_OOO,
                             sal_Unicode cDelimiter = 0 ) const;
 
@@ -107,7 +106,7 @@ typedef tools::SvRef<ScRangeList> ScRangeListRef;
 class SC_DLLPUBLIC ScRangePairList : public SvRefBase
 {
 public:
-    virtual             ~ScRangePairList();
+    virtual             ~ScRangePairList() override;
     ScRangePairList*    Clone() const;
     void                Append( const ScRangePair& rRangePair )
                         {

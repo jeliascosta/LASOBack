@@ -67,6 +67,7 @@ $(call gb_ExternalProject_get_state_target,nss,build): $(call gb_ExternalProject
 		$(if $(filter MACOSX,$(OS)),\
 			$(if $(filter-out POWERPC,$(CPUNAME)),MACOS_SDK_DIR=$(MACOSX_SDK_PATH)) \
 			NSS_USE_SYSTEM_SQLITE=1) \
+		$(if $(filter LINUX,$(OS)),$(if $(ENABLE_DBGUTIL),,BUILD_OPT=1)) \
 		$(if $(filter SOLARIS,$(OS)),NS_USE_GCC=1) \
 		$(if $(CROSS_COMPILING),\
 			$(if $(filter MACOSXPOWERPC,$(OS)$(CPUNAME)),CPU_ARCH=ppc) \
@@ -76,6 +77,7 @@ $(call gb_ExternalProject_get_state_target,nss,build): $(call gb_ExternalProject
 		$(MAKE) -j1 AR="$(AR)" \
 			RANLIB="$(RANLIB)" \
 			NMEDIT="$(NM)edit" \
+			CCC="$(CXX)" \
 			$(if $(CROSS_COMPILING),NSPR_CONFIGURE_OPTS="--build=$(BUILD_PLATFORM) --host=$(HOST_PLATFORM)") \
 			nss_build_all \
 		&& rm -f $(call gb_UnpackedTarball_get_dir,nss)/dist/out/lib/*.a \

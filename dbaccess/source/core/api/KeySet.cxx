@@ -221,12 +221,11 @@ namespace
 {
     void appendOneKeyColumnClause( const OUString &tblName, const OUString &colName, const connectivity::ORowSetValue &_rValue, OUStringBuffer &o_buf )
     {
-        static const char s_sDot[] = ".";
         OUString fullName;
         if (tblName.isEmpty())
             fullName = colName;
         else
-            fullName = tblName + s_sDot + colName;
+            fullName = tblName + "." + colName;
         if ( _rValue.isNull() )
         {
             o_buf.append(fullName + " IS NULL ");
@@ -627,9 +626,7 @@ void SAL_CALL OKeySet::insertRow( const ORowSetRow& _rInsertRow,const connectivi
 
     // set values and column names
     OUStringBuffer aValues(" VALUES ( ");
-    static const char aPara[] = "?,";
     OUString aQuote = getIdentifierQuoteString();
-    static const char aComma[] = ",";
 
     SelectColumnsMetaData::const_iterator aIter = m_pColumnNames->begin();
     SelectColumnsMetaData::const_iterator aEnd = m_pColumnNames->end();
@@ -644,8 +641,8 @@ void SAL_CALL OKeySet::insertRow( const ORowSetRow& _rInsertRow,const connectivi
             {
                 bRefetch = ::std::find(m_aFilterColumns.begin(),m_aFilterColumns.end(),aIter->second.sRealName) == m_aFilterColumns.end();
             }
-            aSql.append(::dbtools::quoteName( aQuote,aIter->second.sRealName) + aComma);
-            aValues.append(aPara);
+            aSql.append(::dbtools::quoteName( aQuote,aIter->second.sRealName) + ",");
+            aValues.append("?,");
             bModified = true;
         }
     }
@@ -756,10 +753,7 @@ void OKeySet::executeInsert( const ORowSetRow& _rInsertRow,const OUString& i_sSQ
             SelectColumnsMetaData::const_iterator aFind = m_pKeyColumnNames->find(*aAutoIter);
             if ( aFind != aEnd )
             {
-                sMaxStmt += sMax;
-                sMaxStmt += ::dbtools::quoteName( sQuote,aFind->second.sRealName
-);
-                sMaxStmt += sMaxEnd;
+                sMaxStmt += sMax + ::dbtools::quoteName( sQuote,aFind->second.sRealName) + sMaxEnd;
             }
         }
 
@@ -1009,7 +1003,7 @@ Reference<XNameAccess> OKeySet::getKeyColumns() const
     return xKeyColumns;
 }
 
-bool SAL_CALL OKeySet::next(  ) throw(SQLException, RuntimeException)
+bool SAL_CALL OKeySet::next() throw(SQLException, RuntimeException, std::exception)
 {
     m_bInserted = m_bUpdated = m_bDeleted = false;
 
@@ -1062,7 +1056,7 @@ void SAL_CALL OKeySet::afterLast(  ) throw(SQLException, RuntimeException)
     invalidateRow();
 }
 
-bool SAL_CALL OKeySet::first(  ) throw(SQLException, RuntimeException)
+bool SAL_CALL OKeySet::first() throw(SQLException, RuntimeException, std::exception)
 {
     m_bInserted = m_bUpdated = m_bDeleted = false;
     m_aKeyIter = m_aKeyMap.begin();
@@ -1187,7 +1181,7 @@ bool SAL_CALL OKeySet::previous(  ) throw(SQLException, RuntimeException)
     return previous_checked(true);
 }
 
-bool OKeySet::doTryRefetch_throw()  throw(SQLException, RuntimeException)
+bool OKeySet::doTryRefetch_throw()  throw(SQLException, RuntimeException, std::exception)
 {
     ensureStatement( );
     // we just reassign the base members
@@ -1231,7 +1225,7 @@ bool OKeySet::doTryRefetch_throw()  throw(SQLException, RuntimeException)
     return m_xSet->next();
 }
 
-void SAL_CALL OKeySet::refreshRow() throw(SQLException, RuntimeException)
+void SAL_CALL OKeySet::refreshRow() throw(SQLException, RuntimeException, std::exception)
 {
     invalidateRow();
 

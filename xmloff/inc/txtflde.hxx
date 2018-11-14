@@ -149,7 +149,7 @@ enum FieldIdEnum {
 };
 
 
-class XMLTextFieldExport
+class XMLTextFieldExport final
 {
     SvXMLExport& rExport;
 
@@ -163,8 +163,8 @@ public:
 
     XMLTextFieldExport( SvXMLExport& rExp,
                         /// XMLPropertyState for the combined characters field
-                        XMLPropertyState* pCombinedCharState = nullptr );
-    virtual ~XMLTextFieldExport();
+                        XMLPropertyState* pCombinedCharState );
+    ~XMLTextFieldExport();
 
     /// Export this field and the surrounding span element with the formatting.
     /// To be called for every field in the document body.
@@ -210,7 +210,7 @@ public:
     enum ::xmloff::token::XMLTokenEnum MapAuthorFieldName(const css::uno::Reference< css::beans::XPropertySet > & xPropSet);
     enum ::xmloff::token::XMLTokenEnum MapSenderFieldName(const css::uno::Reference< css::beans::XPropertySet > & xPropSet);
 
-protected:
+private:
 
     SvXMLExport& GetExport() { return rExport; }
 
@@ -326,7 +326,7 @@ protected:
         enum ::xmloff::token::XMLTokenEnum eXMLName,    /// attribute token
         double dValue,              /// date/time value
         bool bIsDate,           /// export as date (rather than date/time)?
-        bool bIsDuration = false,           /// export as duration
+        bool bIsDuration,           /// export as duration
         bool bOmitDurationIfZero = true,    /// omit zero-length durat.
         sal_uInt16 nPrefix = XML_NAMESPACE_TEXT);   /// attribute name prefix
 
@@ -407,7 +407,6 @@ protected:
     static OUString MakeSequenceRefName(sal_Int16 nSeqNo,
                                               const OUString& rSeqName);
 
-private:
     // constants
 
     // service names

@@ -44,33 +44,19 @@ using namespace ::com::sun::star::uno;
 namespace {
 
 const char TITLE[] = "Title";
-const char TARGET_DIR_URL[] = "TargetDirURL";
-const char DESCRIPTION[] = "TypeDescription";
-const char TARGET_URL[] = "TargetURL";
-
-//  These strings are used to find impress templates in the tree of
-//  template files.  Should probably be determined dynamically.
-const char IMPRESS_BIN_TEMPLATE[] = "application/vnd.stardivision.impress";
-const char IMPRESS_XML_TEMPLATE[] = MIMETYPE_VND_SUN_XML_IMPRESS_ASCII;
-// The following id comes from the bugdoc in #i2764#.
-const char IMPRESS_XML_TEMPLATE_B[] = "Impress 2.0";
-const char IMPRESS_XML_TEMPLATE_OASIS[] = MIMETYPE_OASIS_OPENDOCUMENT_PRESENTATION_ASCII;
 
 class FolderDescriptor
 {
 public:
     FolderDescriptor (
         int nPriority,
-        const OUString& rsTitle,
         const OUString& rsContentIdentifier,
         const Reference<css::ucb::XCommandEnvironment>& rxFolderEnvironment)
         : mnPriority(nPriority),
-          msTitle(rsTitle),
           msContentIdentifier(rsContentIdentifier),
           mxFolderEnvironment(rxFolderEnvironment)
     { }
     int mnPriority;
-    OUString msTitle;
     OUString msContentIdentifier;
     //    Reference<sdbc::XResultSet> mxFolderResultSet;
     Reference<css::ucb::XCommandEnvironment> mxFolderEnvironment;
@@ -167,7 +153,6 @@ TemplateScanner::TemplateScanner()
       maFolderContent(),
       mpTemplateDirectory(nullptr),
       maFolderList(),
-      mbEntrySortingEnabled(false),
       mpLastAddedEntry(nullptr),
       mpFolderDescriptors(new FolderDescriptorList()),
       mxTemplateRoot(),
@@ -214,8 +199,8 @@ TemplateScanner::State TemplateScanner::InitializeEntryScanning()
         //  its URL, and its content type.
         Sequence<OUString> aProps (3);
         aProps[0] = TITLE;
-        aProps[1] = TARGET_URL;
-        aProps[2] = DESCRIPTION;
+        aProps[1] = "TargetURL";
+        aProps[2] = "TypeDescription";
 
         //  Create a cursor to iterate over the templates in this folders.
         ::ucbhelper::ResultSetInclude eInclude = ::ucbhelper::INCLUDE_DOCUMENTS_ONLY;
@@ -249,11 +234,14 @@ TemplateScanner::State TemplateScanner::ScanEntry()
                 //  Check whether the entry is an impress template.  If so
                 //  add a new entry to the resulting list (which is created
                 //  first if necessary).
+                //  These strings are used to find impress templates in the tree of
+                //  template files.  Should probably be determined dynamically.
                 if (    (sContentType == MIMETYPE_OASIS_OPENDOCUMENT_PRESENTATION_TEMPLATE_ASCII)
-                    ||  (sContentType == IMPRESS_XML_TEMPLATE_OASIS)
-                    ||  (sContentType == IMPRESS_BIN_TEMPLATE)
-                    ||  (sContentType == IMPRESS_XML_TEMPLATE)
-                    ||  (sContentType == IMPRESS_XML_TEMPLATE_B))
+                    ||  (sContentType == MIMETYPE_OASIS_OPENDOCUMENT_PRESENTATION_ASCII)
+                    ||  (sContentType == "application/vnd.stardivision.impress")
+                    ||  (sContentType == MIMETYPE_VND_SUN_XML_IMPRESS_ASCII)
+                        // The following id comes from the bugdoc in #i2764#.
+                    ||  (sContentType == "Impress 2.0"))
                 {
                     OUString sLocalisedTitle = SfxDocumentTemplates::ConvertResourceString(
                         STR_TEMPLATE_NAME1_DEF, STR_TEMPLATE_NAME1, NUM_TEMPLATE_NAMES, sTitle );
@@ -301,7 +289,7 @@ TemplateScanner::State TemplateScanner::InitializeFolderScanning()
         //  Define the list of properties we are interested in.
         Sequence<OUString> aProps (2);
         aProps[0] = TITLE;
-        aProps[1] = TARGET_DIR_URL;
+        aProps[1] = "TargetDirURL";
 
         //  Create an cursor to iterate over the template folders.
         ::ucbhelper::ResultSetInclude eInclude = ::ucbhelper::INCLUDE_FOLDERS_ONLY;
@@ -336,7 +324,6 @@ TemplateScanner::State TemplateScanner::GatherFolderList()
                 mpFolderDescriptors->insert(
                     FolderDescriptor(
                         Classify(sTitle,sTargetDir),
-                        sTitle,
                         aId,
                         mxFolderEnvironment));
             }
@@ -357,7 +344,6 @@ TemplateScanner::State TemplateScanner::ScanFolder()
         FolderDescriptor aDescriptor (*mpFolderDescriptors->begin());
         mpFolderDescriptors->erase(mpFolderDescriptors->begin());
 
-        OUString sTitle (aDescriptor.msTitle);
         OUString aId (aDescriptor.msContentIdentifier);
 
         maFolderContent = ::ucbhelper::Content (aId, aDescriptor.mxFolderEnvironment, comphelper::getProcessComponentContext());
@@ -365,8 +351,8 @@ TemplateScanner::State TemplateScanner::ScanFolder()
         {
             // Scan the folder and insert it into the list of template
             // folders.
-            mpTemplateDirectory = new TemplateDir (sTitle);
-            mpTemplateDirectory->EnableSorting(mbEntrySortingEnabled);
+            mpTemplateDirectory = new TemplateDir;
+            mpTemplateDirectory->EnableSorting(false);
             // Continue with scanning all entries in the folder.
             eNextState = INITIALIZE_ENTRY_SCAN;
         }
@@ -377,12 +363,6 @@ TemplateScanner::State TemplateScanner::ScanFolder()
     }
 
     return eNextState;
-}
-
-void TemplateScanner::Scan()
-{
-    while (HasNextStep())
-        RunNextStep();
 }
 
 void TemplateScanner::RunNextStep()

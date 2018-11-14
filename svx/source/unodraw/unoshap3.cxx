@@ -28,6 +28,7 @@
 #include <comphelper/serviceinfohelper.hxx>
 
 #include <svx/svdpool.hxx>
+#include <svx/svditer.hxx>
 #include <svx/unoshape.hxx>
 #include <svx/unopage.hxx>
 #include <editeng/unoprnms.hxx>
@@ -105,13 +106,6 @@ void SAL_CALL Svx3DSceneObject::release() throw ( )
 
 // XTypeProvider
 
-uno::Sequence< uno::Type > SAL_CALL Svx3DSceneObject::getTypes()
-    throw (uno::RuntimeException, std::exception)
-{
-
-    return SvxShape::getTypes();
-}
-
 uno::Sequence< sal_Int8 > SAL_CALL Svx3DSceneObject::getImplementationId()
     throw (uno::RuntimeException, std::exception)
 {
@@ -183,7 +177,7 @@ void SAL_CALL Svx3DSceneObject::remove( const Reference< drawing::XShape >& xSha
         }
         else
         {
-            DBG_ASSERT( false, "Fatality! SdrObject is not belonging to its SdrObjList! [CL]" );
+            SAL_WARN( "svx", "Fatality! SdrObject is not belonging to its SdrObjList! [CL]" );
         }
     }
 }
@@ -292,8 +286,6 @@ static void ConvertObjectToHomogenMatric( E3dObject* pObject, Any& rValue )
 }
 
 
-#include <svx/svditer.hxx>
-
 struct ImpRememberTransAndRect
 {
     basegfx::B3DHomMatrix                   maMat;
@@ -329,7 +321,7 @@ bool Svx3DSceneObject::setPropertyValueImpl( const OUString& rName, const SfxIte
             aSceneTAR.maRect = pScene->GetSnapRect();
 
             // rescue object transformations
-            SdrObjListIter aIter(*pScene->GetSubList(), IM_DEEPWITHGROUPS);
+            SdrObjListIter aIter(*pScene->GetSubList(), SdrIterMode::DeepWithGroups);
             std::vector<basegfx::B3DHomMatrix*> aObjTrans;
             while(aIter.IsMore())
             {

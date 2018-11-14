@@ -42,21 +42,22 @@ ScCsvLayoutData::ScCsvLayoutData() :
 
 ScCsvDiff ScCsvLayoutData::GetDiff( const ScCsvLayoutData& rData ) const
 {
-    ScCsvDiff nRet = CSV_DIFF_EQUAL;
-    if( mnPosCount != rData.mnPosCount )        nRet |= CSV_DIFF_POSCOUNT;
-    if( mnPosOffset != rData.mnPosOffset )      nRet |= CSV_DIFF_POSOFFSET;
-    if( mnHdrWidth != rData.mnHdrWidth )        nRet |= CSV_DIFF_HDRWIDTH;
-    if( mnCharWidth != rData.mnCharWidth )      nRet |= CSV_DIFF_CHARWIDTH;
-    if( mnLineCount != rData.mnLineCount )      nRet |= CSV_DIFF_LINECOUNT;
-    if( mnLineOffset != rData.mnLineOffset )    nRet |= CSV_DIFF_LINEOFFSET;
-    if( mnHdrHeight != rData.mnHdrHeight )      nRet |= CSV_DIFF_HDRHEIGHT;
-    if( mnLineHeight != rData.mnLineHeight )    nRet |= CSV_DIFF_LINEHEIGHT;
-    if( mnPosCursor != rData.mnPosCursor )      nRet |= CSV_DIFF_RULERCURSOR;
-    if( mnColCursor != rData.mnColCursor )      nRet |= CSV_DIFF_GRIDCURSOR;
+    ScCsvDiff nRet = ScCsvDiff::Equal;
+    if( mnPosCount != rData.mnPosCount )        nRet |= ScCsvDiff::PosCount;
+    if( mnPosOffset != rData.mnPosOffset )      nRet |= ScCsvDiff::PosOffset;
+    if( mnHdrWidth != rData.mnHdrWidth )        nRet |= ScCsvDiff::HeaderWidth;
+    if( mnCharWidth != rData.mnCharWidth )      nRet |= ScCsvDiff::CharWidth;
+    if( mnLineCount != rData.mnLineCount )      nRet |= ScCsvDiff::LineCount;
+    if( mnLineOffset != rData.mnLineOffset )    nRet |= ScCsvDiff::LineOffset;
+    if( mnHdrHeight != rData.mnHdrHeight )      nRet |= ScCsvDiff::HeaderHeight;
+    if( mnLineHeight != rData.mnLineHeight )    nRet |= ScCsvDiff::LineHeight;
+    if( mnPosCursor != rData.mnPosCursor )      nRet |= ScCsvDiff::RulerCursor;
+    if( mnColCursor != rData.mnColCursor )      nRet |= ScCsvDiff::GridCursor;
     return nRet;
 }
 
 ScCsvControl::ScCsvControl( ScCsvControl& rParent ) :
+    VclReferenceBase(),
     Control( &rParent, WB_TABSTOP | WB_NODIALOGCONTROL ),
     mrData( rParent.GetLayoutData() ),
     mxAccessible( nullptr ),
@@ -260,7 +261,7 @@ void ScCsvControl::ImplInvertRect( OutputDevice& rOutDev, const Rectangle& rRect
     rOutDev.Push( PushFlags::LINECOLOR | PushFlags::FILLCOLOR | PushFlags::RASTEROP );
     rOutDev.SetLineColor( Color( COL_BLACK ) );
     rOutDev.SetFillColor( Color( COL_BLACK ) );
-    rOutDev.SetRasterOp( ROP_INVERT );
+    rOutDev.SetRasterOp( RasterOp::Invert );
     rOutDev.DrawRect( rRect );
     rOutDev.Pop();
 }

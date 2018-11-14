@@ -217,9 +217,9 @@ const SwTOXType* SwEditShell::GetTOXType(TOXTypes eTyp, sal_uInt16 nId) const
 
 // manage keys for the alphabetical index
 
-sal_uInt16 SwEditShell::GetTOIKeys( SwTOIKeyType eTyp, std::vector<OUString>& rArr ) const
+void SwEditShell::GetTOIKeys( SwTOIKeyType eTyp, std::vector<OUString>& rArr ) const
 {
-    return GetDoc()->GetTOIKeys( eTyp, rArr );
+    GetDoc()->GetTOIKeys( eTyp, rArr );
 }
 
 sal_uInt16 SwEditShell::GetTOXCount() const
@@ -302,7 +302,7 @@ void SwEditShell::ApplyAutoMark()
         }
 
         //2.
-        SfxMedium aMedium( sAutoMarkURL, STREAM_STD_READ );
+        SfxMedium aMedium( sAutoMarkURL, StreamMode::STD_READ );
         SvStream& rStrm = *aMedium.GetInStream();
         Push();
         rtl_TextEncoding eChrSet = ::osl_getThreadTextEncoding();
@@ -373,8 +373,8 @@ void SwEditShell::ApplyAutoMark()
 
                     // todo/mba: assuming that notes shouldn't be searched
                     bool bSearchInNotes = false;
-                    sal_uLong nRet = Find( aSearchOpt,  bSearchInNotes, DOCPOS_START, DOCPOS_END, bCancel,
-                                    (FindRanges)(FND_IN_SELALL) );
+                    sal_uLong nRet = Find( aSearchOpt,  bSearchInNotes, SwDocPositions::Start, SwDocPositions::End, bCancel,
+                                    (FindRanges)(FindRanges::InSelAll) );
 
                     if(nRet)
                     {

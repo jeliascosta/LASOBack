@@ -23,18 +23,19 @@
 #include "headless/svpgdi.hxx"
 #include <config_cairo_canvas.h>
 #include "impfontmetricdata.hxx"
+#include "CommonSalLayout.hxx"
 
 void SvpSalGraphics::SetFont( FontSelectPattern* pIFSD, int nFallbackLevel )
 {
     m_aTextRenderImpl.SetFont(pIFSD, nFallbackLevel);
 }
 
-void SvpSalGraphics::GetFontMetric( ImplFontMetricDataPtr& xFontMetric, int nFallbackLevel )
+void SvpSalGraphics::GetFontMetric( ImplFontMetricDataRef& xFontMetric, int nFallbackLevel )
 {
     m_aTextRenderImpl.GetFontMetric(xFontMetric, nFallbackLevel);
 }
 
-const FontCharMapPtr SvpSalGraphics::GetFontCharMap() const
+const FontCharMapRef SvpSalGraphics::GetFontCharMap() const
 {
     return m_aTextRenderImpl.GetFontCharMap();
 }
@@ -95,7 +96,7 @@ void SvpSalGraphics::FreeEmbedFontData( const void* pData, long nLen )
 
 void SvpSalGraphics::GetGlyphWidths( const PhysicalFontFace* pFont,
                                    bool bVertical,
-                                   Int32Vector& rWidths,
+                                   std::vector< sal_Int32 >& rWidths,
                                    Ucs2UIntMap& rUnicodeEnc )
 {
     m_aTextRenderImpl.GetGlyphWidths(pFont, bVertical, rWidths, rUnicodeEnc);
@@ -116,9 +117,14 @@ SalLayout* SvpSalGraphics::GetTextLayout( ImplLayoutArgs& rArgs, int nFallbackLe
     return m_aTextRenderImpl.GetTextLayout(rArgs, nFallbackLevel);
 }
 
-void SvpSalGraphics::DrawServerFontLayout( const ServerFontLayout& rSalLayout )
+void SvpSalGraphics::DrawServerFontLayout( const GenericSalLayout& rSalLayout, const FreetypeFont& rFreetypeFont )
 {
-    m_aTextRenderImpl.DrawServerFontLayout(rSalLayout );
+    m_aTextRenderImpl.DrawServerFontLayout( rSalLayout, rFreetypeFont );
+}
+
+void SvpSalGraphics::DrawSalLayout( const CommonSalLayout& rSalLayout )
+{
+    DrawServerFontLayout( rSalLayout, rSalLayout.getFontData() );
 }
 
 void SvpSalGraphics::SetTextColor( SalColor nSalColor )

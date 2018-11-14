@@ -24,6 +24,7 @@
 #include <doc.hxx>
 #include <IDocumentTimerAccess.hxx>
 #include <o3tl/typed_flags_set.hxx>
+#include <set>
 #include <vector>
 
 class SwContentFrame;
@@ -35,8 +36,6 @@ class SwCursor;
 class SwShellCursor;
 class SwTableCursor;
 class SwLayVout;
-class SwDestroyList;
-class SwCurrShells;
 class SwViewOption;
 class SwSelectionList;
 struct SwPosition;
@@ -57,6 +56,17 @@ namespace o3tl
 {
     template<> struct typed_flags<SwInvalidateFlags> : is_typed_flags<SwInvalidateFlags, 0x7f> {};
 };
+
+enum class SwRemoveResult
+{
+    Next,
+    Prev
+};
+
+using SwCurrShells = std::set<CurrShell*>;
+
+class SwSectionFrame;
+using SwDestroyList = std::set<SwSectionFrame*>;
 
 /// The root element of a Writer document layout.
 class SwRootFrame: public SwLayoutFrame
@@ -154,7 +164,7 @@ class SwRootFrame: public SwLayoutFrame
     void RemoveFromList_( SwSectionFrame* pSct ); // Removes SectionFrames from the Delete List
 
     virtual void DestroyImpl() override;
-    virtual ~SwRootFrame();
+    virtual ~SwRootFrame() override;
 
 protected:
 
@@ -385,6 +395,8 @@ public:
 
     bool IsLayoutFreezed() const { return mbLayoutFreezed; }
     void FreezeLayout( bool freeze ) { mbLayoutFreezed = freeze; }
+
+    void RemovePage( SwPageFrame **pDel, SwRemoveResult eResult );
 };
 
 inline long SwRootFrame::GetBrowseWidth() const
@@ -404,6 +416,28 @@ inline  void SwRootFrame::SetVirtPageNum( const bool bOf) const
 {
     const_cast<SwRootFrame*>(this)->mbIsVirtPageNum = bOf;
 }
+
+/// helper class to disable creation of an action by a callback event
+/// in particular, change event from a drawing object (SwDrawContact::Changed())
+class DisableCallbackAction
+{
+    private:
+        SwRootFrame & m_rRootFrame;
+        bool m_bOldCallbackActionState;
+
+    public:
+        explicit DisableCallbackAction(SwRootFrame & rRootFrame)
+            : m_rRootFrame(rRootFrame)
+            , m_bOldCallbackActionState(rRootFrame.IsCallbackActionEnabled())
+        {
+            m_rRootFrame.SetCallbackActionEnabled(false);
+        }
+
+        ~DisableCallbackAction()
+        {
+            m_rRootFrame.SetCallbackActionEnabled(m_bOldCallbackActionState);
+        }
+};
 
 #endif // INCLUDED_SW_SOURCE_CORE_INC_ROOTFRM_HXX
 

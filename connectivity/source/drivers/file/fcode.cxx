@@ -32,15 +32,7 @@ using namespace connectivity::file;
 using namespace ::com::sun::star::sdbc;
 using namespace ::com::sun::star::sdb;
 
-
-OCode::OCode()
-{
-}
-
-OCode::~OCode()
-{
-}
-
+OCode::~OCode() = default;
 
 OOperandRow::OOperandRow(sal_uInt16 _nPos, sal_Int32 _rType)
     : OOperand(_rType)
@@ -178,7 +170,7 @@ void OOp_NOT::Exec(OCodeStack& rCodeStack)
     OOperand* pOperand = rCodeStack.top();
     rCodeStack.pop();
 
-    rCodeStack.push(new OOperandResultBOOL(operate(pOperand)));
+    rCodeStack.push(new OOperandResultBOOL(operate(pOperand, nullptr)));
 
     if( typeid(OOperandResult) == typeid(*pOperand))
         delete pOperand;
@@ -201,7 +193,7 @@ void OOp_ISNULL::Exec(OCodeStack& rCodeStack)
     OOperand* pOperand = rCodeStack.top();
     rCodeStack.pop();
 
-    rCodeStack.push(new OOperandResultBOOL(operate(pOperand)));
+    rCodeStack.push(new OOperandResultBOOL(operate(pOperand, nullptr)));
     if( typeid(OOperandResult) == typeid(*pOperand))
         delete pOperand;
 }
@@ -215,7 +207,7 @@ bool OOp_ISNULL::operate(const OOperand* pOperand, const OOperand*) const
 
 bool OOp_ISNOTNULL::operate(const OOperand* pOperand, const OOperand*) const
 {
-    return !OOp_ISNULL::operate(pOperand);
+    return !OOp_ISNULL::operate(pOperand, nullptr);
 }
 
 

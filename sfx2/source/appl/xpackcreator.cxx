@@ -83,9 +83,9 @@ void SAL_CALL OPackageStructureCreator::convertToPackage( const OUString& aFolde
 
                 if ( !aTempURL.isEmpty() )
                 {
-                    pTempStream = new SvFileStream( aTempURL, STREAM_STD_READWRITE );
+                    pTempStream = new SvFileStream( aTempURL, StreamMode::STD_READWRITE );
                     tools::SvRef<SotStorage> aTargetStorage = new SotStorage( true, *pTempStream );
-                    aStorage->CopyTo( aTargetStorage );
+                    aStorage->CopyTo( aTargetStorage.get() );
                     aTargetStorage->Commit();
 
                     if ( aStorage->GetError() || aTargetStorage->GetError() || pTempStream->GetError() )
@@ -102,7 +102,7 @@ void SAL_CALL OPackageStructureCreator::convertToPackage( const OUString& aFolde
                         if ( aSeq.getLength() < 32000 )
                             aSeq.realloc( 32000 );
 
-                        nRead = pTempStream->Read( aSeq.getArray(), 32000 );
+                        nRead = pTempStream->ReadBytes(aSeq.getArray(), 32000);
                         if ( nRead < 32000 )
                             aSeq.realloc( nRead );
                         xTargetStream->writeBytes( aSeq );

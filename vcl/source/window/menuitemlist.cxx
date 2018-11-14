@@ -36,12 +36,12 @@ MenuItemData::~MenuItemData()
         aUserValueReleaseFunc(nUserValue);
     if( pAutoSubMenu )
     {
-        static_cast<PopupMenu*>(pAutoSubMenu)->pRefAutoSubMenu = nullptr;
-        delete pAutoSubMenu;
-        pAutoSubMenu = nullptr;
+        static_cast<PopupMenu*>(pAutoSubMenu.get())->pRefAutoSubMenu = nullptr;
+        pAutoSubMenu.disposeAndClear();
     }
     if( pSalMenuItem )
         ImplGetSVData()->mpDefInst->DestroyMenuItem( pSalMenuItem );
+    pSubMenu.disposeAndClear();
 }
 
 MenuItemList::~MenuItemList()
@@ -73,8 +73,6 @@ MenuItemData* MenuItemList::Insert(
     pData->bEnabled         = true;
     pData->bVisible         = true;
     pData->bIsTemporary     = false;
-    pData->bMirrorMode      = false;
-    pData->nItemImageAngle  = 0;
 
     SalItemParams aSalMIData;
     aSalMIData.nId = nId;
@@ -109,8 +107,6 @@ void MenuItemList::InsertSeparator(const OString &rIdent, size_t nPos)
     pData->bEnabled         = true;
     pData->bVisible         = true;
     pData->bIsTemporary     = false;
-    pData->bMirrorMode      = false;
-    pData->nItemImageAngle  = 0;
 
     SalItemParams aSalMIData;
     aSalMIData.nId = 0;
@@ -137,6 +133,13 @@ void MenuItemList::Remove( size_t nPos )
         delete maItemList[ nPos ];
         maItemList.erase( maItemList.begin() + nPos );
     }
+}
+
+void MenuItemList::Clear()
+{
+    for (MenuItemData* i : maItemList)
+        delete i;
+    maItemList.resize(0);
 }
 
 MenuItemData* MenuItemList::GetData( sal_uInt16 nSVId, size_t& rPos ) const

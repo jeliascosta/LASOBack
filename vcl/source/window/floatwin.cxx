@@ -65,12 +65,12 @@ void FloatingWindow::ImplInit( vcl::Window* pParent, WinBits nStyle )
     mbInCleanUp = false;
     mbGrabFocus = false;
 
-    DBG_ASSERT(pParent, "FloatWindow::FloatingWindow(): - pParent == NULL!");
+    SAL_WARN_IF(!pParent, "vcl", "FloatWindow::FloatingWindow(): - pParent == NULL!");
 
     if (!pParent)
         pParent = ImplGetSVData()->maWinData.mpAppWin;
 
-    DBG_ASSERT(pParent, "FloatWindow::FloatingWindow(): - pParent == NULL and no AppWindow exists");
+    SAL_WARN_IF(!pParent, "vcl", "FloatWindow::FloatingWindow(): - pParent == NULL and no AppWindow exists");
 
     // no Border, then we don't need a border window
     if (!nStyle)
@@ -201,11 +201,7 @@ void FloatingWindow::ApplySettings(vcl::RenderContext& rRenderContext)
 FloatingWindow::~FloatingWindow()
 {
     disposeOnce();
-
-    // Unfortunately the vclwidgets clang plug-in says: "OutputDevice
-    // subclass should have nothing in its destructor but a call to
-    // disposeOnce()."
-    // assert (!mnPostId);
+    assert (!mnPostId);
 }
 
 void FloatingWindow::dispose()
@@ -230,6 +226,7 @@ void FloatingWindow::dispose()
 
     mpNextFloat.clear();
     mpFirstPopupModeWin.clear();
+    mxPrevFocusWin.clear();
     SystemWindow::dispose();
 }
 
@@ -270,7 +267,6 @@ Point FloatingWindow::ImplCalcPos( vcl::Window* pWindow,
             Application::GetBestScreen( bRTL ? devRectRTL : devRect ) );
 
     FloatWinPopupFlags nArrangeAry[5];
-    sal_uInt16        nArrangeIndex;
     Point             e1,e2;  // the common edge between the item rect and the floating window
 
     if ( nFlags & FloatWinPopupFlags::Left )
@@ -305,10 +301,8 @@ Point FloatingWindow::ImplCalcPos( vcl::Window* pWindow,
         nArrangeAry[3]  = FloatWinPopupFlags::Left;
         nArrangeAry[4]  = FloatWinPopupFlags::Down;
     }
-    if ( nFlags & FloatWinPopupFlags::NoAutoArrange )
-        nArrangeIndex = 4;
-    else
-        nArrangeIndex = 0;
+
+    sal_uInt16 nArrangeIndex = 0;
 
     for ( ; nArrangeIndex < 5; nArrangeIndex++ )
     {
@@ -400,7 +394,7 @@ Point FloatingWindow::ImplCalcPos( vcl::Window* pWindow,
         }
 
         // adjust if necessary
-        if ( bBreak && !(nFlags & FloatWinPopupFlags::NoAutoArrange) )
+        if (bBreak)
         {
             if ( (nArrangeAry[nArrangeIndex] == FloatWinPopupFlags::Left)  ||
                  (nArrangeAry[nArrangeIndex] == FloatWinPopupFlags::Right) )
@@ -567,9 +561,9 @@ bool FloatingWindow::ImplIsFloatPopupModeWindow( const vcl::Window* pWindow )
     return false;
 }
 
-IMPL_LINK_NOARG_TYPED(FloatingWindow, ImplEndPopupModeHdl, void*, void)
+IMPL_LINK_NOARG(FloatingWindow, ImplEndPopupModeHdl, void*, void)
 {
-    VclPtr<FloatingWindow> xThis(this);
+    VclPtr<FloatingWindow> pThis(this);
     mnPostId            = nullptr;
     mnPopupModeFlags    = FloatWinPopupFlags::NONE;
     mbPopupMode         = false;
@@ -590,7 +584,6 @@ bool FloatingWindow::Notify( NotifyEvent& rNEvt )
 
             if ( (nKeyCode == KEY_ESCAPE) && (GetStyle() & WB_CLOSEABLE) )
             {
-                VclPtr<FloatingWindow> xThis(this);
                 Close();
                 return true;
             }
@@ -635,7 +628,7 @@ void FloatingWindow::ImplCallPopupModeEnd()
 
     // call Handler asynchronously.
     if ( mpImplData && !mnPostId )
-        mnPostId = Application::PostUserEvent( LINK( this, FloatingWindow, ImplEndPopupModeHdl ), mxPrevFocusWin, true );
+        mnPostId = Application::PostUserEvent(LINK(this, FloatingWindow, ImplEndPopupModeHdl));
 }
 
 void FloatingWindow::PopupModeEnd()
@@ -679,11 +672,6 @@ void FloatingWindow::StartPopupMode( const Rectangle& rRect, FloatWinPopupFlags 
 
     // avoid close on focus change for decorated floating windows only
     if( mpWindowImpl->mbFrame && (GetStyle() & WB_MOVEABLE) )
-        nFlags |= FloatWinPopupFlags::NoAppFocusClose;
-
-    // #102010# For debugging Accessibility
-    static const char* pEnv = getenv("SAL_FLOATWIN_NOAPPFOCUSCLOSE" );
-    if( pEnv && *pEnv )
         nFlags |= FloatWinPopupFlags::NoAppFocusClose;
 
     // compute window position according to flags and arrangement
@@ -741,22 +729,12 @@ void FloatingWindow::StartPopupMode( ToolBox* pBox, FloatWinPopupFlags nFlags )
     aRect.SetPos( aPos );
 
     nFlags |=
-        FloatWinPopupFlags::NoFocusClose     |
-//        FloatWinPopupFlags::NoMouseClose       |
         FloatWinPopupFlags::AllMouseButtonClose |
-//        FloatWinPopupFlags::NoMouseRectClose   |   // #105968# floating toolboxes should close when clicked in (parent's) float rect
         FloatWinPopupFlags::NoMouseUpClose;
-//          |      FloatWinPopupFlags::NoAppFocusClose;
-
-/*
- *  FloatWinPopupFlags::NoKeyClose       |
- *  don't set since it disables closing floaters with escape
- */
 
     // set Flags for positioning
     if ( !(nFlags & (FloatWinPopupFlags::Down | FloatWinPopupFlags::Up |
-                     FloatWinPopupFlags::Left | FloatWinPopupFlags::Right |
-                     FloatWinPopupFlags::NoAutoArrange)) )
+                     FloatWinPopupFlags::Left | FloatWinPopupFlags::Right)) )
     {
          if ( pBox->IsHorizontal() )
              nFlags |= FloatWinPopupFlags::Down;
@@ -852,17 +830,6 @@ void FloatingWindow::AddPopupModeWindow( vcl::Window* pWindow )
 {
     // !!! up-to-now only 1 window and not yet a list
     mpFirstPopupModeWin = pWindow;
-}
-
-void FloatingWindow::setPosSizeOnContainee(Size aSize, Window &rBox)
-{
-    sal_Int32 nBorderWidth = get_border_width();
-
-    aSize.Width() -= mpWindowImpl->mnLeftBorder + mpWindowImpl->mnRightBorder + 2 * nBorderWidth;
-    aSize.Height() -= nBorderWidth + mpWindowImpl->mnTopBorder + mpWindowImpl->mnBottomBorder + 2 * nBorderWidth;
-
-    Point aPos(nBorderWidth, nBorderWidth);
-    VclContainer::setLayoutAllocation(rBox, aPos, aSize);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

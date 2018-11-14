@@ -43,7 +43,7 @@ class FWE_DLLPUBLIC RootActionTriggerContainer :  public PropertySetContainer,
 {
     public:
         RootActionTriggerContainer( const Menu* pMenu, const OUString* pMenuIdentifier);
-        virtual ~RootActionTriggerContainer();
+        virtual ~RootActionTriggerContainer() override;
 
         // XInterface
         virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType )
@@ -106,7 +106,7 @@ class FWE_DLLPUBLIC RootActionTriggerContainer :  public PropertySetContainer,
         bool            m_bContainerCreated;
         bool            m_bContainerChanged;
         bool            m_bInContainerCreation;
-        const Menu*     m_pMenu;
+        VclPtr<const Menu>  m_pMenu;
         const OUString* m_pMenuIdentifier;
 };
 

@@ -47,7 +47,6 @@ class SFTreeListBox : public SvTreeListBox
 {
    friend class SvxScriptOrgDialog;
 private:
-    sal_uInt16          nMode;
     Image m_hdImage;
     Image m_libImage;
     Image m_macImage;
@@ -71,7 +70,7 @@ public:
                                 css::uno::Reference< css::script::browse::XBrowseNode >& node,
                                 css::uno::Reference< css::frame::XModel>& model  );
                             SFTreeListBox(vcl::Window* pParent);
-                    virtual ~SFTreeListBox();
+                    virtual ~SFTreeListBox() override;
     virtual void    dispose() override;
 
     SvTreeListEntry *       insertEntry(OUString const & rText, sal_uInt16 nBitmap,
@@ -99,7 +98,7 @@ private:
     VclPtr<Edit> m_pEdit;
 public:
     CuiInputDialog(vcl::Window * pParent, InputDialogMode nMode);
-    virtual ~CuiInputDialog();
+    virtual ~CuiInputDialog() override;
     virtual void dispose() override;
 
     OUString GetObjectName() const { return m_pEdit->GetText(); }
@@ -110,7 +109,7 @@ public:
     }
 };
 
-class SFEntry
+class SFEntry final
 {
 private:
     sal_uInt8       nType;
@@ -122,7 +121,7 @@ public:
                             const css::uno::Reference< css::script::browse::XBrowseNode >& entryNodes ,
                             const css::uno::Reference< css::frame::XModel >& entryModel) { nType = nT; nodes = entryNodes; loaded=false; model = entryModel; }
                     SFEntry( const SFEntry& r ) { nType = r.nType; nodes = r.nodes; loaded = r.loaded; }
-    virtual         ~SFEntry() {}
+                    ~SFEntry() {}
     const css::uno::Reference< css::script::browse::XBrowseNode >& GetNode() { return nodes ;}
     const css::uno::Reference< css::frame::XModel >& GetModel() { return model ;};
     bool            isLoaded() const                    { return loaded; }
@@ -153,8 +152,8 @@ protected:
     const OUString m_renameErrStr;
     const OUString m_renameErrTitleStr;
 
-    DECL_LINK_TYPED( ScriptSelectHdl, SvTreeListBox *, void );
-    DECL_LINK_TYPED( ButtonHdl, Button *, void );
+    DECL_LINK( ScriptSelectHdl, SvTreeListBox *, void );
+    DECL_LINK( ButtonHdl, Button *, void );
     static bool         getBoolProperty( css::uno::Reference< css::beans::XPropertySet >& xProps, OUString& propName );
     void                CheckButtons(  css::uno::Reference< css::script::browse::XBrowseNode >& node );
 
@@ -173,7 +172,7 @@ public:
                     // prob need another arg in the ctor
                     // to specify the language or provider
                     SvxScriptOrgDialog( vcl::Window* pParent, const OUString& language );
-                    virtual ~SvxScriptOrgDialog();
+                    virtual ~SvxScriptOrgDialog() override;
     virtual void    dispose() override;
 
     virtual short   Execute() override;
@@ -186,13 +185,13 @@ private:
 
     OUString m_sMessage;
 
-    DECL_STATIC_LINK_TYPED( SvxScriptErrorDialog, ShowDialog, void*, void );
+    DECL_STATIC_LINK( SvxScriptErrorDialog, ShowDialog, void*, void );
 
 public:
 
-    SvxScriptErrorDialog( vcl::Window* parent, css::uno::Any aException );
+    SvxScriptErrorDialog( css::uno::Any aException );
 
-    virtual ~SvxScriptErrorDialog();
+    virtual ~SvxScriptErrorDialog() override;
 
     short           Execute() override;
 };

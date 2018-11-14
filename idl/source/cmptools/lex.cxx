@@ -23,6 +23,7 @@
 #include <lex.hxx>
 #include <globals.hxx>
 #include <rtl/strbuf.hxx>
+#include<rtl/character.hxx>
 
 OString SvToken::GetTokenAsString() const
 {
@@ -76,14 +77,13 @@ void SvTokenStream::InitCtor()
     aStrFalse = OString("FALSE");
     nLine       = nColumn = 0;
     nBufPos     = 0;
-    nTabSize    = 4;
     nMaxPos     = 0;
     c           = GetNextChar();
     FillTokenList();
 }
 
 SvTokenStream::SvTokenStream( const OUString & rFileName )
-    : pInStream( new SvFileStream( rFileName, STREAM_STD_READ | StreamMode::NOCREATE ) )
+    : pInStream( new SvFileStream( rFileName, StreamMode::STD_READ ) )
     , aFileName( rFileName )
 {
     InitCtor();
@@ -172,7 +172,7 @@ sal_uLong SvTokenStream::GetNumber()
             if( isdigit( c ) )
                 l = l * nLog + (c - '0');
             else
-                l = l * nLog + (toupper( c ) - 'A' + 10 );
+                l = l * nLog + (rtl::toAsciiUpperCase( c ) - 'A' + 10 );
             c = GetFastNextChar();
         }
     }

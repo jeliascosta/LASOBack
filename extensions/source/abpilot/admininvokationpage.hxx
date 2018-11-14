@@ -33,7 +33,7 @@ namespace abp
 
     public:
         explicit AdminDialogInvokationPage(OAddressBookSourcePilot* _pParent);
-        virtual ~AdminDialogInvokationPage();
+        virtual ~AdminDialogInvokationPage() override;
         virtual void dispose() override;
     protected:
         // TabDialog overridables
@@ -44,7 +44,7 @@ namespace abp
         virtual bool        canAdvance() const override;
 
     private:
-        DECL_LINK_TYPED( OnInvokeAdminDialog, Button*, void );
+        DECL_LINK( OnInvokeAdminDialog, Button*, void );
 
         void implTryConnect();
         void implUpdateErrorMessage();

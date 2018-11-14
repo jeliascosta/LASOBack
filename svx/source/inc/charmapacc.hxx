@@ -46,7 +46,7 @@ namespace svx
         css::uno::Reference< css::accessibility::XAccessible > m_xAcc; // the ref to the table
         sal_Int32 getImplAccessibleChildCount() const;
     protected:
-        virtual ~SvxShowCharSetVirtualAcc();
+        virtual ~SvxShowCharSetVirtualAcc() override;
 
         virtual void SAL_CALL disposing() override;
 
@@ -109,8 +109,7 @@ namespace svx
         SvxShowCharSetItem( SvxShowCharSet& rParent,SvxShowCharSetAcc*  _pParent,sal_uInt16 _nPos );
         ~SvxShowCharSetItem();
 
-        css::uno::Reference< css::accessibility::XAccessible >    GetAccessible();
-         void                                                                                       ClearAccessible();
+        css::uno::Reference< css::accessibility::XAccessible > const &    GetAccessible();
     };
 
 
@@ -187,7 +186,7 @@ namespace svx
         }
     protected:
 
-        virtual ~SvxShowCharSetAcc();
+        virtual ~SvxShowCharSetAcc() override;
 
         // OCommonAccessibleSelection
         // return if the specified child is visible => watch for special ChildIndexes (ACCESSIBLE_SELECTION_CHILD_xxx)
@@ -222,7 +221,7 @@ namespace svx
     private:
         SvxShowCharSetItem* mpParent;
     protected:
-        virtual ~SvxShowCharSetItemAcc();
+        virtual ~SvxShowCharSetItemAcc() override;
 
         // OCommonAccessibleComponent
         /// implements the calculation of the bounding rectangle - still waiting to be overwritten

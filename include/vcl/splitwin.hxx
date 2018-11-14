@@ -83,8 +83,7 @@ private:
                         mbAutoHidePressed:1,
                         mbFadeInPressed:1,
                         mbFadeOutPressed:1,
-                        mbFadeNoButtonMode:1,
-                        mbNoAlign:1;
+                        mbFadeNoButtonMode:1;
     Link<SplitWindow*,void>  maSplitHdl;
 
     using Window::ImplInit;
@@ -111,7 +110,7 @@ private:
     static SAL_DLLPRIVATE void ImplCalcSet2( SplitWindow* pWindow, ImplSplitSet* pSet, bool bHide,
                                              bool bRows, bool bDown = true );
     SAL_DLLPRIVATE void ImplDrawBack(vcl::RenderContext& rRenderContext, ImplSplitSet* pSet );
-    SAL_DLLPRIVATE void ImplDrawBack(vcl::RenderContext& rRenderContext, const Rectangle& rRect,
+    SAL_DLLPRIVATE static void ImplDrawBack(vcl::RenderContext& rRenderContext, const Rectangle& rRect,
                                              const Wallpaper* pWall, const Bitmap* pBitmap );
     static SAL_DLLPRIVATE sal_uInt16 ImplTestSplit( ImplSplitSet* pSet, const Point& rPos,
                                                 long& rMouseOff, ImplSplitSet** ppFoundSet, sal_uInt16& rFoundPos,
@@ -124,7 +123,7 @@ private:
                         SplitWindow & operator= (const SplitWindow &) = delete;
 public:
                         SplitWindow( vcl::Window* pParent, WinBits nStyle = 0 );
-    virtual             ~SplitWindow();
+    virtual             ~SplitWindow() override;
     virtual void        dispose() override;
 
     virtual void        StartSplit();
@@ -138,7 +137,6 @@ public:
     virtual void        MouseMove( const MouseEvent& rMEvt ) override;
     virtual void        Tracking( const TrackingEvent& rTEvt ) override;
     virtual void        Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
-    virtual void        Move() override;
     virtual void        Resize() override;
     virtual void        RequestHelp( const HelpEvent& rHEvt ) override;
     virtual void        StateChanged( StateChangedType nType ) override;
@@ -146,17 +144,17 @@ public:
     virtual bool        PreNotify( NotifyEvent& rNEvt ) override;
 
     void                InsertItem( sal_uInt16 nId, vcl::Window* pWindow, long nSize,
-                                    sal_uInt16 nPos = SPLITWINDOW_APPEND, sal_uInt16 nIntoSetId = 0,
-                                    SplitWindowItemFlags nBits = SplitWindowItemFlags::NONE );
+                                    sal_uInt16 nPos, sal_uInt16 nIntoSetId,
+                                    SplitWindowItemFlags nBits );
     void                InsertItem( sal_uInt16 nId, long nSize,
-                                    sal_uInt16 nPos = SPLITWINDOW_APPEND, sal_uInt16 nIntoSetId = 0,
-                                    SplitWindowItemFlags nBits = SplitWindowItemFlags::NONE );
+                                    sal_uInt16 nPos, sal_uInt16 nIntoSetId,
+                                    SplitWindowItemFlags nBits );
     void                RemoveItem( sal_uInt16 nId );
     void                Clear();
 
     void                SplitItem( sal_uInt16 nId, long nNewSize,
-                                   bool bPropSmall = false,
-                                   bool bPropGreat = false );
+                                   bool bPropSmall,
+                                   bool bPropGreat );
     void                SetItemSize( sal_uInt16 nId, long nNewSize );
     long                GetItemSize( sal_uInt16 nId ) const;
     /** Set a range that limits the (variable part of the) size with an
@@ -179,7 +177,7 @@ public:
     sal_uInt16          GetItemCount( sal_uInt16 nSetId = 0 ) const;
     bool                IsItemValid( sal_uInt16 nId ) const;
 
-    void                SetAlign( WindowAlign eNewAlign = WindowAlign::Top );
+    void                SetAlign( WindowAlign eNewAlign );
     WindowAlign         GetAlign() const { return meAlign; }
     bool                IsHorizontal() const { return mbHorz; }
 

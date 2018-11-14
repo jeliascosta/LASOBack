@@ -51,7 +51,7 @@ public:
     ChartTypeTabPage( vcl::Window* pParent
                 , const css::uno::Reference< css::chart2::XChartDocument >& xChartModel
                 , bool bDoLiveUpdate, bool bShowDescription = true );
-    virtual ~ChartTypeTabPage();
+    virtual ~ChartTypeTabPage() override;
     virtual void        dispose() override;
 
     virtual void        initializePage() override;
@@ -70,8 +70,8 @@ protected:
     void commitToModel( const ChartTypeParameter& rParameter );
     void selectMainType();
 
-    DECL_LINK_TYPED( SelectMainTypeHdl, ListBox&, void );
-    DECL_LINK_TYPED( SelectSubTypeHdl, ValueSet*, void );
+    DECL_LINK( SelectMainTypeHdl, ListBox&, void );
+    DECL_LINK( SelectSubTypeHdl, ValueSet*, void );
 
 protected:
     VclPtr<FixedText>  m_pFT_ChooseType;

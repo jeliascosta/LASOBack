@@ -76,7 +76,7 @@ class EnhancedCustomShapeEngine : public cppu::WeakImplHelper
 
 public:
                             EnhancedCustomShapeEngine();
-    virtual                 ~EnhancedCustomShapeEngine();
+    virtual                 ~EnhancedCustomShapeEngine() override;
 
     // XInterface
     virtual void SAL_CALL   acquire() throw() override;
@@ -433,7 +433,7 @@ drawing::PolyPolygonBezierCoords SAL_CALL EnhancedCustomShapeEngine::getLineGeom
             }
 
             basegfx::B2DPolyPolygon aPolyPolygon;
-            SdrObjListIter aIter( *pObj, IM_DEEPWITHGROUPS );
+            SdrObjListIter aIter( *pObj, SdrIterMode::DeepWithGroups );
 
             while ( aIter.IsMore() )
             {

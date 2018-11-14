@@ -77,7 +77,7 @@ class SvFilterOptionsDialog : public cppu::WeakImplHelper
 public:
 
     explicit SvFilterOptionsDialog( const uno::Reference< uno::XComponentContext >& _rxORB );
-    virtual ~SvFilterOptionsDialog();
+    virtual ~SvFilterOptionsDialog() override;
 
     // XInterface
     virtual void SAL_CALL acquire() throw() override;
@@ -242,18 +242,12 @@ sal_Int16 SvFilterOptionsDialog::execute()
         }
         if ( nFormat < nFilterCount )
         {
-            FltCallDialogParameter aFltCallDlgPara( Application::GetDefDialogParent(), nullptr, meFieldUnit );
+            FltCallDialogParameter aFltCallDlgPara( Application::GetDefDialogParent(), meFieldUnit );
             aFltCallDlgPara.aFilterData = maFilterDataSequence;
-
-            std::unique_ptr<ResMgr> pResMgr(ResMgr::CreateResMgr( "svt", Application::GetSettings().GetUILanguageTag() ));
-            aFltCallDlgPara.pResMgr = pResMgr.get();
-
             aFltCallDlgPara.aFilterExt = aGraphicFilter.GetExportFormatShortName( nFormat );
             bool bIsPixelFormat( aGraphicFilter.IsExportPixelFormat( nFormat ) );
             if ( ScopedVclPtrInstance<ExportDialog>( aFltCallDlgPara, mxContext, mxSourceDocument, mbExportSelection, bIsPixelFormat )->Execute() == RET_OK )
                 nRet = ui::dialogs::ExecutableDialogResults::OK;
-
-            pResMgr.reset();
 
             // taking the out parameter from the dialog
             maFilterDataSequence = aFltCallDlgPara.aFilterData;

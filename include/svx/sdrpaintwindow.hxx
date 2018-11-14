@@ -83,15 +83,8 @@ private:
     // The RedrawRegion used for rendering
     vcl::Region                                              maRedrawRegion;
 
-    // bitfield
     // #i72889# flag if this is only a temporary target for repaint, default is false
     bool                                                mbTemporaryTarget : 1;
-
-    /** Remember whether the mxOverlayManager supports buffering.  Using
-        this flags expensive dynamic_casts on mxOverlayManager in order to
-        detect this.
-    */
-    bool mbUseBuffer;
 
     // helpers
     void impCreateOverlayManager();
@@ -106,7 +99,7 @@ public:
     vcl::Window* GetWindow() const { return mpWindow; }
 
     // OVERLAYMANAGER
-    rtl::Reference< sdr::overlay::OverlayManager > GetOverlayManager() const;
+    rtl::Reference< sdr::overlay::OverlayManager > const & GetOverlayManager() const;
 
     // #i73602# add flag if buffer shall be used
     void DrawOverlay(const vcl::Region& rRegion);

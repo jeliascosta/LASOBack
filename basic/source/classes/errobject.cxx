@@ -38,7 +38,7 @@ class ErrObject : public ::cppu::WeakImplHelper< vba::XErrObject,
 
 public:
     ErrObject();
-    virtual ~ErrObject();
+    virtual ~ErrObject() override;
     // Attributes
     virtual ::sal_Int32 SAL_CALL getNumber() throw (uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setNumber( ::sal_Int32 _number ) throw (uno::RuntimeException, std::exception) override;
@@ -189,15 +189,14 @@ SbxErrObject::~SbxErrObject()
     OSL_TRACE("SbxErrObject::~SbxErrObject dtor");
 }
 
-uno::Reference< vba::XErrObject >
+uno::Reference< vba::XErrObject > const &
 SbxErrObject::getUnoErrObject()
 {
-    SbxVariable* pVar = getErrObject();
-    SbxErrObject* pGlobErr = static_cast< SbxErrObject* >(  pVar );
+    SbxErrObject* pGlobErr = static_cast< SbxErrObject* >(  getErrObject().get() );
     return pGlobErr->m_xErr;
 }
 
-SbxVariableRef
+SbxVariableRef const &
 SbxErrObject::getErrObject()
 {
     static SbxVariableRef pGlobErr = new SbxErrObject( OUString("Err"), uno::makeAny( uno::Reference< vba::XErrObject >( new ErrObject() ) ) );

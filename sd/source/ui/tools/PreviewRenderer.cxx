@@ -54,7 +54,7 @@ namespace {
     {
     public:
         ViewRedirector();
-        virtual ~ViewRedirector();
+        virtual ~ViewRedirector() override;
         virtual drawinglayer::primitive2d::Primitive2DContainer createRedirectedPrimitive2DSequence(
             const sdr::contact::ViewObjectContact& rOriginal,
             const sdr::contact::DisplayInfo& rDisplayInfo) override;
@@ -64,23 +64,14 @@ namespace {
 //===== PreviewRenderer =======================================================
 
 PreviewRenderer::PreviewRenderer (
-    OutputDevice* pTemplate,
     const bool bHasFrame)
     : mpPreviewDevice (VclPtr<VirtualDevice>::Create()),
       mpDocShellOfView(nullptr),
       maFrameColor (svtools::ColorConfig().GetColorValue(svtools::DOCBOUNDARIES).nColor),
       mbHasFrame(bHasFrame)
 {
-    if (pTemplate != nullptr)
-    {
-        mpPreviewDevice->SetDigitLanguage (pTemplate->GetDigitLanguage());
-        mpPreviewDevice->SetBackground(pTemplate->GetBackground());
-    }
-    else
-    {
-        mpPreviewDevice->SetBackground(Wallpaper(
-            Application::GetSettings().GetStyleSettings().GetWindowColor()));
-    }
+    mpPreviewDevice->SetBackground(Wallpaper(
+        Application::GetSettings().GetStyleSettings().GetWindowColor()));
 }
 
 PreviewRenderer::~PreviewRenderer()
@@ -136,7 +127,7 @@ Image PreviewRenderer::RenderPage (
                     mpPreviewDevice->PixelToLogic(Point(0,0)),
                     mpPreviewDevice->PixelToLogic(aSize)));
 
-                Cleanup();
+                mpView->HideSdrPage();
             }
         }
         catch (const css::uno::Exception&)
@@ -169,7 +160,7 @@ Image PreviewRenderer::RenderSubstitution (
         // Set a map mode that makes a typical substitution text completely
         // visible.
         MapMode aMapMode (mpPreviewDevice->GetMapMode());
-        aMapMode.SetMapUnit(MAP_100TH_MM);
+        aMapMode.SetMapUnit(MapUnit::Map100thMM);
         Fraction aFinalScale(25 * rPreviewPixelSize.Width(), 28000);
         aMapMode.SetScaleX(aFinalScale);
         aMapMode.SetScaleY(aFinalScale);
@@ -255,7 +246,7 @@ bool PreviewRenderer::Initialize (
         return false;
 
     // #i121224# No need to set SetApplicationBackgroundColor (which is the color
-    // of the area 'behind' the page (formally called 'Wiese') since the page previews
+    // of the area 'behind' the page (formerly called 'Wiese') since the page previews
     // produced exactly cover the page's area, so it would never be visible. What
     // needs to be set is the ApplicationDocumentColor which is derived from
     // svtools::DOCCOLOR normally
@@ -279,11 +270,6 @@ bool PreviewRenderer::Initialize (
     mpPreviewDevice->Erase();
 
     return true;
-}
-
-void PreviewRenderer::Cleanup()
-{
-    mpView->HideSdrPage();
 }
 
 void PreviewRenderer::PaintPage (
@@ -374,7 +360,7 @@ void PreviewRenderer::SetupOutputSize (
     // First set the map mode to some arbitrary scale that is numerically
     // stable.
     MapMode aMapMode (mpPreviewDevice->GetMapMode());
-    aMapMode.SetMapUnit(MAP_PIXEL);
+    aMapMode.SetMapUnit(MapUnit::MapPixel);
 
     // Adapt it to the desired width.
     const Size aPageModelSize (rPage.GetSize());
@@ -458,7 +444,7 @@ Image PreviewRenderer::ScaleBitmap (
             (long)((nWidth*1.0 * aSize.Height()) / aSize.Width() + 0.5));
         Size aPreviewSize (aFrameSize.Width()-2,aFrameSize.Height()-2);
         MapMode aMapMode (mpPreviewDevice->GetMapMode());
-        aMapMode.SetMapUnit(MAP_PIXEL);
+        aMapMode.SetMapUnit(MapUnit::MapPixel);
         aMapMode.SetOrigin (Point());
         aMapMode.SetScaleX (1.0);
         aMapMode.SetScaleY (1.0);
@@ -491,8 +477,7 @@ void PreviewRenderer::Notify(SfxBroadcaster&, const SfxHint& rHint)
     if (!mpDocShellOfView)
         return;
 
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if (pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING)
+    if (rHint.GetId() == SFX_HINT_DYING)
     {
         // The doc shell is dying.  Our view uses its item pool and
         // has to be destroyed as well.  The next call to
@@ -532,7 +517,7 @@ drawinglayer::primitive2d::Primitive2DContainer ViewRedirector::createRedirected
     const bool bDoCreateGeometry (pObject->GetPage()->checkVisibility( rOriginal, rDisplayInfo, true));
 
     if ( ! bDoCreateGeometry
-        && (pObject->GetObjInventor() != SdrInventor || pObject->GetObjIdentifier() != OBJ_PAGE))
+        && (pObject->GetObjInventor() != SdrInventor::Default || pObject->GetObjIdentifier() != OBJ_PAGE))
     {
         return drawinglayer::primitive2d::Primitive2DContainer();
     }

@@ -28,6 +28,7 @@
 
 class ImplAccelData;
 class ImplAccelEntry;
+class CommandEvent;
 
 class VCL_DLLPUBLIC Accelerator : public Resource
 {
@@ -35,7 +36,6 @@ class VCL_DLLPUBLIC Accelerator : public Resource
 
 private:
     ImplAccelData*          mpData;
-    OUString                maHelpStr;
     Link<Accelerator&,void> maActivateHdl;
     Link<Accelerator&,void> maSelectHdl;
 
@@ -43,7 +43,6 @@ private:
     vcl::KeyCode            maCurKeyCode;
     sal_uInt16              mnCurId;
     sal_uInt16              mnCurRepeat;
-    bool                    mbIsCancel;
     bool*                   mpDel;
 
     SAL_DLLPRIVATE  void    ImplInit();
@@ -73,7 +72,6 @@ public:
 
     sal_uInt16              GetItemCount() const;
     sal_uInt16              GetItemId( sal_uInt16 nPos ) const;
-    vcl::KeyCode            GetKeyCode( sal_uInt16 nItemId ) const;
 
     Accelerator*            GetAccel( sal_uInt16 nItemId ) const;
 
@@ -81,6 +79,9 @@ public:
     void                    SetSelectHdl( const Link<Accelerator&,void>& rLink ) { maSelectHdl = rLink; }
 
     Accelerator&            operator=( const Accelerator& rAccel );
+
+    static bool             ToggleMnemonicsOnHierarchy(const CommandEvent& rCEvent, vcl::Window *pWindow);
+    static void             GenerateAutoMnemonicsOnHierarchy(vcl::Window* pWindow);
 };
 
 #endif // INCLUDED_VCL_ACCEL_HXX

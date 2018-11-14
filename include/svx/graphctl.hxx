@@ -54,9 +54,9 @@ class SVX_DLLPUBLIC GraphCtrl : public Control
     bool                bAnim;
     bool                mbInIdleUpdate;
 
-                        DECL_LINK_TYPED( UpdateHdl, Idle*, void );
+                        DECL_LINK( UpdateHdl, Idle*, void );
 
-    SvxGraphCtrlAccessibleContext* mpAccContext;
+    rtl::Reference<SvxGraphCtrlAccessibleContext> mpAccContext;
 
 protected:
 
@@ -81,7 +81,7 @@ protected:
 public:
 
     GraphCtrl( vcl::Window* pParent, WinBits nStyle );
-    virtual ~GraphCtrl();
+    virtual ~GraphCtrl() override;
     virtual void dispose() override;
 
     void                SetWinStyle( WinBits nWinBits );
@@ -125,7 +125,7 @@ public:
         : rWin(rGraphWin)
     {}
 
-    virtual ~GraphCtrlUserCall()
+    virtual ~GraphCtrlUserCall() override
     {}
 
     virtual void Changed(const SdrObject& rObj, SdrUserCallType eType, const Rectangle& rOldBoundRect) override;
@@ -154,7 +154,7 @@ public:
         , rGraphCtrl(*pWindow)
     {}
 
-    virtual ~GraphCtrlView()
+    virtual ~GraphCtrlView() override
     {}
 };
 

@@ -183,7 +183,7 @@ void SwTextShell::ExecEnterNum(SfxRequest &rReq)
 
         SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
         OSL_ENSURE(pFact, "Dialog creation failed!");
-        std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateSwTabDialog( DLG_SVXTEST_NUM_BULLET,
+        ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateSwTabDialog( DLG_SVXTEST_NUM_BULLET,
                                                         GetView().GetWindow(), &aSet, GetShell()));
         OSL_ENSURE(pDlg, "Dialog creation failed!");
         const SfxStringItem* pPageItem = rReq.GetArg<SfxStringItem>(FN_PARAM_1);
@@ -252,11 +252,11 @@ void SwTextShell::ExecSetNumber(SfxRequest &rReq)
             if ( pItem != nullptr )
             {
                 const sal_uInt16 nChoosenItemIdx = pItem->GetValue();
-                sal_uInt16 nNBOType = svx::sidebar::eNBOType::BULLETS;
+                svx::sidebar::NBOType nNBOType = svx::sidebar::NBOType::Bullets;
                 if ( nSlot == FN_SVX_SET_NUMBER )
-                    nNBOType = svx::sidebar::eNBOType::NUMBERING;
+                    nNBOType = svx::sidebar::NBOType::Numbering;
                 else if ( nSlot == FN_SVX_SET_OUTLINE )
-                    nNBOType = svx::sidebar::eNBOType::OUTLINE;
+                    nNBOType = svx::sidebar::NBOType::Outline;
 
                 svx::sidebar::NBOTypeMgrBase* pNBOTypeMgr = svx::sidebar::NBOutlineTypeMgrFact::CreateInstance( nNBOType );
 

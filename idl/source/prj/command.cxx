@@ -83,8 +83,6 @@ char const * SyntaxStrings[] = {
 "\t\tFastCall",
 "\t\tGet, Set",
 "\t\tGroupId        = Identifier",
-"\t\tImageRotation",
-"\t\tImageReflection",
 "\t\tPseudoPrefix   = Identifier",
 "\t\tPseudoSlots",
 "\t\tReadOnlyDoc*",
@@ -144,7 +142,7 @@ static bool ResponseFile( StringList * pList, int argc, char ** argv )
     {
         if( '@' == **(argv +i) )
         { // when @, then response file
-            SvFileStream aStm( OUString::createFromAscii((*(argv +i)) +1), STREAM_STD_READ | StreamMode::NOCREATE );
+            SvFileStream aStm( OUString::createFromAscii((*(argv +i)) +1), StreamMode::STD_READ );
             if( aStm.GetError() != SVSTREAM_OK )
                 return false;
 
@@ -250,7 +248,7 @@ SvCommand::SvCommand( int argc, char ** argv )
                 { // define include paths
                     OUString aName( aParam.copy( 1 ) );
                     if( !aPath.isEmpty() )
-                        aPath += OUStringLiteral1<SAL_PATHSEPARATOR>();
+                        aPath += OUStringLiteral1(SAL_PATHSEPARATOR);
                     aPath += aName;
                 }
                 else if( aParam.startsWithIgnoreAsciiCase( "rsc" ) )
@@ -289,7 +287,7 @@ SvCommand::SvCommand( int argc, char ** argv )
     if( aInc.getLength() )
     {
         if( !aPath.isEmpty() )
-            aPath += OUStringLiteral1<SAL_PATHSEPARATOR>();
+            aPath += OUStringLiteral1(SAL_PATHSEPARATOR);
         aPath += OStringToOUString(aInc, RTL_TEXTENCODING_ASCII_US);
     }
 }

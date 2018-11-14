@@ -167,7 +167,7 @@ void  SwFormatTablePage::Init()
     m_pRelWidthCB->SetClickHdl(LINK( this, SwFormatTablePage, RelWidthClickHdl ));
 }
 
-IMPL_LINK_TYPED( SwFormatTablePage, RelWidthClickHdl, Button*, p, void )
+IMPL_LINK( SwFormatTablePage, RelWidthClickHdl, Button*, p, void )
 {
     CheckBox* pBtn = static_cast<CheckBox*>(p);
     OSL_ENSURE(pTableData, "table data not available?");
@@ -202,7 +202,7 @@ IMPL_LINK_TYPED( SwFormatTablePage, RelWidthClickHdl, Button*, p, void )
     bModified = true;
 }
 
-IMPL_LINK_TYPED( SwFormatTablePage, AutoClickHdl, Button*, pControl, void )
+IMPL_LINK( SwFormatTablePage, AutoClickHdl, Button*, pControl, void )
 {
     bool bRestore = true,
          bLeftEnable = false,
@@ -283,11 +283,11 @@ void SwFormatTablePage::RightModify()
     }
 }
 
-IMPL_LINK_TYPED( SwFormatTablePage, LoseFocusHdl, Control&, rControl, void )
+IMPL_LINK( SwFormatTablePage, LoseFocusHdl, Control&, rControl, void )
 {
     UpDownHdl(static_cast<SpinField&>(rControl));
 }
-IMPL_LINK_TYPED( SwFormatTablePage, UpDownHdl, SpinField&, rEdit, void )
+IMPL_LINK( SwFormatTablePage, UpDownHdl, SpinField&, rEdit, void )
 {
     if( m_aRightMF.get() == &rEdit)
         RightModify();
@@ -619,7 +619,7 @@ void    SwFormatTablePage::ActivatePage( const SfxItemSet& rSet )
 
 }
 
-SfxTabPage::sfxpg SwFormatTablePage::DeactivatePage( SfxItemSet* _pSet )
+DeactivateRC SwFormatTablePage::DeactivatePage( SfxItemSet* _pSet )
 {
     //os: VCL doesn't take care of making the active widget
     //in the dialog lose the focus
@@ -628,9 +628,9 @@ SfxTabPage::sfxpg SwFormatTablePage::DeactivatePage( SfxItemSet* _pSet )
     OUString sTableName = m_pNameED->GetText();
     if(sTableName.indexOf(' ') != -1)
     {
-        ScopedVclPtrInstance<MessageDialog>(this, SW_RES(STR_WRONG_TABLENAME), VCL_MESSAGE_INFO)->Execute();
+        ScopedVclPtrInstance<MessageDialog>(this, SW_RES(STR_WRONG_TABLENAME), VclMessageType::Info)->Execute();
         m_pNameED->GrabFocus();
-        return KEEP_PAGE;
+        return DeactivateRC::KeepPage;
     }
     if(_pSet)
     {
@@ -730,7 +730,7 @@ SfxTabPage::sfxpg SwFormatTablePage::DeactivatePage( SfxItemSet* _pSet )
                 _pSet->Put(SwPtrItem(FN_TABLE_REP, pTableData));
         }
     }
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 //Description: Page column configuration
@@ -867,7 +867,7 @@ void  SwTableColumnPage::Init(bool bWeb)
     m_pProportionalCB->SetClickHdl( aLk );
 }
 
-IMPL_LINK_TYPED( SwTableColumnPage, AutoClickHdl, Button*, pControl, void )
+IMPL_LINK( SwTableColumnPage, AutoClickHdl, Button*, pControl, void )
 {
     //move display window
     if(pControl == m_pDownBtn.get())
@@ -892,11 +892,6 @@ IMPL_LINK_TYPED( SwTableColumnPage, AutoClickHdl, Button*, pControl, void )
         OUString sIndex = OUString::number( aValueTable[i] + 1 );
         sEntry += sIndex;
         m_pTextArr[i]->SetText( sEntry );
-
-        //added by menghu for SODC_5143,12/12/2006
-        OUString sColumnWidth = SW_RESSTR( STR_ACCESS_COLUMN_WIDTH);
-        sColumnWidth = sColumnWidth.replaceFirst( "%1", sIndex );
-        m_aFieldArr[i].SetAccessibleName( sColumnWidth );
     }
 
     m_pDownBtn->Enable(aValueTable[0] > 0);
@@ -904,19 +899,19 @@ IMPL_LINK_TYPED( SwTableColumnPage, AutoClickHdl, Button*, pControl, void )
     UpdateCols(0);
 }
 
-IMPL_LINK_TYPED( SwTableColumnPage, UpHdl, SpinField&, rEdit, void )
+IMPL_LINK( SwTableColumnPage, UpHdl, SpinField&, rEdit, void )
 {
     bModified = true;
     ModifyHdl( static_cast<MetricField*>(&rEdit) );
 }
 
-IMPL_LINK_TYPED( SwTableColumnPage, DownHdl, SpinField&, rEdit, void )
+IMPL_LINK( SwTableColumnPage, DownHdl, SpinField&, rEdit, void )
 {
     bModified = true;
     ModifyHdl( static_cast<MetricField*>(&rEdit) );
 }
 
-IMPL_LINK_TYPED( SwTableColumnPage, LoseFocusHdl, Control&, rControl, void )
+IMPL_LINK( SwTableColumnPage, LoseFocusHdl, Control&, rControl, void )
 {
     MetricField* pEdit = static_cast<MetricField*>(&rControl);
     if (pEdit->IsModified())
@@ -926,7 +921,7 @@ IMPL_LINK_TYPED( SwTableColumnPage, LoseFocusHdl, Control&, rControl, void )
     }
 }
 
-IMPL_LINK_TYPED( SwTableColumnPage, ModeHdl, Button*, pBox, void )
+IMPL_LINK( SwTableColumnPage, ModeHdl, Button*, pBox, void )
 {
     bool bCheck = static_cast<CheckBox*>(pBox)->IsChecked();
     if (pBox == m_pProportionalCB)
@@ -1136,7 +1131,7 @@ void    SwTableColumnPage::ActivatePage( const SfxItemSet& )
 
 }
 
-SfxTabPage::sfxpg SwTableColumnPage::DeactivatePage( SfxItemSet* _pSet )
+DeactivateRC SwTableColumnPage::DeactivatePage( SfxItemSet* _pSet )
 {
     if(_pSet)
     {
@@ -1195,7 +1190,7 @@ SfxTabPage::sfxpg SwTableColumnPage::DeactivatePage( SfxItemSet* _pSet )
         }
         _pSet->Put(SwPtrItem( FN_TABLE_REP, pTableData ));
     }
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 SwTwips  SwTableColumnPage::GetVisibleWidth(sal_uInt16 nPos)
@@ -1300,12 +1295,6 @@ SwTextFlowPage::SwTextFlowPage(vcl::Window* pParent, const SfxItemSet& rSet)
 
     get(m_pTextDirectionLB, "textdirection");
     get(m_pVertOrientLB, "vertorient");
-
-    m_pPgBrkRB->SetAccessibleRelationMemberOf(m_pPgBrkCB);
-    m_pColBrkRB->SetAccessibleRelationMemberOf(m_pPgBrkCB);
-    m_pPgBrkBeforeRB->SetAccessibleRelationMemberOf(m_pPgBrkCB);
-    m_pPgBrkAfterRB->SetAccessibleRelationMemberOf(m_pPgBrkCB);
-    m_pPageCollLB->SetAccessibleName(m_pPageCollCB->GetText());
 
     m_pPgBrkCB->SetClickHdl(LINK(this, SwTextFlowPage, PageBreakHdl_Impl));
     m_pPgBrkBeforeRB->SetClickHdl(
@@ -1442,21 +1431,21 @@ bool  SwTextFlowPage::FillItemSet( SfxItemSet* rSet )
             if ( m_pPgBrkRB->IsChecked() )
             {
                 if ( bBefore )
-                    aBreak.SetValue( SVX_BREAK_PAGE_BEFORE );
+                    aBreak.SetValue( SvxBreak::PageBefore );
                 else
-                    aBreak.SetValue( SVX_BREAK_PAGE_AFTER );
+                    aBreak.SetValue( SvxBreak::PageAfter );
             }
             else
             {
                 if ( bBefore )
-                    aBreak.SetValue( SVX_BREAK_COLUMN_BEFORE );
+                    aBreak.SetValue( SvxBreak::ColumnBefore );
                 else
-                    aBreak.SetValue( SVX_BREAK_COLUMN_AFTER );
+                    aBreak.SetValue( SvxBreak::ColumnAfter );
             }
         }
         else
         {
-                aBreak.SetValue( SVX_BREAK_NONE );
+                aBreak.SetValue( SvxBreak::NONE );
         }
 
         if ( !pBreak || !( *pBreak == aBreak ) )
@@ -1586,9 +1575,9 @@ void   SwTextFlowPage::Reset( const SfxItemSet* rSet )
             if(SfxItemState::SET == rSet->GetItemState( RES_BREAK, false, &pItem ))
             {
                 const SvxFormatBreakItem* pPageBreak = static_cast<const SvxFormatBreakItem*>(pItem);
-                SvxBreak eBreak = (SvxBreak)pPageBreak->GetValue();
+                SvxBreak eBreak = pPageBreak->GetBreak();
 
-                if ( eBreak != SVX_BREAK_NONE )
+                if ( eBreak != SvxBreak::NONE )
                 {
                     m_pPgBrkCB->Check();
                     m_pPageCollCB->Enable(false);
@@ -1598,25 +1587,25 @@ void   SwTextFlowPage::Reset( const SfxItemSet* rSet )
                 }
                 switch ( eBreak )
                 {
-                    case SVX_BREAK_PAGE_BEFORE:
+                    case SvxBreak::PageBefore:
                         m_pPgBrkRB->Check();
                         m_pColBrkRB->Check( false );
                         m_pPgBrkBeforeRB->Check();
                         m_pPgBrkAfterRB->Check( false );
                         break;
-                    case SVX_BREAK_PAGE_AFTER:
+                    case SvxBreak::PageAfter:
                         m_pPgBrkRB->Check();
                         m_pColBrkRB->Check( false );
                         m_pPgBrkBeforeRB->Check( false );
                         m_pPgBrkAfterRB->Check();
                         break;
-                    case SVX_BREAK_COLUMN_BEFORE:
+                    case SvxBreak::ColumnBefore:
                         m_pPgBrkRB->Check( false );
                         m_pColBrkRB->Check();
                         m_pPgBrkBeforeRB->Check();
                         m_pPgBrkAfterRB->Check( false );
                         break;
-                    case SVX_BREAK_COLUMN_AFTER:
+                    case SvxBreak::ColumnAfter:
                         m_pPgBrkRB->Check( false );
                         m_pColBrkRB->Check();
                         m_pPgBrkBeforeRB->Check( false );
@@ -1700,7 +1689,7 @@ void SwTextFlowPage::SetShell(SwWrtShell* pSh)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SwTextFlowPage, PageBreakHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SwTextFlowPage, PageBreakHdl_Impl, Button*, void)
 {
     if( m_pPgBrkCB->IsChecked() )
     {
@@ -1737,7 +1726,7 @@ IMPL_LINK_NOARG_TYPED(SwTextFlowPage, PageBreakHdl_Impl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SwTextFlowPage, ApplyCollClickHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SwTextFlowPage, ApplyCollClickHdl_Impl, Button*, void)
 {
     bool bEnable = false;
     if ( m_pPageCollCB->IsChecked() &&
@@ -1758,7 +1747,7 @@ IMPL_LINK_NOARG_TYPED(SwTextFlowPage, ApplyCollClickHdl_Impl, Button*, void)
     }
 }
 
-IMPL_LINK_TYPED( SwTextFlowPage, PageBreakPosHdl_Impl, Button*, pBtn, void )
+IMPL_LINK( SwTextFlowPage, PageBreakPosHdl_Impl, Button*, pBtn, void )
 {
     if ( m_pPgBrkCB->IsChecked() )
     {
@@ -1787,7 +1776,7 @@ IMPL_LINK_TYPED( SwTextFlowPage, PageBreakPosHdl_Impl, Button*, pBtn, void )
     }
 }
 
-IMPL_LINK_TYPED( SwTextFlowPage, PageBreakTypeHdl_Impl, Button*, pBtn, void )
+IMPL_LINK( SwTextFlowPage, PageBreakTypeHdl_Impl, Button*, pBtn, void )
 {
     if ( pBtn == m_pColBrkRB || m_pPgBrkAfterRB->IsChecked() )
     {
@@ -1801,23 +1790,23 @@ IMPL_LINK_TYPED( SwTextFlowPage, PageBreakTypeHdl_Impl, Button*, pBtn, void )
         PageBreakPosHdl_Impl(m_pPgBrkBeforeRB);
 }
 
-IMPL_LINK_NOARG_TYPED(SwTextFlowPage, PageNoClickHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SwTextFlowPage, PageNoClickHdl_Impl, Button*, void)
 {
     m_pPageNoNF->Enable(m_pPageNoCB->IsChecked());
 }
 
-IMPL_LINK_TYPED( SwTextFlowPage, SplitHdl_Impl, Button*, pBox, void )
+IMPL_LINK( SwTextFlowPage, SplitHdl_Impl, Button*, pBox, void )
 {
     m_pSplitRowCB->Enable(static_cast<CheckBox*>(pBox)->IsChecked());
 }
 
-IMPL_STATIC_LINK_TYPED(
+IMPL_STATIC_LINK(
     SwTextFlowPage, SplitRowHdl_Impl, Button*, pBox, void )
 {
     static_cast<TriStateBox*>(pBox)->EnableTriState(false);
 }
 
-IMPL_LINK_NOARG_TYPED(SwTextFlowPage, HeadLineCBClickHdl, Button*, void)
+IMPL_LINK_NOARG(SwTextFlowPage, HeadLineCBClickHdl, Button*, void)
 {
     m_pRepeatHeaderCombo->Enable(m_pHeadLineCB->IsChecked());
 }

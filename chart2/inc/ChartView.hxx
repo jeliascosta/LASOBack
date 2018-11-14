@@ -58,8 +58,7 @@ struct CreateShapeParam2D;
 enum TimeBasedMode
 {
     MANUAL,
-    AUTOMATIC,
-    AUTOMATIC_WRAP
+    AUTOMATIC
 };
 
 struct TimeBasedInfo
@@ -111,7 +110,7 @@ public:
     ChartView(css::uno::Reference< css::uno::XComponentContext > const & xContext,
                ChartModel& rModel);
 
-    virtual ~ChartView();
+    virtual ~ChartView() override;
 
     // ___lang::XServiceInfo___
     virtual OUString SAL_CALL getImplementationName()
@@ -120,9 +119,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // ___lang::XInitialization___
     virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
@@ -230,7 +226,7 @@ private: //methods
 
     css::awt::Rectangle impl_createDiagramAndContent( const CreateShapeParam2D& rParam, const css::awt::Size& rPageSize );
 
-    DECL_LINK_TYPED( UpdateTimeBased, Timer*, void );
+    DECL_LINK( UpdateTimeBased, Timer*, void );
 
 private: //member
     ::osl::Mutex m_aMutex;

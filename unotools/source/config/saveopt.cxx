@@ -97,7 +97,7 @@ class SvtSaveOptions_Impl : public utl::ConfigItem
 
 public:
                             SvtSaveOptions_Impl();
-                            virtual ~SvtSaveOptions_Impl();
+                            virtual ~SvtSaveOptions_Impl() override;
 
     virtual void            Notify( const css::uno::Sequence< OUString >& aPropertyNames ) override;
 
@@ -770,7 +770,7 @@ private:
 
 public:
                             SvtLoadOptions_Impl();
-                            virtual ~SvtLoadOptions_Impl();
+                            virtual ~SvtLoadOptions_Impl() override;
 
     virtual void            Notify( const css::uno::Sequence< OUString >& aPropertyNames ) override;
 
@@ -789,8 +789,7 @@ SvtLoadOptions_Impl::SvtLoadOptions_Impl()
     EnableNotification( aNames );
     const Any* pValues = aValues.getConstArray();
     DBG_ASSERT( aValues.getLength() == aNames.getLength(), "GetProperties failed" );
-    if (pValues[0].getValueTypeClass() == css::uno::TypeClass_BOOLEAN)
-         bLoadUserDefinedSettings = *static_cast<sal_Bool const *>(pValues[0].getValue());
+    pValues[0] >>= bLoadUserDefinedSettings;
 }
 
 SvtLoadOptions_Impl::~SvtLoadOptions_Impl()

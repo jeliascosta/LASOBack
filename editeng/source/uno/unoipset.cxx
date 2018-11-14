@@ -26,6 +26,7 @@
 #include <editeng/editids.hrc>
 #include <editeng/editeng.hxx>
 #include <svl/itempool.hxx>
+#include <o3tl/any.hxx>
 #include <osl/diagnose.h>
 #include <algorithm>
 
@@ -102,9 +103,9 @@ uno::Any SvxItemPropertySet::getPropertyValue( const SfxItemPropertySimpleEntry*
     if( nullptr == pItem && pPool )
         pItem = &(pPool->GetDefaultItem( pMap->nWID ));
 
-    const SfxMapUnit eMapUnit = pPool ? pPool->GetMetric((sal_uInt16)pMap->nWID) : SFX_MAPUNIT_100TH_MM;
+    const MapUnit eMapUnit = pPool ? pPool->GetMetric((sal_uInt16)pMap->nWID) : MapUnit::Map100thMM;
     sal_uInt8 nMemberId = pMap->nMemberId & (~SFX_METRIC_ITEM);
-    if( eMapUnit == SFX_MAPUNIT_100TH_MM )
+    if( eMapUnit == MapUnit::Map100thMM )
         nMemberId &= (~CONVERT_TWIPS);
 
     if(pItem)
@@ -112,7 +113,7 @@ uno::Any SvxItemPropertySet::getPropertyValue( const SfxItemPropertySimpleEntry*
         pItem->QueryValue( aVal, nMemberId );
         if( pMap->nMemberId & SFX_METRIC_ITEM )
         {
-            if( eMapUnit != SFX_MAPUNIT_100TH_MM )
+            if( eMapUnit != MapUnit::Map100thMM )
             {
                 if ( !bDontConvertNegativeValues || SvxUnoCheckForPositiveValue( aVal ) )
                     SvxUnoConvertToMM( eMapUnit, aVal );
@@ -163,10 +164,10 @@ void SvxItemPropertySet::setPropertyValue( const SfxItemPropertySimpleEntry* pMa
     {
         uno::Any aValue( rVal );
 
-        const SfxMapUnit eMapUnit = pPool ? pPool->GetMetric((sal_uInt16)pMap->nWID) : SFX_MAPUNIT_100TH_MM;
+        const MapUnit eMapUnit = pPool ? pPool->GetMetric((sal_uInt16)pMap->nWID) : MapUnit::Map100thMM;
 
         // check for needed metric translation
-        if( (pMap->nMemberId & SFX_METRIC_ITEM) && eMapUnit != SFX_MAPUNIT_100TH_MM )
+        if( (pMap->nMemberId & SFX_METRIC_ITEM) && eMapUnit != MapUnit::Map100thMM )
         {
             if ( !bDontConvertNegativeValues || SvxUnoCheckForPositiveValue( aValue ) )
                 SvxUnoConvertFromMM( eMapUnit, aValue );
@@ -175,13 +176,14 @@ void SvxItemPropertySet::setPropertyValue( const SfxItemPropertySimpleEntry* pMa
         SfxPoolItem *pNewItem = pItem->Clone();
 
         sal_uInt8 nMemberId = pMap->nMemberId & (~SFX_METRIC_ITEM);
-        if( eMapUnit == SFX_MAPUNIT_100TH_MM )
+        if( eMapUnit == MapUnit::Map100thMM )
             nMemberId &= (~CONVERT_TWIPS);
 
         if( pNewItem->PutValue( aValue, nMemberId ) )
         {
             // Set new item in item set
-            rSet.Put( *pNewItem, pMap->nWID );
+            pNewItem->SetWhich( pMap->nWID );
+            rSet.Put( *pNewItem );
         }
         delete pNewItem;
     }
@@ -196,9 +198,9 @@ uno::Any SvxItemPropertySet::getPropertyValue( const SfxItemPropertySimpleEntry*
         return *pUsrAny;
 
     // No UsrAny detected yet, generate Default entry and return this
-    const SfxMapUnit eMapUnit = mrItemPool.GetMetric((sal_uInt16)pMap->nWID);
+    const MapUnit eMapUnit = mrItemPool.GetMetric((sal_uInt16)pMap->nWID);
     sal_uInt8 nMemberId = pMap->nMemberId & (~SFX_METRIC_ITEM);
-    if( eMapUnit == SFX_MAPUNIT_100TH_MM )
+    if( eMapUnit == MapUnit::Map100thMM )
         nMemberId &= (~CONVERT_TWIPS);
     uno::Any aVal;
     SfxItemSet aSet( mrItemPool, pMap->nWID, pMap->nWID);
@@ -224,7 +226,7 @@ uno::Any SvxItemPropertySet::getPropertyValue( const SfxItemPropertySimpleEntry*
     if( pMap->nMemberId & SFX_METRIC_ITEM )
     {
         // check for needed metric translation
-        if(pMap->nMemberId & SFX_METRIC_ITEM && eMapUnit != SFX_MAPUNIT_100TH_MM)
+        if(pMap->nMemberId & SFX_METRIC_ITEM && eMapUnit != MapUnit::Map100thMM)
         {
             SvxUnoConvertToMM( eMapUnit, aVal );
         }
@@ -259,7 +261,7 @@ const SfxItemPropertySimpleEntry* SvxItemPropertySet::getPropertyMapEntry(const 
  }
 
 
-uno::Reference< beans::XPropertySetInfo >  SvxItemPropertySet::getPropertySetInfo() const
+uno::Reference< beans::XPropertySetInfo > const &  SvxItemPropertySet::getPropertySetInfo() const
 {
     if( !m_xInfo.is() )
         m_xInfo = new SfxItemPropertySetInfo( m_aPropertyMap );
@@ -275,32 +277,32 @@ uno::Reference< beans::XPropertySetInfo >  SvxItemPropertySet::getPropertySetInf
 #endif
 
 /** converts the given any with a metric to 100th/mm if needed */
-void SvxUnoConvertToMM( const SfxMapUnit eSourceMapUnit, uno::Any & rMetric ) throw()
+void SvxUnoConvertToMM( const MapUnit eSourceMapUnit, uno::Any & rMetric ) throw()
 {
     // map the metric of the itempool to 100th mm
     switch(eSourceMapUnit)
     {
-        case SFX_MAPUNIT_TWIP :
+        case MapUnit::MapTwip :
         {
             switch( rMetric.getValueTypeClass() )
             {
             case uno::TypeClass_BYTE:
-                rMetric <<= (sal_Int8)(TWIPS_TO_MM(*static_cast<sal_Int8 const *>(rMetric.getValue())));
+                rMetric <<= (sal_Int8)(TWIPS_TO_MM(*o3tl::forceAccess<sal_Int8>(rMetric)));
                 break;
             case uno::TypeClass_SHORT:
-                rMetric <<= (sal_Int16)(TWIPS_TO_MM(*static_cast<sal_Int16 const *>(rMetric.getValue())));
+                rMetric <<= (sal_Int16)(TWIPS_TO_MM(*o3tl::forceAccess<sal_Int16>(rMetric)));
                 break;
             case uno::TypeClass_UNSIGNED_SHORT:
-                rMetric <<= (sal_uInt16)(TWIPS_TO_MM(*static_cast<sal_uInt16 const *>(rMetric.getValue())));
+                rMetric <<= (sal_uInt16)(TWIPS_TO_MM(*o3tl::forceAccess<sal_uInt16>(rMetric)));
                 break;
             case uno::TypeClass_LONG:
-                rMetric <<= (sal_Int32)(TWIPS_TO_MM(*static_cast<sal_Int32 const *>(rMetric.getValue())));
+                rMetric <<= (sal_Int32)(TWIPS_TO_MM(*o3tl::forceAccess<sal_Int32>(rMetric)));
                 break;
             case uno::TypeClass_UNSIGNED_LONG:
-                rMetric <<= (sal_uInt32)(TWIPS_TO_MM(*static_cast<sal_uInt32 const *>(rMetric.getValue())));
+                rMetric <<= (sal_uInt32)(TWIPS_TO_MM(*o3tl::forceAccess<sal_uInt32>(rMetric)));
                 break;
             default:
-                OSL_FAIL("AW: Missing unit translation to 100th mm!");
+                OSL_FAIL(OString("AW: Missing unit translation to 100th mm, " + OString::number(rMetric.getValueTypeClass())).getStr());
             }
             break;
         }
@@ -313,28 +315,28 @@ void SvxUnoConvertToMM( const SfxMapUnit eSourceMapUnit, uno::Any & rMetric ) th
 
 
 /** converts the given any with a metric from 100th/mm to the given metric if needed */
-void SvxUnoConvertFromMM( const SfxMapUnit eDestinationMapUnit, uno::Any & rMetric ) throw()
+void SvxUnoConvertFromMM( const MapUnit eDestinationMapUnit, uno::Any & rMetric ) throw()
 {
     switch(eDestinationMapUnit)
     {
-        case SFX_MAPUNIT_TWIP :
+        case MapUnit::MapTwip :
         {
             switch( rMetric.getValueTypeClass() )
             {
                 case uno::TypeClass_BYTE:
-                    rMetric <<= (sal_Int8)(MM_TO_TWIPS(*static_cast<sal_Int8 const *>(rMetric.getValue())));
+                    rMetric <<= (sal_Int8)(MM_TO_TWIPS(*o3tl::forceAccess<sal_Int8>(rMetric)));
                     break;
                 case uno::TypeClass_SHORT:
-                    rMetric <<= (sal_Int16)(MM_TO_TWIPS(*static_cast<sal_Int16 const *>(rMetric.getValue())));
+                    rMetric <<= (sal_Int16)(MM_TO_TWIPS(*o3tl::forceAccess<sal_Int16>(rMetric)));
                     break;
                 case uno::TypeClass_UNSIGNED_SHORT:
-                    rMetric <<= (sal_uInt16)(MM_TO_TWIPS(*static_cast<sal_uInt16 const *>(rMetric.getValue())));
+                    rMetric <<= (sal_uInt16)(MM_TO_TWIPS(*o3tl::forceAccess<sal_uInt16>(rMetric)));
                     break;
                 case uno::TypeClass_LONG:
-                    rMetric <<= (sal_Int32)(MM_TO_TWIPS(*static_cast<sal_Int32 const *>(rMetric.getValue())));
+                    rMetric <<= (sal_Int32)(MM_TO_TWIPS(*o3tl::forceAccess<sal_Int32>(rMetric)));
                     break;
                 case uno::TypeClass_UNSIGNED_LONG:
-                    rMetric <<= (sal_uInt32)(MM_TO_TWIPS(*static_cast<sal_uInt32 const *>(rMetric.getValue())));
+                    rMetric <<= (sal_uInt32)(MM_TO_TWIPS(*o3tl::forceAccess<sal_uInt32>(rMetric)));
                     break;
                 default:
                     OSL_FAIL("AW: Missing unit translation to 100th mm!");

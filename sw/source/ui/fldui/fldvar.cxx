@@ -67,7 +67,7 @@ SwFieldVarPage::SwFieldVarPage(vcl::Window* pParent, const SfxItemSet *const pCo
     m_pSelectionLB->set_height_request(nHeight);
     m_pFormatLB->set_height_request(nHeight/2);
 
-    long nWidth = m_pTypeLB->LogicToPixel(Size(FIELD_COLUMN_WIDTH, 0), MapMode(MAP_APPFONT)).Width();
+    long nWidth = m_pTypeLB->LogicToPixel(Size(FIELD_COLUMN_WIDTH, 0), MapMode(MapUnit::MapAppFont)).Width();
     m_pTypeLB->set_width_request(nWidth);
     m_pSelectionLB->set_width_request(nWidth);
     m_pFormatLB->set_width_request(nWidth);
@@ -207,7 +207,7 @@ void SwFieldVarPage::Reset(const SfxItemSet* )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SwFieldVarPage, TypeHdl, ListBox&, void)
+IMPL_LINK_NOARG(SwFieldVarPage, TypeHdl, ListBox&, void)
 {
     // save old ListBoxPos
     const sal_Int32 nOld = GetTypeSel();
@@ -237,7 +237,7 @@ IMPL_LINK_NOARG_TYPED(SwFieldVarPage, TypeHdl, ListBox&, void)
     bInit = false;
 }
 
-IMPL_LINK_TYPED( SwFieldVarPage, SubTypeListBoxHdl, ListBox&, rBox, void )
+IMPL_LINK( SwFieldVarPage, SubTypeListBoxHdl, ListBox&, rBox, void )
 {
     SubTypeHdl(&rBox);
 }
@@ -473,8 +473,8 @@ void SwFieldVarPage::SubTypeHdl(ListBox* pBox)
                         //              That's not considered here yet
                         OUString sCmd( pType->GetCmd() );
                         sal_Int32 nTmpPos = 0;
-                        sCmd = sCmd.replaceFirst( OUString(sfx2::cTokenSeparator), " ", &nTmpPos );
-                        sCmd = sCmd.replaceFirst( OUString(sfx2::cTokenSeparator), " ", &nTmpPos );
+                        sCmd = sCmd.replaceFirst( OUStringLiteral1(sfx2::cTokenSeparator), " ", &nTmpPos );
+                        sCmd = sCmd.replaceFirst( OUStringLiteral1(sfx2::cTokenSeparator), " ", &nTmpPos );
 
                         m_pValueED->SetText( sCmd );
                         m_pFormatLB->SelectEntryPos(static_cast<int>(pType->GetType()));
@@ -829,7 +829,7 @@ void SwFieldVarPage::FillFormatLB(sal_uInt16 nTypeId)
 }
 
 // Modify
-IMPL_LINK_NOARG_TYPED(SwFieldVarPage, ModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(SwFieldVarPage, ModifyHdl, Edit&, void)
 {
     OUString sValue(m_pValueED->GetText());
     bool bHasValue = !sValue.isEmpty();
@@ -952,7 +952,7 @@ IMPL_LINK_NOARG_TYPED(SwFieldVarPage, ModifyHdl, Edit&, void)
     EnableInsert(bInsert);
 }
 
-IMPL_LINK_TYPED( SwFieldVarPage, TBClickHdl, ToolBox *, pBox, void )
+IMPL_LINK( SwFieldVarPage, TBClickHdl, ToolBox *, pBox, void )
 {
     const sal_uInt16 nTypeId = (sal_uInt16)reinterpret_cast<sal_uLong>(m_pTypeLB->GetEntryData(GetTypeSel()));
 
@@ -1040,8 +1040,8 @@ IMPL_LINK_TYPED( SwFieldVarPage, TBClickHdl, ToolBox *, pBox, void )
                         // DDE-Topics/-Items can have blanks in their names!
                         //  That's not being considered here yet.
                         sal_Int32 nTmpPos = 0;
-                        sValue = sValue.replaceFirst( " ", OUString(sfx2::cTokenSeparator), &nTmpPos );
-                        sValue = sValue.replaceFirst( " ", OUString(sfx2::cTokenSeparator), &nTmpPos );
+                        sValue = sValue.replaceFirst( " ", OUStringLiteral1(sfx2::cTokenSeparator), &nTmpPos );
+                        sValue = sValue.replaceFirst( " ", OUStringLiteral1(sfx2::cTokenSeparator), &nTmpPos );
                         static_cast<SwDDEFieldType*>(pType)->SetCmd(sValue);
                         static_cast<SwDDEFieldType*>(pType)->SetType(static_cast<SfxLinkUpdateMode>(nFormat));
                     }
@@ -1079,8 +1079,8 @@ IMPL_LINK_TYPED( SwFieldVarPage, TBClickHdl, ToolBox *, pBox, void )
                     // DDE-Topics/-Items can have blanks in their names!
                     //  That's not being considered here yet.
                     sal_Int32 nTmpPos = 0;
-                    sValue = sValue.replaceFirst( " ", OUString(sfx2::cTokenSeparator), &nTmpPos );
-                    sValue = sValue.replaceFirst( " ", OUString(sfx2::cTokenSeparator), &nTmpPos );
+                    sValue = sValue.replaceFirst( " ", OUStringLiteral1(sfx2::cTokenSeparator), &nTmpPos );
+                    sValue = sValue.replaceFirst( " ", OUStringLiteral1(sfx2::cTokenSeparator), &nTmpPos );
 
                     SwDDEFieldType aType(sName, sValue, static_cast<SfxLinkUpdateMode>(nFormat));
                     m_pSelectionLB->InsertEntry(sName);
@@ -1096,7 +1096,7 @@ IMPL_LINK_TYPED( SwFieldVarPage, TBClickHdl, ToolBox *, pBox, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SwFieldVarPage, ChapterHdl, ListBox&, void)
+IMPL_LINK_NOARG(SwFieldVarPage, ChapterHdl, ListBox&, void)
 {
     bool bEnable = m_pChapterLevelLB->GetSelectEntryPos() != 0;
 
@@ -1105,7 +1105,7 @@ IMPL_LINK_NOARG_TYPED(SwFieldVarPage, ChapterHdl, ListBox&, void)
     SeparatorHdl(*m_pSeparatorED);
 }
 
-IMPL_LINK_NOARG_TYPED(SwFieldVarPage, SeparatorHdl, Edit&, void)
+IMPL_LINK_NOARG(SwFieldVarPage, SeparatorHdl, Edit&, void)
 {
     bool bEnable = !m_pSeparatorED->GetText().isEmpty() ||
                     m_pChapterLevelLB->GetSelectEntryPos() == 0;

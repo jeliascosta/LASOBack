@@ -44,7 +44,7 @@ public:
     ~ImpSvNumberformatScan();
     void ChangeIntl(); // Replaces Keywords
 
-    void ChangeNullDate(sal_uInt16 nDay, sal_uInt16 nMonth, sal_uInt16 nYear); // Replaces reference date
+    void ChangeNullDate(sal_uInt16 nDay, sal_uInt16 nMonth, sal_Int16 nYear); // Replaces reference date
     void ChangeStandardPrec(sal_uInt16 nPrec); // Replaces standard precision
 
     sal_Int32 ScanFormat( OUString& rString ); // Call scan analysis
@@ -154,6 +154,7 @@ private: // Private section
     OUString sNameStandardFormat;               // "Standard"
     sal_uInt16 nStandardPrec;                   // Default Precision for Standardformat
     SvNumberFormatter* pFormatter;              // Pointer to the FormatList
+    css::uno::Reference< css::i18n::XNumberFormatCode > xNFC;
 
     OUString sStrArray[NF_MAX_FORMAT_SYMBOLS];  // Array of symbols
     short nTypeArray[NF_MAX_FORMAT_SYMBOLS];    // Array of infos

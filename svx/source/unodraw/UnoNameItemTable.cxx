@@ -69,7 +69,7 @@ void SvxUnoNameItemTable::Notify( SfxBroadcaster&, const SfxHint& rHint ) throw(
 {
     const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>(&rHint);
 
-    if( pSdrHint && HINT_MODELCLEARED == pSdrHint->GetKind() )
+    if( pSdrHint && SdrHintKind::ModelCleared == pSdrHint->GetKind() )
         dispose();
 }
 
@@ -85,7 +85,8 @@ void SAL_CALL SvxUnoNameItemTable::ImplInsertByName( const OUString& aName, cons
     std::unique_ptr<NameOrIndex> pNewItem(createItem());
     pNewItem->SetName( aName );
     pNewItem->PutValue( aElement, mnMemberId );
-    maItemSetVector.back()->Put( *pNewItem, mnWhich );
+    pNewItem->SetWhich(mnWhich);
+    maItemSetVector.back()->Put( *pNewItem );
 }
 
 // XNameContainer
@@ -240,7 +241,7 @@ uno::Sequence< OUString > SAL_CALL SvxUnoNameItemTable::getElementNames(  )
         aNameSet.insert(aApiName);
     }
 
-    return comphelper::containerToSequence<OUString>(aNameSet);
+    return comphelper::containerToSequence(aNameSet);
 }
 
 sal_Bool SAL_CALL SvxUnoNameItemTable::hasByName( const OUString& aApiName )

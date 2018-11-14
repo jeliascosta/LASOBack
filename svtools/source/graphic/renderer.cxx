@@ -73,7 +73,7 @@ uno::Any SAL_CALL GraphicRendererVCL::queryAggregation( const uno::Type & rType 
     else if( rType == cppu::UnoType<graphic::XGraphicRenderer>::get())
         aAny <<= uno::Reference< graphic::XGraphicRenderer >(this);
     else
-        aAny <<= OWeakAggObject::queryAggregation( rType );
+        aAny = OWeakAggObject::queryAggregation( rType );
 
     return aAny;
 }
@@ -208,7 +208,7 @@ void GraphicRendererVCL::_setPropertyValues( const comphelper::PropertyMapEntry*
 
             case UNOGRAPHIC_RENDERDATA:
             {
-                *pValues >>= maRenderData;
+                 maRenderData = *pValues;
             }
             break;
         }
@@ -246,7 +246,7 @@ void GraphicRendererVCL::_getPropertyValues( const comphelper::PropertyMapEntry*
 
             case UNOGRAPHIC_RENDERDATA:
             {
-                *pValues <<= maRenderData;
+                *pValues = maRenderData;
             }
             break;
         }

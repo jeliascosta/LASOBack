@@ -64,15 +64,15 @@ class ODocumentDefinition
     css::uno::Reference< css::embed::XStateChangeListener >   m_xListener;
     css::uno::Reference< css::sdbc::XConnection >             m_xLastKnownConnection;
 
-    OInterceptor*                                             m_pInterceptor;
+    rtl::Reference<OInterceptor>                              m_pInterceptor;
     bool                                                      m_bForm; // <TRUE/> if it is a form
     bool                                                      m_bOpenInDesign;
     bool                                                      m_bInExecute;
     bool                                                      m_bRemoveListener;
-    OEmbeddedClientHelper*                                    m_pClientHelper;
+    rtl::Reference<OEmbeddedClientHelper>                     m_pClientHelper;
 
 protected:
-    virtual ~ODocumentDefinition();
+    virtual ~ODocumentDefinition() override;
 
 public:
 
@@ -204,7 +204,7 @@ private:
     static void impl_initFormEditView( const css::uno::Reference< css::frame::XController >& _rxController );
 
     /** removes the given frame from the desktop's frame collection
-        @raises css::uno::RuntimeException
+        @throws css::uno::RuntimeException
     */
     static void impl_removeFrameFromDesktop_throw(
                     const css::uno::Reference< css::uno::XComponentContext >& _rContxt,

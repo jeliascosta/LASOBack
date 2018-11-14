@@ -359,7 +359,7 @@ void SwFlyCntPortion::SetBase( const SwTextFrame& rFrame, const Point &rBase,
     if (rAnchor.GetAnchorId() == FLY_AS_CHAR)
     {
         // This is an inline draw shape, see if it has a textbox.
-        SwFrameFormat* pTextBox = SwTextBoxHelper::findTextBox(pShape);
+        SwFrameFormat* pTextBox = SwTextBoxHelper::getOtherTextBoxFormat(pShape, RES_DRAWFRMFMT);
         if (pTextBox)
         {
             // It has, so look up its text rectangle, and adjust the position
@@ -417,12 +417,6 @@ void SwFlyCntPortion::SetBase( const SwTextFrame& rFrame, const Point &rBase,
 void SwFlyCntPortion::GetFlyCursorOfst(Point &rPoint, SwPosition &rPos, SwCursorMoveState* pCMS) const
 {
     GetFlyFrame()->GetCursorOfst(&rPos, rPoint, pCMS);
-}
-
-sal_Int32 SwFlyCntPortion::GetCursorOfst( const sal_uInt16 nOfst ) const
-{
-    // OSL_FAIL("SwFlyCntPortion::GetCursorOfst: use GetFlyCursorOfst()");
-    return SwLinePortion::GetCursorOfst( nOfst );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

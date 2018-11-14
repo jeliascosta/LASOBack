@@ -55,7 +55,7 @@ class ODocumentCloser : public ::cppu::WeakImplHelper< css::lang::XComponent,
 
 public:
     explicit ODocumentCloser(const css::uno::Sequence< css::uno::Any >& aArguments);
-    virtual ~ODocumentCloser();
+    virtual ~ODocumentCloser() override;
 
 // XComponent
     virtual void SAL_CALL dispose() throw (css::uno::RuntimeException, std::exception) override;
@@ -77,7 +77,7 @@ class MainThreadFrameCloserRequest
         : m_xFrame( xFrame )
         {}
 
-        DECL_STATIC_LINK_TYPED( MainThreadFrameCloserRequest, worker, void*, void );
+        DECL_STATIC_LINK( MainThreadFrameCloserRequest, worker, void*, void );
 
         static void Start( MainThreadFrameCloserRequest* pRequest );
 };
@@ -98,7 +98,7 @@ void MainThreadFrameCloserRequest::Start( MainThreadFrameCloserRequest* pMTReque
 }
 
 
-IMPL_STATIC_LINK_TYPED( MainThreadFrameCloserRequest, worker, void*, p, void )
+IMPL_STATIC_LINK( MainThreadFrameCloserRequest, worker, void*, p, void )
 {
     MainThreadFrameCloserRequest* pMTRequest = static_cast<MainThreadFrameCloserRequest*>(p);
     if ( pMTRequest )
@@ -118,7 +118,7 @@ IMPL_STATIC_LINK_TYPED( MainThreadFrameCloserRequest, worker, void*, p, void )
                 // reparent the window
                 xWinPeer->setProperty( "PluginParent", uno::makeAny( (sal_Int64) 0 ) );
 
-                vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow );
+                VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
                 if ( pWindow )
                     Dialog::EndAllDialogs( pWindow );
             }

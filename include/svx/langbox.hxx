@@ -61,7 +61,7 @@ private:
     SvxLanguageBoxBase(const SvxLanguageBoxBase&) = delete;
     SvxLanguageBoxBase& operator=(const SvxLanguageBoxBase&) = delete;
 public:
-    explicit SvxLanguageBoxBase( bool bCheck );
+    explicit SvxLanguageBoxBase();
     virtual ~SvxLanguageBoxBase();
 
     void            SetLanguageList( SvxLanguageListFlags nLangList,
@@ -149,11 +149,11 @@ class SVX_DLLPUBLIC SvxLanguageComboBox : public ComboBox, public SvxLanguageBox
 public:
     SvxLanguageComboBox( vcl::Window* pParent, WinBits nBits );
 
-    enum EditedAndValid
+    enum class EditedAndValid
     {
-        EDITED_NO,
-        EDITED_VALID,
-        EDITED_INVALID
+        No,
+        Valid,
+        Invalid
     };
 
     EditedAndValid      GetEditedAndValid() const { return meEditedAndValid;}
@@ -181,7 +181,7 @@ private:
     SVX_DLLPRIVATE virtual void         ImplSaveValue() override;
     SVX_DLLPRIVATE virtual sal_Int32    ImplGetSavedValue() const override;
 
-    DECL_LINK_TYPED( EditModifyHdl, Edit&, void );
+    DECL_LINK( EditModifyHdl, Edit&, void );
 };
 
 #endif

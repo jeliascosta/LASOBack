@@ -20,7 +20,7 @@
 #define INCLUDED_SVX_SOURCE_SIDEBAR_PARAGRAPH_PARALINESPACINGPOPUP_HXX
 
 #include <editeng/lspcitem.hxx>
-#include <sfx2/sidebar/EnumContext.hxx>
+#include <vcl/EnumContext.hxx>
 #include <sfx2/tbxctrl.hxx>
 #include <svl/poolitem.hxx>
 #include <svx/svxdllapi.h>
@@ -34,7 +34,7 @@ public:
     SFX_DECL_TOOLBOX_CONTROL();
 
     ParaLineSpacingPopup(sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx);
-    virtual ~ParaLineSpacingPopup();
+    virtual ~ParaLineSpacingPopup() override;
 
     virtual VclPtr<SfxPopupWindow> CreatePopupWindow() override;
 };

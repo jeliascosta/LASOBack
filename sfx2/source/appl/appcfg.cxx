@@ -88,15 +88,14 @@ public:
 
     virtual void        Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
     explicit SfxEventAsyncer_Impl(const SfxEventHint& rHint);
-    virtual ~SfxEventAsyncer_Impl();
-    DECL_LINK_TYPED( IdleHdl, Idle*, void );
+    virtual ~SfxEventAsyncer_Impl() override;
+    DECL_LINK( IdleHdl, Idle*, void );
 };
 
 
 void SfxEventAsyncer_Impl::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if( pHint && pHint->GetId() == SFX_HINT_DYING && pIdle->IsActive() )
+    if( rHint.GetId() == SFX_HINT_DYING && pIdle->IsActive() )
     {
         pIdle->Stop();
         delete this;
@@ -109,7 +108,7 @@ SfxEventAsyncer_Impl::SfxEventAsyncer_Impl( const SfxEventHint& rHint )
 {
     if( rHint.GetObjShell() )
         StartListening( *rHint.GetObjShell() );
-    pIdle = new Idle;
+    pIdle = new Idle("SfxEventASyncer");
     pIdle->SetIdleHdl( LINK(this, SfxEventAsyncer_Impl, IdleHdl) );
     pIdle->SetPriority( SchedulerPriority::HIGHEST );
     pIdle->Start();
@@ -122,7 +121,7 @@ SfxEventAsyncer_Impl::~SfxEventAsyncer_Impl()
 }
 
 
-IMPL_LINK_TYPED(SfxEventAsyncer_Impl, IdleHdl, Idle*, pAsyncIdle, void)
+IMPL_LINK(SfxEventAsyncer_Impl, IdleHdl, Idle*, pAsyncIdle, void)
 {
     SfxObjectShellRef xRef( aHint.GetObjShell() );
     pAsyncIdle->Stop();
@@ -614,16 +613,6 @@ void SfxApplication::SetOptions_Impl( const SfxItemSet& rSet )
         DBG_ASSERT(dynamic_cast< const SfxBoolItem *>( pItem ) !=  nullptr, "BoolItem expected");
         aHelpOptions.SetWelcomeScreen( static_cast<const SfxBoolItem *>(pItem)->GetValue() );
     }
-
-    // WelcomeScreen
-    if ( SfxItemState::SET == rSet.GetItemState(rPool.GetWhich(SID_WELCOMESCREEN_RESET ), true, &pItem))
-    {
-        DBG_ASSERT(dynamic_cast< const SfxBoolItem *>( pItem ) !=  nullptr, "BoolItem expected");
-        bool bReset = static_cast<const SfxBoolItem *>(pItem)->GetValue();
-        if ( bReset )
-        {
-            OSL_FAIL( "Not implemented, may be EOL!" );
-        }                                                   }
 
     if ( SfxItemState::SET == rSet.GetItemState(rPool.GetWhich(SID_HELP_STYLESHEET ), true, &pItem))
     {

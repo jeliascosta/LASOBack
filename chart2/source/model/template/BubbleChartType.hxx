@@ -30,7 +30,7 @@ class BubbleChartType : public ChartType
 public:
     explicit BubbleChartType(
         css::uno::Reference< css::uno::XComponentContext > const & xContext );
-    virtual ~BubbleChartType();
+    virtual ~BubbleChartType() override;
 
     virtual OUString SAL_CALL
         getImplementationName()
@@ -41,9 +41,6 @@ public:
     virtual css::uno::Sequence< OUString > SAL_CALL
         getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString >
-        getSupportedServiceNames_Static();
 
 protected:
     explicit BubbleChartType( const BubbleChartType & rOther );

@@ -69,7 +69,7 @@ public:
             const css::uno::Sequence< css::uno::Any >& lArguments);
 
     /** TODO */
-    virtual ~ModuleAcceleratorConfiguration();
+    virtual ~ModuleAcceleratorConfiguration() override;
 
     virtual OUString SAL_CALL getImplementationName()
         throw (css::uno::RuntimeException, std::exception) override
@@ -86,8 +86,7 @@ public:
     virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
         throw (css::uno::RuntimeException, std::exception) override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.ui.ModuleAcceleratorConfiguration" };
-        return aSeq;
+        return {"com.sun.star.ui.ModuleAcceleratorConfiguration"};
     }
 
     // XComponent

@@ -117,7 +117,6 @@ AccessibleControlShape::AccessibleControlShape (
     ,   m_bWaitingForControl( false )
 {
     m_pChildManager = new comphelper::OWrappedAccessibleChildrenManager( comphelper::getProcessComponentContext() );
-    m_pChildManager->acquire();
 
     osl_atomic_increment( &m_refCount );
     {
@@ -128,8 +127,7 @@ AccessibleControlShape::AccessibleControlShape (
 
 AccessibleControlShape::~AccessibleControlShape()
 {
-    m_pChildManager->release();
-    m_pChildManager = nullptr;
+    m_pChildManager.clear();
 
     if ( m_xControlContextProxy.is() )
         m_xControlContextProxy->setDelegator( nullptr );
@@ -138,11 +136,6 @@ AccessibleControlShape::~AccessibleControlShape()
     m_xControlContextComponent.clear();
         // this should remove the _only_ three "real" reference (means not delegated to
         // ourself) to this proxy, and thus delete it
-}
-
-SdrObject* AccessibleControlShape::getSdrObject() const
-{
-    return GetSdrObjectFromXShape (mxShape);
 }
 
 namespace {
@@ -190,7 +183,7 @@ void AccessibleControlShape::Init()
 
         // get the control which belongs to our model (relative to our view)
         const vcl::Window* pViewWindow = maShapeTreeInfo.GetWindow();
-        SdrUnoObj* pUnoObjectImpl = dynamic_cast<SdrUnoObj*>( getSdrObject()  );
+        SdrUnoObj* pUnoObjectImpl = dynamic_cast<SdrUnoObj*>( GetSdrObjectFromXShape(mxShape)  );
         SdrView* pView = maShapeTreeInfo.GetSdrView();
         OSL_ENSURE( pView && pViewWindow && pUnoObjectImpl, "AccessibleControlShape::Init: no view, or no view window, no SdrUnoObj!" );
 
@@ -280,11 +273,6 @@ void AccessibleControlShape::Init()
     }
 }
 
-Reference< XAccessibleContext > SAL_CALL AccessibleControlShape::getAccessibleContext() throw (RuntimeException, std::exception)
-{
-    return AccessibleShape::getAccessibleContext ();
-}
-
 void SAL_CALL AccessibleControlShape::grabFocus()  throw (RuntimeException, std::exception)
 {
     if ( !m_xUnoControl.is() || !isAliveMode( m_xUnoControl ) )
@@ -341,8 +329,8 @@ OUString
             if ( sDesc.isEmpty() )
             {   // no -> use the default
                 aDG.Initialize (STR_ObjNameSingulUno);
-                aDG.AddProperty ("ControlBackground", DescriptionGenerator::COLOR, "");
-                aDG.AddProperty ( "ControlBorder", DescriptionGenerator::INTEGER, "");
+                aDG.AddProperty ("ControlBackground", DescriptionGenerator::PropertyType::Color, "");
+                aDG.AddProperty ( "ControlBorder", DescriptionGenerator::PropertyType::Integer, "");
             }
             // ensure that we are listening to the Name property
             m_bListeningForDesc = ensureListeningState( m_bListeningForDesc, true, lcl_getDescPropertyName() );
@@ -895,7 +883,7 @@ AccessibleControlShape* SAL_CALL AccessibleControlShape::GetLabeledByControlShap
         // get the "label by" property value of the control
         if (::comphelper::hasProperty(rAccLabelControlProperty, m_xControlModel))
         {
-            m_xControlModel->getPropertyValue( rAccLabelControlProperty ) >>= sCtlLabelBy;
+            sCtlLabelBy = m_xControlModel->getPropertyValue(rAccLabelControlProperty);
             if( sCtlLabelBy.hasValue() )
             {
                 Reference< XPropertySet >  xAsSet (sCtlLabelBy, UNO_QUERY);

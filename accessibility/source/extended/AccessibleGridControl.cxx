@@ -17,9 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include "accessibility/extended/AccessibleGridControl.hxx"
-#include "accessibility/extended/AccessibleGridControlTable.hxx"
-#include "accessibility/extended/AccessibleGridControlHeader.hxx"
+#include "extended/AccessibleGridControl.hxx"
+#include "extended/AccessibleGridControlTable.hxx"
+#include "extended/AccessibleGridControlHeader.hxx"
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 #include <com/sun/star/accessibility/AccessibleTableModelChange.hpp>
 #include <com/sun/star/accessibility/AccessibleTableModelChangeType.hpp>
@@ -155,7 +155,7 @@ AccessibleGridControl::getAccessibleChild( sal_Int32 nChildIndex )
         {
             if(!m_xImpl->m_xTable.is())
             {
-            AccessibleGridControlTable* pTable = new AccessibleGridControlTable(m_xImpl->m_aCreator, m_aTable, svt::table::TCTYPE_TABLE);
+            AccessibleGridControlTable* pTable = new AccessibleGridControlTable(m_xImpl->m_aCreator, m_aTable);
             m_xImpl->m_xTable = pTable;
                 m_xImpl->m_pTable = pTable;
             }
@@ -305,8 +305,8 @@ AccessibleGridControl::implGetFixedChild( sal_Int32 nChildIndex )
 AccessibleGridControlTable* AccessibleGridControl::createAccessibleTable()
 {
     css::uno::Reference< css::accessibility::XAccessible > xCreator(m_xImpl->m_aCreator);
-    OSL_ENSURE( xCreator.is(), "accessibility/extended/AccessibleGridControl::createAccessibleTable: my creator died - how this?" );
-    return new AccessibleGridControlTable( xCreator, m_aTable, TCTYPE_TABLE );
+    OSL_ENSURE( xCreator.is(), "extended/AccessibleGridControl::createAccessibleTable: my creator died - how this?" );
+    return new AccessibleGridControlTable( xCreator, m_aTable );
 }
 
 void AccessibleGridControl::commitCellEvent(sal_Int16 _nEventId,const Any& _rNewValue,const Any& _rOldValue)
@@ -425,9 +425,9 @@ css::uno::Reference< css::accessibility::XAccessibleContext > SAL_CALL Accessibl
     SolarMutexGuard g;
 
     OSL_ENSURE( ( m_pContext && m_xContext.is() ) || ( !m_pContext && !m_xContext.is() ),
-        "accessibility/extended/AccessibleGridControlAccess::getAccessibleContext: inconsistency!" );
+        "extended/AccessibleGridControlAccess::getAccessibleContext: inconsistency!" );
 
-    // if the context died meanwhile (we're no listener, so it won't tell us explicitily when this happens),
+    // if the context died meanwhile (we're no listener, so it won't tell us explicitly when this happens),
     // then reset an re-create.
     if ( m_pContext && !m_pContext->isAlive() )
         m_xContext = m_pContext = nullptr;
@@ -437,12 +437,6 @@ css::uno::Reference< css::accessibility::XAccessibleContext > SAL_CALL Accessibl
             new AccessibleGridControl(m_xParent, this, *m_pTable);
 
     return m_xContext;
-}
-
-
-bool AccessibleGridControlAccess::isContextAlive() const
-{
-    return  ( nullptr != m_pContext ) && m_pContext->isAlive();
 }
 
 

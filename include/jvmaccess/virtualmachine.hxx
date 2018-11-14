@@ -48,14 +48,14 @@ public:
     public:
         /** An exception indicating failure to create an AttachGuard.
          */
-        class JVMACCESS_DLLPUBLIC CreationException
+        class JVMACCESS_DLLPUBLIC CreationException final
         {
         public:
             CreationException();
 
             CreationException(CreationException const &);
 
-            virtual ~CreationException();
+            ~CreationException();
 
             CreationException & operator =(CreationException const &);
         };
@@ -131,7 +131,7 @@ private:
     VirtualMachine(VirtualMachine &) = delete;
     void operator =(VirtualMachine) = delete;
 
-    virtual ~VirtualMachine();
+    virtual ~VirtualMachine() override;
 
     JNIEnv * attachThread(bool * pAttached) const;
 

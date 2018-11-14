@@ -38,8 +38,6 @@
 //      RID_CUI_GALLERY_END                 (RID_SVX_START + 410)
 
 // used in "tabpages"
-#define RID_SVXSTRARY_PAPERSIZE_STD         (RID_SVX_START + 142)
-#define RID_SVXSTRARY_PAPERSIZE_DRAW        (RID_SVX_START + 143)
 #define RID_SVXSTR_READ_DATA_ERROR          (RID_SVX_START + 230)
 #define RID_SVXSTR_TABLE_PRESET_NONE        (RID_SVX_START + 969)
 #define RID_SVXSTR_TABLE_PRESET_ONLYOUTER   (RID_SVX_START + 970)
@@ -72,6 +70,8 @@
 #define RID_SVXSTR_ASK_CHANGE_BITMAP        (RID_SVX_START + 172)
 #define RID_SVXSTR_DESC_NEW_BITMAP          (RID_SVX_START + 168)
 #define RID_SVXSTR_DESC_EXT_BITMAP          (RID_SVX_START + 169)
+#define RID_SVXSTR_DESC_NEW_PATTERN         (RID_SVX_START + 170)
+#define RID_SVXSTR_ASK_CHANGE_PATTERN       (RID_SVX_START + 171)
 #define RID_SVXSTR_DESC_LINESTYLE           (RID_SVX_START + 174)
 
 #define RID_SVXSTR_ASK_CHANGE_LINESTYLE     (RID_SVX_START + 177)
@@ -85,7 +85,6 @@
 #define RID_SVXSTR_CONNECTOR                (RID_SVX_START + 221)
 #define RID_SVXSTR_DIMENSION_LINE           (RID_SVX_START + 222)
 
-#define RID_SVXSTR_CHARNAME_TRANSPARENT     (RID_SVX_START + 237)
 #define RID_SVXSTR_DESC_LINEEND             (RID_SVX_START + 238)
 #define RID_SVXSTR_CHARNAME_NOSTYLE         (RID_SVX_START + 239)
 #define RID_SVXSTR_CHARNAME_FAMILY          (RID_SVX_START + 240)
@@ -106,7 +105,6 @@
 // treeopt
 #define RID_SVXPAGE_COLOR                   (RID_SVX_START +  60)
 #define OFA_TP_LANGUAGES_FOR_SET_DOCUMENT_LANGUAGE      ( RID_OFA_START + 256 )
-#define RID_OFADLG_OPTIONS_TREE_PAGES   (RID_OFA_START + 116)
 
 // options
 #define RID_SVXPAGE_ONLINEUPDATE            (RID_SVX_START + 298)
@@ -138,7 +136,6 @@
 #define RID_SVXSTR_JAVA_START_PARAM         (RID_SVX_START + 258)
 #define RID_SVXSTR_PATH_NAME_START          (RID_SVX_START + 1003)
 #define RID_SVXBMP_LOCK                     (RID_SVX_START + 118)
-#define RID_SVXSTR_READONLY_CONFIG_TIP      (RID_SVX_START + 1026)
 #define RID_SVXPAGE_BASICIDE_OPTIONS        (RID_SVX_START + 209)
 #define RID_SVXSTR_KEY_AUTOCORRECT_DIR      (RID_SVX_START + 1004)  //?
 #define RID_SVXSTR_KEY_DICTIONARY_PATH      (RID_SVX_START + 1010)//?
@@ -196,7 +193,6 @@
 #define RID_SVXSTR_HYPERDLG_QUERYOVERWRITE  (RID_SVX_START +  815)
 #define RID_SVXSTR_HYPDLG_ERR_LERR_NOENTRIES  (RID_SVX_START + 800)
 #define RID_SVXSTR_HYPDLG_ERR_LERR_DOCNOTOPEN (RID_SVX_START + 801)
-#define RID_SVXFLOAT_HYPERLINK_MARKWND      (RID_SVX_START + 232)
 #define RID_SVXSTR_HYPDLG_MACROACT1         (RID_SVX_START + 550)
 #define RID_SVXSTR_HYPDLG_MACROACT2         (RID_SVX_START + 551)
 #define RID_SVXSTR_HYPDLG_MACROACT3         (RID_SVX_START + 552)
@@ -382,9 +378,7 @@
 #define RID_SVXSTR_HYPH_SPECIAL                             (RID_SVX_START + 1232)
 #define RID_SVXSTR_NUM_MIN_WORDLEN                          (RID_SVX_START + 1233)
 #define RID_SVXSTR_GRAMMAR_AUTO                             (RID_SVX_START + 1234)
-#define RID_SVXSTR_LINGU_MODULES_EDIT                       (RID_SVX_START + 1235)
-#define RID_SVXSTR_LINGU_DICS_EDIT_DIC                      (RID_SVX_START + 1236)
-#define RID_SVXSTR_LINGU_OPTIONS_EDIT                       (RID_SVX_START + 1237)
+// There is a gap here because of removed strings
 
 #define RID_SVXSTR_CHG_MATH                                 (RID_SVX_START + 1238)
 #define RID_SVXSTR_CHG_WRITER                               (RID_SVX_START + 1239)
@@ -422,6 +416,7 @@
 #define RID_SVXSTR_LOAD_ERROR                               (RID_SVX_START + 1265)
 
 #define RID_SVXSTR_EDITHINT                                 (RID_SVX_START + 1266)
+#define RID_SVXSTR_SAVE_SCREENSHOT_AS                       (RID_SVX_START + 1267)
 
 // Hangul/Hanja Dialog
 #define RID_SVXSTR_HANGUL                                   (RID_SVX_START + 1270)
@@ -439,11 +434,8 @@
 #define RID_SVXSTR_CONFIRM_RESTORE_DEFAULT                  (RID_SVX_START + 1284)
 #define RID_SVXSTR_CONFIRM_SET_LANGUAGE                     (RID_SVX_START + 1285)
 
-#define RID_SVXSTR_PERSONA_ABSTRACT                         (RID_SVX_START + 1286)
-#define RID_SVXSTR_PERSONA_COLOR                            (RID_SVX_START + 1287)
-#define RID_SVXSTR_PERSONA_MUSIC                            (RID_SVX_START + 1288)
-#define RID_SVXSTR_PERSONA_NATURE                           (RID_SVX_START + 1289)
-#define RID_SVXSTR_PERSONA_SOLID                            (RID_SVX_START + 1290)
+// String Array for Persona Categories
+#define RID_SVXSTR_PERSONA_CATEGORIES                       (RID_SVX_START + 1286)
 
 #define RID_SVXPAGE_OPENCL                                  (RID_SVX_START + 254)
 

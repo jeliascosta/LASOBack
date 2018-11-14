@@ -200,11 +200,6 @@ void ScaDateAddIn::InitData()
     }
 }
 
-OUString ScaDateAddIn::GetDisplFuncStr( sal_uInt16 nResId ) throw( uno::RuntimeException, std::exception )
-{
-    return ScaResStringLoader( RID_DATE_FUNCTION_NAMES, nResId, GetResMgr() ).GetString();
-}
-
 OUString ScaDateAddIn::GetFuncDescrStr( sal_uInt16 nResId, sal_uInt16 nStrIndex ) throw( uno::RuntimeException, std::exception )
 {
     OUString aRet;
@@ -284,7 +279,7 @@ OUString SAL_CALL ScaDateAddIn::getDisplayFunctionName( const OUString& aProgram
                                 FindScaFuncData( aProgrammaticName ) );
     if( fDataIt != pFuncDataList->end() )
     {
-        aRet = GetDisplFuncStr( fDataIt->GetUINameID() );
+        aRet = ScaResStringLoader( RID_DATE_FUNCTION_NAMES, fDataIt->GetUINameID(), GetResMgr() ).GetString();
         if( fDataIt->IsDouble() )
             aRet += STR_FROM_ANSI( "_ADD" );
     }
@@ -591,6 +586,9 @@ sal_Int32 SAL_CALL ScaDateAddIn::getDiffWeeks(
         sal_Int32 nStartDate, sal_Int32 nEndDate,
         sal_Int32 nMode ) throw( uno::RuntimeException, lang::IllegalArgumentException, std::exception )
 {
+    if (nMode != 0 && nMode != 1)
+        throw lang::IllegalArgumentException();
+
     sal_Int32 nNullDate = GetNullDate( xOptions );
 
     sal_Int32 nDays1 = nStartDate + nNullDate;
@@ -628,6 +626,9 @@ sal_Int32 SAL_CALL ScaDateAddIn::getDiffMonths(
         sal_Int32 nStartDate, sal_Int32 nEndDate,
         sal_Int32 nMode ) throw( uno::RuntimeException, lang::IllegalArgumentException, std::exception )
 {
+    if (nMode != 0 && nMode != 1)
+        throw lang::IllegalArgumentException();
+
     sal_Int32 nNullDate = GetNullDate( xOptions );
 
     sal_Int32 nDays1 = nStartDate + nNullDate;
@@ -673,6 +674,9 @@ sal_Int32 SAL_CALL ScaDateAddIn::getDiffYears(
         sal_Int32 nStartDate, sal_Int32 nEndDate,
         sal_Int32 nMode ) throw( uno::RuntimeException, lang::IllegalArgumentException, std::exception )
 {
+    if (nMode != 0 && nMode != 1)
+        throw lang::IllegalArgumentException();
+
     if ( nMode != 1 )
         return getDiffMonths( xOptions, nStartDate, nEndDate, nMode ) / 12;
 

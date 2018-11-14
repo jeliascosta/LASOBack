@@ -28,10 +28,10 @@
 #include <com/sun/star/lang/XUnoTunnel.hpp>
 #include <com/sun/star/util/XCloneable.hpp>
 
-#include <comphelper/broadcasthelper.hxx>
 #include <comphelper/propagg.hxx>
 #include <comphelper/proparrhlp.hxx>
 #include <comphelper/uno3.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <cppuhelper/compbase2.hxx>
 #include <cppuhelper/component.hxx>
 
@@ -43,7 +43,7 @@ namespace frm
 
 typedef ::cppu::WeakAggComponentImplHelper2 <   css::lang::XUnoTunnel
                                             ,   css::util::XCloneable > OGridColumn_BASE;
-class OGridColumn   :public ::comphelper::OBaseMutex
+class OGridColumn   :public ::cppu::BaseMutex
                     ,public OGridColumn_BASE
                     ,public OPropertySetAggregationHelper
                     ,public OCloneableAggregation
@@ -62,9 +62,9 @@ protected:
 // [properties]
 
 public:
-    OGridColumn(const css::uno::Reference<css::uno::XComponentContext>& _rContext, const OUString& _sModelName = OUString());
+    OGridColumn(const css::uno::Reference<css::uno::XComponentContext>& _rContext, const OUString& _sModelName);
     explicit OGridColumn(const OGridColumn* _pOriginal );
-    virtual ~OGridColumn();
+    virtual ~OGridColumn() override;
 
     // UNO binding
     DECLARE_UNO3_AGG_DEFAULTS(OGridControlModel, OGridColumn_BASE)
@@ -93,7 +93,7 @@ public:
     virtual void SAL_CALL getFastPropertyValue(css::uno::Any& rValue, sal_Int32 nHandle ) const override;
     virtual sal_Bool SAL_CALL convertFastPropertyValue(css::uno::Any& rConvertedValue, css::uno::Any& rOldValue,
                                           sal_Int32 nHandle, const css::uno::Any& rValue )
-                                        throw(css::lang::IllegalArgumentException) override;
+                                        throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setFastPropertyValue_NoBroadcast(sal_Int32 nHandle, const css::uno::Any& rValue) throw (css::uno::Exception, std::exception) override;
 
     using OPropertySetAggregationHelper::getFastPropertyValue;

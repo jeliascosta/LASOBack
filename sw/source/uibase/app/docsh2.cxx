@@ -248,22 +248,22 @@ void SwDocShell::Notify( SfxBroadcaster&, const SfxHint& rHint )
         lcl_processCompatibleSfxHint( xVbaEvents, rHint );
 
     sal_uInt16 nAction = 0;
-    if( dynamic_cast<const SfxSimpleHint*>(&rHint) )
+    if( dynamic_cast<const SfxEventHint*>(&rHint) &&
+        static_cast<const SfxEventHint&>( rHint).GetEventId() == SFX_EVENT_LOADFINISHED )
+    {
+        // #i38126# - own action id
+        nAction = 3;
+    }
+    else
     {
         // switch for more actions
-        switch( static_cast<const SfxSimpleHint&>( rHint).GetId() )
+        switch( rHint.GetId() )
         {
             case SFX_HINT_TITLECHANGED:
                 if( GetMedium() )
                     nAction = 2;
             break;
         }
-    }
-    else if( dynamic_cast<const SfxEventHint*>(&rHint) &&
-        static_cast<const SfxEventHint&>( rHint).GetEventId() == SFX_EVENT_LOADFINISHED )
-    {
-        // #i38126# - own action id
-        nAction = 3;
     }
 
     if( nAction )
@@ -372,9 +372,10 @@ void SwDocShell::Execute(SfxRequest& rReq)
                 aSet.Put( *static_cast<const SfxBoolItem*>(pOpenSmartTagOptionsItem) );
 
             SfxAbstractDialogFactory* pFact = SfxAbstractDialogFactory::Create();
-              SfxAbstractTabDialog* pDlg = pFact->CreateTabDialog( RID_OFA_AUTOCORR_DLG, nullptr, &aSet, nullptr );
-              pDlg->Execute();
-              delete pDlg;
+            VclPtr<SfxAbstractTabDialog> pDlg = pFact->CreateAutoCorrTabDialog( &aSet );
+            pDlg->Execute();
+            pDlg.disposeAndClear();
+
 
             rACW.SetLockWordLstLocked( bOldLocked );
 
@@ -694,7 +695,7 @@ void SwDocShell::Execute(SfxRequest& rReq)
             SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
             OSL_ENSURE(pFact, "SwAbstractDialogFactory fail!");
 
-            std::unique_ptr<AbstractSwInsertAbstractDlg> pDlg(pFact->CreateSwInsertAbstractDlg());
+            ScopedVclPtr<AbstractSwInsertAbstractDlg> pDlg(pFact->CreateSwInsertAbstractDlg());
             OSL_ENSURE(pDlg, "Dialog creation failed!");
             if(RET_OK == pDlg->Execute())
             {
@@ -732,7 +733,7 @@ void SwDocShell::Execute(SfxRequest& rReq)
                         if ( aLockBytes.Stat( &aStat, SVSTATFLAG_DEFAULT ) == ERRCODE_NONE )
                         {
                             sal_uInt32 nLen = aStat.nSize;
-                            sal_uLong nRead = 0;
+                            std::size_t nRead = 0;
                             uno::Sequence< sal_Int8 > aSeq( nLen );
                             aLockBytes.ReadAt( 0, aSeq.getArray(), nLen, &nRead );
 
@@ -798,7 +799,7 @@ void SwDocShell::Execute(SfxRequest& rReq)
                         if ( aLockBytes.Stat( &aStat, SVSTATFLAG_DEFAULT ) == ERRCODE_NONE )
                         {
                             sal_uInt32 nLen = aStat.nSize;
-                            sal_uLong nRead = 0;
+                            std::size_t nRead = 0;
                             uno::Sequence< sal_Int8 > aSeq( nLen );
                             aLockBytes.ReadAt( 0, aSeq.getArray(), nLen, &nRead );
 
@@ -1160,8 +1161,16 @@ void SwDocShell::Execute(SfxRequest& rReq)
         break;
         case SID_NOTEBOOKBAR:
         {
+            const SfxStringItem* pFile = rReq.GetArg<SfxStringItem>( SID_NOTEBOOKBAR );
             SfxViewShell* pViewShell = GetView()? GetView(): SfxViewShell::Current();
-            sfx2::SfxNotebookBar::ExecMethod(pViewShell->GetViewFrame()->GetBindings());
+            SfxBindings& rBindings( pViewShell->GetViewFrame()->GetBindings() );
+
+            if ( SfxNotebookBar::IsActive() )
+                sfx2::SfxNotebookBar::ExecMethod( rBindings, pFile ? pFile->GetValue() : "" );
+            else
+            {
+                sfx2::SfxNotebookBar::CloseMethod( rBindings );
+            }
         }
         break;
 
@@ -1254,7 +1263,7 @@ void SwDocShell::SetModified( bool bSet )
          }
 
         UpdateChildWindows();
-        Broadcast(SfxSimpleHint(SFX_HINT_DOCCHANGED));
+        Broadcast(SfxHint(SFX_HINT_DOCCHANGED));
     }
 }
 
@@ -1405,7 +1414,7 @@ sal_uLong SwDocShell::LoadStylesFromFile( const OUString& rURL,
     SfxFilterMatcher aMatcher( sFactory );
 
     // search for filter in WebDocShell, too
-    SfxMedium aMed( rURL, STREAM_STD_READ );
+    SfxMedium aMed( rURL, StreamMode::STD_READ );
     std::shared_ptr<const SfxFilter> pFlt;
     aMatcher.DetectFilter( aMed, pFlt );
     if(!pFlt)
@@ -1566,7 +1575,9 @@ int SwFindDocShell( SfxObjectShellRef& xDocSh,
     std::shared_ptr<const SfxFilter> pSfxFlt;
     if (!xMed->GetError())
     {
-        SfxFilterMatcher aMatcher( OUString::createFromAscii(SwDocShell::Factory().GetShortName()) );
+        SfxFilterMatcher aMatcher( rFilter == "writerglobal8"
+            ? OUString::createFromAscii(SwGlobalDocShell::Factory().GetShortName())
+            : OUString::createFromAscii(SwDocShell::Factory().GetShortName()) );
 
         // No Filter, so search for it. Else test if the one passed is a valid one
         if( !rFilter.isEmpty() )

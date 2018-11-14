@@ -59,7 +59,7 @@ namespace abp
 
     public:
         explicit TypeSelectionPage( OAddressBookSourcePilot* _pParent );
-        virtual ~TypeSelectionPage();
+        virtual ~TypeSelectionPage() override;
         virtual void        dispose() override;
 
         // retrieves the currently selected type
@@ -78,7 +78,7 @@ namespace abp
         virtual bool        canAdvance() const override;
 
     private:
-        DECL_LINK_TYPED( OnTypeSelected, Button*, void );
+        DECL_LINK( OnTypeSelected, Button*, void );
 
         void                selectType( AddressSourceType _eType );
     };

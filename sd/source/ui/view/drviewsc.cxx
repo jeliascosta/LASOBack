@@ -59,7 +59,7 @@ void DrawViewShell::UpdateIMapDlg( SdrObject* pObj )
         Graphic     aGraphic;
         ImageMap*   pIMap = nullptr;
         TargetList* pTargetList = nullptr;
-        SdIMapInfo* pIMapInfo = GetDoc()->GetIMapInfo( pObj );
+        SdIMapInfo* pIMapInfo = SdDrawDocument::GetIMapInfo( pObj );
 
         // get graphic from shape
         SdrGrafObj* pGrafObj = dynamic_cast< SdrGrafObj* >( pObj );
@@ -83,7 +83,7 @@ void DrawViewShell::UpdateIMapDlg( SdrObject* pObj )
     }
 }
 
-IMPL_LINK_TYPED( DrawViewShell, NameObjectHdl, AbstractSvxObjectNameDialog&, rDialog, bool )
+IMPL_LINK( DrawViewShell, NameObjectHdl, AbstractSvxObjectNameDialog&, rDialog, bool )
 {
     OUString aName;
     rDialog.GetName( aName );

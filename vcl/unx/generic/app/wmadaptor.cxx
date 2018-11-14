@@ -31,7 +31,7 @@
 
 #include "unx/wmadaptor.hxx"
 #include "unx/saldisp.hxx"
-#include "unx/saldata.hxx"
+#include "unx/salinst.h"
 #include "unx/salframe.h"
 
 #include "salgdi.hxx"
@@ -50,12 +50,12 @@ class NetWMAdaptor : public WMAdaptor
     virtual bool isValid() const override;
 public:
     explicit NetWMAdaptor( SalDisplay* );
-    virtual ~NetWMAdaptor();
+    virtual ~NetWMAdaptor() override;
 
     virtual void setWMName( X11SalFrame* pFrame, const OUString& rWMName ) const override;
     virtual void maximizeFrame( X11SalFrame* pFrame, bool bHorizontal = true, bool bVertical = true ) const override;
     virtual void shade( X11SalFrame* pFrame, bool bToShaded ) const override;
-    virtual void setFrameTypeAndDecoration( X11SalFrame* pFrame, WMWindowType eType, int nDecorationFlags, X11SalFrame* pTransientFrame = nullptr ) const override;
+    virtual void setFrameTypeAndDecoration( X11SalFrame* pFrame, WMWindowType eType, int nDecorationFlags, X11SalFrame* pTransientFrame ) const override;
     virtual void enableAlwaysOnTop( X11SalFrame* pFrame, bool bEnable ) const override;
     virtual int handlePropertyNotify( X11SalFrame* pFrame, XPropertyEvent* pEvent ) const override;
     virtual void showFullScreen( X11SalFrame* pFrame, bool bFullScreen ) const override;
@@ -72,7 +72,7 @@ class GnomeWMAdaptor : public WMAdaptor
     virtual bool isValid() const override;
 public:
     explicit GnomeWMAdaptor( SalDisplay * );
-    virtual ~GnomeWMAdaptor();
+    virtual ~GnomeWMAdaptor() override;
 
     virtual void maximizeFrame( X11SalFrame* pFrame, bool bHorizontal = true, bool bVertical = true ) const override;
     virtual void shade( X11SalFrame* pFrame, bool bToShaded ) const override;
@@ -221,7 +221,6 @@ WMAdaptor* WMAdaptor::createWMAdaptor( SalDisplay* pSalDisplay )
 
 WMAdaptor::WMAdaptor( SalDisplay* pDisplay ) :
         m_pSalDisplay( pDisplay ),
-        m_bTransientBehaviour( true ),
         m_bEnableAlwaysOnTopWorks( false ),
         m_bLegacyPartialFullscreen( false ),
         m_nWinGravity( StaticGravity ),
@@ -335,7 +334,6 @@ NetWMAdaptor::NetWMAdaptor( SalDisplay* pSalDisplay ) :
         WMAdaptor( pSalDisplay )
 {
     // currently all _NET WMs do transient like expected
-    m_bTransientBehaviour = true;
 
     Atom                aRealType   = None;
     int                 nFormat     = 8;
@@ -525,7 +523,6 @@ GnomeWMAdaptor::GnomeWMAdaptor( SalDisplay* pSalDisplay ) :
         m_bValid( false )
 {
     // currently all Gnome WMs do transient like expected
-    m_bTransientBehaviour = true;
 
     Atom                aRealType   = None;
     int                 nFormat     = 8;

@@ -53,8 +53,8 @@ SfxRectangleItem::SfxRectangleItem( const SfxRectangleItem& rItem ) :
 bool SfxRectangleItem::GetPresentation
 (
     SfxItemPresentation     /*ePresentation*/,
-    SfxMapUnit              /*eCoreMetric*/,
-    SfxMapUnit              /*ePresentationMetric*/,
+    MapUnit                 /*eCoreMetric*/,
+    MapUnit                 /*ePresentationMetric*/,
     OUString&               rText,
     const IntlWrapper *
 )   const
@@ -69,7 +69,7 @@ bool SfxRectangleItem::GetPresentation
 
 bool SfxRectangleItem::operator==( const SfxPoolItem& rItem ) const
 {
-    DBG_ASSERT( SfxPoolItem::operator==( rItem ), "unequal type" );
+    assert(SfxPoolItem::operator==(rItem));
     return static_cast<const SfxRectangleItem&>(rItem).aVal == aVal;
 }
 

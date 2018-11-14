@@ -19,6 +19,7 @@
 
 #include <sal/config.h>
 
+#include <algorithm>
 #include <utility>
 
 #include "chart2uno.hxx"
@@ -893,8 +894,6 @@ public:
     explicit Tokens2RangeStringXML(ScDocument* pDoc) :
         mpRangeStr(new OUStringBuffer),
         mpDoc(pDoc),
-        mcRangeSep(' '),
-        mcAddrSep(':'),
         mbFirst(true)
     {
     }
@@ -902,8 +901,6 @@ public:
     Tokens2RangeStringXML(const Tokens2RangeStringXML& r) :
         mpRangeStr(r.mpRangeStr),
         mpDoc(r.mpDoc),
-        mcRangeSep(r.mcRangeSep),
-        mcAddrSep(r.mcAddrSep),
         mbFirst(r.mbFirst)
     {
     }
@@ -983,10 +980,10 @@ private:
 
 private:
     shared_ptr<OUStringBuffer>  mpRangeStr;
-    ScDocument*         mpDoc;
-    sal_Unicode         mcRangeSep;
-    sal_Unicode         mcAddrSep;
-    bool                mbFirst;
+    ScDocument*                 mpDoc;
+    static const sal_Unicode    mcRangeSep = ' ';
+    static const sal_Unicode    mcAddrSep = ':';
+    bool                        mbFirst;
 };
 
 void lcl_convertTokensToString(OUString& rStr, const vector<ScTokenRef>& rTokens, ScDocument* pDoc)
@@ -1021,8 +1018,7 @@ ScChart2DataProvider::~ScChart2DataProvider()
 
 void ScChart2DataProvider::Notify( SfxBroadcaster& /*rBC*/, const SfxHint& rHint)
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
     {
         m_pDocument = nullptr;
     }
@@ -1098,7 +1094,7 @@ Reference< chart2::data::XLabeledDataSequence > lcl_createLabeledDataSequenceFro
  * @return true if the corner was added, false otherwise.
  */
 bool lcl_addUpperLeftCornerIfMissing(vector<ScTokenRef>& rRefTokens,
-            SCROW nCornerRowCount=1, SCCOL nCornerColumnCount=1)
+            SCROW nCornerRowCount, SCCOL nCornerColumnCount)
 {
     using ::std::max;
     using ::std::min;
@@ -1512,7 +1508,7 @@ ScChart2DataProvider::createDataSource(
         shrinkToDataRange(m_pDocument, aRefTokens);
 
     if (bLabel)
-        lcl_addUpperLeftCornerIfMissing(aRefTokens); //#i90669#
+        lcl_addUpperLeftCornerIfMissing(aRefTokens, 1, 1); //#i90669#
 
     bool bColHeaders = (bOrientCol ? bLabel : bCategories );
     bool bRowHeaders = (bOrientCol ? bCategories : bLabel );
@@ -2408,8 +2404,7 @@ ScChart2DataSource::~ScChart2DataSource()
 
 void ScChart2DataSource::Notify( SfxBroadcaster& /*rBC*/, const SfxHint& rHint)
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
     {
         m_pDocument = nullptr;
     }
@@ -2419,7 +2414,7 @@ uno::Sequence< uno::Reference< chart2::data::XLabeledDataSequence> > SAL_CALL
 ScChart2DataSource::getDataSequences() throw ( uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
-    return comphelper::containerToSequence< uno::Reference< chart2::data::XLabeledDataSequence> >(m_aLabeledSequences);
+    return comphelper::containerToSequence(m_aLabeledSequences);
 }
 
 void ScChart2DataSource::AddLabeledSequence(const uno::Reference < chart2::data::XLabeledDataSequence >& xNew)
@@ -2547,9 +2542,8 @@ void ScChart2DataSequence::BuildDataCache()
 
     StopListeningToAllExternalRefs();
 
-    ::std::list<sal_Int32> aHiddenValues;
+    ::std::vector<sal_Int32> aHiddenValues;
     sal_Int32 nDataCount = 0;
-    sal_Int32 nHiddenValueCount = 0;
 
     for (vector<ScTokenRef>::const_iterator itr = m_aTokens.begin(), itrEnd = m_aTokens.end();
           itr != itrEnd; ++itr)
@@ -2578,7 +2572,6 @@ void ScChart2DataSequence::BuildDataCache()
                         if (bColHidden || bRowHidden)
                         {
                             // hidden cell
-                            ++nHiddenValueCount;
                             aHiddenValues.push_back(nDataCount-1);
 
                             if( !m_bIncludeHiddenCells )
@@ -2600,8 +2593,8 @@ void ScChart2DataSequence::BuildDataCache()
                             case CELLTYPE_FORMULA:
                             {
                                 ScFormulaCell* pFCell = aCell.mpFormula;
-                                sal_uInt16 nErr = pFCell->GetErrCode();
-                                if (nErr)
+                                FormulaError nErr = pFCell->GetErrCode();
+                                if (nErr != FormulaError::NONE)
                                     break;
 
                                 if (pFCell->IsValue())
@@ -2629,11 +2622,9 @@ void ScChart2DataSequence::BuildDataCache()
     }
 
     // convert the hidden cell list to sequence.
-    m_aHiddenValues.realloc(nHiddenValueCount);
-    sal_Int32* pArr = m_aHiddenValues.getArray();
-    ::std::list<sal_Int32>::const_iterator itr = aHiddenValues.begin(), itrEnd = aHiddenValues.end();
-    for (;itr != itrEnd; ++itr, ++pArr)
-        *pArr = *itr;
+    m_aHiddenValues.realloc(aHiddenValues.size());
+    std::copy(
+        aHiddenValues.begin(), aHiddenValues.end(), m_aHiddenValues.begin());
 
     // Clear the data series cache when the array is re-built.
     m_aMixedDataCache.realloc(0);
@@ -2814,43 +2805,7 @@ void ScChart2DataSequence::CopyData(const ScChart2DataSequence& r)
 
 void ScChart2DataSequence::Notify( SfxBroadcaster& /*rBC*/, const SfxHint& rHint)
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint )
-    {
-        const sal_uInt32 nId = pSimpleHint->GetId();
-        if ( nId ==SFX_HINT_DYING )
-        {
-            m_pDocument = nullptr;
-        }
-        else if ( nId == SFX_HINT_DATACHANGED )
-        {
-            // delayed broadcast as in ScCellRangesBase
-
-            if ( m_bGotDataChangedHint && m_pDocument )
-            {
-                m_aDataArray.clear();
-                lang::EventObject aEvent;
-                aEvent.Source.set(static_cast<cppu::OWeakObject*>(this));
-
-                if( m_pDocument )
-                {
-                    for (uno::Reference<util::XModifyListener> & xListener: m_aValueListeners)
-                        m_pDocument->AddUnoListenerCall( xListener, aEvent );
-                }
-
-                m_bGotDataChangedHint = false;
-            }
-        }
-        else if ( nId == SC_HINT_CALCALL )
-        {
-            // broadcast from DoHardRecalc - set m_bGotDataChangedHint
-            // (SFX_HINT_DATACHANGED follows separately)
-
-            if ( !m_aValueListeners.empty() )
-                m_bGotDataChangedHint = true;
-        }
-    }
-    else if ( dynamic_cast<const ScUpdateRefHint*>(&rHint) )
+    if ( dynamic_cast<const ScUpdateRefHint*>(&rHint) )
     {
         // Create a range list from the token list, have the range list
         // updated, and bring the change back to the token list.
@@ -2924,12 +2879,46 @@ void ScChart2DataSequence::Notify( SfxBroadcaster& /*rBC*/, const SfxHint& rHint
         }
         while (false);
     }
+    else
+    {
+        const sal_uInt32 nId = rHint.GetId();
+        if ( nId ==SFX_HINT_DYING )
+        {
+            m_pDocument = nullptr;
+        }
+        else if ( nId == SFX_HINT_DATACHANGED )
+        {
+            // delayed broadcast as in ScCellRangesBase
+
+            if ( m_bGotDataChangedHint && m_pDocument )
+            {
+                m_aDataArray.clear();
+                lang::EventObject aEvent;
+                aEvent.Source.set(static_cast<cppu::OWeakObject*>(this));
+
+                if( m_pDocument )
+                {
+                    for (uno::Reference<util::XModifyListener> & xListener: m_aValueListeners)
+                        m_pDocument->AddUnoListenerCall( xListener, aEvent );
+                }
+
+                m_bGotDataChangedHint = false;
+            }
+        }
+        else if ( nId == SC_HINT_CALCALL )
+        {
+            // broadcast from DoHardRecalc - set m_bGotDataChangedHint
+            // (SFX_HINT_DATACHANGED follows separately)
+
+            if ( !m_aValueListeners.empty() )
+                m_bGotDataChangedHint = true;
+        }
+    }
 }
 
-IMPL_LINK_TYPED( ScChart2DataSequence, ValueListenerHdl, const SfxHint&, rHint, void )
+IMPL_LINK( ScChart2DataSequence, ValueListenerHdl, const SfxHint&, rHint, void )
 {
-    if ( m_pDocument && dynamic_cast<const SfxSimpleHint*>(&rHint) &&
-            static_cast<const SfxSimpleHint&>(rHint).GetId() & SC_HINT_DATACHANGED)
+    if ( m_pDocument && (rHint.GetId() & SC_HINT_DATACHANGED) )
     {
         //  This may be called several times for a single change, if several formulas
         //  in the range are notified. So only a flag is set that is checked when
@@ -2969,7 +2958,7 @@ void ScChart2DataSequence::ExternalRefListener::notify(sal_uInt16 nFileId, ScExt
         }
         break;
         case ScExternalRefManager::LINK_BROKEN:
-            removeFileId(nFileId);
+            maFileIds.erase(nFileId);
         break;
     }
 }
@@ -2977,11 +2966,6 @@ void ScChart2DataSequence::ExternalRefListener::notify(sal_uInt16 nFileId, ScExt
 void ScChart2DataSequence::ExternalRefListener::addFileId(sal_uInt16 nFileId)
 {
     maFileIds.insert(nFileId);
-}
-
-void ScChart2DataSequence::ExternalRefListener::removeFileId(sal_uInt16 nFileId)
-{
-    maFileIds.erase(nFileId);
 }
 
 uno::Sequence< uno::Any> SAL_CALL ScChart2DataSequence::getData()
@@ -3292,9 +3276,9 @@ uno::Reference< util::XCloneable > SAL_CALL ScChart2DataSequence::createClone()
         aTokensNew.push_back(p);
     }
 
-    uno::Reference<ScChart2DataSequence> p(new ScChart2DataSequence(m_pDocument, m_xDataProvider, std::move(aTokensNew), m_bIncludeHiddenCells));
+    rtl::Reference<ScChart2DataSequence> p(new ScChart2DataSequence(m_pDocument, m_xDataProvider, std::move(aTokensNew), m_bIncludeHiddenCells));
     p->CopyData(*this);
-    Reference< util::XCloneable > xClone(p);
+    Reference< util::XCloneable > xClone(p.get());
 
     return xClone;
 }

@@ -83,7 +83,6 @@ namespace frm
 
     OClickableImageBaseControl::OClickableImageBaseControl(const Reference<XComponentContext>& _rxFactory, const OUString& _aService)
         :OControl(_rxFactory, _aService)
-        ,m_pThread(nullptr)
         ,m_aSubmissionVetoListeners( m_aMutex )
         ,m_aApproveActionListeners( m_aMutex )
         ,m_aActionListeners( m_aMutex )
@@ -150,11 +149,7 @@ namespace frm
 
         {
             ::osl::MutexGuard aGuard( m_aMutex );
-            if( m_pThread )
-            {
-                m_pThread->release();
-                m_pThread = nullptr;
-            }
+            m_pThread.clear();
         }
 
         OControl::disposing();
@@ -163,13 +158,12 @@ namespace frm
 
     OImageProducerThread_Impl* OClickableImageBaseControl::getImageProducerThread()
     {
-        if ( !m_pThread )
+        if ( !m_pThread.is() )
         {
             m_pThread = new OImageProducerThread_Impl( this );
-            m_pThread->acquire();
             m_pThread->create();
         }
-        return m_pThread;
+        return m_pThread.get();
     }
 
 
@@ -652,7 +646,7 @@ namespace frm
 
 
     sal_Bool OClickableImageBaseModel::convertFastPropertyValue(Any& rConvertedValue, Any& rOldValue, sal_Int32 nHandle, const Any& rValue)
-                                throw( IllegalArgumentException )
+                                throw( IllegalArgumentException, RuntimeException, std::exception )
     {
         switch (nHandle)
         {
@@ -728,7 +722,7 @@ namespace frm
        {
             delete m_pMedium;
 
-            m_pMedium = new SfxMedium(rURL, STREAM_STD_READ);
+            m_pMedium = new SfxMedium(rURL, StreamMode::STD_READ);
 
             // Find the XModel to get to the Object shell or at least the
             // Referer.
@@ -825,7 +819,7 @@ namespace frm
     }
 
 
-    IMPL_LINK_NOARG_TYPED( OClickableImageBaseModel, DownloadDoneLink, void*, void )
+    IMPL_LINK_NOARG( OClickableImageBaseModel, DownloadDoneLink, void*, void )
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         DownloadDone();
@@ -854,7 +848,7 @@ namespace frm
         }
     }
 
-    IMPL_LINK_TYPED( OClickableImageBaseModel, OnImageImportDone, Graphic*, i_pGraphic, void )
+    IMPL_LINK( OClickableImageBaseModel, OnImageImportDone, Graphic*, i_pGraphic, void )
     {
         const Reference< XGraphic > xGraphic( i_pGraphic != nullptr ? Graphic(i_pGraphic->GetBitmapEx()).GetXGraphic() : nullptr );
         if ( !xGraphic.is() )

@@ -366,9 +366,9 @@ void ImplUpdateSeparators( const OUString& rOldDecSep, const OUString& rNewDecSe
 
 } // namespace
 
-FormatterBase::FormatterBase( Edit* pField )
+FormatterBase::FormatterBase()
 {
-    mpField                     = pField;
+    mpField                     = nullptr;
     mpLocaleDataWrapper         = nullptr;
     mbReformat                  = false;
     mbStrictFormat              = false;
@@ -504,8 +504,9 @@ void NumericFormatter::ImplInit()
     mnFieldValue        = 0;
     mnLastValue         = 0;
     mnMin               = 0;
-    mnMax               = SAL_MAX_INT64;
-    mnCorrectedValue    = 0;
+    mnMax               = SAL_MAX_INT32;
+        // a "large" value substantially smaller than SAL_MAX_INT64, to avoid
+        // overflow in computations using this "dummy" value
     mnDecimalDigits     = 2;
     mnType              = FORMAT_NUMERIC;
     mbThousandSep       = true;
@@ -523,34 +524,6 @@ void NumericFormatter::ImplInit()
 NumericFormatter::NumericFormatter()
 {
     ImplInit();
-}
-
-void NumericFormatter::ImplLoadRes( const ResId& rResId )
-{
-    ResMgr*     pMgr = rResId.GetResMgr();
-
-    if( pMgr )
-    {
-        RscNumFormatterFlags nMask = (RscNumFormatterFlags)pMgr->ReadLong();
-
-        if ( RscNumFormatterFlags::Min & nMask )
-            mnMin = pMgr->ReadLong();
-
-        if ( RscNumFormatterFlags::Max & nMask )
-            mnMax = pMgr->ReadLong();
-
-        if ( RscNumFormatterFlags::StrictFormat & nMask )
-            SetStrictFormat( pMgr->ReadShort() != 0 );
-
-        if ( RscNumFormatterFlags::DecimalDigits & nMask )
-            SetDecimalDigits( pMgr->ReadShort() );
-
-        if ( RscNumFormatterFlags::Value & nMask )
-        {
-            mnFieldValue = ClipAgainstMinMax(pMgr->ReadLong());
-            mnLastValue = mnFieldValue;
-        }
-    }
 }
 
 NumericFormatter::~NumericFormatter()
@@ -782,20 +755,6 @@ NumericField::NumericField( vcl::Window* pParent, WinBits nWinStyle ) :
     Reformat();
 }
 
-NumericField::NumericField( vcl::Window* pParent, const ResId& rResId ) :
-    SpinField( WINDOW_NUMERICFIELD )
-{
-    rResId.SetRT( RSC_NUMERICFIELD );
-    WinBits nStyle = ImplInitRes( rResId ) ;
-    SpinField::ImplInit( pParent, nStyle );
-    SetField( this );
-    ImplLoadRes( rResId );
-    Reformat();
-
-    if ( !(nStyle & WB_HIDE ) )
-        Show();
-}
-
 void NumericField::dispose()
 {
     NumericFormatter::SetField( nullptr );
@@ -813,23 +772,6 @@ bool NumericField::set_property(const OString &rKey, const OString &rValue)
     else
         return SpinField::set_property(rKey, rValue);
     return true;
-}
-
-void NumericField::ImplLoadRes( const ResId& rResId )
-{
-    SpinField::ImplLoadRes( rResId );
-    NumericFormatter::ImplLoadRes( ResId( static_cast<RSHEADER_TYPE *>(GetClassRes()), *rResId.GetResMgr() ) );
-
-    sal_uLong      nMask = ReadLongRes();
-
-    if ( NUMERICFIELD_FIRST & nMask )
-        mnFirst = ReadLongRes();
-
-    if ( NUMERICFIELD_LAST & nMask )
-        mnLast = ReadLongRes();
-
-    if ( NUMERICFIELD_SPINSIZE & nMask )
-        mnSpinSize = ReadLongRes();
 }
 
 bool NumericField::PreNotify( NotifyEvent& rNEvt )
@@ -1088,8 +1030,7 @@ static FieldUnit ImplStringToMetric(const OUString &rMetricString)
     if( pList )
     {
         // return FieldUnit
-        OUString aStr(rMetricString.toAsciiLowerCase());
-        aStr = string::remove(aStr, ' ');
+        OUString aStr = rMetricString.toAsciiLowerCase().replaceAll(" ", "");
         for( FieldUnitStringList::const_iterator it = pList->begin(); it != pList->end(); ++it )
         {
             if ( it->first == aStr )
@@ -1143,30 +1084,30 @@ static FieldUnit ImplMap2FieldUnit( MapUnit meUnit, long& nDecDigits )
 {
     switch( meUnit )
     {
-        case MAP_100TH_MM :
+        case MapUnit::Map100thMM :
             nDecDigits -= 2;
             return FUNIT_MM;
-        case MAP_10TH_MM :
+        case MapUnit::Map10thMM :
             nDecDigits -= 1;
             return FUNIT_MM;
-        case MAP_MM :
+        case MapUnit::MapMM :
             return FUNIT_MM;
-        case MAP_CM :
+        case MapUnit::MapCM :
             return FUNIT_CM;
-        case MAP_1000TH_INCH :
+        case MapUnit::Map1000thInch :
             nDecDigits -= 3;
             return FUNIT_INCH;
-        case MAP_100TH_INCH :
+        case MapUnit::Map100thInch :
             nDecDigits -= 2;
             return FUNIT_INCH;
-        case MAP_10TH_INCH :
+        case MapUnit::Map10thInch :
             nDecDigits -= 1;
             return FUNIT_INCH;
-        case MAP_INCH :
+        case MapUnit::MapInch :
             return FUNIT_INCH;
-        case MAP_POINT :
+        case MapUnit::MapPoint :
             return FUNIT_POINT;
-        case MAP_TWIP :
+        case MapUnit::MapTwip :
             return FUNIT_TWIP;
         default:
             OSL_FAIL( "default eInUnit" );
@@ -1244,8 +1185,8 @@ double MetricField::ConvertDoubleValue( double nValue, sal_Int64 mnBaseValue, sa
             nDiv  = aImplFactor[eInUnit][eOutUnit];
             nMult = aImplFactor[eOutUnit][eInUnit];
 
-            DBG_ASSERT( nMult > 0, "illegal *" );
-            DBG_ASSERT( nDiv  > 0, "illegal /" );
+            SAL_WARN_IF( nMult <= 0, "vcl", "illegal *" );
+            SAL_WARN_IF( nDiv  <= 0, "vcl", "illegal /" );
         }
 
         if ( nMult != 1 && nMult > 0 )
@@ -1266,10 +1207,10 @@ double MetricField::ConvertDoubleValue( double nValue, sal_uInt16 nDigits,
     if ( eOutUnit == FUNIT_PERCENT ||
          eOutUnit == FUNIT_CUSTOM ||
          eOutUnit == FUNIT_NONE ||
-         eInUnit == MAP_PIXEL ||
-         eInUnit == MAP_SYSFONT ||
-         eInUnit == MAP_APPFONT ||
-         eInUnit == MAP_RELATIVE )
+         eInUnit == MapUnit::MapPixel ||
+         eInUnit == MapUnit::MapSysFont ||
+         eInUnit == MapUnit::MapAppFont ||
+         eInUnit == MapUnit::MapRelative )
     {
         OSL_FAIL( "invalid parameters" );
         return nValue;
@@ -1297,8 +1238,8 @@ double MetricField::ConvertDoubleValue( double nValue, sal_uInt16 nDigits,
         sal_Int64 nDiv  = aImplFactor[eFieldUnit][eOutUnit];
         sal_Int64 nMult = aImplFactor[eOutUnit][eFieldUnit];
 
-        DBG_ASSERT( nMult > 0, "illegal *" );
-        DBG_ASSERT( nDiv  > 0, "illegal /" );
+        SAL_WARN_IF( nMult <= 0, "vcl", "illegal *" );
+        SAL_WARN_IF( nDiv  <= 0, "vcl", "illegal /" );
 
         if ( nMult != 1 && nMult > 0)
             nValue *= nMult;
@@ -1321,10 +1262,10 @@ double MetricField::ConvertDoubleValue( double nValue, sal_uInt16 nDigits,
          eInUnit == FUNIT_SECOND ||
          eInUnit == FUNIT_MILLISECOND ||
          eInUnit == FUNIT_PIXEL ||
-         eOutUnit == MAP_PIXEL ||
-         eOutUnit == MAP_SYSFONT ||
-         eOutUnit == MAP_APPFONT ||
-         eOutUnit == MAP_RELATIVE )
+         eOutUnit == MapUnit::MapPixel ||
+         eOutUnit == MapUnit::MapSysFont ||
+         eOutUnit == MapUnit::MapAppFont ||
+         eOutUnit == MapUnit::MapRelative )
     {
         OSL_FAIL( "invalid parameters" );
         return nValue;
@@ -1347,8 +1288,8 @@ double MetricField::ConvertDoubleValue( double nValue, sal_uInt16 nDigits,
         sal_Int64 nDiv  = aImplFactor[eInUnit][eFieldUnit];
         sal_Int64 nMult = aImplFactor[eFieldUnit][eInUnit];
 
-        DBG_ASSERT( nMult > 0, "illegal *" );
-        DBG_ASSERT( nDiv  > 0, "illegal /" );
+        SAL_WARN_IF( nMult <= 0, "vcl", "illegal *" );
+        SAL_WARN_IF( nDiv  <= 0, "vcl", "illegal /" );
 
         if( nMult != 1 && nMult > 0 )
             nValue *= nMult;
@@ -1407,28 +1348,6 @@ inline void MetricFormatter::ImplInit()
 MetricFormatter::MetricFormatter()
 {
     ImplInit();
-}
-
-void MetricFormatter::ImplLoadRes( const ResId& rResId )
-{
-    NumericFormatter::ImplLoadRes( rResId );
-
-    ResMgr*     pMgr = rResId.GetResMgr();
-    if( pMgr )
-    {
-        sal_uLong       nMask = pMgr->ReadLong();
-
-        if ( METRICFORMATTER_UNIT & nMask )
-        {
-            sal_uLong nUnit = pMgr->ReadLong();
-            assert(nUnit <= FUNIT_MILLISECOND && "out of FieldUnit bounds");
-            if (nUnit <= FUNIT_MILLISECOND)
-                meUnit = (FieldUnit)nUnit;
-        }
-
-        if ( METRICFORMATTER_CUSTOMUNITTEXT & nMask )
-            maCustomUnitText = pMgr->ReadString();
-    }
 }
 
 MetricFormatter::~MetricFormatter()
@@ -1596,7 +1515,7 @@ void MetricFormatter::Reformat()
 sal_Int64 MetricFormatter::GetCorrectedValue( FieldUnit eOutUnit ) const
 {
     // convert to requested units
-    return MetricField::ConvertValue( mnCorrectedValue, mnBaseValue, GetDecimalDigits(),
+    return MetricField::ConvertValue( 0/*nCorrectedValue*/, mnBaseValue, GetDecimalDigits(),
                                       meUnit, eOutUnit );
 }
 
@@ -1605,19 +1524,6 @@ MetricField::MetricField( vcl::Window* pParent, WinBits nWinStyle ) :
 {
     SetField( this );
     Reformat();
-}
-
-MetricField::MetricField( vcl::Window* pParent, const ResId& rResId ) :
-    SpinField( WINDOW_METRICFIELD )
-{
-    rResId.SetRT( RSC_METRICFIELD );
-    WinBits nStyle = ImplInitRes( rResId ) ;
-    SpinField::ImplInit( pParent, nStyle );
-    SetField( this );
-    ImplLoadRes( rResId );
-
-    if ( !(nStyle & WB_HIDE ) )
-        Show();
 }
 
 void MetricField::dispose()
@@ -1640,25 +1546,6 @@ bool MetricField::set_property(const OString &rKey, const OString &rValue)
     else
         return SpinField::set_property(rKey, rValue);
     return true;
-}
-
-void MetricField::ImplLoadRes( const ResId& rResId )
-{
-    SpinField::ImplLoadRes( rResId );
-    MetricFormatter::ImplLoadRes( ResId( static_cast<RSHEADER_TYPE *>(GetClassRes()), *rResId.GetResMgr() ) );
-
-    sal_uLong      nMask = ReadLongRes();
-
-    if ( METRICFIELD_FIRST & nMask )
-        mnFirst = ReadLongRes();
-
-    if ( METRICFIELD_LAST & nMask )
-        mnLast = ReadLongRes();
-
-    if ( METRICFIELD_SPINSIZE & nMask )
-        mnSpinSize = ReadLongRes();
-
-    Reformat();
 }
 
 void MetricField::SetUnit( FieldUnit nNewUnit )
@@ -1951,23 +1838,13 @@ bool CurrencyFormatter::ImplCurrencyReformat( const OUString& rStr, OUString& rO
     }
 }
 
-inline void CurrencyFormatter::ImplInit()
+CurrencyFormatter::CurrencyFormatter()
 {
     mnType = FORMAT_CURRENCY;
 }
 
-CurrencyFormatter::CurrencyFormatter()
-{
-    ImplInit();
-}
-
 CurrencyFormatter::~CurrencyFormatter()
 {
-}
-
-OUString CurrencyFormatter::GetCurrencySymbol() const
-{
-    return ImplGetLocaleDataWrapper().getCurrSymbol();
 }
 
 void CurrencyFormatter::SetValue( sal_Int64 nNewValue )
@@ -1979,7 +1856,9 @@ void CurrencyFormatter::SetValue( sal_Int64 nNewValue )
 
 OUString CurrencyFormatter::CreateFieldText( sal_Int64 nValue ) const
 {
-    return ImplGetLocaleDataWrapper().getCurr( nValue, GetDecimalDigits(), GetCurrencySymbol(), IsUseThousandSep() );
+    return ImplGetLocaleDataWrapper().getCurr( nValue, GetDecimalDigits(),
+                                               ImplGetLocaleDataWrapper().getCurrSymbol(),
+                                               IsUseThousandSep() );
 }
 
 sal_Int64 CurrencyFormatter::GetValue() const

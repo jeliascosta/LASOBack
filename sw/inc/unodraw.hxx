@@ -42,16 +42,9 @@ class SwDoc;
 class SwFmDrawPage : public SvxFmDrawPage
 {
     SdrPageView*        pPageView;
-protected:
-
-    // Create a SdrObject according to a description. Can be used by derived classes to
-    // support own css::drawing::Shapes (e.g. controls).
-    virtual SdrObject *CreateSdrObject_( const css::uno::Reference< css::drawing::XShape > & xShape )
-        throw (css::uno::RuntimeException, std::exception) override;
-
 public:
     SwFmDrawPage( SdrPage* pPage );
-    virtual ~SwFmDrawPage() throw ();
+    virtual ~SwFmDrawPage() throw () override;
 
     const SdrMarkList&  PreGroup(const css::uno::Reference< css::drawing::XShapes >& rShapes);
     void                PreUnGroup(const css::uno::Reference< css::drawing::XShapeGroup >& rShapeGroup);
@@ -82,7 +75,7 @@ class SwXDrawPage : public SwXDrawPageBaseClass
     SwFmDrawPage*   pDrawPage;
 public:
     SwXDrawPage(SwDoc* pDoc);
-    virtual ~SwXDrawPage();
+    virtual ~SwXDrawPage() override;
 
     //XEnumerationAccess
     virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() throw( css::uno::RuntimeException, std::exception ) override;
@@ -116,9 +109,6 @@ public:
     SwFmDrawPage*   GetSvxPage();
     // renamed and outlined to detect where it's called
     void    InvalidateSwDoc(); // {pDoc = 0;}
-    SwDoc* GetDoc();
-    /// Same as getByIndex(nIndex), except that it also takes a set of formats to ignore, so the method itself doesn't have to generate such a list.
-    css::uno::Any getByIndex(sal_Int32 nIndex, std::set<const SwFrameFormat*>* pTextBoxes) throw(css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception);
 };
 
 class SwShapeDescriptor_Impl;
@@ -220,7 +210,7 @@ class SwXShape : public SwXShapeBaseClass,
                    css::uno::RuntimeException);
 
 protected:
-    virtual ~SwXShape();
+    virtual ~SwXShape() override;
     //SwClient
     virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew) override;
 
@@ -283,7 +273,7 @@ class SwXGroupShape :
     public css::drawing::XShapes
 {
 protected:
-    virtual ~SwXGroupShape();
+    virtual ~SwXGroupShape() override;
 public:
     SwXGroupShape(css::uno::Reference< css::uno::XInterface > & xShape);
 

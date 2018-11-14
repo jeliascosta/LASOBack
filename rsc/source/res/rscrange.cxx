@@ -26,9 +26,8 @@
 
 RscRange::RscRange( Atom nId, sal_uInt32 nTypeId )
     : RscTop( nId, nTypeId )
+    , nMin(0), nMax(0)
 {
-    nMin = nMax = 0;
-    nSize = ALIGNED_SIZE( sizeof( RscRangeInst ) );
 }
 
 RSCCLASS_TYPE RscRange::GetClassType() const
@@ -100,8 +99,8 @@ RSCINST RscRange::Create( RSCINST * pInst, const RSCINST & rDflt,
         memmove( aInst.pData, rDflt.pData, sizeof( RscRangeInst ) );
     else
     {
-        if( 0L >= nMin && 0L <= nMax )
-            reinterpret_cast<RscRangeInst *>(aInst.pData)->nValue = (sal_uInt16)(0L - nMin);
+        if( 0 >= nMin && 0 <= nMax )
+            reinterpret_cast<RscRangeInst *>(aInst.pData)->nValue = (sal_uInt16)(0 - nMin);
         else
             reinterpret_cast<RscRangeInst *>(aInst.pData)->nValue = 0;
 
@@ -138,9 +137,8 @@ ERRTYPE RscRange::WriteRc( const RSCINST & rInst, RscWriteRc & aMem,
 
 RscLongRange::RscLongRange( Atom nId, sal_uInt32 nTypeId )
     : RscTop( nId, nTypeId )
+    , nMin(0), nMax(0)
 {
-    nMin = nMax = 0;
-    nSize = ALIGNED_SIZE( sizeof( RscLongRangeInst ) );
 }
 
 RSCCLASS_TYPE RscLongRange::GetClassType() const
@@ -211,7 +209,7 @@ RSCINST RscLongRange::Create( RSCINST * pInst, const RSCINST & rDflt,
     else
     {
         sal_Int32   lDflt;
-        if( 0L >= nMin && 0L <= nMax )
+        if( 0 >= nMin && 0 <= nMax )
             lDflt = 0;
         else
             lDflt = nMin;
@@ -256,9 +254,8 @@ ERRTYPE RscLongEnumRange::SetConst( const RSCINST & rInst, Atom /*nConst*/,
 
 RscIdRange::RscIdRange( Atom nId, sal_uInt32 nTypeId )
     : RscTop( nId, nTypeId )
+    , nMin(0), nMax(0)
 {
-    nSize = ALIGNED_SIZE( sizeof( RscId ) );
-    nMin = nMax = 0;
 }
 
 RSCCLASS_TYPE RscIdRange::GetClassType() const
@@ -348,7 +345,7 @@ ERRTYPE RscIdRange::SetRef( const RSCINST & rInst, const RscId & rRscId )
     ERRTYPE aError;
     if( rRscId.IsId() )
     {
-        aError = SetNumber( rInst, rRscId );
+        aError = SetNumber( rInst, rRscId.GetNumber() );
         if( aError.IsOk() )
         {
             *reinterpret_cast<RscId *>(rInst.pData) = rRscId;
@@ -416,9 +413,8 @@ void RscBool::WriteSrc( const RSCINST & rInst, FILE * fOutput,
 }
 
 RscBreakRange::RscBreakRange( Atom nId, sal_uInt32 nTypeId )
-    : RscRange( nId, nTypeId )
+    : RscRange(nId, nTypeId), nOutRange(0xFFFFFFFF)
 {
-    nOutRange = 0xFFFFFFFF;
 }
 
 ERRTYPE RscBreakRange::SetNumber( const RSCINST & rInst, sal_Int32 nValue )

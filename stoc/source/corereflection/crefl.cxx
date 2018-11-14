@@ -25,6 +25,7 @@
 #include <com/sun/star/reflection/XConstantTypeDescription.hpp>
 #include <com/sun/star/reflection/XTypeDescription.hpp>
 #include <com/sun/star/uno/RuntimeException.hpp>
+#include <o3tl/any.hxx>
 #include <uno/lbnames.h>
 
 using namespace css;
@@ -42,8 +43,6 @@ using namespace osl;
 namespace stoc_corefl
 {
 
-static const sal_Int32 CACHE_SIZE = 256;
-
 #define IMPLNAME    "com.sun.star.comp.stoc.CoreReflection"
 
 static Sequence< OUString > core_getSupportedServiceNames()
@@ -60,7 +59,7 @@ static OUString core_getImplementationName()
 IdlReflectionServiceImpl::IdlReflectionServiceImpl(
     const Reference< XComponentContext > & xContext )
     : OComponentHelper( _aComponentMutex )
-    , _aElements( CACHE_SIZE )
+    , _aElements()
 {
     xContext->getValueByName(
         "/singletons/com.sun.star.reflection.theTypeDescriptionManager" ) >>= _xTDMgr;
@@ -223,8 +222,7 @@ Reference< XIdlClass > IdlReflectionServiceImpl::forName( const OUString & rType
 
     if (aAny.hasValue())
     {
-        if (aAny.getValueTypeClass() == TypeClass_INTERFACE)
-            xRet = *static_cast<const Reference< XIdlClass > *>(aAny.getValue());
+        aAny >>= xRet;
     }
     else
     {
@@ -254,7 +252,7 @@ Any IdlReflectionServiceImpl::getByHierarchicalName( const OUString & rName )
         if (aRet.getValueTypeClass() == TypeClass_INTERFACE)
         {
             // type retrieved from tdmgr
-            OSL_ASSERT( (*static_cast<Reference< XInterface > const *>(aRet.getValue()))->queryInterface(
+            OSL_ASSERT( (*o3tl::forceAccess<Reference<XInterface>>(aRet))->queryInterface(
                 cppu::UnoType<XTypeDescription>::get()).hasValue() );
 
             css::uno::Reference< css::reflection::XConstantTypeDescription >
@@ -321,8 +319,7 @@ Reference< XIdlClass > IdlReflectionServiceImpl::forType( typelib_TypeDescriptio
 
     if (aAny.hasValue())
     {
-        if (aAny.getValueTypeClass() == TypeClass_INTERFACE)
-            xRet = *static_cast<const Reference< XIdlClass > *>(aAny.getValue());
+        aAny >>= xRet;
     }
     else
     {

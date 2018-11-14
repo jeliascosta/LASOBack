@@ -27,7 +27,7 @@
 #include <com/sun/star/security/XDocumentDigitalSignatures.hpp>
 #include <com/sun/star/io/XStream.hpp>
 #include <com/sun/star/io/XInputStream.hpp>
-#include <xmlsecurity/documentsignaturehelper.hxx>
+#include <documentsignaturehelper.hxx>
 
 namespace com { namespace  sun { namespace star {
 
@@ -45,7 +45,9 @@ class DocumentDigitalSignatures : public cppu::WeakImplHelper
 {
 private:
     css::uno::Reference< css::uno::XComponentContext > mxCtx;
-    // will be set by XInitialization. If not we assume true. false means an earlier version.
+    // will be set by XInitialization. If not we assume true. false means an earlier version (whatever that means,
+    // this is a string, not a boolean).
+    // Note that the code talks about "ODF version" even if this class is also used to sign OOXML.
     OUString m_sODFVersion;
     //The number of arguments which were passed in XInitialization::initialize
     int m_nArgumentsCount;
@@ -58,6 +60,7 @@ private:
 
 public:
     explicit DocumentDigitalSignatures( const css::uno::Reference< css::uno::XComponentContext>& rxCtx );
+    virtual ~DocumentDigitalSignatures() override;
 
     // for service registration...
     static OUString GetImplementationName() throw (css::uno::RuntimeException);
@@ -96,7 +99,7 @@ public:
     void SAL_CALL addAuthorToTrustedSources( const css::uno::Reference< css::security::XCertificate >& Author ) throw (css::uno::RuntimeException, std::exception) override;
     void SAL_CALL addLocationToTrustedSources( const OUString& Location ) throw (css::uno::RuntimeException, std::exception) override;
 
-    css::uno::Reference< css::security::XCertificate > SAL_CALL chooseCertificate( ) throw (css::uno::RuntimeException, std::exception) override;
+    css::uno::Reference< css::security::XCertificate > SAL_CALL chooseCertificate(OUString& rDescription) throw (css::uno::RuntimeException, std::exception) override;
 };
 
 css::uno::Reference< css::uno::XInterface > SAL_CALL DocumentDigitalSignatures_CreateInstance(

@@ -35,6 +35,7 @@
 #include <vcl/settings.hxx>
 #include <vcl/bitmapaccess.hxx>
 #include <vcl/opengl/OpenGLContext.hxx>
+#include <vcl/BitmapTools.hxx>
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -44,7 +45,7 @@
 #include <X11/extensions/shape.h>
 
 #include "unx/salunx.h"
-#include "unx/saldata.hxx"
+#include "saldatabasic.hxx"
 #include "unx/saldisp.hxx"
 #include "unx/salgdi.h"
 #include "unx/salframe.h"
@@ -56,6 +57,7 @@
 #include "unx/i18n_keysym.hxx"
 #include "unx/i18n_status.hxx"
 #include <unx/x11/xlimits.hxx>
+#include "opengl/zone.hxx"
 
 #include "unx/gensys.h"
 #include "sallayout.hxx"
@@ -209,23 +211,26 @@ static void CreateNetWmAppIcon( sal_uInt16 nIcon, NetWmIconData& netwm_icon )
             nIconSizeOffset = SV_ICON_SIZE32_START;
         else
             nIconSizeOffset = SV_ICON_SIZE16_START;
-        BitmapEx aIcon( ResId(nIconSizeOffset + nIcon, *ImplGetResMgr()));
+
+        BitmapEx aIcon = vcl::bitmap::loadFromResource(ResId(nIconSizeOffset + nIcon, *ImplGetResMgr()),
+                                                       ImageLoadFlags::IgnoreScalingFactor);
+
         if( aIcon.IsEmpty())
             continue;
         Bitmap icon = aIcon.GetBitmap();
         AlphaMask mask;
         switch( aIcon.GetTransparentType())
         {
-            case TRANSPARENT_NONE:
+            case TransparentType::NONE:
             {
                 sal_uInt8 nTrans = 0;
                 mask = AlphaMask( icon.GetSizePixel(), &nTrans );
             }
             break;
-            case TRANSPARENT_COLOR:
+            case TransparentType::Color:
                 mask = AlphaMask( icon.CreateMask( aIcon.GetTransparentColor() ) );
             break;
-            case TRANSPARENT_BITMAP:
+            case TransparentType::Bitmap:
                 mask = aIcon.GetAlpha();
             break;
         }
@@ -253,6 +258,8 @@ static bool lcl_SelectAppIconPixmap( SalDisplay *pDisplay, SalX11Screen nXScreen
     if( ! ImplGetResMgr() )
         return false;
 
+    PreDefaultWinNoOpenGLZone aGuard;
+
     CreateNetWmAppIcon( nIcon, netwm_icon );
 
     sal_uInt16 nIconSizeOffset;
@@ -266,7 +273,9 @@ static bool lcl_SelectAppIconPixmap( SalDisplay *pDisplay, SalX11Screen nXScreen
     else
         return false;
 
-    BitmapEx aIcon( ResId(nIconSizeOffset + nIcon, *ImplGetResMgr()));
+    BitmapEx aIcon = vcl::bitmap::loadFromResource(ResId(nIconSizeOffset + nIcon, *ImplGetResMgr()),
+                                                   ImageLoadFlags::IgnoreScalingFactor);
+
     if( aIcon.IsEmpty() )
         return false;
 
@@ -294,7 +303,7 @@ static bool lcl_SelectAppIconPixmap( SalDisplay *pDisplay, SalX11Screen nXScreen
 
     icon_mask = None;
 
-    if( TRANSPARENT_BITMAP == aIcon.GetTransparentType() )
+    if( TransparentType::Bitmap == aIcon.GetTransparentType() )
     {
         icon_mask = XCreatePixmap( pDisplay->GetDisplay(),
                                    pDisplay->GetRootWindow( pDisplay->GetDefaultXScreen() ),
@@ -375,7 +384,7 @@ void X11SalFrame::Init( SalFrameStyleFlags nSalFrameStyle, SalX11Screen nXScreen
     }
     else if( (nSalFrameStyle & SalFrameStyleFlags::SYSTEMCHILD ) )
     {
-        DBG_ASSERT( mpParent, "SalFrameStyleFlags::SYSTEMCHILD window without parent" );
+        SAL_WARN_IF( !mpParent, "vcl", "SalFrameStyleFlags::SYSTEMCHILD window without parent" );
         if( mpParent )
         {
             aFrameParent = mpParent->mhWindow;
@@ -767,7 +776,6 @@ X11SalFrame::X11SalFrame( SalFrame *pParent, SalFrameStyleFlags nSalFrameStyle,
     mhShellWindow               = None;
     mhStackingWindow            = None;
     mhForeignParent             = None;
-    mhBackgroundPixmap          = None;
     m_bSetFocusOnMap            = false;
 
     pGraphics_                  = nullptr;
@@ -778,7 +786,6 @@ X11SalFrame::X11SalFrame( SalFrame *pParent, SalFrameStyleFlags nSalFrameStyle,
 
     nKeyCode_                   = 0;
     nKeyState_                  = 0;
-    nCompose_                   = -1;
     mbSendExtKeyModChange       = false;
     mnExtKeyMod                 = 0;
 
@@ -834,12 +841,6 @@ X11SalFrame::~X11SalFrame()
         delete [] m_pClipRectangles;
         m_pClipRectangles = nullptr;
         m_nCurClipRect = m_nMaxClipRect = 0;
-    }
-
-    if( mhBackgroundPixmap )
-    {
-        XSetWindowBackgroundPixmap( GetXDisplay(), GetWindow(), None );
-        XFreePixmap( GetXDisplay(), mhBackgroundPixmap );
     }
 
     if( mhStackingWindow )
@@ -961,7 +962,7 @@ SalGraphics *X11SalFrame::AcquireGraphics()
 
 void X11SalFrame::ReleaseGraphics( SalGraphics *pGraphics )
 {
-    DBG_ASSERT( pGraphics == pGraphics_, "SalFrame::ReleaseGraphics pGraphics!=pGraphics_" );
+    SAL_WARN_IF( pGraphics != pGraphics_, "vcl", "SalFrame::ReleaseGraphics pGraphics!=pGraphics_" );
 
     if( pGraphics != pGraphics_ )
         return;
@@ -1376,10 +1377,6 @@ void X11SalFrame::ToTop( SalFrameToTop nFlags )
     if( ! (nFlags & SalFrameToTop::GrabFocusOnly) )
     {
         XRaiseWindow( GetXDisplay(), aToTopWindow );
-        if( ! GetDisplay()->getWMAdaptor()->isTransientBehaviourAsExpected() )
-            for( std::list< X11SalFrame* >::const_iterator it = maChildren.begin();
-                 it != maChildren.end(); ++it )
-                (*it)->ToTop( nFlags & ~SalFrameToTop::GrabFocus );
     }
 
     if( ( ( nFlags & SalFrameToTop::GrabFocus ) || ( nFlags & SalFrameToTop::GrabFocusOnly ) )
@@ -2816,8 +2813,7 @@ long X11SalFrame::HandleMouseEvent( XEvent *pEvent )
         ImplSVData* pSVData = ImplGetSVData();
         if ( pSVData->maWinData.mpFirstFloat )
         {
-            static const char* pEnv = getenv( "SAL_FLOATWIN_NOAPPFOCUSCLOSE" );
-            if ( !(pSVData->maWinData.mpFirstFloat->GetPopupModeFlags() & FloatWinPopupFlags::NoAppFocusClose) && !(pEnv && *pEnv) )
+            if (!(pSVData->maWinData.mpFirstFloat->GetPopupModeFlags() & FloatWinPopupFlags::NoAppFocusClose))
                 pSVData->maWinData.mpFirstFloat->EndPopupMode( FloatWinPopupEndFlags::Cancel | FloatWinPopupEndFlags::CloseAll );
         }
     }
@@ -2863,12 +2859,10 @@ void X11SalFrame::beginUnicodeSequence()
     {
         ExtTextInputAttr nTextAttr = ExtTextInputAttr::Underline;
         SalExtTextInputEvent aEv;
-        aEv.mnTime          = 0;
         aEv.maText          = rSeq;
         aEv.mpTextAttr      = &nTextAttr;
         aEv.mnCursorPos     = 0;
         aEv.mnCursorFlags   = 0;
-        aEv.mbOnlyCursor    = false;
 
         CallCallback(SalEvent::ExtTextInput, static_cast<void*>(&aEv));
     }
@@ -2892,12 +2886,10 @@ bool X11SalFrame::appendUnicodeSequence( sal_Unicode c )
             std::vector<ExtTextInputAttr> attribs( rSeq.getLength(), ExtTextInputAttr::Underline );
 
             SalExtTextInputEvent aEv;
-            aEv.mnTime          = 0;
             aEv.maText          = rSeq;
             aEv.mpTextAttr      = &attribs[0];
             aEv.mnCursorPos     = 0;
             aEv.mnCursorFlags   = 0;
-            aEv.mbOnlyCursor    = false;
 
             CallCallback(SalEvent::ExtTextInput, static_cast<void*>(&aEv));
             bRet = true;
@@ -2924,12 +2916,10 @@ bool X11SalFrame::endUnicodeSequence()
         {
             ExtTextInputAttr nTextAttr = ExtTextInputAttr::Underline;
             SalExtTextInputEvent aEv;
-            aEv.mnTime          = 0;
             aEv.maText          = OUString( sal_Unicode(nValue) );
             aEv.mpTextAttr      = &nTextAttr;
             aEv.mnCursorPos     = 0;
             aEv.mnCursorFlags   = 0;
-            aEv.mbOnlyCursor    = false;
             CallCallback(SalEvent::ExtTextInput, static_cast<void*>(&aEv));
         }
     }
@@ -3054,6 +3044,7 @@ long X11SalFrame::HandleKeyEvent( XKeyEvent *pEvent )
                 ||      nKeySym == XK_Super_L   || nKeySym == XK_Super_R )
     {
         SalKeyModEvent aModEvt;
+        aModEvt.mbDown = false; // auto-accelerator feature not supported here
         aModEvt.mnModKeyCode = 0;
         if( pEvent->type == KeyPress && mnExtKeyMod == 0 )
             mbSendExtKeyModChange = true;
@@ -3065,7 +3056,7 @@ long X11SalFrame::HandleKeyEvent( XKeyEvent *pEvent )
 
         // pressing just the ctrl key leads to a keysym of XK_Control but
         // the event state does not contain ControlMask. In the release
-        // event its the other way round: it does contain the Control mask.
+        // event it's the other way round: it does contain the Control mask.
         // The modifier mode therefore has to be adapted manually.
         sal_uInt16 nExtModMask = 0;
         sal_uInt16 nModMask = 0;
@@ -3432,8 +3423,7 @@ void X11SalFrame::RestackChildren( ::Window* pTopLevelWindows, int nTopLevelWind
 
 void X11SalFrame::RestackChildren()
 {
-    if( ! GetDisplay()->getWMAdaptor()->isTransientBehaviourAsExpected()
-        && !maChildren.empty() )
+    if( !maChildren.empty() )
     {
         ::Window aRoot, aParent, *pChildren = nullptr;
         unsigned int nChildren;
@@ -3561,7 +3551,7 @@ long X11SalFrame::HandleSizeEvent( XConfigureEvent *pEvent )
     return 1;
 }
 
-IMPL_LINK_NOARG_TYPED(X11SalFrame, HandleAlwaysOnTopRaise, Timer *, void)
+IMPL_LINK_NOARG(X11SalFrame, HandleAlwaysOnTopRaise, Timer *, void)
 {
     if( bMapped_ )
         ToTop( SalFrameToTop::NONE );
@@ -3873,8 +3863,7 @@ long X11SalFrame::Dispatch( XEvent *pEvent )
                 break;
 
             case KeyRelease:
-                if( -1 == nCompose_ )
-                    nRet = HandleKeyEvent( &pEvent->xkey );
+                nRet = HandleKeyEvent( &pEvent->xkey );
             break;
 
             case ButtonPress:

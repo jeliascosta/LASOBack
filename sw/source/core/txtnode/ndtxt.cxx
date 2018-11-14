@@ -86,6 +86,8 @@
 #include <calbck.hxx>
 #include <attrhint.hxx>
 #include <memory>
+#include <unoparagraph.hxx>
+#include <wrtsh.hxx>
 
 //UUUU
 #include <svx/sdr/attribute/sdrallfillattributeshelper.hxx>
@@ -826,10 +828,10 @@ void SwTextNode::NewAttrSet( SwAttrPool& rPool )
     const SwFormatColl* pAnyFormatColl = &GetAnyFormatColl();
     const SwFormatColl* pFormatColl = GetFormatColl();
     OUString sVal;
-    SwStyleNameMapper::FillProgName( pAnyFormatColl->GetName(), sVal, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL, true );
+    SwStyleNameMapper::FillProgName( pAnyFormatColl->GetName(), sVal, SwGetPoolIdFromName::TxtColl, true );
     SfxStringItem aAnyFormatColl( RES_FRMATR_STYLE_NAME, sVal );
     if ( pFormatColl != pAnyFormatColl )
-        SwStyleNameMapper::FillProgName( pFormatColl->GetName(), sVal, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL, true );
+        SwStyleNameMapper::FillProgName( pFormatColl->GetName(), sVal, SwGetPoolIdFromName::TxtColl, true );
     SfxStringItem aFormatColl( RES_FRMATR_CONDITIONAL_STYLE_NAME, sVal );
     aNewAttrSet.Put( aAnyFormatColl );
     aNewAttrSet.Put( aFormatColl );
@@ -1088,6 +1090,10 @@ void SwTextNode::Update(
                 if( this == &pEnd->nNode.GetNode() &&
                     rPos.GetIndex() == rEndIdx.GetIndex() )
                 {
+                    if (&rEndIdx == next) // nasty corner case:
+                    {   // don't switch to iterating aTmpIdxReg!
+                        next = rEndIdx.GetNext();
+                    }
                     rEndIdx.Assign( &aTmpIdxReg, rEndIdx.GetIndex() );
                     bAtLeastOneBookmarkMoved = true;
                 }
@@ -1156,6 +1162,31 @@ void SwTextNode::Update(
 #if OSL_DEBUG_LEVEL > 0
         assert( checkFormats.empty());
 #endif
+
+        // The cursors of other shells shouldn't be moved, either.
+        if (SwDocShell* pDocShell = GetDoc()->GetDocShell())
+        {
+            if (pDocShell->GetWrtShell())
+            {
+                for (SwViewShell& rShell : pDocShell->GetWrtShell()->GetRingContainer())
+                {
+                    auto pWrtShell = dynamic_cast<SwWrtShell*>(&rShell);
+                    if (!pWrtShell || pWrtShell == pDocShell->GetWrtShell())
+                        continue;
+
+                    SwShellCursor* pCursor = pWrtShell->GetCursor_();
+                    if (!pCursor)
+                        continue;
+
+                    SwIndex& rIndex = const_cast<SwIndex&>(pCursor->Start()->nContent);
+                    if (&pCursor->Start()->nNode.GetNode() == this && rIndex.GetIndex() == rPos.GetIndex())
+                    {
+                        // The cursor position of this other shell is exactly our insert position.
+                        rIndex.Assign(&aTmpIdxReg, rIndex.GetIndex());
+                    }
+                }
+            }
+        }
     }
 
     // base class
@@ -1275,7 +1306,7 @@ static bool lcl_GetTextAttrParent(sal_Int32 nIndex, sal_Int32 nHintStart, sal_In
 
 static void
 lcl_GetTextAttrs(
-    ::std::vector<SwTextAttr *> *const pVector,
+    std::vector<SwTextAttr *> *const pVector,
     SwTextAttr **const ppTextAttr,
     SwpHints *const pSwpHints,
     sal_Int32 const nIndex, RES_TXTATR const nWhich,
@@ -1337,10 +1368,10 @@ lcl_GetTextAttrs(
     }
 }
 
-::std::vector<SwTextAttr *>
+std::vector<SwTextAttr *>
 SwTextNode::GetTextAttrsAt(sal_Int32 const nIndex, RES_TXTATR const nWhich) const
 {
-    ::std::vector<SwTextAttr *> ret;
+    std::vector<SwTextAttr *> ret;
     lcl_GetTextAttrs(& ret, nullptr, m_pSwpHints, nIndex, nWhich, DEFAULT);
     return ret;
 }
@@ -1502,8 +1533,7 @@ void lcl_CopyHint(
         if( pDest && pDest->GetpSwpHints()
             && pDest->GetpSwpHints()->Contains( pNewHt ) )
         {
-            SwCharFormat* pFormat =
-                static_cast<SwCharFormat*>(pHt->GetCharFormat().GetCharFormat());
+            SwCharFormat* pFormat = pHt->GetCharFormat().GetCharFormat();
 
             if (pOtherDoc)
             {
@@ -1839,7 +1869,7 @@ void SwTextNode::CopyText( SwTextNode *const pDest,
         {
             // copy the hint here, but insert it later
             pNewHt = MakeTextAttr( *GetDoc(), pHt->GetAttr(),
-                    nAttrStt, nAttrEnd, COPY, pDest );
+                    nAttrStt, nAttrEnd, CopyOrNewType::Copy, pDest );
 
             lcl_CopyHint(nWhich, pHt, pNewHt, nullptr, pDest);
             aArr.push_back( pNewHt );
@@ -2139,7 +2169,7 @@ void SwTextNode::CutImpl( SwTextNode * const pDest, const SwIndex & rDestStart,
                 // do not delete note and later add it -> sidebar flickering
                 if (GetDoc()->GetDocShell())
                 {
-                    GetDoc()->GetDocShell()->Broadcast( SfxSimpleHint(SFX_HINT_USER04));
+                    GetDoc()->GetDocShell()->Broadcast( SfxHint(SFX_HINT_USER04));
                 }
                 // Attribut verschieben
                 m_pSwpHints->Delete( pHt );
@@ -2162,7 +2192,7 @@ void SwTextNode::CutImpl( SwTextNode * const pDest, const SwIndex & rDestStart,
                         | SetAttrMode::DONTREPLACE );
                 if (GetDoc()->GetDocShell())
                 {
-                    GetDoc()->GetDocShell()->Broadcast( SfxSimpleHint(SFX_HINT_USER04));
+                    GetDoc()->GetDocShell()->Broadcast( SfxHint(SFX_HINT_USER04));
                 }
                 continue;           // while-Schleife weiter, ohne ++ !
             }
@@ -3139,8 +3169,7 @@ bool SwTextNode::GetExpandText( SwTextNode& rDestNd, const SwIndex* pDestIdx,
                             if( !sExpand.isEmpty() )
                             {
                                 ++aDestIdx;     // insert behind
-                                SvxEscapementItem aItem(
-                                        SVX_ESCAPEMENT_SUPERSCRIPT );
+                                SvxEscapementItem aItem( SvxEscapement::Superscript, RES_CHRATR_ESCAPEMENT );
                                 rDestNd.InsertItem(
                                         aItem,
                                         aDestIdx.GetIndex(),
@@ -4185,7 +4214,7 @@ namespace {
     //     is set and changed after the attributes have been set
     // (6) Notify list tree, if count in list - RES_PARATR_LIST_ISCOUNTED - is set
     //     and changed after the attributes have been set
-    // (7) Set or Reset emtpy list style due to changed outline level - RES_PARATR_OUTLINELEVEL.
+    // (7) Set or Reset empty list style due to changed outline level - RES_PARATR_OUTLINELEVEL.
     class HandleSetAttrAtTextNode
     {
         public:
@@ -4821,7 +4850,7 @@ sal_uInt16 SwTextNode::ResetAllAttr()
 
 void SwTextNode::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swTextNode"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwTextNode"));
     xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("ptr"), "%p", this);
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("index"), BAD_CAST(OString::number(GetIndex()).getStr()));
 
@@ -4834,21 +4863,21 @@ void SwTextNode::dumpAsXml(xmlTextWriterPtr pWriter) const
 
     if (GetFormatColl())
     {
-        xmlTextWriterStartElement(pWriter, BAD_CAST("swTextFormatColl"));
+        xmlTextWriterStartElement(pWriter, BAD_CAST("SwTextFormatColl"));
         xmlTextWriterWriteAttribute(pWriter, BAD_CAST("name"), BAD_CAST(GetFormatColl()->GetName().toUtf8().getStr()));
         xmlTextWriterEndElement(pWriter);
     }
 
     if (HasSwAttrSet())
     {
-        xmlTextWriterStartElement(pWriter, BAD_CAST("swAttrSet"));
+        xmlTextWriterStartElement(pWriter, BAD_CAST("SwAttrSet"));
         GetSwAttrSet().dumpAsXml(pWriter);
         xmlTextWriterEndElement(pWriter);
     }
 
     if (HasHints())
     {
-        xmlTextWriterStartElement(pWriter, BAD_CAST("swpHints"));
+        xmlTextWriterStartElement(pWriter, BAD_CAST("SwpHints"));
         const SwpHints& rHints = GetSwpHints();
         for (size_t i = 0; i < rHints.Count(); ++i)
             rHints.Get(i)->dumpAsXml(pWriter);
@@ -4920,11 +4949,9 @@ void SwTextNode::SwClientNotify( const SwModify& rModify, const SfxHint& rHint )
 {
     SwClient::SwClientNotify(rModify, rHint);
     const SwAttrHint* pHint = dynamic_cast<const SwAttrHint*>(&rHint);
-    if ( pHint && pHint->GetId() == RES_CONDTXTFMTCOLL && &rModify == GetRegisteredIn() )
+    if ( pHint && &rModify == GetRegisteredIn() )
         ChkCondColl();
 }
-
-#include <unoparagraph.hxx>
 
 uno::Reference< rdf::XMetadatable >
 SwTextNode::MakeUnoObject()

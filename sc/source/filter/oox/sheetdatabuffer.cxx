@@ -22,7 +22,6 @@
 #include <algorithm>
 #include <com/sun/star/sheet/XArrayFormulaTokens.hpp>
 #include <com/sun/star/sheet/XCellRangeData.hpp>
-#include <com/sun/star/sheet/XFormulaTokens.hpp>
 #include <com/sun/star/sheet/XMultipleOperation.hpp>
 #include <com/sun/star/table/XCell.hpp>
 #include <com/sun/star/text/XText.hpp>
@@ -41,7 +40,6 @@
 #include <oox/token/properties.hxx>
 #include <oox/token/tokens.hxx>
 #include "addressconverter.hxx"
-#include "biffinputstream.hxx"
 #include "formulaparser.hxx"
 #include "sharedstringsbuffer.hxx"
 #include "unitconverter.hxx"
@@ -56,6 +54,7 @@
 #include "documentimport.hxx"
 #include "formulabuffer.hxx"
 #include <numformat.hxx>
+#include <sax/tools/converter.hxx>
 
 namespace oox {
 namespace xls {
@@ -180,7 +179,18 @@ void SheetDataBuffer::setDateTimeCell( const CellModel& rModel, const css::util:
     // set appropriate number format
     using namespace ::com::sun::star::util::NumberFormat;
     sal_Int16 nStdFmt = (fSerial < 1.0) ? TIME : (((rDateTime.Hours > 0) || (rDateTime.Minutes > 0) || (rDateTime.Seconds > 0)) ? DATETIME : DATE);
-    setStandardNumFmt( rModel.maCellAddr, nStdFmt );
+    // set number format
+    try
+    {
+        Reference< XNumberFormatsSupplier > xNumFmtsSupp( getDocument(), UNO_QUERY_THROW );
+        Reference< XNumberFormatTypes > xNumFmtTypes( xNumFmtsSupp->getNumberFormats(), UNO_QUERY_THROW );
+        sal_Int32 nIndex = xNumFmtTypes->getStandardFormat( nStdFmt, Locale() );
+        PropertySet aPropSet( getCell( rModel.maCellAddr ) );
+        aPropSet.setProperty( PROP_NumberFormat, nIndex );
+    }
+    catch( Exception& )
+    {
+    }
 }
 
 void SheetDataBuffer::setBooleanCell( const CellModel& rModel, bool bValue )
@@ -206,15 +216,17 @@ void SheetDataBuffer::setErrorCell( const CellModel& rModel, sal_uInt8 nErrorCod
 
 void SheetDataBuffer::setDateCell( const CellModel& rModel, const OUString& rDateString )
 {
-    ScDocument& rDoc = getScDocument();
-    SvNumberFormatter* pFormatter = rDoc.GetFormatTable();
+    css::util::DateTime aDateTime;
+    if (!sax::Converter::parseDateTime( aDateTime, nullptr, rDateString))
+    {
+        SAL_WARN("sc.filter", "SheetDataBuffer::setDateCell - could not parse: " << rDateString);
+        // At least don't lose data.
+        setStringCell( rModel, rDateString);
+        return;
+    }
 
-    double fValue = 0.0;
-    sal_uInt32 nFormatIndex = 0;
-    bool bValid = pFormatter->IsNumberFormat( rDateString, nFormatIndex, fValue );
-
-    if(bValid)
-        setValueCell( rModel, fValue );
+    double fSerial = getUnitConverter().calcSerialFromDateTime( aDateTime);
+    setValueCell( rModel, fSerial);
 }
 
 void SheetDataBuffer::createSharedFormula(const ScAddress& rAddr, const ApiTokenSequence& rTokens)
@@ -316,21 +328,6 @@ void SheetDataBuffer::setMergedRange( const CellRangeAddress& rRange )
     maMergedRanges.push_back( MergedRange( rRange ) );
 }
 
-void SheetDataBuffer::setStandardNumFmt( const ScAddress& rCellAddr, sal_Int16 nStdNumFmt )
-{
-    try
-    {
-        Reference< XNumberFormatsSupplier > xNumFmtsSupp( getDocument(), UNO_QUERY_THROW );
-        Reference< XNumberFormatTypes > xNumFmtTypes( xNumFmtsSupp->getNumberFormats(), UNO_QUERY_THROW );
-        sal_Int32 nIndex = xNumFmtTypes->getStandardFormat( nStdNumFmt, Locale() );
-        PropertySet aPropSet( getCell( rCellAddr ) );
-        aPropSet.setProperty( PROP_NumberFormat, nIndex );
-    }
-    catch( Exception& )
-    {
-    }
-}
-
 typedef std::pair<sal_Int32, sal_Int32> FormatKeyPair;
 
 void addIfNotInMyMap( StylesBuffer& rStyles, std::map< FormatKeyPair, ApiCellRangeList >& rMap, sal_Int32 nXfId, sal_Int32 nFormatId, const ApiCellRangeList& rRangeList )
@@ -370,53 +367,48 @@ void SheetDataBuffer::addColXfStyle( sal_Int32 nXfId, sal_Int32 nFormatId, const
             maStylesPerColumn[ nCol ].insert( aStyleRows );
         else
         {
-            RowStyles& rRowStyles =  maStylesPerColumn[ nCol ];
-            // If the rowrange style includes rows already
-            // allocated to a style then we need to split
-            // the range style Rows into sections ( to
-            // occupy only rows that have no style definition )
+            RowStyles& rRowStyles = maStylesPerColumn[ nCol ];
+            // Reset row range for each column
+            aStyleRows.mnStartRow = rAddress.StartRow;
+            aStyleRows.mnEndRow = rAddress.EndRow;
 
-            // We don't want to set any rowstyle 'rows'
-            // for rows where there is an existing 'style' )
-            std::vector< RowRangeStyle > aRangeRowsSplits;
+            // If aStyleRows includes rows already allocated to a style
+            // in rRowStyles, then we need to split it into parts.
+            // ( to occupy only rows that have no style definition)
 
-            RowStyles::iterator rows_it = rRowStyles.begin();
+            // Start iterating at the first element that is not completely before aStyleRows
+            RowStyles::iterator rows_it = rRowStyles.lower_bound(aStyleRows);
             RowStyles::iterator rows_end = rRowStyles.end();
             bool bAddRange = true;
             for ( ; rows_it != rows_end; ++rows_it )
             {
                 const RowRangeStyle& r = *rows_it;
-                // if row is completely within existing style, discard it
-                if ( aStyleRows.mnStartRow >= r.mnStartRow && aStyleRows.mnEndRow <= r.mnEndRow )
-                    bAddRange = false;
-                else if ( aStyleRows.mnStartRow <= r.mnStartRow )
+
+                // Add the part of aStyleRows that does not overlap with r
+                if ( aStyleRows.mnStartRow < r.mnStartRow )
                 {
-                    // not intersecting at all?, if so finish as none left
-                    // to check ( row ranges are in ascending order
-                    if ( aStyleRows.mnEndRow < r.mnStartRow )
-                        break;
-                    else if ( aStyleRows.mnEndRow <= r.mnEndRow )
-                    {
-                        aStyleRows.mnEndRow = r.mnStartRow - 1;
-                        break;
-                    }
-                    if ( aStyleRows.mnStartRow < r.mnStartRow )
-                    {
-                        RowRangeStyle aSplit = aStyleRows;
-                        aSplit.mnEndRow = r.mnStartRow - 1;
-                        aRangeRowsSplits.push_back( aSplit );
-                    }
+                    RowRangeStyle aSplit = aStyleRows;
+                    aSplit.mnEndRow = std::min(aStyleRows.mnEndRow, r.mnStartRow - 1);
+                    // Insert with hint that aSplit comes directly before the current position
+                    rRowStyles.insert( rows_it, aSplit );
                 }
+
+                // Done if no part of aStyleRows extends beyond r
+                if ( aStyleRows.mnEndRow <= r.mnEndRow )
+                {
+                    bAddRange = false;
+                    break;
+                }
+
+                // Cut off the part aStyleRows that was handled above
+                aStyleRows.mnStartRow = r.mnEndRow + 1;
             }
-            std::vector< RowRangeStyle >::iterator splits_it = aRangeRowsSplits.begin();
-            std::vector< RowRangeStyle >::iterator splits_end = aRangeRowsSplits.end();
-            for ( ; splits_it != splits_end; ++splits_it )
-                rRowStyles.insert( *splits_it );
             if ( bAddRange )
                 rRowStyles.insert( aStyleRows );
         }
     }
 }
+
 void SheetDataBuffer::finalizeImport()
 {
     // create all array formulas

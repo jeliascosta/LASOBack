@@ -120,7 +120,7 @@ sal_Int32 GlobalSyncData::GetMappedId()
         else
             nLinkId = -1;
 
-        DBG_ASSERT( nLinkId >= 0, "unmapped id in GlobalSyncData" );
+        SAL_WARN_IF( nLinkId < 0, "vcl", "unmapped id in GlobalSyncData" );
     }
 
     return nLinkId;
@@ -133,7 +133,7 @@ sal_Int32 GlobalSyncData::GetMappedStructId( sal_Int32 nStructId )
     else
         nStructId = -1;
 
-    DBG_ASSERT( nStructId >= 0, "unmapped structure id in GlobalSyncData" );
+    SAL_WARN_IF( nStructId < 0, "vcl", "unmapped structure id in GlobalSyncData" );
 
     return nStructId;
 }
@@ -313,7 +313,7 @@ struct PageSyncData
 void PageSyncData::PushAction( const OutputDevice& rOutDev, const PDFExtOutDevDataSync::Action eAct )
 {
     GDIMetaFile* pMtf = rOutDev.GetConnectMetaFile();
-    DBG_ASSERT( pMtf, "PageSyncData::PushAction -> no ConnectMetaFile !!!" );
+    SAL_WARN_IF( !pMtf, "vcl", "PageSyncData::PushAction -> no ConnectMetaFile !!!" );
 
     PDFExtOutDevDataSync aSync;
     aSync.eAct = eAct;
@@ -387,7 +387,7 @@ bool PageSyncData::PlaySyncPageAct( PDFWriter& rWriter, sal_uInt32& rCurGDIMtfAc
             case PDFExtOutDevDataSync::CreateControl:
             {
                 std::shared_ptr< PDFWriter::AnyWidget > pControl( mControls.front() );
-                DBG_ASSERT( pControl.get(), "PageSyncData::PlaySyncPageAct: invalid widget!" );
+                SAL_WARN_IF( !pControl.get(), "vcl", "PageSyncData::PlaySyncPageAct: invalid widget!" );
                 if ( pControl.get() )
                     rWriter.CreateControl( *pControl );
                 mControls.pop_front();
@@ -412,7 +412,7 @@ bool PageSyncData::PlaySyncPageAct( PDFWriter& rWriter, sal_uInt32& rCurGDIMtfAc
                         if ( rGraphic.IsLink() )
                         {
                             GfxLinkType eType = rGraphic.GetLink().GetType();
-                            if ( eType == GFX_LINK_TYPE_NATIVE_JPG && mParaRects.size() >= 2 )
+                            if ( eType == GfxLinkType::NativeJpg && mParaRects.size() >= 2 )
                             {
                                 mbGroupIgnoreGDIMtfActions =
                                 rOutDevData.HasAdequateCompression(
@@ -420,7 +420,7 @@ bool PageSyncData::PlaySyncPageAct( PDFWriter& rWriter, sal_uInt32& rCurGDIMtfAc
                                 if ( !mbGroupIgnoreGDIMtfActions )
                                     mCurrentGraphic = rGraphic;
                             }
-                            else if ( eType == GFX_LINK_TYPE_NATIVE_PNG && mParaRects.size() >= 2 )
+                            else if ( eType == GfxLinkType::NativePng && mParaRects.size() >= 2 )
                             {
                                 if ( rOutDevData.HasAdequateCompression(rGraphic, mParaRects[0], mParaRects[1]) )
                                     mCurrentGraphic = rGraphic;
@@ -455,7 +455,7 @@ bool PageSyncData::PlaySyncPageAct( PDFWriter& rWriter, sal_uInt32& rCurGDIMtfAc
                     bool bClippingNeeded = ( aOutputRect != aVisibleOutputRect ) && !aVisibleOutputRect.IsEmpty();
 
                     GfxLink   aGfxLink( aGraphic.GetLink() );
-                    if ( aGfxLink.GetType() == GFX_LINK_TYPE_NATIVE_JPG )
+                    if ( aGfxLink.GetType() == GfxLinkType::NativeJpg )
                     {
                         if ( bClippingNeeded )
                         {
@@ -479,7 +479,7 @@ bool PageSyncData::PlaySyncPageAct( PDFWriter& rWriter, sal_uInt32& rCurGDIMtfAc
                         sal_uInt32 nBytes = aGfxLink.GetDataSize();
                         if( pData && nBytes )
                         {
-                            aTmp.Write( pData, nBytes );
+                            aTmp.WriteBytes( pData, nBytes );
                             rWriter.DrawJPGBitmap( aTmp, aGraphic.GetBitmap().GetBitCount() > 8, aGraphic.GetSizePixel(), aOutputRect, aMask );
                         }
 
@@ -806,7 +806,7 @@ bool PDFExtOutDevData::HasAdequateCompression( const Graphic &rGraphic,
 {
     bool bReduceResolution = false;
 
-    assert( rGraphic.IsLink() && (rGraphic.GetLink().GetType() == GFX_LINK_TYPE_NATIVE_JPG || rGraphic.GetLink().GetType() == GFX_LINK_TYPE_NATIVE_PNG));
+    assert( rGraphic.IsLink() && (rGraphic.GetLink().GetType() ==  GfxLinkType::NativeJpg || rGraphic.GetLink().GetType() == GfxLinkType::NativePng));
 
     // small items better off as PNG anyway
     if ( rGraphic.GetSizePixel().Width() < 32 &&
@@ -826,7 +826,7 @@ bool PDFExtOutDevData::HasAdequateCompression( const Graphic &rGraphic,
         static const struct {
             sal_Int32 mnQuality;
             sal_Int32 mnRatio;
-        } aRatios[] = { // minium tolerable compression ratios
+        } aRatios[] = { // minimum tolerable compression ratios
             { 100, 400 }, { 95, 700 }, { 90, 1000 }, { 85, 1200 },
             { 80, 1500 }, { 75, 1700 }
         };

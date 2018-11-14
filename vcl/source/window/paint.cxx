@@ -123,7 +123,7 @@ PaintBufferGuard::~PaintBufferGuard()
         {
             // Make sure that the +1 value GetSize() adds to the size is in pixels.
             Size aPaintRectSize;
-            if (m_pWindow->GetMapMode().GetMapUnit() == MAP_PIXEL)
+            if (m_pWindow->GetMapMode().GetMapUnit() == MapUnit::MapPixel)
             {
                 aPaintRectSize = m_aPaintRect.GetSize();
             }
@@ -278,8 +278,6 @@ void PaintHelper::DoPaint(const vcl::Region* pRegion)
 #if HAVE_FEATURE_OPENGL
         VCL_GL_INFO("PaintHelper::DoPaint on " <<
                     typeid( *m_pWindow ).name() << " '" << m_pWindow->GetText() << "' begin");
-
-        OutputDevice::PaintScope aScope( m_pWindow );
 #endif
         // double-buffering: setup the buffer if it does not exist
         if (!pFrameData->mbInBufferedPaint && m_pWindow->SupportsDoubleBuffering())
@@ -600,6 +598,10 @@ void Window::ImplCallPaint(const vcl::Region* pRegion, sal_uInt16 nPaintFlags)
             Invalidate(InvalidateFlags::NoChildren | InvalidateFlags::NoErase | InvalidateFlags::NoTransparent | InvalidateFlags::NoClipChildren);
         else if ( pRegion )
             Invalidate(*pRegion, InvalidateFlags::NoChildren | InvalidateFlags::NoErase | InvalidateFlags::NoTransparent | InvalidateFlags::NoClipChildren);
+
+        // call PostPaint before returning
+        PostPaint(*this);
+
         return;
     }
 
@@ -611,6 +613,9 @@ void Window::ImplCallPaint(const vcl::Region* pRegion, sal_uInt16 nPaintFlags)
         aHelper.DoPaint(pRegion);
     else
         mpWindowImpl->mnPaintFlags = 0;
+
+    // call PostPaint
+    PostPaint(*this);
 }
 
 void Window::ImplCallOverlapPaint()
@@ -629,20 +634,11 @@ void Window::ImplCallOverlapPaint()
     {
         // - RTL - notify ImplCallPaint to check for re-mirroring (CHECKRTL)
         //         because we were called from the Sal layer
-#if HAVE_FEATURE_OPENGL
-        OutputDevice::PaintScope aScope( GetOutDev() );
-#endif
         ImplCallPaint(nullptr, mpWindowImpl->mnPaintFlags /*| IMPL_PAINT_CHECKRTL */);
     }
 }
 
-void Window::ImplPostPaint()
-{
-    if ( !mpWindowImpl->mpFrameData->maPaintIdle.IsActive() )
-        mpWindowImpl->mpFrameData->maPaintIdle.Start();
-}
-
-IMPL_LINK_NOARG_TYPED(Window, ImplHandlePaintHdl, Idle *, void)
+IMPL_LINK_NOARG(Window, ImplHandlePaintHdl, Idle *, void)
 {
     // save paint events until layout is done
     if (IsSystemWindow() && static_cast<const SystemWindow*>(this)->hasPendingLayout())
@@ -650,10 +646,6 @@ IMPL_LINK_NOARG_TYPED(Window, ImplHandlePaintHdl, Idle *, void)
         mpWindowImpl->mpFrameData->maPaintIdle.Start();
         return;
     }
-
-#if HAVE_FEATURE_OPENGL
-    OutputDevice::PaintScope aScope(this);
-#endif
 
     // save paint events until resizing or initial sizing done
     if (mpWindowImpl->mbFrame &&
@@ -667,13 +659,10 @@ IMPL_LINK_NOARG_TYPED(Window, ImplHandlePaintHdl, Idle *, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(Window, ImplHandleResizeTimerHdl, Idle *, void)
+IMPL_LINK_NOARG(Window, ImplHandleResizeTimerHdl, Idle *, void)
 {
     if( mpWindowImpl->mbReallyVisible )
     {
-#if HAVE_FEATURE_OPENGL
-        OutputDevice::PaintScope aScope(this);
-#endif
         ImplCallResize();
         if( mpWindowImpl->mpFrameData->maPaintIdle.IsActive() )
         {
@@ -737,7 +726,8 @@ void Window::ImplInvalidateFrameRegion( const vcl::Region* pRegion, InvalidateFl
             pParent->ImplInvalidateFrameRegion( pChildRegion, nFlags );
         }
     }
-    ImplPostPaint();
+    if ( !mpWindowImpl->mpFrameData->maPaintIdle.IsActive() )
+        mpWindowImpl->mpFrameData->maPaintIdle.Start();
 }
 
 void Window::ImplInvalidateOverlapFrameRegion( const vcl::Region& rRegion )
@@ -1007,6 +997,10 @@ void Window::ImplUpdateAll()
 }
 
 void Window::PrePaint(vcl::RenderContext& /*rRenderContext*/)
+{
+}
+
+void Window::PostPaint(vcl::RenderContext& /*rRenderContext*/)
 {
 }
 
@@ -1339,8 +1333,8 @@ void Window::ImplPaintToDevice( OutputDevice* i_pTargetOutDev, const Point& i_rP
     bool bOutput = IsOutputEnabled();
     EnableOutput();
 
-    DBG_ASSERT( GetMapMode().GetMapUnit() == MAP_PIXEL, "MapMode must be PIXEL based" );
-    if ( GetMapMode().GetMapUnit() != MAP_PIXEL )
+    SAL_WARN_IF( GetMapMode().GetMapUnit() != MapUnit::MapPixel, "vcl", "MapMode must be PIXEL based" );
+    if ( GetMapMode().GetMapUnit() != MapUnit::MapPixel )
         return;
 
     // preserve graphicsstate
@@ -1452,15 +1446,14 @@ void Window::PaintToDevice( OutputDevice* pDev, const Point& rPos, const Size& /
 {
     // FIXME: scaling: currently this is for pixel copying only
 
-    DBG_ASSERT( ! pDev->HasMirroredGraphics(), "PaintToDevice to mirroring graphics" );
-    DBG_ASSERT( ! pDev->IsRTLEnabled(), "PaintToDevice to mirroring device" );
+    SAL_WARN_IF(  pDev->HasMirroredGraphics(), "vcl", "PaintToDevice to mirroring graphics" );
+    SAL_WARN_IF(  pDev->IsRTLEnabled(), "vcl", "PaintToDevice to mirroring device" );
 
     vcl::Window* pRealParent = nullptr;
     if( ! mpWindowImpl->mbVisible )
     {
         vcl::Window* pTempParent = ImplGetDefaultWindow();
-        if( pTempParent )
-            pTempParent->EnableChildTransparentMode();
+        pTempParent->EnableChildTransparentMode();
         pRealParent = GetParent();
         SetParent( pTempParent );
         // trigger correct visibility flags for children
@@ -1505,10 +1498,10 @@ void Window::Erase(vcl::RenderContext& rRenderContext)
     if (mbBackground && !bNativeOK)
     {
         RasterOp eRasterOp = GetRasterOp();
-        if (eRasterOp != ROP_OVERPAINT)
-            SetRasterOp(ROP_OVERPAINT);
+        if (eRasterOp != RasterOp::OverPaint)
+            SetRasterOp(RasterOp::OverPaint);
         rRenderContext.DrawWallpaper(0, 0, mnOutWidth, mnOutHeight, maBackground);
-        if (eRasterOp != ROP_OVERPAINT)
+        if (eRasterOp != RasterOp::OverPaint)
             rRenderContext.SetRasterOp(eRasterOp);
     }
 
@@ -1542,7 +1535,6 @@ void Window::ImplScroll( const Rectangle& rRect,
 
     vcl::Region  aInvalidateRegion;
     bool    bScrollChildren(nFlags & ScrollFlags::Children);
-    bool    bErase(!(nFlags & ScrollFlags::NoErase));
 
     if ( !mpWindowImpl->mpFirstChild )
         bScrollChildren = false;
@@ -1563,34 +1555,29 @@ void Window::ImplScroll( const Rectangle& rRect,
     // adapt paint areas
     ImplMoveAllInvalidateRegions( aRectMirror, nHorzScroll, nVertScroll, bScrollChildren );
 
-    if ( !(nFlags & ScrollFlags::NoInvalidate) )
+    ImplCalcOverlapRegion( aRectMirror, aInvalidateRegion, !bScrollChildren, false );
+
+    // --- RTL ---
+    // if the scrolling on the device is performed in the opposite direction
+    // then move the overlaps in that direction to compute the invalidate region
+    // on the correct side, i.e., revert nHorzScroll
+    if (!aInvalidateRegion.IsEmpty())
     {
-        ImplCalcOverlapRegion( aRectMirror, aInvalidateRegion, !bScrollChildren, false );
-
-        // --- RTL ---
-        // if the scrolling on the device is performed in the opposite direction
-        // then move the overlaps in that direction to compute the invalidate region
-        // on the correct side, i.e., revert nHorzScroll
-
-        if ( !aInvalidateRegion.IsEmpty() )
-        {
-            aInvalidateRegion.Move( bReMirror ? -nHorzScroll : nHorzScroll, nVertScroll );
-            bErase = true;
-        }
-        if ( !(nFlags & ScrollFlags::NoWindowInvalidate) )
-        {
-            Rectangle aDestRect( aRectMirror );
-            aDestRect.Move( bReMirror ? -nHorzScroll : nHorzScroll, nVertScroll );
-            vcl::Region aWinInvalidateRegion( aRectMirror );
-            if (!SupportsDoubleBuffering())
-                // There will be no CopyArea() call below, so invalidate the
-                // whole visible area, not only the smaller one that was just
-                // scrolled in.
-                aWinInvalidateRegion.Exclude(aDestRect);
-
-            aInvalidateRegion.Union( aWinInvalidateRegion );
-        }
+        aInvalidateRegion.Move(bReMirror ? -nHorzScroll : nHorzScroll, nVertScroll);
     }
+
+    Rectangle aDestRect(aRectMirror);
+    aDestRect.Move(bReMirror ? -nHorzScroll : nHorzScroll, nVertScroll);
+    vcl::Region aWinInvalidateRegion(aRectMirror);
+    if (!SupportsDoubleBuffering())
+    {
+        // There will be no CopyArea() call below, so invalidate the
+        // whole visible area, not only the smaller one that was just
+        // scrolled in.
+        aWinInvalidateRegion.Exclude(aDestRect);
+    }
+
+    aInvalidateRegion.Union(aWinInvalidateRegion);
 
     Point aPoint( mnOutOffX, mnOutOffY );
     vcl::Region aRegion( Rectangle( aPoint, Size( mnOutWidth, mnOutHeight ) ) );
@@ -1665,8 +1652,6 @@ void Window::ImplScroll( const Rectangle& rRect,
         mpWindowImpl->mnPaintFlags |= IMPL_PAINT_CHECKRTL;
 
         InvalidateFlags nPaintFlags = InvalidateFlags::Children;
-        if ( !bErase )
-            nPaintFlags |= InvalidateFlags::NoErase;
         if ( !bScrollChildren )
         {
             if ( nOrgFlags & ScrollFlags::NoChildren )

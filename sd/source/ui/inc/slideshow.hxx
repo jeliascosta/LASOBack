@@ -110,8 +110,7 @@ public:
 
     bool startPreview(
         const css::uno::Reference< css::drawing::XDrawPage >& xDrawPage,
-        const css::uno::Reference< css::animations::XAnimationNode >& xAnimationNode,
-        vcl::Window* pParent = nullptr );
+        const css::uno::Reference< css::animations::XAnimationNode >& xAnimationNode );
 
     // uno api
 
@@ -160,7 +159,6 @@ public:
 
     // settings
     bool isFullScreen();                                // a.k.a. FuSlideShow::IsFullScreen()
-    bool isAlwaysOnTop();                               // a.k.a. FuSlideShow::IsAlwaysOnTop();
     OutputDevice* getShowWindow();                      // a.k.a. FuSlideShow::GetShowWindow()
     int getAnimationMode();                             // a.k.a. FuSlideShow::GetAnimationMode()
     sal_Int32 getCurrentPageNumber();                   // a.k.a. FuSlideShow::GetCurrentPage()
@@ -183,7 +181,7 @@ public:
 private:
     SlideShow( SdDrawDocument* pDoc );
 
-    DECL_LINK_TYPED( StartInPlacePresentationConfigurationHdl, void *, void );
+    DECL_LINK( StartInPlacePresentationConfigurationHdl, void *, void );
     void StartInPlacePresentationConfigurationCallback();
 
     void StartInPlacePresentation();

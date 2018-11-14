@@ -128,7 +128,7 @@ void BitmapTest::testScale()
     {
         SvFileStream aStream(OUString("~/scale_before.png"), StreamMode::WRITE | StreamMode::TRUNC);
         GraphicFilter& rFilter = GraphicFilter::GetGraphicFilter();
-        rFilter.compressAsPNG(aBitmap24Bit, aStream, 9);
+        rFilter.compressAsPNG(aBitmap24Bit, aStream);
     }
 
     aBitmap24Bit.Scale(2, 2, BmpScaleFlag::Fast);
@@ -144,7 +144,7 @@ void BitmapTest::testScale()
     {
         SvFileStream aStream(OUString("~/scale_after.png"), StreamMode::WRITE | StreamMode::TRUNC);
         GraphicFilter& rFilter = GraphicFilter::GetGraphicFilter();
-        rFilter.compressAsPNG(aBitmap24Bit, aStream, 9);
+        rFilter.compressAsPNG(aBitmap24Bit, aStream);
     }
 }
 
@@ -165,12 +165,12 @@ void checkAndInsert(CRCHash &rHash, sal_uInt64 nCRC, const char *pLocation)
     rHash[nCRC] = pLocation;
 }
 
-void checkAndInsert(CRCHash &rHash, Bitmap rBmp, const char *pLocation)
+void checkAndInsert(CRCHash &rHash, Bitmap const & rBmp, const char *pLocation)
 {
     checkAndInsert(rHash, rBmp.GetChecksum(), pLocation);
 }
 
-Bitmap getAsBitmap(VclPtr<OutputDevice> pOut)
+Bitmap getAsBitmap(VclPtr<OutputDevice> const & pOut)
 {
     return pOut->GetBitmap(Point(), pOut->GetOutputSizePixel());
 }

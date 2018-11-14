@@ -1,9 +1,9 @@
 #. extracted from sw/source/uibase/lingu
 msgid ""
 msgstr ""
-"Project-Id-Version: LibreOffice 5.4\n"
+"Project-Id-Version: LibreOffice 5.1\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2017-03-27 10:49+0200\n"
+"POT-Creation-Date: 2016-03-29 10:23+0200\n"
 "PO-Revision-Date: 2016-03-10 23:01+0200\n"
 "Last-Translator: Martin Srebotnjak <miles@filmsi.net>\n"
 "Language-Team: sl.libreoffice.org\n"
@@ -16,6 +16,120 @@ msgstr ""
 "X-Accelerator-Marker: ~\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 "X-Project-Style: openoffice\n"
+
+#: olmenu.src
+msgctxt ""
+"olmenu.src\n"
+"MN_SPELL_POPUP\n"
+"MN_IGNORE_WORD\n"
+"menuitem.text"
+msgid "I~gnore All"
+msgstr "Prezri ~vse"
+
+#: olmenu.src
+msgctxt ""
+"olmenu.src\n"
+"MN_SPELL_POPUP\n"
+"MN_ADD_TO_DIC\n"
+"menuitem.text"
+msgid "~Add to Dictionary"
+msgstr "~Dodaj v slovar"
+
+#: olmenu.src
+msgctxt ""
+"olmenu.src\n"
+"MN_SPELL_POPUP\n"
+"MN_ADD_TO_DIC_SINGLE\n"
+"menuitem.text"
+msgid "~Add to Dictionary"
+msgstr "~Dodaj v slovar"
+
+#: olmenu.src
+msgctxt ""
+"olmenu.src\n"
+"MN_SPELL_POPUP\n"
+"MN_AUTOCORR\n"
+"menuitem.text"
+msgid "Always correct ~to"
+msgstr "Vedno popravi ~v"
+
+#: olmenu.src
+msgctxt ""
+"olmenu.src\n"
+"MN_SPELL_POPUP\n"
+"MN_SET_LANGUAGE_SELECTION\n"
+"menuitem.text"
+msgid "Set Language for Selection"
+msgstr "Določi jezik izbora"
+
+#: olmenu.src
+msgctxt ""
+"olmenu.src\n"
+"MN_SPELL_POPUP\n"
+"MN_SET_LANGUAGE_PARAGRAPH\n"
+"menuitem.text"
+msgid "Set Language for Paragraph"
+msgstr "Določi jezik odstavka"
+
+#: olmenu.src
+msgctxt ""
+"olmenu.src\n"
+"MN_SPELL_POPUP\n"
+"FN_REDLINE_ACCEPT_DIRECT\n"
+"menuitem.text"
+msgid "Accept Change"
+msgstr "Sprejmi spremembo"
+
+#: olmenu.src
+msgctxt ""
+"olmenu.src\n"
+"MN_SPELL_POPUP\n"
+"FN_REDLINE_REJECT_DIRECT\n"
+"menuitem.text"
+msgid "Reject Change"
+msgstr "Zavrni spremembo"
+
+#: olmenu.src
+msgctxt ""
+"olmenu.src\n"
+"MN_SPELL_POPUP\n"
+"FN_REDLINE_NEXT_CHANGE\n"
+"menuitem.text"
+msgid "Next Change"
+msgstr "Naslednja sprememba"
+
+#: olmenu.src
+msgctxt ""
+"olmenu.src\n"
+"MN_SPELL_POPUP\n"
+"FN_REDLINE_PREV_CHANGE\n"
+"menuitem.text"
+msgid "Previous Change"
+msgstr "Prejšnja sprememba"
+
+#: olmenu.src
+msgctxt ""
+"olmenu.src\n"
+"STR_WORD\n"
+"string.text"
+msgid "Word is "
+msgstr "Jezik besede je "
+
+#: olmenu.src
+msgctxt ""
+"olmenu.src\n"
+"STR_PARAGRAPH\n"
+"string.text"
+msgid "Paragraph is "
+msgstr "Jezik odstavka je "
+
+#: olmenu.src
+msgctxt ""
+"olmenu.src\n"
+"STR_SPELL_OK\n"
+"string.text"
+msgid "The spellcheck is complete."
+msgstr "Preverjanje črkovanja je končano."
 
 #: olmenu.src
 msgctxt ""

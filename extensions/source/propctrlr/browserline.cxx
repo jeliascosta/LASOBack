@@ -209,7 +209,7 @@ namespace pcr
 
             if ( m_bIndentTitle )
             {
-                Size aIndent( m_pTheParent->LogicToPixel( Size( 8, 0 ), MAP_APPFONT ) );
+                Size aIndent( m_pTheParent->LogicToPixel( Size( 8, 0 ), MapUnit::MapAppFont ) );
                 aTitlePos.X() += aIndent.Width();
                 aTitleSize.Width() -= aIndent.Width();
             }
@@ -244,15 +244,15 @@ namespace pcr
     }
 
 
-    void OBrowserLine::SetTitle(const OUString& _rNewTtile )
+    void OBrowserLine::SetTitle(const OUString& _rNewTitle )
     {
-        if ( GetTitle() == _rNewTtile )
+        if ( GetTitle() == _rNewTitle )
             return;
-        m_aFtTitle->SetText( _rNewTtile );
+        m_aFtTitle->SetText( _rNewTitle );
         if ( m_pControlWindow )
-            m_pControlWindow->SetAccessibleName( _rNewTtile );
+            m_pControlWindow->SetAccessibleName( _rNewTitle );
         if ( m_pBrowseButton )
-            m_pBrowseButton->SetAccessibleName( _rNewTtile );
+            m_pBrowseButton->SetAccessibleName( _rNewTitle );
         FullFillTitleString();
     }
 
@@ -386,8 +386,12 @@ namespace pcr
     }
 
 
-    void OBrowserLine::impl_getImagesFromURL_nothrow( const OUString& _rImageURL, Image& _out_rImage )
+    void OBrowserLine::ShowBrowseButton( const OUString& _rImageURL, bool _bPrimary )
     {
+        PushButton& rButton( impl_ensureButton( _bPrimary ) );
+
+        OSL_PRECOND( !_rImageURL.isEmpty(), "OBrowserLine::ShowBrowseButton: use the other version if you don't have an image!" );
+        Image aImage;
         try
         {
             Reference< XComponentContext > xContext( ::comphelper::getProcessComponentContext() );
@@ -398,22 +402,12 @@ namespace pcr
             aMediaProperties[0].Value <<= _rImageURL;
 
             Reference< XGraphic > xGraphic( xGraphicProvider->queryGraphic( aMediaProperties ), UNO_QUERY_THROW );
-            _out_rImage = Image( xGraphic );
+            aImage = Image( xGraphic );
         }
         catch( const Exception& )
         {
             DBG_UNHANDLED_EXCEPTION();
         }
-    }
-
-
-    void OBrowserLine::ShowBrowseButton( const OUString& _rImageURL, bool _bPrimary )
-    {
-        PushButton& rButton( impl_ensureButton( _bPrimary ) );
-
-        OSL_PRECOND( !_rImageURL.isEmpty(), "OBrowserLine::ShowBrowseButton: use the other version if you don't have an image!" );
-        Image aImage;
-        impl_getImagesFromURL_nothrow( _rImageURL, aImage );
 
         rButton.SetModeImage( aImage );
    }
@@ -471,14 +465,14 @@ namespace pcr
     }
 
 
-    IMPL_LINK_TYPED( OBrowserLine, OnButtonClicked, Button*, _pButton, void )
+    IMPL_LINK( OBrowserLine, OnButtonClicked, Button*, _pButton, void )
     {
         if ( m_pClickListener )
             m_pClickListener->buttonClicked( this, _pButton == m_pBrowseButton );
     }
 
 
-    IMPL_LINK_NOARG_TYPED( OBrowserLine, OnButtonFocus, Control&, void )
+    IMPL_LINK_NOARG( OBrowserLine, OnButtonFocus, Control&, void )
     {
         if ( m_xControl.is() )
         {

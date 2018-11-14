@@ -31,13 +31,12 @@ private:
 
 public:
             ScLinkTransferObj();
-    virtual ~ScLinkTransferObj();
+    virtual ~ScLinkTransferObj() override;
 
     void                SetLinkURL( const OUString& rURL, const OUString& rText );
 
     virtual void        AddSupportedFormats() override;
     virtual bool GetData( const css::datatransfer::DataFlavor& rFlavor, const OUString& rDestDoc ) override;
-    virtual void        ObjectReleased() override;
     virtual void        DragFinished( sal_Int8 nDropAction ) override;
 };
 

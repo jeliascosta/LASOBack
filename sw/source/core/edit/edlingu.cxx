@@ -23,6 +23,7 @@
 #include <com/sun/star/text/XFlatParagraph.hpp>
 #include <com/sun/star/i18n/ScriptType.hpp>
 #include <comphelper/string.hxx>
+#include <o3tl/any.hxx>
 
 #include <unoflatpara.hxx>
 
@@ -42,6 +43,7 @@
 #include <IDocumentRedlineAccess.hxx>
 #include <rootfrm.hxx>
 #include <pam.hxx>
+#include <pamtyp.hxx>
 #include <swundo.hxx>
 #include <ndtxt.hxx>
 #include <viewopt.hxx>
@@ -115,11 +117,11 @@ class SwSpellIter : public SwLinguIter
     bool                                bBackToStartOfSentence;
     bool                                bMoveToEndOfSentence;
 
-    void    CreatePortion(uno::Reference< XSpellAlternatives > xAlt,
+    void    CreatePortion(uno::Reference< XSpellAlternatives > const & xAlt,
                 linguistic2::ProofreadingResult* pGrammarResult,
                 bool bIsField, bool bIsHidden);
 
-    void    AddPortion(uno::Reference< XSpellAlternatives > xAlt,
+    void    AddPortion(uno::Reference< XSpellAlternatives > const & xAlt,
                        linguistic2::ProofreadingResult* pGrammarResult,
                        const SpellContentPositions& rDeletedRedlines);
 public:
@@ -412,8 +414,8 @@ uno::Any SwConvIter::Continue( sal_uInt16* pPageCnt, sal_uInt16* pPageSt )
 bool SwHyphIter::IsAuto()
 {
     uno::Reference< beans::XPropertySet >  xProp( ::GetLinguPropertySet() );
-    return xProp.is() && *static_cast<sal_Bool const *>(xProp->getPropertyValue(
-                                UPN_IS_HYPH_AUTO ).getValue());
+    return xProp.is() && *o3tl::doAccess<bool>(xProp->getPropertyValue(
+                                UPN_IS_HYPH_AUTO ));
 }
 
 void SwHyphIter::ShowSelection()
@@ -616,7 +618,7 @@ bool SwEditShell::HasHyphIter()
 void SwEditShell::SetLinguRange( SwDocPositions eStart, SwDocPositions eEnd )
 {
     SwPaM *pCursor = GetCursor();
-    MakeFindRange( static_cast<sal_uInt16>(eStart), static_cast<sal_uInt16>(eEnd), pCursor );
+    MakeFindRange( eStart, eEnd, pCursor );
     if( *pCursor->GetPoint() > *pCursor->GetMark() )
         pCursor->Exchange();
 }
@@ -860,9 +862,8 @@ uno::Reference< XSpellAlternatives >
         if( pWrong->InWrongWord(nBegin,nLen) && !pNode->IsSymbol(nBegin) )
         {
             const OUString aText(pNode->GetText().copy(nBegin, nLen));
-            OUString aWord( aText );
-            aWord = comphelper::string::remove(aWord, CH_TXTATR_BREAKWORD);
-            aWord = comphelper::string::remove(aWord, CH_TXTATR_INWORD);
+            OUString aWord = aText.replaceAll(OUStringLiteral1(CH_TXTATR_BREAKWORD), "")
+                                  .replaceAll(OUStringLiteral1(CH_TXTATR_INWORD), "");
 
             uno::Reference< XSpellChecker1 >  xSpell( ::GetSpellChecker() );
             if( xSpell.is() )
@@ -1274,7 +1275,7 @@ static SpellContentPositions lcl_CollectDeletedRedlines(SwEditShell* pSh)
 {
     SpellContentPositions aRedlines;
     SwDoc* pDoc = pSh->GetDoc();
-    const bool bShowChg = IDocumentRedlineAccess::IsShowChanges( pDoc->getIDocumentRedlineAccess().GetRedlineMode() );
+    const bool bShowChg = IDocumentRedlineAccess::IsShowChanges( pDoc->getIDocumentRedlineAccess().GetRedlineFlags() );
     if ( bShowChg )
     {
         SwPaM *pCursor = pSh->GetCursor();
@@ -1569,7 +1570,7 @@ static LanguageType lcl_GetLanguage(SwEditShell& rSh)
 }
 
 /// create a text portion at the given position
-void SwSpellIter::CreatePortion(uno::Reference< XSpellAlternatives > xAlt,
+void SwSpellIter::CreatePortion(uno::Reference< XSpellAlternatives > const & xAlt,
                         linguistic2::ProofreadingResult* pGrammarResult,
         bool bIsField, bool bIsHidden)
 {
@@ -1615,7 +1616,7 @@ void SwSpellIter::CreatePortion(uno::Reference< XSpellAlternatives > xAlt,
     }
 }
 
-void    SwSpellIter::AddPortion(uno::Reference< XSpellAlternatives > xAlt,
+void    SwSpellIter::AddPortion(uno::Reference< XSpellAlternatives > const & xAlt,
                                 linguistic2::ProofreadingResult* pGrammarResult,
                                 const SpellContentPositions& rDeletedRedlines)
 {

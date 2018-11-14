@@ -210,7 +210,7 @@ private:
     DatabaseDataProvider(DatabaseDataProvider &) = delete;
     void operator =(DatabaseDataProvider &) = delete;
 
-    virtual ~DatabaseDataProvider() {}
+    virtual ~DatabaseDataProvider() override {}
 
     // This function is called upon disposing the component,
     // if your component needs special work when it becomes
@@ -218,7 +218,6 @@ private:
     virtual void SAL_CALL disposing() override;
 
     void impl_fillRowSet_throw();
-    void impl_executeRowSet_throw(::osl::ResettableMutexGuard& _rClearForNotifies);
     bool impl_fillParameters_nothrow( ::osl::ResettableMutexGuard& _rClearForNotifies);
     void impl_fillInternalDataProvider_throw(bool _bHasCategories,const css::uno::Sequence< OUString >& i_aColumnNames);
     void impl_invalidateParameter_nothrow();

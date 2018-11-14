@@ -37,15 +37,15 @@ class LineWidthPopup : public FloatingWindow
 public:
     LineWidthPopup(LinePropertyPanelBase& rParent);
     virtual void dispose() override;
-    virtual ~LineWidthPopup();
+    virtual ~LineWidthPopup() override;
 
-    void SetWidthSelect (long lValue, bool bValuable, SfxMapUnit eMapUnit);
+    void SetWidthSelect (long lValue, bool bValuable, MapUnit eMapUnit);
 
 private:
     LinePropertyPanelBase& m_rParent;
     OUString* m_pStr;
     OUString m_sPt;
-    SfxMapUnit m_eMapUnit;
+    MapUnit m_eMapUnit;
     bool m_bVSFocus;
     bool m_bCustom;
     bool m_bCloseByEdit;
@@ -57,8 +57,8 @@ private:
     Image m_aIMGCus;
     Image m_aIMGCusGray;
 
-    DECL_LINK_TYPED(VSSelectHdl, ValueSet*, void);
-    DECL_LINK_TYPED(MFModifyHdl, Edit&, void);
+    DECL_LINK(VSSelectHdl, ValueSet*, void);
+    DECL_LINK(MFModifyHdl, Edit&, void);
 };
 
 } } // end of namespace svx::sidebar

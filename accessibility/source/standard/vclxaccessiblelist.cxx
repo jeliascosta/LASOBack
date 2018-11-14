@@ -17,9 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/standard/vclxaccessiblelist.hxx>
-#include <accessibility/standard/vclxaccessiblelistitem.hxx>
-#include <accessibility/helper/listboxhelper.hxx>
+#include <standard/vclxaccessiblelist.hxx>
+#include <standard/vclxaccessiblelistitem.hxx>
+#include <helper/listboxhelper.hxx>
 
 #include <unotools/accessiblerelationsethelper.hxx>
 #include <unotools/accessiblestatesethelper.hxx>
@@ -89,7 +89,7 @@ VCLXAccessibleList::VCLXAccessibleList (VCLXWindow* pVCLWindow, BoxType aBoxType
     UpdateVisibleLineCount();
     if(m_pListBoxHelper)
     {
-        m_nCurSelectedPos=m_pListBoxHelper->GetSelectEntryPos();
+        m_nCurSelectedPos=m_pListBoxHelper->GetSelectEntryPos(0);
     }
     sal_uInt16 nCount = static_cast<sal_uInt16>(getAccessibleChildCount());
     m_aAccessibleChildren.reserve(nCount);
@@ -165,19 +165,23 @@ void VCLXAccessibleList::notifyVisibleStates(bool _bSetNew )
     NotifyAccessibleEvent( AccessibleEventId::STATE_CHANGED, aOldValue, aNewValue );
 
     ListItems::iterator aIter = m_aAccessibleChildren.begin();
-    ListItems::iterator aEnd = m_aAccessibleChildren.end();
     UpdateVisibleLineCount();
     // adjust the index inside the VCLXAccessibleListItem
-    for (;aIter != aEnd ; ++aIter)
+    for ( ; aIter != m_aAccessibleChildren.end(); )
     {
         Reference< XAccessible > xHold = *aIter;
-        VCLXAccessibleListItem* pItem = static_cast<VCLXAccessibleListItem*>(xHold.get());
-        if ( pItem )
+        if (!xHold.is())
         {
+            aIter = m_aAccessibleChildren.erase(aIter);
+        }
+        else
+        {
+            VCLXAccessibleListItem* pItem = static_cast<VCLXAccessibleListItem*>(xHold.get());
             const sal_Int32 nTopEntry = m_pListBoxHelper ? m_pListBoxHelper->GetTopEntry() : 0;
             const sal_Int32 nPos = static_cast<sal_Int32>(aIter - m_aAccessibleChildren.begin());
             bool bVisible = ( nPos>=nTopEntry && nPos<( nTopEntry + m_nVisibleLineCount ) );
             pItem->SetVisible( m_bVisible && bVisible );
+            ++aIter;
         }
 
     }

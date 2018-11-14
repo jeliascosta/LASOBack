@@ -194,7 +194,16 @@ void PresenterScrollBar::SetThumbPosition (
 
         UpdateBorders();
         Repaint(GetRectangle(Total), bAsynchronousUpdate);
-        NotifyThumbPositionChange();
+
+        mbIsNotificationActive = true;
+        try
+        {
+            maThumbMotionListener(mnThumbPosition);
+        }
+        catch (Exception&)
+        {
+        }
+        mbIsNotificationActive = false;
     }
 }
 
@@ -447,7 +456,7 @@ void SAL_CALL PresenterScrollBar::disposing (const css::lang::EventObject& rEven
 }
 
 
-geometry::RealRectangle2D PresenterScrollBar::GetRectangle (const Area eArea) const
+geometry::RealRectangle2D const & PresenterScrollBar::GetRectangle (const Area eArea) const
 {
     OSL_ASSERT(eArea>=0 && eArea<AreaCount);
 
@@ -520,24 +529,6 @@ void PresenterScrollBar::PaintBitmap(
             xBitmap,
             aViewState,
             aRenderState);
-    }
-}
-
-void PresenterScrollBar::NotifyThumbPositionChange()
-{
-    if ( ! mbIsNotificationActive)
-    {
-        mbIsNotificationActive = true;
-
-        try
-        {
-            maThumbMotionListener(mnThumbPosition);
-        }
-        catch (Exception&)
-        {
-        }
-
-        mbIsNotificationActive = false;
     }
 }
 
@@ -811,6 +802,7 @@ void PresenterScrollBar::MousePressRepeater::Start (const PresenterScrollBar::Ar
         // Schedule repeated executions.
         auto pThis(shared_from_this());
         mnMousePressRepeaterTaskId = PresenterTimer::ScheduleRepeatedTask (
+            mpScrollBar->GetComponentContext(),
             [pThis] (TimeValue const& rTime) { return pThis->Callback(rTime); },
             500000000,
             250000000);

@@ -78,7 +78,7 @@ sal_Int32 SAL_CALL WrappedResultSet::hashBookmark( const Any& bookmark ) throw(S
     return m_xRowLocate->hashBookmark(bookmark);
 }
 
-void SAL_CALL WrappedResultSet::insertRow( const ORowSetRow& _rInsertRow,const connectivity::OSQLTable& /*_xTable*/ ) throw(SQLException, RuntimeException)
+void SAL_CALL WrappedResultSet::insertRow( const ORowSetRow& _rInsertRow,const connectivity::OSQLTable& /*_xTable*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     m_xUpd->moveToInsertRow();
     sal_Int32 i = 1;
@@ -92,7 +92,7 @@ void SAL_CALL WrappedResultSet::insertRow( const ORowSetRow& _rInsertRow,const c
     (*_rInsertRow->get().begin()) = getBookmark();
 }
 
-void SAL_CALL WrappedResultSet::updateRow(const ORowSetRow& _rInsertRow ,const ORowSetRow& _rOriginalRow,const connectivity::OSQLTable& /*_xTable*/  ) throw(SQLException, RuntimeException)
+void SAL_CALL WrappedResultSet::updateRow(const ORowSetRow& _rInsertRow ,const ORowSetRow& _rOriginalRow,const connectivity::OSQLTable& /*_xTable*/  ) throw(SQLException, RuntimeException, std::exception)
 {
     sal_Int32 i = 1;
     connectivity::ORowVector< ORowSetValue > ::Vector::const_iterator aOrgIter = _rOriginalRow->get().begin()+1;
@@ -108,11 +108,6 @@ void SAL_CALL WrappedResultSet::updateRow(const ORowSetRow& _rInsertRow ,const O
 void SAL_CALL WrappedResultSet::deleteRow(const ORowSetRow& /*_rDeleteRow*/ ,const connectivity::OSQLTable& /*_xTable*/  ) throw(SQLException, RuntimeException)
 {
     m_xUpd->deleteRow();
-}
-
-void WrappedResultSet::fillValueRow(ORowSetRow& _rRow,sal_Int32 _nPosition)
-{
-    OCacheSet::fillValueRow(_rRow,_nPosition);
 }
 
 void WrappedResultSet::updateColumn(sal_Int32 nPos, const Reference< XRowUpdate >& _xParameter, const ORowSetValue& _rValue)

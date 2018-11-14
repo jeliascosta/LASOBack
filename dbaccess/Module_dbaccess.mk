@@ -78,6 +78,11 @@ $(eval $(call gb_Module_add_subsequentcheck_targets,dbaccess,\
 endif
 endif
 
+# screenshots
+$(eval $(call gb_Module_add_screenshot_targets,dbaccess,\
+    CppunitTest_dbaccess_dialogs_test \
+))
+
 endif
 
 # vim: set noet sw=4 ts=4:

@@ -18,7 +18,7 @@
  */
 
 #include <algorithm>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <vcl/svapp.hxx>
 
 #include "dapiuno.hxx"
@@ -39,6 +39,7 @@
 #include "dpdimsave.hxx"
 #include "hints.hxx"
 #include <dputil.hxx>
+#include "globstr.hrc"
 
 #include <com/sun/star/sheet/XHierarchiesSupplier.hpp>
 #include <com/sun/star/sheet/XLevelsSupplier.hpp>
@@ -49,6 +50,7 @@
 #include <com/sun/star/sheet/DataPilotFieldFilter.hpp>
 #include <com/sun/star/sheet/DataPilotOutputRangeType.hpp>
 #include <com/sun/star/sheet/DataPilotTablePositionData.hpp>
+#include <com/sun/star/sheet/GeneralFunction2.hpp>
 
 #include <comphelper/extract.hxx>
 #include <comphelper/sequence.hxx>
@@ -114,6 +116,7 @@ const SfxItemPropertyMapEntry* lcl_GetDataPilotFieldMap()
     {
         {OUString(SC_UNONAME_AUTOSHOW),     0,  cppu::UnoType<DataPilotFieldAutoShowInfo>::get(),   MAYBEVOID, 0 },
         {OUString(SC_UNONAME_FUNCTION),     0,  cppu::UnoType<GeneralFunction>::get(),              0, 0 },
+        {OUString(SC_UNONAME_FUNCTION2),    0,  cppu::UnoType<sal_Int16>::get(),             0, 0 },
         {OUString(SC_UNONAME_GROUPINFO),    0,  cppu::UnoType<DataPilotFieldGroupInfo>::get(),      MAYBEVOID, 0 },
         {OUString(SC_UNONAME_HASAUTOSHOW),  0,  cppu::UnoType<bool>::get(),                          0, 0 },
         {OUString(SC_UNONAME_HASLAYOUTINFO),0,  cppu::UnoType<bool>::get(),                          0, 0 },
@@ -128,6 +131,7 @@ const SfxItemPropertyMapEntry* lcl_GetDataPilotFieldMap()
         {OUString(SC_UNONAME_REPEATITEMLABELS),    0,  cppu::UnoType<bool>::get(),                          0, 0 },
         {OUString(SC_UNONAME_SORTINFO),     0,  cppu::UnoType<DataPilotFieldSortInfo>::get(),       MAYBEVOID, 0 },
         {OUString(SC_UNONAME_SUBTOTALS),    0,  cppu::UnoType<Sequence<GeneralFunction>>::get(),    0, 0 },
+        {OUString(SC_UNONAME_SUBTOTALS2),   0,  cppu::UnoType<Sequence<sal_Int16>>::get(),   0, 0 },
         {OUString(SC_UNONAME_USESELPAGE),   0,  cppu::UnoType<bool>::get(),                          0, 0 },
         { OUString(), 0, css::uno::Type(), 0, 0 }
     };
@@ -178,43 +182,45 @@ SC_SIMPLE_SERVICE_INFO( ScDataPilotFieldGroupItemObj, "ScDataPilotFieldGroupItem
 // name that is used in the API for the data layout field
 #define SC_DATALAYOUT_NAME  "Data"
 
-GeneralFunction ScDataPilotConversion::FirstFunc( PivotFunc nBits )
+sal_Int16 ScDataPilotConversion::FirstFunc( PivotFunc nBits )
 {
-    if ( nBits & PivotFunc::Sum )       return GeneralFunction_SUM;
-    if ( nBits & PivotFunc::Count )     return GeneralFunction_COUNT;
-    if ( nBits & PivotFunc::Average )   return GeneralFunction_AVERAGE;
-    if ( nBits & PivotFunc::Max )       return GeneralFunction_MAX;
-    if ( nBits & PivotFunc::Min )       return GeneralFunction_MIN;
-    if ( nBits & PivotFunc::Product )   return GeneralFunction_PRODUCT;
-    if ( nBits & PivotFunc::CountNum ) return GeneralFunction_COUNTNUMS;
-    if ( nBits & PivotFunc::StdDev )   return GeneralFunction_STDEV;
-    if ( nBits & PivotFunc::StdDevP )  return GeneralFunction_STDEVP;
-    if ( nBits & PivotFunc::StdVar )   return GeneralFunction_VAR;
-    if ( nBits & PivotFunc::StdVarP )  return GeneralFunction_VARP;
-    if ( nBits & PivotFunc::Auto )      return GeneralFunction_AUTO;
-    return GeneralFunction_NONE;
+    if ( nBits & PivotFunc::Sum )       return GeneralFunction2::SUM;
+    if ( nBits & PivotFunc::Count )     return GeneralFunction2::COUNT;
+    if ( nBits & PivotFunc::Average )   return GeneralFunction2::AVERAGE;
+    if ( nBits & PivotFunc::Median )    return GeneralFunction2::MEDIAN;
+    if ( nBits & PivotFunc::Max )       return GeneralFunction2::MAX;
+    if ( nBits & PivotFunc::Min )       return GeneralFunction2::MIN;
+    if ( nBits & PivotFunc::Product )   return GeneralFunction2::PRODUCT;
+    if ( nBits & PivotFunc::CountNum ) return GeneralFunction2::COUNTNUMS;
+    if ( nBits & PivotFunc::StdDev )   return GeneralFunction2::STDEV;
+    if ( nBits & PivotFunc::StdDevP )  return GeneralFunction2::STDEVP;
+    if ( nBits & PivotFunc::StdVar )   return GeneralFunction2::VAR;
+    if ( nBits & PivotFunc::StdVarP )  return GeneralFunction2::VARP;
+    if ( nBits & PivotFunc::Auto )      return GeneralFunction2::AUTO;
+    return GeneralFunction2::NONE;
 }
 
-PivotFunc ScDataPilotConversion::FunctionBit( GeneralFunction eFunc )
+PivotFunc ScDataPilotConversion::FunctionBit( sal_Int16 eFunc )
 {
     PivotFunc nRet = PivotFunc::NONE;  // 0
     switch (eFunc)
     {
-        case GeneralFunction_SUM:       nRet = PivotFunc::Sum;       break;
-        case GeneralFunction_COUNT:     nRet = PivotFunc::Count;     break;
-        case GeneralFunction_AVERAGE:   nRet = PivotFunc::Average;   break;
-        case GeneralFunction_MAX:       nRet = PivotFunc::Max;       break;
-        case GeneralFunction_MIN:       nRet = PivotFunc::Min;       break;
-        case GeneralFunction_PRODUCT:   nRet = PivotFunc::Product;   break;
-        case GeneralFunction_COUNTNUMS: nRet = PivotFunc::CountNum; break;
-        case GeneralFunction_STDEV:     nRet = PivotFunc::StdDev;   break;
-        case GeneralFunction_STDEVP:    nRet = PivotFunc::StdDevP;  break;
-        case GeneralFunction_VAR:       nRet = PivotFunc::StdVar;   break;
-        case GeneralFunction_VARP:      nRet = PivotFunc::StdVarP;  break;
-        case GeneralFunction_AUTO:      nRet = PivotFunc::Auto;      break;
+        case GeneralFunction2::SUM:       nRet = PivotFunc::Sum;       break;
+        case GeneralFunction2::COUNT:     nRet = PivotFunc::Count;     break;
+        case GeneralFunction2::AVERAGE:   nRet = PivotFunc::Average;   break;
+        case GeneralFunction2::MEDIAN:    nRet = PivotFunc::Median;    break;
+        case GeneralFunction2::MAX:       nRet = PivotFunc::Max;       break;
+        case GeneralFunction2::MIN:       nRet = PivotFunc::Min;       break;
+        case GeneralFunction2::PRODUCT:   nRet = PivotFunc::Product;   break;
+        case GeneralFunction2::COUNTNUMS: nRet = PivotFunc::CountNum; break;
+        case GeneralFunction2::STDEV:     nRet = PivotFunc::StdDev;   break;
+        case GeneralFunction2::STDEVP:    nRet = PivotFunc::StdDevP;  break;
+        case GeneralFunction2::VAR:       nRet = PivotFunc::StdVar;   break;
+        case GeneralFunction2::VARP:      nRet = PivotFunc::StdVarP;  break;
+        case GeneralFunction2::AUTO:      nRet = PivotFunc::Auto;      break;
         default:
         {
-            // added to avoid warnings
+            assert(false);
         }
     }
     return nRet;
@@ -299,8 +305,7 @@ void ScDataPilotTablesObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
     //! Referenz-Update
 
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
     {
         pDocShell = nullptr;       // ungueltig geworden
     }
@@ -643,8 +648,7 @@ void ScDataPilotDescriptorBase::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
     //! Referenz-Update?
 
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
     {
         pDocShell = nullptr;       // ungueltig geworden
     }
@@ -1037,7 +1041,7 @@ Reference< XDataPilotField > SAL_CALL ScDataPilotDescriptorBase::getDataLayoutFi
         {
             if( pSaveData->GetDataLayoutDimension() )
             {
-                ScFieldIdentifier aFieldId( OUString( SC_DATALAYOUT_NAME ), 0, true );
+                ScFieldIdentifier aFieldId( OUString( SC_DATALAYOUT_NAME ), true );
                 return new ScDataPilotFieldObj( *this, aFieldId );
             }
         }
@@ -1386,7 +1390,6 @@ ScDataPilotDescriptor::ScDataPilotDescriptor(ScDocShell* pDocSh) :
     mpDPObject->SetSaveData(aSaveData);
     ScSheetSourceDesc aSheetDesc(pDocSh ? &pDocSh->GetDocument() : nullptr);
     mpDPObject->SetSheetDesc(aSheetDesc);
-    mpDPObject->GetSource();
 }
 
 ScDataPilotDescriptor::~ScDataPilotDescriptor()
@@ -1512,9 +1515,9 @@ sal_Int32 ScDataPilotChildObjBase::GetMemberCount() const
     return nRet;
 }
 
-Reference< XNameAccess > ScDataPilotChildObjBase::GetMembers() const
+Reference< XMembersAccess > ScDataPilotChildObjBase::GetMembers() const
 {
-    Reference< XNameAccess > xMembersNA;
+    Reference< XMembersAccess > xMembersNA;
     if( ScDPObject* pDPObj = GetDPObject() )
         pDPObj->GetMembersNA( lcl_GetObjectIndex( pDPObj, maFieldId ), xMembersNA );
     return xMembersNA;
@@ -1862,11 +1865,30 @@ void SAL_CALL ScDataPilotFieldObj::setPropertyValue( const OUString& aPropertyNa
         // #i109350# use GetEnumFromAny because it also allows sal_Int32
         GeneralFunction eFunction = (GeneralFunction)
                             ScUnoHelpFunctions::GetEnumFromAny( aValue );
+        setFunction( static_cast<sal_Int16> (eFunction) );
+    }
+    else if ( aPropertyName == SC_UNONAME_FUNCTION2 )
+    {
+        sal_Int16 eFunction = ScUnoHelpFunctions::GetInt16FromAny( aValue );
         setFunction( eFunction );
     }
     else if ( aPropertyName == SC_UNONAME_SUBTOTALS )
     {
-        Sequence< GeneralFunction > aSubtotals;
+        Sequence< sal_Int16 > aSubTotals;
+        uno::Sequence<sheet::GeneralFunction> aSeq;
+        if( aValue >>= aSeq)
+        {
+            aSubTotals.realloc(aSeq.getLength());
+            for (sal_Int32 nIndex = 0; nIndex < aSeq.getLength(); nIndex++)
+            {
+                aSubTotals[nIndex] = static_cast<sal_Int16>(aSeq[nIndex]);
+            }
+            setSubtotals( aSubTotals );
+        }
+    }
+    else if ( aPropertyName == SC_UNONAME_SUBTOTALS2 )
+    {
+        Sequence< sal_Int16 > aSubtotals;
         if( aValue >>= aSubtotals )
             setSubtotals( aSubtotals );
     }
@@ -1960,13 +1982,43 @@ Any SAL_CALL ScDataPilotFieldObj::getPropertyValue( const OUString& aPropertyNam
     Any aRet;
 
     if ( aPropertyName == SC_UNONAME_FUNCTION )
+    {
+        sheet::GeneralFunction eVal;
+        sal_Int16 nFunction = getFunction();
+        if (nFunction == sheet::GeneralFunction2::MEDIAN)
+        {
+            eVal = sheet::GeneralFunction_NONE;
+        }
+        else
+        {
+            eVal = static_cast<sheet::GeneralFunction>(nFunction);
+        }
+        aRet <<= eVal;
+    }
+    else if ( aPropertyName == SC_UNONAME_FUNCTION2 )
         aRet <<= getFunction();
     else if ( aPropertyName == SC_UNONAME_SUBTOTALS )
+    {
+        uno::Sequence<sal_Int16> aSeq = getSubtotals();
+        uno::Sequence<sheet::GeneralFunction>  aNewSeq;
+        aNewSeq.realloc(aSeq.getLength());
+        for (sal_Int32 nIndex = 0; nIndex < aSeq.getLength(); nIndex++)
+        {
+            if (aSeq[nIndex] == sheet::GeneralFunction2::MEDIAN)
+                aNewSeq[nIndex] = sheet::GeneralFunction_NONE;
+            else
+                aNewSeq[nIndex] = static_cast<sheet::GeneralFunction>(aSeq[nIndex]);
+        }
+        aRet <<= aNewSeq;
+    }
+    else if ( aPropertyName == SC_UNONAME_SUBTOTALS2 )
+    {
         aRet <<= getSubtotals();
+    }
     else if ( aPropertyName == SC_UNONAME_ORIENT )
         aRet <<= getOrientation();
     else if ( aPropertyName == SC_UNONAME_SELPAGE )
-        aRet <<= getCurrentPage();
+        aRet <<= OUString();
     else if ( aPropertyName == SC_UNONAME_USESELPAGE )
         aRet <<= false;
     else if ( aPropertyName == SC_UNONAME_HASAUTOSHOW )
@@ -2092,10 +2144,10 @@ void ScDataPilotFieldObj::setOrientation(DataPilotFieldOrientation eNew)
     }
 }
 
-GeneralFunction ScDataPilotFieldObj::getFunction() const
+sal_Int16 ScDataPilotFieldObj::getFunction() const
 {
     SolarMutexGuard aGuard;
-    GeneralFunction eRet = GeneralFunction_NONE;
+    sal_Int16 eRet = GeneralFunction2::NONE;
     if( ScDPSaveDimension* pDim = GetDPDimension() )
     {
         if( pDim->GetOrientation() != DataPilotFieldOrientation_DATA )
@@ -2103,16 +2155,16 @@ GeneralFunction ScDataPilotFieldObj::getFunction() const
             // for non-data fields, property Function is the subtotals
             long nSubCount = pDim->GetSubTotalsCount();
             if ( nSubCount > 0 )
-                eRet = (GeneralFunction)pDim->GetSubTotalFunc(0);    // always use the first one
+                eRet = static_cast<sal_Int16>(pDim->GetSubTotalFunc(0));    // always use the first one
             // else keep NONE
         }
         else
-            eRet = (GeneralFunction)pDim->GetFunction();
+            eRet = static_cast<sal_Int16>(pDim->GetFunction());
     }
     return eRet;
 }
 
-void ScDataPilotFieldObj::setFunction(GeneralFunction eNewFunc)
+void ScDataPilotFieldObj::setFunction(sal_Int16 eNewFunc)
 {
     SolarMutexGuard aGuard;
     ScDPObject* pDPObj = nullptr;
@@ -2121,7 +2173,7 @@ void ScDataPilotFieldObj::setFunction(GeneralFunction eNewFunc)
         if( pDim->GetOrientation() != DataPilotFieldOrientation_DATA )
         {
             // for non-data fields, property Function is the subtotals
-            if ( eNewFunc == GeneralFunction_NONE )
+            if ( eNewFunc == GeneralFunction2::NONE )
                 pDim->SetSubTotals( 0, nullptr );
             else
             {
@@ -2135,10 +2187,10 @@ void ScDataPilotFieldObj::setFunction(GeneralFunction eNewFunc)
     }
 }
 
-Sequence< GeneralFunction > ScDataPilotFieldObj::getSubtotals() const
+Sequence< sal_Int16 > ScDataPilotFieldObj::getSubtotals() const
 {
     SolarMutexGuard aGuard;
-    Sequence< GeneralFunction > aRet;
+    Sequence< sal_Int16 > aRet;
     if( ScDPSaveDimension* pDim = GetDPDimension() )
     {
         if( pDim->GetOrientation() != DataPilotFieldOrientation_DATA )
@@ -2149,14 +2201,14 @@ Sequence< GeneralFunction > ScDataPilotFieldObj::getSubtotals() const
             {
                 aRet.realloc( nCount );
                 for( sal_Int32 nIdx = 0; nIdx < nCount; ++nIdx )
-                    aRet[ nIdx ] = (GeneralFunction)pDim->GetSubTotalFunc( nIdx );
+                    aRet[ nIdx ] = static_cast<sal_Int16>(pDim->GetSubTotalFunc( nIdx ));
             }
         }
     }
     return aRet;
 }
 
-void ScDataPilotFieldObj::setSubtotals( const Sequence< GeneralFunction >& rSubtotals )
+void ScDataPilotFieldObj::setSubtotals( const Sequence< sal_Int16 >& rSubtotals )
 {
     SolarMutexGuard aGuard;
     ScDPObject* pDPObj = nullptr;
@@ -2168,7 +2220,7 @@ void ScDataPilotFieldObj::setSubtotals( const Sequence< GeneralFunction >& rSubt
             if( nCount == 1 )
             {
                 // count 1: all values are allowed (including NONE and AUTO)
-                if( rSubtotals[ 0 ] == GeneralFunction_NONE )
+                if( rSubtotals[ 0 ] == GeneralFunction2::NONE )
                     pDim->SetSubTotals( 0, nullptr );
                 else
                 {
@@ -2182,8 +2234,8 @@ void ScDataPilotFieldObj::setSubtotals( const Sequence< GeneralFunction >& rSubt
                 ::std::vector< sal_uInt16 > aSubt;
                 for( sal_Int32 nIdx = 0; nIdx < nCount; ++nIdx )
                 {
-                    GeneralFunction eFunc = rSubtotals[ nIdx ];
-                    if( (eFunc != GeneralFunction_NONE) && (eFunc != GeneralFunction_AUTO) )
+                    sal_Int16 eFunc = rSubtotals[ nIdx ];
+                    if( (eFunc != GeneralFunction2::NONE) && (eFunc != GeneralFunction2::AUTO) )
                     {
                         // do not insert functions twice
                         sal_uInt16 nFunc = static_cast< sal_uInt16 >( eFunc );
@@ -2200,11 +2252,6 @@ void ScDataPilotFieldObj::setSubtotals( const Sequence< GeneralFunction >& rSubt
         }
         SetDPObject( pDPObj );
     }
-}
-
-OUString ScDataPilotFieldObj::getCurrentPage()
-{
-    return OUString();
 }
 
 void ScDataPilotFieldObj::setCurrentPage( const OUString& rPage )
@@ -2528,12 +2575,27 @@ Reference< XDataPilotField > SAL_CALL ScDataPilotFieldObj::createNameGroup( cons
 {
     SolarMutexGuard aGuard;
 
-    Reference< XDataPilotField > xRet;
-    OUString sNewDim;
-
     if( !rItems.hasElements() )
         throw IllegalArgumentException();
 
+    Reference< XMembersAccess > xMembers = GetMembers();
+    if (!xMembers.is())
+    {
+        SAL_WARN("sc.ui", "Cannot access members of the field object.");
+        throw RuntimeException();
+    }
+
+    for (const OUString& aEntryName : rItems)
+    {
+        if (!xMembers->hasByName(aEntryName))
+        {
+            SAL_WARN("sc.ui", "There is no member with that name: " + aEntryName + ".");
+            throw IllegalArgumentException();
+        }
+    }
+
+    Reference< XDataPilotField > xRet;
+    OUString sNewDim;
     ScDPObject* pDPObj = nullptr;
     if( ScDPSaveDimension* pDim = GetDPDimension( &pDPObj ) )
     {
@@ -2557,11 +2619,9 @@ Reference< XDataPilotField > SAL_CALL ScDataPilotFieldObj::createNameGroup( cons
 
         // remove the selected items from their groups
         // (empty groups are removed, too)
-        sal_Int32 nEntryCount = rItems.getLength();
-        sal_Int32 nEntry;
         if ( pGroupDimension )
         {
-            for (nEntry=0; nEntry<nEntryCount; nEntry++)
+            for (sal_Int32 nEntry = 0; nEntry < rItems.getLength(); nEntry++)
             {
                 const OUString& aEntryName = rItems[nEntry];
                 if ( pBaseGroupDim )
@@ -2614,26 +2674,11 @@ Reference< XDataPilotField > SAL_CALL ScDataPilotFieldObj::createNameGroup( cons
         }
         OUString aGroupDimName = pGroupDimension->GetGroupDimName();
 
-        //! localized prefix string
-        OUString aGroupName = pGroupDimension->CreateGroupName( "Group" );
+        OUString aGroupName = pGroupDimension->CreateGroupName( ScGlobal::GetRscString(STR_PIVOT_GROUP) );
         ScDPSaveGroupItem aGroup( aGroupName );
-        Reference< XNameAccess > xMembers = GetMembers();
-        if (!xMembers.is())
-        {
-            delete pNewGroupDim;
-            throw RuntimeException();
-        }
-
-        for (nEntry=0; nEntry<nEntryCount; nEntry++)
+        for (sal_Int32 nEntry = 0; nEntry < rItems.getLength(); nEntry++)
         {
             OUString aEntryName(rItems[nEntry]);
-
-            if (!xMembers->hasByName(aEntryName))
-            {
-                delete pNewGroupDim;
-                throw IllegalArgumentException();
-            }
-
             if ( pBaseGroupDim )
             {
                 // for each selected (intermediate) group, add all its items
@@ -2681,10 +2726,11 @@ Reference< XDataPilotField > SAL_CALL ScDataPilotFieldObj::createNameGroup( cons
             try
             {
                 xRet.set(xFields->getByName(sNewDim), UNO_QUERY);
-                OSL_ENSURE(xRet.is(), "there is a name, so there should be also a field");
+                SAL_WARN_IF(!xRet.is(), "sc.ui", "there is a name, so there should be also a field");
             }
             catch (const container::NoSuchElementException&)
             {
+                SAL_WARN("sc.ui", "Cannot find field with that name: " + sNewDim + ".");
                 // Avoid throwing exception that's not specified in the method signature.
                 throw RuntimeException();
             }

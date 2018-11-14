@@ -24,6 +24,8 @@
 #include <svtools/svtdllapi.h>
 #include <o3tl/typed_flags_set.hxx>
 
+#include <unordered_set>
+
 enum class GraphicManagerDrawFlags
 {
     CACHED                  = 0x01,
@@ -183,8 +185,8 @@ private:
     OUString                maLink;
     Link<const GraphicObject*, SvStream*> maSwapStreamHdl;
     OUString                maUserData;
-    Timer*                  mpSwapOutTimer;
-    GrfSimpleCacheObj*      mpSimpleCache;
+    std::unique_ptr<Timer>  mxSwapOutTimer;
+    std::unique_ptr<GrfSimpleCacheObj> mxSimpleCache;
     sal_uLong               mnAnimationLoopCount;
 
     // a unique increasing ID to be able to say which data change is older
@@ -233,9 +235,6 @@ private:
         @param rVDev
         Virtual device to render everything into
 
-        @param nExponent
-        Number of repetitions per subdivision step, _must_ be greater than 1
-
         @param nNumTilesX
         Number of original tiles to generate in x direction
 
@@ -258,7 +257,6 @@ private:
     */
     bool SVT_DLLPRIVATE     ImplRenderTempTile(
                                 VirtualDevice& rVDev,
-                                int nExponent,
                                 int nNumTilesX,
                                 int nNumTilesY,
                                 const Size& rTileSizePixel,
@@ -311,10 +309,7 @@ private:
                                 bool                bEnlarge
                             ) const;
 
-                            DECL_LINK_TYPED( ImplAutoSwapOutHdl, Timer*, void );
-
-    // restart SwapOut timer; this is like touching in a cache to reset to the full timeout value
-    void SVT_DLLPRIVATE     restartSwapOutTimer() const;
+                            DECL_LINK( ImplAutoSwapOutHdl, Timer*, void );
 
     // Handle evtl. needed AfterDataChanges, needs to be called when new
     // graphic data is swapped in/added to the GraphicManager
@@ -326,11 +321,11 @@ protected:
     void                    SetSwapState();
 
 public:
-                            GraphicObject( const GraphicManager* pMgr = nullptr );
-                            GraphicObject( const Graphic& rGraphic, const GraphicManager* pMgr = nullptr );
+                            GraphicObject();
+                            GraphicObject( const Graphic& rGraphic );
                             GraphicObject( const GraphicObject& rCacheObj, const GraphicManager* pMgr = nullptr );
-                            explicit GraphicObject( const OString& rUniqueID, const GraphicManager* pMgr = nullptr );
-                            virtual ~GraphicObject();
+                            explicit GraphicObject( const OString& rUniqueID );
+                            virtual ~GraphicObject() override;
 
     GraphicObject&          operator=( const GraphicObject& rCacheObj );
     bool                    operator==( const GraphicObject& rCacheObj ) const;
@@ -348,7 +343,7 @@ public:
                                 OutputDevice* pOut,
                                 const Point& rPt,
                                 const Size& rSz,
-                                const GraphicAttr* pAttr = nullptr,
+                                const GraphicAttr* pAttr,
                                 GraphicManagerDrawFlags nFlags = GraphicManagerDrawFlags::STANDARD
                             ) const;
 
@@ -411,8 +406,6 @@ public:
     bool                    IsAnimated() const { return mbAnimated; }
     bool                    IsEPS() const { return mbEPS; }
 
-    Link<Animation*,void>   GetAnimationNotifyHdl() const { return GetGraphic().GetAnimationNotifyHdl(); }
-
     bool                    SwapOut();
     bool                    SwapOut( SvStream* pOStm );
     bool                    SwapIn();
@@ -446,9 +439,6 @@ public:
         virtually start at this position. Concretely, only that many
         tiles are drawn to completely fill the given output area.
 
-        @param pAttr
-        Optional GraphicAttr
-
         @param nFlags
         Optional rendering flags
 
@@ -465,7 +455,6 @@ public:
                                 const Rectangle& rArea,
                                 const Size& rSize,
                                 const Size& rOffset,
-                                const GraphicAttr* pAttr = nullptr,
                                 GraphicManagerDrawFlags nFlags = GraphicManagerDrawFlags::STANDARD,
                                 int nTileCacheSize1D=128
                             );
@@ -475,8 +464,6 @@ public:
                                 const Point& rPt,
                                 const Size& rSz,
                                 long nExtraData = 0L,
-                                const GraphicAttr* pAttr = nullptr,
-                                GraphicManagerDrawFlags nFlags = GraphicManagerDrawFlags::STANDARD,
                                 OutputDevice* pFirstFrameOutDev = nullptr
                             );
 
@@ -504,8 +491,6 @@ public:
     sal_uLong GetDataChangeTimeStamp() const { return mnDataChangeTimeStamp; }
 };
 
-typedef ::std::vector< GraphicObject* > GraphicObjectList_impl;
-
 class SVT_DLLPUBLIC GraphicManager
 {
     friend class GraphicObject;
@@ -513,7 +498,7 @@ class SVT_DLLPUBLIC GraphicManager
 
 private:
 
-    GraphicObjectList_impl  maObjList;
+    std::unordered_set< GraphicObject* >    maObjList;
     sal_uLong               mnUsedSize; // currently used memory footprint of all swapped in graphics
     GraphicCache*           mpCache;
 
@@ -578,8 +563,8 @@ private:
     void SVT_DLLPRIVATE ImplRegisterObj(
                             const GraphicObject& rObj,
                             Graphic& rSubstitute,
-                            const OString* pID = nullptr,
-                            const GraphicObject* pCopyObj = nullptr
+                            const OString* pID,
+                            const GraphicObject* pCopyObj
                         );
     void SVT_DLLPRIVATE ImplUnregisterObj( const GraphicObject& rObj );
     inline bool SVT_DLLPRIVATE ImplHasObjects() const { return !maObjList.empty(); }
@@ -600,7 +585,7 @@ private:
     void SVT_DLLPRIVATE ImplCheckSizeOfSwappedInGraphics(const GraphicObject* pGraphicToIgnore);
 public:
 
-                        GraphicManager( sal_uLong nCacheSize = 10000000UL, sal_uLong nMaxObjCacheSize = 2400000UL );
+                        GraphicManager( sal_uLong nCacheSize, sal_uLong nMaxObjCacheSize );
                         ~GraphicManager();
 
     void                SetMaxCacheSize( sal_uLong nNewCacheSize );

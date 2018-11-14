@@ -59,7 +59,7 @@ namespace pcr
     class OFormatSampleControl : public OFormatSampleControl_Base
     {
     public:
-        OFormatSampleControl( vcl::Window* pParent, WinBits nWinStyle );
+        explicit OFormatSampleControl( vcl::Window* pParent );
 
         // XPropertyControl
         virtual css::uno::Any SAL_CALL getValue() throw (css::uno::RuntimeException, std::exception) override;
@@ -102,7 +102,7 @@ namespace pcr
         sal_Int32   m_nLastDecimalDigits;
 
     public:
-        OFormattedNumericControl( vcl::Window* pParent, WinBits nWinStyle = WB_TABSTOP);
+        OFormattedNumericControl( vcl::Window* pParent, WinBits nWinStyle);
 
         // XPropertyControl
         virtual css::uno::Any SAL_CALL getValue() throw (css::uno::RuntimeException, std::exception) override;
@@ -118,7 +118,7 @@ namespace pcr
         void SetThousandsSep(bool bEnable) { getTypedControlWindow()->SetThousandsSep(bEnable); }
 
     protected:
-        virtual ~OFormattedNumericControl();
+        virtual ~OFormattedNumericControl() override;
     };
 
 
@@ -128,7 +128,7 @@ namespace pcr
     class OFileUrlControl : public OFileUrlControl_Base
     {
     public:
-        OFileUrlControl( vcl::Window* pParent, WinBits nWinStyle );
+        explicit OFileUrlControl( vcl::Window* pParent );
 
         // XPropertyControl
         virtual css::uno::Any SAL_CALL getValue() throw (css::uno::RuntimeException, std::exception) override;
@@ -136,7 +136,7 @@ namespace pcr
         virtual css::uno::Type SAL_CALL getValueType() throw (css::uno::RuntimeException, std::exception) override;
 
     protected:
-        virtual ~OFileUrlControl();
+        virtual ~OFileUrlControl() override;
     };
 
 
@@ -145,14 +145,14 @@ namespace pcr
     class OTimeDurationControl : public ONumericControl
     {
     public:
-        OTimeDurationControl( vcl::Window* pParent, WinBits nWinStyle );
-        virtual ~OTimeDurationControl();
+        explicit OTimeDurationControl( vcl::Window* pParent );
+        virtual ~OTimeDurationControl() override;
 
         // XPropertyControl
         ::sal_Int16 SAL_CALL getControlType() throw (css::uno::RuntimeException) override;
 
     private:
-        DECL_LINK_TYPED( OnCustomConvert, MetricFormatter&, void );
+        DECL_LINK( OnCustomConvert, MetricFormatter&, void );
     };
 
 

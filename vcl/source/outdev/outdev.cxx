@@ -21,6 +21,7 @@
 #include <vcl/outdev.hxx>
 #include <vcl/unowrap.hxx>
 #include <vcl/sysdata.hxx>
+#include <comphelper/lok.hxx>
 
 #include "salgdi.hxx"
 #include "svdata.hxx"
@@ -67,7 +68,7 @@ OutputDevice::OutputDevice() :
     mnOutHeight                     = 0;
     mnDPIX                          = 0;
     mnDPIY                          = 0;
-    mnDPIScaleFactor                = 1;
+    mnDPIScalePercentage            = 100;
     mnTextOffX                      = 0;
     mnTextOffY                      = 0;
     mnOutOffOrigX                   = 0;
@@ -77,15 +78,14 @@ OutputDevice::OutputDevice() :
     mnEmphasisAscent                = 0;
     mnEmphasisDescent               = 0;
     mnDrawMode                      = DrawModeFlags::Default;
-    mnTextLayoutMode                = TEXT_LAYOUT_DEFAULT;
+    mnTextLayoutMode                = ComplexTextLayoutFlags::Default;
 
     if( AllSettings::GetLayoutRTL() ) //#i84553# tip BiDi preference to RTL
-        mnTextLayoutMode            = TEXT_LAYOUT_BIDI_RTL | TEXT_LAYOUT_TEXTORIGIN_LEFT;
+        mnTextLayoutMode            = ComplexTextLayoutFlags::BiDiRtl | ComplexTextLayoutFlags::TextOriginLeft;
 
     meOutDevType                    = OUTDEV_DONTKNOW;
     meOutDevViewType                = OUTDEV_VIEWTYPE_DONTKNOW;
     mbMap                           = false;
-    mbMapIsDefault                  = true;
     mbClipRegion                    = false;
     mbBackground                    = false;
     mbOutput                        = true;
@@ -94,7 +94,7 @@ OutputDevice::OutputDevice() :
     maTextColor                     = Color( COL_BLACK );
     maOverlineColor                 = Color( COL_TRANSPARENT );
     meTextAlign                     = maFont.GetAlignment();
-    meRasterOp                      = ROP_OVERPAINT;
+    meRasterOp                      = RasterOp::OverPaint;
     mnAntialiasing                  = AntialiasingFlags::NONE;
     meTextLanguage                  = 0;  // TODO: get default from configuration?
     mbLineColor                     = true;
@@ -209,7 +209,8 @@ void OutputDevice::dispose()
     }
 
     mpAlphaVDev.disposeAndClear();
-
+    mpPrevGraphics.clear();
+    mpNextGraphics.clear();
     VclReferenceBase::dispose();
 }
 
@@ -417,7 +418,7 @@ void OutputDevice::DrawOutDev( const Point& rDestPt, const Size& rDestSize,
     if( ImplIsRecordLayout() )
         return;
 
-    if ( ROP_INVERT == meRasterOp )
+    if ( RasterOp::Invert == meRasterOp )
     {
         DrawRect( Rectangle( rDestPt, rDestSize ) );
         return;
@@ -474,7 +475,7 @@ void OutputDevice::DrawOutDev( const Point& rDestPt, const Size& rDestSize,
     if ( ImplIsRecordLayout() )
         return;
 
-    if ( ROP_INVERT == meRasterOp )
+    if ( RasterOp::Invert == meRasterOp )
     {
         DrawRect( Rectangle( rDestPt, rDestSize ) );
         return;
@@ -546,7 +547,7 @@ void OutputDevice::CopyArea( const Point& rDestPt,
         return;
 
     RasterOp eOldRop = GetRasterOp();
-    SetRasterOp( ROP_OVERPAINT );
+    SetRasterOp( RasterOp::OverPaint );
 
     if ( !IsDeviceOutputNecessary() )
         return;
@@ -634,7 +635,7 @@ void OutputDevice::drawOutDevDirect( const OutputDevice* pSrcDev, SalTwoRect& rP
                     if ( !AcquireGraphics() )
                         return;
                 }
-                DBG_ASSERT( mpGraphics && pSrcDev->mpGraphics,
+                SAL_WARN_IF( !mpGraphics || !pSrcDev->mpGraphics, "vcl",
                             "OutputDevice::DrawOutDev(): We need more than one Graphics" );
             }
         }

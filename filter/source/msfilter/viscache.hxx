@@ -32,8 +32,6 @@ class Impl_OlePres
     GDIMetaFile *   pMtf;
 
     sal_uInt32      nAdvFlags;
-    sal_Int32       nJobLen;
-    sal_uInt8*      pJob;
     Size            aSize;      // Groesse in 100TH_MM
 public:
     explicit Impl_OlePres( SotClipboardFormatId nF )
@@ -41,12 +39,9 @@ public:
         , nAspect( ASPECT_CONTENT )
         , pMtf( nullptr )
         , nAdvFlags( 0x2 )  // in Dokument gefunden
-        , nJobLen( 0 )
-        , pJob( nullptr )
     {}
     ~Impl_OlePres()
     {
-        delete pJob;
         delete pMtf;
     }
     void    SetMtf( const GDIMetaFile & rMtf )
@@ -55,7 +50,6 @@ public:
                     delete pMtf;
                 pMtf = new GDIMetaFile( rMtf );
             }
-    SotClipboardFormatId GetFormat() const { return nFormat; }
     void                 SetAspect( sal_uInt16 nAsp ) { nAspect = nAsp; }
     void                 SetAdviseFlags( sal_uLong nAdv ) { nAdvFlags = nAdv; }
     void                 SetSize( const Size & rSize ) { aSize = rSize; }

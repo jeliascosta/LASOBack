@@ -20,7 +20,9 @@ $(eval $(call gb_UIConfig_add_uifiles,sfx,\
 	sfx2/uiconfig/ui/documentfontspage \
 	sfx2/uiconfig/ui/documentinfopage \
 	sfx2/uiconfig/ui/documentpropertiesdialog \
+	sfx2/uiconfig/ui/editdocumentdialog \
 	sfx2/uiconfig/ui/editdurationdialog \
+	sfx2/uiconfig/ui/emojicontrol \
 	sfx2/uiconfig/ui/errorfindemaildialog \
 	sfx2/uiconfig/ui/floatingrecord \
 	sfx2/uiconfig/ui/helpbookmarkpage \
@@ -37,8 +39,10 @@ $(eval $(call gb_UIConfig_add_uifiles,sfx,\
 	sfx2/uiconfig/ui/notebookbar \
 	sfx2/uiconfig/ui/optprintpage \
 	sfx2/uiconfig/ui/password \
+	sfx2/uiconfig/ui/notebookbarpopup \
 	sfx2/uiconfig/ui/printeroptionsdialog \
 	sfx2/uiconfig/ui/querysavedialog \
+	sfx2/uiconfig/ui/safemodequerydialog \
 	sfx2/uiconfig/ui/searchdialog \
 	sfx2/uiconfig/ui/securityinfopage \
 	sfx2/uiconfig/ui/singletabdialog \

@@ -29,12 +29,10 @@
 
 const sal_uInt16    TokenPool::nScTokenOff = 8192;
 
-TokenStack::TokenStack( sal_uInt16 nNewSize )
+TokenStack::TokenStack(  )
 {
-    pStack = new TokenId[ nNewSize ];
-
+    pStack = new TokenId[ nSize ];
     Reset();
-    nSize = nNewSize;
 }
 
 TokenStack::~TokenStack()
@@ -73,7 +71,6 @@ TokenPool::TokenPool( svl::SharedStringPool& rSPool ) :
     pP_Dbl = new double[ nP_Dbl ];
 
     // pool for error codes
-    nP_Err = 8;
     pP_Err = new sal_uInt16[ nP_Err ];
 
     // pool for References
@@ -473,7 +470,7 @@ bool TokenPool::GetElement( const sal_uInt16 nId )
                 if (n < maExtNames.size())
                 {
                     const ExtName& r = maExtNames[n];
-                    pScToken->AddExternalName(r.mnFileId, r.maName);
+                    pScToken->AddExternalName(r.mnFileId, mrStringPool.intern( r.maName));
                 }
                 else
                     bRet = false;
@@ -485,7 +482,7 @@ bool TokenPool::GetElement( const sal_uInt16 nId )
                 if (n < maExtCellRefs.size())
                 {
                     const ExtCellRef& r = maExtCellRefs[n];
-                    pScToken->AddExternalSingleReference(r.mnFileId, r.maTabName, r.maRef);
+                    pScToken->AddExternalSingleReference(r.mnFileId, mrStringPool.intern( r.maTabName), r.maRef);
                 }
                 else
                     bRet = false;
@@ -497,7 +494,7 @@ bool TokenPool::GetElement( const sal_uInt16 nId )
                 if (n < maExtAreaRefs.size())
                 {
                     const ExtAreaRef& r = maExtAreaRefs[n];
-                    pScToken->AddExternalDoubleReference(r.mnFileId, r.maTabName, r.maRef);
+                    pScToken->AddExternalDoubleReference(r.mnFileId, mrStringPool.intern( r.maTabName), r.maRef);
                 }
                 else
                     bRet = false;

@@ -155,7 +155,7 @@ namespace fileaccess {
         shell( const css::uno::Reference< css::uno::XComponentContext >& rxContext,
                FileProvider* pProvider, bool bWithConfig );
 
-        virtual ~shell();
+        virtual ~shell() override;
 
 
         /**
@@ -439,7 +439,7 @@ namespace fileaccess {
 
         void SAL_CALL copyPersistentSet( const OUString& srcUnqPath,
                                          const OUString& dstUnqPath,
-                                         bool withChildren = false );
+                                         bool withChildren );
 
 
         // Special optimized method for getting the properties of a directoryitem, which

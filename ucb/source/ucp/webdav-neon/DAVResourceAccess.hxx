@@ -62,6 +62,7 @@ class DAVResourceAccess
     rtl::Reference< DAVSessionFactory > m_xSessionFactory;
     css::uno::Reference< css::uno::XComponentContext > m_xContext;
     std::vector< NeonUri > m_aRedirectURIs;
+    sal_uInt32   m_nRedirectLimit;
 
 public:
     DAVResourceAccess( const css::uno::Reference< css::uno::XComponentContext > & rxContext,
@@ -86,13 +87,11 @@ public:
 
     // DAV methods
 
-
-#if 0 // currently not used, but please don't remove code
     void
-    OPTIONS(  DAVCapabilities & rCapabilities,
-              const css::uno::Reference< css::ucb::XCommandEnvironment > & xEnv )
+    OPTIONS( DAVOptions & rOptions,
+             const css::uno::Reference<
+             css::ucb::XCommandEnvironment > & xEnv )
         throw ( DAVException );
-#endif
 
     // allprop & named
     void
@@ -134,6 +133,14 @@ public:
          DAVResource & rResource,
          const css::uno::Reference< css::ucb::XCommandEnvironment > & xEnv )
         throw ( DAVException );
+
+    // used as HEAD substitute when HEAD is not implemented on server
+    void
+    GET0( DAVRequestHeaders & rRequestHeaders,
+          const std::vector< rtl::OUString > & rHeaderNames, // empty == 'all'
+          DAVResource & rResource,
+          const css::uno::Reference< css::ucb::XCommandEnvironment > & xEnv )
+         throw ( DAVException );
 
     void
     GET( css::uno::Reference< css::io::XOutputStream > & rStream,
@@ -214,11 +221,12 @@ public:
         css::ucb::WebDAVHTTPMethod eMethod,
         DAVRequestHeaders & rRequestHeaders );
 
+        bool handleException( const DAVException & e, int errorCount )
+        throw ( DAVException );
+
 private:
     const OUString & getRequestURI() const;
     bool detectRedirectCycle( const OUString& rRedirectURL )
-        throw ( DAVException );
-    bool handleException( const DAVException & e, int errorCount )
         throw ( DAVException );
     void initialize()
         throw ( DAVException );

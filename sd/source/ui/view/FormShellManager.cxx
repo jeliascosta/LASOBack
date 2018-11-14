@@ -37,7 +37,7 @@ class FormShellManagerFactory
 {
 public:
     FormShellManagerFactory (ViewShell& rViewShell, FormShellManager& rManager);
-    virtual FmFormShell* CreateShell (ShellId nId, vcl::Window* pParentWindow, FrameView* pFrameView) override;
+    virtual FmFormShell* CreateShell (ShellId nId) override;
     virtual void ReleaseShell (SfxShell* pShell) override;
 
 private:
@@ -58,11 +58,7 @@ FormShellManager::FormShellManager (ViewShellBase& rBase)
     // Register at the EventMultiplexer to be informed about changes in the
     // center pane.
     Link<sd::tools::EventMultiplexerEvent&,void> aLink (LINK(this, FormShellManager, ConfigurationUpdateHandler));
-    mrBase.GetEventMultiplexer()->AddEventListener(
-        aLink,
-        sd::tools::EventMultiplexerEvent::EID_MAIN_VIEW_REMOVED
-        | sd::tools::EventMultiplexerEvent::EID_MAIN_VIEW_ADDED
-        | sd::tools::EventMultiplexerEvent::EID_CONFIGURATION_UPDATED);
+    mrBase.GetEventMultiplexer()->AddEventListener(aLink);
 
     RegisterAtCenterPane();
 }
@@ -183,7 +179,7 @@ void FormShellManager::UnregisterAtCenterPane()
     mpSubShellFactory.reset();
 }
 
-IMPL_LINK_NOARG_TYPED(FormShellManager, FormControlActivated, LinkParamNone*, void)
+IMPL_LINK_NOARG(FormShellManager, FormControlActivated, LinkParamNone*, void)
 {
     // The form shell has been activated.  To give it priority in reacting to
     // slot calls the form shell is moved to the top of the object bar shell
@@ -198,19 +194,19 @@ IMPL_LINK_NOARG_TYPED(FormShellManager, FormControlActivated, LinkParamNone*, vo
     }
 }
 
-IMPL_LINK_TYPED(FormShellManager, ConfigurationUpdateHandler, sd::tools::EventMultiplexerEvent&, rEvent, void)
+IMPL_LINK(FormShellManager, ConfigurationUpdateHandler, sd::tools::EventMultiplexerEvent&, rEvent, void)
 {
     switch (rEvent.meEventId)
     {
-        case sd::tools::EventMultiplexerEvent::EID_MAIN_VIEW_REMOVED:
+        case EventMultiplexerEventId::MainViewRemoved:
             UnregisterAtCenterPane();
             break;
 
-        case sd::tools::EventMultiplexerEvent::EID_MAIN_VIEW_ADDED:
+        case EventMultiplexerEventId::MainViewAdded:
             mbIsMainViewChangePending = true;
             break;
 
-        case sd::tools::EventMultiplexerEvent::EID_CONFIGURATION_UPDATED:
+        case EventMultiplexerEventId::ConfigurationUpdated:
             if (mbIsMainViewChangePending)
             {
                 mbIsMainViewChangePending = false;
@@ -223,7 +219,7 @@ IMPL_LINK_TYPED(FormShellManager, ConfigurationUpdateHandler, sd::tools::EventMu
     }
 }
 
-IMPL_LINK_TYPED(FormShellManager, WindowEventHandler, VclWindowEvent&, rEvent, void)
+IMPL_LINK(FormShellManager, WindowEventHandler, VclWindowEvent&, rEvent, void)
 {
     switch (rEvent.GetId())
     {
@@ -261,8 +257,7 @@ IMPL_LINK_TYPED(FormShellManager, WindowEventHandler, VclWindowEvent&, rEvent, v
 
 void FormShellManager::Notify(SfxBroadcaster&, const SfxHint& rHint)
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if (pSimpleHint!=nullptr && pSimpleHint->GetId()==SFX_HINT_DYING)
+    if (rHint.GetId()==SFX_HINT_DYING)
     {
         // If all goes well this listener is called after the
         // FormShellManager was notified about the dying form shell by the
@@ -291,10 +286,7 @@ FormShellManagerFactory::FormShellManagerFactory (
 {
 }
 
-FmFormShell* FormShellManagerFactory::CreateShell (
-    ::sd::ShellId nId,
-    vcl::Window*,
-    ::sd::FrameView*)
+FmFormShell* FormShellManagerFactory::CreateShell( ::sd::ShellId nId )
 {
     FmFormShell* pShell = nullptr;
 

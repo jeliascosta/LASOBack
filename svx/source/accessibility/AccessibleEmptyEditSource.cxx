@@ -53,7 +53,7 @@ namespace accessibility
         AccessibleProxyEditSource_Impl( SdrObject&      rObj,
                                         SdrView&        rView,
                                         const vcl::Window&   rViewWindow );
-        virtual ~AccessibleProxyEditSource_Impl();
+        virtual ~AccessibleProxyEditSource_Impl() override;
 
         // from the SvxEditSource interface
         SvxTextForwarder*       GetTextForwarder() override;
@@ -78,7 +78,7 @@ namespace accessibility
     public:
 
         AccessibleEmptyEditSource_Impl() {}
-        virtual ~AccessibleEmptyEditSource_Impl() {}
+        virtual ~AccessibleEmptyEditSource_Impl() override {}
 
         // SvxEditSource
         SvxTextForwarder*       GetTextForwarder() override { return this; }
@@ -125,7 +125,7 @@ namespace accessibility
         {
             return  OUString();
         }
-        void            FieldClicked( const SvxFieldItem&, sal_Int32, sal_Int32 ) override {;}
+        void            FieldClicked( const SvxFieldItem&, sal_Int32, sal_Int32 ) override {}
 
         bool            IsValid() const override { return true; }
 
@@ -309,7 +309,7 @@ namespace accessibility
     {
         const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>( &rHint );
 
-        if( pSdrHint && pSdrHint->GetKind() == HINT_BEGEDIT &&
+        if( pSdrHint && pSdrHint->GetKind() == SdrHintKind::BeginEdit &&
             &mrObj == pSdrHint->GetObject() && mpEditSource.get() )
         {
             // switch edit source, if not yet done. This is necessary

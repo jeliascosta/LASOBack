@@ -65,11 +65,10 @@ OCommonStatement::OCommonStatement(OConnection* _pConnection )
     ,m_pTable(nullptr)
     ,m_pConnection(_pConnection)
     ,m_aParser( comphelper::getComponentContext(_pConnection->getDriver()->getFactory()) )
-    ,m_pSQLIterator( new OSQLParseTreeIterator( _pConnection, _pConnection->createCatalog()->getTables(), m_aParser, nullptr ) )
+    ,m_pSQLIterator( new OSQLParseTreeIterator( _pConnection, _pConnection->createCatalog()->getTables(), m_aParser ) )
 {
     m_xDBMetaData = _pConnection->getMetaData();
     m_pParseTree = nullptr;
-    m_pConnection->acquire();
 }
 
 
@@ -85,9 +84,7 @@ void OCommonStatement::disposing()
     clearWarnings();
     clearCachedResultSet();
 
-    if (m_pConnection)
-        m_pConnection->release();
-    m_pConnection = nullptr;
+    m_pConnection.clear();
 
     m_pSQLIterator->dispose();
     delete m_pParseTree;
@@ -122,9 +119,8 @@ void SAL_CALL OCommonStatement::close(  ) throw(SQLException, RuntimeException, 
     dispose();
 }
 
-
 OCommonStatement::StatementType OCommonStatement::parseSql( const OUString& sql , bool bAdjusted)
-    throw ( SQLException, RuntimeException )
+    throw ( SQLException, RuntimeException, std::exception )
 {
     OUString aErr;
 
@@ -276,7 +272,7 @@ Reference< XConnection > SAL_CALL OCommonStatement::getConnection(  ) throw(SQLE
     checkDisposed(OCommonStatement_IBASE::rBHelper.bDisposed);
 
     // just return our connection here
-    return Reference< XConnection >(m_pConnection);
+    return Reference< XConnection >(m_pConnection.get());
 }
 
 Any SAL_CALL OStatement::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
@@ -319,23 +315,23 @@ void SAL_CALL OCommonStatement::clearWarnings(  ) throw(SQLException, RuntimeExc
     Sequence< Property > aProps(9);
     Property* pProperties = aProps.getArray();
     sal_Int32 nPos = 0;
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_CURSORNAME),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_CURSORNAME),
         PROPERTY_ID_CURSORNAME, cppu::UnoType<OUString>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_ESCAPEPROCESSING),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_ESCAPEPROCESSING),
         PROPERTY_ID_ESCAPEPROCESSING, cppu::UnoType<bool>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FETCHDIRECTION),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FETCHDIRECTION),
         PROPERTY_ID_FETCHDIRECTION, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FETCHSIZE),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FETCHSIZE),
         PROPERTY_ID_FETCHSIZE, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_MAXFIELDSIZE),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_MAXFIELDSIZE),
         PROPERTY_ID_MAXFIELDSIZE, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_MAXROWS),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_MAXROWS),
         PROPERTY_ID_MAXROWS, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_QUERYTIMEOUT),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_QUERYTIMEOUT),
         PROPERTY_ID_QUERYTIMEOUT, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RESULTSETCONCURRENCY),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RESULTSETCONCURRENCY),
         PROPERTY_ID_RESULTSETCONCURRENCY, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RESULTSETTYPE),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RESULTSETTYPE),
         PROPERTY_ID_RESULTSETTYPE, cppu::UnoType<sal_Int32>::get(), 0);
 
     return new ::cppu::OPropertyArrayHelper(aProps);
@@ -352,7 +348,7 @@ sal_Bool OCommonStatement::convertFastPropertyValue(
                             Any & /*rOldValue*/,
                             sal_Int32 /*nHandle*/,
                             const Any& /*rValue*/ )
-                                throw (::com::sun::star::lang::IllegalArgumentException)
+                                throw (css::lang::IllegalArgumentException)
 {
     bool bConverted = false;
     // here we have to try to convert
@@ -403,7 +399,7 @@ void SAL_CALL OCommonStatement::acquire() throw()
 
 void SAL_CALL OCommonStatement::release() throw()
 {
-    relase_ChildImpl();
+    release_ChildImpl();
 }
 
 void SAL_CALL OStatement::acquire() throw()
@@ -416,7 +412,7 @@ void SAL_CALL OStatement::release() throw()
     OCommonStatement::release();
 }
 
-Reference< ::com::sun::star::beans::XPropertySetInfo > SAL_CALL OCommonStatement::getPropertySetInfo(  ) throw(RuntimeException, std::exception)
+Reference< css::beans::XPropertySetInfo > SAL_CALL OCommonStatement::getPropertySetInfo(  ) throw(RuntimeException, std::exception)
 {
     return ::cppu::OPropertySetHelper::createPropertySetInfo(getInfoHelper());
 }

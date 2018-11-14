@@ -19,8 +19,6 @@
 
 #include <pam.hxx>
 #include <pamtyp.hxx>
-#include <trvlreg.hxx>
-#include <trvltbl.hxx>
 
 static SwMoveFnCollection aFwrd = {
     /* fnNd         */  &GoNext,
@@ -44,69 +42,19 @@ static SwMoveFnCollection aBwrd = {
     /* fnSection    */  &SwNodes::GoEndOfSection
 };
 
-SwGoInDoc fnGoDoc       = &GoInDoc;
-SwGoInDoc fnGoSection   = &GoInSection;
-SwGoInDoc fnGoNode      = &GoInNode;
-SwGoInDoc fnGoContent     = &GoInContent;
-SwGoInDoc fnGoContentCells = &GoInContentCells;
-SwGoInDoc fnGoContentSkipHidden      = &GoInContentSkipHidden;
-SwGoInDoc fnGoContentCellsSkipHidden = &GoInContentCellsSkipHidden;
+SwMoveFnCollection const & fnParaStart   = aFwrd;
+SwMoveFnCollection const & fnParaEnd     = aBwrd;
 
-SwWhichPara fnParaPrev  = &GoPrevPara;
-SwWhichPara fnParaCurr  = &GoCurrPara;
-SwWhichPara fnParaNext  = &GoNextPara;
-SwPosPara fnParaStart   = &aFwrd;
-SwPosPara fnParaEnd     = &aBwrd;
+SwMoveFnCollection const & fnSectionStart     = aFwrd;
+SwMoveFnCollection const & fnSectionEnd       = aBwrd;
 
-SwWhichSection fnSectionPrev    = &GoPrevSection;
-SwWhichSection fnSectionCurr    = &GoCurrSection;
-SwWhichSection fnSectionNext    = &GoNextSection;
-SwPosSection fnSectionStart     = &aFwrd;
-SwPosSection fnSectionEnd       = &aBwrd;
+SwMoveFnCollection const & fnTableStart = aFwrd;
+SwMoveFnCollection const & fnTableEnd = aBwrd;
 
-SwWhichTable fnTablePrev = &GotoPrevTable;
-SwWhichTable fnTableCurr = &GotoCurrTable;
-SwWhichTable fnTableNext = &GotoNextTable;
-SwPosTable fnTableStart = &aFwrd;
-SwPosTable fnTableEnd = &aBwrd;
+SwMoveFnCollection const & fnRegionStart = aFwrd;
+SwMoveFnCollection const & fnRegionEnd = aBwrd;
 
-SwWhichRegion fnRegionPrev = &GotoPrevRegion;
-SwWhichRegion fnRegionCurr = &GotoCurrRegion;
-SwWhichRegion fnRegionCurrAndSkip = &GotoCurrRegionAndSkip;
-SwWhichRegion fnRegionNext = &GotoNextRegion;
-SwPosRegion fnRegionStart = &aFwrd;
-SwPosRegion fnRegionEnd = &aBwrd;
-
-SwMoveFn fnMoveBackward = &aBwrd;
-SwMoveFn fnMoveForward  = &aFwrd;
-
-SwWhichPara GetfnParaCurr()
-{
-    return fnParaCurr;
-}
-SwPosPara GetfnParaStart()
-{
-     return  fnParaStart;
-}
-SwWhichTable GetfnTablePrev()
-{
-    return fnTablePrev;
-}
-SwPosPara GetfnParaEnd()
-{
-     return  fnParaEnd;
-}
-SwPosTable GetfnTableStart()
-{
-    return fnTableStart;
-}
-SwWhichTable GetfnTableCurr()
-{
-    return fnTableCurr;
-}
-SwPosTable GetfnTableEnd()
-{
-    return fnTableEnd;
-}
+SwMoveFnCollection const & fnMoveBackward = aBwrd;
+SwMoveFnCollection const & fnMoveForward  = aFwrd;
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

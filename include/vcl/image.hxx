@@ -29,13 +29,13 @@
 
 #include <com/sun/star/uno/Reference.hxx>
 
+#include <memory>
 #include <vector>
 
 struct ImplImage;
 struct ImplImageList;
 namespace com { namespace sun { namespace star { namespace graphic { class XGraphic;} } } }
 
-#define IMAGE_STDBTN_COLOR          Color( 0xC0, 0xC0, 0xC0 )
 #define IMAGELIST_IMAGE_NOTFOUND    ((sal_uInt16)0xFFFF)
 
 class VCL_DLLPUBLIC Image
@@ -46,14 +46,12 @@ class VCL_DLLPUBLIC Image
 public:
                     Image();
                     explicit Image( const ResId& rResId );
-                    Image( const Image& rImage );
                     explicit Image( const BitmapEx& rBitmapEx );
                     explicit Image( const Bitmap& rBitmap );
                     Image( const Bitmap& rBitmap, const Bitmap& rMaskBitmap );
                     Image( const Bitmap& rBitmap, const Color& rColor );
                     explicit Image( const css::uno::Reference< css::graphic::XGraphic >& rxGraphic );
                     explicit Image( const OUString &rPNGFileUrl );
-                    ~Image();
 
     Size            GetSizePixel() const;
 
@@ -61,7 +59,6 @@ public:
     css::uno::Reference< css::graphic::XGraphic > GetXGraphic() const;
 
     bool            operator!() const { return !mpImplData; }
-    Image&          operator=( const Image& rImage );
     bool            operator==( const Image& rImage ) const;
     bool            operator!=( const Image& rImage ) const { return !(Image::operator==( rImage )); }
 
@@ -69,7 +66,7 @@ public:
 
 private:
 
-    ImplImage*             mpImplData;
+    std::shared_ptr<ImplImage> mpImplData;
 
     SAL_DLLPRIVATE void    ImplInit( const BitmapEx& rBmpEx );
 };
@@ -81,8 +78,6 @@ public:
                     explicit ImageList( const ResId& rResId );
                     ImageList( const std::vector<OUString>& rNameVector,
                                const OUString& rPrefix);
-                    ImageList( const ImageList& rImageList );
-                    ~ImageList();
 
     void                    InsertFromHorizontalStrip( const BitmapEx &rBitmapEx,
                                    const std::vector< OUString > &rNameVector );
@@ -93,7 +88,7 @@ public:
                                     const Color *pReplaceColors = nullptr,
                                     sal_uLong        nColorCount = 0);
     BitmapEx        GetAsHorizontalStrip() const;
-    sal_uInt16          GetImageCount() const;
+    sal_uInt16      GetImageCount() const;
     Size            GetImageSize() const;
 
     void            AddImage( const OUString& rImageName, const Image& rImage );
@@ -105,22 +100,21 @@ public:
     Image           GetImage( sal_uInt16 nId ) const;
     Image           GetImage( const OUString& rImageName ) const;
 
-    sal_uInt16          GetImagePos( sal_uInt16 nId ) const;
+    sal_uInt16      GetImagePos( sal_uInt16 nId ) const;
     bool            HasImageAtPos( sal_uInt16 nId ) const;
-    sal_uInt16          GetImagePos( const OUString& rImageName ) const;
+    sal_uInt16      GetImagePos( const OUString& rImageName ) const;
 
-    sal_uInt16          GetImageId( sal_uInt16 nPos ) const;
+    sal_uInt16      GetImageId( sal_uInt16 nPos ) const;
 
-    OUString GetImageName( sal_uInt16 nPos ) const;
+    OUString        GetImageName( sal_uInt16 nPos ) const;
     void            GetImageNames( ::std::vector< OUString >& rNames ) const;
 
-    ImageList&      operator=( const ImageList& rImageList );
     bool            operator==( const ImageList& rImageList ) const;
     bool            operator!=( const ImageList& rImageList ) const { return !(ImageList::operator==( rImageList )); }
 
 private:
 
-    ImplImageList*  mpImplData;
+    std::shared_ptr<ImplImageList> mpImplData;
 
     SAL_DLLPRIVATE void    ImplInit( sal_uInt16 nItems, const Size &rSize );
     SAL_DLLPRIVATE sal_uInt16  ImplGetImageId( const OUString& rImageName ) const;

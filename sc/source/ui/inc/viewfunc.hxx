@@ -70,7 +70,7 @@ public:
                     ScViewFunc( vcl::Window* pParent, ScDocShell& rDocSh, ScTabViewShell* pViewShell );
                     ~ScViewFunc();
 
-    const ScPatternAttr*    GetSelectionPattern ();
+    SC_DLLPUBLIC const ScPatternAttr*    GetSelectionPattern ();
     void                    GetSelectionFrame   ( SvxBoxItem&       rLineOuter,
                                                   SvxBoxInfoItem&   rLineInner );
 
@@ -98,9 +98,9 @@ public:
     void            EnterDataAtCursor( const OUString& rString );         //! Not used?
 
     SC_DLLPUBLIC void           CutToClip();
-    SC_DLLPUBLIC bool           CopyToClip( ScDocument* pClipDoc = nullptr, bool bCut = false, bool bApi = false,
+    SC_DLLPUBLIC bool           CopyToClip( ScDocument* pClipDoc, bool bCut = false, bool bApi = false,
                                             bool bIncludeObjects = false, bool bStopEdit = true );
-    SC_DLLPUBLIC bool           CopyToClip( ScDocument* pClipDoc, const ScRangeList& rRange, bool bCut = false,
+    SC_DLLPUBLIC bool           CopyToClip( ScDocument* pClipDoc, const ScRangeList& rRange, bool bCut,
                                             bool bApi = false, bool bIncludeObjects = false, bool bStopEdit = true );
     ScTransferObj*              CopyToTransferable();
     SC_DLLPUBLIC bool           PasteFromClip( InsertDeleteFlags nFlags, ScDocument* pClipDoc,
@@ -127,11 +127,11 @@ public:
 
     bool            PasteDataFormat( SotClipboardFormatId nFormatId,
                                         const css::uno::Reference< css::datatransfer::XTransferable >& rxTransferable,
-                                        SCCOL nPosX, SCROW nPosY, Point* pLogicPos = nullptr,
+                                        SCCOL nPosX, SCROW nPosY, Point* pLogicPos,
                                         bool bLink = false, bool bAllowDialogs = false );
 
-    bool            PasteFile( const Point&, const OUString&, bool bLink=false );
-    bool            PasteObject( const Point&, const css::uno::Reference < css::embed::XEmbeddedObject >&, const Size* = nullptr, const Graphic* = nullptr, const OUString& = OUString(), sal_Int64 nAspect = css::embed::Aspects::MSOLE_CONTENT );
+    bool            PasteFile( const Point&, const OUString&, bool bLink );
+    bool            PasteObject( const Point&, const css::uno::Reference < css::embed::XEmbeddedObject >&, const Size*, const Graphic* = nullptr, const OUString& = OUString(), sal_Int64 nAspect = css::embed::Aspects::MSOLE_CONTENT );
     bool            PasteBitmapEx( const Point&, const BitmapEx& );
     bool            PasteMetaFile( const Point&, const GDIMetaFile& );
     bool            PasteGraphic( const Point& rPos, const Graphic& rGraphic,
@@ -220,7 +220,7 @@ public:
     bool            TestMergeCells();
     bool            TestRemoveMerge();
 
-    bool            MergeCells( bool bApi, bool& rDoContents, bool bCenter = false );
+    bool            MergeCells( bool bApi, bool& rDoContents, bool bCenter );
     bool            RemoveMerge();
 
     void            FillSimple( FillDir eDir );
@@ -270,8 +270,8 @@ public:
     void            ShowTable( const std::vector<OUString>& rNames );
     void            HideTable( const ScMarkData& rMark );
 
-    void            MakeScenario( const OUString& rName, const OUString& rComment,
-                                    const Color& rColor, sal_uInt16 nFlags );
+    void            MakeScenario(const OUString& rName, const OUString& rComment,
+                                 const Color& rColor, ScScenarioFlags nFlags);
     void            ExtendScenario();
     void            UseScenario( const OUString& rName );
 
@@ -308,10 +308,9 @@ public:
 
     void            InsertCurrentTime(short nCellFmt, const OUString& rUndoStr);
 
-    void            ShowNote( bool bShow = true );
+    void            ShowNote( bool bShow );
     void            EditNote();
 
-    void            ForgetFormatArea()      { bFormatValid = false; }
     bool            SelectionEditable( bool* pOnlyNotBecauseOfMatrix = nullptr );
 
     SC_DLLPUBLIC void

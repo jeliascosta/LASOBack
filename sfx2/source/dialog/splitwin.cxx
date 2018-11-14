@@ -114,7 +114,7 @@ public:
                             ShowFadeInHideButton();
                         }
 
-                        virtual ~SfxEmptySplitWin_Impl()
+                        virtual ~SfxEmptySplitWin_Impl() override
                         { disposeOnce(); }
    virtual void         dispose() override
                         {
@@ -123,7 +123,6 @@ public:
                             SplitWindow::dispose();
                         }
 
-    virtual void        MouseMove( const MouseEvent& ) override;
     virtual void        AutoHide() override;
     virtual void        FadeIn() override;
     void                Actualize();
@@ -179,14 +178,8 @@ void SfxSplitWindow::MouseButtonDown( const MouseEvent& rMEvt )
         SplitWindow::MouseButtonDown( rMEvt );
 }
 
-void SfxEmptySplitWin_Impl::MouseMove( const MouseEvent& rMEvt )
-{
-    SplitWindow::MouseMove( rMEvt );
-}
-
-
 SfxSplitWindow::SfxSplitWindow( vcl::Window* pParent, SfxChildAlignment eAl,
-        SfxWorkWindow *pW, bool bWithButtons, WinBits nBits )
+        SfxWorkWindow *pW, bool bWithButtons )
 
 /*  [Description]
 
@@ -196,7 +189,7 @@ SfxSplitWindow::SfxSplitWindow( vcl::Window* pParent, SfxChildAlignment eAl,
     the arrangement of the SfxDockingWindows.
 */
 
-:   SplitWindow ( pParent, nBits | WB_HIDE ),
+:   SplitWindow ( pParent, WB_BORDER | WB_SIZEABLE | WB_3DLOOK | WB_HIDE ),
     eAlign(eAl),
     pWorkWin(pW),
     pDockArr( new SfxDockArr_Impl ),
@@ -670,7 +663,7 @@ void SfxSplitWindow::InsertWindow_Impl( SfxDock_Impl* pDock,
 {
     SfxDockingWindow* pDockWin = pDock->pWin;
 
-    SplitWindowItemFlags nItemBits = pDockWin->GetWinBits_Impl();
+    SplitWindowItemFlags nItemBits = SplitWindowItemFlags::NONE;
 
     long nWinSize, nSetSize;
     if ( IsHorizontal() )
@@ -935,13 +928,7 @@ sal_uInt16 SfxSplitWindow::GetWindowCount() const
 }
 
 
-void SfxSplitWindow::Command( const CommandEvent& rCEvt )
-{
-    SplitWindow::Command( rCEvt );
-}
-
-
-IMPL_LINK_TYPED( SfxSplitWindow, TimerHdl, Timer*, pTimer, void)
+IMPL_LINK( SfxSplitWindow, TimerHdl, Timer*, pTimer, void)
 {
     if ( pTimer )
         pTimer->Stop();

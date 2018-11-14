@@ -66,6 +66,7 @@
 #include "queryentry.hxx"
 #include "markdata.hxx"
 #include "stringutil.hxx"
+#include "tabvwsh.hxx"
 
 #include <list>
 #include <memory>
@@ -384,7 +385,7 @@ void ScDBFunc::DoSubTotals( const ScSubTotalParam& rParam, bool bRecord,
     }
 
     if (rDoc.HasAttrib( rParam.nCol1, rParam.nRow1+1, nTab,
-                         rParam.nCol2, rParam.nRow2, nTab, HASATTR_MERGED | HASATTR_OVERLAPPED ))
+                         rParam.nCol2, rParam.nRow2, nTab, HasAttrFlags::Merged | HasAttrFlags::Overlapped ))
     {
         ErrorMessage(STR_MSSG_INSERTCELLS_0);   // do not insert into merged
         return;
@@ -430,19 +431,19 @@ void ScDBFunc::DoSubTotals( const ScSubTotalParam& rParam, bool bRecord,
                 pTable->GetRowArray().GetRange( nOutStartRow, nOutEndRow );
 
                 pUndoDoc->InitUndo( &rDoc, nTab, nTab, true, true );
-                rDoc.CopyToDocument( static_cast<SCCOL>(nOutStartCol), 0, nTab, static_cast<SCCOL>(nOutEndCol), MAXROW, nTab, InsertDeleteFlags::NONE, false, pUndoDoc );
-                rDoc.CopyToDocument( 0, nOutStartRow, nTab, MAXCOL, nOutEndRow, nTab, InsertDeleteFlags::NONE, false, pUndoDoc );
+                rDoc.CopyToDocument( static_cast<SCCOL>(nOutStartCol), 0, nTab, static_cast<SCCOL>(nOutEndCol), MAXROW, nTab, InsertDeleteFlags::NONE, false, *pUndoDoc );
+                rDoc.CopyToDocument( 0, nOutStartRow, nTab, MAXCOL, nOutEndRow, nTab, InsertDeleteFlags::NONE, false, *pUndoDoc );
             }
             else
                 pUndoDoc->InitUndo( &rDoc, nTab, nTab, false, bOldFilter );
 
             // record data range - including filter results
             rDoc.CopyToDocument( 0,rParam.nRow1+1,nTab, MAXCOL,rParam.nRow2,nTab,
-                                    InsertDeleteFlags::ALL, false, pUndoDoc );
+                                    InsertDeleteFlags::ALL, false, *pUndoDoc );
 
             // all formulas for reference
             rDoc.CopyToDocument( 0,0,0, MAXCOL,MAXROW,nTabCount-1,
-                                        InsertDeleteFlags::FORMULA, false, pUndoDoc );
+                                        InsertDeleteFlags::FORMULA, false, *pUndoDoc );
 
             // data base and othe ranges
             ScRangeName* pDocRange = rDoc.GetRangeName();
@@ -518,7 +519,7 @@ void ScDBFunc::DoSubTotals( const ScSubTotalParam& rParam, bool bRecord,
         MarkDataChanged();
 
         pDocSh->PostPaint(ScRange(0, 0, nTab, MAXCOL, MAXROW, nTab),
-                          PAINT_GRID | PAINT_LEFT | PAINT_TOP | PAINT_SIZE);
+                          PaintPartFlags::Grid | PaintPartFlags::Left | PaintPartFlags::Top | PaintPartFlags::Size);
 
         aModificator.SetDocumentModified();
 
@@ -624,7 +625,7 @@ bool ScDBFunc::MakePivotTable(
     if ( bNewTable )
     {
         pDocSh->PostPaintExtras();
-        SfxGetpApp()->Broadcast( SfxSimpleHint( SC_HINT_TABLES_CHANGED ) );
+        SfxGetpApp()->Broadcast( SfxHint( SC_HINT_TABLES_CHANGED ) );
     }
 
     return bSuccess;
@@ -2044,7 +2045,7 @@ void ScDBFunc::ShowDataPilotSourceData( ScDPObject& rDPObj, const Sequence<sheet
 
     ::svl::IUndoManager* pMgr = GetViewData().GetDocShell()->GetUndoManager();
     OUString aUndo = ScGlobal::GetRscString( STR_UNDO_DOOUTLINE );
-    pMgr->EnterListAction( aUndo, aUndo );
+    pMgr->EnterListAction( aUndo, aUndo, 0, GetViewData().GetViewShell()->GetViewShellId() );
 
     OUString aNewTabName;
     pDoc->CreateValidTabName(aNewTabName);
@@ -2125,17 +2126,17 @@ void ScDBFunc::RepeatDB( bool bRecord )
                 pTable->GetRowArray().GetRange( nOutStartRow, nOutEndRow );
 
                 pUndoDoc->InitUndo( pDoc, nTab, nTab, true, true );
-                pDoc->CopyToDocument( static_cast<SCCOL>(nOutStartCol), 0, nTab, static_cast<SCCOL>(nOutEndCol), MAXROW, nTab, InsertDeleteFlags::NONE, false, pUndoDoc );
-                pDoc->CopyToDocument( 0, nOutStartRow, nTab, MAXCOL, nOutEndRow, nTab, InsertDeleteFlags::NONE, false, pUndoDoc );
+                pDoc->CopyToDocument( static_cast<SCCOL>(nOutStartCol), 0, nTab, static_cast<SCCOL>(nOutEndCol), MAXROW, nTab, InsertDeleteFlags::NONE, false, *pUndoDoc );
+                pDoc->CopyToDocument( 0, nOutStartRow, nTab, MAXCOL, nOutEndRow, nTab, InsertDeleteFlags::NONE, false, *pUndoDoc );
             }
             else
                 pUndoDoc->InitUndo( pDoc, nTab, nTab, false, true );
 
             // Record data range - including filter results
-            pDoc->CopyToDocument( 0,nStartRow,nTab, MAXCOL,nEndRow,nTab, InsertDeleteFlags::ALL, false, pUndoDoc );
+            pDoc->CopyToDocument( 0,nStartRow,nTab, MAXCOL,nEndRow,nTab, InsertDeleteFlags::ALL, false, *pUndoDoc );
 
             // all formulas for reference
-            pDoc->CopyToDocument( 0,0,0, MAXCOL,MAXROW,nTabCount-1, InsertDeleteFlags::FORMULA, false, pUndoDoc );
+            pDoc->CopyToDocument( 0,0,0, MAXCOL,MAXROW,nTabCount-1, InsertDeleteFlags::FORMULA, false, *pUndoDoc );
 
             // data base and other ranges
             ScRangeName* pDocRange = pDoc->GetRangeName();
@@ -2218,7 +2219,7 @@ void ScDBFunc::RepeatDB( bool bRecord )
 
         GetViewData().GetDocShell()->PostPaint(
             ScRange(0, 0, nTab, MAXCOL, MAXROW, nTab),
-            PAINT_GRID | PAINT_LEFT | PAINT_TOP | PAINT_SIZE);
+            PaintPartFlags::Grid | PaintPartFlags::Left | PaintPartFlags::Top | PaintPartFlags::Size);
     }
     else        // "no not execute any operations"
         ErrorMessage(STR_MSSG_REPEATDB_0);

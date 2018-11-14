@@ -25,8 +25,8 @@
 #include <com/sun/star/lang/XComponent.hpp>
 #include <cppuhelper/implbase1.hxx>
 #include <cppuhelper/interfacecontainer.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <comphelper/uno3.hxx>
-#include <comphelper/broadcasthelper.hxx>
 #include <cppuhelper/compbase_ex.hxx>
 #include <comphelper/comphelperdllapi.h>
 
@@ -176,7 +176,7 @@ namespace comphelper
 
     //= OComponentProxyAggregation
 
-    class COMPHELPER_DLLPUBLIC OComponentProxyAggregation   :public OBaseMutex
+    class COMPHELPER_DLLPUBLIC OComponentProxyAggregation : public cppu::BaseMutex
                                         ,public cppu::WeakComponentImplHelperBase
                                         ,public OComponentProxyAggregationHelper
     {
@@ -186,7 +186,7 @@ namespace comphelper
             const css::uno::Reference< css::lang::XComponent >& _rxComponent
         );
 
-        virtual ~OComponentProxyAggregation();
+        virtual ~OComponentProxyAggregation() override;
 
         // XInterface
         DECLARE_XINTERFACE()
@@ -201,10 +201,6 @@ namespace comphelper
 
         // XComponent/OComponentProxyAggregationHelper
         virtual void SAL_CALL dispose() throw( css::uno::RuntimeException, std::exception ) override;
-
-    protected:
-        // be called from within the dtor of derived classes
-        void implEnsureDisposeInDtor( );
 
     private:
         OComponentProxyAggregation( const OComponentProxyAggregation& ) = delete;

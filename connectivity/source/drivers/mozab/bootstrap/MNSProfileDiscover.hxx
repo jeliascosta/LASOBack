@@ -65,22 +65,21 @@ namespace connectivity
         };
 
         //Used to query profiles information
-        class ProfileAccess
+        class ProfileAccess final
         {
         public:
-
-            virtual ~ProfileAccess();
+            ~ProfileAccess();
             ProfileAccess();
-            OUString getProfilePath( ::com::sun::star::mozilla::MozillaProductType product, const OUString& profileName ) throw (::com::sun::star::uno::RuntimeException);
-            ::sal_Int32 getProfileCount( ::com::sun::star::mozilla::MozillaProductType product ) throw (::com::sun::star::uno::RuntimeException);
-            ::sal_Int32 getProfileList( ::com::sun::star::mozilla::MozillaProductType product, ::com::sun::star::uno::Sequence< OUString >& list ) throw (::com::sun::star::uno::RuntimeException);
-            OUString getDefaultProfile( ::com::sun::star::mozilla::MozillaProductType product ) throw (::com::sun::star::uno::RuntimeException);
-            bool SAL_CALL isProfileLocked( ::com::sun::star::mozilla::MozillaProductType product, const OUString& profileName ) throw (::com::sun::star::uno::RuntimeException);
-            bool SAL_CALL getProfileExists( ::com::sun::star::mozilla::MozillaProductType product, const OUString& profileName ) throw (::com::sun::star::uno::RuntimeException);
-        protected:
+            OUString getProfilePath( css::mozilla::MozillaProductType product, const OUString& profileName ) throw (css::uno::RuntimeException);
+            ::sal_Int32 getProfileCount( css::mozilla::MozillaProductType product ) throw (css::uno::RuntimeException);
+            ::sal_Int32 getProfileList( css::mozilla::MozillaProductType product, css::uno::Sequence< OUString >& list ) throw (css::uno::RuntimeException);
+            OUString getDefaultProfile( css::mozilla::MozillaProductType product ) throw (css::uno::RuntimeException);
+            bool SAL_CALL isProfileLocked( css::mozilla::MozillaProductType product, const OUString& profileName ) throw (css::uno::RuntimeException);
+            bool SAL_CALL getProfileExists( css::mozilla::MozillaProductType product, const OUString& profileName ) throw (css::uno::RuntimeException);
+        private:
             ProductStruct m_ProductProfileList[4];
-            sal_Int32 LoadProductsInfo();
-            sal_Int32 LoadXPToolkitProfiles(MozillaProductType product);
+            void      LoadProductsInfo();
+            void      LoadXPToolkitProfiles(MozillaProductType product);
         };
 
     }

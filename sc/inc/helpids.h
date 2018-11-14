@@ -32,27 +32,6 @@
 #define HID_SC_WIN_GRIDWIN                                      "SC_HID_SC_WIN_GRIDWIN"
 #define HID_SC_WIN_PREVIEW                                      "SC_HID_SC_WIN_PREVIEW"
 
-// Hilfe IDs fuer einzelne Controls (max.30) ---------------------------------
-//  Eintraege im Navigator
-#define HID_SC_NAVIPI_ENTRIES                                   "SC_HID_SC_NAVIPI_ENTRIES"
-#define HID_SC_NAVIPI_ROW                                       "SC_HID_SC_NAVIPI_ROW"
-#define HID_SC_NAVIPI_COL                                       "SC_HID_SC_NAVIPI_COL"
-#define HID_SC_NAVIPI_DOC                                       "SC_HID_SC_NAVIPI_DOC"
-#define HID_SC_NAVIPI_DATA                                      "SC_HID_SC_NAVIPI_DATA"
-#define HID_SC_NAVIPI_UP                                        "SC_HID_SC_NAVIPI_UP"
-#define HID_SC_NAVIPI_DOWN                                      "SC_HID_SC_NAVIPI_DOWN"
-#define HID_SC_NAVIPI_ZOOM                                      "SC_HID_SC_NAVIPI_ZOOM"
-#define HID_SC_NAVIPI_ROOT                                      "SC_HID_SC_NAVIPI_ROOT"
-#define HID_SC_NAVIPI_SCEN                                      "SC_HID_SC_NAVIPI_SCEN"
-#define HID_SC_NAVIPI_DROP                                      "SC_HID_SC_NAVIPI_DROP"
-
-#define HID_SC_NAVIPI_TOOLBOX                                   "SC_HID_SC_NAVIPI_TOOLBOX"
-//  Bereich ist voll!
-
-// Hilfe IDs fuer Dialoge / Pages (max.70) -----------------------------------
-#define HID_SC_NAVIGATOR                                        "SC_HID_SC_NAVIGATOR"
-
-
 #define HID_SC_HEADER_EDIT                                      "SC_HID_SC_HEADER_EDIT"
 #define HID_SC_FOOTER_EDIT                                      "SC_HID_SC_FOOTER_EDIT"
 
@@ -219,31 +198,6 @@
 #define HID_MN_FORMAT_STYLE                                     "SC_HID_MN_FORMAT_STYLE"
 #define HID_MN_FORMAT_ALGN                                      "SC_HID_MN_FORMAT_ALGN"
 #define HID_MN_FORMAT_LINESPACE                                 "SC_HID_MN_FORMAT_LINESPACE"
-
-// sidebar -----------------------------------------
-
-// CellAppearancePropertyPanel -----------------------------------------
-#define HID_PROPERTYPANEL_SC_STYLE_VS                           "SC_HID_PROPERTYPANEL_SC_STYLE_VS"
-#define HID_PROPERTYPANEL_SC_STYLE_PB                           "SC_HID_PROPERTYPANEL_SC_STYLE_PB"
-#define HID_PROPERTYPANEL_SC_BORDER1_TBX                        "SC_HID_PROPERTYPANEL_SC_BORDER1_TBX"
-#define HID_PROPERTYPANEL_SC_BORDER_TBI_NONE                    "SC_HID_PROPERTYPANEL_SC_BORDER_TBI_NONE"
-#define HID_PROPERTYPANEL_SC_BORDER_TBI_ALL                     "SC_HID_PROPERTYPANEL_SC_BORDER_TBI_ALL"
-#define HID_PROPERTYPANEL_SC_BORDER_TBI_OUTER                   "SC_HID_PROPERTYPANEL_SC_BORDER_TBI_OUTER"
-#define HID_PROPERTYPANEL_SC_BORDER_TBI_OUTERBOLD               "SC_HID_PROPERTYPANEL_SC_BORDER_TBI_OUTERBOLD"
-#define HID_PROPERTYPANEL_SC_BORDER2_TBX                        "SC_HID_PROPERTYPANEL_SC_BORDER2_TBX"
-#define HID_PROPERTYPANEL_SC_BORDER3_TBX                        "SC_HID_PROPERTYPANEL_SC_BORDER3_TBX"
-#define HID_PROPERTYPANEL_SC_BORDER_TBI_S1                      "SC_HID_PROPERTYPANEL_SC_BORDER_TBI_S1"
-#define HID_PROPERTYPANEL_SC_BORDER_TBI_S2                      "SC_HID_PROPERTYPANEL_SC_BORDER_TBI_S2"
-#define HID_PROPERTYPANEL_SC_BORDER_TBI_S3                      "SC_HID_PROPERTYPANEL_SC_BORDER_TBI_S3"
-#define HID_PROPERTYPANEL_SC_BORDER_TBI_S4                      "SC_HID_PROPERTYPANEL_SC_BORDER_TBI_S4"
-#define HID_PROPERTYPANEL_SC_BORDER_TBI_LEFT                    "SC_HID_PROPERTYPANEL_SC_BORDER_TBI_LEFT"
-#define HID_PROPERTYPANEL_SC_BORDER_TBI_RIGHT                   "SC_HID_PROPERTYPANEL_SC_BORDER_TBI_RIGHT"
-#define HID_PROPERTYPANEL_SC_BORDER_TBI_TOP                     "SC_HID_PROPERTYPANEL_SC_BORDER_TBI_TOP"
-#define HID_PROPERTYPANEL_SC_BORDER_TBI_BOT                     "SC_HID_PROPERTYPANEL_SC_BORDER_TBI_BOT"
-#define HID_PROPERTYPANEL_SC_BORDER_TBI_BLTR                    "SC_HID_PROPERTYPANEL_SC_BORDER_TBI_BLTR"
-#define HID_PROPERTYPANEL_SC_BORDER_TBI_TLBR                    "SC_HID_PROPERTYPANEL_SC_BORDER_TBI_TLBR"
-#define HID_PROPERTYPANEL_SC_BORDER_TBI_TOPBOT                  "SC_HID_PROPERTYPANEL_SC_BORDER_TBI_TOPBOT"
-#define HID_PROPERTYPANEL_SC_BORDER_TBI_LEFTRIGHT               "SC_HID_PROPERTYPANEL_SC_BORDER_TBI_LEFTRIGHT"
 
 // Ende Hilfe IDs ------------------------------------------------------------
 

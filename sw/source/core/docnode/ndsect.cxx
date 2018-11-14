@@ -17,7 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svl/smplhint.hxx>
 #include <hintids.hxx>
 #include <sfx2/linkmgr.hxx>
 #include <svl/itemiter.hxx>
@@ -198,8 +197,8 @@ SwDoc::InsertSwSection(SwPaM const& rRange, SwSectionData & rNewData,
 
     SwSectionNode* pNewSectNode = nullptr;
 
-    RedlineMode_t eOld = getIDocumentRedlineAccess().GetRedlineMode();
-    getIDocumentRedlineAccess().SetRedlineMode_intern( (RedlineMode_t)((eOld & ~nsRedlineMode_t::REDLINE_SHOW_MASK) | nsRedlineMode_t::REDLINE_IGNORE));
+    RedlineFlags eOld = getIDocumentRedlineAccess().GetRedlineFlags();
+    getIDocumentRedlineAccess().SetRedlineFlags_intern( (eOld & ~RedlineFlags::ShowMask) | RedlineFlags::Ignore );
 
     if( rRange.HasMark() )
     {
@@ -320,7 +319,7 @@ SwDoc::InsertSwSection(SwPaM const& rRange, SwSectionData & rNewData,
     pNewSectNode->CheckSectionCondColl();
 //FEATURE::CONDCOLL
 
-    getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+    getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
 
     // To-Do - add 'SwExtraRedlineTable' also ?
     if( getIDocumentRedlineAccess().IsRedlineOn() || (!getIDocumentRedlineAccess().IsIgnoreRedline() && !getIDocumentRedlineAccess().GetRedlineTable().empty() ))
@@ -682,7 +681,7 @@ void SwDoc::UpdateSection( size_t const nPos, SwSectionData & rNewData,
     ::sw::UndoGuard const undoGuard(GetIDocumentUndoRedo());
 
     // The LinkFileName could only consist of separators
-    OUString sCompareString = OUString(sfx2::cTokenSeparator) + OUString(sfx2::cTokenSeparator);
+    OUString sCompareString = OUStringLiteral1(sfx2::cTokenSeparator) + OUStringLiteral1(sfx2::cTokenSeparator);
     const bool bUpdate =
            (!pSection->IsLinkType() && rNewData.IsLinkType())
             ||  (!rNewData.GetLinkFileName().isEmpty()

@@ -59,7 +59,7 @@ Svx3DPreviewControl::Svx3DPreviewControl(vcl::Window* pParent, WinBits nStyle)
 
 Size Svx3DPreviewControl::GetOptimalSize() const
 {
-    return LogicToPixel(Size(80, 100), MAP_APPFONT);
+    return LogicToPixel(Size(80, 100), MapUnit::MapAppFont);
 }
 
 VCL_BUILDER_FACTORY(Svx3DPreviewControl)
@@ -81,7 +81,7 @@ void Svx3DPreviewControl::Construct()
     // Do never mirror the preview window.  This explicitly includes right
     // to left writing environments.
     EnableRTL (false);
-    SetMapMode( MAP_100TH_MM );
+    SetMapMode( MapUnit::Map100thMM );
 
     // Model
     mpModel = new FmFormModel();
@@ -249,6 +249,8 @@ void Svx3DPreviewControl::Set3DAttributes( const SfxItemSet& rAttr )
 #define NO_LIGHT_SELECTED           (0xffffffff)
 #define MAX_NUMBER_LIGHTS              (8)
 
+static const sal_Int32 g_nInteractionStartDistance = 5 * 5 * 2;
+
 Svx3DLightControl::Svx3DLightControl(vcl::Window* pParent, WinBits nStyle)
 :   Svx3DPreviewControl(pParent, nStyle),
     maChangeCallback(),
@@ -262,7 +264,6 @@ Svx3DLightControl::Svx3DLightControl(vcl::Window* pParent, WinBits nStyle)
     mfRotateY(45.0),
     mfRotateZ(0.0),
     maActionStartPoint(),
-    mnInteractionStartDistance(5 * 5 * 2),
     mfSaveActionStartHor(0.0),
     mfSaveActionStartVer(0.0),
     mfSaveActionStartRotZ(0.0),
@@ -604,7 +605,7 @@ void Svx3DLightControl::Tracking( const TrackingEvent& rTEvt )
 
         if(!mbMouseMoved)
         {
-            if(sal_Int32(aDeltaPos.X() * aDeltaPos.X() + aDeltaPos.Y() * aDeltaPos.Y()) > mnInteractionStartDistance)
+            if(sal_Int32(aDeltaPos.X() * aDeltaPos.X() + aDeltaPos.Y() * aDeltaPos.Y()) > g_nInteractionStartDistance)
             {
                 if(mbGeometrySelected)
                 {
@@ -951,7 +952,7 @@ SvxLightCtl3D::SvxLightCtl3D( vcl::Window* pParent)
 
 Size SvxLightCtl3D::GetOptimalSize() const
 {
-    return LogicToPixel(Size(80, 100), MAP_APPFONT);
+    return LogicToPixel(Size(80, 100), MapUnit::MapAppFont);
 }
 
 VCL_BUILDER_FACTORY(SvxLightCtl3D)
@@ -1221,7 +1222,7 @@ void SvxLightCtl3D::LoseFocus()
     maLightControl->HideFocus();
 }
 
-IMPL_LINK_NOARG_TYPED(SvxLightCtl3D, ScrollBarMove, ScrollBar*, void)
+IMPL_LINK_NOARG(SvxLightCtl3D, ScrollBarMove, ScrollBar*, void)
 {
     const sal_Int32 nHor(maHorScroller->GetThumbPos());
     const sal_Int32 nVer(maVerScroller->GetThumbPos());
@@ -1236,7 +1237,7 @@ IMPL_LINK_NOARG_TYPED(SvxLightCtl3D, ScrollBarMove, ScrollBar*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SvxLightCtl3D, ButtonPress, Button*, void)
+IMPL_LINK_NOARG(SvxLightCtl3D, ButtonPress, Button*, void)
 {
     if(SvxPreviewObjectType::SPHERE == GetSvx3DLightControl().GetObjectType())
     {
@@ -1248,7 +1249,7 @@ IMPL_LINK_NOARG_TYPED(SvxLightCtl3D, ButtonPress, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SvxLightCtl3D, InternalInteractiveChange, Svx3DLightControl*, void)
+IMPL_LINK_NOARG(SvxLightCtl3D, InternalInteractiveChange, Svx3DLightControl*, void)
 {
     double fHor(0.0), fVer(0.0);
 
@@ -1262,7 +1263,7 @@ IMPL_LINK_NOARG_TYPED(SvxLightCtl3D, InternalInteractiveChange, Svx3DLightContro
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SvxLightCtl3D, InternalSelectionChange, Svx3DLightControl*, void)
+IMPL_LINK_NOARG(SvxLightCtl3D, InternalSelectionChange, Svx3DLightControl*, void)
 {
     CheckSelection();
 

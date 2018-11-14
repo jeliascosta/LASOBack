@@ -25,6 +25,7 @@
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/uno/XComponentContext.hpp>
 #include <vcl/msgbox.hxx>
+#include <memory>
 
 namespace com { namespace sun { namespace star {
     namespace sdbc {
@@ -49,7 +50,7 @@ namespace dbaui
     class OSaveAsDlg : public ModalDialog
     {
     private:
-        OSaveAsDlgImpl* m_pImpl;
+        std::unique_ptr<OSaveAsDlgImpl> m_pImpl;
         css::uno::Reference< css::uno::XComponentContext >    m_xContext;
     public:
         OSaveAsDlg( vcl::Window * pParent, sal_Int32 _rType,
@@ -65,15 +66,15 @@ namespace dbaui
                     const OUString& _sLabel,
                     const IObjectNameCheck& _rObjectNameCheck,
                     sal_Int32 _nFlags = SAD_DEFAULT | SAD_TITLE_STORE_AS);
-        virtual ~OSaveAsDlg();
+        virtual ~OSaveAsDlg() override;
         virtual void dispose() override;
 
         const OUString& getName() const;
         OUString getCatalog() const;
         OUString getSchema() const;
     private:
-        DECL_LINK_TYPED(ButtonClickHdl, Button *, void);
-        DECL_LINK_TYPED(EditModifyHdl,  Edit&, void);
+        DECL_LINK(ButtonClickHdl, Button *, void);
+        DECL_LINK(EditModifyHdl,  Edit&, void);
 
         void implInitOnlyTitle(const OUString& _rLabel);
         void implInit();

@@ -49,6 +49,7 @@
 #include <connectivity/formattedcolumnvalue.hxx>
 #include <connectivity/dbconversion.hxx>
 #include <cppuhelper/queryinterface.hxx>
+#include <o3tl/any.hxx>
 #include <tools/debug.hxx>
 #include <tools/diagnose_ex.h>
 #include <unotools/sharedunocomponent.hxx>
@@ -254,7 +255,7 @@ namespace frm
         switch (_nHandle)
         {
         case PROPERTY_ID_BOUNDCOLUMN:
-            _rValue <<= m_aBoundColumn;
+            _rValue = m_aBoundColumn;
             break;
 
         case PROPERTY_ID_LISTSOURCETYPE:
@@ -270,7 +271,7 @@ namespace frm
             break;
 
         case PROPERTY_ID_SELECT_VALUE_SEQ:
-            _rValue = getCurrentMultiValue();
+            _rValue <<= getCurrentMultiValue();
             break;
 
         case PROPERTY_ID_SELECT_VALUE:
@@ -389,7 +390,7 @@ namespace frm
 
     sal_Bool OListBoxModel::convertFastPropertyValue(
         Any& _rConvertedValue, Any& _rOldValue, sal_Int32 _nHandle, const Any& _rValue)
-        throw (IllegalArgumentException)
+        throw (IllegalArgumentException, RuntimeException, std::exception)
     {
         bool bModified(false);
         switch (_nHandle)
@@ -415,9 +416,17 @@ namespace frm
             break;
 
         case PROPERTY_ID_SELECT_VALUE :
-            bModified = tryPropertyValue(_rConvertedValue, _rOldValue, _rValue, getCurrentSingleValue());
+        {
+            // Any from connectivity::ORowSetValue
+            Any _rCurrentValue = getCurrentSingleValue();
+            if (_rCurrentValue != _rValue)
+            {
+                _rOldValue = _rCurrentValue;
+                _rConvertedValue = _rValue;
+                bModified = true;
+            }
             break;
-
+        }
         case PROPERTY_ID_DEFAULT_SELECT_SEQ :
             bModified = tryPropertyValue(_rConvertedValue, _rOldValue, _rValue, m_aDefaultSelectSeq);
             break;
@@ -1061,7 +1070,9 @@ namespace frm
 
     sal_Int32 OListBoxModel::getValueType() const
     {
-        return impl_hasBoundComponent() ? m_nBoundColumnType : getFieldType();
+        return (m_nBoundColumnType != css::sdbc::DataType::SQLNULL) ?
+            m_nBoundColumnType :
+            ( hasField() ? getFieldType() : DataType::VARCHAR);
     }
 
     ValueList OListBoxModel::impl_getValues() const
@@ -1402,7 +1413,7 @@ namespace frm
             }
 
             // copy the indexes to the sequence
-            aSelectIndexes = comphelper::containerToSequence<sal_Int16>( aSelectionSet );
+            aSelectIndexes = comphelper::containerToSequence( aSelectionSet );
         }
         break;
 
@@ -1419,7 +1430,7 @@ namespace frm
                 ++idx;
             }
 
-            aSelectIndexes = comphelper::containerToSequence<sal_Int16>( aSelectionSet );
+            aSelectIndexes = comphelper::containerToSequence( aSelectionSet );
         }
         break;
         }
@@ -1516,7 +1527,7 @@ namespace frm
         }
 
 
-        Any lcl_getMultiSelectedEntriesAny( const Sequence< sal_Int16 >& _rSelectSequence, const ValueList& _rStringList )
+        Sequence< Any > lcl_getMultiSelectedEntriesAny( const Sequence< sal_Int16 >& _rSelectSequence, const ValueList& _rStringList )
         {
             Sequence< Any > aSelectedEntriesValues( _rSelectSequence.getLength() );
             ::std::transform(
@@ -1525,7 +1536,7 @@ namespace frm
                 aSelectedEntriesValues.getArray(),
                 ExtractAnyFromValueList_Safe( _rStringList )
             );
-            return makeAny( aSelectedEntriesValues );
+            return aSelectedEntriesValues;
         }
     }
 
@@ -1541,7 +1552,7 @@ namespace frm
         switch ( lcl_getCurrentExchangeType( getExternalValueType() ) )
         {
         case eValueList:
-            aReturn = getCurrentMultiValue();
+            aReturn <<= getCurrentMultiValue();
             break;
 
         case eValue:
@@ -1612,9 +1623,9 @@ namespace frm
         return aCurrentValue;
     }
 
-    Any OListBoxModel::getCurrentMultiValue() const
+    Sequence< Any > OListBoxModel::getCurrentMultiValue() const
     {
-        Any aCurrentValue;
+        Sequence< Any > aCurrentValue;
 
         try
         {
@@ -1647,7 +1658,7 @@ namespace frm
             OSL_VERIFY( const_cast< OListBoxModel* >( this )->getPropertyValue( PROPERTY_MULTISELECTION ) >>= bMultiSelection );
 
             if ( bMultiSelection )
-                aCurrentValue = getCurrentMultiValue();
+                aCurrentValue <<= getCurrentMultiValue();
             else
                 aCurrentValue = getCurrentSingleValue();
         }
@@ -1886,8 +1897,8 @@ namespace frm
                     bool bModified(false);
                     Any aValue = xSet->getPropertyValue(PROPERTY_SELECT_SEQ);
 
-                    Sequence<sal_Int16> const & rSelection = *static_cast<Sequence<sal_Int16> const *>(aValue.getValue());
-                    Sequence<sal_Int16> const & rOldSelection = *static_cast<Sequence<sal_Int16> const *>(m_aCurrentSelection.getValue());
+                    Sequence<sal_Int16> const & rSelection = *o3tl::doAccess<Sequence<sal_Int16>>(aValue);
+                    Sequence<sal_Int16> const & rOldSelection = *o3tl::doAccess<Sequence<sal_Int16>>(m_aCurrentSelection);
                     sal_Int32 nLen = rSelection.getLength();
                     if (nLen != rOldSelection.getLength())
                         bModified = true;
@@ -1975,7 +1986,7 @@ namespace frm
     }
 
 
-    IMPL_LINK_NOARG_TYPED(OListBoxControl, OnTimeout, Idle*, void)
+    IMPL_LINK_NOARG(OListBoxControl, OnTimeout, Idle*, void)
     {
         m_aChangeListeners.notifyEach( &XChangeListener::changed, EventObject( *this ) );
     }

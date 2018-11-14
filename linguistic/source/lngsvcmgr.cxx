@@ -29,6 +29,7 @@
 #include <com/sun/star/linguistic2/ProofreadingIterator.hpp>
 
 #include <unotools/lingucfg.hxx>
+#include <vcl/svapp.hxx>
 #include <comphelper/processfactory.hxx>
 #include <i18nlangtag/lang.h>
 #include <i18nlangtag/languagetag.hxx>
@@ -114,9 +115,8 @@ static uno::Sequence< lang::Locale > GetAvailLocales(
                     const lang::Locale *pLoc = aLoc.getConstArray();
                     LanguageType nLang = LinguLocaleToLanguage( pLoc[k] );
 
-                    // language not already added?
-                    if (aLanguages.find( nLang ) == aLanguages.end())
-                        aLanguages.insert( nLang );
+                    // It's a set, so insertion fails if language was already added.
+                    aLanguages.insert( nLang );
                 }
             }
             else
@@ -480,24 +480,29 @@ LngSvcMgr::LngSvcMgr()
 void LngSvcMgr::modified(const lang::EventObject&)
     throw(uno::RuntimeException, std::exception)
 {
-    osl::MutexGuard aGuard(GetLinguMutex());
-    //assume that if an extension has been added/removed that
-    //it might be a dictionary extension, so drop our cache
+    {
+        osl::MutexGuard aGuard(GetLinguMutex());
+        //assume that if an extension has been added/removed that
+        //it might be a dictionary extension, so drop our cache
 
-    clearSvcInfoArray(pAvailSpellSvcs);
-    clearSvcInfoArray(pAvailGrammarSvcs);
-    clearSvcInfoArray(pAvailHyphSvcs);
-    clearSvcInfoArray(pAvailThesSvcs);
+        clearSvcInfoArray(pAvailSpellSvcs);
+        clearSvcInfoArray(pAvailGrammarSvcs);
+        clearSvcInfoArray(pAvailHyphSvcs);
+        clearSvcInfoArray(pAvailThesSvcs);
+    }
 
-    //schedule in an update to execute in the main thread
-    aUpdateIdle.Start();
+    {
+        SolarMutexGuard aGuard;
+        //schedule in an update to execute in the main thread
+        aUpdateIdle.Start();
+    }
 }
 
 //run update, and inform everyone that dictionaries (may) have changed, this
 //needs to be run in the main thread because
 //utl::ConfigChangeListener_Impl::changesOccurred grabs the SolarMutex and we
 //get notified that an extension was added from an extension manager thread
-IMPL_LINK_NOARG_TYPED(LngSvcMgr, updateAndBroadcast, Idle *, void)
+IMPL_LINK_NOARG(LngSvcMgr, updateAndBroadcast, Idle *, void)
 {
     osl::MutexGuard aGuard( GetLinguMutex() );
 
@@ -580,20 +585,18 @@ namespace
     Sequence< OUString > lcl_GetLastFoundSvcs(
             SvtLinguConfig &rCfg,
             const OUString &rLastFoundList ,
-            const Locale &rAvailLocale )
+            const OUString& rCfgLocaleStr )
     {
         Sequence< OUString > aRes;
 
-        OUString aCfgLocaleStr( LanguageTag::convertToBcp47( rAvailLocale ) );
-
         Sequence< OUString > aNodeNames( rCfg.GetNodeNames(rLastFoundList) );
-        bool bFound = lcl_FindEntry( aCfgLocaleStr, aNodeNames);
+        bool bFound = lcl_FindEntry( rCfgLocaleStr, aNodeNames);
 
         if (bFound)
         {
             Sequence< OUString > aNames(1);
             OUString &rNodeName = aNames.getArray()[0];
-            rNodeName = rLastFoundList + "/" + aCfgLocaleStr;
+            rNodeName = rLastFoundList + "/" + rCfgLocaleStr;
             Sequence< Any > aValues( rCfg.GetProperties( aNames ) );
             if (aValues.getLength())
             {
@@ -715,7 +718,7 @@ void LngSvcMgr::UpdateAll()
         const OUString *pNodeName = aNodeNames.getConstArray();
         for (i = 0;  i < nNodeNames;  ++i)
         {
-            Locale aLocale( (LanguageTag(pNodeName[i])).getLocale() );
+            Locale aLocale( LanguageTag::convertToLocale( pNodeName[i]));
             Sequence< OUString > aCfgSvcs( getConfiguredServices( aService, aLocale ));
             Sequence< OUString > aAvailSvcs( getAvailableServices( aService, aLocale ));
 
@@ -734,14 +737,14 @@ void LngSvcMgr::UpdateAll()
         const Locale *pAvailLocale = aAvailLocales.getConstArray();
         for (i = 0;  i < nAvailLocales;  ++i)
         {
-            OUString aCfgLocaleStr( (LanguageTag(pAvailLocale[i])).getBcp47() );
+            OUString aCfgLocaleStr( LanguageTag::convertToBcp47( pAvailLocale[i]));
 
             Sequence< OUString > aAvailSvcs( getAvailableServices( aService, pAvailLocale[i] ));
 
             aLastFoundSvcs[k][ aCfgLocaleStr ] = aAvailSvcs;
 
             Sequence< OUString > aLastSvcs(
-                    lcl_GetLastFoundSvcs( aCfg, aLastFoundList , pAvailLocale[i] ));
+                    lcl_GetLastFoundSvcs( aCfg, aLastFoundList , aCfgLocaleStr ));
             Sequence< OUString > aNewSvcs =
                     lcl_GetNewEntries( aLastSvcs, aAvailSvcs );
 
@@ -1777,7 +1780,7 @@ bool LngSvcMgr::SaveCfgSvcs( const OUString &rServiceName )
             aCfgAny <<= aSvcImplNames;
             DBG_ASSERT( aCfgAny.hasValue(), "missing value for 'Any' type" );
 
-            OUString aCfgLocaleStr( (LanguageTag(pLocale[i])).getBcp47() );
+            OUString aCfgLocaleStr( LanguageTag::convertToBcp47( pLocale[i]));
             pValue->Value = aCfgAny;
             pValue->Name  = aNodeName + "/" + aCfgLocaleStr;
             pValue++;

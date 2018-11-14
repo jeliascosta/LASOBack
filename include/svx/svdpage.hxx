@@ -52,13 +52,12 @@ class Color;
 class SfxStyleSheet;
 class SvxUnoDrawPagesAccess;
 
-enum SdrInsertReasonKind {
-    SDRREASON_UNKNOWN,
-    SDRREASON_STREAMING,  /// importing document
-    SDRREASON_UNDO,       /// from Undo
-    SDRREASON_COPY,       /// something copied...
-    SDRREASON_VIEWCREATE, /// created by User interactively
-    SDRREASON_VIEWCALL    /// via SdrView::Group(), ...
+enum class SdrInsertReasonKind {
+    Unknown,
+    Streaming,  /// importing document
+    Undo,       /// from Undo
+    Copy,       /// something copied...
+    ViewCall    /// via SdrView::Group(), ...
 };
 
 class SdrInsertReason {
@@ -102,7 +101,7 @@ private:
     /// simple ActionChildInserted forwarder to have it on a central place
     static void impChildInserted(SdrObject& rChild);
 public:
-    SdrObjList(SdrModel* pNewModel, SdrPage* pNewPage, SdrObjList* pNewUpList=nullptr);
+    SdrObjList(SdrModel* pNewModel, SdrPage* pNewPage);
     virtual ~SdrObjList();
 
     virtual SdrObjList* Clone() const;
@@ -343,7 +342,7 @@ private:
 public:
     // construct/destruct
     SdrPageProperties(SdrPage& rSdrPage);
-    virtual ~SdrPageProperties();
+    virtual ~SdrPageProperties() override;
 
     // Notify(...) from baseclass SfxListener
     virtual void Notify(SfxBroadcaster& rBC, const SfxHint& rHint) override;
@@ -427,7 +426,6 @@ protected:
     SetOfByte           aPrefVisiLayers;
     sal_uInt16          nPageNum;
 
-    // bitfield
     bool                mbMaster : 1;               // flag if this is a MasterPage
     bool                mbInserted : 1;
     bool                mbObjectsNotPersistent : 1;
@@ -449,7 +447,7 @@ protected:
 
 public:
     explicit SdrPage(SdrModel& rNewModel, bool bMasterPage=false);
-    virtual ~SdrPage();
+    virtual ~SdrPage() override;
     virtual SdrPage* Clone() const override;
     virtual SdrPage* Clone(SdrModel* pNewModel) const;
     bool             IsMasterPage() const       { return mbMaster; }
@@ -508,7 +506,7 @@ public:
     /// otherwise the visible pages
     virtual const SdrPageGridFrameList* GetGridFrameList(const SdrPageView* pPV, const Rectangle* pRect) const;
 
-    css::uno::Reference< css::uno::XInterface > getUnoPage();
+    css::uno::Reference< css::uno::XInterface > const & getUnoPage();
 
     virtual SfxStyleSheet* GetTextStyleSheetForObject( SdrObject* pObj ) const;
 
@@ -535,22 +533,6 @@ private:
 };
 
 typedef tools::WeakReference< SdrPage > SdrPageWeakRef;
-
-
-// use new redirector instead of pPaintProc
-
-class SVX_DLLPUBLIC StandardCheckVisisbilityRedirector : public sdr::contact::ViewObjectContactRedirector
-{
-public:
-    StandardCheckVisisbilityRedirector();
-    virtual ~StandardCheckVisisbilityRedirector();
-
-    // all default implementations just call the same methods at the original. To do something
-    // different, override the method and at least do what the method does.
-    virtual drawinglayer::primitive2d::Primitive2DContainer createRedirectedPrimitive2DSequence(
-        const sdr::contact::ViewObjectContact& rOriginal,
-        const sdr::contact::DisplayInfo& rDisplayInfo) override;
-};
 
 
 #endif // INCLUDED_SVX_SVDPAGE_HXX

@@ -22,10 +22,14 @@
 
 #include <memory>
 #include <vector>
+
 #include <com/sun/star/awt/Point.hpp>
-#include <oox/vml/vmlformatting.hxx>
-#include <oox/vml/vmltextbox.hxx>
+#include <com/sun/star/uno/Reference.hxx>
 #include <oox/dllapi.h>
+#include <oox/helper/helper.hxx>
+#include <oox/vml/vmlformatting.hxx>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
 
 namespace com { namespace sun { namespace star {
     namespace awt { struct Rectangle; }
@@ -39,7 +43,7 @@ namespace vml {
 class Drawing;
 struct ShapeParentAnchor;
 class ShapeContainer;
-
+class TextBox;
 
 const sal_Int32 VML_CLIENTDATA_UNCHECKED        = 0;
 const sal_Int32 VML_CLIENTDATA_CHECKED          = 1;
@@ -192,13 +196,11 @@ struct ClientData
 struct ShapeModel
 {
     typedef ::std::vector< css::awt::Point >   PointVector;
-    typedef ::std::unique_ptr< TextBox >                    TextBoxPtr;
-    typedef ::std::unique_ptr< ClientData >                 ClientDataPtr;
 
     OUString     maType;             ///< Shape template with default properties.
     PointVector         maPoints;           ///< Points for the polyline shape.
-    TextBoxPtr          mxTextBox;          ///< Text contents and properties.
-    ClientDataPtr       mxClientData;       ///< Excel specific client data.
+    std::unique_ptr<TextBox>          mxTextBox;          ///< Text contents and properties.
+    std::unique_ptr<ClientData>       mxClientData;       ///< Excel specific client data.
     OUString     maLegacyDiagramPath;///< Legacy Diagram Fragment Path
     OUString     maFrom;             ///< Start point for line shape.
     OUString     maTo;               ///< End point for line shape.
@@ -400,7 +402,7 @@ class GroupShape : public ShapeBase
 {
 public:
     explicit            GroupShape( Drawing& rDrawing );
-    virtual             ~GroupShape();
+    virtual             ~GroupShape() override;
 
     /** Returns read/write access to the container of child shapes and templates. */
     ShapeContainer& getChildren() { return *mxChildren; }
@@ -423,8 +425,7 @@ protected:
                             const css::awt::Rectangle& rShapeRect ) const override;
 
 private:
-    typedef ::std::unique_ptr< ShapeContainer > ShapeContainerPtr;
-    ShapeContainerPtr   mxChildren;         ///< Shapes and templates that are part of this group.
+    std::unique_ptr<ShapeContainer>   mxChildren;         ///< Shapes and templates that are part of this group.
 };
 
 

@@ -32,13 +32,11 @@ class SwNoTextFrame: public SwContentFrame
 
     const Size& GetSize() const;
 
-    void InitCtor();
-
     void Format ( vcl::RenderContext* pRenderContext, const SwBorderAttrs *pAttrs = nullptr ) override;
     void PaintPicture( vcl::RenderContext*, const SwRect& ) const;
 
     virtual void DestroyImpl() override;
-    virtual ~SwNoTextFrame();
+    virtual ~SwNoTextFrame() override;
 
 protected:
     virtual void MakeAll(vcl::RenderContext* pRenderContext) override;
@@ -53,7 +51,7 @@ public:
     virtual bool GetCursorOfst(SwPosition* pPos, Point& aPoint,
                      SwCursorMoveState* = nullptr, bool bTestBackground = false) const override;
 
-    void GetGrfArea( SwRect &rRect, SwRect * = nullptr ) const;
+    void GetGrfArea( SwRect &rRect, SwRect * ) const;
 
     bool IsTransparent() const;
 

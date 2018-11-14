@@ -19,6 +19,7 @@
 
 #include <sal/config.h>
 
+#include <memory>
 #include <utility>
 
 #include <com/sun/star/style/XStyle.hpp>
@@ -646,7 +647,7 @@ void SAL_CALL SdXShape::setPropertyValue( const OUString& aPropertyName, const c
                         if( !xImageMap.is() || !SvUnoImageMap_fillImageMap( xImageMap, aImageMap ) )
                             throw lang::IllegalArgumentException();
 
-                        SdIMapInfo* pIMapInfo = pDoc->GetIMapInfo(pObj);
+                        SdIMapInfo* pIMapInfo = SdDrawDocument::GetIMapInfo(pObj);
                         if( pIMapInfo )
                         {
                             // replace existing image map
@@ -765,7 +766,7 @@ css::uno::Any SAL_CALL SdXShape::getPropertyValue( const OUString& PropertyName 
             break;
         }
         case WID_CLICKACTION:
-            aRet = ::cppu::enum2any< presentation::ClickAction >( pInfo?pInfo->meClickAction:presentation::ClickAction_NONE );
+            aRet <<= ( pInfo?pInfo->meClickAction:presentation::ClickAction_NONE );
             break;
         case WID_PLAYFULL:
             aRet <<= ( pInfo && pInfo->mbPlayFull );
@@ -797,10 +798,6 @@ css::uno::Any SAL_CALL SdXShape::getPropertyValue( const OUString& PropertyName 
         case WID_STYLE:
             aRet = GetStyleSheet();
             break;
-        case WID_ANIMPATH:
-            if( pInfo && pInfo->mpPathObj )
-                aRet <<= pInfo->mpPathObj->getUnoShape();
-            break;
         case WID_IMAGEMAP:
             {
                 uno::Reference< uno::XInterface > xImageMap;
@@ -809,7 +806,7 @@ css::uno::Any SAL_CALL SdXShape::getPropertyValue( const OUString& PropertyName 
                 if( pDoc )
                 {
 
-                    SdIMapInfo* pIMapInfo = pDoc->GetIMapInfo(mpShape->GetSdrObject());
+                    SdIMapInfo* pIMapInfo = SdDrawDocument::GetIMapInfo(mpShape->GetSdrObject());
                     if( pIMapInfo )
                     {
                         const ImageMap& rIMap = pIMapInfo->GetImageMap();
@@ -865,7 +862,7 @@ uno::Sequence< OUString > SAL_CALL SdXShape::getSupportedServiceNames() throw(cs
                                                   "com.sun.star.document.LinkTarget"} );
 
     SdrObject* pObj = mpShape->GetSdrObject();
-    if(pObj && pObj->GetObjInventor() == SdrInventor )
+    if(pObj && pObj->GetObjInventor() == SdrInventor::Default )
     {
         sal_uInt32 nInventor = pObj->GetObjIdentifier();
         switch( nInventor )
@@ -898,7 +895,7 @@ bool SdXShape::IsPresObj() const
 
 /** checks if this presentation object is empty
  */
-bool SdXShape::IsEmptyPresObj() const throw()
+bool SdXShape::IsEmptyPresObj() const
 {
     SdrObject* pObj = mpShape->GetSdrObject();
     if( (pObj != nullptr) && pObj->IsEmptyPresObj() )
@@ -908,15 +905,8 @@ bool SdXShape::IsEmptyPresObj() const throw()
         if( pTextObj == nullptr )
             return true;
 
-        OutlinerParaObject* pParaObj = pTextObj->GetEditOutlinerParaObject();
-        if( pParaObj )
-        {
-            delete pParaObj;
-        }
-        else
-        {
-            return true;
-        }
+        const std::unique_ptr<OutlinerParaObject> pParaObj(pTextObj->GetEditOutlinerParaObject());
+        return !pParaObj;
     }
 
     return false;
@@ -938,12 +928,11 @@ OUString SdXShape::GetPlaceholderText() const
         return OUString();
 
     return pPage->GetPresObjText( pPage->GetPresObjKind(pObj) );
- }
+}
 
 /** sets/reset the empty status of a presentation object
 */
 void SdXShape::SetEmptyPresObj(bool bEmpty)
-    throw (css::uno::RuntimeException, std::exception)
 {
     // only possible if this actually *is* a presentation object
     if( !IsPresObj() )
@@ -992,7 +981,7 @@ void SdXShape::SetEmptyPresObj(bool bEmpty)
                 if( pDoc == nullptr)
                     break;
 
-                ::sd::Outliner* pOutliner = pDoc->GetInternalOutliner();
+                SdOutliner* pOutliner = pDoc->GetInternalOutliner();
                 DBG_ASSERT( pOutliner, "no outliner?" );
                 if( pOutliner == nullptr )
                     break;
@@ -1113,7 +1102,7 @@ private:
     SdXShape*   mpShape;
 
 public:
-    SdUnoEventsAccess( SdXShape* pShape ) throw();
+    explicit SdUnoEventsAccess(SdXShape* pShape) throw();
 
     // XNameReplace
     virtual void SAL_CALL replaceByName( const OUString& aName, const css::uno::Any& aElement ) throw(css::lang::IllegalArgumentException, css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;

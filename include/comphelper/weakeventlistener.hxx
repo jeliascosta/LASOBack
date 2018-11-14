@@ -21,10 +21,10 @@
 #define INCLUDED_COMPHELPER_WEAKEVENTLISTENER_HXX
 
 #include <cppuhelper/compbase.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <com/sun/star/lang/XComponent.hpp>
 #include <com/sun/star/uno/XWeak.hpp>
 #include <cppuhelper/weakref.hxx>
-#include <comphelper/broadcasthelper.hxx>
 #include <comphelper/comphelperdllapi.h>
 
 
@@ -41,7 +41,7 @@ namespace comphelper
         holds it's listener hard. The adapter itself knows the real listener as weak reference,
         thus not affecting its life time.</p>
     */
-    class OWeakListenerAdapterBase : public OBaseMutex
+    class OWeakListenerAdapterBase : public cppu::BaseMutex
     {
     private:
         css::uno::WeakReference< css::uno::XInterface >
@@ -135,8 +135,8 @@ namespace comphelper
     {
     public:
         OWeakEventListenerAdapter(
-            css::uno::Reference< css::uno::XWeak > _rxListener,
-            css::uno::Reference< css::lang::XComponent > _rxBroadcaster
+            css::uno::Reference< css::uno::XWeak > const & _rxListener,
+            css::uno::Reference< css::lang::XComponent > const & _rxBroadcaster
         );
 
         // nothing to do except an own ctor - the forwarding of the "disposing" is already done

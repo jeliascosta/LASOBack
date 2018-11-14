@@ -41,17 +41,13 @@ class PreviewRenderer
 public:
     /** Create a new preview renderer that takes some of its initial values
         from the given output device.
-        @param pTemplate
-            May be NULL.
         @param bPaintFrame
             When <TRUE/> (the default) then a frame is painted around the
             preview.  This makes the actual preview smaller.
     */
-    PreviewRenderer (
-        OutputDevice* pTemplate = nullptr,
-        const bool bPaintFrame = true);
+    PreviewRenderer(const bool bPaintFrame = true);
 
-    virtual ~PreviewRenderer();
+    virtual ~PreviewRenderer() override;
 
     /** Render a page with the given pixel size.
         Use this version when only the width of the preview is known to the
@@ -95,7 +91,7 @@ public:
         const SdPage* pPage,
         const Size aPreviewPixelSize,
         const OUString& sSubstitutionText,
-        const bool bObeyHighContrastMode = true,
+        const bool bObeyHighContrastMode,
         const bool bDisplayPresentationObjects = true);
 
     /** Render an image that contains the given substitution text instead of a
@@ -131,7 +127,6 @@ private:
         const SdPage* pPage,
         const Size& rPixelSize,
         const bool bObeyHighContrastMode);
-    void Cleanup();
     void PaintPage (
         const SdPage* pPage,
         const bool bDisplayPresentationObjects);

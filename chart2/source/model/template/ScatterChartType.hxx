@@ -33,7 +33,7 @@ public:
         css::chart2::CurveStyle eCurveStyle =  css::chart2::CurveStyle_LINES,
         sal_Int32 nResolution = 20,
         sal_Int32 nOrder = 3 );
-    virtual ~ScatterChartType();
+    virtual ~ScatterChartType() override;
 
     virtual OUString SAL_CALL
         getImplementationName()
@@ -44,9 +44,6 @@ public:
     virtual css::uno::Sequence< OUString > SAL_CALL
         getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString >
-        getSupportedServiceNames_Static();
 
 protected:
     explicit ScatterChartType( const ScatterChartType & rOther );

@@ -74,11 +74,6 @@ namespace drawinglayer
             double getWidth(
                     const geometry::ViewInformation2D& rViewInformation) const;
 
-            bool isSolidLine() const
-            {
-                return mnStyle == css::table::BorderLineStyle::SOLID;
-            }
-
             bool isInsideUsed() const
             {
                 return !basegfx::fTools::equalZero(mfLeftWidth);
@@ -94,7 +89,7 @@ namespace drawinglayer
                     const geometry::ViewInformation2D& rViewInformation) const;
 
             /// create local decomposition
-            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const override;
 
         public:
             /// constructor
@@ -132,7 +127,7 @@ namespace drawinglayer
             short getStyle () const { return mnStyle; }
             double getPatternScale() const { return mfPatternScale; }
             /// Same as create2DDecomposition(), but can do pixel correction if requested.
-            Primitive2DContainer createDecomposition(const geometry::ViewInformation2D& rViewInformation, bool bPixelCorrection) const;
+            void createDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation, bool bPixelCorrection) const;
 
             /// compare operator
             virtual bool operator==(const BasePrimitive2D& rPrimitive) const override;

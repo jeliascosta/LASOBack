@@ -20,7 +20,7 @@
 #include <sfx2/sidebar/PanelTitleBar.hxx>
 #include <sfx2/sfxresid.hxx>
 
-#include <sfx2/sidebar/Sidebar.hrc>
+#include "Sidebar.hrc"
 
 #include <sfx2/sidebar/Paint.hxx>
 #include <sfx2/sidebar/Panel.hxx>
@@ -46,7 +46,6 @@ PanelTitleBar::PanelTitleBar(const OUString& rsTitle,
     : TitleBar(rsTitle, pParentWindow, GetBackgroundPaint()),
       mbIsLeftButtonDown(false),
       mpPanel(pPanel),
-      mnMenuItemIndex(1),
       mxFrame(),
       msMoreOptionsCommand()
 {

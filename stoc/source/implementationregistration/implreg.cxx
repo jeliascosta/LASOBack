@@ -1196,7 +1196,7 @@ class ImplementationRegistration
 {
 public:
     explicit ImplementationRegistration( const Reference < XComponentContext > & rSMgr );
-    virtual ~ImplementationRegistration();
+    virtual ~ImplementationRegistration() override;
 
     // XServiceInfo
     OUString                        SAL_CALL getImplementationName() throw(RuntimeException, std::exception) override;
@@ -1624,7 +1624,7 @@ Sequence< OUString > ImplementationRegistration::getImplementations(
 
                         if (!implNames.empty())
                         {
-                            Sequence<OUString> seqImpl(comphelper::containerToSequence<OUString>(implNames));
+                            Sequence<OUString> seqImpl(comphelper::containerToSequence(implNames));
                             xImpl->closeKey();
                             return seqImpl;
                         }

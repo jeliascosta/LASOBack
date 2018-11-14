@@ -36,7 +36,7 @@ class ScDocShell;
 
 class ScNamePasteDlg : public ModalDialog
 {
-    DECL_LINK_TYPED( ButtonHdl, Button *, void );
+    DECL_LINK( ButtonHdl, Button *, void );
 
 private:
     VclPtr<PushButton> m_pBtnPasteAll;
@@ -49,9 +49,9 @@ private:
     std::map<OUString, std::unique_ptr<ScRangeName>> m_RangeMap;
 
 public:
-    ScNamePasteDlg( vcl::Window * pParent, ScDocShell* pShell, bool bInsList=true );
+    ScNamePasteDlg( vcl::Window * pParent, ScDocShell* pShell, bool bInsList );
 
-    virtual ~ScNamePasteDlg();
+    virtual ~ScNamePasteDlg() override;
     virtual void dispose() override;
 
     const std::vector<OUString>& GetSelectedNames() const;

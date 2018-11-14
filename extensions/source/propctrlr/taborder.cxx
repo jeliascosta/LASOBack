@@ -224,19 +224,19 @@ namespace pcr
     }
 
 
-    IMPL_LINK_NOARG_TYPED( TabOrderDialog, MoveUpClickHdl, Button*, void )
+    IMPL_LINK_NOARG( TabOrderDialog, MoveUpClickHdl, Button*, void )
     {
         m_pLB_Controls->MoveSelection( -1 );
     }
 
 
-    IMPL_LINK_NOARG_TYPED( TabOrderDialog, MoveDownClickHdl, Button*, void )
+    IMPL_LINK_NOARG( TabOrderDialog, MoveDownClickHdl, Button*, void )
     {
         m_pLB_Controls->MoveSelection( 1 );
     }
 
 
-    IMPL_LINK_NOARG_TYPED( TabOrderDialog, AutoOrderClickHdl, Button*, void )
+    IMPL_LINK_NOARG( TabOrderDialog, AutoOrderClickHdl, Button*, void )
     {
         try
         {
@@ -258,7 +258,7 @@ namespace pcr
     }
 
 
-    IMPL_LINK_NOARG_TYPED( TabOrderDialog, OKClickHdl, Button*, void )
+    IMPL_LINK_NOARG( TabOrderDialog, OKClickHdl, Button*, void )
     {
         sal_uLong nEntryCount = m_pLB_Controls->GetEntryCount();
         Sequence< Reference< XControlModel > > aSortedControlModelSeq( nEntryCount );
@@ -297,17 +297,10 @@ namespace pcr
         SetDragDropMode(DragDropMode::ALL/*DragDropMode::CTRL_MOVE*/);
             // Hmm. The flag alone is not enough, so to be on the safe side ...
 
-        SetSelectionMode( MULTIPLE_SELECTION );
+        SetSelectionMode( SelectionMode::Multiple );
     }
 
-    VCL_BUILDER_DECL_FACTORY(TabOrderListBox)
-    {
-         WinBits nWinStyle = WB_TABSTOP;
-         OString sBorder = VclBuilder::extractCustomProperty(rMap);
-         if (!sBorder.isEmpty())
-             nWinStyle |= WB_BORDER;
-         rRet = VclPtr<TabOrderListBox>::Create(pParent, nWinStyle);
-    }
+    VCL_BUILDER_FACTORY_CONSTRUCTOR(TabOrderListBox, WB_TABSTOP)
 
     TabOrderListBox::~TabOrderListBox()
     {
@@ -389,9 +382,9 @@ namespace pcr
                 long nFirstVisible = GetModel()->GetAbsPos( FirstVisible());
 
                 if ( ( nThumbPos + nVisibleSize + 1 ) < (long)( nLastSelPos + 3 ) )
-                    GetVScroll()->DoScrollAction(SCROLL_LINEDOWN);
+                    GetVScroll()->DoScrollAction(ScrollType::LineDown);
                 else if((nThumbPos+nVisibleSize+1) >= (nFirstVisible))
-                    GetVScroll()->DoScrollAction(SCROLL_LINEUP);
+                    GetVScroll()->DoScrollAction(ScrollType::LineUp);
             }
         }
     }

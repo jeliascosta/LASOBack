@@ -66,7 +66,6 @@ PresenterTextView::PresenterTextView (
     const Reference<rendering::XCanvas>& rxCanvas,
     const ::std::function<void (const css::awt::Rectangle&)>& rInvalidator)
     : mxCanvas(rxCanvas),
-      mbDoOuput(true),
       mxBreakIterator(),
       mxScriptTypeDetector(),
       maLocation(0,0),
@@ -74,13 +73,13 @@ PresenterTextView::PresenterTextView (
       mpFont(),
       maParagraphs(),
       mpCaret(new PresenterTextCaret(
+          rxContext,
           [this] (sal_Int32 const nParagraphIndex, sal_Int32 const nCharacterIndex)
               { return this->GetCaretBounds(nParagraphIndex, nCharacterIndex); },
           rInvalidator)),
       mnLeftOffset(0),
       mnTopOffset(0),
       mbIsFormatPending(false),
-      mnCharacterCount(-1),
       maTextChangeBroadcaster()
 {
     Reference<lang::XMultiComponentFactory> xFactory (
@@ -103,7 +102,6 @@ PresenterTextView::PresenterTextView (
 void PresenterTextView::SetText (const Reference<text::XText>& rxText)
 {
     maParagraphs.clear();
-    mnCharacterCount = -1;
 
     Reference<container::XEnumerationAccess> xParagraphAccess (rxText, UNO_QUERY);
     if ( ! xParagraphAccess.is())
@@ -291,8 +289,6 @@ void PresenterTextView::MoveCaret (
 void PresenterTextView::Paint (
     const css::awt::Rectangle& rUpdateBox)
 {
-    if ( ! mbDoOuput)
-        return;
     if ( ! mxCanvas.is())
         return;
     if ( ! mpFont->PrepareFont(mxCanvas))
@@ -1082,9 +1078,11 @@ void PresenterTextParagraph::SetupCellArray (
 //===== PresenterTextCaret ================================================----
 
 PresenterTextCaret::PresenterTextCaret (
+        uno::Reference<uno::XComponentContext> const& xContext,
     const ::std::function<css::awt::Rectangle (const sal_Int32,const sal_Int32)>& rCharacterBoundsAccess,
     const ::std::function<void (const css::awt::Rectangle&)>& rInvalidator)
-    : mnParagraphIndex(-1),
+    : m_xContext(xContext)
+    , mnParagraphIndex(-1),
       mnCharacterIndex(-1),
       mnCaretBlinkTaskId(0),
       mbIsCaretVisible(false),
@@ -1105,6 +1103,7 @@ void PresenterTextCaret::ShowCaret()
     if (mnCaretBlinkTaskId == 0)
     {
         mnCaretBlinkTaskId = PresenterTimer::ScheduleRepeatedTask (
+            m_xContext,
             [this] (TimeValue const&) { return this->InvertCaret(); },
             CaretBlinkIntervall,
             CaretBlinkIntervall);
@@ -1206,7 +1205,7 @@ PresenterTextParagraph::Line::Line (
 
 void PresenterTextParagraph::Line::ProvideCellBoxes()
 {
-    if ( ! IsEmpty() && maCellBoxes.getLength()==0)
+    if ( mnLineStartCharacterIndex < mnLineEndCharacterIndex && maCellBoxes.getLength()==0 )
     {
         if (mxLayoutedLine.is())
             maCellBoxes = mxLayoutedLine->queryInkMeasures();
@@ -1234,11 +1233,6 @@ void PresenterTextParagraph::Line::ProvideLayoutedLine (
             nTextDirection,
             0);
     }
-}
-
-bool PresenterTextParagraph::Line::IsEmpty() const
-{
-    return mnLineStartCharacterIndex >= mnLineEndCharacterIndex;
 }
 
 } } // end of namespace ::sdext::presenter

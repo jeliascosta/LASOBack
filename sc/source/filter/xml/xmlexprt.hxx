@@ -23,18 +23,17 @@
 #include <com/sun/star/sheet/XSpreadsheet.hpp>
 #include <com/sun/star/sheet/XSpreadsheetDocument.hpp>
 #include <com/sun/star/table/CellRangeAddress.hpp>
-#include <com/sun/star/table/CellAddress.hpp>
-#include <com/sun/star/drawing/XShapes.hpp>
 #include <com/sun/star/table/XCellRange.hpp>
 
 #include "address.hxx"
 
+#include <memory>
+#include <unordered_map>
+
+
 namespace com { namespace sun { namespace star {
     namespace beans { class XPropertySet; }
 } } }
-
-#include <memory>
-#include <unordered_map>
 
 class ScOutlineArray;
 class SvXMLExportPropertyMapper;
@@ -132,6 +131,7 @@ class ScXMLExport : public SvXMLExport
     sal_Int32       GetNumberFormatStyleIndex(sal_Int32 nNumFmt) const;
     void            CollectSharedData(SCTAB& nTableCount, sal_Int32& nShapesCount);
     void            CollectShapesAutoStyles(SCTAB nTableCount);
+    void            RegisterDefinedStyleNames( css::uno::Reference< css::sheet::XSpreadsheetDocument > & xSpreadDoc );
     virtual void ExportFontDecls_() override;
     virtual void ExportStyles_( bool bUsed ) override;
     virtual void ExportAutoStyles_() override;
@@ -140,7 +140,7 @@ class ScXMLExport : public SvXMLExport
     virtual void ExportContent_() override;
     virtual void ExportMeta_() override;
 
-    void CollectInternalShape( css::uno::Reference< css::drawing::XShape > xShape );
+    void CollectInternalShape( css::uno::Reference< css::drawing::XShape > const & xShape );
 
     static css::table::CellRangeAddress GetEndAddress(const css::uno::Reference<css::sheet::XSpreadsheet>& xTable,
                                                         const sal_Int32 nTable);
@@ -189,7 +189,6 @@ class ScXMLExport : public SvXMLExport
     void WriteTableShapes();
     void SetRepeatAttribute(sal_Int32 nEqualCellCount, bool bIncProgress);
 
-    static bool IsCellTypeEqual (const ScMyCell& aCell1, const ScMyCell& aCell2);
     static bool IsEditCell(ScMyCell& rCell);
     bool IsCellEqual(ScMyCell& aCell1, ScMyCell& aCell2);
 
@@ -234,13 +233,13 @@ public:
         const css::uno::Reference< css::uno::XComponentContext >& rContext,
         OUString const & implementationName, SvXMLExportFlags nExportFlag);
 
-    virtual ~ScXMLExport();
+    virtual ~ScXMLExport() override;
 
     static sal_Int16 GetMeasureUnit();
     inline ScDocument*          GetDocument()           { return pDoc; }
     inline const ScDocument*    GetDocument() const     { return pDoc; }
     bool IsMatrix (const ScAddress& aCell,
-        css::table::CellRangeAddress& aCellAddress, bool& bIsFirst) const;
+        ScRange& aCellAddress, bool& bIsFirst) const;
 
     const rtl::Reference < XMLPropertySetMapper >& GetCellStylesPropertySetMapper() { return xCellStylesPropertySetMapper; }
     const rtl::Reference < XMLPropertySetMapper >& GetTableStylesPropertySetMapper() { return xTableStylesPropertySetMapper; }
@@ -253,7 +252,6 @@ public:
 
     virtual void exportAnnotationMeta( const css::uno::Reference < css::drawing::XShape >& xShape) override;
 
-    void CreateSharedData(const sal_Int32 nTableCount);
     void SetSharedData(ScMySharedData* pTemp) { pSharedData = pTemp; }
     ScMySharedData* GetSharedData() { return pSharedData; }
     XMLNumberFormatAttributesExportHelper* GetNumberFormatAttributesExportHelper();

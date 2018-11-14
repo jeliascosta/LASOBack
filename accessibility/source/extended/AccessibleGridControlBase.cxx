@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/extended/AccessibleGridControlBase.hxx>
+#include <extended/AccessibleGridControlBase.hxx>
 #include <svtools/accessibletable.hxx>
 #include <comphelper/servicehelper.hxx>
 #include <cppuhelper/supportsservice.hxx>
@@ -274,8 +274,7 @@ sal_Bool SAL_CALL AccessibleGridControlBase::supportsService(
 Sequence< OUString > SAL_CALL AccessibleGridControlBase::getSupportedServiceNames()
     throw ( uno::RuntimeException, std::exception )
 {
-    const OUString aServiceName( "com.sun.star.accessibility.AccessibleContext" );
-    return Sequence< OUString >( &aServiceName, 1 );
+    return { "com.sun.star.accessibility.AccessibleContext" };
 }
 // internal virtual methods
 

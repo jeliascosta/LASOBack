@@ -26,6 +26,7 @@
 #include "docsh.hxx"
 
 #include <memory>
+#include <o3tl/typed_flags_set.hxx>
 
 #define SC_SIZE_NONE        65535
 const SCCOL SC_TABSTART_NONE = SCCOL_MAX;
@@ -83,6 +84,16 @@ enum ScPasteFlags
     SC_PASTE_MODE   = 1,    // Enable paste-mode
     SC_PASTE_BORDER = 2,    // Show a border around the source cells
 };
+
+// for internal Drag&Drop:
+enum class ScDragSrc{
+    Undefined = 0,
+    Navigator = 1,
+    Table     = 2
+};
+namespace o3tl {
+    template<> struct typed_flags<ScDragSrc> : is_typed_flags<ScDragSrc, 0x00000003> {};
+}
 
 class ScDocFunc;
 class ScDocShell;
@@ -207,14 +218,21 @@ private:
 
     ScSplitPos          eEditActivePart;            // the part that was active when edit mode was started
     ScFillMode          nFillMode;
+    SvxAdjust           eEditAdjust;
     bool                bEditActive[4];             // Active?
     bool                bActive:1;                  // Active Window ?
     bool                bIsRefMode:1;               // Reference input
     bool                bDelMarkValid:1;            // Only valid at SC_REFTYPE_FILL
     bool                bPagebreak:1;               // Page break preview mode
     bool                bSelCtrlMouseClick:1;       // special selection handling for ctrl-mouse-click
+    bool                bMoveArea:1;
 
-    DECL_DLLPRIVATE_LINK_TYPED( EditEngineHdl, EditStatus&, void );
+    bool                bGrowing;
+
+    long                m_nLOKPageUpDownOffset;
+    
+    DECL_DLLPRIVATE_LINK( EditEngineHdl, EditStatus&, void );
+
 
     SAL_DLLPRIVATE void          CalcPPT();
     SAL_DLLPRIVATE void          CreateTabData( SCTAB nNewTab );
@@ -343,8 +361,11 @@ public:
 
     bool            IsMultiMarked();
 
-                    /// Disallow paste on Ctrl+A all selected. We'd go DOOM.
-    bool            SelectionForbidsPaste();
+                    /** Disallow cell fill (Paste,Fill,...) on Ctrl+A all
+                        selected or another high amount of selected cells.
+                        We'd go DOOM.
+                     */
+    bool            SelectionForbidsCellFill();
                     /// Determine DOOM condition, i.e. from selected range.
     static bool     SelectionFillDOOM( const ScRange& rRange );
 
@@ -357,6 +378,9 @@ public:
     bool            IsAnyFillMode()             { return nFillMode != ScFillMode::NONE; }
     bool            IsFillMode()                { return nFillMode == ScFillMode::FILL; }
     ScFillMode      GetFillMode()               { return nFillMode; }
+
+    SvxAdjust       GetEditAdjust() const {return eEditAdjust; }
+    void            SetEditAdjust( SvxAdjust eNewEditAdjust ) { eEditAdjust = eNewEditAdjust; }
 
                     // TRUE: Cell is merged
     bool            GetMergeSizePixel( SCCOL nX, SCROW nY, long& rSizeXPix, long& rSizeYPix ) const;
@@ -408,6 +432,10 @@ public:
     bool    IsOutlineMode   () const            { return pOptions->GetOption( VOPT_OUTLINER ); }
     void    SetOutlineMode  ( bool bNewMode )   { pOptions->SetOption( VOPT_OUTLINER, bNewMode ); }
 
+    /// Force page size for PgUp/PgDown to overwrite the computation based on m_aVisArea.
+    void ForcePageUpDownOffset(long nTwips) { m_nLOKPageUpDownOffset = nTwips; }
+    long GetPageUpDownOffset() { return m_nLOKPageUpDownOffset; }
+
     void            KillEditView();
     void            ResetEditView();
     void            SetEditEngine( ScSplitPos eWhich,
@@ -419,7 +447,19 @@ public:
     EditView*       GetEditView( ScSplitPos eWhich ) const
                                         { return pEditView[eWhich]; }
 
+    /**
+     * Extend the output area for the edit engine view in a horizontal
+     * direction as needed.
+     */
     void            EditGrowX();
+
+    /**
+     * Extend the output area for the edit engine view in a vertical direction
+     * as needed.
+     *
+     * @param bInitial when true, then the call originates from a brand-new
+     *                 edit engine instance.
+     */
     void            EditGrowY( bool bInitial = false );
 
     ScSplitPos      GetEditActivePart() const       { return eEditActivePart; }

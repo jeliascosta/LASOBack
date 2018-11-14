@@ -217,7 +217,7 @@ void DialogWindow::Command( const CommandEvent& rCEvt )
 }
 
 
-IMPL_STATIC_LINK_TYPED(
+IMPL_STATIC_LINK(
     DialogWindow, NotifyUndoActionHdl, SdrUndoAction *, pUndoAction, void )
 {
     // #i120515# pUndoAction needs to be deleted, this hand over is an ownership
@@ -342,7 +342,7 @@ void DialogWindow::GetState( SfxItemSet& rSet )
                             case OBJ_DLG_TREECONTROL:       nObj = SVX_SNAP_TREECONTROL; break;
                             default:                        nObj = 0;
                         }
-                        SAL_INFO_IF( !nObj, "basctl.basicide", "SID_CHOOSE_CONTROLS: Unbekannt!" );
+                        SAL_INFO_IF( !nObj, "basctl.basicide", "SID_CHOOSE_CONTROLS: unknown" );
                         aItem.SetValue( nObj );
                     }
 
@@ -763,9 +763,7 @@ void DialogWindow::SaveDialog()
                 aURLObj.removeSegment();
                 OUString aURL( aURLObj.GetMainURL( INetURLObject::NO_DECODE ) );
                 bool bReadOnly = false;
-                OUString aComment( "# " );
-                aComment += aDialogName;
-                aComment += " strings" ;
+                OUString aComment = "# " + aDialogName + " strings" ;
                 Reference< task::XInteractionHandler > xDummyHandler;
 
                 // Remove old properties files in case of overwriting Dialog files

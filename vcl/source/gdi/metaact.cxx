@@ -2894,7 +2894,7 @@ void MetaPopAction::Read( SvStream& rIStm, ImplMetaReadData* )
 
 MetaRasterOpAction::MetaRasterOpAction() :
     MetaAction  ( MetaActionType::RASTEROP ),
-    meRasterOp  ( ROP_OVERPAINT )
+    meRasterOp  ( RasterOp::OverPaint )
 {}
 
 MetaRasterOpAction::~MetaRasterOpAction()
@@ -2922,7 +2922,7 @@ void MetaRasterOpAction::Write( SvStream& rOStm, ImplMetaWriteData* pData )
 {
     MetaAction::Write(rOStm, pData);
     VersionCompat aCompat(rOStm, StreamMode::WRITE, 1);
-    rOStm.WriteUInt16( meRasterOp );
+    rOStm.WriteUInt16( (sal_uInt16)meRasterOp );
 }
 
 void MetaRasterOpAction::Read( SvStream& rIStm, ImplMetaReadData* )
@@ -3349,7 +3349,7 @@ void MetaCommentAction::Write( SvStream& rOStm, ImplMetaWriteData* pData )
     rOStm.WriteInt32( mnValue ).WriteUInt32( mnDataSize );
 
     if ( mnDataSize )
-        rOStm.Write( mpData, mnDataSize );
+        rOStm.WriteBytes( mpData, mnDataSize );
 }
 
 void MetaCommentAction::Read( SvStream& rIStm, ImplMetaReadData* )
@@ -3365,7 +3365,7 @@ void MetaCommentAction::Read( SvStream& rIStm, ImplMetaReadData* )
     if( mnDataSize )
     {
         mpData = new sal_uInt8[ mnDataSize ];
-        rIStm.Read( mpData, mnDataSize );
+        rIStm.ReadBytes(mpData, mnDataSize);
     }
     else
         mpData = nullptr;
@@ -3373,13 +3373,13 @@ void MetaCommentAction::Read( SvStream& rIStm, ImplMetaReadData* )
 
 MetaLayoutModeAction::MetaLayoutModeAction() :
     MetaAction  ( MetaActionType::LAYOUTMODE ),
-    mnLayoutMode( TEXT_LAYOUT_DEFAULT )
+    mnLayoutMode( ComplexTextLayoutFlags::Default )
 {}
 
 MetaLayoutModeAction::~MetaLayoutModeAction()
 {}
 
-MetaLayoutModeAction::MetaLayoutModeAction( ComplexTextLayoutMode nLayoutMode ) :
+MetaLayoutModeAction::MetaLayoutModeAction( ComplexTextLayoutFlags nLayoutMode ) :
     MetaAction  ( MetaActionType::LAYOUTMODE ),
     mnLayoutMode( nLayoutMode )
 {}
@@ -3400,7 +3400,7 @@ void MetaLayoutModeAction::Write( SvStream& rOStm, ImplMetaWriteData* pData )
 {
     MetaAction::Write(rOStm, pData);
     VersionCompat aCompat(rOStm, StreamMode::WRITE, 1);
-    rOStm.WriteUInt32( mnLayoutMode );
+    rOStm.WriteUInt32( (sal_uInt32)mnLayoutMode );
 }
 
 void MetaLayoutModeAction::Read( SvStream& rIStm, ImplMetaReadData* )
@@ -3408,7 +3408,7 @@ void MetaLayoutModeAction::Read( SvStream& rIStm, ImplMetaReadData* )
     VersionCompat aCompat(rIStm, StreamMode::READ);
     sal_uInt32 tmp;
     rIStm.ReadUInt32( tmp );
-    mnLayoutMode = static_cast<ComplexTextLayoutMode>(tmp);
+    mnLayoutMode = static_cast<ComplexTextLayoutFlags>(tmp);
 }
 
 MetaTextLanguageAction::MetaTextLanguageAction() :

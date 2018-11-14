@@ -24,6 +24,11 @@
 #include <vcl/fixed.hxx>
 #include <svtools/valueset.hxx>
 #include <sfx2/tabdlg.hxx>
+#include <svx/sxctitm.hxx>
+#include <svx/sxcecitm.hxx>
+#include <svx/anchorid.hxx>
+
+
 class SdrView;
 
 // class SvxCaptionTabPage -----------------------------------------------
@@ -51,31 +56,31 @@ private:
     std::vector<OUString> m_aStrVertList;
     std::vector<OUString> m_aLineTypes;
 
-    short               nCaptionType;
+    SdrCaptionType      nCaptionType;
     sal_Int32           nGap;
-    short               nEscDir;
-    bool            bEscRel;
+    SdrCaptionEscDir    nEscDir;
+    bool                bEscRel;
     sal_Int32           nEscAbs;
     sal_Int32           nEscRel;
     sal_Int32           nLineLen;
-    bool            bFitLineLen;
+    bool                bFitLineLen;
 
     sal_uInt16          nAnsatzRelPos;
     sal_uInt16          nAnsatzTypePos;
 
     void            SetupAnsatz_Impl( sal_uInt16 nType );
-    void            SetupType_Impl( sal_uInt16 nType );
-    DECL_LINK_TYPED( AnsatzSelectHdl_Impl, ListBox&, void );
-    DECL_LINK_TYPED( AnsatzRelSelectHdl_Impl, ListBox&, void );
-    DECL_LINK_TYPED( LineOptHdl_Impl, Button *, void );
-    DECL_LINK_TYPED( SelectCaptTypeHdl_Impl, ValueSet*, void );
+    void            SetupType_Impl( SdrCaptionType nType );
+    DECL_LINK( AnsatzSelectHdl_Impl, ListBox&, void );
+    DECL_LINK( AnsatzRelSelectHdl_Impl, ListBox&, void );
+    DECL_LINK( LineOptHdl_Impl, Button *, void );
+    DECL_LINK( SelectCaptTypeHdl_Impl, ValueSet*, void );
 
     const SfxItemSet&   rOutAttrs;
     const SdrView*      pView;
 
 public:
     SvxCaptionTabPage( vcl::Window* pParent, const SfxItemSet& rInAttrs  );
-    virtual ~SvxCaptionTabPage();
+    virtual ~SvxCaptionTabPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window*, const SfxItemSet* );
@@ -97,7 +102,7 @@ class SvxCaptionTabDialog : public SfxTabDialog
 {
 private:
     const SdrView* pView;
-    sal_uInt16 nAnchorCtrls;
+    SvxAnchorIds nAnchorCtrls;
     sal_uInt16 m_nSwPosSizePageId;
     sal_uInt16 m_nPositionSizePageId;
     sal_uInt16 m_nCaptionPageId;
@@ -108,7 +113,7 @@ private:
 
 public:
     SvxCaptionTabDialog(vcl::Window* pParent, const SdrView* pView,
-                            sal_uInt16 nAnchorTypes = 0);
+                            SvxAnchorIds nAnchorTypes = SvxAnchorIds::NONE);
 
     /// link for the Writer to validate positions
     void SetValidateFramePosLink( const Link<SvxSwFrameValidation&,void>& rLink );

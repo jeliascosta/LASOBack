@@ -11,7 +11,7 @@
 
 #include <vcl/msgbox.hxx>
 #include <vcl/settings.hxx>
-
+#include <formula/errorcodes.hxx>
 #include <sfx2/app.hxx>
 
 #include "document.hxx"
@@ -122,7 +122,7 @@ bool ScNameDefDlg::IsFormulaValid()
     ScCompiler aComp( mpDoc, maCursorPos);
     aComp.SetGrammar( mpDoc->GetGrammar() );
     ScTokenArray* pCode = aComp.CompileString(m_pEdRange->GetText());
-    if (pCode->GetCodeError())
+    if (pCode->GetCodeError() != FormulaError::NONE)
     {
         //TODO: info message
         delete pCode;
@@ -233,9 +233,9 @@ void ScNameDefDlg::AddPushed()
             pNewEntry->AddType(nType);
 
             // aExpression valid?
-            if ( 0 == pNewEntry->GetErrCode() )
+            if ( FormulaError::NONE == pNewEntry->GetErrCode() )
             {
-                if ( !pRangeName->insert( pNewEntry ) )
+                if ( !pRangeName->insert( pNewEntry, false /*bReuseFreeIndex*/ ) )
                     pNewEntry = nullptr;
 
                 if (mbUndo)
@@ -256,7 +256,7 @@ void ScNameDefDlg::AddPushed()
                     // call invalidates the stream
                     if (nTab != -1)
                         mpDoc->SetStreamValid(nTab, false);
-                    SfxGetpApp()->Broadcast( SfxSimpleHint( SC_HINT_AREAS_CHANGED ) );
+                    SfxGetpApp()->Broadcast( SfxHint( SC_HINT_AREAS_CHANGED ) );
                     mpDocShell->SetDocumentModified();
                     Close();
                 }
@@ -319,22 +319,22 @@ void ScNameDefDlg::SetActive()
     RefInputDone();
 }
 
-IMPL_LINK_NOARG_TYPED(ScNameDefDlg, CancelBtnHdl, Button*, void)
+IMPL_LINK_NOARG(ScNameDefDlg, CancelBtnHdl, Button*, void)
 {
     CancelPushed();
 }
 
-IMPL_LINK_NOARG_TYPED(ScNameDefDlg, AddBtnHdl, Button*, void)
+IMPL_LINK_NOARG(ScNameDefDlg, AddBtnHdl, Button*, void)
 {
     AddPushed();
 };
 
-IMPL_LINK_NOARG_TYPED(ScNameDefDlg, NameModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(ScNameDefDlg, NameModifyHdl, Edit&, void)
 {
     IsNameValid();
 }
 
-IMPL_LINK_NOARG_TYPED(ScNameDefDlg, AssignGetFocusHdl, Control&, void)
+IMPL_LINK_NOARG(ScNameDefDlg, AssignGetFocusHdl, Control&, void)
 {
     IsNameValid();
 }

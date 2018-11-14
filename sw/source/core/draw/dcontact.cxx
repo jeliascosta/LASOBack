@@ -99,9 +99,9 @@ SwFrameFormat *FindFrameFormat( SdrObject *pObj )
 {
     SwFrameFormat* pRetval = nullptr;
 
-    if ( dynamic_cast<const SwVirtFlyDrawObj*>( pObj) !=  nullptr )
+    if (SwVirtFlyDrawObj* pFlyDrawObj = dynamic_cast<SwVirtFlyDrawObj*>(pObj))
     {
-       pRetval = static_cast<SwVirtFlyDrawObj*>(pObj)->GetFormat();
+       pRetval = pFlyDrawObj->GetFormat();
     }
     else
     {
@@ -160,7 +160,7 @@ SwContact* GetUserCall( const SdrObject* pObj )
 bool IsMarqueeTextObj( const SdrObject& rObj )
 {
     SdrTextAniKind eTKind;
-    return SdrInventor == rObj.GetObjInventor() &&
+    return SdrInventor::Default == rObj.GetObjInventor() &&
         OBJ_TEXT == rObj.GetObjIdentifier() &&
         ( SDRTEXTANI_SCROLL == ( eTKind = static_cast<const SdrTextObj&>(rObj).GetTextAniKind())
          || SDRTEXTANI_ALTERNATE == eTKind || SDRTEXTANI_SLIDE == eTKind );
@@ -415,9 +415,9 @@ const SwAnchoredObject* SwFlyDrawContact::GetAnchoredObj( const SdrObject* _pSdr
 
     const SwAnchoredObject* pRetAnchoredObj = nullptr;
 
-    if ( _pSdrObj && dynamic_cast<const SwVirtFlyDrawObj*>( _pSdrObj) !=  nullptr )
+    if (const SwVirtFlyDrawObj* pFlyDrawObj = dynamic_cast<const SwVirtFlyDrawObj*>(_pSdrObj))
     {
-        pRetAnchoredObj = static_cast<const SwVirtFlyDrawObj*>(_pSdrObj)->GetFlyFrame();
+        pRetAnchoredObj = pFlyDrawObj->GetFlyFrame();
     }
 
     return pRetAnchoredObj;
@@ -550,7 +550,7 @@ void SwFlyDrawContact::GetAnchoredObjs( std::list<SwAnchoredObject*>& _roAnchore
 
 bool CheckControlLayer( const SdrObject *pObj )
 {
-    if ( FmFormInventor == pObj->GetObjInventor() )
+    if ( SdrInventor::FmForm == pObj->GetObjInventor() )
         return true;
     if ( dynamic_cast<const SdrObjGroup*>( pObj) !=  nullptr )
     {
@@ -575,7 +575,7 @@ SwDrawContact::SwDrawContact( SwFrameFormat* pToRegisterIn, SdrObject* pObj ) :
     mbUserCallActive( false ),
     // Note: value of <meEventTypeOfCurrentUserCall> isn't of relevance, because
     //       <mbUserCallActive> is false.
-    meEventTypeOfCurrentUserCall( SDRUSERCALL_MOVEONLY )
+    meEventTypeOfCurrentUserCall( SdrUserCallType::MoveOnly )
 {
     // clear list containing 'virtual' drawing objects.
     maDrawVirtObjs.clear();
@@ -639,7 +639,7 @@ void SwDrawContact::GetTextObjectsFromFormat( std::list<SdrTextObj*>& rTextObjec
                 {
                     if ( dynamic_cast<const SdrObjGroup*>(pSdrO) !=  nullptr )
                     {
-                        SdrObjListIter aListIter( *pSdrO, IM_DEEPNOGROUPS );
+                        SdrObjListIter aListIter( *pSdrO, SdrIterMode::DeepNoGroups );
                         //iterate inside of a grouped object
                         while( aListIter.IsMore() )
                         {
@@ -1043,8 +1043,8 @@ void SwDrawContact::Changed( const SdrObject& rObj,
 
     // #i44339#
     // no event handling, if document is in destruction.
-    // Exception: It's the SDRUSERCALL_DELETE event
-    if ( pDoc->IsInDtor() && eType != SDRUSERCALL_DELETE )
+    // Exception: It's the SdrUserCallType::Delete event
+    if ( pDoc->IsInDtor() && eType != SdrUserCallType::Delete )
     {
         return;
     }
@@ -1121,21 +1121,21 @@ class NestedUserCallHdl
             if ( IsNestedUserCall() )
             {
                 bool bTmpAssert( true );
-                // Currently its known, that a nested event SDRUSERCALL_RESIZE
-                // could occur during parent user call SDRUSERCALL_INSERTED,
-                // SDRUSERCALL_DELETE and SDRUSERCALL_RESIZE for edge objects.
-                // Also possible are nested SDRUSERCALL_CHILD_RESIZE events for
+                // Currently its known, that a nested event SdrUserCallType::Resize
+                // could occur during parent user call SdrUserCallType::Inserted,
+                // SdrUserCallType::Delete and SdrUserCallType::Resize for edge objects.
+                // Also possible are nested SdrUserCallType::ChildResize events for
                 // edge objects
                 // Thus, assert all other combinations
-                if ( ( meParentUserCallEventType == SDRUSERCALL_INSERTED ||
-                       meParentUserCallEventType == SDRUSERCALL_DELETE ||
-                       meParentUserCallEventType == SDRUSERCALL_RESIZE ) &&
-                     mpDrawContact->meEventTypeOfCurrentUserCall == SDRUSERCALL_RESIZE )
+                if ( ( meParentUserCallEventType == SdrUserCallType::Inserted ||
+                       meParentUserCallEventType == SdrUserCallType::Delete ||
+                       meParentUserCallEventType == SdrUserCallType::Resize ) &&
+                     mpDrawContact->meEventTypeOfCurrentUserCall == SdrUserCallType::Resize )
                 {
                     bTmpAssert = false;
                 }
-                else if ( meParentUserCallEventType == SDRUSERCALL_CHILD_RESIZE &&
-                          mpDrawContact->meEventTypeOfCurrentUserCall == SDRUSERCALL_CHILD_RESIZE )
+                else if ( meParentUserCallEventType == SdrUserCallType::ChildResize &&
+                          mpDrawContact->meEventTypeOfCurrentUserCall == SdrUserCallType::ChildResize )
                 {
                     bTmpAssert = false;
                 }
@@ -1151,7 +1151,7 @@ class NestedUserCallHdl
 /// Notify the format's textbox that it should reconsider its position / size.
 void lcl_textBoxSizeNotify(SwFrameFormat* pFormat)
 {
-    if (SwTextBoxHelper::findTextBox(pFormat))
+    if (SwTextBoxHelper::isTextBox(pFormat, RES_DRAWFRMFMT))
     {
         // Just notify the textbox that the size has changed, the actual object size is not interesting.
         SfxItemSet aResizeSet(pFormat->GetDoc()->GetAttrPool(), RES_FRM_SIZE, RES_FRM_SIZE, 0);
@@ -1185,7 +1185,7 @@ void SwDrawContact::Changed_( const SdrObject& rObj,
                          !bAnchoredAsChar;
     switch( eType )
     {
-        case SDRUSERCALL_DELETE:
+        case SdrUserCallType::Delete:
             {
                 if ( bNotify )
                 {
@@ -1201,7 +1201,7 @@ void SwDrawContact::Changed_( const SdrObject& rObj,
                 aNestedUserCallHdl.DrawContactDeleted();
                 break;
             }
-        case SDRUSERCALL_INSERTED:
+        case SdrUserCallType::Inserted:
             {
                 if ( mbDisconnectInProgress )
                 {
@@ -1217,7 +1217,7 @@ void SwDrawContact::Changed_( const SdrObject& rObj,
                 }
                 break;
             }
-        case SDRUSERCALL_REMOVED:
+        case SdrUserCallType::Removed:
             {
                 if ( bNotify )
                 {
@@ -1226,8 +1226,8 @@ void SwDrawContact::Changed_( const SdrObject& rObj,
                 DisconnectFromLayout( false );
                 break;
             }
-        case SDRUSERCALL_CHILD_INSERTED :
-        case SDRUSERCALL_CHILD_REMOVED :
+        case SdrUserCallType::ChildInserted :
+        case SdrUserCallType::ChildRemoved :
         {
             // --> #i113730#
             // force layer of controls for group objects containing control objects
@@ -1256,13 +1256,13 @@ void SwDrawContact::Changed_( const SdrObject& rObj,
             }
             SAL_FALLTHROUGH;
         }
-        case SDRUSERCALL_MOVEONLY:
-        case SDRUSERCALL_RESIZE:
-        case SDRUSERCALL_CHILD_MOVEONLY :
-        case SDRUSERCALL_CHILD_RESIZE :
-        case SDRUSERCALL_CHILD_CHGATTR :
-        case SDRUSERCALL_CHILD_DELETE :
-        case SDRUSERCALL_CHILD_COPY :
+        case SdrUserCallType::MoveOnly:
+        case SdrUserCallType::Resize:
+        case SdrUserCallType::ChildMoveOnly :
+        case SdrUserCallType::ChildResize :
+        case SdrUserCallType::ChildChangeAttr :
+        case SdrUserCallType::ChildDelete :
+        case SdrUserCallType::ChildCopy :
         {
             // #i31698# - improvement
             // get instance <SwAnchoredDrawObject> only once
@@ -1396,7 +1396,7 @@ void SwDrawContact::Changed_( const SdrObject& rObj,
 
                     lcl_textBoxSizeNotify(GetFormat());
                 }
-                else if (eType == SDRUSERCALL_RESIZE)
+                else if (eType == SdrUserCallType::Resize)
                     // Even if the bounding box of the shape didn't change,
                     // notify about the size change, as an adjustment change
                     // may affect the size of the underlying textbox.
@@ -1404,7 +1404,7 @@ void SwDrawContact::Changed_( const SdrObject& rObj,
             }
         }
         break;
-        case SDRUSERCALL_CHGATTR:
+        case SdrUserCallType::ChangeAttr:
             if ( bNotify )
             {
                 lcl_NotifyBackgroundOfObj( *this, rObj, pOldBoundRect );
@@ -1476,7 +1476,7 @@ void SwDrawContact::Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew )
                     {
                         // --> #i102752#
                         // assure that a ShapePropertyChangeNotifier exists
-                        maAnchoredDrawObj.DrawObj()->notifyShapePropertyChange( svx::eTextShapeAnchorType );
+                        maAnchoredDrawObj.DrawObj()->notifyShapePropertyChange( svx::ShapeProperty::TextDocAnchor );
                     }
                 }
             }
@@ -1939,7 +1939,7 @@ void SwDrawContact::ChkPage()
             if ( GetPageFrame() )
                 GetPageFrame()->RemoveDrawObjFromPage( maAnchoredDrawObj );
             pPg->AppendDrawObjToPage( maAnchoredDrawObj );
-            SetPageFrame( pPg );
+            maAnchoredDrawObj.SetPageFrame( pPg );
         }
     }
 }
@@ -2003,7 +2003,7 @@ namespace sdr
             {
             }
 
-            virtual ~VOCOfDrawVirtObj();
+            virtual ~VOCOfDrawVirtObj() override;
         };
 
         class VCOfDrawVirtObj : public ViewContactOfVirtObj
@@ -2022,7 +2022,7 @@ namespace sdr
             :   ViewContactOfVirtObj(rObj)
             {
             }
-            virtual ~VCOfDrawVirtObj();
+            virtual ~VCOfDrawVirtObj() override;
 
             /// access to SwDrawVirtObj
             SwDrawVirtObj& GetSwDrawVirtObj() const
@@ -2380,7 +2380,7 @@ void SwDrawVirtObj::Resize(const Point& rRef, const Fraction& xFact, const Fract
         Rectangle aBoundRect0; if(pUserCall) aBoundRect0 = GetLastBoundRect();
         rRefObj.Resize(rRef - GetOffset(), xFact, yFact, bUnsetRelative);
         SetRectsDirty();
-        SendUserCall(SDRUSERCALL_RESIZE, aBoundRect0);
+        SendUserCall(SdrUserCallType::Resize, aBoundRect0);
     }
 }
 
@@ -2391,7 +2391,7 @@ void SwDrawVirtObj::Rotate(const Point& rRef, long nAngle, double sn, double cs)
         Rectangle aBoundRect0; if(pUserCall) aBoundRect0 = GetLastBoundRect();
         rRefObj.Rotate(rRef - GetOffset(), nAngle, sn, cs);
         SetRectsDirty();
-        SendUserCall(SDRUSERCALL_RESIZE, aBoundRect0);
+        SendUserCall(SdrUserCallType::Resize, aBoundRect0);
     }
 }
 
@@ -2400,7 +2400,7 @@ void SwDrawVirtObj::Mirror(const Point& rRef1, const Point& rRef2)
     Rectangle aBoundRect0; if(pUserCall) aBoundRect0 = GetLastBoundRect();
     rRefObj.Mirror(rRef1 - GetOffset(), rRef2 - GetOffset());
     SetRectsDirty();
-    SendUserCall(SDRUSERCALL_RESIZE, aBoundRect0);
+    SendUserCall(SdrUserCallType::Resize, aBoundRect0);
 }
 
 void SwDrawVirtObj::Shear(const Point& rRef, long nAngle, double tn, bool bVShear)
@@ -2410,7 +2410,7 @@ void SwDrawVirtObj::Shear(const Point& rRef, long nAngle, double tn, bool bVShea
         Rectangle aBoundRect0; if(pUserCall) aBoundRect0 = GetLastBoundRect();
         rRefObj.Shear(rRef - GetOffset(), nAngle, tn, bVShear);
         SetRectsDirty();
-        SendUserCall(SDRUSERCALL_RESIZE, aBoundRect0);
+        SendUserCall(SdrUserCallType::Resize, aBoundRect0);
     }
 }
 
@@ -2435,7 +2435,7 @@ void SwDrawVirtObj::SetSnapRect(const Rectangle& rRect)
     aR -= GetOffset();
     rRefObj.SetSnapRect(aR);
     SetRectsDirty();
-    SendUserCall(SDRUSERCALL_RESIZE, aBoundRect0);
+    SendUserCall(SdrUserCallType::Resize, aBoundRect0);
 }
 
 void SwDrawVirtObj::NbcSetSnapRect(const Rectangle& rRect)
@@ -2461,7 +2461,7 @@ void SwDrawVirtObj::SetLogicRect(const Rectangle& rRect)
     aR -= GetOffset();
     rRefObj.SetLogicRect(aR);
     SetRectsDirty();
-    SendUserCall(SDRUSERCALL_RESIZE, aBoundRect0);
+    SendUserCall(SdrUserCallType::Resize, aBoundRect0);
 }
 
 void SwDrawVirtObj::NbcSetLogicRect(const Rectangle& rRect)
@@ -2515,18 +2515,6 @@ void SwDrawVirtObj::SetLayer(SdrLayerID nLayer)
 {
     ReferencedObj().SetLayer( nLayer );
     SdrVirtObj::NbcSetLayer( ReferencedObj().GetLayer() );
-}
-
-bool SwDrawVirtObj::supportsFullDrag() const
-{
-    // call parent
-    return SdrVirtObj::supportsFullDrag();
-}
-
-SdrObject* SwDrawVirtObj::getFullDragClone() const
-{
-    // call parent
-    return SdrVirtObj::getFullDragClone();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

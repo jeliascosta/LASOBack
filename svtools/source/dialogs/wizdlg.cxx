@@ -105,21 +105,16 @@ void WizardDialog::ImplCalcSize( Size& rSize )
     }
 }
 
-bool WizardDialog::hasWizardPendingLayout() const
-{
-    return maWizardLayoutIdle.IsActive();
-}
-
 void WizardDialog::queue_resize(StateChangedType /*eReason*/)
 {
-    if (hasWizardPendingLayout())
+    if (maWizardLayoutIdle.IsActive())
         return;
     if (IsInClose())
         return;
     maWizardLayoutIdle.Start();
 }
 
-IMPL_LINK_NOARG_TYPED( WizardDialog, ImplHandleWizardLayoutTimerHdl, Idle*, void )
+IMPL_LINK_NOARG( WizardDialog, ImplHandleWizardLayoutTimerHdl, Idle*, void )
 {
     ImplPosCtrls();
     ImplPosTabPage();
@@ -235,7 +230,7 @@ void WizardDialog::ImplPosCtrls()
 
 
 long WizardDialog::LogicalCoordinateToPixel(int iCoordinate){
-    Size aLocSize = LogicToPixel(Size( iCoordinate, 0 ), MAP_APPFONT );
+    Size aLocSize = LogicToPixel(Size( iCoordinate, 0 ), MapUnit::MapAppFont );
     int iPixelCoordinate =  aLocSize.Width();
     return iPixelCoordinate;
 }

@@ -99,12 +99,6 @@ namespace accessibility
         }
     }
 
-    uno::Any SAL_CALL AccessibleImageBullet::queryInterface (const uno::Type & rType) throw (uno::RuntimeException, std::exception)
-    {
-
-        return AccessibleImageBulletInterfaceBase::queryInterface(rType);
-    }
-
     uno::Reference< XAccessibleContext > SAL_CALL AccessibleImageBullet::getAccessibleContext(  ) throw (uno::RuntimeException, std::exception)
     {
 
@@ -271,7 +265,7 @@ namespace accessibility
                                                                               GetViewForwarder() );
 
             // offset from shape/cell
-            Point aOffset = GetEEOffset();
+            Point aOffset = maEEOffset;
 
             return awt::Rectangle( aScreenRect.Left() + aOffset.X(),
                                    aScreenRect.Top() + aOffset.Y(),
@@ -444,18 +438,6 @@ namespace accessibility
                                                          aEvent );
     }
 
-    void AccessibleImageBullet::GotPropertyEvent( const uno::Any& rNewValue, const sal_Int16 nEventId ) const
-    {
-
-        FireEvent( nEventId, rNewValue );
-    }
-
-    void AccessibleImageBullet::LostPropertyEvent( const uno::Any& rOldValue, const sal_Int16 nEventId ) const
-    {
-
-        FireEvent( nEventId, uno::Any(), rOldValue );
-    }
-
     void AccessibleImageBullet::SetState( const sal_Int16 nStateId )
     {
 
@@ -464,7 +446,7 @@ namespace accessibility
             !pStateSet->contains(nStateId) )
         {
             pStateSet->AddState( nStateId );
-            GotPropertyEvent( uno::makeAny( nStateId ), AccessibleEventId::STATE_CHANGED );
+            FireEvent( AccessibleEventId::STATE_CHANGED, uno::makeAny( nStateId ) );
         }
     }
 
@@ -476,7 +458,7 @@ namespace accessibility
             pStateSet->contains(nStateId) )
         {
             pStateSet->RemoveState( nStateId );
-            LostPropertyEvent( uno::makeAny( nStateId ), AccessibleEventId::STATE_CHANGED );
+            FireEvent( AccessibleEventId::STATE_CHANGED, uno::Any(), uno::makeAny( nStateId ) );
         }
     }
 

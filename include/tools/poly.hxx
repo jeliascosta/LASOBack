@@ -98,7 +98,7 @@ public:
                                  bool bWholeCircle = false );
                         Polygon( const Point& rBezPt1, const Point& rCtrlPt1,
                                  const Point& rBezPt2, const Point& rCtrlPt2,
-                                 sal_uInt16 nPoints = 0 );
+                                 sal_uInt16 nPoints );
 
                         Polygon( const tools::Polygon& rPoly );
                         ~Polygon();
@@ -159,6 +159,7 @@ public:
     Point&              operator[]( sal_uInt16 nPos );
 
     tools::Polygon&     operator=( const tools::Polygon& rPoly );
+    tools::Polygon&     operator=( tools::Polygon&& rPoly );
     bool                operator==( const tools::Polygon& rPoly ) const;
     bool                operator!=( const tools::Polygon& rPoly ) const
                             { return !(Polygon::operator==( rPoly )); }
@@ -246,6 +247,7 @@ public:
     tools::Polygon& operator[]( sal_uInt16 nPos );
 
     tools::PolyPolygon& operator=( const tools::PolyPolygon& rPolyPoly );
+    tools::PolyPolygon& operator=( tools::PolyPolygon&& rPolyPoly );
     bool                operator==( const tools::PolyPolygon& rPolyPoly ) const;
     bool                operator!=( const tools::PolyPolygon& rPolyPoly ) const
                             { return !(PolyPolygon::operator==( rPolyPoly )); }

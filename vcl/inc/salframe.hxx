@@ -81,7 +81,7 @@ enum class SalFrameStyleFlags
     TOOLWINDOW          = 0x40000000,
 };
 namespace o3tl {
-    template<> struct typed_flags<SalFrameStyleFlags> : is_typed_flags<SalFrameStyleFlags, 0x7c8001ff> {};
+    template<> struct typed_flags<SalFrameStyleFlags> : is_typed_flags<SalFrameStyleFlags, 0x788001ff> {};
 };
 
 // - extended frame style                 -
@@ -111,7 +111,7 @@ private:
 
 public:
                             SalFrame();
-    virtual                 ~SalFrame();
+    virtual                 ~SalFrame() override;
 
     SalFrameGeometry        maGeometry;
 
@@ -262,10 +262,6 @@ public:
         return false;
     }
 
-    virtual void            StartToolKitMoveBy()
-    {
-    }
-
     // Callbacks (indepent part in vcl/source/window/winproc.cxx)
     // for default message handling return 0
     void                    SetCallback( vcl::Window* pWindow, SALFRAMEPROC pProc );
@@ -279,6 +275,10 @@ public:
     long                    CallCallback( SalEvent nEvent, const void* pEvent ) const
         { return m_pProc ? long(m_pProc( m_pWindow, nEvent, pEvent )) : 0; }
 };
+
+#ifdef _WIN32
+bool HasAtHook();
+#endif
 
 #endif // INCLUDED_VCL_INC_SALFRAME_HXX
 

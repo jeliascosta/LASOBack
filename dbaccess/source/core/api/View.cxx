@@ -50,14 +50,13 @@ namespace dbaccess
     // View
     View::View( const Reference< XConnection >& _rxConnection, bool _bCaseSensitive,
         const OUString& _rCatalogName,const OUString& _rSchemaName, const OUString& _rName )
-        :View_Base( _bCaseSensitive, _rName, _rxConnection->getMetaData(), 0, OUString(), _rSchemaName, _rCatalogName )
+        :View_Base( _bCaseSensitive, _rName, _rxConnection->getMetaData(), OUString(), _rSchemaName, _rCatalogName )
     {
         m_nCommandHandle = getProperty(PROPERTY_COMMAND).Handle;
         try
         {
             Reference<XMultiServiceFactory> xFac(_rxConnection,UNO_QUERY_THROW);
-            static const char s_sViewAccess[] = "ViewAccessServiceName";
-            m_xViewAccess.set(xFac->createInstance(lcl_getServiceNameForSetting(_rxConnection,s_sViewAccess)),UNO_QUERY);
+            m_xViewAccess.set(xFac->createInstance(lcl_getServiceNameForSetting(_rxConnection,"ViewAccessServiceName")),UNO_QUERY);
         }
         catch(const Exception& )
         {

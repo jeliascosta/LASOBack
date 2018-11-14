@@ -31,7 +31,8 @@
 #include "RowSetRow.hxx"
 #include <cppuhelper/implbase.hxx>
 
-#include <list>
+#include <vector>
+
 namespace com{ namespace sun { namespace star{namespace sdbc{ class XParameters; } } } }
 
 namespace dbaccess
@@ -55,7 +56,7 @@ namespace dbaccess
         OUString                                m_sRowSetFilter;
 
         explicit OCacheSet(sal_Int32 i_nMaxRows);
-        virtual ~OCacheSet();
+        virtual ~OCacheSet() override;
 
         static void setParameter(sal_Int32 nPos
                             ,const css::uno::Reference< css::sdbc::XParameters >& _xParameter
@@ -67,7 +68,7 @@ namespace dbaccess
                             ,const connectivity::OSQLTable& _xTable
                             ,OUStringBuffer& _sCondition
                             ,OUStringBuffer& _sParameter
-                            ,::std::list< sal_Int32>& _rOrgValues);
+                            ,::std::vector< sal_Int32>& _rOrgValues);
         void fillTableName(const css::uno::Reference< css::beans::XPropertySet>& _xTable)  throw(css::sdbc::SQLException, css::uno::RuntimeException);
 
         OUString getIdentifierQuoteString() const;
@@ -99,17 +100,17 @@ namespace dbaccess
         virtual css::uno::Reference< css::sdbc::XClob > SAL_CALL getClob( sal_Int32 columnIndex ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
         virtual css::uno::Reference< css::sdbc::XArray > SAL_CALL getArray( sal_Int32 columnIndex ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
         // css::sdbc::XResultSet
-        virtual bool SAL_CALL next(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException);
+        virtual bool SAL_CALL next() throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception);
         virtual bool SAL_CALL isBeforeFirst(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException);
         virtual bool SAL_CALL isAfterLast(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException);
         virtual void SAL_CALL beforeFirst(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException);
-        virtual void SAL_CALL afterLast(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException);
-        virtual bool SAL_CALL first(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException);
-        virtual bool SAL_CALL last(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException);
+        virtual void SAL_CALL afterLast(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception);
+        virtual bool SAL_CALL first() throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception);
+        virtual bool SAL_CALL last() throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception);
         virtual sal_Int32 SAL_CALL getRow(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException);
-        virtual bool SAL_CALL absolute( sal_Int32 row ) throw(css::sdbc::SQLException, css::uno::RuntimeException);
+        virtual bool SAL_CALL absolute( sal_Int32 row ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception);
         virtual bool SAL_CALL previous(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException);
-        virtual void SAL_CALL refreshRow(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException);
+        virtual void SAL_CALL refreshRow(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception);
         virtual bool SAL_CALL rowUpdated(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException);
         virtual bool SAL_CALL rowInserted(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException);
         virtual bool SAL_CALL rowDeleted(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException);
@@ -121,7 +122,7 @@ namespace dbaccess
         virtual sal_Int32 SAL_CALL hashBookmark( const css::uno::Any& bookmark ) throw(css::sdbc::SQLException, css::uno::RuntimeException) = 0;
         // css::sdbc::XResultSetUpdate
         virtual void SAL_CALL insertRow( const ORowSetRow& _rInsertRow,const connectivity::OSQLTable& _xTable ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception);
-        virtual void SAL_CALL updateRow( const ORowSetRow& _rInsertRow,const ORowSetRow& _rOriginalRow,const connectivity::OSQLTable& _xTable ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception) = 0;
+        virtual void SAL_CALL updateRow( const ORowSetRow& _rInsertRow,const ORowSetRow& _rOriginalRow,const connectivity::OSQLTable& _xTable ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception);
         virtual void SAL_CALL deleteRow( const ORowSetRow& _rDeleteRow,const connectivity::OSQLTable& _xTable ) throw(css::sdbc::SQLException, css::uno::RuntimeException) = 0;
 
         virtual bool isResultSetChanged() const;

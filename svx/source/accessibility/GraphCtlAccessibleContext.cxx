@@ -31,7 +31,6 @@
 #include <vcl/settings.hxx>
 #include <osl/mutex.hxx>
 #include <tools/gen.hxx>
-#include <svl/smplhint.hxx>
 #include <toolkit/helper/convert.hxx>
 #include <svtools/colorcfg.hxx>
 #include <comphelper/accessibleeventnotifier.hxx>
@@ -63,9 +62,7 @@ using namespace ::com::sun::star::accessibility;
 /** initialize this component and set default values */
 SvxGraphCtrlAccessibleContext::SvxGraphCtrlAccessibleContext(
     const Reference< XAccessible >& rxParent,
-    GraphCtrl&                              rRepr,
-    const OUString*                         pName,
-    const OUString*                         pDesc ) :
+    GraphCtrl&                      rRepr ) :
 
     SvxGraphCtrlAccessibleContext_Base( m_aMutex ),
     mxParent( rxParent ),
@@ -94,23 +91,9 @@ SvxGraphCtrlAccessibleContext::SvxGraphCtrlAccessibleContext(
         }
     }
 
-    if( pName )
-    {
-        msName = *pName;
-    }
-    else
     {
         ::SolarMutexGuard aSolarGuard;
         msName = SVX_RESSTR( RID_SVXSTR_GRAPHCTRL_ACC_NAME );
-    }
-
-    if( pDesc )
-    {
-        msDescription = *pDesc;
-    }
-    else
-    {
-        ::SolarMutexGuard aSolarGuard;
         msDescription = SVX_RESSTR( RID_SVXSTR_GRAPHCTRL_ACC_DESCRIPTION );
     }
 
@@ -293,16 +276,9 @@ void SvxGraphCtrlAccessibleContext::CommitChange (
         rNewValue,
         rOldValue);
 
-    FireEvent (aEvent);
-}
-
-/** sends an AccessibleEventObject to all added XAccessibleEventListeners */
-void SvxGraphCtrlAccessibleContext::FireEvent (const AccessibleEventObject& aEvent)
-{
     if (mnClientId)
         comphelper::AccessibleEventNotifier::addEvent( mnClientId, aEvent );
 }
-
 
 Reference< XAccessible > SAL_CALL SvxGraphCtrlAccessibleContext::getAccessibleChild( sal_Int32 nIndex )
     throw( RuntimeException, lang::IndexOutOfBoundsException, std::exception )
@@ -740,7 +716,7 @@ void SvxGraphCtrlAccessibleContext::Notify( SfxBroadcaster& /*rBC*/, const SfxHi
     {
         switch( pSdrHint->GetKind() )
         {
-            case HINT_OBJCHG:
+            case SdrHintKind::ObjectChange:
                 {
                     ShapesMapType::iterator iter = mxShapes.find( pSdrHint->GetObject() );
 
@@ -755,13 +731,13 @@ void SvxGraphCtrlAccessibleContext::Notify( SfxBroadcaster& /*rBC*/, const SfxHi
                 }
                 break;
 
-            case HINT_OBJINSERTED:
+            case SdrHintKind::ObjectInserted:
                 CommitChange( AccessibleEventId::CHILD, makeAny( getAccessible( pSdrHint->GetObject() ) ) , uno::Any());
                 break;
-            case HINT_OBJREMOVED:
+            case SdrHintKind::ObjectRemoved:
                 CommitChange( AccessibleEventId::CHILD, uno::Any(), makeAny( getAccessible( pSdrHint->GetObject() ) )  );
                 break;
-            case HINT_MODELCLEARED:
+            case SdrHintKind::ModelCleared:
                 dispose();
                 break;
             default:
@@ -770,10 +746,8 @@ void SvxGraphCtrlAccessibleContext::Notify( SfxBroadcaster& /*rBC*/, const SfxHi
     }
     else
     {
-        const SfxSimpleHint* pSfxHint = dynamic_cast<const SfxSimpleHint*>( &rHint );
-
         // Has our SdDrawDocument just died?
-        if(pSfxHint && pSfxHint->GetId() == SFX_HINT_DYING)
+        if(rHint.GetId() == SFX_HINT_DYING)
         {
             dispose();
         }

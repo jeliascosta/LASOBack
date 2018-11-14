@@ -250,7 +250,7 @@ namespace
         virtual void Select() override;
     public:
         explicit OSelectionBrwBoxHeader(OSelectionBrowseBox* pParent);
-        virtual ~OSelectionBrwBoxHeader() { disposeOnce(); }
+        virtual ~OSelectionBrwBoxHeader() override { disposeOnce(); }
         virtual void dispose() override { m_pBrowseBox.clear(); ::svt::EditBrowserHeader::dispose(); }
     };
     OSelectionBrwBoxHeader::OSelectionBrwBoxHeader(OSelectionBrowseBox* pParent)
@@ -328,7 +328,7 @@ void OSelectionBrowseBox::Init()
     EditBrowseBox::Init();
 
     // set the header bar
-    BrowserHeader* pNewHeaderBar = CreateHeaderBar(this);
+    VclPtr<BrowserHeader> pNewHeaderBar = CreateHeaderBar(this);
     pNewHeaderBar->SetMouseTransparent(false);
 
     SetHeaderBar(pNewHeaderBar);
@@ -703,8 +703,7 @@ bool OSelectionBrowseBox::saveField(OUString& _sFieldName ,OTableFieldDescRef& _
             sSql = "SELECT " + sSql;
             if ( !sFieldAlias.isEmpty() )
             { // always quote the alias name: there cannot be a function in it
-                sSql += " ";
-                sSql += ::dbtools::quoteName( xMetaData->getIdentifierQuoteString(), sFieldAlias );
+                sSql += " " + ::dbtools::quoteName( xMetaData->getIdentifierQuoteString(), sFieldAlias );
             }
             sSql += " FROM x";
 
@@ -941,7 +940,7 @@ bool OSelectionBrowseBox::SaveModified()
                         strOldCellContents = pEntry->GetField();
                         bListAction = true;
                         if ( !m_bInUndoMode )
-                            rController.GetUndoManager().EnterListAction(OUString(),OUString());
+                            rController.GetUndoManager().EnterListAction(OUString(),OUString(),0,-1);
 
                         sal_Int32 nPos = m_pFieldCell->GetEntryPos(aFieldName);
                         OUString aAliasName = pEntry->GetAlias();
@@ -1163,7 +1162,7 @@ bool OSelectionBrowseBox::SaveModified()
                     bAppendRow = true;
             }
         }
-        if(!bError && Controller())
+        if( !bError && Controller().Is() )
             Controller()->ClearModified();
 
         RowModified(GetCurRow(), GetCurColumnId());
@@ -1767,11 +1766,7 @@ void OSelectionBrowseBox::AddCondition( const OTableFieldDescRef& rInfo, const O
         OUString sOldCriteria = pLastEntry->GetCriteria( nLevel );
         if ( !sOldCriteria.isEmpty() )
         {
-            sCriteria = "( ";
-            sCriteria += sOldCriteria;
-            sCriteria += " OR ";
-            sCriteria += rValue;
-            sCriteria += " )";
+            sCriteria = "( " + sOldCriteria + " OR " + rValue + " )";
         }
         pLastEntry->SetCriteria( nLevel, sCriteria);
         if(nLevel == (m_nVisibleCount-BROW_CRIT1_ROW-1))
@@ -1852,11 +1847,6 @@ void OSelectionBrowseBox::AddOrder( const OTableFieldDescRef& rInfo, const EOrde
             pTmp->SetOrderDir( eDir );
         }
     }
-}
-
-void OSelectionBrowseBox::ArrangeControls(sal_uInt16& nX, sal_uInt16 nY)
-{
-    EditBrowseBox::ArrangeControls(nX, nY);
 }
 
 bool OSelectionBrowseBox::Save()
@@ -1951,8 +1941,8 @@ void OSelectionBrowseBox::Command(const CommandEvent& rEvt)
 
                 if (!static_cast<OQueryController&>(getDesignView()->getController()).isReadOnly())
                 {
-                    PopupMenu aContextMenu( ModuleRes( RID_QUERYCOLPOPUPMENU ) );
-                    switch (aContextMenu.Execute(this, aMenuPos))
+                    ScopedVclPtrInstance<PopupMenu> aContextMenu( ModuleRes( RID_QUERYCOLPOPUPMENU ) );
+                    switch (aContextMenu->Execute(this, aMenuPos))
                     {
                         case SID_DELETE:
                             RemoveField(nColId);
@@ -1968,13 +1958,13 @@ void OSelectionBrowseBox::Command(const CommandEvent& rEvt)
             {
                 if (!static_cast<OQueryController&>(getDesignView()->getController()).isReadOnly())
                 {
-                    PopupMenu aContextMenu(ModuleRes(RID_QUERYFUNCTION_POPUPMENU));
-                    aContextMenu.CheckItem( ID_QUERY_FUNCTION, m_bVisibleRow[BROW_FUNCTION_ROW]);
-                    aContextMenu.CheckItem( ID_QUERY_TABLENAME, m_bVisibleRow[BROW_TABLE_ROW]);
-                    aContextMenu.CheckItem( ID_QUERY_ALIASNAME, m_bVisibleRow[BROW_COLUMNALIAS_ROW]);
-                    aContextMenu.CheckItem( ID_QUERY_DISTINCT, static_cast<OQueryController&>(getDesignView()->getController()).isDistinct());
+                    ScopedVclPtrInstance<PopupMenu> aContextMenu(ModuleRes(RID_QUERYFUNCTION_POPUPMENU));
+                    aContextMenu->CheckItem( ID_QUERY_FUNCTION, m_bVisibleRow[BROW_FUNCTION_ROW]);
+                    aContextMenu->CheckItem( ID_QUERY_TABLENAME, m_bVisibleRow[BROW_TABLE_ROW]);
+                    aContextMenu->CheckItem( ID_QUERY_ALIASNAME, m_bVisibleRow[BROW_COLUMNALIAS_ROW]);
+                    aContextMenu->CheckItem( ID_QUERY_DISTINCT, static_cast<OQueryController&>(getDesignView()->getController()).isDistinct());
 
-                    switch (aContextMenu.Execute(this, aMenuPos))
+                    switch (aContextMenu->Execute(this, aMenuPos))
                     {
                         case ID_QUERY_FUNCTION:
                             SetRowVisible(BROW_FUNCTION_ROW, !IsRowVisible(BROW_FUNCTION_ROW));
@@ -2458,7 +2448,7 @@ void OSelectionBrowseBox::appendUndoAction(const OUString& _rOldValue, const OUS
         if ( !_bListAction )
         {
             _bListAction = true;
-            static_cast<OQueryController&>(getDesignView()->getController()).GetUndoManager().EnterListAction(OUString(),OUString());
+            static_cast<OQueryController&>(getDesignView()->getController()).GetUndoManager().EnterListAction(OUString(),OUString(),0,-1);
         }
         appendUndoAction(_rOldValue,_rNewValue,_nRow);
     }
@@ -2477,7 +2467,7 @@ void OSelectionBrowseBox::appendUndoAction(const OUString& _rOldValue,const OUSt
     }
 }
 
-IMPL_LINK_NOARG_TYPED(OSelectionBrowseBox, OnInvalidateTimer, Timer *, void)
+IMPL_LINK_NOARG(OSelectionBrowseBox, OnInvalidateTimer, Timer *, void)
 {
     static_cast<OQueryController&>(getDesignView()->getController()).InvalidateFeature(SID_CUT);
     static_cast<OQueryController&>(getDesignView()->getController()).InvalidateFeature(SID_COPY);

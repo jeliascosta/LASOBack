@@ -22,7 +22,6 @@
 #include <com/sun/star/chart2/XChartDocument.hpp>
 #include <com/sun/star/chart2/data/XDataProvider.hpp>
 #include <com/sun/star/chart2/data/XDataReceiver.hpp>
-#include <com/sun/star/embed/EmbedStates.hpp>
 #include <com/sun/star/embed/XEmbeddedObject.hpp>
 
 #include <sfx2/objsh.hxx>
@@ -125,7 +124,7 @@ void ScDocument::UpdateAllCharts()
             OSL_ENSURE(pPage,"Page ?");
 
             ScRange aRange;
-            SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
+            SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
             SdrObject* pObject = aIter.Next();
             while (pObject)
             {
@@ -192,7 +191,7 @@ bool ScDocument::HasChartAtPoint( SCTAB nTab, const Point& rPos, OUString& rName
         SdrPage* pPage = pDrawLayer->GetPage(static_cast<sal_uInt16>(nTab));
         OSL_ENSURE(pPage,"Page ?");
 
-        SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
+        SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
         SdrObject* pObject = aIter.Next();
         while (pObject)
         {
@@ -237,7 +236,7 @@ uno::Reference< chart2::XChartDocument > ScDocument::GetChartByName( const OUStr
             SdrPage* pPage = pDrawLayer->GetPage(nTab);
             OSL_ENSURE(pPage,"Page ?");
 
-            SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
+            SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
             SdrObject* pObject = aIter.Next();
             while (pObject)
             {
@@ -264,7 +263,7 @@ void ScDocument::GetChartRanges( const OUString& rChartName, ::std::vector< ScRa
         for(const OUString & aRangeString : aRangeStrings)
         {
             ScRangeList aRanges;
-            aRanges.Parse( aRangeString, pSheetNameDoc, ScRefFlags::VALID, pSheetNameDoc->GetAddressConvention() );
+            aRanges.Parse( aRangeString, pSheetNameDoc, pSheetNameDoc->GetAddressConvention() );
             rRangesVector.push_back(aRanges);
         }
     }
@@ -302,7 +301,7 @@ void ScDocument::GetOldChartParameters( const OUString& rName,
         SdrPage* pPage = pDrawLayer->GetPage(nTab);
         OSL_ENSURE(pPage,"Page ?");
 
-        SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
+        SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
         SdrObject* pObject = aIter.Next();
         while (pObject)
         {
@@ -349,7 +348,7 @@ void ScDocument::UpdateChartArea( const OUString& rChartName,
         SdrPage* pPage = pDrawLayer->GetPage(static_cast<sal_uInt16>(nTab));
         OSL_ENSURE(pPage,"Page ?");
 
-        SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
+        SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
         SdrObject* pObject = aIter.Next();
         while (pObject)
         {
@@ -584,7 +583,7 @@ void ScDocument::SetChartRangeList( const OUString& rChartName,
         SdrPage* pPage = pDrawLayer->GetPage(static_cast<sal_uInt16>(nTab));
         OSL_ENSURE(pPage,"Page ?");
 
-        SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
+        SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
         SdrObject* pObject = aIter.Next();
         while (pObject)
         {
@@ -639,7 +638,7 @@ uno::Reference< embed::XEmbeddedObject >
         SdrPage* pPage = pDrawLayer->GetPage(nTab);
         OSL_ENSURE(pPage,"Page ?");
 
-        SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
+        SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
         SdrObject* pObject = aIter.Next();
         while (pObject)
         {
@@ -678,7 +677,7 @@ void ScDocument::UpdateChartListenerCollection()
         if (!pPage)
             continue;
 
-        SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
+        SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
         ScChartListenerCollection::StringSetType& rNonOleObjects =
             pChartListenerCollection->getNonOleObjectNames();
 

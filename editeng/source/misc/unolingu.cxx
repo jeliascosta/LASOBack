@@ -24,6 +24,7 @@
 #include <com/sun/star/frame/XModel.hpp>
 #include <com/sun/star/frame/XStorable.hpp>
 #include <com/sun/star/lang/XEventListener.hpp>
+#include <com/sun/star/linguistic2/XHyphenatedWord.hpp>
 #include <com/sun/star/linguistic2/DictionaryList.hpp>
 #include <com/sun/star/linguistic2/XAvailableLocales.hpp>
 #include <com/sun/star/linguistic2/LinguServiceManager.hpp>
@@ -83,7 +84,7 @@ class ThesDummy_Impl :
 
 public:
     ThesDummy_Impl() : pLocaleSeq(nullptr)  {}
-    virtual ~ThesDummy_Impl();
+    virtual ~ThesDummy_Impl() override;
 
     // XSupportedLocales
     virtual css::uno::Sequence< css::lang::Locale > SAL_CALL
@@ -434,7 +435,7 @@ class LinguMgrExitLstnr : public cppu::WeakImplHelper<XEventListener>
 
 public:
     LinguMgrExitLstnr();
-    virtual ~LinguMgrExitLstnr();
+    virtual ~LinguMgrExitLstnr() override;
 
     // lang::XEventListener
     virtual void    SAL_CALL disposing(const EventObject& rSource)
@@ -715,50 +716,6 @@ uno::Reference< XDictionary > LinguMgr::GetStandard()
 
     return xDic;
 }
-
-uno::Reference< XSpellChecker1 >  SvxGetSpellChecker()
-{
-    return LinguMgr::GetSpellChecker();
-}
-
-uno::Reference< XHyphenator >  SvxGetHyphenator()
-{
-    return LinguMgr::GetHyphenator();
-}
-
-uno::Reference< XThesaurus >  SvxGetThesaurus()
-{
-    return LinguMgr::GetThesaurus();
-}
-
-uno::Reference< XSearchableDictionaryList >  SvxGetDictionaryList()
-{
-    return LinguMgr::GetDictionaryList();
-}
-
-uno::Reference< XLinguProperties >  SvxGetLinguPropertySet()
-{
-    return LinguMgr::GetLinguPropertySet();
-}
-
-//TODO: remove argument or provide SvxGetIgnoreAllList with the same one
-uno::Reference< XDictionary >  SvxGetOrCreatePosDic(
-        uno::Reference< XSearchableDictionaryList >  /* xDicList */ )
-{
-    return LinguMgr::GetStandardDic();
-}
-
-uno::Reference< XDictionary >  SvxGetIgnoreAllList()
-{
-    return LinguMgr::GetIgnoreAllList();
-}
-
-uno::Reference< XDictionary >  SvxGetChangeAllList()
-{
-    return LinguMgr::GetChangeAllList();
-}
-
-#include <com/sun/star/linguistic2/XHyphenatedWord.hpp>
 
 SvxAlternativeSpelling SvxGetAltSpelling(
         const css::uno::Reference< css::linguistic2::XHyphenatedWord > & rHyphWord )

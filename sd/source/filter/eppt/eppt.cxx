@@ -19,6 +19,7 @@
 
 #include <eppt.hxx>
 #include "epptdef.hxx"
+#include <o3tl/any.hxx>
 #include <tools/globname.hxx>
 #include <tools/poly.hxx>
 #include <vcl/graph.hxx>
@@ -75,7 +76,6 @@ PPTWriter::PPTWriter( tools::SvRef<SotStorage>& rSvStorage,
     PPTWriterBase           ( rXModel, rXStatInd ),
     mnCnvrtFlags            ( nCnvrtFlags ),
     mbStatus                ( false ),
-    mbUseNewAnimations      ( true ),
     mnStatMaxValue          ( 0 ),
     mnLatestStatValue       ( 0 ),
     mnTextStyle( 0 ),
@@ -171,7 +171,7 @@ void PPTWriter::exportPPTPost( )
 void ImplExportComments( const uno::Reference< drawing::XDrawPage >& xPage, SvMemoryStream& rBinaryTagData10Atom );
 
 void PPTWriter::ImplWriteSlide( sal_uInt32 nPageNum, sal_uInt32 nMasterNum, sal_uInt16 nMode,
-                                bool bHasBackground, Reference< XPropertySet > aXBackgroundPropSet )
+                                bool bHasBackground, Reference< XPropertySet > const & aXBackgroundPropSet )
 {
     Any aAny;
 
@@ -180,7 +180,7 @@ void PPTWriter::ImplWriteSlide( sal_uInt32 nPageNum, sal_uInt32 nMasterNum, sal_
     mpPptEscherEx->OpenContainer( EPP_Slide );
     mpPptEscherEx->AddAtom( 24, EPP_SlideAtom, 2 );
     mpStrm->WriteInt32( static_cast<sal_Int32>(rLayout.nLayout) );
-    mpStrm->Write( rLayout.nPlaceHolder, 8 );       // placeholderIDs (8 parts)
+    mpStrm->WriteBytes(rLayout.nPlaceHolder, 8);    // placeholderIDs (8 parts)
     mpStrm->WriteUInt32( nMasterNum | 0x80000000 )  // master ID (equals 0x80000000 on a master page)
            .WriteUInt32( nPageNum + 0x100 )         // notes ID (equals null if no notes are present)
            .WriteUInt16( nMode )
@@ -194,7 +194,7 @@ void PPTWriter::ImplWriteSlide( sal_uInt32 nPageNum, sal_uInt32 nMasterNum, sal_
         aAny >>= bVisible;
     if ( GetPropertyValue( aAny, mXPagePropSet, "Change" ) )
     {
-        switch ( *static_cast<sal_Int32 const *>(aAny.getValue()) )
+        switch ( *o3tl::doAccess<sal_Int32>(aAny) )
         {
             case 1 :        // automatic
                 mnDiaMode++;
@@ -272,7 +272,7 @@ void PPTWriter::ImplWriteSlide( sal_uInt32 nPageNum, sal_uInt32 nMasterNum, sal_
             nBuildFlags |= 256;
 
         if ( GetPropertyValue( aAny, mXPagePropSet, "Duration" ) )// duration of this slide
-            nSlideTime = *static_cast<sal_Int32 const *>(aAny.getValue()) << 10;        // in ticks
+            nSlideTime = *o3tl::doAccess<sal_Int32>(aAny) << 10;        // in ticks
 
         mpPptEscherEx->AddAtom( 16, EPP_SSSlideInfoAtom );
         mpStrm->WriteInt32( nSlideTime )       // standtime in ticks
@@ -319,27 +319,24 @@ void PPTWriter::ImplWriteSlide( sal_uInt32 nPageNum, sal_uInt32 nMasterNum, sal_
 
     SvMemoryStream aBinaryTagData10Atom;
     ImplExportComments( mXDrawPage, aBinaryTagData10Atom );
-    if ( mbUseNewAnimations )
+    SvMemoryStream amsofbtAnimGroup;
+    ppt::AnimationExporter aExporter( aSolverContainer, maSoundCollection );
+    aExporter.doexport( mXDrawPage, amsofbtAnimGroup );
+    sal_uInt32 nmsofbtAnimGroupSize = amsofbtAnimGroup.Tell();
+    if ( nmsofbtAnimGroupSize )
     {
-        SvMemoryStream amsofbtAnimGroup;
-        ppt::AnimationExporter aExporter( aSolverContainer, maSoundCollection );
-        aExporter.doexport( mXDrawPage, amsofbtAnimGroup );
-        sal_uInt32 nmsofbtAnimGroupSize = amsofbtAnimGroup.Tell();
-        if ( nmsofbtAnimGroupSize )
         {
-            {
-                EscherExAtom aMagic2( aBinaryTagData10Atom, 0x2eeb );
-                aBinaryTagData10Atom.WriteUInt32( 0x01c45df9 )
-                                    .WriteUInt32( 0xe1471b30 );
-            }
-            {
-                EscherExAtom aMagic( aBinaryTagData10Atom, 0x2b00 );
-                aBinaryTagData10Atom.WriteUInt32( 0 );
-            }
-            aBinaryTagData10Atom.Write( amsofbtAnimGroup.GetData(), amsofbtAnimGroup.Tell() );
-            {
-                EscherExContainer aMagic2( aBinaryTagData10Atom, 0x2b02 );
-            }
+            EscherExAtom aMagic2( aBinaryTagData10Atom, 0x2eeb );
+            aBinaryTagData10Atom.WriteUInt32( 0x01c45df9 )
+                                .WriteUInt32( 0xe1471b30 );
+        }
+        {
+            EscherExAtom aMagic( aBinaryTagData10Atom, 0x2b00 );
+            aBinaryTagData10Atom.WriteUInt32( 0 );
+        }
+        aBinaryTagData10Atom.WriteBytes(amsofbtAnimGroup.GetData(), amsofbtAnimGroup.Tell());
+        {
+            EscherExContainer aMagic2( aBinaryTagData10Atom, 0x2b02 );
         }
     }
     if ( aBinaryTagData10Atom.Tell() )
@@ -356,13 +353,13 @@ void PPTWriter::ImplWriteSlide( sal_uInt32 nPageNum, sal_uInt32 nMasterNum, sal_
         }
         {
             EscherExAtom aBinaryTagData( *mpStrm, EPP_BinaryTagData );
-            mpStrm->Write( aBinaryTagData10Atom.GetData(), aBinaryTagData10Atom.Tell() );
+            mpStrm->WriteBytes(aBinaryTagData10Atom.GetData(), aBinaryTagData10Atom.Tell());
         }
     }
     mpPptEscherEx->CloseContainer();    // EPP_Slide
 }
 
-void PPTWriter::ImplWriteSlideMaster( sal_uInt32 nPageNum, Reference< XPropertySet > aXBackgroundPropSet )
+void PPTWriter::ImplWriteSlideMaster( sal_uInt32 nPageNum, Reference< XPropertySet > const & aXBackgroundPropSet )
 {
     mpPptEscherEx->PtReplaceOrInsert( EPP_Persist_MainMaster | nPageNum, mpStrm->Tell() );
     mpPptEscherEx->OpenContainer( EPP_MainMaster );
@@ -488,7 +485,7 @@ bool PPTWriter::ImplCreateCurrentUserStream()
                   .WriteUChar( 0 )                      // MinorVersion
                   .WriteUInt16( 0 );                    // Pad Word
     pUserName[ nLenOfUserName ] = 8;
-    mpCurUserStrm->Write( pUserName, nLenOfUserName + 1 );
+    mpCurUserStrm->WriteBytes(pUserName, nLenOfUserName + 1);
     for ( sal_uInt32 i = 0x15 + nLenOfUserName; i < nSizeOfRecord; i++ )
     {
         mpCurUserStrm->WriteUChar( 0 );                 // pad bytes
@@ -532,15 +529,14 @@ bool PPTWriter::ImplCreateDocumentSummaryInformation()
             uno::Sequence<sal_Int8> aThumbSeq;
             if ( GetPageByIndex( 0, NORMAL ) && ImplGetPropertyValue( mXPagePropSet, "PreviewBitmap" ) )
             {
-                aThumbSeq =
-                    *static_cast<const uno::Sequence<sal_Int8>*>(mAny.getValue());
+                aThumbSeq = *o3tl::doAccess<uno::Sequence<sal_Int8>>(mAny);
             }
-            sfx2::SaveOlePropertySet( xDocProps, mrStg,
+            sfx2::SaveOlePropertySet( xDocProps, mrStg.get(),
                     &aThumbSeq, &aGuidSeq, &aHyperSeq);
         }
         else
         {
-            sfx2::SaveOlePropertySet( xDocProps, mrStg,
+            sfx2::SaveOlePropertySet( xDocProps, mrStg.get(),
                     nullptr, &aGuidSeq, &aHyperSeq );
         }
     }
@@ -557,7 +553,7 @@ void PPTWriter::ImplWriteExtParaHeader( SvMemoryStream& rSt, sal_uInt32 nRef, sa
                            .WriteUInt32( 8 )
                            .WriteUInt32( nSlideId )
                            .WriteUInt32( nInstance );
-        aBuExOutlineStream.Write( rSt.GetData(), rSt.Tell() );
+        aBuExOutlineStream.WriteBytes(rSt.GetData(), rSt.Tell());
     }
 }
 
@@ -621,7 +617,7 @@ void PPTWriter::ImplCreateHeaderFooters( css::uno::Reference< css::beans::XPrope
         }
         if ( PropValue::GetPropertyValue( aAny, rXPagePropSet, "DateTimeFormat", true ) )
         {
-            sal_Int32 nFormat = *static_cast<sal_Int32 const *>(aAny.getValue());
+            sal_Int32 nFormat = *o3tl::doAccess<sal_Int32>(aAny);
             SvxDateFormat eDateFormat = (SvxDateFormat)( nFormat & 0xf );
             SvxTimeFormat eTimeFormat = (SvxTimeFormat)( ( nFormat >> 4 ) & 0xf );
             switch( eDateFormat )
@@ -782,7 +778,7 @@ bool PPTWriter::ImplCreateDocument()
 
                 if ( ImplGetPropertyValue( "CustomShow" ) )
                 {
-                    aCustomShow = *static_cast<OUString const *>(mAny.getValue());
+                    aCustomShow = *o3tl::doAccess<OUString>(mAny);
                     if ( !aCustomShow.isEmpty() )
                     {
                         nFlags |= 8;
@@ -792,10 +788,10 @@ bool PPTWriter::ImplCreateDocument()
                 {
                     if ( ImplGetPropertyValue( "FirstPage" ) )
                     {
-                        OUString aSlideName( *static_cast<OUString const *>(mAny.getValue()) );
+                        auto aSlideName = o3tl::doAccess<OUString>(mAny);
 
                         std::vector<OUString>::const_iterator pIter = std::find(
-                                    maSlideNameList.begin(),maSlideNameList.end(),aSlideName);
+                                    maSlideNameList.begin(),maSlideNameList.end(), *aSlideName);
 
                         if (pIter != maSlideNameList.end())
                         {
@@ -872,41 +868,34 @@ bool PPTWriter::ImplCreateDocument()
                                     const sal_Unicode* pCustomShowName = pUString[ i ].getStr();
                                     for ( sal_uInt32 k = 0; k < nNamedShowLen; mpStrm->WriteUInt16( pCustomShowName[ k++ ] ) ) ;
                                     mAny = aXCont->getByName( pUString[ i ] );
-                                    if ( mAny.getValue() )
+                                    css::uno::Reference< css::container::XIndexContainer > aXIC;
+                                    if ( mAny >>= aXIC )
                                     {
+                                        mpPptEscherEx->BeginAtom();
 
-                                        css::uno::Reference< css::container::XIndexContainer > aXIC;
-                                        if ( mAny >>= aXIC )
+                                        sal_Int32 nSlideCount = aXIC->getCount();
+                                        for ( sal_Int32 j = 0; j < nSlideCount; j++ )   // number of slides
                                         {
-                                            mpPptEscherEx->BeginAtom();
-
-                                            sal_Int32 nSlideCount = aXIC->getCount();
-                                            for ( sal_Int32 j = 0; j < nSlideCount; j++ )   // number of slides
+                                            mAny = aXIC->getByIndex( j );
+                                            css::uno::Reference< css::drawing::XDrawPage > aXDrawPage;
+                                            if ( mAny >>= aXDrawPage )
                                             {
-                                                mAny = aXIC->getByIndex( j );
-                                                if ( mAny.getValue() )
+                                                css::uno::Reference< css::container::XNamed > aXName( aXDrawPage, css::uno::UNO_QUERY );
+                                                if ( aXName.is() )
                                                 {
-                                                    css::uno::Reference< css::drawing::XDrawPage > aXDrawPage;
-                                                    if ( mAny >>= aXDrawPage )
-                                                    {
-                                                        css::uno::Reference< css::container::XNamed > aXName( aXDrawPage, css::uno::UNO_QUERY );
-                                                        if ( aXName.is() )
-                                                        {
-                                                            OUString aSlideName( aXName->getName() );
-                                                            std::vector<OUString>::const_iterator pIter = std::find(
-                                                                        maSlideNameList.begin(),maSlideNameList.end(),aSlideName);
+                                                    OUString aSlideName( aXName->getName() );
+                                                    std::vector<OUString>::const_iterator pIter = std::find(
+                                                        maSlideNameList.begin(),maSlideNameList.end(),aSlideName);
 
-                                                            if (pIter != maSlideNameList.end())
-                                                            {
-                                                                sal_uInt32 nPageNumber = pIter - maSlideNameList.begin();
-                                                                mpStrm->WriteUInt32( nPageNumber + 0x100 ); // unique slide id
-                                                            }
-                                                        }
+                                                    if (pIter != maSlideNameList.end())
+                                                    {
+                                                        sal_uInt32 nPageNumber = pIter - maSlideNameList.begin();
+                                                        mpStrm->WriteUInt32( nPageNumber + 0x100 ); // unique slide id
                                                     }
                                                 }
                                             }
-                                            mpPptEscherEx->EndAtom( EPP_NamedShowSlides );
                                         }
+                                        mpPptEscherEx->EndAtom( EPP_NamedShowSlides );
                                     }
                                     mpPptEscherEx->CloseContainer();            // EPP_NamedShow
                                 }
@@ -1061,7 +1050,7 @@ static OUString getInitials( const OUString& rName )
         // take letter
         if( nLength )
         {
-            sInitials += OUString( *pStr );
+            sInitials += OUStringLiteral1( *pStr );
             nLength--; pStr++;
         }
 
@@ -1091,9 +1080,9 @@ void ImplExportComments( const uno::Reference< drawing::XDrawPage >& xPage, SvMe
                 uno::Reference< office::XAnnotation > xAnnotation( xAnnotationEnumeration->nextElement() );
 
                 geometry::RealPoint2D aRealPoint2D( xAnnotation->getPosition() );
-                MapMode aMapDest( MAP_INCH, Point(), Fraction( 1, 576 ), Fraction( 1, 576 ) );
+                MapMode aMapDest( MapUnit::MapInch, Point(), Fraction( 1, 576 ), Fraction( 1, 576 ) );
                 Point aPoint( OutputDevice::LogicToLogic( Point( static_cast< sal_Int32 >( aRealPoint2D.X * 100.0 ),
-                    static_cast< sal_Int32 >( aRealPoint2D.Y * 100.0 ) ), MAP_100TH_MM, aMapDest ) );
+                    static_cast< sal_Int32 >( aRealPoint2D.Y * 100.0 ) ), MapUnit::Map100thMM, aMapDest ) );
 
                 OUString sAuthor( xAnnotation->getAuthor() );
                 uno::Reference< text::XText > xText( xAnnotation->getTextRange() );
@@ -1171,7 +1160,7 @@ void PPTWriter::ImplWriteNotes( sal_uInt32 nPageNum )
     mpPptEscherEx->CloseContainer();    // EPP_Notes
 };
 
-void PPTWriter::ImplWriteBackground( css::uno::Reference< css::beans::XPropertySet > & rXPropSet )
+void PPTWriter::ImplWriteBackground( css::uno::Reference< css::beans::XPropertySet > const & rXPropSet )
 {
     //************************ ******
     //** DEFAULT BACKGROUND SHAPE **
@@ -1214,7 +1203,7 @@ void PPTWriter::ImplWriteBackground( css::uno::Reference< css::beans::XPropertyS
         {
             if ( ImplGetPropertyValue( rXPropSet, "FillColor" ) )
             {
-                nFillColor = EscherEx::GetColor( *static_cast<sal_uInt32 const *>(mAny.getValue()) );
+                nFillColor = EscherEx::GetColor( *o3tl::doAccess<sal_uInt32>(mAny) );
                 nFillBackColor = nFillColor ^ 0xffffff;
             }
             SAL_FALLTHROUGH;
@@ -1246,7 +1235,7 @@ void PPTWriter::ImplWriteVBA()
             nLen -= 8;
             mnVBAOleOfs = mpStrm->Tell();
             mpPptEscherEx->BeginAtom();
-            mpStrm->Write( static_cast<sal_Int8 const *>(mpVBA->GetData()) + 8, nLen );
+            mpStrm->WriteBytes(static_cast<sal_Int8 const *>(mpVBA->GetData()) + 8, nLen);
             mpPptEscherEx->EndAtom( EPP_ExOleObjStg, 0, 1 );
         }
     }
@@ -1279,7 +1268,7 @@ void PPTWriter::ImplWriteOLE( )
                         OUString aPersistStream( SVEXT_PERSIST_STREAM );
                         SvMemoryStream aStream;
                         tools::SvRef<SotStorage> xCleanStorage( new SotStorage( false, aStream ) );
-                        xTempStorage->CopyTo( xCleanStorage );
+                        xTempStorage->CopyTo( xCleanStorage.get() );
                         // create a dummy content stream, the dummy content is necessary for ppt, but not for
                         // doc files, so we can't share code.
                         tools::SvRef<SotStorageStream> xStm = xCleanStorage->OpenSotStream( aPersistStream );
@@ -1475,7 +1464,7 @@ extern "C" SAL_DLLPUBLIC_EXPORT sal_Bool SAL_CALL SaveVBA( SfxObjectShell& rDocS
                 {
                     char* pTemp = new char[ nLen ];
                     xTemp->Seek( STREAM_SEEK_TO_BEGIN );
-                    xTemp->Read( pTemp, nLen );
+                    xTemp->ReadBytes(pTemp, nLen);
                     pBas = new SvMemoryStream( pTemp, nLen, StreamMode::READ );
                     pBas->ObjectOwnsMemory( true );
                     return true;

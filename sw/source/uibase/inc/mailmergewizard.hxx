@@ -37,7 +37,7 @@ class SwMailMergeWizard : public ::svt::RoadmapWizard
     OUString                sDocumentURL;
     bool                    m_bDocumentLoad;
 
-    SwMailMergeConfigItem&  m_rConfigItem;
+    std::shared_ptr<SwMailMergeConfigItem> m_xConfigItem;
 
     OUString                m_sStarting;
     OUString                m_sDocumentType;
@@ -60,11 +60,11 @@ protected:
     virtual OUString                getStateDisplayName( WizardState _nState ) const override;
 
 public:
-    SwMailMergeWizard(SwView& rView, SwMailMergeConfigItem& rConfigItem);
-    virtual ~SwMailMergeWizard();
+    SwMailMergeWizard(SwView& rView, std::shared_ptr<SwMailMergeConfigItem>& rConfigItem);
+    virtual ~SwMailMergeWizard() override;
 
     SwView*                     GetSwView() {return m_pSwView;}
-    SwMailMergeConfigItem&      GetConfigItem() { return m_rConfigItem;}
+    SwMailMergeConfigItem&      GetConfigItem() { return *m_xConfigItem.get();}
 
     void                    SetReloadDocument(const OUString& rURL) {sDocumentURL = rURL;}
     const OUString&         GetReloadDocument() const {return sDocumentURL;}
@@ -80,10 +80,9 @@ public:
     bool                skipUntil( sal_uInt16 nPage)
                                 {return ::svt::RoadmapWizard::skipUntil(WizardState(nPage));}
 
-    void                    updateRoadmapItemLabel( WizardState _nState );
+    using svt::RoadmapWizard::updateRoadmapItemLabel;
 
     virtual short           Execute() override;
-    virtual void            StartExecuteModal( const Link<Dialog&,void>& rEndDialogHdl ) override;
 };
 #endif
 

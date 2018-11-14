@@ -27,6 +27,8 @@ PanelLayout::PanelLayout(vcl::Window* pParent, const OString& rID, const OUStrin
     m_pUIBuilder = new VclBuilder(this, getUIRootDir(), rUIXMLDescription, rID, rFrame);
     m_aPanelLayoutIdle.SetPriority(SchedulerPriority::RESIZE);
     m_aPanelLayoutIdle.SetIdleHdl( LINK( this, PanelLayout, ImplHandlePanelLayoutTimerHdl ) );
+    if (GetSettings().GetStyleSettings().GetAutoMnemonic())
+       Accelerator::GenerateAutoMnemonicsOnHierarchy(this);
 }
 
 PanelLayout::~PanelLayout()
@@ -55,16 +57,11 @@ Size PanelLayout::GetOptimalSize() const
     return Control::GetOptimalSize();
 }
 
-bool PanelLayout::hasPanelPendingLayout() const
-{
-    return m_aPanelLayoutIdle.IsActive();
-}
-
 void PanelLayout::queue_resize(StateChangedType /*eReason*/)
 {
     if (m_bInClose)
         return;
-    if (hasPanelPendingLayout())
+    if (m_aPanelLayoutIdle.IsActive())
         return;
     if (!isLayoutEnabled(this))
         return;
@@ -72,7 +69,7 @@ void PanelLayout::queue_resize(StateChangedType /*eReason*/)
     m_aPanelLayoutIdle.Start();
 }
 
-IMPL_LINK_NOARG_TYPED( PanelLayout, ImplHandlePanelLayoutTimerHdl, Idle*, void )
+IMPL_LINK_NOARG( PanelLayout, ImplHandlePanelLayoutTimerHdl, Idle*, void )
 {
     vcl::Window *pChild = GetWindow(GetWindowType::FirstChild);
     assert(pChild);
@@ -106,6 +103,13 @@ void PanelLayout::setPosSizePixel(long nX, long nY, long nWidth, long nHeight, P
 
     if (bIsLayoutEnabled && (nFlags & PosSizeFlags::Size))
         VclContainer::setLayoutAllocation(*pChild, Point(0, 0), Size(nWidth, nHeight));
+}
+
+bool PanelLayout::Notify(NotifyEvent& rNEvt)
+{
+    if (rNEvt.GetType() == MouseNotifyEvent::COMMAND)
+        Accelerator::ToggleMnemonicsOnHierarchy(*rNEvt.GetCommandEvent(), this);
+    return Control::Notify( rNEvt );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

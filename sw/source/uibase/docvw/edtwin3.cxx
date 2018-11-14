@@ -34,52 +34,57 @@
 #include "pagedesc.hxx"
 #include <frmatr.hxx>
 #include <editeng/frmdiritem.hxx>
+#include "uiobject.hxx"
 
 // Core-Notify
 void ScrollMDI( SwViewShell* pVwSh, const SwRect &rRect,
                 sal_uInt16 nRangeX, sal_uInt16 nRangeY)
 {
-    SfxViewShell *pSfxVwSh = pVwSh->GetSfxViewShell();
-    if (pSfxVwSh && dynamic_cast< const SwView *>( pSfxVwSh ) !=  nullptr)
-        static_cast<SwView *>(pSfxVwSh)->Scroll( rRect.SVRect(), nRangeX, nRangeY );
+    SfxViewShell *pSfxViewShell = pVwSh->GetSfxViewShell();
+
+    if (SwView* pSwView = dynamic_cast<SwView *>(pSfxViewShell))
+        pSwView->Scroll(rRect.SVRect(), nRangeX, nRangeY);
 }
 
 // Docmdi - movable
 bool IsScrollMDI( SwViewShell* pVwSh, const SwRect &rRect )
 {
-    SfxViewShell *pSfxVwSh = pVwSh->GetSfxViewShell();
-    if (pSfxVwSh && dynamic_cast< const SwView *>( pSfxVwSh ) !=  nullptr)
-        return static_cast<SwView *>(pSfxVwSh)->IsScroll(rRect.SVRect());
+    SfxViewShell *pSfxViewShell = pVwSh->GetSfxViewShell();
+
+    if (SwView* pSwView = dynamic_cast<SwView *>(pSfxViewShell))
+        return pSwView->IsScroll(rRect.SVRect());
+
     return false;
 }
 
 // Notify for size change
 void SizeNotify(SwViewShell* pVwSh, const Size &rSize)
 {
-    SfxViewShell *pSfxVwSh = pVwSh->GetSfxViewShell();
-    if (pSfxVwSh)
-    {
-        if (dynamic_cast< const SwView *>( pSfxVwSh ) !=  nullptr)
-            static_cast<SwView *>(pSfxVwSh)->DocSzChgd(rSize);
-        else if (dynamic_cast< const SwPagePreview *>( pSfxVwSh ) !=  nullptr)
-            static_cast<SwPagePreview *>(pSfxVwSh)->DocSzChgd( rSize );
-    }
+    SfxViewShell *pSfxViewShell = pVwSh->GetSfxViewShell();
+
+    if (SwView* pSwView = dynamic_cast<SwView *>(pSfxViewShell))
+        pSwView->DocSzChgd(rSize);
+    else if (SwPagePreview* pSwPageView = dynamic_cast<SwPagePreview *>(pSfxViewShell))
+        pSwPageView->DocSzChgd(rSize);
 }
 
 // Notify for page number update
 void PageNumNotify( SwViewShell* pVwSh, sal_uInt16 nPhyNum, sal_uInt16 nVirtNum,
                                                     const OUString& rPgStr)
 {
-    SfxViewShell *pSfxVwSh = pVwSh->GetSfxViewShell();
-    if ( pSfxVwSh && dynamic_cast< const SwView *>( pSfxVwSh ) !=  nullptr &&
-         static_cast<SwView*>(pSfxVwSh)->GetCurShell() )
-            static_cast<SwView *>(pSfxVwSh)->UpdatePageNums(nPhyNum, nVirtNum, rPgStr);
+    SfxViewShell *pSfxViewShell = pVwSh->GetSfxViewShell();
+
+    if (SwView* pSwView = dynamic_cast<SwView *>(pSfxViewShell))
+    {
+        if (pSwView->GetCurShell())
+            pSwView->UpdatePageNums(nPhyNum, nVirtNum, rPgStr);
+    }
 }
 
 void FrameNotify( SwViewShell* pVwSh, FlyMode eMode )
 {
-    if ( dynamic_cast< const SwCursorShell *>( pVwSh ) !=  nullptr )
-        SwBaseShell::SetFrameMode( eMode, static_cast<SwWrtShell*>(pVwSh) );
+    if (SwWrtShell* pWrtShell = dynamic_cast<SwWrtShell *>(pVwSh))
+        SwBaseShell::SetFrameMode(eMode, pWrtShell);
 }
 
 // Notify for page number update
@@ -109,16 +114,19 @@ TableChgMode GetTableChgDefaultMode()
 
 void RepaintPagePreview( SwViewShell* pVwSh, const SwRect& rRect )
 {
-    SfxViewShell *pSfxVwSh = pVwSh->GetSfxViewShell();
-    if (pSfxVwSh && dynamic_cast< const SwPagePreview *>( pSfxVwSh ) !=  nullptr)
-        static_cast<SwPagePreview *>(pSfxVwSh)->RepaintCoreRect( rRect );
+    SfxViewShell *pSfxViewShell = pVwSh->GetSfxViewShell();
+
+    if (SwPagePreview* pSwPagePreview = dynamic_cast<SwPagePreview *>(pSfxViewShell))
+        pSwPagePreview->RepaintCoreRect(rRect);
 }
 
 bool JumpToSwMark( SwViewShell* pVwSh, const OUString& rMark )
 {
-    SfxViewShell *pSfxVwSh = pVwSh->GetSfxViewShell();
-    if( pSfxVwSh && dynamic_cast< const SwView *>( pSfxVwSh ) !=  nullptr )
-        return static_cast<SwView *>(pSfxVwSh)->JumpToSwMark( rMark );
+    SfxViewShell *pSfxViewShell = pVwSh->GetSfxViewShell();
+
+    if (SwView* pSwView = dynamic_cast<SwView *>(pSfxViewShell))
+        return pSwView->JumpToSwMark(rMark);
+
     return false;
 }
 
@@ -163,6 +171,11 @@ void SwEditWin::DataChanged( const DataChangedEvent& rDCEvt )
     pSh->LockView( bViewWasLocked );
     if( bUnlockPaint )
         pSh->UnlockPaint();
+}
+
+FactoryFunction SwEditWin::GetUITestFactory() const
+{
+    return SwEditWinUIObject::create;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

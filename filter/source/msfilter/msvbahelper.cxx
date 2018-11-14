@@ -25,6 +25,7 @@
 #include <basic/basmgr.hxx>
 #include <basic/sbmod.hxx>
 #include <basic/sbmeth.hxx>
+#include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/document/XDocumentPropertiesSupplier.hpp>
 #include <com/sun/star/document/XDocumentProperties.hpp>
 #include <com/sun/star/script/vba/XVBACompatibility.hpp>
@@ -34,6 +35,8 @@
 #include <tools/urlobj.hxx>
 #include <osl/file.hxx>
 #include <unotools/pathoptions.hxx>
+#include <rtl/character.hxx>
+#include <sfx2/objsh.hxx>
 
 #include <com/sun/star/awt/KeyModifier.hpp>
 #include <svtools/acceleratorexecute.hxx>
@@ -201,15 +204,9 @@ bool hasMacro( SfxObjectShell* pShell, const OUString& sLibrary, OUString& sMod,
                 if ( !sMod.isEmpty() ) // we wish to find the macro is a specific module
                 {
                     SbModule* pModule = pBasic->FindModule( sMod );
-                    if ( pModule )
+                    if ( pModule && pModule->FindMethod( sMacro, SbxClassType::Method ))
                     {
-                        SbxArray* pMethods = pModule->GetMethods();
-                        if ( pMethods )
-                        {
-                            SbMethod* pMethod = static_cast< SbMethod* >( pMethods->Find( sMacro, SbxClassType::Method ) );
-                            if ( pMethod )
-                              bFound = true;
-                        }
+                        bFound = true;
                     }
                 }
                 else if( SbMethod* pMethod = dynamic_cast< SbMethod* >( pBasic->Find( sMacro, SbxClassType::Method ) ) )
@@ -610,21 +607,18 @@ OUString SAL_CALL VBAMacroResolver::resolveScriptURLtoVBAMacro( const OUString& 
 
 bool getModifier( char c, sal_uInt16& mod )
 {
-    static const char modifiers[] = "+^%";
-    static const sal_uInt16 KEY_MODS[] = {KEY_SHIFT, KEY_MOD1, KEY_MOD2};
-
-    for ( unsigned int i=0; i<SAL_N_ELEMENTS(KEY_MODS); ++i )
-    {
-        if ( c == modifiers[i] )
-        {
-            mod = mod | KEY_MODS[ i ];
-            return true;
-        }
+    if ( c == '+' ) {
+        mod |= KEY_SHIFT;
+        return true;
+    } else if ( c == '^' ) {
+        mod |= KEY_MOD1;
+        return true;
+    } else if ( c == '%' ) {
+        mod |= KEY_MOD2;
+        return true;
     }
     return false;
 }
-
-typedef std::map< OUString, sal_uInt16 > MSKeyCodeMap;
 
 sal_uInt16 parseChar( char c ) throw ( uno::RuntimeException )
 {
@@ -632,8 +626,8 @@ sal_uInt16 parseChar( char c ) throw ( uno::RuntimeException )
     // do we care about locale here for isupper etc. ? probably not
     if ( isalpha( c ) )
     {
-        nVclKey |= ( toupper( c ) - 'A' ) + KEY_A;
-        if ( isupper( c ) )
+        nVclKey |= ( rtl::toAsciiUpperCase( c ) - 'A' ) + KEY_A;
+        if ( rtl::isAsciiUpperCase( c ) )
             nVclKey |= KEY_SHIFT;
     }
     else if ( isdigit( c ) )
@@ -692,7 +686,7 @@ KeyCodeEntry aMSKeyCodesData[] = {
 
 awt::KeyEvent parseKeyEvent( const OUString& Key ) throw ( uno::RuntimeException )
 {
-    static MSKeyCodeMap s_KeyCodes;
+    static std::map< OUString, sal_uInt16 > s_KeyCodes;
     if ( s_KeyCodes.empty() )
     {
         for (KeyCodeEntry & i : aMSKeyCodesData)
@@ -731,7 +725,7 @@ awt::KeyEvent parseKeyEvent( const OUString& Key ) throw ( uno::RuntimeException
             nVclKey |= parseChar( (char)( sKeyCode[ 0 ] ) );
         else
         {
-            MSKeyCodeMap::iterator it = s_KeyCodes.find( sKeyCode );
+            auto it = s_KeyCodes.find( sKeyCode );
             if ( it == s_KeyCodes.end() ) // unknown or unsupported
                 throw uno::RuntimeException();
             nVclKey |= it->second;

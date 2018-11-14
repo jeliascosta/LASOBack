@@ -29,7 +29,7 @@ SwUndoFormatColl::SwUndoFormatColl( const SwPaM& rRange,
                               SwFormatColl* pColl,
                               const bool bReset,
                               const bool bResetListAttrs )
-    : SwUndo( UNDO_SETFMTCOLL ),
+    : SwUndo( UNDO_SETFMTCOLL, rRange.GetDoc() ),
       SwUndRng( rRange ),
       pHistory( new SwHistory ),
       pFormatColl( pColl ),
@@ -74,7 +74,7 @@ void SwUndoFormatColl::DoSetFormatColl(SwDoc & rDoc, SwPaM & rPaM)
     // this array.
 
     // does the format still exist?
-    if( rDoc.GetTextFormatColls()->Contains(static_cast<SwTextFormatColl*>(pFormatColl)) )
+    if( SIZE_MAX != rDoc.GetTextFormatColls()->GetPos(static_cast<SwTextFormatColl*>(pFormatColl)) )
     {
         rDoc.SetTextFormatColl(rPaM, static_cast<SwTextFormatColl*>(pFormatColl), mbReset,
                            mbResetListAttrs);

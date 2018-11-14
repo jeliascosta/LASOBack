@@ -620,9 +620,7 @@ bool SfxScriptLibraryContainer::implStorePasswordLibrary( SfxLibrary* pLib, cons
             SbModule* pMod = pBasicLib->FindModule( aElementName );
             if( pMod )
             {
-                OUString aCodeStreamName = aElementName;
-                aCodeStreamName += ".bin";
-
+                OUString aCodeStreamName = aElementName + ".bin";
                 try
                 {
                     uno::Reference< io::XStream > xCodeStream = xStorage->openStreamElement(
@@ -636,7 +634,8 @@ bool SfxScriptLibraryContainer::implStorePasswordLibrary( SfxLibrary* pLib, cons
                     SvMemoryStream aMemStream;
                     /*sal_Bool bStore = */pMod->StoreBinaryData( aMemStream, B_CURVERSION );
 
-                    sal_Size nSize = aMemStream.Tell();
+                    sal_Int32 const nSize = aMemStream.Tell();
+                    if (nSize < 0) { abort(); }
                     Sequence< sal_Int8 > aBinSeq( nSize );
                     sal_Int8* pData = aBinSeq.getArray();
                     memcpy( pData, aMemStream.GetData(), nSize );
@@ -668,9 +667,7 @@ bool SfxScriptLibraryContainer::implStorePasswordLibrary( SfxLibrary* pLib, cons
                     continue;
                 }
 
-                OUString aSourceStreamName = aElementName;
-                aSourceStreamName += ".xml";
-
+                OUString aSourceStreamName = aElementName + ".xml";
                 try
                 {
                     uno::Reference< io::XStream > xSourceStream = xStorage->openStreamElement(
@@ -779,7 +776,8 @@ bool SfxScriptLibraryContainer::implStorePasswordLibrary( SfxLibrary* pLib, cons
                         SvMemoryStream aMemStream;
                         /*sal_Bool bStore = */pMod->StoreBinaryData( aMemStream, B_CURVERSION );
 
-                        sal_Size nSize = aMemStream.Tell();
+                        sal_Int32 const nSize = aMemStream.Tell();
+                        if (nSize < 0) { abort(); }
                         Sequence< sal_Int8 > aBinSeq( nSize );
                         sal_Int8* pData = aBinSeq.getArray();
                         memcpy( pData, aMemStream.GetData(), nSize );
@@ -945,9 +943,7 @@ bool SfxScriptLibraryContainer::implLoadPasswordLibrary
                     pBasicLib->SetModified( false );
                 }
 
-                OUString aCodeStreamName= aElementName;
-                aCodeStreamName += ".bin";
-
+                OUString aCodeStreamName= aElementName + ".bin";
                 try
                 {
                     uno::Reference< io::XStream > xCodeStream = xLibraryStor->openStreamElement(
@@ -981,9 +977,7 @@ bool SfxScriptLibraryContainer::implLoadPasswordLibrary
             if( bLoadSource || bVerifyPasswordOnly )
             {
                 // Access encrypted source stream
-                OUString aSourceStreamName = aElementName;
-                aSourceStreamName += ".xml";
-
+                OUString aSourceStreamName = aElementName + ".xml";
                 try
                 {
                     uno::Reference< io::XStream > xSourceStream = xLibraryStor->openEncryptedStreamElement(
@@ -1180,11 +1174,8 @@ OUString SAL_CALL SfxScriptLibraryContainer::getImplementationName( )
 Sequence< OUString > SAL_CALL SfxScriptLibraryContainer::getSupportedServiceNames( )
     throw (RuntimeException, std::exception)
 {
-    Sequence< OUString > aServiceNames( 2 );
-    aServiceNames[0] = "com.sun.star.script.DocumentScriptLibraryContainer";
-    // plus, for compatibility:
-    aServiceNames[1] = "com.sun.star.script.ScriptLibraryContainer";
-    return aServiceNames;
+    return {"com.sun.star.script.DocumentScriptLibraryContainer",
+            "com.sun.star.script.ScriptLibraryContainer"}; // for compatibility
 }
 
 // Implementation class SfxScriptLibrary

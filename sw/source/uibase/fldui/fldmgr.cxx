@@ -946,10 +946,10 @@ bool SwFieldMgr::InsertField(
             //JP 28.08.95: DDE-Topics/-Items can have blanks in their names!
             //              That's not yet considered here.
             sal_Int32 nIndex = 0;
-            OUString sCmd = rData.m_sPar2.replaceFirst(" ", OUString(sfx2::cTokenSeparator), &nIndex);
+            OUString sCmd = rData.m_sPar2.replaceFirst(" ", OUStringLiteral1(sfx2::cTokenSeparator), &nIndex);
             if (nIndex>=0 && ++nIndex<sCmd.getLength())
             {
-                sCmd = sCmd.replaceFirst(" ", OUString(sfx2::cTokenSeparator), &nIndex);
+                sCmd = sCmd.replaceFirst(" ", OUStringLiteral1(sfx2::cTokenSeparator), &nIndex);
             }
 
             SwDDEFieldType aType( rData.m_sPar1, sCmd, static_cast<SfxLinkUpdateMode>(nFormatId) );
@@ -1328,10 +1328,14 @@ bool SwFieldMgr::InsertField(
 
     if (TYP_INPUTFLD == rData.m_nTypeId)
     {
+        pCurShell->Push();
+
         // start dialog, not before the field is inserted tdf#99529
         pCurShell->Left(CRSR_SKIP_CHARS,
                 false, (INP_VAR == (nSubType & 0xff)) ? 1 : 2, false );
         pCurShell->StartInputFieldDlg(pField, false, rData.m_pParent);
+
+        pCurShell->Pop(false);
     }
 
     if(bExp && bEvalExp)
@@ -1397,10 +1401,10 @@ void SwFieldMgr::UpdateCurField(sal_uLong nFormat,
             // DDE-Topics/-Items can have blanks in their names!
             //  That's not yet considered here!
             sal_Int32 nIndex = 0;
-            sPar2 = sPar2.replaceFirst(" ", OUString(sfx2::cTokenSeparator), &nIndex );
+            sPar2 = sPar2.replaceFirst(" ", OUStringLiteral1(sfx2::cTokenSeparator), &nIndex );
             if (nIndex>=0 && ++nIndex<sPar2.getLength())
             {
-                sPar2 = sPar2.replaceFirst(" ", OUString(sfx2::cTokenSeparator), &nIndex);
+                sPar2 = sPar2.replaceFirst(" ", OUStringLiteral1(sfx2::cTokenSeparator), &nIndex);
             }
             break;
         }
@@ -1679,7 +1683,7 @@ sal_uLong SwFieldMgr::GetDefaultFormat(sal_uInt16 nTypeId, bool bIsText, SvNumbe
     return pFormatter->GetStandardFormat(nDefFormat, GetCurrLanguage());
 }
 
-Reference<XNumberingTypeInfo> SwFieldMgr::GetNumberingInfo() const
+Reference<XNumberingTypeInfo> const & SwFieldMgr::GetNumberingInfo() const
 {
     if(!xNumberingInfo.is())
     {

@@ -41,9 +41,15 @@ void WpftWriterFilterTest::test()
     };
     const writerperfect::test::WpftOptionalMap_t aMWAWOptional
     {
+        {"MaxWrite_1.hqx", REQUIRE_MWAW_VERSION(0, 3, 8)},
+        {"MouseWrite_1.hqx", REQUIRE_MWAW_VERSION(0, 3, 8)},
         {"RagTime_2.1.hqx", REQUIRE_MWAW_VERSION(0, 3, 2)},
         {"RagTime_3.2.hqx", REQUIRE_MWAW_VERSION(0, 3, 2)},
         {"RagTime_5.5.rag", REQUIRE_MWAW_VERSION(0, 3, 6)},
+    };
+    const writerperfect::test::WpftOptionalMap_t aStarOfficeOptional
+    {
+        {"Writer_3.1.sdw", REQUIRE_STAROFFICE_VERSION(0, 0, 2)},
     };
     const writerperfect::test::WpftOptionalMap_t aWpsOptional
     {
@@ -56,6 +62,7 @@ void WpftWriterFilterTest::test()
     doTest("com.sun.star.comp.Writer.MSWorksImportFilter", "/writerperfect/qa/unit/data/writer/libwps/", aWpsOptional);
     doTest("com.sun.star.comp.Writer.MWAWImportFilter", "/writerperfect/qa/unit/data/writer/libmwaw/", aMWAWOptional);
     doTest("org.libreoffice.comp.Writer.PagesImportFilter", "/writerperfect/qa/unit/data/writer/libetonyek/", aEtonyekOptional);
+    doTest("org.libreoffice.comp.Writer.StarOfficeWriterImportFilter", "/writerperfect/qa/unit/data/writer/libstaroffice/", aStarOfficeOptional);
     doTest("com.sun.star.comp.Writer.WordPerfectImportFilter", "/writerperfect/qa/unit/data/writer/libwpd/");
 }
 

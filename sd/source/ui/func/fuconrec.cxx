@@ -215,11 +215,6 @@ bool FuConstructRectangle::MouseButtonDown(const MouseEvent& rMEvt)
     return bReturn;
 }
 
-bool FuConstructRectangle::MouseMove(const MouseEvent& rMEvt)
-{
-    return FuConstruct::MouseMove(rMEvt);
-}
-
 bool FuConstructRectangle::MouseButtonUp(const MouseEvent& rMEvt)
 {
     bool bReturn(false);
@@ -228,7 +223,7 @@ bool FuConstructRectangle::MouseButtonUp(const MouseEvent& rMEvt)
     {
         SdrObject* pObj = mpView->GetCreateObj();
 
-        if(pObj && mpView->EndCreateObj(SDRCREATE_FORCEEND))
+        if(pObj && mpView->EndCreateObj(SdrCreateCmd::ForceEnd))
         {
             if(SID_DRAW_MEASURELINE == nSlotId)
             {
@@ -264,15 +259,6 @@ bool FuConstructRectangle::MouseButtonUp(const MouseEvent& rMEvt)
         mpViewShell->GetViewFrame()->GetDispatcher()->Execute(SID_OBJECT_SELECT, SfxCallMode::ASYNCHRON);
 
     return bReturn;
-}
-
-/**
- * Process keyboard input
- * @returns sal_True if a KeyEvent is being processed, sal_False otherwise
- */
-bool FuConstructRectangle::KeyInput(const KeyEvent& rKEvt)
-{
-    return FuConstruct::KeyInput(rKEvt);
 }
 
 void FuConstructRectangle::Activate()
@@ -441,7 +427,7 @@ void FuConstructRectangle::SetAttributes(SfxItemSet& rAttr, SdrObject* pObj)
              nSlotId == SID_CONNECTOR_LINE_CIRCLES)
     {
         // direct connector
-        rAttr.Put(SdrEdgeKindItem(SDREDGE_ONELINE));
+        rAttr.Put(SdrEdgeKindItem(SdrEdgeKind::OneLine));
     }
     else if (nSlotId == SID_CONNECTOR_LINES              ||
              nSlotId == SID_CONNECTOR_LINES_ARROW_START  ||
@@ -452,7 +438,7 @@ void FuConstructRectangle::SetAttributes(SfxItemSet& rAttr, SdrObject* pObj)
              nSlotId == SID_CONNECTOR_LINES_CIRCLES)
     {
         // line connector
-        rAttr.Put(SdrEdgeKindItem(SDREDGE_THREELINES));
+        rAttr.Put(SdrEdgeKindItem(SdrEdgeKind::ThreeLines));
     }
     else if (nSlotId == SID_CONNECTOR_CURVE              ||
              nSlotId == SID_CONNECTOR_CURVE_ARROW_START  ||
@@ -463,7 +449,7 @@ void FuConstructRectangle::SetAttributes(SfxItemSet& rAttr, SdrObject* pObj)
              nSlotId == SID_CONNECTOR_CURVE_CIRCLES)
     {
         // curve connector
-        rAttr.Put(SdrEdgeKindItem(SDREDGE_BEZIER));
+        rAttr.Put(SdrEdgeKindItem(SdrEdgeKind::Bezier));
     }
     else if ( nSlotId == SID_DRAW_CAPTION || nSlotId == SID_DRAW_CAPTION_VERTICAL )
     {
@@ -525,7 +511,7 @@ void FuConstructRectangle::SetAttributes(SfxItemSet& rAttr, SdrObject* pObj)
         long nIndex;
         for( nIndex = 0L; nIndex < nCount; nIndex++ )
         {
-            XLineEndEntry* pEntry = pLineEndList->GetLineEnd(nIndex);
+            const XLineEndEntry* pEntry = pLineEndList->GetLineEnd(nIndex);
             if( pEntry->GetName() == aArrowName )
             {
                 aRetval = pEntry->GetLineEnd();

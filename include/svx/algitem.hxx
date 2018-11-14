@@ -41,9 +41,9 @@ public:
         const sal_uInt16 nId );
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
@@ -62,9 +62,7 @@ public:
     /** Returns sal_True, if the item represents STACKED state. */
     bool                    IsStacked() const;
     /** Returns the rotation this item represents (returns nStdAngle for STANDARD and STACKED state). */
-    sal_Int32               GetRotation( sal_Int32 nStdAngle = 0 ) const;
-    /** Fills this item according to passed item values. */
-    void                    SetFromRotation( sal_Int32 nRotation, bool bStacked );
+    sal_Int32               GetRotation( sal_Int32 nStdAngle ) const;
 };
 
 class SAL_WARN_UNUSED SVX_DLLPUBLIC SvxMarginItem: public SfxPoolItem
@@ -82,9 +80,9 @@ public:
     SvxMarginItem( const SvxMarginItem& );
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual bool             operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*     Clone( SfxItemPool *pPool = nullptr ) const override;

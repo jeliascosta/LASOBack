@@ -313,8 +313,7 @@ void SvxHyperlinkNewDocTp::DoApply ()
 
             // check if file exists, warn before we overwrite it
             {
-                css::uno::Reference < css::task::XInteractionHandler > xHandler;
-                SvStream* pIStm = ::utl::UcbStreamHelper::CreateStream( aURL.GetMainURL( INetURLObject::NO_DECODE ), StreamMode::READ, xHandler );
+                SvStream* pIStm = ::utl::UcbStreamHelper::CreateStream( aURL.GetMainURL( INetURLObject::NO_DECODE ), StreamMode::READ );
 
                 bool bOk = pIStm && ( pIStm->GetError() == 0);
 
@@ -401,7 +400,7 @@ void SvxHyperlinkNewDocTp::DoApply ()
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG_TYPED(SvxHyperlinkNewDocTp, ClickNewHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxHyperlinkNewDocTp, ClickNewHdl_Impl, Button*, void)
 {
     uno::Reference < XComponentContext > xContext( ::comphelper::getProcessComponentContext() );
     uno::Reference < XFolderPicker2 >  xFolderPicker = FolderPicker::create(xContext);

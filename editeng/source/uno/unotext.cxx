@@ -1224,7 +1224,7 @@ void SvxUnoTextRangeBase::_setPropertyToDefault(SvxTextForwarder* pForwarder, co
 {
     do
     {
-        SfxItemSet aSet( *pForwarder->GetPool(), true );
+        SfxItemSet aSet(*pForwarder->GetPool());
 
         if( pMap->nWID == WID_FONTDESC )
         {
@@ -1664,7 +1664,7 @@ SvxUnoTextBase::SvxUnoTextBase( const SvxItemPropertySet* _pSet  ) throw()
 {
 }
 
-SvxUnoTextBase::SvxUnoTextBase( const SvxEditSource* pSource, const SvxItemPropertySet* _pSet, uno::Reference < text::XText > xParent ) throw()
+SvxUnoTextBase::SvxUnoTextBase( const SvxEditSource* pSource, const SvxItemPropertySet* _pSet, uno::Reference < text::XText > const & xParent ) throw()
 : SvxUnoTextRangeBase( pSource, _pSet )
 {
     xParentText = xParent;
@@ -1749,15 +1749,11 @@ namespace
         }
     };
 }
-uno::Sequence< uno::Type > SAL_CALL SvxUnoTextBase::getStaticTypes() throw()
-{
-    return theSvxUnoTextBaseTypes::get();
-}
 
 uno::Sequence< uno::Type > SAL_CALL SvxUnoTextBase::getTypes()
     throw (uno::RuntimeException, std::exception)
 {
-    return getStaticTypes();
+    return theSvxUnoTextBaseTypes::get();
 }
 
 uno::Sequence< sal_Int8 > SAL_CALL SvxUnoTextBase::getImplementationId()
@@ -2291,7 +2287,7 @@ SvxUnoText::SvxUnoText( const SvxItemPropertySet* _pSet ) throw()
 {
 }
 
-SvxUnoText::SvxUnoText( const SvxEditSource* pSource, const SvxItemPropertySet* _pSet, uno::Reference < text::XText > xParent ) throw()
+SvxUnoText::SvxUnoText( const SvxEditSource* pSource, const SvxItemPropertySet* _pSet, uno::Reference < text::XText > const & xParent ) throw()
 : SvxUnoTextBase( pSource, _pSet, xParent )
 {
 }

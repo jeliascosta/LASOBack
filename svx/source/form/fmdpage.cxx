@@ -82,7 +82,7 @@ SdrObject *SvxFmDrawPage::CreateSdrObject_( const css::uno::Reference< css::draw
 css::uno::Reference< css::drawing::XShape >  SvxFmDrawPage::CreateShape( SdrObject *pObj ) const
     throw (css::uno::RuntimeException, std::exception)
 {
-    if( FmFormInventor == pObj->GetObjInventor() )
+    if( SdrInventor::FmForm == pObj->GetObjInventor() )
     {
         css::uno::Reference< css::drawing::XShape >  xShape = static_cast<SvxShape*>(new SvxShapeControl( pObj ));
         return xShape;
@@ -112,12 +112,5 @@ sal_Bool SAL_CALL SvxFmDrawPage::hasForms() throw( css::uno::RuntimeException, s
         bHas = pFormPage->GetForms( false ).is();
     return bHas;
 }
-
-// css::lang::XServiceInfo
-css::uno::Sequence< OUString > SAL_CALL SvxFmDrawPage::getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception )
-{
-    return SvxDrawPage::getSupportedServiceNames();
-}
-
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -25,6 +25,7 @@
 #include <svx/svdoutl.hxx>
 #include <sfx2/bindings.hxx>
 #include <sfx2/dispatch.hxx>
+#include <sfx2/lokhelper.hxx>
 #include <sfx2/objsh.hxx>
 
 #include "tabview.hxx"
@@ -35,7 +36,6 @@
 #include "tabsplit.hxx"
 #include "colrowba.hxx"
 #include "tabcont.hxx"
-#include "hintwin.hxx"
 #include "sc.hrc"
 #include "pagedata.hxx"
 #include "hiranges.hxx"
@@ -54,7 +54,6 @@
 #include <comphelper/lok.hxx>
 #include <officecfg/Office/Calc.hxx>
 #include <LibreOfficeKit/LibreOfficeKitEnums.h>
-
 
 using namespace com::sun::star;
 
@@ -160,6 +159,24 @@ ScTabView::~ScTabView()
     DELETEZ(pDrawOld);
     DELETEZ(pDrawActual);
 
+    if (comphelper::LibreOfficeKit::isActive())
+    {
+        ScTabViewShell* pThisViewShell = GetViewData().GetViewShell();
+
+        auto lRemoveWindows =
+                [pThisViewShell] (ScTabViewShell* pOtherViewShell)
+                {
+                    ScViewData& rOtherViewData = pOtherViewShell->GetViewData();
+                    for (int k = 0; k < 4; ++k)
+                    {
+                        if (rOtherViewData.HasEditView((ScSplitPos)(k)))
+                            pThisViewShell->RemoveWindowFromForeignEditView(pOtherViewShell, (ScSplitPos)(k));
+                    }
+                };
+
+        SfxLokHelper::forEachOtherView(pThisViewShell, lRemoveWindows);
+    }
+
     aViewData.KillEditView();           // solange GridWin's noch existieren
 
     if (pDrawView)
@@ -176,8 +193,7 @@ ScTabView::~ScTabView()
 
     delete pSelEngine;
 
-    // Delete this before the grid windows, since it's a child window of one of them.
-    mpInputHintWindow.disposeAndClear();
+    mxInputHintOO.reset();
     for (i=0; i<4; i++)
         pGridWin[i].disposeAndClear();
 
@@ -243,7 +259,7 @@ void ScTabView::MakeDrawView( TriState nForceDesignMode )
             pFormSh->SetView(pDrawView);
 
         if (aViewData.GetViewShell()->HasAccessibilityObjects())
-            aViewData.GetViewShell()->BroadcastAccessibility(SfxSimpleHint(SC_HINT_ACC_MAKEDRAWLAYER));
+            aViewData.GetViewShell()->BroadcastAccessibility(SfxHint(SC_HINT_ACC_MAKEDRAWLAYER));
 
     }
 }
@@ -282,7 +298,7 @@ void ScTabView::TabChanged( bool bSameTabButMoved )
 
     if (aViewData.GetViewShell()->HasAccessibilityObjects())
     {
-        SfxSimpleHint aAccHint(SC_HINT_ACC_TABLECHANGED);
+        SfxHint aAccHint(SC_HINT_ACC_TABLECHANGED);
         aViewData.GetViewShell()->BroadcastAccessibility(aAccHint);
     }
 
@@ -310,7 +326,8 @@ void ScTabView::TabChanged( bool bSameTabButMoved )
             std::stringstream ss;
             ss << aDocSize.Width() << ", " << aDocSize.Height();
             OString sRect = ss.str().c_str();
-            pDocSh->libreOfficeKitCallback(LOK_CALLBACK_DOCUMENT_SIZE_CHANGED, sRect.getStr());
+            ScTabViewShell* pViewShell = aViewData.GetViewShell();
+            pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_DOCUMENT_SIZE_CHANGED, sRect.getStr());
         }
     }
 }
@@ -413,7 +430,7 @@ void ScTabView::SetPagebreakMode( bool bSet )
 void ScTabView::ResetDrawDragMode()
 {
     if (pDrawView)
-        pDrawView->SetDragMode( SDRDRAG_MOVE );
+        pDrawView->SetDragMode( SdrDragMode::Move );
 }
 
 void ScTabView::ViewOptionsHasChanged( bool bHScrollChanged, bool bGraphicsChanged )

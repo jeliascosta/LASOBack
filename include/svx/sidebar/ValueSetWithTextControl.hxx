@@ -41,37 +41,19 @@ public:
     // control type of specialized <ValueSet>:
     // - image + text
     // - text + text
-    enum tControlType
+    enum class ControlType
     {
-        IMAGE_TEXT,
-        TEXT_TEXT
+        ImageText,
+        TextText
     };
 
-    ValueSetWithTextControl(
-        const tControlType eControlType,
-        vcl::Window* pParent,
-        const ResId& rResId);
-
-    // add item for control type IMAGE_TEXT
-    // if control type does not match IMAGE_TEXT no item is added.
-    // @param pSelectedItemImage
-    // selection item image is optional. if not provided, it is the same as the image item
-    // @param pItemHelpText
-    // help text is optional. if not provided, it is the same as the item text
-    void AddItem(
-        const Image& rItemImage,
-        const Image* pSelectedItemImage,
-        const OUString& rItemText,
-        const OUString* pItemHelpText );
+    ValueSetWithTextControl(Window* pParent, WinBits nBits);
 
     // add item for control type TEXT_TEXT
     // if control type does not match TEXT_TEXT no item is added.
-    // @param pItemHelpText
-    // help text is optional. if not provided, it is the same as the item text
     void AddItem(
         const OUString& rItemText,
-        const OUString& rItemText2,
-        const OUString* pItemHelpText );
+        const OUString& rItemText2 );
 
     virtual void UserDraw( const UserDrawEvent& rUDEvt ) override;
 
@@ -86,7 +68,7 @@ private:
 
     typedef ::std::vector< ValueSetWithTextItem > tItemList;
 
-    const tControlType meControlType;
+    const ControlType meControlType;
     tItemList maItems;
 };
 

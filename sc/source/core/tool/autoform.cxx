@@ -96,8 +96,8 @@ namespace
         if (blobSize)
         {
             blob.pData = new sal_uInt8[blobSize];
-            blob.size = static_cast<sal_Size>(blobSize);
-            stream.Read(blob.pData, blob.size);
+            blob.size = static_cast<std::size_t>(blobSize);
+            stream.ReadBytes(blob.pData, blob.size);
         }
 
         return stream;
@@ -109,7 +109,7 @@ namespace
         const sal_uInt64 endOfBlob = stream.Tell() + sizeof(sal_uInt64) + blob.size;
         stream.WriteUInt64( endOfBlob );
         if (blob.size)
-            stream.Write(blob.pData, blob.size);
+            stream.WriteBytes(blob.pData, blob.size);
 
         return stream;
     }
@@ -657,9 +657,15 @@ void ScAutoFormatData::FillToItemSet( sal_uInt16 nIndex, SfxItemSet& rItemSet, S
         }
         else
         {
-            rItemSet.Put( rField.GetHeight(), ATTR_CJK_FONT_HEIGHT );
-            rItemSet.Put( rField.GetWeight(), ATTR_CJK_FONT_WEIGHT );
-            rItemSet.Put( rField.GetPosture(), ATTR_CJK_FONT_POSTURE );
+            SvxFontHeightItem aFontHeightItem(rField.GetHeight());
+            aFontHeightItem.SetWhich(ATTR_CJK_FONT_HEIGHT);
+            rItemSet.Put( aFontHeightItem );
+            SvxWeightItem aWeightItem(rField.GetWeight());
+            aWeightItem.SetWhich(ATTR_CJK_FONT_WEIGHT);
+            rItemSet.Put( aWeightItem );
+            SvxPostureItem aPostureItem(rField.GetPosture());
+            aPostureItem.SetWhich(ATTR_CJK_FONT_POSTURE);
+            rItemSet.Put( aPostureItem );
         }
         // do not insert empty CTL font
         const SvxFontItem& rCTLFont = rField.GetCTLFont();
@@ -672,9 +678,15 @@ void ScAutoFormatData::FillToItemSet( sal_uInt16 nIndex, SfxItemSet& rItemSet, S
         }
         else
         {
-            rItemSet.Put( rField.GetHeight(), ATTR_CTL_FONT_HEIGHT );
-            rItemSet.Put( rField.GetWeight(), ATTR_CTL_FONT_WEIGHT );
-            rItemSet.Put( rField.GetPosture(), ATTR_CTL_FONT_POSTURE );
+            SvxFontHeightItem aFontHeightItem(rField.GetHeight());
+            aFontHeightItem.SetWhich(ATTR_CTL_FONT_HEIGHT);
+            rItemSet.Put( aFontHeightItem );
+            SvxWeightItem aWeightItem(rField.GetWeight());
+            aWeightItem.SetWhich(ATTR_CTL_FONT_WEIGHT);
+            rItemSet.Put( aWeightItem );
+            SvxPostureItem aPostureItem(rField.GetPosture());
+            aPostureItem.SetWhich(ATTR_CTL_FONT_POSTURE);
+            rItemSet.Put( aPostureItem );
         }
         rItemSet.Put( rField.GetUnderline() );
         rItemSet.Put( rField.GetOverline() );
@@ -900,6 +912,8 @@ ScAutoFormat::ScAutoFormat() :
 bool DefaultFirstEntry::operator() (const OUString& left, const OUString& right) const
 {
     OUString aStrStandard(ScGlobal::GetRscString(STR_STYLENAME_STANDARD));
+    if (ScGlobal::GetpTransliteration()->isEqual( left, right ) )
+        return false;
     if ( ScGlobal::GetpTransliteration()->isEqual( left, aStrStandard ) )
         return true;
     if ( ScGlobal::GetpTransliteration()->isEqual( right, aStrStandard ) )

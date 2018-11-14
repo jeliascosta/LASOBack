@@ -33,7 +33,7 @@ using namespace com::sun::star::sdbc;
 using namespace com::sun::star::sdbcx;
 
 
-OAdoKey::OAdoKey(sal_Bool _bCase,OConnection* _pConnection, ADOKey* _pKey)
+OAdoKey::OAdoKey(bool _bCase,OConnection* _pConnection, ADOKey* _pKey)
     : OKey_ADO(_bCase)
     ,m_pConnection(_pConnection)
 {
@@ -42,7 +42,7 @@ OAdoKey::OAdoKey(sal_Bool _bCase,OConnection* _pConnection, ADOKey* _pKey)
     fillPropertyValues();
 }
 
-OAdoKey::OAdoKey(sal_Bool _bCase,OConnection* _pConnection)
+OAdoKey::OAdoKey(bool _bCase,OConnection* _pConnection)
     : OKey_ADO(_bCase)
     ,m_pConnection(_pConnection)
 {
@@ -69,7 +69,7 @@ void OAdoKey::refreshColumns()
 
 Sequence< sal_Int8 > OAdoKey::getUnoTunnelImplementationId()
 {
-    static ::cppu::OImplementationId * pId = 0;
+    static ::cppu::OImplementationId * pId = nullptr;
     if (! pId)
     {
         ::osl::MutexGuard aGuard( ::osl::Mutex::getGlobalMutex() );
@@ -82,7 +82,7 @@ Sequence< sal_Int8 > OAdoKey::getUnoTunnelImplementationId()
     return pId->getImplementationId();
 }
 
-// com::sun::star::lang::XUnoTunnel
+// css::lang::XUnoTunnel
 
 sal_Int64 OAdoKey::getSomething( const Sequence< sal_Int8 > & rId ) throw (RuntimeException)
 {
@@ -141,17 +141,5 @@ void OAdoKey::setFastPropertyValue_NoBroadcast(sal_Int32 nHandle,const Any& rVal
     }
     OKey_ADO::setFastPropertyValue_NoBroadcast(nHandle,rValue);
 }
-
-
-void SAL_CALL OAdoKey::acquire() throw()
-{
-    OKey_ADO::acquire();
-}
-
-void SAL_CALL OAdoKey::release() throw()
-{
-    OKey_ADO::release();
-}
-
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

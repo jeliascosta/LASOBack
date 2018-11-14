@@ -21,11 +21,13 @@
 #include <set>
 #include <comphelper/servicehelper.hxx>
 #include <com/sun/star/drawing/XShapes.hpp>
+#include <com/sun/star/lang/WrappedTargetRuntimeException.hpp>
 #include <com/sun/star/xml/sax/FastShapeContextHandler.hpp>
 #include <ooxml/QNameToString.hxx>
 #include <ooxml/resourceids.hxx>
 #include <oox/token/namespaces.hxx>
 #include <comphelper/embeddedobjectcontainer.hxx>
+#include <cppuhelper/exc_hlp.hxx>
 #include <tools/globname.hxx>
 #include <comphelper/classids.hxx>
 #include <sfx2/sfxbasemodel.hxx>
@@ -866,7 +868,6 @@ void OOXMLFastContextHandler::sendPropertiesToParent()
     }
 }
 
-
 /*
   class OOXMLFastContextHandlerStream
  */
@@ -936,18 +937,34 @@ void OOXMLFastContextHandlerProperties::lcl_endFastElement
 (Token_t Element)
     throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
-    endAction(Element);
-
-    if (mbResolve)
+    try
     {
-        if (isForwardEvents())
+        endAction(Element);
+
+        if (mbResolve)
         {
-            mpStream->props(mpPropertySet);
+            if (isForwardEvents())
+            {
+                mpStream->props(mpPropertySet);
+            }
+        }
+        else
+        {
+            sendPropertiesToParent();
         }
     }
-    else
+    catch (const uno::RuntimeException&)
     {
-        sendPropertiesToParent();
+        throw;
+    }
+    catch (const xml::sax::SAXException&)
+    {
+        throw;
+    }
+    catch (const uno::Exception& e)
+    {
+        auto a = cppu::getCaughtException();
+        throw lang::WrappedTargetRuntimeException(e.Message, e.Context, a);
     }
 }
 
@@ -1042,6 +1059,11 @@ void OOXMLFastContextHandlerProperties::handleFontRel()
 {
     OOXMLEmbeddedFontHandler handler(this);
     getPropertySet()->resolve(handler);
+}
+
+void OOXMLFastContextHandlerProperties::handleHyperlinkURL() {
+    OOXMLHyperlinkURLHandler aHyperlinkURLHandler(this);
+    getPropertySet()->resolve(aHyperlinkURLHandler);
 }
 
 void OOXMLFastContextHandlerProperties::setParent
@@ -1733,7 +1755,7 @@ void OOXMLFastContextHandlerShape::lcl_characters
 
 OOXMLFastContextHandlerWrapper::OOXMLFastContextHandlerWrapper
 (OOXMLFastContextHandler * pParent,
- uno::Reference<XFastContextHandler> xContext)
+ uno::Reference<XFastContextHandler> const & xContext)
 : OOXMLFastContextHandler(pParent), mxContext(xContext)
 {
     setId(pParent->getId());

@@ -55,11 +55,12 @@
 #include <svl/intitem.hxx>
 #include <editeng/lineitem.hxx>
 #include "scdllapi.h"
-#include "global.hxx"
 #include "zforauto.hxx"
 
 #include <memory>
 #include <map>
+
+class ScDocument;
 
 /**
 A binary blob of writer-specific data. This data typically consists of types that are
@@ -73,7 +74,7 @@ blobs to avoid needlessly complicating the Calc logic.
 struct AutoFormatSwBlob
 {
     sal_uInt8 *pData;
-    sal_Size size;
+    std::size_t size;
 
     AutoFormatSwBlob() : pData(nullptr), size(0)
     {

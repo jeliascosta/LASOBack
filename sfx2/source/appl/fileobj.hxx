@@ -49,16 +49,16 @@ class SvFileObject : public sfx2::SvLinkSource
     bool bStateChangeCalled : 1;
     bool bInCallDownload : 1;
 
-    bool GetGraphic_Impl( Graphic&, SvStream* pStream = nullptr );
+    bool GetGraphic_Impl( Graphic&, SvStream* pStream );
     bool LoadFile_Impl();
     void SendStateChg_Impl( sfx2::LinkManager::LinkState nState );
 
-    DECL_LINK_TYPED( DelMedium_Impl, void*, void );
-    DECL_LINK_TYPED( LoadGrfReady_Impl, void*, void );
-    DECL_LINK_TYPED( DialogClosedHdl, sfx2::FileDialogHelper*, void );
+    DECL_LINK( DelMedium_Impl, void*, void );
+    DECL_LINK( LoadGrfReady_Impl, void*, void );
+    DECL_LINK( DialogClosedHdl, sfx2::FileDialogHelper*, void );
 
 protected:
-    virtual ~SvFileObject();
+    virtual ~SvFileObject() override;
 
 public:
     SvFileObject();

@@ -24,8 +24,7 @@
 #include <osl/mutex.hxx>
 #include <vcl/svapp.hxx>
 
-#include <rtl/random.h>
-
+#include <comphelper/random.hxx>
 
 #include <algorithm>
 #include <list>
@@ -111,7 +110,6 @@ namespace sfx2 {
 
 static const char s_content [] = "content.xml";
 static const char s_styles  [] = "styles.xml";
-static const char s_prefix  [] = "id";  // prefix for generated xml:id
 
 static bool isContentFile(OUString const & i_rPath)
 {
@@ -143,7 +141,7 @@ class XmlIdRegistry : public sfx2::IXmlIdRegistry
 public:
     XmlIdRegistry();
 
-    virtual ~XmlIdRegistry();
+    virtual ~XmlIdRegistry() override;
 
     /** get the ODF element with the given metadata reference. */
     virtual css::uno::Reference< css::rdf::XMetadatable >
@@ -214,7 +212,7 @@ class XmlIdRegistryDocument : public XmlIdRegistry
 public:
     XmlIdRegistryDocument();
 
-    virtual ~XmlIdRegistryDocument();
+    virtual ~XmlIdRegistryDocument() override;
 
     virtual void RegisterMetadatableAndCreateID(Metadatable& i_xObject) override;
 
@@ -306,7 +304,7 @@ class XmlIdRegistryClipboard : public XmlIdRegistry
 
 public:
     XmlIdRegistryClipboard();
-    virtual ~XmlIdRegistryClipboard();
+    virtual ~XmlIdRegistryClipboard() override;
 
     virtual void RegisterMetadatableAndCreateID(Metadatable& i_xObject) override;
 
@@ -389,7 +387,7 @@ template< typename T >
     std::unordered_map< OUString, T, OUStringHash > & i_rXmlIdMap)
 {
     static bool bHack = (getenv("LIBO_ONEWAY_STABLE_ODF_EXPORT") != nullptr);
-    const OUString prefix(s_prefix);
+    static const char prefix[] = "id";  // prefix for generated xml:id
     typename std::unordered_map< OUString, T, OUStringHash >
         ::const_iterator iter;
     OUString id;
@@ -406,12 +404,11 @@ template< typename T >
     }
     else
     {
-        static rtlRandomPool s_Pool( rtl_random_createPool() );
         do
         {
-            sal_Int32 n;
-            rtl_random_getBytes(s_Pool, & n, sizeof(n));
-            id = prefix + OUString::number(abs(n));
+            unsigned int const n(comphelper::rng::uniform_uint_distribution(0,
+                                    std::numeric_limits<unsigned int>::max()));
+            id = prefix + OUString::number(n);
             iter = i_rXmlIdMap.find(id);
         }
         while (iter != i_rXmlIdMap.end());
@@ -933,14 +930,6 @@ struct XmlIdRegistryClipboard::XmlIdRegistry_Impl
     Metadatable* const* LookupEntry(const OUString & i_rStreamName,
         const OUString & i_rIdref) const;
 
-    Metadatable*      * LookupEntry(const OUString & i_rStreamName,
-        const OUString & i_rIdref)
-    {
-        return const_cast<Metadatable**>(
-            const_cast<const XmlIdRegistry_Impl*>(this)
-                ->LookupEntry(i_rStreamName, i_rIdref));
-    }
-
     ClipboardXmlIdMap_t m_XmlIdMap;
     ClipboardXmlIdReverseMap_t m_XmlIdReverseMap;
 };
@@ -1036,7 +1025,7 @@ XmlIdRegistryClipboard::XmlIdRegistry_Impl::TryInsertMetadatable(
     OSL_ENSURE(isContentFile(i_rStreamName) || isStylesFile(i_rStreamName),
         "invalid stream");
 
-    Metadatable ** ppEntry = LookupEntry(i_rStreamName, i_rIdref);
+    Metadatable ** ppEntry = const_cast<Metadatable**>(LookupEntry(i_rStreamName, i_rIdref));
     if (ppEntry)
     {
         if (*ppEntry)

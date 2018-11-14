@@ -23,6 +23,7 @@
 #include <cppuhelper/component.hxx>
 #include <connectivity/CommonTools.hxx>
 #include <cppuhelper/compbase.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <com/sun/star/sdbc/XConnection.hpp>
 #include <com/sun/star/sdbc/XWarningsSupplier.hpp>
 #include <com/sun/star/sdbc/SQLWarning.hpp>
@@ -44,13 +45,13 @@ namespace dbaccess
                                            > OSharedConnection_BASE;
     typedef ::connectivity::OConnectionWrapper  OSharedConnection_BASE2;
 
-    class OSharedConnection :   public ::comphelper::OBaseMutex
+    class OSharedConnection :   public ::cppu::BaseMutex
                               , public OSharedConnection_BASE
                               , public OSharedConnection_BASE2
     {
     protected:
         virtual void SAL_CALL disposing() override;
-        virtual ~OSharedConnection();
+        virtual ~OSharedConnection() override;
     public:
         explicit OSharedConnection(css::uno::Reference< css::uno::XAggregation >& _rxProxyConnection);
 

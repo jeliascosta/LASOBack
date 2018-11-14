@@ -117,7 +117,6 @@ void OutputDevice::ImplPrintTransparent( const Bitmap& rBmp, const Bitmap& rMask
                                          const Point& rDestPt, const Size& rDestSize,
                                          const Point& rSrcPtPixel, const Size& rSrcSizePixel )
 {
-    Point       aPt;
     Point       aDestPt( LogicToPixel( rDestPt ) );
     Size        aDestSz( LogicToPixel( rDestSize ) );
     Rectangle   aSrcRect( rSrcPtPixel, rSrcSizePixel );
@@ -149,7 +148,7 @@ void OutputDevice::ImplPrintTransparent( const Bitmap& rBmp, const Bitmap& rMask
         }
 
         // source cropped?
-        if( aSrcRect != Rectangle( aPt, aPaint.GetSizePixel() ) )
+        if( aSrcRect != Rectangle( Point(), aPaint.GetSizePixel() ) )
         {
             aPaint.Crop( aSrcRect );
             aMask.Crop( aSrcRect );
@@ -234,8 +233,8 @@ void OutputDevice::DrawTransparent( const basegfx::B2DPolyPolygon& rB2DPolyPoly,
         InitFillColor();
 
     if((mnAntialiasing & AntialiasingFlags::EnableB2dDraw) &&
-       mpGraphics->supportsOperation(OutDevSupport_B2DDraw) &&
-       (ROP_OVERPAINT == GetRasterOp()) )
+       mpGraphics->supportsOperation(OutDevSupportType::B2DDraw) &&
+       (RasterOp::OverPaint == GetRasterOp()) )
     {
         // b2dpolygon support not implemented yet on non-UNX platforms
         const basegfx::B2DHomMatrix aTransform = ImplGetDeviceTransformation();
@@ -306,7 +305,7 @@ bool OutputDevice::DrawTransparentNatively ( const tools::PolyPolygon& rPolyPoly
     static const char* pDisableNative = getenv( "SAL_DISABLE_NATIVE_ALPHA");
 
     if( !pDisableNative &&
-        mpGraphics->supportsOperation( OutDevSupport_B2DDraw )
+        mpGraphics->supportsOperation( OutDevSupportType::B2DDraw )
 #if defined UNX && ! defined MACOSX && ! defined IOS
         && GetBitCount() > 8
 #endif

@@ -71,6 +71,7 @@
 #include <uno/current_context.hxx>
 #include <uno/environment.h>
 #include <jvmfwk/framework.hxx>
+#include <i18nlangtag/languagetag.hxx>
 #include "jni.h"
 
 #include <stack>
@@ -125,7 +126,7 @@ public:
 private:
     inline SingletonFactory() {}
 
-    virtual inline ~SingletonFactory() {}
+    virtual inline ~SingletonFactory() override {}
 
     SingletonFactory(const SingletonFactory&) = delete;
     SingletonFactory& operator=(const SingletonFactory&) = delete;
@@ -286,14 +287,12 @@ void getINetPropsFromConfig(stoc_javavm::JVM * pjvm,
         // read ftp proxy name
         css::uno::Reference<css::registry::XRegistryKey> ftpProxy_name = xRegistryRootKey->openKey("Settings/ooInetFTPProxyName");
         if(ftpProxy_name.is() && !ftpProxy_name->getStringValue().isEmpty()) {
-            OUString ftpHost = "ftp.proxyHost=";
-            ftpHost += ftpProxy_name->getStringValue();
+            OUString ftpHost = "ftp.proxyHost=" + ftpProxy_name->getStringValue();
 
             // read ftp proxy port
             css::uno::Reference<css::registry::XRegistryKey> ftpProxy_port = xRegistryRootKey->openKey("Settings/ooInetFTPProxyPort");
             if(ftpProxy_port.is() && ftpProxy_port->getLongValue()) {
-                OUString ftpPort = "ftp.proxyPort=";
-                ftpPort += OUString::number(ftpProxy_port->getLongValue());
+                OUString ftpPort = "ftp.proxyPort=" + OUString::number(ftpProxy_port->getLongValue());
 
                 pjvm->pushProp(ftpHost);
                 pjvm->pushProp(ftpPort);
@@ -303,14 +302,12 @@ void getINetPropsFromConfig(stoc_javavm::JVM * pjvm,
         // read http proxy name
         css::uno::Reference<css::registry::XRegistryKey> httpProxy_name = xRegistryRootKey->openKey("Settings/ooInetHTTPProxyName");
         if(httpProxy_name.is() && !httpProxy_name->getStringValue().isEmpty()) {
-            OUString httpHost = "http.proxyHost=";
-            httpHost += httpProxy_name->getStringValue();
+            OUString httpHost = "http.proxyHost=" + httpProxy_name->getStringValue();
 
             // read http proxy port
             css::uno::Reference<css::registry::XRegistryKey> httpProxy_port = xRegistryRootKey->openKey("Settings/ooInetHTTPProxyPort");
             if(httpProxy_port.is() && httpProxy_port->getLongValue()) {
-                OUString httpPort = "http.proxyPort=";
-                httpPort += OUString::number(httpProxy_port->getLongValue());
+                OUString httpPort = "http.proxyPort=" + OUString::number(httpProxy_port->getLongValue());
 
                 pjvm->pushProp(httpHost);
                 pjvm->pushProp(httpPort);
@@ -320,14 +317,12 @@ void getINetPropsFromConfig(stoc_javavm::JVM * pjvm,
         // read https proxy name
         css::uno::Reference<css::registry::XRegistryKey> httpsProxy_name = xRegistryRootKey->openKey("Settings/ooInetHTTPSProxyName");
         if(httpsProxy_name.is() && !httpsProxy_name->getStringValue().isEmpty()) {
-            OUString httpsHost = "https.proxyHost=";
-            httpsHost += httpsProxy_name->getStringValue();
+            OUString httpsHost = "https.proxyHost=" + httpsProxy_name->getStringValue();
 
             // read https proxy port
             css::uno::Reference<css::registry::XRegistryKey> httpsProxy_port = xRegistryRootKey->openKey("Settings/ooInetHTTPSProxyPort");
             if(httpsProxy_port.is() && httpsProxy_port->getLongValue()) {
-                OUString httpsPort = "https.proxyPort=";
-                httpsPort += OUString::number(httpsProxy_port->getLongValue());
+                OUString httpsPort = "https.proxyPort=" + OUString::number(httpsProxy_port->getLongValue());
 
                 pjvm->pushProp(httpsHost);
                 pjvm->pushProp(httpsPort);
@@ -337,14 +332,12 @@ void getINetPropsFromConfig(stoc_javavm::JVM * pjvm,
         // read  nonProxyHosts
         css::uno::Reference<css::registry::XRegistryKey> nonProxies_name = xRegistryRootKey->openKey("Settings/ooInetNoProxy");
         if(nonProxies_name.is() && !nonProxies_name->getStringValue().isEmpty()) {
-            OUString httpNonProxyHosts = "http.nonProxyHosts=";
-            OUString ftpNonProxyHosts = "ftp.nonProxyHosts=";
-            OUString value= nonProxies_name->getStringValue();
+            OUString value = nonProxies_name->getStringValue();
             // replace the separator ";" by "|"
-            value= value.replace((sal_Unicode)';', (sal_Unicode)'|');
+            value = value.replace((sal_Unicode)';', (sal_Unicode)'|');
 
-            httpNonProxyHosts += value;
-            ftpNonProxyHosts += value;
+            OUString httpNonProxyHosts = "http.nonProxyHosts=" + value;
+            OUString ftpNonProxyHosts = "ftp.nonProxyHosts=" + value;
 
             pjvm->pushProp(httpNonProxyHosts);
             pjvm->pushProp(ftpNonProxyHosts);
@@ -356,7 +349,7 @@ void getINetPropsFromConfig(stoc_javavm::JVM * pjvm,
 void getDefaultLocaleFromConfig(
     stoc_javavm::JVM * pjvm,
     const css::uno::Reference<css::lang::XMultiComponentFactory> & xSMgr,
-    const css::uno::Reference<css::uno::XComponentContext> &xCtx ) throw(css::uno::Exception)
+    const css::uno::Reference<css::uno::XComponentContext> &xCtx ) throw(css::uno::Exception, std::exception)
 {
     css::uno::Reference<css::uno::XInterface> xConfRegistry =
         xSMgr->createInstanceWithContext( "com.sun.star.configuration.ConfigurationRegistry", xCtx );
@@ -373,31 +366,83 @@ void getDefaultLocaleFromConfig(
     xConfRegistry_simple->open("org.openoffice.Setup", true, false);
     css::uno::Reference<css::registry::XRegistryKey> xRegistryRootKey = xConfRegistry_simple->getRootKey();
 
-    // read locale
-    css::uno::Reference<css::registry::XRegistryKey> locale = xRegistryRootKey->openKey("L10N/ooLocale");
-    if(locale.is() && !locale->getStringValue().isEmpty()) {
+    // Since 1.7 Java knows DISPLAY and FORMAT locales, which match our UI and
+    // system locale. See
+    // http://hg.openjdk.java.net/jdk8u/jdk8u-dev/jdk/file/569b1b644416/src/share/classes/java/util/Locale.java
+    // https://docs.oracle.com/javase/tutorial/i18n/locale/scope.html
+    // https://docs.oracle.com/javase/7/docs/api/java/util/Locale.html
+
+    // Read UI language/locale.
+    css::uno::Reference<css::registry::XRegistryKey> xUILocale = xRegistryRootKey->openKey("L10N/ooLocale");
+    if(xUILocale.is() && !xUILocale->getStringValue().isEmpty()) {
+        LanguageTag aLanguageTag( xUILocale->getStringValue());
         OUString language;
+        OUString script;
         OUString country;
+        // Java knows nothing but plain old ISO codes, unless Locale.Builder or
+        // Locale.forLanguageTag() are used, or non-standardized variant field
+        // content which we ignore.
+        aLanguageTag.getIsoLanguageScriptCountry( language, script, country);
 
-        sal_Int32 index = locale->getStringValue().indexOf((sal_Unicode) '-');
+        if(!language.isEmpty()) {
+            OUString prop = "user.language=" + language;
+            pjvm->pushProp(prop);
+        }
 
-        if(index >= 0) {
-            language = locale->getStringValue().copy(0, index);
-            country = locale->getStringValue().copy(index + 1);
+        // As of Java 7 also script is supported.
+        if(!script.isEmpty()) {
+            OUString prop = "user.script=" + script;
+            pjvm->pushProp(prop);
+        }
 
-            if(!language.isEmpty()) {
-                OUString prop("user.language=");
-                prop += language;
+        if(!country.isEmpty()) {
+            OUString prop = "user.country=" + country;
+            pjvm->pushProp(prop);
+        }
 
-                pjvm->pushProp(prop);
-            }
+        // Java 7 DISPLAY category is our UI language/locale.
+        if(!language.isEmpty()) {
+            OUString prop = "user.language.display=" + language;
+            pjvm->pushProp(prop);
+        }
 
-            if(!country.isEmpty()) {
-                OUString prop("user.country=");
-                prop += country;
+        if(!script.isEmpty()) {
+            OUString prop = "user.script.display=" + script;
+            pjvm->pushProp(prop);
+        }
 
-                pjvm->pushProp(prop);
-            }
+        if(!country.isEmpty()) {
+            OUString prop = "user.country.display=" + country;
+            pjvm->pushProp(prop);
+        }
+    }
+
+    // Read system locale.
+    css::uno::Reference<css::registry::XRegistryKey> xLocale = xRegistryRootKey->openKey("L10N/ooSetupSystemLocale");
+    if(xLocale.is() && !xLocale->getStringValue().isEmpty()) {
+        LanguageTag aLanguageTag( xLocale->getStringValue());
+        OUString language;
+        OUString script;
+        OUString country;
+        // Java knows nothing but plain old ISO codes, unless Locale.Builder or
+        // Locale.forLanguageTag() are used, or non-standardized variant field
+        // content which we ignore.
+        aLanguageTag.getIsoLanguageScriptCountry( language, script, country);
+
+        // Java 7 FORMAT category is our system locale.
+        if(!language.isEmpty()) {
+            OUString prop = "user.language.format=" + language;
+            pjvm->pushProp(prop);
+        }
+
+        if(!script.isEmpty()) {
+            OUString prop = "user.script.format=" + script;
+            pjvm->pushProp(prop);
+        }
+
+        if(!country.isEmpty()) {
+            OUString prop = "user.country.format=" + country;
+            pjvm->pushProp(prop);
         }
     }
 
@@ -494,7 +539,7 @@ void setTimeZone(stoc_javavm::JVM * pjvm) throw() {
 void initVMConfiguration(
     stoc_javavm::JVM * pjvm,
     const css::uno::Reference<css::lang::XMultiComponentFactory> & xSMgr,
-    const css::uno::Reference<css::uno::XComponentContext > &xCtx) throw(css::uno::Exception)
+    const css::uno::Reference<css::uno::XComponentContext > &xCtx) throw(css::uno::Exception, std::exception)
 {
     stoc_javavm::JVM jvm;
     try {
@@ -565,7 +610,6 @@ JavaVirtualMachine::JavaVirtualMachine(
     m_xContext(rContext),
     m_bDisposed(false),
     m_pJavaVm(nullptr),
-    m_bDontCreateJvm(false),
     m_aAttachGuards(destroyAttachGuards) // TODO check for validity
 {}
 
@@ -673,12 +717,6 @@ JavaVirtualMachine::getJavaVM(css::uno::Sequence< sal_Int8 > const & rProcessId)
     jfw::JavaInfoGuard info;
     while (!m_xVirtualMachine.is()) // retry until successful
     {
-        // This is the second attempt to create Java.  m_bDontCreateJvm is
-        // set which means instantiating the JVM might crash.
-        if (m_bDontCreateJvm)
-            //throw css::uno::RuntimeException();
-            return css::uno::Any();
-
         stoc_javavm::JVM aJvm;
         initVMConfiguration(&aJvm, m_xContext->getServiceManager(),
                             m_xContext);

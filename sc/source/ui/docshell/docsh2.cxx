@@ -18,10 +18,16 @@
  */
 
 #include "scitems.hxx"
+#include <rtl/bootstrap.hxx>
+#include <osl/file.hxx>
 #include <svx/drawitem.hxx>
 #include <svl/asiancfg.hxx>
 #include <editeng/forbiddencharacterstable.hxx>
 #include <editeng/unolingu.hxx>
+#include <orcus/orcus_import_ods.hpp>
+#include <orcusfiltersimpl.hxx>
+#include <config_orcus.h>
+#include <config_folders.h>
 
 #include "drwlayer.hxx"
 #include "stlpool.hxx"
@@ -29,6 +35,7 @@
 #include "docshimp.hxx"
 #include "docfunc.hxx"
 #include "sc.hrc"
+#include "filter.hxx"
 
 using namespace com::sun::star;
 
@@ -52,6 +59,26 @@ bool ScDocShell::InitNew( const uno::Reference < embed::XStorage >& xStor )
 
     aDocument.GetStyleSheetPool()->CreateStandardStyles();
     aDocument.UpdStlShtPtrsFrmNms();
+
+#if ENABLE_ORCUS
+    if (!mbUcalcTest)
+    {
+        /* Create styles that are imported through Orcus */
+
+        OUString aURL("$BRAND_BASE_DIR/" LIBO_SHARE_FOLDER "/calc/styles.xml");
+        rtl::Bootstrap::expandMacros(aURL);
+
+        OUString aPath;
+        osl::FileBase::getSystemPathFromFileURL(aURL, aPath);
+
+        ScOrcusFilters* pOrcus = ScFormatFilter::Get().GetOrcusFilters();
+        if (pOrcus)
+        {
+            pOrcus->importODS_Styles(aDocument, aPath);
+            aDocument.GetStyleSheetPool()->setAllStandard();
+        }
+    }
+#endif
 
     //  SetDocumentModified is not allowed anymore in Load/InitNew!
     InitItems();
@@ -78,6 +105,7 @@ void ScDocShell::InitItems()
         PutItem( SvxGradientListItem( pDrawLayer->GetGradientList(), SID_GRADIENT_LIST ) );
         PutItem( SvxHatchListItem   ( pDrawLayer->GetHatchList(), SID_HATCH_LIST ) );
         PutItem( SvxBitmapListItem  ( pDrawLayer->GetBitmapList(), SID_BITMAP_LIST ) );
+        PutItem( SvxPatternListItem ( pDrawLayer->GetPatternList(), SID_PATTERN_LIST ) );
         PutItem( SvxDashListItem    ( pDrawLayer->GetDashList(), SID_DASH_LIST ) );
         PutItem( SvxLineEndListItem ( pDrawLayer->GetLineEndList(), SID_LINEEND_LIST ) );
 
@@ -148,7 +176,7 @@ ScDrawLayer* ScDocShell::MakeDrawLayer()
         aDocument.InitDrawLayer(this);
         pDrawLayer = aDocument.GetDrawLayer();
         InitItems(); // including Undo and Basic
-        Broadcast( SfxSimpleHint( SC_HINT_DRWLAYER_NEW ) );
+        Broadcast( SfxHint( SC_HINT_DRWLAYER_NEW ) );
         if (nDocumentLock)
             pDrawLayer->setLock(true);
     }

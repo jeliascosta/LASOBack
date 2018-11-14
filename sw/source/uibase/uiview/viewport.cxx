@@ -217,16 +217,13 @@ void SwView::SetVisArea( const Rectangle &rRect, bool bUpdateScrollbar )
         // If m_pWrtShell's visible area is the whole document, do the same here.
         aOldSz = m_pWrtShell->VisArea().SSize();
 
-    const Point aTopLeft(     AlignToPixel( rRect.TopLeft() ));
-    const Point aBottomRight( AlignToPixel( rRect.BottomRight() ));
-    Rectangle aLR( aTopLeft, aBottomRight );
-
-    if( aLR == m_aVisArea )
+    if( rRect == m_aVisArea )
         return;
 
     const SwTwips lMin = IsDocumentBorder() ? DOCUMENTBORDER : 0;
 
     // No negative position, no negative size
+    Rectangle aLR = rRect;
     if( aLR.Top() < lMin )
     {
         aLR.Bottom() += lMin - aLR.Top();
@@ -532,6 +529,13 @@ void SwView::Scroll( const Rectangle &rRect, sal_uInt16 nRangeX, sal_uInt16 nRan
 
 bool SwView::GetPageScrollUpOffset( SwTwips &rOff ) const
 {
+    // in the LOK case, force the value set by the API
+    if (comphelper::LibreOfficeKit::isActive() && m_nLOKPageUpDownOffset > 0)
+    {
+        rOff = -m_nLOKPageUpDownOffset;
+        return true;
+    }
+
     if ( !m_aVisArea.Top() || !m_aVisArea.GetHeight() )
         return false;
     long nYScrl = GetYScroll() / 2;
@@ -542,15 +546,18 @@ bool SwView::GetPageScrollUpOffset( SwTwips &rOff ) const
     else if( GetWrtShell().GetCharRect().Top() < (m_aVisArea.Top() + nYScrl))
         rOff += nYScrl;
 
-    // in the LOK case, force the value set by the API
-    if (comphelper::LibreOfficeKit::isActive() && m_nLOKPageUpDownOffset > 0)
-        rOff = -m_nLOKPageUpDownOffset;
-
     return true;
 }
 
 bool SwView::GetPageScrollDownOffset( SwTwips &rOff ) const
 {
+    // in the LOK case, force the value set by the API
+    if (comphelper::LibreOfficeKit::isActive() && m_nLOKPageUpDownOffset > 0)
+    {
+        rOff = m_nLOKPageUpDownOffset;
+        return true;
+    }
+
     if ( !m_aVisArea.GetHeight() ||
          (m_aVisArea.GetHeight() > m_aDocSz.Height()) )
         return false;
@@ -562,10 +569,6 @@ bool SwView::GetPageScrollDownOffset( SwTwips &rOff ) const
     else if( GetWrtShell().GetCharRect().Bottom() >
                                             ( m_aVisArea.Bottom() - nYScrl ))
         rOff -= nYScrl;
-
-    // in the LOK case, force the value set by the API
-    if (comphelper::LibreOfficeKit::isActive() && m_nLOKPageUpDownOffset > 0)
-        rOff = m_nLOKPageUpDownOffset;
 
     return rOff > 0;
 }
@@ -674,17 +677,17 @@ bool SwView::PageDownCursor(bool bSelect)
 
 // Handler of the scrollbars
 
-IMPL_LINK_TYPED( SwView, ScrollHdl, ScrollBar *, p, void )
+IMPL_LINK( SwView, ScrollHdl, ScrollBar *, p, void )
 {
     SwScrollbar* pScrollbar = static_cast<SwScrollbar*>(p);
     if ( GetWrtShell().ActionPend() )
         return;
 
-    if ( pScrollbar->GetType() == SCROLL_DRAG )
+    if ( pScrollbar->GetType() == ScrollType::Drag )
         m_pWrtShell->EnableSmooth( false );
 
     if(!m_pWrtShell->GetViewOptions()->getBrowseMode() &&
-        pScrollbar->GetType() == SCROLL_DRAG)
+        pScrollbar->GetType() == ScrollType::Drag)
     {
         // Here comment out again if it is not desired to scroll together:
         // The end scrollhandler invalidate the FN_STAT_PAGE,
@@ -740,13 +743,13 @@ IMPL_LINK_TYPED( SwView, ScrollHdl, ScrollBar *, p, void )
     else
         EndScrollHdl(pScrollbar);
 
-    if ( pScrollbar->GetType() == SCROLL_DRAG )
+    if ( pScrollbar->GetType() == ScrollType::Drag )
         m_pWrtShell->EnableSmooth( true );
 }
 
 // Handler of the scrollbars
 
-IMPL_LINK_TYPED( SwView, EndScrollHdl, ScrollBar *, p, void )
+IMPL_LINK( SwView, EndScrollHdl, ScrollBar *, p, void )
 {
     SwScrollbar* pScrollbar = static_cast<SwScrollbar*>(p);
     if ( !GetWrtShell().ActionPend() )
@@ -949,7 +952,7 @@ void SwView::ShowAtResize()
         m_pHRuler->Show();
 }
 
-void SwView::InnerResizePixel( const Point &rOfst, const Size &rSize )
+void SwView::InnerResizePixel( const Point &rOfst, const Size &rSize, bool )
 {
     Size aObjSize = GetObjectShell()->GetVisArea().GetSize();
     if ( aObjSize.Width() > 0 && aObjSize.Height() > 0 )
@@ -958,7 +961,7 @@ void SwView::InnerResizePixel( const Point &rOfst, const Size &rSize )
         Size aSize( rSize );
         aSize.Width() -= (aBorder.Left() + aBorder.Right());
         aSize.Height() -= (aBorder.Top() + aBorder.Bottom());
-        Size aObjSizePixel = GetWindow()->LogicToPixel( aObjSize, MAP_TWIP );
+        Size aObjSizePixel = GetWindow()->LogicToPixel( aObjSize, MapUnit::MapTwip );
         SfxViewShell::SetZoomFactor( Fraction( aSize.Width(), aObjSizePixel.Width() ),
                         Fraction( aSize.Height(), aObjSizePixel.Height() ) );
     }

@@ -111,6 +111,7 @@ SlideSorterController::SlideSorterController (SlideSorter& rSlideSorter)
       mpListener(),
       mnModelChangeLockCount(0),
       mbIsForcedRearrangePending(false),
+      mbContextMenuOpen(false),
       mbPreModelChangeDone(false),
       mbPostModelChangePending(false),
       maSelectionBeforeSwitch(),
@@ -133,7 +134,7 @@ SlideSorterController::SlideSorterController (SlideSorter& rSlideSorter)
         // class.
         pWindow->SetBackground(Wallpaper());
         pWindow->SetCenterAllowed(false);
-        pWindow->SetMapMode(MapMode(MAP_PIXEL));
+        pWindow->SetMapMode(MapMode(MapUnit::MapPixel));
         pWindow->SetViewSize(mrView.GetModelArea().GetSize());
     }
 }
@@ -199,7 +200,6 @@ model::SharedPageDescriptor SlideSorterController::GetPageAt (
         // Depending on a property we may have to check that the mouse is no
         // just over the page object but over the preview area.
         if (pDescriptorAtPoint
-            && mrSlideSorter.GetProperties()->IsOnlyPreviewTriggersMouseOver()
             && ! pDescriptorAtPoint->HasState(PageDescriptor::ST_Selected))
         {
             // Make sure that the mouse is over the preview area.
@@ -240,25 +240,25 @@ ScrollBarManager& SlideSorterController::GetScrollBarManager()
     return *mpScrollBarManager.get();
 }
 
-std::shared_ptr<CurrentSlideManager> SlideSorterController::GetCurrentSlideManager() const
+std::shared_ptr<CurrentSlideManager> const & SlideSorterController::GetCurrentSlideManager() const
 {
     OSL_ASSERT(mpCurrentSlideManager.get()!=nullptr);
     return mpCurrentSlideManager;
 }
 
-std::shared_ptr<SlotManager> SlideSorterController::GetSlotManager() const
+std::shared_ptr<SlotManager> const & SlideSorterController::GetSlotManager() const
 {
     OSL_ASSERT(mpSlotManager.get()!=nullptr);
     return mpSlotManager;
 }
 
-std::shared_ptr<SelectionManager> SlideSorterController::GetSelectionManager() const
+std::shared_ptr<SelectionManager> const & SlideSorterController::GetSelectionManager() const
 {
     OSL_ASSERT(mpSelectionManager.get()!=nullptr);
     return mpSelectionManager;
 }
 
-std::shared_ptr<InsertionIndicatorHandler>
+std::shared_ptr<InsertionIndicatorHandler> const &
     SlideSorterController::GetInsertionIndicatorHandler() const
 {
     OSL_ASSERT(mpInsertionIndicatorHandler.get()!=nullptr);
@@ -326,7 +326,7 @@ bool SlideSorterController::Command (
             if (aSelectedPages.HasMoreElements())
                 pPage = aSelectedPages.GetNextElement()->GetPage();
 
-            if (mrModel.GetEditMode() == EM_PAGE)
+            if (mrModel.GetEditMode() == EditMode::Page)
             {
                 if (pPage != nullptr)
                     aPopupId = "pagepane";
@@ -387,7 +387,9 @@ bool SlideSorterController::Command (
                 SfxDispatcher* pDispatcher = pViewShell->GetDispatcher();
                 if (pDispatcher != nullptr)
                 {
+                    mbContextMenuOpen = true;
                     pDispatcher->ExecutePopup( aPopupId, pWindow, &aMenuLocation );
+                    mbContextMenuOpen = false;
                     mrSlideSorter.GetView().UpdatePageUnderMouse();
                     ::rtl::Reference<SelectionFunction> pFunction(GetCurrentSelectionFunction());
                     if (pFunction.is())
@@ -426,14 +428,12 @@ bool SlideSorterController::Command (
             {
                 GetScrollBarManager().Scroll(
                     ScrollBarManager::Orientation_Vertical,
-                    ScrollBarManager::Unit_Slide,
                     -pData->GetNotchDelta());
             }
             else
             {
                 GetScrollBarManager().Scroll(
                     ScrollBarManager::Orientation_Horizontal,
-                    ScrollBarManager::Unit_Slide,
                     -pData->GetNotchDelta());
             }
             mrSlideSorter.GetView().UpdatePageUnderMouse(rEvent.GetMousePosPixel());
@@ -520,14 +520,14 @@ void SlideSorterController::HandleModelChange()
     }
 }
 
-IMPL_LINK_TYPED(SlideSorterController, ApplicationEventHandler, VclSimpleEvent&, rEvent, void)
+IMPL_LINK(SlideSorterController, ApplicationEventHandler, VclSimpleEvent&, rEvent, void)
 {
     auto windowEvent = dynamic_cast<VclWindowEvent *>(&rEvent);
     if (windowEvent != nullptr) {
         WindowEventHandler(*windowEvent);
     }
 }
-IMPL_LINK_TYPED(SlideSorterController, WindowEventHandler, VclWindowEvent&, rEvent, void)
+IMPL_LINK(SlideSorterController, WindowEventHandler, VclWindowEvent&, rEvent, void)
 {
         vcl::Window* pWindow = rEvent.GetWindow();
         sd::Window *pActiveWindow (mrSlideSorter.GetContentWindow());
@@ -556,9 +556,14 @@ IMPL_LINK_TYPED(SlideSorterController, WindowEventHandler, VclWindowEvent&, rEve
                     GetFocusManager().HideFocus();
                     mrView.GetToolTip().Hide();
 
-                    // Select the current slide so that it is properly
-                    // visualized when the focus is moved to the edit view.
-                    GetPageSelector().SelectPage(GetCurrentSlideManager()->GetCurrentSlide());
+                    //don't scroll back to the selected slide when we lose
+                    //focus due to a temporary active context menu
+                    if (!mbContextMenuOpen)
+                    {
+                        // Select the current slide so that it is properly
+                        // visualized when the focus is moved to the edit view.
+                        GetPageSelector().SelectPage(GetCurrentSlideManager()->GetCurrentSlide());
+                    }
                 }
                 break;
 
@@ -743,7 +748,7 @@ void SlideSorterController::PrepareEditModeChange()
     //  Before we throw away the page descriptors we prepare for selecting
     //  descriptors in the other mode and for restoring the current
     //  selection when switching back to the current mode.
-    if (mrModel.GetEditMode() == EM_PAGE)
+    if (mrModel.GetEditMode() == EditMode::Page)
     {
         maSelectionBeforeSwitch.clear();
 
@@ -787,7 +792,7 @@ void SlideSorterController::ChangeEditMode (EditMode eEditMode)
 
 void SlideSorterController::FinishEditModeChange()
 {
-    if (mrModel.GetEditMode() == EM_MASTERPAGE)
+    if (mrModel.GetEditMode() == EditMode::MasterPage)
     {
         mpPageSelector->DeselectAllPages();
 

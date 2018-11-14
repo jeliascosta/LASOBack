@@ -28,8 +28,6 @@
 namespace oox {
 namespace xls {
 
-class BiffInputStream;
-
 /** A vector of com.sun.star.table.CellRangeAddress elements and additional
     functionality. */
 class ApiCellRangeList
@@ -90,11 +88,9 @@ struct BinAddress
 
     inline explicit     BinAddress() : mnCol( 0 ), mnRow( 0 ) {}
     inline explicit     BinAddress( sal_Int32 nCol, sal_Int32 nRow ) : mnCol( nCol ), mnRow( nRow ) {}
-    inline explicit     BinAddress( const css::table::CellAddress& rAddr ) : mnCol( rAddr.Column ), mnRow( rAddr.Row ) {}
     inline explicit     BinAddress( const ScAddress& rAddr ) : mnCol( rAddr.Col() ), mnRow( rAddr.Row() ) {}
 
     void                read( SequenceInputStream& rStrm );
-    void                read( BiffInputStream& rStrm );
 };
 
 inline bool operator<( const BinAddress& rL, const BinAddress& rR )
@@ -108,12 +104,6 @@ inline SequenceInputStream& operator>>( SequenceInputStream& rStrm, BinAddress& 
     return rStrm;
 }
 
-inline BiffInputStream& operator>>( BiffInputStream& rStrm, BinAddress& orPos )
-{
-    orPos.read( rStrm );
-    return rStrm;
-}
-
 /** A 2D cell range address struct for binary filters. */
 struct BinRange
 {
@@ -121,16 +111,9 @@ struct BinRange
     BinAddress          maLast;
 
     void                read( SequenceInputStream& rStrm );
-    void                read( BiffInputStream& rStrm );
 };
 
 inline SequenceInputStream& operator>>( SequenceInputStream& rStrm, BinRange& orRange )
-{
-    orRange.read( rStrm );
-    return rStrm;
-}
-
-inline BiffInputStream& operator>>( BiffInputStream& rStrm, BinRange& orRange )
 {
     orRange.read( rStrm );
     return rStrm;
@@ -156,16 +139,6 @@ inline SequenceInputStream& operator>>( SequenceInputStream& rStrm, BinRangeList
     orRanges.read( rStrm );
     return rStrm;
 }
-
-/** Different target types that can be encoded in a BIFF URL. */
-enum BiffTargetType
-{
-    BIFF_TARGETTYPE_URL,            /// URL, URL with sheet name, or sheet name.
-    BIFF_TARGETTYPE_SAMESHEET,      /// Target for special '!A1' syntax to refer to current sheet.
-    BIFF_TARGETTYPE_LIBRARY,        /// Library directory in application installation.
-    BIFF_TARGETTYPE_DDE_OLE,        /// DDE server/topic or OLE class/target.
-    BIFF_TARGETTYPE_UNKNOWN         /// Unknown/unsupported target type.
-};
 
 /** Converter for cell addresses and cell ranges for OOXML and BIFF filters.
  */
@@ -297,25 +270,9 @@ public:
         @return  true = Cell address could be parsed from the passed string.
      */
     static bool        convertToCellAddressUnchecked(
-                            css::table::CellAddress& orAddress,
-                            const OUString& rString,
-                            sal_Int16 nSheet );
-
-    /** Converts the passed string to a single cell address, without checking
-        any sheet limits.
-
-        @param orAddress  (out-parameter) Returns the converted cell address.
-        @param rString  Cell address string in A1 notation.
-        @param nSheet  Sheet index to be inserted into orAddress.
-        @return  true = Cell address could be parsed from the passed string.
-     */
-    static bool        convertToCellAddressUnchecked(
                             ScAddress& orAddress,
                             const OUString& rString,
                             sal_Int16 nSheet );
-
-    static bool convertToCellAddressUnchecked(
-        css::table::CellAddress& orAddress, const char* pStr, sal_Int16 nSheet );
 
     static bool convertToCellAddressUnchecked(
         ScAddress& orAddress, const char* pStr, sal_Int16 nSheet );
@@ -350,18 +307,6 @@ public:
                             const OUString& rString,
                             sal_Int16 nSheet,
                             bool bTrackOverflow );
-
-    /** Converts the passed address to a single cell address, without checking
-        any sheet limits.
-
-        @param orAddress  (out-parameter) Returns the converted cell address.
-        @param rBinAddress  Binary cell address struct.
-        @param nSheet  Sheet index to be inserted into orAddress.
-     */
-    static void        convertToCellAddressUnchecked(
-                            css::table::CellAddress& orAddress,
-                            const BinAddress& rBinAddress,
-                            sal_Int16 nSheet );
 
     /** Converts the passed address to a single cell address, without checking
         any sheet limits.

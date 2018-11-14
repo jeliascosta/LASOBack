@@ -119,7 +119,7 @@ public:
 
     BaseControl( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
 
-    virtual ~BaseControl();
+    virtual ~BaseControl() override;
 
     //  XInterface
 
@@ -352,12 +352,6 @@ public:
     virtual void SAL_CALL windowShown( const css::lang::EventObject& aEvent ) throw( css::uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL windowHidden( const css::lang::EventObject& aEvent ) throw( css::uno::RuntimeException, std::exception ) override;
 
-    //  impl but public method to register service
-
-    static const css::uno::Sequence< OUString > impl_getStaticSupportedServiceNames();
-
-    static const OUString impl_getStaticImplementationName();
-
 protected:
     using OComponentHelper::disposing;
 
@@ -384,8 +378,6 @@ protected:
     const css::uno::Reference< css::uno::XInterface >& impl_getDelegator() { return m_xDelegator;}
 
 private:
-
-    void impl_releasePeer();
 
     OMRCListenerMultiplexerHelper* impl_getMultiplexer();
 

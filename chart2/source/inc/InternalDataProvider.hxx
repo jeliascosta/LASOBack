@@ -77,9 +77,7 @@ public:
         bool bConnectToModel,
         bool bDefaultDataInColumns );
     explicit InternalDataProvider( const InternalDataProvider & rOther );
-    virtual ~InternalDataProvider();
-
-    void createDefaultData();
+    virtual ~InternalDataProvider() override;
 
     /// declare XServiceInfo methods
     virtual OUString SAL_CALL getImplementationName()
@@ -88,9 +86,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // ____ XInternalDataProvider ____
     virtual sal_Bool SAL_CALL hasDataByRangeRepresentation( const OUString& aRange )

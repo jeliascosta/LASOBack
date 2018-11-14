@@ -59,6 +59,7 @@
 #include <com/sun/star/bridge/oleautomation/XAutomationObject.hpp>
 #include <memory>
 #include <random>
+#include <o3tl/make_unique.hxx>
 
 using namespace comphelper;
 using namespace osl;
@@ -93,6 +94,8 @@ using namespace com::sun::star::uno;
 #include <direct.h>
 #include <io.h>
 #include <postwin.h>
+#else
+#include <unistd.h>
 #endif
 
 #if HAVE_FEATURE_SCRIPTING
@@ -160,7 +163,7 @@ OUString getFullPath( const OUString& aRelPath )
 }
 
 // TODO: -> SbiGlobals
-static uno::Reference< ucb::XSimpleFileAccess3 > getFileAccess()
+static uno::Reference< ucb::XSimpleFileAccess3 > const & getFileAccess()
 {
     static uno::Reference< ucb::XSimpleFileAccess3 > xSFI;
     if( !xSFI.is() )
@@ -182,13 +185,13 @@ RTLFUNC(CreateObject)
 
     OUString aClass( rPar.Get( 1 )->GetOUString() );
     SbxObjectRef p = SbxBase::CreateObject( aClass );
-    if( !p )
+    if( !p.Is() )
         StarBASIC::Error( ERRCODE_BASIC_CANNOT_LOAD );
     else
     {
         // Convenience: enter BASIC as parent
         p->SetParent( pBasic );
-        rPar.Get( 0 )->PutObject( p );
+        rPar.Get( 0 )->PutObject( p.get() );
     }
 }
 
@@ -203,7 +206,7 @@ RTLFUNC(Error)
     else
     {
         OUString aErrorMsg;
-        SbError nErr = 0L;
+        SbError nErr = 0;
         sal_Int32 nCode = 0;
         if( rPar.Count() == 1 )
         {
@@ -417,7 +420,7 @@ RTLFUNC(CurDir)
         }
     }
     char* pBuffer = new char[ _MAX_PATH ];
-    if ( _getdcwd( nCurDir, pBuffer, _MAX_PATH ) != 0 )
+    if ( _getdcwd( nCurDir, pBuffer, _MAX_PATH ) != nullptr )
     {
         rPar.Get(0)->PutString( OUString::createFromAscii( pBuffer ) );
     }
@@ -630,8 +633,8 @@ RTLFUNC(MkDir)
                 SbxArrayRef pPar = new SbxArray();
                 SbxVariableRef pResult = new SbxVariable();
                 SbxVariableRef pParam = new SbxVariable();
-                pPar->Insert( pResult, pPar->Count() );
-                pPar->Insert( pParam, pPar->Count() );
+                pPar->Insert( pResult.get(), pPar->Count() );
+                pPar->Insert( pParam.get(), pPar->Count() );
                 SbRtl_CurDir( pBasic, *pPar, bWrite );
 
                 rtl::OUString sCurPathURL;
@@ -902,7 +905,7 @@ RTLFUNC(InStr)
     (void)pBasic;
     (void)bWrite;
 
-    sal_Size nArgCount = rPar.Count()-1;
+    std::size_t nArgCount = rPar.Count()-1;
     if ( nArgCount < 2 )
         StarBASIC::Error( ERRCODE_BASIC_BAD_ARGUMENT );
     else
@@ -975,7 +978,7 @@ RTLFUNC(InStrRev)
     (void)pBasic;
     (void)bWrite;
 
-    sal_Size nArgCount = rPar.Count()-1;
+    std::size_t nArgCount = rPar.Count()-1;
     if ( nArgCount < 2 )
     {
         StarBASIC::Error( ERRCODE_BASIC_BAD_ARGUMENT );
@@ -1337,7 +1340,7 @@ RTLFUNC(Replace)
     (void)pBasic;
     (void)bWrite;
 
-    sal_Size nArgCount = rPar.Count()-1;
+    std::size_t nArgCount = rPar.Count()-1;
     if ( nArgCount < 3 || nArgCount > 6 )
     {
         StarBASIC::Error( ERRCODE_BASIC_BAD_ARGUMENT );
@@ -1458,7 +1461,7 @@ RTLFUNC(RTL)
     (void)pBasic;
     (void)bWrite;
 
-    rPar.Get( 0 )->PutObject( pBasic->getRTL() );
+    rPar.Get( 0 )->PutObject( pBasic->getRTL().get() );
 }
 
 RTLFUNC(RTrim)
@@ -2034,7 +2037,7 @@ RTLFUNC(CDateToIso)
     {
         double aDate = rPar.Get(1)->GetDate();
 
-        char Buffer[9];
+        char Buffer[11];
         snprintf( Buffer, sizeof( Buffer ), "%04d%02d%02d",
             implGetDateYear( aDate ),
             implGetDateMonth( aDate ),
@@ -2048,7 +2051,7 @@ RTLFUNC(CDateToIso)
     }
 }
 
-// Function to convert date from ISO 8601 date format
+// Function to convert date from ISO 8601 date format YYYYMMDD or YYYY-MM-DD
 RTLFUNC(CDateFromIso)
 {
     (void)pBasic;
@@ -2056,18 +2059,56 @@ RTLFUNC(CDateFromIso)
 
     if ( rPar.Count() == 2 )
     {
-        OUString aStr = rPar.Get(1)->GetOUString();
-        const sal_Int32 iMonthStart = aStr.getLength() - 4;
-        OUString aYearStr  = aStr.copy( 0, iMonthStart );
-        OUString aMonthStr = aStr.copy( iMonthStart, 2 );
-        OUString aDayStr   = aStr.copy( iMonthStart+2, 2 );
-
-        double dDate;
-        if( implDateSerial( (sal_Int16)aYearStr.toInt32(),
-            (sal_Int16)aMonthStr.toInt32(), (sal_Int16)aDayStr.toInt32(), dDate ) )
+        do
         {
+            OUString aStr = rPar.Get(1)->GetOUString();
+            const sal_Int32 nLen = aStr.getLength();
+            if (nLen != 6 && nLen != 8 && nLen != 10)
+                break;
+
+            OUString aYearStr, aMonthStr, aDayStr;
+            if (nLen == 6 || nLen == 8)
+            {
+                // (YY)YYMMDD
+                if (!comphelper::string::isdigitAsciiString(aStr))
+                    break;
+
+                const sal_Int32 nMonthPos = (nLen == 6 ? 2 : 4);
+                aYearStr  = aStr.copy( 0, nMonthPos );
+                aMonthStr = aStr.copy( nMonthPos, 2 );
+                aDayStr   = aStr.copy( nMonthPos + 2, 2 );
+            }
+            else
+            {
+                // YYYY-MM-DD
+                const sal_Int32 nSep1 = aStr.indexOf('-');
+                if (nSep1 != 4)
+                    break;
+                const sal_Int32 nSep2 = aStr.indexOf('-', nSep1+1);
+                if (nSep2 != 7)
+                    break;
+
+                aYearStr  = aStr.copy( 0, 4 );
+                aMonthStr = aStr.copy( 5, 2 );
+                aDayStr   = aStr.copy( 8, 2 );
+                if (    !comphelper::string::isdigitAsciiString(aYearStr) ||
+                        !comphelper::string::isdigitAsciiString(aMonthStr) ||
+                        !comphelper::string::isdigitAsciiString(aDayStr))
+                    break;
+            }
+
+            double dDate;
+            if (!implDateSerial( (sal_Int16)aYearStr.toInt32(),
+                        (sal_Int16)aMonthStr.toInt32(), (sal_Int16)aDayStr.toInt32(), dDate ))
+                break;
+
             rPar.Get(0)->PutDate( dDate );
+
+            return;
         }
+        while (false);
+
+        SbxBase::SetError( ERRCODE_SBX_BAD_PARAMETER );
     }
     else
     {
@@ -2720,8 +2761,7 @@ OUString implSetupWildcard( const OUString& rFileParam, SbiRTLData* pRTLData )
     static sal_Char cWild1 = '*';
     static sal_Char cWild2 = '?';
 
-    delete pRTLData->pWildCard;
-    pRTLData->pWildCard = nullptr;
+    pRTLData->pWildCard.reset();
     pRTLData->sFullNameToBeChecked.clear();
 
     OUString aFileParam = rFileParam;
@@ -2775,7 +2815,7 @@ OUString implSetupWildcard( const OUString& rFileParam, SbiRTLData* pRTLData )
     // invalid anyway because it was not accepted by OSL before
     if (aPureFileName != "*")
     {
-        pRTLData->pWildCard = new WildCard( aPureFileName );
+        pRTLData->pWildCard = o3tl::make_unique<WildCard>( aPureFileName );
     }
     return aPathStr;
 }
@@ -3012,12 +3052,11 @@ RTLFUNC(Dir)
 
                 // Read directory
                 bool bIncludeFolders = bool(nFlags & SbAttributes::DIRECTORY);
-                pRTLData->pDir = new Directory( aDirURL );
+                pRTLData->pDir = o3tl::make_unique<Directory>( aDirURL );
                 FileBase::RC nRet = pRTLData->pDir->open();
                 if( nRet != FileBase::E_None )
                 {
-                    delete pRTLData->pDir;
-                    pRTLData->pDir = nullptr;
+                    pRTLData->pDir.reset();
                     rPar.Get(0)->PutString( OUString() );
                     return;
                 }
@@ -3063,8 +3102,7 @@ RTLFUNC(Dir)
                         FileBase::RC nRet = pRTLData->pDir->getNextItem( aItem );
                         if( nRet != FileBase::E_None )
                         {
-                            delete pRTLData->pDir;
-                            pRTLData->pDir = nullptr;
+                            pRTLData->pDir.reset();
                             aPath.clear();
                             break;
                         }
@@ -3388,7 +3426,7 @@ RTLFUNC(Loc)
             return;
         }
         SvStream* pSvStrm = pSbStrm->GetStrm();
-        sal_Size nPos;
+        std::size_t nPos;
         if( pSbStrm->IsRandom())
         {
             short nBlockLen = pSbStrm->GetBlockLen();
@@ -3436,8 +3474,8 @@ RTLFUNC(Lof)
             return;
         }
         SvStream* pSvStrm = pSbStrm->GetStrm();
-        sal_Size nOldPos = pSvStrm->Tell();
-        sal_Size nLen = pSvStrm->Seek( STREAM_SEEK_TO_END );
+        sal_uInt64 const nOldPos = pSvStrm->Tell();
+        sal_uInt64 const nLen = pSvStrm->Seek( STREAM_SEEK_TO_END );
         pSvStrm->Seek( nOldPos );
         rPar.Get(0)->PutLong( (sal_Int32)nLen );
     }
@@ -3468,7 +3506,7 @@ RTLFUNC(Seek)
 
     if ( nArgs == 2 )   // Seek-Function
     {
-        sal_Size nPos = pStrm->Tell();
+        sal_uInt64 nPos = pStrm->Tell();
         if( pSbStrm->IsRandom() )
         {
             nPos = nPos / pSbStrm->GetBlockLen();
@@ -3490,7 +3528,7 @@ RTLFUNC(Seek)
         {
             nPos *= pSbStrm->GetBlockLen();
         }
-        pStrm->Seek( (sal_Size)nPos );
+        pStrm->Seek( static_cast<sal_uInt64>(nPos) );
         pSbStrm->SetExpandOnWriteTo( nPos );
     }
 }
@@ -3602,7 +3640,7 @@ RTLFUNC(Shell)
     (void)pBasic;
     (void)bWrite;
 
-    sal_Size nArgCount = rPar.Count();
+    std::size_t nArgCount = rPar.Count();
     if ( nArgCount < 2 || nArgCount > 5 )
     {
         rPar.Get(0)->PutLong(0);
@@ -4247,7 +4285,7 @@ RTLFUNC(StrConv)
     (void)pBasic;
     (void)bWrite;
 
-    sal_Size nArgCount = rPar.Count()-1;
+    std::size_t nArgCount = rPar.Count()-1;
     if( nArgCount < 2 || nArgCount > 3 )
     {
         StarBASIC::Error( ERRCODE_BASIC_BAD_ARGUMENT );
@@ -4474,8 +4512,8 @@ RTLFUNC(LoadPicture)
         Graphic aGraphic(aBmp);
 
         SbxObjectRef xRef = new SbStdPicture;
-        static_cast<SbStdPicture*>(static_cast<SbxObject*>(xRef))->SetGraphic( aGraphic );
-        rPar.Get(0)->PutObject( xRef );
+        static_cast<SbStdPicture*>(xRef.get())->SetGraphic( aGraphic );
+        rPar.Get(0)->PutObject( xRef.get() );
     }
 }
 
@@ -4858,7 +4896,7 @@ sal_Int16 implGetDateYear( double aDate )
     long nDays = (long) aDate;
     nDays -= 2; // standardize: 1.1.1900 => 0.0
     aRefDate += nDays;
-    sal_Int16 nRet = (sal_Int16)( aRefDate.GetYear() );
+    sal_Int16 nRet = aRefDate.GetYear();
     return nRet;
 }
 
@@ -4917,7 +4955,7 @@ bool implDateSerial( sal_Int16 nYear, sal_Int16 nMonth, sal_Int16 nDay, double& 
             {
                 nYearAdj = ( ( nMonth -12 ) / 12 );
             }
-            aCurDate.SetYear( aCurDate.GetYear() + nYearAdj );
+            aCurDate.AddYears( nYearAdj );
         }
 
         // adjust day value,

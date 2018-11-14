@@ -73,13 +73,13 @@ class SvUnoImageMapObject : public OWeakAggObject,
 public:
     SvUnoImageMapObject( sal_uInt16 nType, const SvEventDescription* pSupportedMacroItems );
     SvUnoImageMapObject( const IMapObject& rMapObject, const SvEventDescription* pSupportedMacroItems );
-    virtual ~SvUnoImageMapObject() throw();
+    virtual ~SvUnoImageMapObject() throw() override;
 
     UNO3_GETIMPLEMENTATION_DECL( SvUnoImageMapObject )
 
     IMapObject* createIMapObject() const;
 
-    SvMacroTableEventDescriptor* mpEvents;
+    rtl::Reference<SvMacroTableEventDescriptor> mxEvents;
 
     // overriden helpers from PropertySetHelper
     virtual void _setPropertyValues( const PropertyMapEntry** ppEntries, const Any* pValues ) throw(UnknownPropertyException, PropertyVetoException, IllegalArgumentException, WrappedTargetException ) override;
@@ -186,8 +186,7 @@ SvUnoImageMapObject::SvUnoImageMapObject( sal_uInt16 nType, const SvEventDescrip
 ,   mbIsActive( true )
 ,   mnRadius( 0 )
 {
-    mpEvents = new SvMacroTableEventDescriptor( pSupportedMacroItems );
-    mpEvents->acquire();
+    mxEvents = new SvMacroTableEventDescriptor( pSupportedMacroItems );
 }
 
 SvUnoImageMapObject::SvUnoImageMapObject( const IMapObject& rMapObject, const SvEventDescription* pSupportedMacroItems )
@@ -243,13 +242,11 @@ SvUnoImageMapObject::SvUnoImageMapObject( const IMapObject& rMapObject, const Sv
         }
     }
 
-    mpEvents = new SvMacroTableEventDescriptor( rMapObject.GetMacroTable(), pSupportedMacroItems );
-    mpEvents->acquire();
+    mxEvents = new SvMacroTableEventDescriptor( rMapObject.GetMacroTable(), pSupportedMacroItems );
 }
 
 SvUnoImageMapObject::~SvUnoImageMapObject() throw()
 {
-    mpEvents->release();
 }
 
 IMapObject* SvUnoImageMapObject::createIMapObject() const
@@ -297,7 +294,7 @@ IMapObject* SvUnoImageMapObject::createIMapObject() const
     }
 
     SvxMacroTableDtor aMacroTable;
-    mpEvents->copyMacrosIntoTable(aMacroTable);
+    mxEvents->copyMacrosIntoTable(aMacroTable);
     pNewIMapObject->SetMacroTable( aMacroTable );
 
     return pNewIMapObject;
@@ -329,7 +326,7 @@ Any SAL_CALL SvUnoImageMapObject::queryAggregation( const Type & rType )
     else if( rType == cppu::UnoType<XUnoTunnel>::get())
         aAny <<= Reference< XUnoTunnel >(this);
     else
-        aAny <<= OWeakAggObject::queryAggregation( rType );
+        aAny = OWeakAggObject::queryAggregation( rType );
 
     return aAny;
 }
@@ -512,9 +509,7 @@ void SvUnoImageMapObject::_getPropertyValues( const PropertyMapEntry** ppEntries
 Reference< XNameReplace > SAL_CALL SvUnoImageMapObject::getEvents()
     throw( RuntimeException, std::exception )
 {
-    // try weak reference first
-    Reference< XNameReplace > xEvents( mpEvents );
-    return xEvents;
+    return mxEvents.get();
 }
 
 
@@ -523,7 +518,7 @@ class SvUnoImageMap : public WeakImplHelper< XIndexContainer, XServiceInfo, XUno
 public:
     explicit SvUnoImageMap( const SvEventDescription* pSupportedMacroItems );
     SvUnoImageMap( const ImageMap& rMap, const SvEventDescription* pSupportedMacroItems );
-    virtual ~SvUnoImageMap();
+    virtual ~SvUnoImageMap() override;
 
     bool fillImageMap( ImageMap& rMap ) const;
     static SvUnoImageMapObject* getObject( const Any& aElement ) throw( IllegalArgumentException );

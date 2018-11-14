@@ -139,9 +139,6 @@ namespace basctl
                 the application-wide scripts/dialogs.
             */
             AllWithApplication,
-            /** real documents only
-            */
-            DocumentsOnly,
             /** real documents only, sorted lexicographically by their title (using the sys locale's default
                 collator)
             */
@@ -473,12 +470,6 @@ namespace basctl
             to be used for valid documents only
         */
         OUString    getTitle() const;
-
-        /** returns the URL of the document
-
-            to be used for valid documents only
-        */
-        OUString    getURL() const;
 
         /** determines whether the document is currently the one-and-only application-wide active document
         */

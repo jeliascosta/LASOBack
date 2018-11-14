@@ -32,22 +32,14 @@
 #include <sfx2/sfxsids.hrc>
 #include <com/sun/star/container/XChild.hpp>
 #include <com/sun/star/beans/XPropertySetInfo.hpp>
-#include <com/sun/star/xml/sax/XErrorHandler.hpp>
-#include <com/sun/star/xml/sax/XEntityResolver.hpp>
 #include <com/sun/star/xml/sax/InputSource.hpp>
-#include <com/sun/star/xml/sax/XDTDHandler.hpp>
 #include <com/sun/star/xml/sax/Parser.hpp>
 #include <com/sun/star/xml/sax/Writer.hpp>
-#include <com/sun/star/io/XActiveDataSource.hpp>
-#include <com/sun/star/io/XActiveDataControl.hpp>
 #include <com/sun/star/frame/XModel.hpp>
-#include <com/sun/star/task/XStatusIndicatorFactory.hpp>
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <comphelper/extract.hxx>
 #include <comphelper/propertysetinfo.hxx>
 #include <comphelper/genericpropertyset.hxx>
-#include <com/sun/star/container/XNameContainer.hpp>
-#include <com/sun/star/lang/DisposedException.hpp>
 #include <com/sun/star/packages/zip/ZipIOException.hpp>
 #include <com/sun/star/embed/ElementModes.hpp>
 #include <com/sun/star/script/vba/XVBACompatibility.hpp>
@@ -279,7 +271,7 @@ sal_uInt32 ScXMLImportWrapper::ImportFromComponent(const uno::Reference<uno::XCo
     return nReturn;
 }
 
-bool ScXMLImportWrapper::Import( sal_uInt8 nMode, ErrCode& rError )
+bool ScXMLImportWrapper::Import( ImportFlags nMode, ErrCode& rError )
 {
     uno::Reference<uno::XComponentContext> xContext = comphelper::getProcessComponentContext();
 
@@ -382,7 +374,7 @@ bool ScXMLImportWrapper::Import( sal_uInt8 nMode, ErrCode& rError )
 
     bool bOasis = ( SotStorage::GetVersion( xStorage ) > SOFFICE_FILEFORMAT_60 );
 
-    if ((nMode & METADATA) == METADATA && bOasis)
+    if ((nMode & ImportFlags::Metadata) && bOasis)
     {
         // RDF metadata: ODF >= 1.2
         try
@@ -415,7 +407,7 @@ bool ScXMLImportWrapper::Import( sal_uInt8 nMode, ErrCode& rError )
 
     // #i103539#: always read meta.xml for generator
     sal_uInt32 nMetaRetval(0);
-    if ((nMode & METADATA) == METADATA)
+    if (nMode & ImportFlags::Metadata)
     {
         uno::Sequence<uno::Any> aMetaArgs(1);
         uno::Any* pMetaArgs = aMetaArgs.getArray();
@@ -440,10 +432,10 @@ bool ScXMLImportWrapper::Import( sal_uInt8 nMode, ErrCode& rError )
 
     if( xStorage.is() )
     {
-        pGraphicHelper = SvXMLGraphicHelper::Create( xStorage, GRAPHICHELPER_MODE_READ );
+        pGraphicHelper = SvXMLGraphicHelper::Create( xStorage, SvXMLGraphicHelperMode::Read );
         xGrfContainer = pGraphicHelper;
 
-        pObjectHelper = SvXMLEmbeddedObjectHelper::Create(xStorage, mrDocShell, EMBEDDEDOBJECTHELPER_MODE_READ, false);
+        pObjectHelper = SvXMLEmbeddedObjectHelper::Create(xStorage, mrDocShell, SvXMLEmbeddedObjectHelperMode::Read, false);
         xObjectResolver = pObjectHelper;
     }
     uno::Sequence<uno::Any> aStylesArgs(4);
@@ -454,7 +446,7 @@ bool ScXMLImportWrapper::Import( sal_uInt8 nMode, ErrCode& rError )
     pStylesArgs[3] <<= xObjectResolver;
 
     sal_uInt32 nSettingsRetval(0);
-    if ((nMode & SETTINGS) == SETTINGS)
+    if (nMode & ImportFlags::Settings)
     {
         //  Settings must be loaded first because of the printer setting,
         //  which is needed in the page styles (paper tray).
@@ -475,7 +467,7 @@ bool ScXMLImportWrapper::Import( sal_uInt8 nMode, ErrCode& rError )
     }
 
     sal_uInt32 nStylesRetval(0);
-    if ((nMode & STYLES) == STYLES)
+    if (nMode & ImportFlags::Styles)
     {
         SAL_INFO( "sc.filter", "styles import start" );
 
@@ -489,7 +481,7 @@ bool ScXMLImportWrapper::Import( sal_uInt8 nMode, ErrCode& rError )
     }
 
     sal_uInt32 nDocRetval(0);
-    if ((nMode & CONTENT) == CONTENT)
+    if (nMode & ImportFlags::Content)
     {
         if (mrDocShell.GetCreateMode() == SfxObjectCreateMode::INTERNAL)
             // We only need to import content for external link cache document.
@@ -719,7 +711,21 @@ bool ScXMLImportWrapper::ExportToComponent(const uno::Reference<uno::XComponentC
 
 bool ScXMLImportWrapper::Export(bool bStylesOnly)
 {
+    // Prevent all broadcasting and repaints and notification of accessibility
+    // during mass creation of captions, which is a major bottleneck and not
+    // needed during Save.
+    ScDrawLayer* pDrawLayer = rDoc.GetDrawLayer();
+    bool bOldLock = bool();
+    if (pDrawLayer)
+    {
+        bOldLock = pDrawLayer->isLocked();
+        pDrawLayer->setLock(true);
+    }
+
     rDoc.CreateAllNoteCaptions();
+
+    if (pDrawLayer)
+        pDrawLayer->setLock(bOldLock);
 
     uno::Reference<uno::XComponentContext> xContext(comphelper::getProcessComponentContext());
 
@@ -857,13 +863,13 @@ bool ScXMLImportWrapper::Export(bool bStylesOnly)
 
         if( xStorage.is() )
         {
-            pGraphicHelper = SvXMLGraphicHelper::Create( xStorage, GRAPHICHELPER_MODE_WRITE, false );
+            pGraphicHelper = SvXMLGraphicHelper::Create( xStorage, SvXMLGraphicHelperMode::Write, false );
             xGrfContainer = pGraphicHelper;
         }
 
         if( pObjSh )
         {
-            pObjectHelper = SvXMLEmbeddedObjectHelper::Create( xStorage, *pObjSh, EMBEDDEDOBJECTHELPER_MODE_WRITE, false );
+            pObjectHelper = SvXMLEmbeddedObjectHelper::Create( xStorage, *pObjSh, SvXMLEmbeddedObjectHelperMode::Write, false );
             xObjectResolver = pObjectHelper;
         }
 

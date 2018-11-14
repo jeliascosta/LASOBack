@@ -100,7 +100,6 @@ private:
     virtual void SAL_CALL disposing() override;
 
     SdPage* mpPage;
-    mutable ::osl::Mutex m_aMutex;
     RealPoint2D m_Position;
     RealSize2D m_Size;
     OUString m_Author;
@@ -168,7 +167,7 @@ void createAnnotation( Reference< XAnnotation >& xAnnotation, SdPage* pPage )
 {
     xAnnotation.set(
         new Annotation(comphelper::getProcessComponentContext(), pPage));
-    pPage->addAnnotation(xAnnotation);
+    pPage->addAnnotation(xAnnotation, -1);
 }
 
 Annotation::Annotation( const Reference< XComponentContext >& context, SdPage* pPage )

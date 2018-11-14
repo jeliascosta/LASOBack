@@ -144,7 +144,7 @@ SwHeaderFooterWin::SwHeaderFooterWin( SwEditWin* pEditWin, const SwFrame *pFrame
     m_pLine->SetZOrder(this, ZOrderFlags::Before);
 
     // Create and set the PopupMenu
-    m_pPopupMenu = new PopupMenu(SW_RES(MN_HEADERFOOTER_BUTTON));
+    m_pPopupMenu = VclPtr<PopupMenu>::Create(SW_RES(MN_HEADERFOOTER_BUTTON));
 
     // Rewrite the menu entries' text
     if (m_bIsHeader)
@@ -171,7 +171,7 @@ SwHeaderFooterWin::~SwHeaderFooterWin( )
 
 void SwHeaderFooterWin::dispose()
 {
-    delete m_pPopupMenu;
+    m_pPopupMenu.disposeAndClear();
     m_pLine.disposeAndClear();
     SwFrameMenuButtonBase::dispose();
 }
@@ -257,7 +257,7 @@ bool SwHeaderFooterWin::Contains( const Point &rDocPt ) const
 void SwHeaderFooterWin::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
 {
     // Use pixels for the rest of the drawing
-    SetMapMode(MapMode(MAP_PIXEL));
+    SetMapMode(MapMode(MapUnit::MapPixel));
 
     const Rectangle aRect(Rectangle(Point(0, 0), rRenderContext.PixelToLogic(GetSizePixel())));
     drawinglayer::primitive2d::Primitive2DContainer aSeq(3);
@@ -307,7 +307,7 @@ void SwHeaderFooterWin::Paint(vcl::RenderContext& rRenderContext, const Rectangl
 
     aSeq[2] = drawinglayer::primitive2d::Primitive2DReference(
                     new drawinglayer::primitive2d::TextSimplePortionPrimitive2D(
-                        aTextMatrix, OUString(m_sLabel), 0, m_sLabel.getLength(),
+                        aTextMatrix, m_sLabel, 0, m_sLabel.getLength(),
                         std::vector<double>(), aFontAttr, css::lang::Locale(), aLineColor));
 
     // Create the 'plus' or 'arrow' primitive
@@ -501,7 +501,7 @@ void SwHeaderFooterWin::Select()
     ExecuteCommand(GetCurItemId());
 }
 
-IMPL_LINK_NOARG_TYPED(SwHeaderFooterWin, FadeHandler, Timer *, void)
+IMPL_LINK_NOARG(SwHeaderFooterWin, FadeHandler, Timer *, void)
 {
     if (m_bIsAppearing && m_nFadeRate > 0)
         m_nFadeRate -= 25;

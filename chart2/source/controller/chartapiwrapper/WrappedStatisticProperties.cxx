@@ -60,22 +60,22 @@ css::chart::ChartRegressionCurveType lcl_getRegressionCurveType(SvxChartRegress 
     css::chart::ChartRegressionCurveType eRet = css::chart::ChartRegressionCurveType_NONE;
     switch(eRegressionType)
     {
-        case CHREGRESS_LINEAR:
+        case SvxChartRegress::Linear:
             eRet = css::chart::ChartRegressionCurveType_LINEAR;
             break;
-        case CHREGRESS_LOG:
+        case SvxChartRegress::Log:
             eRet = css::chart::ChartRegressionCurveType_LOGARITHM;
             break;
-        case CHREGRESS_EXP:
+        case SvxChartRegress::Exp:
             eRet = css::chart::ChartRegressionCurveType_EXPONENTIAL;
             break;
-        case CHREGRESS_POWER:
+        case SvxChartRegress::Power:
             eRet = css::chart::ChartRegressionCurveType_POWER;
             break;
-        case CHREGRESS_POLYNOMIAL:
+        case SvxChartRegress::Polynomial:
             eRet = css::chart::ChartRegressionCurveType_POLYNOMIAL;
             break;
-        /*case CHREGRESS_MOVING_AVERAGE:
+        /*case SvxChartRegress::MovingAverage:
             eRet = css::chart::ChartRegressionCurveType_MOVING_AVERAGE;
             break;*/
         default:
@@ -91,21 +91,21 @@ SvxChartRegress lcl_getRegressionType( css::chart::ChartRegressionCurveType eReg
     switch (eRegressionCurveType)
     {
         case css::chart::ChartRegressionCurveType_LINEAR:
-            eRet = CHREGRESS_LINEAR;
+            eRet = SvxChartRegress::Linear;
             break;
         case css::chart::ChartRegressionCurveType_LOGARITHM:
-            eRet = CHREGRESS_LOG;
+            eRet = SvxChartRegress::Log;
             break;
         case css::chart::ChartRegressionCurveType_EXPONENTIAL:
-            eRet = CHREGRESS_EXP;
+            eRet = SvxChartRegress::Exp;
             break;
         case css::chart::ChartRegressionCurveType_POLYNOMIAL:
         //case css::chart::ChartRegressionCurveType_MOVING_AVERAGE:
         case css::chart::ChartRegressionCurveType_POWER:
-            eRet = CHREGRESS_POWER;
+            eRet = SvxChartRegress::Power;
             break;
         default:
-            eRet = CHREGRESS_NONE;
+            eRet = SvxChartRegress::NONE;
             break;
     }
     return eRet;
@@ -187,8 +187,7 @@ protected:
         xSeriesPropertySet->getPropertyValue( CHART_UNONAME_ERRORBAR_Y ) >>= xErrorBarProperties;
         if( !xErrorBarProperties.is() )
         {
-            // todo: use a valid context
-            xErrorBarProperties = ::chart::createErrorBar( uno::Reference< uno::XComponentContext >() );
+            xErrorBarProperties = new ::chart::ErrorBar;
             //default in new and old api are different
             xErrorBarProperties->setPropertyValue( "ShowPositiveError" , uno::makeAny(false) );
             xErrorBarProperties->setPropertyValue( "ShowNegativeError" , uno::makeAny(false) );
@@ -209,7 +208,7 @@ public:
 
     explicit WrappedConstantErrorLowProperty( ::std::shared_ptr< Chart2ModelContact > spChart2ModelContact,
                                               tSeriesOrDiagramPropertyType ePropertyType );
-    virtual ~WrappedConstantErrorLowProperty();
+    virtual ~WrappedConstantErrorLowProperty() override;
 
 private:
     mutable Any m_aOuterValue;
@@ -263,7 +262,7 @@ public:
 
     explicit WrappedConstantErrorHighProperty( ::std::shared_ptr< Chart2ModelContact > spChart2ModelContact,
                                                tSeriesOrDiagramPropertyType ePropertyType );
-    virtual ~WrappedConstantErrorHighProperty();
+    virtual ~WrappedConstantErrorHighProperty() override;
 
 private:
     mutable Any m_aOuterValue;
@@ -317,7 +316,7 @@ public:
 
     explicit WrappedMeanValueProperty( ::std::shared_ptr< Chart2ModelContact > spChart2ModelContact,
                                        tSeriesOrDiagramPropertyType ePropertyType );
-    virtual ~WrappedMeanValueProperty();
+    virtual ~WrappedMeanValueProperty() override;
 };
 
 WrappedMeanValueProperty::WrappedMeanValueProperty(
@@ -345,7 +344,7 @@ void WrappedMeanValueProperty::setValueToSeries( const Reference< beans::XProper
     if( xRegCnt.is() )
     {
         if(aNewValue)
-            RegressionCurveHelper::addMeanValueLine( xRegCnt, nullptr, nullptr );
+            RegressionCurveHelper::addMeanValueLine( xRegCnt, nullptr );
         else
             RegressionCurveHelper::removeMeanValueLine( xRegCnt );
     }
@@ -361,7 +360,7 @@ public:
 
     explicit WrappedErrorCategoryProperty( ::std::shared_ptr< Chart2ModelContact > spChart2ModelContact,
                                            tSeriesOrDiagramPropertyType ePropertyType );
-    virtual ~WrappedErrorCategoryProperty();
+    virtual ~WrappedErrorCategoryProperty() override;
 };
 
 WrappedErrorCategoryProperty::WrappedErrorCategoryProperty(
@@ -459,7 +458,7 @@ public:
 
     explicit WrappedPercentageErrorProperty( ::std::shared_ptr< Chart2ModelContact > spChart2ModelContact,
                                              tSeriesOrDiagramPropertyType ePropertyType );
-    virtual ~WrappedPercentageErrorProperty();
+    virtual ~WrappedPercentageErrorProperty() override;
 
 private:
     mutable Any m_aOuterValue;
@@ -513,7 +512,7 @@ public:
 
     explicit WrappedErrorMarginProperty( ::std::shared_ptr< Chart2ModelContact > spChart2ModelContact,
                                          tSeriesOrDiagramPropertyType ePropertyType );
-    virtual ~WrappedErrorMarginProperty();
+    virtual ~WrappedErrorMarginProperty() override;
 
 private:
     mutable Any m_aOuterValue;
@@ -567,7 +566,7 @@ public:
 
     explicit WrappedErrorIndicatorProperty( ::std::shared_ptr< Chart2ModelContact > spChart2ModelContact,
                                             tSeriesOrDiagramPropertyType ePropertyType );
-    virtual ~WrappedErrorIndicatorProperty();
+    virtual ~WrappedErrorIndicatorProperty() override;
 };
 
 WrappedErrorIndicatorProperty::WrappedErrorIndicatorProperty(
@@ -640,7 +639,7 @@ public:
 
     explicit WrappedErrorBarStyleProperty( ::std::shared_ptr< Chart2ModelContact > spChart2ModelContact1,
                                            tSeriesOrDiagramPropertyType ePropertyType );
-    virtual ~WrappedErrorBarStyleProperty();
+    virtual ~WrappedErrorBarStyleProperty() override;
 };
 
 WrappedErrorBarStyleProperty::WrappedErrorBarStyleProperty(
@@ -686,7 +685,7 @@ public:
 
     explicit WrappedErrorBarRangePositiveProperty( ::std::shared_ptr< Chart2ModelContact > spChart2ModelContact,
                                                    tSeriesOrDiagramPropertyType ePropertyType );
-    virtual ~WrappedErrorBarRangePositiveProperty();
+    virtual ~WrappedErrorBarRangePositiveProperty() override;
 
 private:
     mutable Any m_aOuterValue;
@@ -753,7 +752,7 @@ public:
 
     explicit WrappedErrorBarRangeNegativeProperty( ::std::shared_ptr< Chart2ModelContact > spChart2ModelContact,
                                                    tSeriesOrDiagramPropertyType ePropertyType );
-    virtual ~WrappedErrorBarRangeNegativeProperty();
+    virtual ~WrappedErrorBarRangeNegativeProperty() override;
 
 private:
     mutable Any m_aOuterValue;
@@ -820,7 +819,7 @@ public:
 
     explicit WrappedRegressionCurvesProperty( ::std::shared_ptr< Chart2ModelContact > spChart2ModelContact,
                                               tSeriesOrDiagramPropertyType ePropertyType );
-    virtual ~WrappedRegressionCurvesProperty();
+    virtual ~WrappedRegressionCurvesProperty() override;
 };
 
 WrappedRegressionCurvesProperty::WrappedRegressionCurvesProperty(
@@ -884,7 +883,7 @@ public:
     explicit WrappedStatisticPropertySetProperty(
         PropertySetType ePropertySetType, ::std::shared_ptr< Chart2ModelContact > spChart2ModelContact,
         tSeriesOrDiagramPropertyType ePropertyType );
-    virtual ~WrappedStatisticPropertySetProperty();
+    virtual ~WrappedStatisticPropertySetProperty() override;
 
 private:
     PropertySetType m_eType;

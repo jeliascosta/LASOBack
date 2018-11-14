@@ -90,7 +90,7 @@ uno::Any SAL_CALL GalleryItem::queryAggregation( const uno::Type & rType )
     else if( rType == cppu::UnoType<beans::XMultiPropertySet>::get())
         aAny <<= uno::Reference< beans::XMultiPropertySet >(this);
     else
-        aAny <<= OWeakAggObject::queryAggregation( rType );
+        aAny = OWeakAggObject::queryAggregation( rType );
 
     return aAny;
 }
@@ -117,24 +117,10 @@ void SAL_CALL GalleryItem::release()
 }
 
 
-OUString GalleryItem::getImplementationName_Static()
-    throw()
-{
-    return OUString( "com.sun.star.comp.gallery.GalleryItem" );
-}
-
-
-uno::Sequence< OUString > GalleryItem::getSupportedServiceNames_Static()
-    throw()
-{
-    uno::Sequence< OUString > aSeq { "com.sun.star.gallery.GalleryItem" };
-    return aSeq;
-}
-
 OUString SAL_CALL GalleryItem::getImplementationName()
     throw( uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
+    return OUString( "com.sun.star.comp.gallery.GalleryItem" );
 }
 
 sal_Bool SAL_CALL GalleryItem::supportsService( const OUString& ServiceName )
@@ -146,7 +132,7 @@ sal_Bool SAL_CALL GalleryItem::supportsService( const OUString& ServiceName )
 uno::Sequence< OUString > SAL_CALL GalleryItem::getSupportedServiceNames()
     throw( uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return { "com.sun.star.gallery.GalleryItem" };
 }
 
 uno::Sequence< uno::Type > SAL_CALL GalleryItem::getTypes()
@@ -182,12 +168,12 @@ sal_Int8 SAL_CALL GalleryItem::getType()
     {
         switch( implGetObject()->eObjKind )
         {
-            case SGA_OBJ_SOUND:
-            case SGA_OBJ_VIDEO:
+            case SgaObjKind::Sound:
+            case SgaObjKind::Video:
                 nRet = gallery::GalleryItemType::MEDIA;
             break;
 
-            case SGA_OBJ_SVDRAW:
+            case SgaObjKind::SvDraw:
                 nRet = gallery::GalleryItemType::DRAWING;
             break;
 

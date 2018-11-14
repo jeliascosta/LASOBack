@@ -390,7 +390,7 @@ public:
     inline bool     UseFormat() const                   { return m_bUseFormat; }
     inline void     EnableFormat(bool bFormat = true)   { m_bUseFormat = bFormat; }
 
-    OUString        ExpandValue(const double& rVal, sal_uInt32 nFormat, sal_uInt16 nLng=0) const;
+    OUString        ExpandValue(const double& rVal, sal_uInt32 nFormat, sal_uInt16 nLng) const;
     OUString        DoubleToString(const double &rVal, LanguageType eLng) const;
     OUString        DoubleToString(const double &rVal, sal_uInt32 nFormat) const;
 };
@@ -401,11 +401,11 @@ private:
     double m_fValue;
 
 protected:
-    SwValueField( SwValueFieldType* pFieldType, sal_uInt32 nFormat = 0, sal_uInt16 nLang = LANGUAGE_SYSTEM, const double fVal = 0.0 );
+    SwValueField( SwValueFieldType* pFieldType, sal_uInt32 nFormat, sal_uInt16 nLang = LANGUAGE_SYSTEM, const double fVal = 0.0 );
     SwValueField( const SwValueField& rField );
 
 public:
-    virtual                 ~SwValueField();
+    virtual                 ~SwValueField() override;
 
     virtual SwFieldType*    ChgTyp( SwFieldType* ) override;
     virtual void            SetLanguage(sal_uInt16 nLng) override;
@@ -415,7 +415,7 @@ public:
     virtual double          GetValue() const;
     virtual void            SetValue( const double& rVal );
 
-    inline OUString ExpandValue(const double& rVal, sal_uInt32 nFormat, sal_uInt16 nLng=0) const
+    inline OUString ExpandValue(const double& rVal, sal_uInt32 nFormat, sal_uInt16 nLng) const
         { return static_cast<SwValueFieldType*>(GetTyp())->ExpandValue(rVal, nFormat, nLng); }
 
     static sal_uInt32       GetSystemFormat(SvNumberFormatter* pFormatter, sal_uInt32 nFormat);
@@ -427,7 +427,7 @@ private:
     OUString m_sFormula;
 
 protected:
-    SwFormulaField( SwValueFieldType* pFieldType, sal_uInt32 nFormat = 0, const double fVal = 0.0 );
+    SwFormulaField( SwValueFieldType* pFieldType, sal_uInt32 nFormat, const double fVal = 0.0 );
     SwFormulaField( const SwFormulaField& rField );
 
 public:

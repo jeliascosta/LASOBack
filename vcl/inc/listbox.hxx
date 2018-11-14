@@ -37,7 +37,6 @@ enum LB_EVENT_TYPE
 {
     LET_MBDOWN,
     LET_TRACKING,
-    LET_TRACKING_END,
     LET_KEYMOVE,
     LET_KEYSPACE
 };
@@ -103,7 +102,7 @@ public:
     ImplEntryType*          GetMutableEntryPtr( sal_Int32  nPos ) const { return GetEntry( nPos ); }
     void                    Clear();
 
-    sal_Int32           FindMatchingEntry( const OUString& rStr, sal_Int32  nStart = 0, bool bForward = true, bool bLazy = true ) const;
+    sal_Int32           FindMatchingEntry( const OUString& rStr, sal_Int32  nStart, bool bLazy ) const;
     sal_Int32           FindEntry( const OUString& rStr, bool bSearchMRUArea = false ) const;
     sal_Int32           FindEntry( const void* pData ) const;
 
@@ -111,7 +110,7 @@ public:
     /// GetAddedHeight( 0 ) @return 0
     /// GetAddedHeight( LISTBOX_ENTRY_NOTFOUND ) @return 0
     /// GetAddedHeight( i, k ) with k > i is equivalent -GetAddedHeight( k, i )
-    long            GetAddedHeight( sal_Int32  nEndIndex, sal_Int32  nBeginIndex = 0 ) const;
+    long            GetAddedHeight( sal_Int32  nEndIndex, sal_Int32  nBeginIndex ) const;
     long            GetEntryHeight( sal_Int32  nPos ) const;
 
     sal_Int32       GetEntryCount() const { return (sal_Int32 )maEntries.size(); }
@@ -195,7 +194,6 @@ private:
 
     sal_uInt16      mnSelectModifier;   ///< Modifiers
 
-    /// bitfield
     bool mbHasFocusRect : 1;
     bool mbSort : 1;             ///< ListBox sorted
     bool mbTrack : 1;            ///< Tracking
@@ -254,7 +252,7 @@ public:
     virtual void  FillLayoutData() const override;
 
                     ImplListBoxWindow( vcl::Window* pParent, WinBits nWinStyle );
-    virtual         ~ImplListBoxWindow();
+    virtual         ~ImplListBoxWindow() override;
     virtual void    dispose() override;
 
     ImplEntryList*  GetEntryList() const { return mpEntryList; }
@@ -363,7 +361,6 @@ private:
     VclPtr<ScrollBar>    mpVScrollBar;
     VclPtr<ScrollBarBox> mpScrollBarBox;
 
-    /// bitfield
     bool mbVScroll : 1;     // VScroll an oder aus
     bool mbHScroll : 1;     // HScroll an oder aus
     bool mbAutoHScroll : 1; // AutoHScroll an oder aus
@@ -375,7 +372,6 @@ private:
 protected:
     virtual void        GetFocus() override;
     virtual void        StateChanged( StateChangedType nType ) override;
-    virtual void        DataChanged( const DataChangedEvent& rDCEvt ) override;
 
     virtual bool        Notify( NotifyEvent& rNEvt ) override;
 
@@ -383,13 +379,13 @@ protected:
     void                ImplCheckScrollBars();
     void                ImplInitScrollBars();
 
-    DECL_LINK_TYPED(    ScrollBarHdl, ScrollBar*, void );
-    DECL_LINK_TYPED(    LBWindowScrolled, ImplListBoxWindow*, void );
-    DECL_LINK_TYPED(    MRUChanged, LinkParamNone*, void );
+    DECL_LINK(    ScrollBarHdl, ScrollBar*, void );
+    DECL_LINK(    LBWindowScrolled, ImplListBoxWindow*, void );
+    DECL_LINK(    MRUChanged, LinkParamNone*, void );
 
 public:
                     ImplListBox( vcl::Window* pParent, WinBits nWinStyle );
-                    virtual ~ImplListBox();
+                    virtual ~ImplListBox() override;
     virtual void    dispose() override;
 
     const ImplEntryList*    GetEntryList() const            { return maLBWindow->GetEntryList(); }
@@ -485,7 +481,7 @@ protected:
 
 public:
                     ImplListBoxFloatingWindow( vcl::Window* pParent );
-    virtual         ~ImplListBoxFloatingWindow();
+    virtual         ~ImplListBoxFloatingWindow() override;
     virtual void    dispose() override;
     void            SetImplListBox( ImplListBox* pLB )  { mpImplLB = pLB; }
 
@@ -499,8 +495,6 @@ public:
 
     virtual void    setPosSizePixel( long nX, long nY,
                                      long nWidth, long nHeight, PosSizeFlags nFlags = PosSizeFlags::All ) override;
-    void            SetPosSizePixel( const Point& rNewPos, const Size& rNewSize ) override
-                        { FloatingWindow::SetPosSizePixel( rNewPos, rNewSize ); }
 
     void            SetDropDownLineCount( sal_uInt16 n ) { mnDDLineCount = n; }
     sal_uInt16      GetDropDownLineCount() const { return mnDDLineCount; }
@@ -519,12 +513,10 @@ private:
     Image           maImage;
 
     Rectangle       maFocusRect;
-    Size            maUserItemSize;
 
     Link<void*,void> maMBDownHdl;
     Link<UserDrawEvent*, void> maUserDrawHdl;
 
-    /// bitfield
     bool            mbUserDrawEnabled : 1;
     bool            mbInUserDraw : 1;
     bool            mbEdgeBlending : 1;
@@ -534,7 +526,7 @@ protected:
     virtual void  FillLayoutData() const override;
 
 public:
-                    ImplWin( vcl::Window* pParent, WinBits nWinStyle = 0 );
+                    ImplWin( vcl::Window* pParent, WinBits nWinStyle );
 
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
@@ -550,18 +542,14 @@ public:
 
     void            SetImage( const Image& rImg ) { maImage = rImg; }
 
-    void            MBDown();
-
     void            SetMBDownHdl( const Link<void*,void>& rLink ) { maMBDownHdl = rLink; }
     void            SetUserDrawHdl( const Link<UserDrawEvent*, void>& rLink ) { maUserDrawHdl = rLink; }
-
-    void            SetUserItemSize( const Size& rSz )  { maUserItemSize = rSz; }
 
     void            EnableUserDraw( bool bUserDraw )    { mbUserDrawEnabled = bUserDraw; }
     bool            IsUserDrawEnabled() const           { return mbUserDrawEnabled; }
 
     void DrawEntry(vcl::RenderContext& rRenderContext, bool bDrawImage,
-                   bool bDrawTextAtImagePos = false, bool bLayout = false);
+                   bool bDrawTextAtImagePos, bool bLayout = false);
 
     bool GetEdgeBlending() const { return mbEdgeBlending; }
     void SetEdgeBlending(bool bNew) { mbEdgeBlending = bNew; }
@@ -580,10 +568,9 @@ private:
     Link<void*,void> maMBDownHdl;
 
 public:
-                    ImplBtn( vcl::Window* pParent, WinBits nWinStyle = 0 );
+                    ImplBtn( vcl::Window* pParent, WinBits nWinStyle );
 
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
-    void    MBDown();
     void            SetMBDownHdl( const Link<void*,void>& rLink ) { maMBDownHdl = rLink; }
 };
 

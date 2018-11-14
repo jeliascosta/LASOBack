@@ -39,7 +39,7 @@ using namespace ::com::sun::star::view;
 
 //  class VCLXTabPageContainer
 
-void VCLXTabPageContainer::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXTabPageContainer::GetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     VCLXWindow::ImplGetPropertyIds( rIds );
 }
@@ -185,8 +185,8 @@ void SAL_CALL VCLXTabPageContainer::elementInserted( const css::container::Conta
         Reference< awt::tab::XTabPageModel > xP( xControl->getModel(), UNO_QUERY );
         sal_Int16 nPageID = xP->getTabPageID();
 
-        vcl::Window* pWindow = VCLUnoHelper::GetWindow(xControl->getPeer());
-        TabPage* pPage = static_cast<TabPage*>(pWindow);
+        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow(xControl->getPeer());
+        TabPage* pPage = static_cast<TabPage*>(pWindow.get());
         pTabCtrl->InsertPage(nPageID,pPage->GetText());
 
         pPage->Hide();

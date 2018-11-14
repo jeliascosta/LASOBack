@@ -63,9 +63,9 @@ sal_uInt16 SwEditShell::MakeGlossary( SwTextBlocks& rBlks, const OUString& rName
     rBlks.ClearDoc();
     if( rBlks.BeginPutDoc( rShortName, rName ) )
     {
-        rBlks.GetDoc()->getIDocumentRedlineAccess().SetRedlineMode_intern( nsRedlineMode_t::REDLINE_DELETE_REDLINES );
+        rBlks.GetDoc()->getIDocumentRedlineAccess().SetRedlineFlags_intern( RedlineFlags::DeleteRedlines );
         CopySelToDoc( pGDoc );
-        rBlks.GetDoc()->getIDocumentRedlineAccess().SetRedlineMode_intern( (RedlineMode_t)0 );
+        rBlks.GetDoc()->getIDocumentRedlineAccess().SetRedlineFlags_intern( RedlineFlags::NONE );
         return rBlks.PutDoc();
     }
 
@@ -212,7 +212,7 @@ bool SwEditShell::CopySelToDoc( SwDoc* pInsDoc )
                         ( bColSel || !pNd->GetTextNode() ) )
                     {
                         rPaM.SetMark();
-                        rPaM.Move( fnMoveForward, fnGoContent );
+                        rPaM.Move( fnMoveForward, GoInContent );
                         bRet = GetDoc()->getIDocumentContentOperations().CopyRange( rPaM, aPos, /*bCopyAll=*/false, /*bCheckPos=*/true )
                             || bRet;
                         rPaM.Exchange();
@@ -320,7 +320,7 @@ bool SwEditShell::GetSelectedText( OUString &rBuf, int nHndlParaBrk )
                     aStream.Seek( 0 );
                     aStream.ResetError();
                     //endian specific?, yipes!
-                    aStream.Read(pStr->buffer, nLen);
+                    aStream.ReadBytes(pStr->buffer, nLen);
                     rBuf = OUString(pStr, SAL_NO_ACQUIRE);
                 }
             }

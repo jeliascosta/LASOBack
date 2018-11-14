@@ -2193,6 +2193,8 @@ namespace xmloff { namespace token {
         XML_REGRESSION_PERIOD,
         XML_REGRESSION_FORCE_INTERCEPT,
         XML_REGRESSION_INTERCEPT_VALUE,
+        XML_REGRESSION_X_NAME,
+        XML_REGRESSION_Y_NAME,
 
         XML_ERROR_INDICATOR,
 
@@ -3067,6 +3069,14 @@ namespace xmloff { namespace token {
         XML_ODD_ROWS,
         XML_EVEN_COLUMNS,
         XML_ODD_COLUMNS,
+        // table styles
+        XML_FIRST_ROW_EVEN_COLUMN,
+        XML_LAST_ROW_EVEN_COLUMN,
+        XML_FIRST_ROW_END_COLUMN,
+        XML_FIRST_ROW_START_COLUMN,
+        XML_LAST_ROW_END_COLUMN,
+        XML_LAST_ROW_START_COLUMN,
+
         XML_HORIZONTAL_ON_ODD,
         // Password error from 1.4 to 2.0 Beta (#i45874#)
         XML_RESTART_NUMBERING,
@@ -3259,6 +3269,11 @@ namespace xmloff { namespace token {
         XML_EXPONENT_INTERVAL,
         XML_FORCED_EXPONENT_SIGN,
         XML_MIN_DECIMAL_PLACES,
+        XML_MAX_DENOMINATOR_VALUE,
+        XML_MAX_NUMERATOR_DIGITS,
+        XML_ZEROS_NUMERATOR_DIGITS,
+        XML_ZEROS_DENOMINATOR_DIGITS,
+        XML_INTEGER_FRACTION_DELIMITER,
 
         XML_TOKEN_END
     };

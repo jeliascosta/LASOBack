@@ -190,7 +190,7 @@ public:
         sal_uInt16 nPrfx,
         const OUString& rLName,
         const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList);
-    virtual ~SdXML3DLightContext();
+    virtual ~SdXML3DLightContext() override;
 
     sal_Int32 GetDiffuseColor() { return maDiffuseColor; }
     const ::basegfx::B3DVector& GetDirection() { return maDirection; }
@@ -204,7 +204,7 @@ protected:
     SvXMLImport& mrImport;
 
     // list for local light contexts
-    ::std::vector< SdXML3DLightContext* >
+    ::std::vector< rtl::Reference< SdXML3DLightContext > >
                                 maList;
 
     // local parameters which need to be read
@@ -228,7 +228,6 @@ protected:
 
 public:
     SdXML3DSceneAttributesHelper( SvXMLImport& rImporter );
-    ~SdXML3DSceneAttributesHelper();
 
     /** creates a 3d light context and adds it to the internal list for later processing */
     SvXMLImportContext * create3DLightContext( sal_uInt16 nPrfx, const OUString& rLName, const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList);
@@ -267,26 +266,26 @@ class XMLOFF_DLLPUBLIC XMLShapeImportHelper : public salhelper::SimpleReferenceO
 {
     std::unique_ptr<XMLShapeImportHelperImpl> mpImpl;
 
-    XMLShapeImportPageContextImpl*  mpPageContext;
+    std::shared_ptr<XMLShapeImportPageContextImpl> mpPageContext;
 
     // PropertySetMappers and factory
-    XMLSdPropHdlFactory*        mpSdPropHdlFactory;
-    SvXMLImportPropertyMapper*      mpPropertySetMapper;
-    SvXMLImportPropertyMapper*      mpPresPagePropsMapper;
+    rtl::Reference<XMLSdPropHdlFactory>       mpSdPropHdlFactory;
+    rtl::Reference<SvXMLImportPropertyMapper> mpPropertySetMapper;
+    rtl::Reference<SvXMLImportPropertyMapper> mpPresPagePropsMapper;
 
     // contexts for Style and AutoStyle import
-    SvXMLStylesContext*         mpStylesContext;
-    SvXMLStylesContext*         mpAutoStylesContext;
+    rtl::Reference<SvXMLStylesContext> mxStylesContext;
+    rtl::Reference<SvXMLStylesContext> mxAutoStylesContext;
 
     // contexts for xShape contents TokenMaps
-    SvXMLTokenMap*              mpGroupShapeElemTokenMap;
-    SvXMLTokenMap*              mpFrameShapeElemTokenMap;
-    SvXMLTokenMap*              mp3DSceneShapeElemTokenMap;
-    SvXMLTokenMap*              mp3DObjectAttrTokenMap;
-    SvXMLTokenMap*              mp3DPolygonBasedAttrTokenMap;
-    SvXMLTokenMap*              mp3DCubeObjectAttrTokenMap;
-    SvXMLTokenMap*              mp3DSphereObjectAttrTokenMap;
-    SvXMLTokenMap*              mp3DLightAttrTokenMap;
+    std::unique_ptr<SvXMLTokenMap>              mpGroupShapeElemTokenMap;
+    std::unique_ptr<SvXMLTokenMap>              mpFrameShapeElemTokenMap;
+    std::unique_ptr<SvXMLTokenMap>              mp3DSceneShapeElemTokenMap;
+    std::unique_ptr<SvXMLTokenMap>              mp3DObjectAttrTokenMap;
+    std::unique_ptr<SvXMLTokenMap>              mp3DPolygonBasedAttrTokenMap;
+    std::unique_ptr<SvXMLTokenMap>              mp3DCubeObjectAttrTokenMap;
+    std::unique_ptr<SvXMLTokenMap>              mp3DSphereObjectAttrTokenMap;
+    std::unique_ptr<SvXMLTokenMap>              mp3DLightAttrTokenMap;
 
     const OUString       msStartShape;
     const OUString       msEndShape;
@@ -303,7 +302,7 @@ public:
         const css::uno::Reference< css::frame::XModel>& rModel,
     SvXMLImportPropertyMapper *pExtMapper=nullptr );
 
-    virtual ~XMLShapeImportHelper();
+    virtual ~XMLShapeImportHelper() override;
 
     SvXMLShapeContext* CreateGroupChildContext(
         SvXMLImport& rImport, sal_uInt16 nPrefix, const OUString& rLocalName,
@@ -335,14 +334,14 @@ public:
     const SvXMLTokenMap& Get3DLightAttrTokenMap();
 
     // Styles and AutoStyles contexts
-    SvXMLStylesContext* GetStylesContext() const { return mpStylesContext; }
+    SvXMLStylesContext* GetStylesContext() const { return mxStylesContext.get(); }
     void SetStylesContext(SvXMLStylesContext* pNew);
-    SvXMLStylesContext* GetAutoStylesContext() const { return mpAutoStylesContext; }
+    SvXMLStylesContext* GetAutoStylesContext() const { return mxAutoStylesContext.get(); }
     void SetAutoStylesContext(SvXMLStylesContext* pNew);
 
     // get factories and mappers
-    SvXMLImportPropertyMapper* GetPropertySetMapper() const { return mpPropertySetMapper; }
-    SvXMLImportPropertyMapper* GetPresPagePropsMapper() const { return mpPresPagePropsMapper; }
+    SvXMLImportPropertyMapper* GetPropertySetMapper() const { return mpPropertySetMapper.get(); }
+    SvXMLImportPropertyMapper* GetPresPagePropsMapper() const { return mpPresPagePropsMapper.get(); }
 
     // this function is called whenever the implementation classes like to add this new
     // shape to the given XShapes.
@@ -409,7 +408,7 @@ public:
     /** queries the capability of the current model to create presentation shapes */
     bool IsPresentationShapesSupported();
 
-    XMLSdPropHdlFactory* GetSdPropHdlFactory() const { return mpSdPropHdlFactory; }
+    XMLSdPropHdlFactory* GetSdPropHdlFactory() const { return mpSdPropHdlFactory.get(); }
 
     const rtl::Reference< XMLTableImport >&     GetShapeTableImport();
 };

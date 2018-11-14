@@ -96,7 +96,7 @@ public:
         const css::uno::Reference<css::rendering::XCanvas>& rxSharedCanvas,
         const css::uno::Reference<css::awt::XWindow>& rxSharedWindow,
         const css::uno::Reference<css::awt::XWindow>& rxWindow);
-    virtual ~PresenterCanvas();
+    virtual ~PresenterCanvas() override;
     PresenterCanvas(const PresenterCanvas&) = delete;
     PresenterCanvas& operator=(const PresenterCanvas&) = delete;
 
@@ -353,7 +353,7 @@ private:
     /** The UpdateRequester is used by updateScreen() to schedule
         updateScreen() calls at the shared canvas.
     */
-    std::shared_ptr<CanvasUpdateRequester> mpUpdateRequester;
+    std::shared_ptr<CanvasUpdateRequester> m_pUpdateRequester;
 
     /** The clip rectangle as given to SetClip().
     */

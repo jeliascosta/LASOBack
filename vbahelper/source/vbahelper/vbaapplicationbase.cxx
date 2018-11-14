@@ -20,6 +20,7 @@
 #include "vbahelper/vbaapplicationbase.hxx"
 #include <sal/macros.h>
 
+#include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/container/XIndexAccess.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/lang/XMultiComponentFactory.hpp>
@@ -34,7 +35,9 @@
 #include <com/sun/star/awt/XWindow2.hpp>
 
 #include <filter/msfilter/msvbahelper.hxx>
+#include <rtl/ref.hxx>
 #include <tools/datetime.hxx>
+#include <vcl/timer.hxx>
 
 #include <basic/sbx.hxx>
 #include <basic/sbstar.hxx>
@@ -66,7 +69,7 @@ public:
     VbaTimer()
     {}
 
-    virtual ~VbaTimer()
+    ~VbaTimer()
     {
         m_aTimer.Stop();
     }
@@ -109,10 +112,10 @@ public:
         m_aTimer.Start();
     }
 
-    DECL_LINK_TYPED( MacroCallHdl, Timer*, void );
+    DECL_LINK( MacroCallHdl, Timer*, void );
 };
 
-IMPL_LINK_NOARG_TYPED(VbaTimer, MacroCallHdl, Timer *, void)
+IMPL_LINK_NOARG(VbaTimer, MacroCallHdl, Timer *, void)
 {
     if ( m_aTimerInfo.second.second == 0 || GetNow() < m_aTimerInfo.second.second )
     {
@@ -148,14 +151,14 @@ struct VbaTimerInfoHash
 typedef std::unordered_map< VbaTimerInfo, VbaTimer*, VbaTimerInfoHash > VbaTimerHashMap;
 
 // ====VbaApplicationBase_Impl==================================
-struct VbaApplicationBase_Impl
+struct VbaApplicationBase_Impl final
 {
     VbaTimerHashMap m_aTimerHash;
     bool mbVisible;
 
     inline VbaApplicationBase_Impl() : mbVisible( true ) {}
 
-    virtual ~VbaApplicationBase_Impl()
+    ~VbaApplicationBase_Impl()
     {
         // remove the remaining timers
         for ( VbaTimerHashMap::iterator aIter = m_aTimerHash.begin();

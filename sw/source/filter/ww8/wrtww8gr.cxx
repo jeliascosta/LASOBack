@@ -85,12 +85,12 @@ void WW8Export::OutputGrfNode( const SwGrfNode& /*rNode*/ )
     if ( m_pParentFrame )
     {
         OutGrf( *m_pParentFrame );
-        pFib->fHasPic = true;
+        pFib->m_fHasPic = true;
     }
 }
 
 bool WW8Export::TestOleNeedsGraphic(const SwAttrSet& rSet,
-    tools::SvRef<SotStorage> xOleStg, tools::SvRef<SotStorage> xObjStg, OUString &rStorageName,
+    tools::SvRef<SotStorage> const & xOleStg, tools::SvRef<SotStorage> xObjStg, OUString &rStorageName,
     SwOLENode *pOLENd)
 {
     bool bGraphicNeeded = false;
@@ -218,14 +218,13 @@ void WW8Export::OutputOLENode( const SwOLENode& rOLENode )
         if( xObj.is() )
         {
             const embed::XEmbeddedObject *pObj = xObj.get();
-            WW8OleMap& rPointerToObjId = GetOLEMap();
             //Don't want to use pointer ids, as is traditional, because we need
             //to put this into a 32bit value, and on 64bit the bottom bits
             //might collide and two unrelated ole objects end up considered the
             //same.  Don't want to simply start at 0 which is a special value
-            sal_Int32 nPictureId = SAL_MAX_INT32 - rPointerToObjId.size();
+            sal_Int32 nPictureId = SAL_MAX_INT32 - m_aOleMap.size();
             WW8OleMap::value_type entry = std::make_pair(pObj, nPictureId);
-            std::pair<WW8OleMap::iterator, bool> aRes = rPointerToObjId.insert(entry);
+            std::pair<WW8OleMap::iterator, bool> aRes = m_aOleMap.insert(entry);
             bool bIsNotDuplicate = aRes.second; //.second is false when element already existed
             nPictureId = aRes.first->second;
             Set_UInt32(pDataAdr, nPictureId);
@@ -252,7 +251,7 @@ void WW8Export::OutputOLENode( const SwOLENode& rOLENode )
                             tools::SvRef<SotStorageStream> rObjInfoStream = xOleStg->OpenSotStream( aObjInfo );
                             if ( rObjInfoStream.Is() && !rObjInfoStream->GetError() )
                             {
-                                rObjInfoStream->Write( pObjInfoData, sizeof( pObjInfoData ) );
+                                rObjInfoStream->WriteBytes(pObjInfoData, sizeof(pObjInfoData));
                                 xOleStg->Commit();
                             }
                         }
@@ -332,7 +331,7 @@ void WW8Export::OutputLinkedOLE( const OUString& rOleId )
     {
         tools::SvRef<SotStorage> xOleDst = xObjStg->OpenSotStorage( rOleId );
         if ( xOleDst.Is() )
-            xObjSrc->CopyTo( xOleDst );
+            xObjSrc->CopyTo( xOleDst.get() );
 
         if ( !xOleDst->GetError( ) )
         {
@@ -650,7 +649,7 @@ void SwWW8WrGrf::WritePICFHeader(SvStream& rStrm, const ww8::Frame &rFly,
         Set_UInt16( pArr, nCropB );                     // set dyaCropBottom
     }
 
-    rStrm.Write( aArr, nHdrLen );
+    rStrm.WriteBytes(aArr, nHdrLen);
 }
 
 void SwWW8WrGrf::WriteGrfFromGrfNode(SvStream& rStrm, const SwGrfNode &rGrfNd,
@@ -763,7 +762,7 @@ void SwWW8WrGrf::WritePICBulletFHeader(SvStream& rStrm, const Graphic &rGrf,
     Set_UInt16( pArr, nCropR );                     // set dxaCropRight
     Set_UInt16( pArr, nCropB );                     // set dyaCropBottom
 
-    rStrm.Write( aArr, nHdrLen );
+    rStrm.WriteBytes(aArr, nHdrLen);
 }
 
 void SwWW8WrGrf::WriteGrfForBullet(SvStream& rStrm, const Graphic &rGrf, sal_uInt16 nWidth, sal_uInt16 nHeight)
@@ -869,9 +868,7 @@ void SwWW8WrGrf::WriteGraphicNode(SvStream& rStrm, const GraphicDetails &rItem)
 
     sal_uInt32 nPos2 = rStrm.Tell();                    // store the end
     rStrm.Seek( nPos );
-    SVBT32 nLen;
-    UInt32ToSVBT32( nPos2 - nPos, nLen );             // calculate graphic length
-    rStrm.Write( nLen, 4 );                         // patch it in the header
+    rStrm.WriteUInt32(nPos2 - nPos); // patch graphic length in the header
     rStrm.Seek( nPos2 );                            // restore Pos
 }
 

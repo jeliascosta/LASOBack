@@ -43,7 +43,7 @@ public:
     /** Sets text data for this portion. */
     void                setText( const OUString& rText );
     /** Creates and returns a new font formatting object. */
-    FontRef             createFont();
+    FontRef const &     createFont();
     /** Links this portion to a font object from the global font list. */
     void                setFontId( sal_Int32 nFontId );
 
@@ -58,12 +58,11 @@ public:
     /** Converts the portion and replaces or appends to the passed XText. */
     void                convert(
                             const css::uno::Reference< css::text::XText >& rxText,
-                            const oox::xls::Font* pFont, bool bReplace );
+                            bool bReplace );
     void                convert( ScEditEngineDefaulter& rEE, ESelection& rSelection, const oox::xls::Font* pFont );
 
     void                writeFontProperties(
-        const css::uno::Reference< css::text::XText >& rxText,
-        const oox::xls::Font* pFont ) const;
+                            const css::uno::Reference< css::text::XText >& rxText ) const;
 
 private:
     OUString            maText;         /// Portion text.
@@ -73,13 +72,6 @@ private:
 };
 
 typedef std::shared_ptr< RichStringPortion > RichStringPortionRef;
-
-enum BiffFontPortionMode
-{
-    BIFF_FONTPORTION_8BIT,              /// Font portion with 8-bit values.
-    BIFF_FONTPORTION_16BIT,             /// Font portion with 16-bit values.
-    BIFF_FONTPORTION_OBJ                /// Font portion in OBJ or TXO record.
-};
 
 /** Represents a position in a rich-string containing current font identifier.
 
@@ -238,7 +230,7 @@ public:
         if there is only one unformatted portion. */
     bool                extractPlainString(
                             OUString& orString,
-                            const oox::xls::Font* pFirstPortionFont = nullptr ) const;
+                            const oox::xls::Font* pFirstPortionFont ) const;
 
     /** Converts the string and writes it into the passed XText.
         @param rxText  The XText interface of the target object.

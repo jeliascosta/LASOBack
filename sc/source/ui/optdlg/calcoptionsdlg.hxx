@@ -35,20 +35,18 @@ class ScCalcOptionsDialog : public ModalDialog
 {
 public:
     ScCalcOptionsDialog(vcl::Window* pParent, const ScCalcConfig& rConfig, bool bWriteConfig);
-    virtual ~ScCalcOptionsDialog();
+    virtual ~ScCalcOptionsDialog() override;
     virtual void dispose() override;
 
-    DECL_LINK_TYPED( AsZeroModifiedHdl, Button*, void);
-    DECL_LINK_TYPED( ConversionModifiedHdl, ListBox&, void);
-    DECL_LINK_TYPED( SyntaxModifiedHdl, ListBox&, void);
-    DECL_LINK_TYPED( CurrentDocOnlyHdl, Button*, void);
+    DECL_LINK( AsZeroModifiedHdl, Button*, void);
+    DECL_LINK( ConversionModifiedHdl, ListBox&, void);
+    DECL_LINK( SyntaxModifiedHdl, ListBox&, void);
+    DECL_LINK( CurrentDocOnlyHdl, Button*, void);
 
     const ScCalcConfig& GetConfig() const { return maConfig;}
     bool GetWriteCalcConfig() const { return mbWriteConfig;}
 
 private:
-    void OpenCLAutomaticSelectionChanged();
-    void SelectedDeviceChanged();
     void CoupleEmptyAsZeroToStringConversion();
 
 private:

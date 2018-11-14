@@ -65,8 +65,8 @@ struct OHierarchyElement_Impl : public cppu::WeakImplHelper< css::embed::XTransa
     OWeakStorRefList_Impl m_aOpenStreams;
 
 public:
-    OHierarchyElement_Impl( OHierarchyElement_Impl* pParent, const css::uno::Reference< css::embed::XStorage >& xStorage )
-    : m_rParent( pParent )
+    explicit OHierarchyElement_Impl( const css::uno::Reference< css::embed::XStorage >& xStorage )
+    : m_rParent( nullptr )
     , m_xOwnStorage( xStorage )
     {}
 
@@ -87,7 +87,7 @@ public:
         GetStreamHierarchically( sal_Int32 nStorageMode,
                                 OStringList_Impl& aPath,
                                 sal_Int32 nStreamMode,
-                                const ::comphelper::SequenceAsHashMap& aEncryptionData = ::comphelper::SequenceAsHashMap() );
+                                const ::comphelper::SequenceAsHashMap& aEncryptionData );
 
     void RemoveStreamHierarchically( OStringList_Impl& aListPath );
 

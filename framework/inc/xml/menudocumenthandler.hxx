@@ -39,7 +39,7 @@ class FWE_DLLPUBLIC ReadMenuDocumentHandlerBase :
 {
     public:
         ReadMenuDocumentHandlerBase();
-        virtual ~ReadMenuDocumentHandlerBase();
+        virtual ~ReadMenuDocumentHandlerBase() override;
 
         // XDocumentHandler
         virtual void SAL_CALL startDocument()
@@ -100,7 +100,7 @@ class FWE_DLLPUBLIC OReadMenuDocumentHandler : public ReadMenuDocumentHandlerBas
     public:
         OReadMenuDocumentHandler(
             const css::uno::Reference< css::container::XIndexContainer >& rItemContainer );
-        virtual ~OReadMenuDocumentHandler();
+        virtual ~OReadMenuDocumentHandler() override;
 
         // XDocumentHandler
         virtual void SAL_CALL startDocument()
@@ -139,7 +139,7 @@ class FWE_DLLPUBLIC OReadMenuBarHandler : public ReadMenuDocumentHandlerBase
         OReadMenuBarHandler(
             const css::uno::Reference< css::container::XIndexContainer >& rMenuBarContainer,
             const css::uno::Reference< css::lang::XSingleComponentFactory >& rContainerFactory );
-        virtual ~OReadMenuBarHandler();
+        virtual ~OReadMenuBarHandler() override;
 
         // XDocumentHandler
         virtual void SAL_CALL startDocument()
@@ -176,7 +176,7 @@ class FWE_DLLPUBLIC OReadMenuHandler : public ReadMenuDocumentHandlerBase
     public:
         OReadMenuHandler( const css::uno::Reference< css::container::XIndexContainer >& rMenuContainer,
                           const css::uno::Reference< css::lang::XSingleComponentFactory >& rContainerFactory );
-        virtual ~OReadMenuHandler();
+        virtual ~OReadMenuHandler() override;
 
         // XDocumentHandler
         virtual void SAL_CALL startDocument()
@@ -213,7 +213,7 @@ class FWE_DLLPUBLIC OReadMenuPopupHandler : public ReadMenuDocumentHandlerBase
     public:
         OReadMenuPopupHandler( const css::uno::Reference< css::container::XIndexContainer >& rMenuContainer,
                                const css::uno::Reference< css::lang::XSingleComponentFactory >& rContainerFactory );
-        virtual ~OReadMenuPopupHandler();
+        virtual ~OReadMenuPopupHandler() override;
 
         // XDocumentHandler
         virtual void SAL_CALL startDocument()
@@ -250,22 +250,22 @@ class FWE_DLLPUBLIC OReadMenuPopupHandler : public ReadMenuDocumentHandlerBase
         NextElementClose                                           m_nNextElementExpected;
 }; // OReadMenuPopupHandler
 
-class FWE_DLLPUBLIC OWriteMenuDocumentHandler
+class FWE_DLLPUBLIC OWriteMenuDocumentHandler final
 {
     public:
         OWriteMenuDocumentHandler(
             const css::uno::Reference< css::container::XIndexAccess >& rMenuBarContainer,
             const css::uno::Reference< css::xml::sax::XDocumentHandler >& rDocumentHandler,
             bool bIsMenuBar );
-        virtual ~OWriteMenuDocumentHandler();
+        ~OWriteMenuDocumentHandler();
 
         void WriteMenuDocument() throw
             ( css::xml::sax::SAXException, css::uno::RuntimeException );
-    protected:
+    private:
         void WriteMenu( const css::uno::Reference< css::container::XIndexAccess >& rSubMenuContainer ) throw
             ( css::xml::sax::SAXException, css::uno::RuntimeException );
 
-        void WriteMenuItem( const OUString& aCommandURL, const OUString& aLabel, const OUString& aHelpURL, sal_Int16 nStyle = 0 );
+        void WriteMenuItem( const OUString& aCommandURL, const OUString& aLabel, const OUString& aHelpURL, sal_Int16 nStyle );
         void WriteMenuSeparator();
 
         css::uno::Reference< css::container::XIndexAccess > m_xMenuBarContainer;

@@ -33,7 +33,6 @@
 #include <com/sun/star/view/XSelectionSupplier.hpp>
 #include <com/sun/star/table/BorderLine2.hpp>
 #include <com/sun/star/table/ShadowFormat.hpp>
-#include <com/sun/star/text/GraphicCrop.hpp>
 #include <com/sun/star/text/XPageCursor.hpp>
 #include <com/sun/star/awt/FontWeight.hpp>
 #include <com/sun/star/awt/FontUnderline.hpp>
@@ -66,9 +65,6 @@ protected:
         const char* aBlacklist[] = {
             "math-escape.docx",
             "math-mso2k7.docx",
-            "ImageCrop.docx",
-            "test_GIF_ImageCrop.docx",
-            "test_PNG_ImageCrop.docx"
         };
         std::vector<const char*> vBlacklist(aBlacklist, aBlacklist + SAL_N_ELEMENTS(aBlacklist));
 
@@ -341,6 +337,14 @@ DECLARE_OOXMLEXPORT_TEST(testFdo73541,"fdo73541.docx")
     assertXPath(pXmlDoc, "/w:settings/w:mirrorMargins");
 }
 
+DECLARE_OOXMLEXPORT_TEST(testFdo106029,"fdo106029.docx")
+{
+    xmlDocPtr pXmlDoc = parseExport("word/settings.xml");
+    if (!pXmlDoc)
+        return;
+    assertXPath(pXmlDoc, "/w:settings/w:compat/w:doNotExpandShiftReturn");
+}
+
 DECLARE_OOXMLEXPORT_TEST(testFDO74106, "FDO74106.docx")
 {
     xmlDocPtr pXmlDoc = parseExport("word/numbering.xml");
@@ -363,9 +367,15 @@ DECLARE_OOXMLEXPORT_TEST(testColumnBreak_ColumnCountIsZero,"fdo74153.docx")
      * The <w:br w:type="column" /> was missing after roundtrip
      */
     xmlDocPtr pXmlDoc = parseExport("word/document.xml");
-    if (!pXmlDoc)
-        return;
-    assertXPath(pXmlDoc, "/w:document/w:body/w:p[3]/w:r[1]/w:br","type","column");
+    if (pXmlDoc)
+        assertXPath(pXmlDoc, "/w:document/w:body/w:p[3]/w:r[1]/w:br","type","column");
+
+    //tdf76349 match Word's behavior of treating breaks in single columns as page breaks.
+    uno::Reference<frame::XModel> xModel(mxComponent, uno::UNO_QUERY);
+    uno::Reference<text::XTextViewCursorSupplier> xTextViewCursorSupplier(xModel->getCurrentController(), uno::UNO_QUERY);
+    uno::Reference<text::XPageCursor> xCursor(xTextViewCursorSupplier->getViewCursor(), uno::UNO_QUERY);
+    xCursor->jumpToLastPage();
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(2), xCursor->getPage());
 }
 
 DECLARE_OOXMLEXPORT_TEST(testTdf90697_complexBreaksHeaders,"tdf90697_complexBreaksHeaders.docx")
@@ -970,6 +980,100 @@ DECLARE_OOXMLEXPORT_TEST(testTdf92521, "tdf92521.odt")
     if (xmlDocPtr pXmlDoc = parseExport("word/document.xml"))
         // There should be a section break that's in the middle of the document: right after the table.
         assertXPath(pXmlDoc, "/w:document/w:body/w:p/w:pPr/w:sectPr", 1);
+}
+
+DECLARE_OOXMLEXPORT_TEST(testTdf99090_pgbrkAfterTable, "tdf99090_pgbrkAfterTable.docx")
+{
+    if (xmlDocPtr pXmlDoc = parseExport("word/document.xml"))
+        // There should be a regular page break that's in the middle of the document: right after the table.
+        assertXPath(pXmlDoc, "/w:document/w:body/w:p/w:r/w:br", 1);
+}
+
+DECLARE_OOXMLEXPORT_TEST(testTdf96750_landscapeFollow, "tdf96750_landscapeFollow.docx")
+{
+    uno::Reference<beans::XPropertySet> xStyle(getStyles("PageStyles")->getByName("Standard"), uno::UNO_QUERY);
+    CPPUNIT_ASSERT_EQUAL(true, getProperty<bool>(xStyle, "IsLandscape"));
+}
+
+DECLARE_OOXMLEXPORT_TEST(testTdf86926_A3, "tdf86926_A3.docx")
+{
+    uno::Reference<beans::XPropertySet> xStyle(getStyles("PageStyles")->getByName("Standard"), uno::UNO_QUERY);
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(42000), getProperty<sal_Int32>(xStyle, "Height"));
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(29700), getProperty<sal_Int32>(xStyle, "Width"));
+}
+
+DECLARE_OOXMLEXPORT_TEST(testTdf64372_continuousBreaks,"tdf64372_continuousBreaks.docx")
+{
+    //There are no page breaks, so everything should be on the first page.
+    uno::Reference<frame::XModel> xModel(mxComponent, uno::UNO_QUERY);
+    uno::Reference<text::XTextViewCursorSupplier> xTextViewCursorSupplier(xModel->getCurrentController(), uno::UNO_QUERY);
+    uno::Reference<text::XPageCursor> xCursor(xTextViewCursorSupplier->getViewCursor(), uno::UNO_QUERY);
+    xCursor->jumpToLastPage();
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(1), xCursor->getPage());
+}
+
+DECLARE_OOXMLEXPORT_TEST(testTdf92724_continuousBreaksComplex,"tdf92724_continuousBreaksComplex.docx")
+{
+    //There are 2 page breaks, so there should be 3 pages.
+    uno::Reference<frame::XModel> xModel(mxComponent, uno::UNO_QUERY);
+    uno::Reference<text::XTextViewCursorSupplier> xTextViewCursorSupplier(xModel->getCurrentController(), uno::UNO_QUERY);
+    uno::Reference<text::XPageCursor> xCursor(xTextViewCursorSupplier->getViewCursor(), uno::UNO_QUERY);
+    xCursor->jumpToLastPage();
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(3), xCursor->getPage());
+}
+
+DECLARE_OOXMLEXPORT_TEST(testTdf90697_continuousBreaksComplex2,"tdf92724_continuousBreaksComplex2.docx")
+{
+// Continuous section breaks with new headers/footers should not immediately switch to a new page style.
+    uno::Reference<frame::XModel> xModel(mxComponent, uno::UNO_QUERY);
+    uno::Reference<text::XTextViewCursorSupplier> xTextViewCursorSupplier(xModel->getCurrentController(), uno::UNO_QUERY);
+    uno::Reference<text::XPageCursor> xCursor(xTextViewCursorSupplier->getViewCursor(), uno::UNO_QUERY);
+    xCursor->jumpToLastPage();
+
+    sal_Int16 nPages = xCursor->getPage();
+    while( nPages > 0 )
+    {
+        OUString sPageStyleName = getProperty<OUString>( xCursor, "PageStyleName" );
+        uno::Reference<text::XText> xHeaderText = getProperty< uno::Reference<text::XText> >(getStyles("PageStyles")->getByName(sPageStyleName), "HeaderText");
+// Specific case to avoid.  Testing separately (even though redundant).
+// The first header (defined on page 3) ONLY is shown IF the section happens to start on a new page (which it doesn't in this document).
+        CPPUNIT_ASSERT( xHeaderText->getString() != "Third section - First page header. No follow defined" );
+// Same test stated differently: Pages 4 and 5 OUGHT to use "Second section header", but currently don't.  Page 6 does.
+        if( nPages <= 3 )
+            CPPUNIT_ASSERT_EQUAL( xHeaderText->getString(), OUString("First section header") );
+        else
+            CPPUNIT_ASSERT( xHeaderText->getString() == "First section header" || xHeaderText->getString() == "Second section header" );
+
+        xCursor->jumpToPage( --nPages );
+    }
+}
+
+DECLARE_OOXMLEXPORT_TEST(testTdf95367_inheritFollowStyle, "tdf95367_inheritFollowStyle.docx")
+{
+    CPPUNIT_ASSERT_EQUAL(OUString("header"),  parseDump("/root/page[2]/header/txt/text()"));
+}
+
+DECLARE_OOXMLEXPORT_TEST(testInheritFirstHeader,"inheritFirstHeader.docx")
+{
+// First page headers always link to last used first header, never to a follow header
+    uno::Reference<frame::XModel> xModel(mxComponent, uno::UNO_QUERY);
+    uno::Reference<text::XTextViewCursorSupplier> xTextViewCursorSupplier(xModel->getCurrentController(), uno::UNO_QUERY);
+    uno::Reference<text::XPageCursor> xCursor(xTextViewCursorSupplier->getViewCursor(), uno::UNO_QUERY);
+
+    xCursor->jumpToLastPage();
+    OUString sPageStyleName = getProperty<OUString>( xCursor, "PageStyleName" );
+    uno::Reference<text::XText> xHeaderText = getProperty< uno::Reference<text::XText> >(getStyles("PageStyles")->getByName(sPageStyleName), "HeaderText");
+    CPPUNIT_ASSERT_EQUAL( OUString("Last Header"), xHeaderText->getString() );
+
+    xCursor->jumpToPreviousPage();
+    sPageStyleName = getProperty<OUString>( xCursor, "PageStyleName" );
+    xHeaderText = getProperty< uno::Reference<text::XText> >(getStyles("PageStyles")->getByName(sPageStyleName), "HeaderText");
+    CPPUNIT_ASSERT_EQUAL( OUString("First Header"), xHeaderText->getString() );
+
+    xCursor->jumpToPreviousPage();
+    sPageStyleName = getProperty<OUString>( xCursor, "PageStyleName" );
+    xHeaderText = getProperty< uno::Reference<text::XText> >(getStyles("PageStyles")->getByName(sPageStyleName), "HeaderText");
+    CPPUNIT_ASSERT_EQUAL( OUString("Follow Header"), xHeaderText->getString() );
 }
 
 DECLARE_OOXMLEXPORT_TEST(testTdf81345_045Original,"tdf81345.docx")

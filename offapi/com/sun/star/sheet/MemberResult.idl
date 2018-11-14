@@ -46,6 +46,17 @@ struct MemberResult
      */
     long Flags;
 
+
+    /** the underlying numeric value of the field <b>if</b> Flags
+        indicate so by having
+        com::sun::star::sheet::MemberResultFlags::NUMERIC set.
+
+        May be NaN if value is not available or unknown.
+
+        @since LibreOffice 5.3
+     */
+    double Value;
+
 };
 
 

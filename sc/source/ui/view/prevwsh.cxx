@@ -186,7 +186,7 @@ ScPreviewShell::~ScPreviewShell()
         mpFrameWindow->SetCloseHdl(Link<SystemWindow&,void>()); // Remove close handler.
 
     // #108333#; notify Accessibility that Shell is dying and before destroy all
-    BroadcastAccessibility( SfxSimpleHint( SFX_HINT_DYING ) );
+    BroadcastAccessibility( SfxHint( SFX_HINT_DYING ) );
     DELETEZ(pAccessibilityBroadcaster);
 
     SfxBroadcaster* pDrawBC = pDocShell->GetDocument().GetDrawBroadcaster();
@@ -220,10 +220,10 @@ void ScPreviewShell::AdjustPosSizePixel( const Point &rPos, const Size &rSize )
     else if ( SvxZoomType::PAGEWIDTH == eZoom )
         pPreview->SetZoom( pPreview->GetOptimalZoom(true) );
 
-    UpdateNeededScrollBars();
+    UpdateNeededScrollBars(false);
 }
 
-void ScPreviewShell::InnerResizePixel( const Point &rOfs, const Size &rSize )
+void ScPreviewShell::InnerResizePixel( const Point &rOfs, const Size &rSize, bool )
 {
     AdjustPosSizePixel( rOfs,rSize );
 }
@@ -404,7 +404,7 @@ void ScPreviewShell::UpdateScrollBars()
     }
 }
 
-IMPL_LINK_TYPED( ScPreviewShell, ScrollHandler, ScrollBar*, pScroll, void )
+IMPL_LINK( ScPreviewShell, ScrollHandler, ScrollBar*, pScroll, void )
 {
     long nPos           = pScroll->GetThumbPos();
     long nDelta         = pScroll->GetDelta();
@@ -475,7 +475,7 @@ IMPL_LINK_TYPED( ScPreviewShell, ScrollHandler, ScrollBar*, pScroll, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ScPreviewShell, CloseHdl, SystemWindow&, void)
+IMPL_LINK_NOARG(ScPreviewShell, CloseHdl, SystemWindow&, void)
 {
     ExitPreview();
 }
@@ -640,7 +640,7 @@ void ScPreviewShell::Execute( SfxRequest& rReq )
                     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                     if(pFact)
                     {
-                        std::unique_ptr<AbstractSvxZoomDialog> pDlg(pFact->CreateSvxZoomDialog(nullptr, aSet));
+                        ScopedVclPtr<AbstractSvxZoomDialog> pDlg(pFact->CreateSvxZoomDialog(nullptr, aSet));
                         OSL_ENSURE(pDlg, "Dialog creation failed!");
                         pDlg->SetLimits( 20, 400 );
                         pDlg->HideButton( ZoomButtonId::OPTIMAL );
@@ -915,7 +915,7 @@ void ScPreviewShell::WriteUserData(OUString& rData, bool /* bBrowse */)
     //  nPageNo
 
     rData = OUString::number(pPreview->GetZoom())
-        + OUStringLiteral1<SC_USERDATA_SEP>()
+        + OUStringLiteral1(SC_USERDATA_SEP)
         + OUString::number(pPreview->GetPageNo());
 }
 
@@ -947,6 +947,9 @@ void ScPreviewShell::WriteUserDataSequence(uno::Sequence < beans::PropertyValue 
         pSeq[2].Name = "PageNumber";
         pSeq[2].Value <<= pPreview->GetPageNo();
     }
+
+    // Common SdrModel processing
+    GetDocument().GetDrawLayer()->WriteUserDataSequence(rSeq);
 }
 
 void ScPreviewShell::ReadUserDataSequence(const uno::Sequence < beans::PropertyValue >& rSeq)
@@ -972,6 +975,8 @@ void ScPreviewShell::ReadUserDataSequence(const uno::Sequence < beans::PropertyV
                     if (pSeq->Value >>= nTemp)
                         pPreview->SetPageNo(nTemp);
                 }
+                // Fallback to common SdrModel processing
+                else GetDocument().GetDrawLayer()->ReadUserDataSequenceValue(pSeq);
             }
         }
     }

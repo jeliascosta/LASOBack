@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/standard/vclxaccessiblefixedhyperlink.hxx>
+#include <standard/vclxaccessiblefixedhyperlink.hxx>
 
 using namespace ::com::sun::star;
 
@@ -33,19 +33,6 @@ VCLXAccessibleFixedHyperlink::VCLXAccessibleFixedHyperlink( VCLXWindow* pVCLWind
 
 VCLXAccessibleFixedHyperlink::~VCLXAccessibleFixedHyperlink()
 {
-}
-
-
-void VCLXAccessibleFixedHyperlink::FillAccessibleStateSet( utl::AccessibleStateSetHelper& rStateSet )
-{
-    VCLXAccessibleTextComponent::FillAccessibleStateSet( rStateSet );
-}
-
-
-void VCLXAccessibleFixedHyperlink::implGetLineBoundary( i18n::Boundary& rBoundary, sal_Int32 nIndex )
-{
-    // TODO
-    OCommonAccessibleText::implGetLineBoundary( rBoundary, nIndex );
 }
 
 

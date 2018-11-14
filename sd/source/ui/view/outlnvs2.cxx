@@ -241,7 +241,7 @@ void OutlineViewShell::FuTemporary(SfxRequest &rReq)
         case SID_REHEARSE_TIMINGS:
         {
             pOlView->PrepareClose();
-            ShowSlideShow(rReq);
+            slideshowhelp::ShowSlideShow(rReq, *GetDoc());
             Cancel();
             rReq.Done();
         }
@@ -294,9 +294,12 @@ void OutlineViewShell::FuTemporary(SfxRequest &rReq)
         {
 #ifdef ENABLE_SDREMOTE
              SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-             VclAbstractDialog* pDlg = pFact ? pFact->CreateRemoteDialog(GetActiveWindow()) : nullptr;
-             if (pDlg)
-                 pDlg->Execute();
+             if (pFact)
+             {
+                 ScopedVclPtr<VclAbstractDialog> pDlg(pFact->CreateRemoteDialog(GetActiveWindow()));
+                 if (pDlg)
+                     pDlg->Execute();
+             }
 #endif
         }
         break;
@@ -311,14 +314,13 @@ void OutlineViewShell::FuTemporary(SfxRequest &rReq)
         case SID_PHOTOALBUM:
         {
             SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-            std::unique_ptr<VclAbstractDialog> pDlg(pFact ? pFact->CreateSdPhotoAlbumDialog(
-                GetActiveWindow(),
-                GetDoc()) : nullptr);
-
-            if (pDlg)
+            if (pFact)
             {
+                ScopedVclPtr<VclAbstractDialog> pDlg(pFact->CreateSdPhotoAlbumDialog(
+                    GetActiveWindow(),
+                    GetDoc()));
+
                 pDlg->Execute();
-                pDlg.reset();
             }
             Cancel();
             rReq.Ignore ();
@@ -346,11 +348,6 @@ void OutlineViewShell::FuTemporary(SfxRequest &rReq)
     Invalidate(SID_COPY);
     Invalidate(SID_PASTE);
     Invalidate(SID_PASTE_UNFORMATTED);
-}
-
-void OutlineViewShell::ShowSlideShow(SfxRequest& rReq)
-{
-    slideshowhelp::ShowSlideShow(rReq, *GetDoc());
 }
 
 void OutlineViewShell::FuTemporaryModify(SfxRequest &rReq)
@@ -582,7 +579,7 @@ void OutlineViewShell::FuTemporaryModify(SfxRequest &rReq)
             {
                 // Dialog...
                 SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-                std::unique_ptr<AbstractSdModifyFieldDlg> pDlg(pFact ? pFact->CreateSdModifyFieldDlg(GetActiveWindow(), pFldItem->GetField(), pOutlinerView->GetAttribs() ) : nullptr);
+                ScopedVclPtr<AbstractSdModifyFieldDlg> pDlg(pFact ? pFact->CreateSdModifyFieldDlg(GetActiveWindow(), pFldItem->GetField(), pOutlinerView->GetAttribs() ) : nullptr);
                 if( pDlg && (pDlg->Execute() == RET_OK) )
                 {
                     std::unique_ptr<SvxFieldData> pField(pDlg->GetField());

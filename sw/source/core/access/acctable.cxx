@@ -58,8 +58,8 @@ using namespace ::com::sun::star;
 using namespace ::com::sun::star::accessibility;
 using namespace ::sw::access;
 
-typedef ::std::set < sal_Int32 > Int32Set_Impl;
-typedef ::std::pair < sal_Int32, sal_Int32 > Int32Pair_Impl;
+typedef std::set < sal_Int32 > Int32Set_Impl;
+typedef std::pair < sal_Int32, sal_Int32 > Int32Pair_Impl;
 
 const unsigned int SELECTION_WITH_NUM = 10;
 
@@ -77,7 +77,7 @@ class SwAccessibleTableData_Impl
     SwAccessibleMap& mrAccMap;
     Int32Set_Impl   maRows;
     Int32Set_Impl   maColumns;
-    ::std::list < Int32Pair_Impl > maExtents;   // cell extends for event processing only
+    std::list < Int32Pair_Impl > maExtents;     // cell extends for event processing only
     Point   maTabFramePos;
     const SwTabFrame *mpTabFrame;
     bool mbIsInPagePreview;
@@ -384,7 +384,7 @@ void SwAccessibleTableData_Impl::GetSelection(
                     Int32Set_Impl::const_iterator aSttRowOrCol(
                         rRowsOrCols.lower_bound( nPos ) );
                     sal_Int32 nRowOrCol =
-                        static_cast< sal_Int32 >( ::std::distance(
+                        static_cast< sal_Int32 >( std::distance(
                             rRowsOrCols.begin(), aSttRowOrCol ) );
 
                     nPos = bColumns ? (rBox.Right() - rTabPos.X())
@@ -392,7 +392,7 @@ void SwAccessibleTableData_Impl::GetSelection(
                     Int32Set_Impl::const_iterator aEndRowOrCol(
                         rRowsOrCols.upper_bound( nPos ) );
                     sal_Int32 nExt =
-                        static_cast< sal_Int32 >( ::std::distance(
+                        static_cast< sal_Int32 >( std::distance(
                             aSttRowOrCol, aEndRowOrCol ) );
 
                     rSelHdl.Unselect( nRowOrCol, nExt );
@@ -440,7 +440,7 @@ void SwAccessibleTableData_Impl::GetSelection(
     if( nStart > 0 )
     {
         Int32Set_Impl::const_iterator aStt( rRowsOrColumns.begin() );
-        ::std::advance( aStt,
+        std::advance( aStt,
             static_cast< Int32Set_Impl::difference_type >( nStart ) );
         if( bColumns )
             aArea.Left( *aStt + aPos.getX() );
@@ -450,7 +450,7 @@ void SwAccessibleTableData_Impl::GetSelection(
     if( nEnd < static_cast< sal_Int32 >( rRowsOrColumns.size() ) )
     {
         Int32Set_Impl::const_iterator aEnd( rRowsOrColumns.begin() );
-        ::std::advance( aEnd,
+        std::advance( aEnd,
             static_cast< Int32Set_Impl::difference_type >( nEnd ) );
         if( bColumns )
             aArea.Right( *aEnd + aPos.getX() - 1 );
@@ -490,7 +490,7 @@ bool SwAccessibleTableData_Impl::CompareExtents(
     if( maExtents.size() != rCmp.maExtents.size() )
         return false;
 
-    return ::std::equal(maExtents.begin(), maExtents.end(), rCmp.maExtents.begin());
+    return std::equal(maExtents.begin(), maExtents.end(), rCmp.maExtents.begin());
 }
 
 SwAccessibleTableData_Impl::SwAccessibleTableData_Impl( SwAccessibleMap& rAccMap,
@@ -513,7 +513,7 @@ inline Int32Set_Impl::const_iterator SwAccessibleTableData_Impl::GetRowIter(
     Int32Set_Impl::const_iterator aCol( GetRows().begin() );
     if( nRow > 0 )
     {
-        ::std::advance( aCol,
+        std::advance( aCol,
                     static_cast< Int32Set_Impl::difference_type >( nRow ) );
     }
     return aCol;
@@ -525,7 +525,7 @@ inline Int32Set_Impl::const_iterator SwAccessibleTableData_Impl::GetColumnIter(
     Int32Set_Impl::const_iterator aCol = GetColumns().begin();
     if( nColumn > 0 )
     {
-        ::std::advance( aCol,
+        std::advance( aCol,
                     static_cast< Int32Set_Impl::difference_type >( nColumn ) );
     }
     return aCol;
@@ -598,7 +598,7 @@ void SwAccSingleTableSelHander_Impl::Unselect( sal_Int32, sal_Int32 )
 class SwAccAllTableSelHander_Impl : public SwAccTableSelHander_Impl
 
 {
-    ::std::vector< bool > aSelected;
+    std::vector< bool > aSelected;
     sal_Int32 nCount;
 
 public:
@@ -763,7 +763,7 @@ void SwAccessibleTable::GetStates(
 }
 
 SwAccessibleTable::SwAccessibleTable(
-        SwAccessibleMap* pInitMap,
+        std::shared_ptr<SwAccessibleMap> const& pInitMap,
         const SwTabFrame* pTabFrame  ) :
     SwAccessibleContext( pInitMap, AccessibleRole::TABLE, pTabFrame ),
     mpTableData( nullptr )
@@ -1034,7 +1034,7 @@ sal_Int32 SAL_CALL SwAccessibleTable::getAccessibleRowExtentAt(
         Int32Set_Impl::const_iterator aEndRow(
                 GetTableData().GetRows().upper_bound( nBottom ) );
         nExtend =
-             static_cast< sal_Int32 >( ::std::distance( aSttRow, aEndRow ) );
+             static_cast< sal_Int32 >( std::distance( aSttRow, aEndRow ) );
     }
 
     return nExtend;
@@ -1065,7 +1065,7 @@ sal_Int32 SAL_CALL SwAccessibleTable::getAccessibleColumnExtentAt(
         Int32Set_Impl::const_iterator aEndCol(
                 GetTableData().GetColumns().upper_bound( nRight ) );
         nExtend =
-             static_cast< sal_Int32 >( ::std::distance( aSttCol, aEndCol ) );
+             static_cast< sal_Int32 >( std::distance( aSttCol, aEndCol ) );
     }
 
     return nExtend;
@@ -1086,7 +1086,8 @@ uno::Reference< XAccessibleTable > SAL_CALL
     // #i87532# - assure that return accessible object is empty,
     // if no column header exists.
     SwAccessibleTableColHeaders* pTableColHeaders =
-        new SwAccessibleTableColHeaders( GetMap(), static_cast< const SwTabFrame *>( GetFrame() ) );
+        new SwAccessibleTableColHeaders(GetMap()->shared_from_this(),
+                    static_cast<const SwTabFrame *>(GetFrame()));
     uno::Reference< XAccessibleTable > xTableColumnHeaders( pTableColHeaders );
     if ( pTableColHeaders->getAccessibleChildCount() <= 0 )
     {
@@ -1298,7 +1299,7 @@ sal_Int32 SAL_CALL SwAccessibleTable::getAccessibleRow( sal_Int32 nChildIndex )
         nTop -= GetFrame()->Frame().Top();
         Int32Set_Impl::const_iterator aRow(
                 GetTableData().GetRows().lower_bound( nTop ) );
-        nRet = static_cast< sal_Int32 >( ::std::distance(
+        nRet = static_cast< sal_Int32 >( std::distance(
                     GetTableData().GetRows().begin(), aRow ) );
     }
     else
@@ -1336,7 +1337,7 @@ sal_Int32 SAL_CALL SwAccessibleTable::getAccessibleColumn(
         nLeft -= GetFrame()->Frame().Left();
         Int32Set_Impl::const_iterator aCol(
                 GetTableData().GetColumns().lower_bound( nLeft ) );
-        nRet = static_cast< sal_Int32 >( ::std::distance(
+        nRet = static_cast< sal_Int32 >( std::distance(
                     GetTableData().GetColumns().begin(), aCol ) );
     }
     else
@@ -1391,18 +1392,18 @@ void SwAccessibleTable::InvalidatePosOrSize( const SwRect& rOldBox )
     SwAccessibleContext::InvalidatePosOrSize( rOldBox );
 }
 
-void SwAccessibleTable::Dispose( bool bRecursive )
+void SwAccessibleTable::Dispose(bool bRecursive, bool bCanSkipInvisible)
 {
     SolarMutexGuard aGuard;
 
     if( GetRegisteredIn() )
         GetRegisteredInNonConst()->Remove( this );
 
-    SwAccessibleContext::Dispose( bRecursive );
+    SwAccessibleContext::Dispose(bRecursive, bCanSkipInvisible);
 }
 
 void SwAccessibleTable::DisposeChild( const SwAccessibleChild& rChildFrameOrObj,
-                                      bool bRecursive )
+                                      bool bRecursive, bool bCanSkipInvisible )
 {
     SolarMutexGuard aGuard;
 
@@ -1421,7 +1422,7 @@ void SwAccessibleTable::DisposeChild( const SwAccessibleChild& rChildFrameOrObj,
     // about its change. We then must not call the superclass
     uno::Reference< XAccessible > xAcc( GetMap()->GetContext( pFrame, false ) );
     if( !xAcc.is() )
-        SwAccessibleContext::DisposeChild( rChildFrameOrObj, bRecursive );
+        SwAccessibleContext::DisposeChild( rChildFrameOrObj, bRecursive, bCanSkipInvisible );
 }
 
 void SwAccessibleTable::InvalidateChildPosOrSize( const SwAccessibleChild& rChildFrameOrObj,
@@ -1533,12 +1534,12 @@ void SAL_CALL SwAccessibleTable::selectAccessibleChild(
         pCursorShell->StartAction();
         // Set cursor into current cell. This deletes any table cursor.
         SwPaM aPaM( *pStartNode );
-        aPaM.Move( fnMoveForward, fnGoNode );
+        aPaM.Move( fnMoveForward, GoInNode );
         Select( aPaM );
         // Move cursor to the end of the table creating a selection and a table
         // cursor.
         pCursorShell->SetMark();
-        pCursorShell->MoveTable( fnTableCurr, fnTableEnd );
+        pCursorShell->MoveTable( GotoCurrTable, fnTableEnd );
         // now set the cursor into the cell again.
         SwPaM *pPaM = pCursorShell->GetTableCrs() ? pCursorShell->GetTableCrs()
                                                     : pCursorShell->GetCursor();
@@ -1552,7 +1553,7 @@ void SAL_CALL SwAccessibleTable::selectAccessibleChild(
         // expand the current selection (i.e., set
         // point to new position; keep mark)
         SwPaM aPaM( *pStartNode );
-        aPaM.Move( fnMoveForward, fnGoNode );
+        aPaM.Move( fnMoveForward, GoInNode );
         aPaM.SetMark();
         const SwPaM *pPaM = pCursorShell->GetTableCrs() ? pCursorShell->GetTableCrs()
                                                     : pCursorShell->GetCursor();
@@ -1689,7 +1690,7 @@ void SAL_CALL SwAccessibleTable::deselectAccessibleChild(
     // Move cursor to the end of the table creating a selection and a table
     // cursor.
     pCursorShell->SetMark();
-    pCursorShell->MoveTable( fnTableCurr, fnTableEnd );
+    pCursorShell->MoveTable( GotoCurrTable, fnTableEnd );
     // now set the cursor into the cell again.
     pPaM = pCursorShell->GetTableCrs() ? pCursorShell->GetTableCrs()
                                         : pCursorShell->GetCursor();
@@ -1854,9 +1855,10 @@ sal_Bool SAL_CALL SwAccessibleTable::unselectColumn( sal_Int32 column )
 }
 
 // #i77106# - implementation of class <SwAccessibleTableColHeaders>
-SwAccessibleTableColHeaders::SwAccessibleTableColHeaders( SwAccessibleMap *pMap2,
-                                                          const SwTabFrame *pTabFrame )
-    : SwAccessibleTable( pMap2, pTabFrame )
+SwAccessibleTableColHeaders::SwAccessibleTableColHeaders(
+        std::shared_ptr<SwAccessibleMap> const& pMap,
+        const SwTabFrame *const pTabFrame)
+    : SwAccessibleTable(pMap, pTabFrame)
 {
     SolarMutexGuard aGuard;
 

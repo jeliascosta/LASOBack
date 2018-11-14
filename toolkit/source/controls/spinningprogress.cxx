@@ -48,7 +48,7 @@ public:
     css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception) override;
 
 protected:
-    virtual ~SpinningProgressControlModel();
+    virtual ~SpinningProgressControlModel() override;
 };
 
     SpinningProgressControlModel::SpinningProgressControlModel( Reference< XComponentContext > const & i_factory )
@@ -61,7 +61,7 @@ protected:
             {
                 Throbber::ImageSet aImageSets[] =
                 {
-                    Throbber::IMAGES_16_PX, Throbber::IMAGES_32_PX, Throbber::IMAGES_64_PX
+                    Throbber::ImageSet::N16px, Throbber::ImageSet::N32px, Throbber::ImageSet::N64px
                 };
                 for ( size_t i=0; i < SAL_N_ELEMENTS(aImageSets); ++i )
                 {

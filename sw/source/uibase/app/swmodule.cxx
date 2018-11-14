@@ -27,6 +27,7 @@
 #include <svx/ParaLineSpacingPopup.hxx>
 #include <svx/TextCharacterSpacingPopup.hxx>
 #include <svx/TextUnderlinePopup.hxx>
+#include <svx/ParaSpacingControl.hxx>
 #include <svx/svdobj.hxx>
 #include <svx/pszctrl.hxx>
 #include <svx/insctrl.hxx>
@@ -49,6 +50,7 @@
 #include <svx/srchdlg.hxx>
 #include <svx/hyperdlg.hxx>
 #include <svx/modctrl.hxx>
+#include <sfx2/emojipopup.hxx>
 #include <com/sun/star/scanner/ScannerManager.hpp>
 #include <com/sun/star/container/XSet.hpp>
 #include <com/sun/star/linguistic2/LanguageGuessing.hpp>
@@ -108,6 +110,10 @@
 #include <barcfg.hxx>
 #include <svx/rubydialog.hxx>
 #include <svtools/colorcfg.hxx>
+#include <PageSizePopup.hxx>
+#include <PageMarginPopup.hxx>
+#include <PageOrientationPopup.hxx>
+#include <PageColumnPopup.hxx>
 
 #include <unotools/configmgr.hxx>
 #include <unotools/moduleoptions.hxx>
@@ -140,8 +146,7 @@ using namespace ::com::sun::star::uno;
 SwModule::SwModule( SfxObjectFactory* pWebFact,
                     SfxObjectFactory* pFact,
                     SfxObjectFactory* pGlobalFact )
-    : SfxModule( ResMgr::CreateResMgr( "sw" ), false, pWebFact,
-                     pFact, pGlobalFact, nullptr ),
+    : SfxModule( ResMgr::CreateResMgr( "sw" ), {pWebFact, pFact, pGlobalFact} ),
     m_pModuleConfig(nullptr),
     m_pUsrPref(nullptr),
     m_pWebUsrPref(nullptr),
@@ -192,7 +197,7 @@ SwModule::SwModule( SfxObjectFactory* pWebFact,
         GetColorConfig();
     }
 }
-uno::Reference< scanner::XScannerManager2 >
+uno::Reference< scanner::XScannerManager2 > const &
 SwModule::GetScannerManager()
 {
     if (!m_xScannerManager.is())
@@ -202,7 +207,7 @@ SwModule::GetScannerManager()
     return m_xScannerManager;
 }
 
-uno::Reference< linguistic2::XLanguageGuessing > SwModule::GetLanguageGuesser()
+uno::Reference< linguistic2::XLanguageGuessing > const & SwModule::GetLanguageGuesser()
 {
     if (!m_xLanguageGuesser.is())
     {
@@ -288,7 +293,12 @@ void SwDLL::RegisterControls()
     svx::ParaLineSpacingPopup::RegisterControl(SID_ATTR_PARA_LINESPACE, pMod);
     svx::TextCharacterSpacingPopup::RegisterControl(SID_ATTR_CHAR_KERNING, pMod);
     svx::TextUnderlinePopup::RegisterControl(SID_ATTR_CHAR_UNDERLINE, pMod);
-
+    svx::ParaULSpacingControl::RegisterControl(SID_ATTR_PARA_ULSPACE, pMod);
+    svx::ParaLRSpacingControl::RegisterControl(SID_ATTR_PARA_LRSPACE, pMod);
+    PageMarginPopup::RegisterControl(SID_ATTR_PAGE_MARGIN, pMod);
+    PageOrientationPopup::RegisterControl(SID_ATTR_PAGE_ORIENTATION, pMod);
+    PageColumnPopup::RegisterControl(SID_ATTR_PAGE_COLUMN, pMod);
+    PageSizePopup::RegisterControl(SID_ATTR_PAGE_SIZE, pMod);
     SvxColorToolBoxControl::RegisterControl( SID_EXTRUSION_3D_COLOR, pMod );
 
     SvxClipBoardControl::RegisterControl(SID_PASTE, pMod );
@@ -304,14 +314,11 @@ void SwDLL::RegisterControls()
     SvxColorToolBoxControl::RegisterControl(SID_ATTR_FILL_COLOR, pMod);
     SvxColorToolBoxControl::RegisterControl(SID_ATTR_CHAR_BACK_COLOR, pMod);
 
-    SvxFontNameToolBoxControl::RegisterControl(SID_ATTR_CHAR_FONT, pMod );
     SvxColorToolBoxControl::RegisterControl(SID_ATTR_CHAR_COLOR, pMod );
     SvxColorToolBoxControl::RegisterControl(SID_ATTR_CHAR_COLOR2, pMod );
     SvxColorToolBoxControl::RegisterControl(SID_ATTR_CHAR_COLOR_BACKGROUND, pMod );
     SvxStyleToolBoxControl::RegisterControl(SID_STYLE_APPLY, pMod );
     SvxColorToolBoxControl::RegisterControl( SID_BACKGROUND_COLOR, pMod );
-    SvxFrameToolBoxControl::RegisterControl(SID_ATTR_BORDER, pMod );
-    SvxFrameLineStyleToolBoxControl::RegisterControl(SID_FRAME_LINESTYLE, pMod );
     SvxColorToolBoxControl::RegisterControl(SID_FRAME_LINECOLOR, pMod );
 
     SvxColumnsToolBoxControl::RegisterControl(FN_INSERT_FRAME_INTERACT, pMod );
@@ -333,6 +340,8 @@ void SwDLL::RegisterControls()
     SwViewLayoutControl::RegisterControl( SID_ATTR_VIEWLAYOUT, pMod );
     SvxModifyControl::RegisterControl( SID_DOC_MODIFIED, pMod );
     SvxZoomSliderControl::RegisterControl( SID_ATTR_ZOOMSLIDER, pMod );
+
+    EmojiPopup::RegisterControl(SID_EMOJI_CONTROL, pMod );
 
     SvxIMapDlgChildWindow::RegisterChildWindow( false, pMod );
     SvxSearchDialogWrapper::RegisterChildWindow( false, pMod );
@@ -387,6 +396,45 @@ void    SwModule::RemoveAttrPool()
 {
     SetPool(nullptr);
     SfxItemPool::Free(m_pAttrPool);
+}
+
+SfxStyleFamilies* SwModule::CreateStyleFamilies()
+{
+    SfxStyleFamilies *pStyleFamilies = new SfxStyleFamilies;
+
+    ImageList aEntryImages(SW_RES(RID_STYLEFAMILY_IMAGELIST));
+
+    pStyleFamilies->emplace_back(SfxStyleFamilyItem(SfxStyleFamily::Para,
+                                                    SW_RESSTR(STR_PARAGRAPHSTYLEFAMILY),
+                                                    aEntryImages.GetImage(1),
+                                                    SW_RES(RID_PARAGRAPHSTYLEFAMILY)));
+
+    pStyleFamilies->emplace_back(SfxStyleFamilyItem(SfxStyleFamily::Char,
+                                                    SW_RESSTR(STR_CHARACTERSTYLEFAMILY),
+                                                    aEntryImages.GetImage(2),
+                                                    SW_RES(RID_CHARACTERSTYLEFAMILY)));
+
+    pStyleFamilies->emplace_back(SfxStyleFamilyItem(SfxStyleFamily::Frame,
+                                                    SW_RESSTR(STR_FRAMESTYLEFAMILY),
+                                                    aEntryImages.GetImage(3),
+                                                    SW_RES(RID_FRAMESTYLEFAMILY)));
+
+    pStyleFamilies->emplace_back(SfxStyleFamilyItem(SfxStyleFamily::Page,
+                                                    SW_RESSTR(STR_PAGESTYLEFAMILY),
+                                                    aEntryImages.GetImage(4),
+                                                    SW_RES(RID_PAGESTYLEFAMILY)));
+
+    pStyleFamilies->emplace_back(SfxStyleFamilyItem(SfxStyleFamily::Pseudo,
+                                                    SW_RESSTR(STR_LISTSTYLEFAMILY),
+                                                    aEntryImages.GetImage(5),
+                                                    SW_RES(RID_LISTSTYLEFAMILY)));
+
+    pStyleFamilies->emplace_back(SfxStyleFamilyItem(SfxStyleFamily::Table,
+                                                    SW_RESSTR(STR_TABLESTYLEFAMILY),
+                                                    aEntryImages.GetImage(6),
+                                                    SW_RES(RID_TABLESTYLEFAMILY)));
+
+    return pStyleFamilies;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

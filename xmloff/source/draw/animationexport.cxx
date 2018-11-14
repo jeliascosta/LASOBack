@@ -42,6 +42,8 @@
 #include <com/sun/star/animations/ValuePair.hpp>
 #include <com/sun/star/container/XEnumerationAccess.hpp>
 #include <com/sun/star/beans/NamedValue.hpp>
+#include <com/sun/star/document/XStorageBasedDocument.hpp>
+#include <com/sun/star/embed/XTransactedObject.hpp>
 #include <com/sun/star/presentation/EffectNodeType.hpp>
 #include <com/sun/star/presentation/EffectPresetClass.hpp>
 #include <com/sun/star/presentation/ParagraphTarget.hpp>
@@ -49,7 +51,7 @@
 #include <com/sun/star/presentation/ShapeAnimationSubType.hpp>
 #include <com/sun/star/presentation/EffectCommands.hpp>
 #include <com/sun/star/drawing/XShape.hpp>
-
+#include <o3tl/any.hxx>
 #include <sax/tools/converter.hxx>
 
 #include <tools/debug.hxx>
@@ -67,8 +69,10 @@
 
 #include "animations.hxx"
 #include <xmloff/animationexport.hxx>
+#include <comphelper/storagehelper.hxx>
 
 
+using namespace css;
 using namespace ::std;
 using namespace ::cppu;
 using namespace ::com::sun::star::animations;
@@ -503,7 +507,7 @@ class AnimationsExporterImpl
 {
 public:
     AnimationsExporterImpl( SvXMLExport& rExport, const Reference< XPropertySet >& xPageProps );
-    virtual ~AnimationsExporterImpl();
+    ~AnimationsExporterImpl();
 
     void prepareNode( const Reference< XAnimationNode >& xNode );
     void exportNode( const Reference< XAnimationNode >& xNode );
@@ -513,12 +517,11 @@ public:
     void exportAudio( const Reference< XAudio >& xAudio );
     void exportCommand( const Reference< XCommand >& xCommand );
 
-    static Reference< XInterface > getParagraphTarget( const ParagraphTarget* pTarget );
+    static Reference< XInterface > getParagraphTarget( const ParagraphTarget& pTarget );
 
     static void convertPath( OUStringBuffer& sTmp, const Any& rPath );
     void convertValue( XMLTokenEnum eAttributeName, OUStringBuffer& sTmp, const Any& rValue ) const;
     void convertTiming( OUStringBuffer& sTmp, const Any& rTiming ) const;
-    void convertSource( OUStringBuffer& sTmp, const Any& rSource ) const;
     void convertTarget( OUStringBuffer& sTmp, const Any& rTarget ) const;
 
     void prepareValue( const Any& rValue );
@@ -531,7 +534,7 @@ private:
     SvXMLExport& mrExport;
     Reference< XInterface > mxExport;
     Reference< XPropertySet > mxPageProps;
-    XMLSdPropHdlFactory* mpSdPropHdlFactory;
+    rtl::Reference<XMLSdPropHdlFactory> mxSdPropHdlFactory;
 };
 
 AnimationsExporterImpl::AnimationsExporterImpl( SvXMLExport& rExport, const Reference< XPropertySet >& xPageProps )
@@ -548,18 +551,91 @@ AnimationsExporterImpl::AnimationsExporterImpl( SvXMLExport& rExport, const Refe
         OSL_FAIL( "xmloff::AnimationsExporterImpl::AnimationsExporterImpl(), RuntimeException caught!" );
     }
 
-    mpSdPropHdlFactory = new XMLSdPropHdlFactory( mrExport.GetModel(), mrExport );
-    // set lock to avoid deletion
-    mpSdPropHdlFactory->acquire();
+    mxSdPropHdlFactory = new XMLSdPropHdlFactory( mrExport.GetModel(), mrExport );
 }
 
 AnimationsExporterImpl::~AnimationsExporterImpl()
 {
-    // cleanup factory, decrease refcount. Should lead to destruction.
-    if(mpSdPropHdlFactory)
+}
+
+
+/** split a uri hierarchy into first segment and rest */
+static bool splitPath(::rtl::OUString const & i_rPath,
+    ::rtl::OUString & o_rDir, ::rtl::OUString& o_rRest)
+{
+    const sal_Int32 idx(i_rPath.indexOf(static_cast<sal_Unicode>('/')));
+    if (idx < 0 || idx >= i_rPath.getLength()) {
+        o_rDir = ::rtl::OUString();
+        o_rRest = i_rPath;
+        return true;
+    } else if (idx == 0 || idx == i_rPath.getLength() - 1) {
+        // input must not start or end with '/'
+        return false;
+    } else {
+        o_rDir  = (i_rPath.copy(0, idx));
+        o_rRest = (i_rPath.copy(idx+1));
+        return true;
+    }
+}
+
+static void lcl_CopyStream(
+        uno::Reference<embed::XStorage> const& xSource,
+        uno::Reference<embed::XStorage> const& xTarget,
+         ::rtl::OUString const& rPath)
+{
+    ::rtl::OUString dir;
+    ::rtl::OUString rest;
+    if (!splitPath(rPath, dir, rest))
+        throw uno::RuntimeException();
+
+    if (dir.getLength() == 0)
+        xSource->copyElementTo(rPath, xTarget, rPath);
+    else
     {
-        mpSdPropHdlFactory->release();
-        mpSdPropHdlFactory = nullptr;
+        uno::Reference<embed::XStorage> const xSubSource(
+            xSource->openStorageElement(dir, embed::ElementModes::READ));
+        uno::Reference<embed::XStorage> const xSubTarget(
+            xTarget->openStorageElement(dir, embed::ElementModes::WRITE));
+        lcl_CopyStream(xSubSource, xSubTarget, rest);
+    }
+    uno::Reference<embed::XTransactedObject> const xTransaction(xTarget, uno::UNO_QUERY);
+    if (xTransaction.is())
+        xTransaction->commit();
+}
+
+static char const s_PkgScheme[] = "vnd.sun.star.Package:";
+
+static OUString lcl_StoreMediaAndGetURL(SvXMLExport & rExport, OUString const& rURL)
+{
+    OUString urlPath;
+    if (rURL.startsWithIgnoreAsciiCase(s_PkgScheme, &urlPath))
+    {
+        try // video is embedded
+        {
+            // copy the media stream from document storage to target storage
+            // (not sure if this is the best way to store these?)
+            uno::Reference<document::XStorageBasedDocument> const xSBD(
+                    rExport.GetModel(), uno::UNO_QUERY_THROW);
+            uno::Reference<embed::XStorage> const xSource(
+                    xSBD->getDocumentStorage(), uno::UNO_QUERY_THROW);
+            uno::Reference<embed::XStorage> const xTarget(
+                    rExport.GetTargetStorage(), uno::UNO_QUERY_THROW);
+
+            urlPath = rURL.copy(SAL_N_ELEMENTS(s_PkgScheme)-1);
+
+            lcl_CopyStream(xSource, xTarget, urlPath);
+
+            return urlPath;
+        }
+        catch (uno::Exception const& e)
+        {
+            SAL_INFO("xmloff", "exception while storing embedded media: '" << e.Message << "'");
+        }
+        return OUString();
+    }
+    else
+    {
+        return rExport.GetRelativeReference(rURL); // linked
     }
 }
 
@@ -592,56 +668,54 @@ void AnimationsExporterImpl::exportTransitionNode()
 
             SvXMLElementExport aElement( mrExport, XML_NAMESPACE_ANIMATION, XML_PAR, true, true );
 
-            if( nTransition != 0 )
+            sal_Int16 nSubtype = 0;
+            bool bDirection = false;
+            sal_Int32 nFadeColor = 0;
+            double fDuration = 0.0;
+            mxPageProps->getPropertyValue("TransitionSubtype") >>= nSubtype;
+            mxPageProps->getPropertyValue("TransitionDirection") >>= bDirection;
+            mxPageProps->getPropertyValue("TransitionFadeColor") >>= nFadeColor;
+            mxPageProps->getPropertyValue("TransitionDuration") >>= fDuration;
+
+            ::sax::Converter::convertDouble( sTmp, fDuration );
+            sTmp.append( 's');
+            mrExport.AddAttribute( XML_NAMESPACE_SMIL, XML_DUR, sTmp.makeStringAndClear() );
+
+            SvXMLUnitConverter::convertEnum( sTmp, (sal_uInt16)nTransition, getAnimationsEnumMap(Animations_EnumMap_TransitionType) );
+            mrExport.AddAttribute( XML_NAMESPACE_SMIL, XML_TYPE, sTmp.makeStringAndClear() );
+
+            if( nSubtype != TransitionSubType::DEFAULT )
             {
-                sal_Int16 nSubtype = 0;
-                bool bDirection = false;
-                sal_Int32 nFadeColor = 0;
-                double fDuration = 0.0;
-                mxPageProps->getPropertyValue("TransitionSubtype") >>= nSubtype;
-                mxPageProps->getPropertyValue("TransitionDirection") >>= bDirection;
-                mxPageProps->getPropertyValue("TransitionFadeColor") >>= nFadeColor;
-                mxPageProps->getPropertyValue("TransitionDuration") >>= fDuration;
-
-                ::sax::Converter::convertDouble( sTmp, fDuration );
-                sTmp.append( 's');
-                mrExport.AddAttribute( XML_NAMESPACE_SMIL, XML_DUR, sTmp.makeStringAndClear() );
-
-                SvXMLUnitConverter::convertEnum( sTmp, (sal_uInt16)nTransition, getAnimationsEnumMap(Animations_EnumMap_TransitionType) );
-                mrExport.AddAttribute( XML_NAMESPACE_SMIL, XML_TYPE, sTmp.makeStringAndClear() );
-
-                if( nSubtype != TransitionSubType::DEFAULT )
-                {
-                    SvXMLUnitConverter::convertEnum( sTmp, (sal_uInt16)nSubtype, getAnimationsEnumMap(Animations_EnumMap_TransitionSubType) );
-                    mrExport.AddAttribute( XML_NAMESPACE_SMIL, XML_SUBTYPE, sTmp.makeStringAndClear() );
-                }
-
-                if( !bDirection )
-                    mrExport.AddAttribute( XML_NAMESPACE_SMIL, XML_DIRECTION, XML_REVERSE );
-
-                if( (nTransition == TransitionType::FADE) && ((nSubtype == TransitionSubType::FADETOCOLOR) || (nSubtype == TransitionSubType::FADEFROMCOLOR) ))
-                {
-                    ::sax::Converter::convertColor( sTmp, nFadeColor );
-                    mrExport.AddAttribute( XML_NAMESPACE_SMIL, XML_FADECOLOR, sTmp.makeStringAndClear() );
-                }
-                SvXMLElementExport aElement2( mrExport, XML_NAMESPACE_ANIMATION, XML_TRANSITIONFILTER, true, true );
+                SvXMLUnitConverter::convertEnum( sTmp, (sal_uInt16)nSubtype, getAnimationsEnumMap(Animations_EnumMap_TransitionSubType) );
+                mrExport.AddAttribute( XML_NAMESPACE_SMIL, XML_SUBTYPE, sTmp.makeStringAndClear() );
             }
+
+            if( !bDirection )
+                mrExport.AddAttribute( XML_NAMESPACE_SMIL, XML_DIRECTION, XML_REVERSE );
+
+            if( (nTransition == TransitionType::FADE) && ((nSubtype == TransitionSubType::FADETOCOLOR) || (nSubtype == TransitionSubType::FADEFROMCOLOR) ))
+            {
+                ::sax::Converter::convertColor( sTmp, nFadeColor );
+                mrExport.AddAttribute( XML_NAMESPACE_SMIL, XML_FADECOLOR, sTmp.makeStringAndClear() );
+            }
+            SvXMLElementExport aElement2( mrExport, XML_NAMESPACE_ANIMATION, XML_TRANSITIONFILTER, true, true );
 
             if( bStopSound )
             {
                 mrExport.AddAttribute( XML_NAMESPACE_ANIMATION, XML_COMMAND, XML_STOP_AUDIO );
-                SvXMLElementExport aElement2( mrExport, XML_NAMESPACE_ANIMATION, XML_COMMAND, true, true );
+                SvXMLElementExport aElement3( mrExport, XML_NAMESPACE_ANIMATION, XML_COMMAND, true, true );
             }
             else if( !sSoundURL.isEmpty())
             {
-                mrExport.AddAttribute( XML_NAMESPACE_XLINK, XML_HREF, mrExport.GetRelativeReference( sSoundURL ) );
+                sSoundURL = lcl_StoreMediaAndGetURL(mrExport, sSoundURL);
+                mrExport.AddAttribute( XML_NAMESPACE_XLINK, XML_HREF, sSoundURL );
 
                 bool bLoopSound = false;
                 mxPageProps->getPropertyValue("LoopSound") >>= bLoopSound;
 
                 if( bLoopSound )
                     mrExport.AddAttribute( XML_NAMESPACE_SMIL, XML_REPEATCOUNT, XML_INDEFINITE );
-                SvXMLElementExport aElement2( mrExport, XML_NAMESPACE_ANIMATION, XML_AUDIO, true, true );
+                SvXMLElementExport aElement4( mrExport, XML_NAMESPACE_ANIMATION, XML_AUDIO, true, true );
             }
         }
     }
@@ -1412,14 +1486,14 @@ void AnimationsExporterImpl::exportCommand( const Reference< XCommand >& xComman
     }
 }
 
-Reference< XInterface > AnimationsExporterImpl::getParagraphTarget( const ParagraphTarget* pTarget )
+Reference< XInterface > AnimationsExporterImpl::getParagraphTarget( const ParagraphTarget& pTarget )
 {
-    if( pTarget ) try
+    try
     {
-        Reference< XEnumerationAccess > xParaEnumAccess( pTarget->Shape, UNO_QUERY_THROW );
+        Reference< XEnumerationAccess > xParaEnumAccess( pTarget.Shape, UNO_QUERY_THROW );
 
         Reference< XEnumeration > xEnumeration( xParaEnumAccess->createEnumeration(), UNO_QUERY_THROW );
-        sal_Int32 nParagraph = pTarget->Paragraph;
+        sal_Int32 nParagraph = pTarget.Paragraph;
 
         while( xEnumeration->hasMoreElements() )
         {
@@ -1450,18 +1524,16 @@ void AnimationsExporterImpl::convertValue( XMLTokenEnum eAttributeName, OUString
     if( !rValue.hasValue() )
         return;
 
-    if( rValue.getValueType() == cppu::UnoType<ValuePair>::get() )
+    if( auto pValuePair = o3tl::tryAccess<ValuePair>(rValue) )
     {
-        const ValuePair* pValuePair = static_cast< const ValuePair* >( rValue.getValue() );
         OUStringBuffer sTmp2;
         convertValue( eAttributeName, sTmp, pValuePair->First );
         sTmp.append( ',' );
         convertValue( eAttributeName, sTmp2, pValuePair->Second );
         sTmp.append( sTmp2.makeStringAndClear() );
     }
-    else if( rValue.getValueType() == cppu::UnoType< Sequence<Any> >::get() )
+    else if( auto pSequence = o3tl::tryAccess<Sequence<Any>>(rValue) )
     {
-        const Sequence<Any>* pSequence = static_cast< const Sequence<Any>* >( rValue.getValue() );
         const sal_Int32 nLength = pSequence->getLength();
         sal_Int32 nElement;
         const Any* pAny = pSequence->getConstArray();
@@ -1478,7 +1550,6 @@ void AnimationsExporterImpl::convertValue( XMLTokenEnum eAttributeName, OUString
     }
     else
     {
-        OUString aString;
         sal_Int32 nType;
 
         switch( eAttributeName )
@@ -1490,13 +1561,13 @@ void AnimationsExporterImpl::convertValue( XMLTokenEnum eAttributeName, OUString
         case XML_ANIMATETRANSFORM:
         case XML_ANIMATEMOTION:
         {
-            if( rValue >>= aString )
+            if( auto aString = o3tl::tryAccess<OUString>(rValue) )
             {
-                sTmp.append( aString );
+                sTmp.append( *aString );
             }
-            else if( rValue.getValueType() == cppu::UnoType<double>::get() )
+            else if( auto x = o3tl::tryAccess<double>(rValue) )
             {
-                sTmp.append( *(static_cast< const double* >( rValue.getValue() )) );
+                sTmp.append( *x );
             }
             else
             {
@@ -1527,9 +1598,10 @@ void AnimationsExporterImpl::convertValue( XMLTokenEnum eAttributeName, OUString
         }
 
         //const XMLPropertyHandler* pHandler = static_cast<SdXMLExport*>(&mrExport)->GetSdPropHdlFactory()->GetPropertyHandler( nType );
-        const XMLPropertyHandler* pHandler = mpSdPropHdlFactory->GetPropertyHandler( nType );
+        const XMLPropertyHandler* pHandler = mxSdPropHdlFactory->GetPropertyHandler( nType );
         if( pHandler )
         {
+            OUString aString;
             pHandler->exportXML( aString, rValue, mrExport.GetMM100UnitConverter() );
             sTmp.append( aString );
         }
@@ -1541,9 +1613,8 @@ void AnimationsExporterImpl::convertTiming( OUStringBuffer& sTmp, const Any& rVa
     if( !rValue.hasValue() )
         return;
 
-    if( rValue.getValueType() == cppu::UnoType< Sequence<Any> >::get() )
+    if( auto pSequence = o3tl::tryAccess<Sequence<Any>>(rValue) )
     {
-        const Sequence<Any>* pSequence = static_cast< const Sequence<Any>* >( rValue.getValue() );
         const sal_Int32 nLength = pSequence->getLength();
         sal_Int32 nElement;
         const Any* pAny = pSequence->getConstArray();
@@ -1558,27 +1629,24 @@ void AnimationsExporterImpl::convertTiming( OUStringBuffer& sTmp, const Any& rVa
             sTmp.append( sTmp2.makeStringAndClear() );
         }
     }
-    else if( rValue.getValueType() == cppu::UnoType<double>::get() )
+    else if( auto x = o3tl::tryAccess<double>(rValue) )
     {
-        sTmp.append( *(static_cast< const double* >( rValue.getValue() )) );
+        sTmp.append( *x );
         sTmp.append( 's');
     }
-    else if( rValue.getValueType() == cppu::UnoType<Timing>::get() )
+    else if( auto pTiming = o3tl::tryAccess<Timing>(rValue) )
     {
-        const Timing* pTiming = static_cast< const Timing* >( rValue.getValue() );
         sTmp.append( GetXMLToken( (*pTiming == Timing_MEDIA) ? XML_MEDIA : XML_INDEFINITE ) );
     }
-    else if( rValue.getValueType() == cppu::UnoType<Event>::get() )
+    else if( auto pEvent = o3tl::tryAccess<Event>(rValue) )
     {
         OUStringBuffer sTmp2;
-
-        const Event* pEvent = static_cast< const Event* >( rValue.getValue() );
 
         if( pEvent->Trigger != EventTrigger::NONE )
         {
             if( pEvent->Source.hasValue() )
             {
-                convertSource( sTmp, pEvent->Source );
+                convertTarget( sTmp, pEvent->Source );
                 sTmp.append( '.' );
             }
 
@@ -1603,11 +1671,6 @@ void AnimationsExporterImpl::convertTiming( OUStringBuffer& sTmp, const Any& rVa
     }
 }
 
-void AnimationsExporterImpl::convertSource( OUStringBuffer& sTmp, const Any& rSource ) const
-{
-    convertTarget( sTmp, rSource );
-}
-
 void AnimationsExporterImpl::convertTarget( OUStringBuffer& sTmp, const Any& rTarget ) const
 {
     if( !rTarget.hasValue() )
@@ -1615,16 +1678,15 @@ void AnimationsExporterImpl::convertTarget( OUStringBuffer& sTmp, const Any& rTa
 
     Reference< XInterface > xRef;
 
-    if( rTarget.getValueTypeClass() == css::uno::TypeClass_INTERFACE )
+    if( !(rTarget >>= xRef) )
     {
-        rTarget >>= xRef;
-    }
-    else if( rTarget.getValueType() == cppu::UnoType<ParagraphTarget>::get() )
-    {
-        xRef = getParagraphTarget( static_cast< const ParagraphTarget* >( rTarget.getValue() ) );
+        if( auto pt = o3tl::tryAccess<ParagraphTarget>(rTarget) )
+        {
+            xRef = getParagraphTarget( *pt );
+        }
     }
 
-    DBG_ASSERT( xRef.is(), "xmloff::AnimationsExporterImpl::convertTarget(), invalid target type!" );
+    SAL_WARN_IF( !xRef.is(), "xmloff", "xmloff::AnimationsExporterImpl::convertTarget(), invalid target type!" );
     if( xRef.is() )
     {
         const OUString& rIdentifier = mrExport.getInterfaceToIdentifierMapper().getIdentifier(xRef);
@@ -1638,15 +1700,13 @@ void AnimationsExporterImpl::prepareValue( const Any& rValue )
     if( !rValue.hasValue() )
         return;
 
-    if( rValue.getValueType() == cppu::UnoType<ValuePair>::get() )
+    if( auto pValuePair = o3tl::tryAccess<ValuePair>(rValue) )
     {
-        const ValuePair* pValuePair = static_cast< const ValuePair* >( rValue.getValue() );
         prepareValue( pValuePair->First );
         prepareValue( pValuePair->Second );
     }
-    else if( rValue.getValueType() == cppu::UnoType< Sequence<Any> >::get() )
+    else if( auto pSequence = o3tl::tryAccess<Sequence<Any>>(rValue) )
     {
-        const Sequence<Any>* pSequence = static_cast< const Sequence<Any>* >( rValue.getValue() );
         const sal_Int32 nLength = pSequence->getLength();
         sal_Int32 nElement;
         const Any* pAny = pSequence->getConstArray();
@@ -1660,15 +1720,14 @@ void AnimationsExporterImpl::prepareValue( const Any& rValue )
         if( xRef.is() )
             mrExport.getInterfaceToIdentifierMapper().registerReference( xRef );
     }
-    else if( rValue.getValueType() == cppu::UnoType<ParagraphTarget>::get() )
+    else if( auto pt = o3tl::tryAccess<ParagraphTarget>(rValue) )
     {
-        Reference< XInterface> xRef( getParagraphTarget( static_cast< const ParagraphTarget* >( rValue.getValue() ) ) );
+        Reference< XInterface> xRef( getParagraphTarget( *pt ) );
         if( xRef.is() )
             mrExport.getInterfaceToIdentifierMapper().registerReference( xRef );
     }
-    else if( rValue.getValueType() == cppu::UnoType<Event>::get() )
+    else if( auto pEvent = o3tl::tryAccess<Event>(rValue) )
     {
-        const Event* pEvent = static_cast< const Event* >( rValue.getValue() );
         prepareValue( pEvent->Source );
     }
 }

@@ -35,6 +35,7 @@
 #include <svx/dialmgr.hxx>
 #include <svx/unoapi.hxx>
 #include <memory>
+#include <o3tl/make_unique.hxx>
 
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::beans;
@@ -225,7 +226,7 @@ void SvxLineWidthToolBoxControl::StateChanged(
 
                 // Core-Unit handed over to MetricField
                 // Should not happen in CreateItemWin ()!
-                SfxMapUnit eUnit = SFX_MAPUNIT_100TH_MM; // CD!!! GetCoreMetric();
+                MapUnit eUnit = MapUnit::Map100thMM; // CD!!! GetCoreMetric();
                 pFld->SetCoreUnit( eUnit );
 
                 pFld->Update( static_cast<const XLineWidthItem*>(pState) );
@@ -254,7 +255,6 @@ SvxLineEndWindow::SvxLineEndWindow(
     aLineEndSet     ( VclPtr<ValueSet>::Create(this, WinBits( WB_ITEMBORDER | WB_3DLOOK | WB_NO_DIRECTSELECT ) )),
     nCols           ( 2 ),
     nLines          ( 12 ),
-    nLineEndWidth   ( 400 ),
     bPopupMode      ( true ),
     mbInResize      ( false ),
     mxFrame         ( rFrame )
@@ -275,10 +275,6 @@ void SvxLineEndWindow::implInit()
         const SfxPoolItem*  pItem = pDocSh->GetItem( SID_LINEEND_LIST );
         if( pItem )
             pLineEndList = static_cast<const SvxLineEndListItem*>( pItem )->GetLineEndList();
-
-        pItem = pDocSh->GetItem( SID_ATTR_LINEEND_WIDTH_DEFAULT );
-        if( pItem )
-            nLineEndWidth = static_cast<const SfxUInt16Item*>( pItem )->GetValue();
     }
     DBG_ASSERT( pLineEndList.is(), "LineEndList not found" );
 
@@ -305,7 +301,7 @@ void SvxLineEndWindow::dispose()
     SfxPopupWindow::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED(SvxLineEndWindow, SelectHdl, ValueSet*, void)
+IMPL_LINK_NOARG(SvxLineEndWindow, SelectHdl, ValueSet*, void)
 {
     std::unique_ptr<XLineEndItem> pLineEndItem;
     std::unique_ptr<XLineStartItem> pLineStartItem;
@@ -321,13 +317,13 @@ IMPL_LINK_NOARG_TYPED(SvxLineEndWindow, SelectHdl, ValueSet*, void)
     }
     else if( nId % 2 ) // beginning of line
     {
-        XLineEndEntry* pEntry = pLineEndList->GetLineEnd( ( nId - 1 ) / 2 - 1 );
-        pLineStartItem.reset(new XLineStartItem( pEntry->GetName(), pEntry->GetLineEnd() ));
+        const XLineEndEntry* pEntry = pLineEndList->GetLineEnd( (nId - 1) / 2 - 1 );
+        pLineStartItem.reset(new XLineStartItem(pEntry->GetName(), pEntry->GetLineEnd()));
     }
     else // end of line
     {
-        XLineEndEntry* pEntry = pLineEndList->GetLineEnd( nId / 2 - 2 );
-        pLineEndItem.reset(new XLineEndItem( pEntry->GetName(), pEntry->GetLineEnd() ));
+        const XLineEndEntry* pEntry = pLineEndList->GetLineEnd( nId / 2 - 2 );
+        pLineEndItem.reset(new XLineEndItem(pEntry->GetName(), pEntry->GetLineEnd()));
     }
 
     if ( IsInPopupMode() )
@@ -364,7 +360,6 @@ void SvxLineEndWindow::FillValueSet()
 {
     if( pLineEndList.is() )
     {
-        XLineEndEntry*      pEntry  = nullptr;
         ScopedVclPtrInstance< VirtualDevice > pVD;
 
         long nCount = pLineEndList->Count();
@@ -372,8 +367,8 @@ void SvxLineEndWindow::FillValueSet()
         // First entry: no line end.
         // An entry is temporarly added to get the UI bitmap
         basegfx::B2DPolyPolygon aNothing;
-        pLineEndList->Insert( new XLineEndEntry( aNothing, SVX_RESSTR( RID_SVXSTR_NONE ) ) );
-        pEntry = pLineEndList->GetLineEnd( nCount );
+        pLineEndList->Insert(o3tl::make_unique<XLineEndEntry>(aNothing, SVX_RESSTR(RID_SVXSTR_NONE)));
+        const XLineEndEntry* pEntry = pLineEndList->GetLineEnd(nCount);
         Bitmap aBmp = pLineEndList->GetUiBitmap( nCount );
         OSL_ENSURE( !aBmp.IsEmpty(), "UI bitmap was not created" );
 
@@ -387,7 +382,7 @@ void SvxLineEndWindow::FillValueSet()
         aLineEndSet->InsertItem(1, Image(pVD->GetBitmap(aPt0, aBmpSize)), pEntry->GetName());
         aLineEndSet->InsertItem(2, Image(pVD->GetBitmap(aPt1, aBmpSize)), pEntry->GetName());
 
-        delete pLineEndList->Remove( nCount );
+        pLineEndList->Remove(nCount);
 
         for( long i = 0; i < nCount; i++ )
         {
@@ -488,21 +483,15 @@ void SvxLineEndWindow::StartSelection()
 }
 
 
-bool SvxLineEndWindow::Close()
+void SvxLineEndWindow::statusChanged( const css::frame::FeatureStateEvent& rEvent )
 {
-    return SfxPopupWindow::Close();
-}
-
-
-void SvxLineEndWindow::StateChanged(
-    sal_uInt16 nSID, SfxItemState, const SfxPoolItem* pState )
-{
-    if ( nSID == SID_LINEEND_LIST )
+    if ( rEvent.FeatureURL.Complete == ".uno:LineEndListState" )
     {
         // The list of line ends (LineEndList) has changed
-        if ( pState && dynamic_cast<const SvxLineEndListItem*>( pState) !=  nullptr)
+        css::uno::Reference< css::uno::XWeak > xWeak;
+        if ( rEvent.State >>= xWeak )
         {
-            pLineEndList = static_cast<const SvxLineEndListItem*>(pState)->GetLineEndList();
+            pLineEndList.set( static_cast< XLineEndList* >( xWeak.get() ) );
             DBG_ASSERT( pLineEndList.is(), "LineEndList not found" );
 
             aLineEndSet->Clear();
@@ -581,8 +570,7 @@ SvxLineEndToolBoxControl::~SvxLineEndToolBoxControl()
 
 VclPtr<SfxPopupWindow> SvxLineEndToolBoxControl::CreatePopupWindow()
 {
-    SvxLineEndWindow* pLineEndWin =
-        VclPtr<SvxLineEndWindow>::Create( GetId(), m_xFrame, &GetToolBox(), SVX_RESSTR( RID_SVXSTR_LINEEND ) );
+    VclPtrInstance<SvxLineEndWindow> pLineEndWin( GetId(), m_xFrame, &GetToolBox(), SVX_RESSTR( RID_SVXSTR_LINEEND ) );
     pLineEndWin->StartPopupMode( &GetToolBox(),
                                  FloatWinPopupFlags::GrabFocus |
                                  FloatWinPopupFlags::AllowTearOff |

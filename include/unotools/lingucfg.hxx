@@ -140,14 +140,12 @@ struct UNOTOOLS_DLLPUBLIC SvtLinguConfigDictionaryEntry
 class UNOTOOLS_DLLPUBLIC SvtLinguConfig: public utl::detail::Options
 {
     // returns static object
-    UNOTOOLS_DLLPRIVATE SvtLinguConfigItem &   GetConfigItem();
-
-    SvtLinguConfigItem &   GetConfigItem() const    { return const_cast< SvtLinguConfig * >( this )->GetConfigItem(); }
+    UNOTOOLS_DLLPRIVATE static SvtLinguConfigItem & GetConfigItem();
 
     // configuration update access for the 'Linguistic' main node
     mutable css::uno::Reference< css::util::XChangesBatch > m_xMainUpdateAccess;
 
-    css::uno::Reference< css::util::XChangesBatch > GetMainUpdateAccess() const;
+    css::uno::Reference< css::util::XChangesBatch > const & GetMainUpdateAccess() const;
 
     OUString GetVendorImageUrl_Impl( const OUString &rServiceImplName, const OUString &rImageName ) const;
 
@@ -156,7 +154,7 @@ class UNOTOOLS_DLLPUBLIC SvtLinguConfig: public utl::detail::Options
 
 public:
     SvtLinguConfig();
-    virtual ~SvtLinguConfig();
+    virtual ~SvtLinguConfig() override;
 
     // borrowed from utl::ConfigItem
 

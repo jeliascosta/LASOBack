@@ -228,7 +228,7 @@ class RecoveryCore : public ::cppu::WeakImplHelper< css::frame::XStatusListener 
 
 
         /** @short  TODO */
-        virtual ~RecoveryCore();
+        virtual ~RecoveryCore() override;
 
 
         /** @short  TODO */
@@ -304,7 +304,7 @@ class PluginProgressWindow : public vcl::Window
     public:
         PluginProgressWindow(      vcl::Window*                                       pParent  ,
                              const css::uno::Reference< css::lang::XComponent >& xProgress);
-        virtual ~PluginProgressWindow();
+        virtual ~PluginProgressWindow() override;
         virtual void dispose() override;
 };
 
@@ -329,7 +329,7 @@ class PluginProgress : public ::cppu::WeakImplHelper< css::task::XStatusIndicato
 
 
         /** @short  TODO */
-        virtual ~PluginProgress();
+        virtual ~PluginProgress() override;
 
 
     // uno interface
@@ -369,7 +369,6 @@ class SaveDialog : public Dialog
 {
     // member
     private:
-        VclPtr<FixedText>      m_pTitleFT;
         VclPtr<ListBox>        m_pFileListLB;
         VclPtr<OKButton>       m_pOkBtn;
         RecoveryCore*   m_pCore;
@@ -392,10 +391,10 @@ class SaveDialog : public Dialog
                     which should be shown inside this dialog.
          */
         SaveDialog(vcl::Window* pParent, RecoveryCore* pCore);
-        virtual ~SaveDialog();
+        virtual ~SaveDialog() override;
         virtual void dispose() override;
 
-        DECL_LINK_TYPED(OKButtonHdl, Button*, void);
+        DECL_LINK(OKButtonHdl, Button*, void);
 };
 
 class SaveProgressDialog : public ModalDialog
@@ -427,7 +426,7 @@ class SaveProgressDialog : public ModalDialog
          */
         SaveProgressDialog(vcl::Window*       pParent,
                            RecoveryCore* pCore  );
-        virtual ~SaveProgressDialog();
+        virtual ~SaveProgressDialog() override;
         virtual void dispose() override;
 
         /** @short  start the emergency save operation. */
@@ -493,7 +492,6 @@ class RecoveryDialog : public Dialog
 {
     // member
     private:
-        VclPtr<FixedText>      m_pTitleFT;
         VclPtr<FixedText>      m_pDescrFT;
         VclPtr<vcl::Window>    m_pProgrParent;
         VclPtr<RecovDocList>   m_pFileListLB;
@@ -526,7 +524,7 @@ class RecoveryDialog : public Dialog
         RecoveryDialog(vcl::Window*       pParent,
                        RecoveryCore* pCore  );
 
-        virtual ~RecoveryDialog();
+        virtual ~RecoveryDialog() override;
         virtual void dispose() override;
 
         // IRecoveryUpdateListener
@@ -540,8 +538,8 @@ class RecoveryDialog : public Dialog
     // helper
     private:
         /** @short TODO */
-        DECL_LINK_TYPED(NextButtonHdl, Button*, void);
-        DECL_LINK_TYPED(CancelButtonHdl, Button*, void);
+        DECL_LINK(NextButtonHdl, Button*, void);
+        DECL_LINK(CancelButtonHdl, Button*, void);
 
 
         /** @short TODO */
@@ -574,7 +572,7 @@ class BrokenRecoveryDialog : public ModalDialog
         BrokenRecoveryDialog(vcl::Window*       pParent        ,
                              RecoveryCore* pCore          ,
                              bool      bBeforeRecovery);
-        virtual ~BrokenRecoveryDialog();
+        virtual ~BrokenRecoveryDialog() override;
         virtual void dispose() override;
 
 
@@ -595,15 +593,15 @@ class BrokenRecoveryDialog : public ModalDialog
 
 
         /** @short TODO */
-        DECL_LINK_TYPED(SaveButtonHdl, Button*, void);
+        DECL_LINK(SaveButtonHdl, Button*, void);
 
 
         /** @short TODO */
-        DECL_LINK_TYPED(OkButtonHdl, Button*, void);
+        DECL_LINK(OkButtonHdl, Button*, void);
 
 
         /** @short TODO */
-        DECL_LINK_TYPED(CancelButtonHdl, Button*, void);
+        DECL_LINK(CancelButtonHdl, Button*, void);
 
 
         /** @short TODO */

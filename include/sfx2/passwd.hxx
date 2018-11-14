@@ -76,15 +76,15 @@ private:
     SfxShowExtras  mnExtras;
 
     bool            mbAsciiOnly;
-    DECL_DLLPRIVATE_LINK_TYPED(EditModifyHdl, Edit&, void);
-    DECL_DLLPRIVATE_LINK_TYPED(OKHdl, Button *, void);
+    DECL_DLLPRIVATE_LINK(EditModifyHdl, Edit&, void);
+    DECL_DLLPRIVATE_LINK(OKHdl, Button *, void);
     void            ModifyHdl(Edit*);
 
     void            SetPasswdText();
 
 public:
     SfxPasswordDialog(vcl::Window* pParent, const OUString* pGroupText = nullptr);
-    virtual ~SfxPasswordDialog();
+    virtual ~SfxPasswordDialog() override;
     virtual void dispose() override;
 
     OUString GetUser() const
@@ -102,10 +102,6 @@ public:
     OUString GetPassword2() const
     {
         return mpPassword2ED->GetText();
-    }
-    OUString GetConfirm2() const
-    {
-        return mpConfirm2ED->GetText();
     }
     void SetGroup2Text(const OUString& i_rText)
     {

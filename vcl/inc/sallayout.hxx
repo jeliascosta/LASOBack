@@ -174,7 +174,7 @@ public:
     int             GetOrientation() const                  { return mnOrientation; }
 
     // methods using string indexing
-    virtual sal_Int32 GetTextBreak(DeviceCoordinate nMaxWidth, DeviceCoordinate nCharExtra=0, int nFactor=1) const = 0;
+    virtual sal_Int32 GetTextBreak(DeviceCoordinate nMaxWidth, DeviceCoordinate nCharExtra, int nFactor) const = 0;
     virtual DeviceCoordinate FillDXArray( DeviceCoordinate* pDXArray ) const = 0;
     virtual DeviceCoordinate GetTextWidth() const { return FillDXArray( nullptr ); }
     virtual void    GetCaretPositions( int nArraySize, long* pCaretXArray ) const = 0;
@@ -200,6 +200,8 @@ public:
 
     virtual std::shared_ptr<vcl::TextLayoutCache>
         CreateTextLayoutCache(OUString const&) const;
+
+    static bool     UseCommonLayout();
 
 protected:
     // used by layout engines
@@ -238,13 +240,13 @@ public:
     virtual DeviceCoordinate FillDXArray( DeviceCoordinate* pDXArray ) const override;
     virtual void    GetCaretPositions( int nArraySize, long* pCaretXArray ) const override;
     virtual int     GetNextGlyphs( int nLen, sal_GlyphId* pGlyphIdxAry, Point& rPos,
-                                   int&, DeviceCoordinate* pGlyphAdvAry, int* pCharPosAry,
-                                   const PhysicalFontFace** pFallbackFonts ) const override;
+                                   int&, DeviceCoordinate* pGlyphAdvAry = nullptr, int* pCharPosAry = nullptr,
+                                   const PhysicalFontFace** pFallbackFonts = nullptr ) const override;
     virtual bool    GetOutline( SalGraphics&, basegfx::B2DPolyPolygonVector& ) const override;
+    virtual bool    IsKashidaPosValid(int nCharPos) const override;
 
     // used only by OutputDevice::ImplLayout, TODO: make friend
-    explicit        MultiSalLayout( SalLayout& rBaseLayout,
-                                    const PhysicalFontFace* pBaseFont = nullptr );
+    explicit        MultiSalLayout( SalLayout& rBaseLayout );
     void            AddFallback( SalLayout& rFallbackLayout,
                                  ImplLayoutRuns&, const PhysicalFontFace* pFallbackFont );
     virtual bool    LayoutText( ImplLayoutArgs& ) override;
@@ -254,7 +256,7 @@ public:
     void SetIncomplete(bool bIncomplete);
 
 protected:
-    virtual         ~MultiSalLayout();
+    virtual         ~MultiSalLayout() override;
 
 private:
     // dummy implementations
@@ -311,15 +313,20 @@ public:
                 maGlyphId(aGlyphId), maLinearPos(rLinearPos)
             {}
 
-    enum{ FALLBACK_MASK=0xFF, IS_IN_CLUSTER=0x100, IS_RTL_GLYPH=0x200, IS_DIACRITIC=0x400 };
+    enum {
+        IS_IN_CLUSTER = 0x001,
+        IS_RTL_GLYPH  = 0x002,
+        IS_DIACRITIC  = 0x004,
+        ALLOW_KASHIDA = 0X010
+    };
 
     bool    IsClusterStart() const  { return ((mnFlags & IS_IN_CLUSTER) == 0); }
     bool    IsRTLGlyph() const      { return ((mnFlags & IS_RTL_GLYPH) != 0); }
     bool    IsDiacritic() const     { return ((mnFlags & IS_DIACRITIC) != 0); }
+    bool    AllowKashida() const    { return ((mnFlags & ALLOW_KASHIDA) != 0); }
 };
 
 typedef std::list<GlyphItem> GlyphList;
-typedef std::vector<GlyphItem> GlyphVector;
 
 class VCL_PLUGIN_PUBLIC GenericSalLayout : public SalLayout
 {
@@ -328,7 +335,7 @@ public:
     void            AppendGlyph( const GlyphItem& );
     void            Reserve(int size) { m_GlyphItems.reserve(size + 1); }
     virtual void    AdjustLayout( ImplLayoutArgs& ) override;
-    void    ApplyDXArray( ImplLayoutArgs& );
+    virtual void    ApplyDXArray( ImplLayoutArgs& );
     void    Justify( DeviceCoordinate nNewWidth );
     void            KashidaJustify( long nIndex, int nWidth );
     void            ApplyAsianKerning(const OUString& rStr);
@@ -347,16 +354,16 @@ public:
 
 protected:
                     GenericSalLayout();
-    virtual         ~GenericSalLayout();
+    virtual         ~GenericSalLayout() override;
 
     // for glyph+font+script fallback
     virtual void    MoveGlyph( int nStart, long nNewXPos ) override;
     virtual void    DropGlyph( int nStart ) override;
     virtual void    Simplify( bool bIsBase ) override;
 
-    bool            GetCharWidths( DeviceCoordinate* pCharWidths ) const;
+    virtual bool    GetCharWidths( DeviceCoordinate* pCharWidths ) const;
 
-    GlyphVector     m_GlyphItems;
+    std::vector<GlyphItem>     m_GlyphItems;
 
 private:
     mutable Point   maBasePoint;

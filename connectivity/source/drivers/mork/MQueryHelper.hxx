@@ -127,7 +127,7 @@ namespace connectivity
                                  m_aExprCondType( OR )
                             {}
 
-            virtual ~MQueryExpression() {
+            virtual ~MQueryExpression() override {
                 for (ExprVector::iterator i(m_aExprVector.begin());
                      i != m_aExprVector.end(); ++i)
                 {
@@ -159,16 +159,13 @@ namespace connectivity
             void            setValue( const OString &key, const OUString & rValue);
         };
 
-        class MQueryHelper
+        class MQueryHelper final
         {
         private:
             typedef std::vector< MQueryHelperResultEntry* > resultsArray;
 
             mutable ::osl::Mutex        m_aMutex;
             resultsArray        m_aResults;
-            sal_uInt32          m_nIndex;
-            bool            m_bHasMore;
-            bool            m_bAtEnd;
             void            append(MQueryHelperResultEntry* resEnt );
             void            clear_results();
             OColumnAlias        m_rColumnAlias;
@@ -177,7 +174,7 @@ namespace connectivity
 
         public:
             explicit                   MQueryHelper(const OColumnAlias& _ca);
-            virtual                    ~MQueryHelper();
+                                       ~MQueryHelper();
 
             void                       reset();
             MQueryHelperResultEntry*   getByIndex( sal_uInt32 nRow );

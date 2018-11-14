@@ -130,7 +130,7 @@ sal_Int64 ODbaseIndex::getSomething( const Sequence< sal_Int8 > & rId ) throw (R
                 : ODbaseIndex_BASE::getSomething(rId);
 }
 
-ONDXPagePtr ODbaseIndex::getRoot()
+ONDXPagePtr const & ODbaseIndex::getRoot()
 {
     openIndexFile();
     if (!m_aRoot.Is())
@@ -149,7 +149,7 @@ bool ODbaseIndex::openIndexFile()
         OUString sFile = getCompletePath();
         if(UCBContentHelper::Exists(sFile))
         {
-            m_pFileStream = OFileTable::createStream_simpleError(sFile, STREAM_READWRITE | StreamMode::NOCREATE | StreamMode::SHARE_DENYWRITE);
+            m_pFileStream = OFileTable::createStream_simpleError(sFile, StreamMode::READWRITE | StreamMode::NOCREATE | StreamMode::SHARE_DENYWRITE);
             if (!m_pFileStream)
                 m_pFileStream = OFileTable::createStream_simpleError(sFile, StreamMode::READ | StreamMode::NOCREATE | StreamMode::SHARE_DENYNONE);
             if(m_pFileStream)
@@ -175,7 +175,7 @@ bool ODbaseIndex::openIndexFile()
 OIndexIterator* ODbaseIndex::createIterator()
 {
     openIndexFile();
-    return new OIndexIterator(this, nullptr, nullptr);
+    return new OIndexIterator(this);
 }
 
 bool ODbaseIndex::ConvertToKey(ONDXKey* rKey, sal_uInt32 nRec, const ORowSetValue& rValue)
@@ -357,14 +357,14 @@ void connectivity::dbase::ReadHeader(
 #endif
     rStream.ReadUInt32(rHeader.db_rootpage);
     rStream.ReadUInt32(rHeader.db_pagecount);
-    rStream.Read(&rHeader.db_frei, 4);
+    rStream.ReadBytes(&rHeader.db_frei, 4);
     rStream.ReadUInt16(rHeader.db_keylen);
     rStream.ReadUInt16(rHeader.db_maxkeys);
     rStream.ReadUInt16(rHeader.db_keytype);
     rStream.ReadUInt16(rHeader.db_keyrec);
-    rStream.Read(&rHeader.db_frei1, 3);
+    rStream.ReadBytes(&rHeader.db_frei1, 3);
     rStream.ReadUChar(rHeader.db_unique);
-    rStream.Read(&rHeader.db_name, 488);
+    rStream.ReadBytes(&rHeader.db_name, 488);
     assert(rStream.GetError() || rStream.Tell() == nOldPos + DINDEX_PAGE_SIZE);
 }
 
@@ -383,14 +383,14 @@ SvStream& connectivity::dbase::WriteODbaseIndex(SvStream &rStream, ODbaseIndex& 
     rStream.Seek(0);
     rStream.WriteUInt32(rIndex.m_aHeader.db_rootpage);
     rStream.WriteUInt32(rIndex.m_aHeader.db_pagecount);
-    rStream.Write(&rIndex.m_aHeader.db_frei, 4);
+    rStream.WriteBytes(&rIndex.m_aHeader.db_frei, 4);
     rStream.WriteUInt16(rIndex.m_aHeader.db_keylen);
     rStream.WriteUInt16(rIndex.m_aHeader.db_maxkeys);
     rStream.WriteUInt16(rIndex.m_aHeader.db_keytype);
     rStream.WriteUInt16(rIndex.m_aHeader.db_keyrec);
-    rStream.Write(&rIndex.m_aHeader.db_frei1, 3);
+    rStream.WriteBytes(&rIndex.m_aHeader.db_frei1, 3);
     rStream.WriteUChar(rIndex.m_aHeader.db_unique);
-    rStream.Write(&rIndex.m_aHeader.db_name, 488);
+    rStream.WriteBytes(&rIndex.m_aHeader.db_name, 488);
     assert(rStream.GetError() || rStream.Tell() == DINDEX_PAGE_SIZE);
     SAL_WARN_IF(rStream.GetError(), "connectivity.dbase", "write error");
     return rStream;
@@ -514,7 +514,7 @@ bool ODbaseIndex::CreateImpl()
         ::dbtools::throwFunctionSequenceException(*this);
 
     // create the index file
-    m_pFileStream = OFileTable::createStream_simpleError(sFile,STREAM_READWRITE | StreamMode::SHARE_DENYWRITE | StreamMode::TRUNC);
+    m_pFileStream = OFileTable::createStream_simpleError(sFile,StreamMode::READWRITE | StreamMode::SHARE_DENYWRITE | StreamMode::TRUNC);
     if (!m_pFileStream)
     {
         const OUString sError( m_pTable->getConnection()->getResources().getResourceStringWithSubstitution(
@@ -629,17 +629,6 @@ bool ODbaseIndex::CreateImpl()
     Release();
     createINFEntry();
     return true;
-}
-
-
-void SAL_CALL ODbaseIndex::acquire() throw()
-{
-    ODbaseIndex_BASE::acquire();
-}
-
-void SAL_CALL ODbaseIndex::release() throw()
-{
-    ODbaseIndex_BASE::release();
 }
 
 

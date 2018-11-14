@@ -27,7 +27,7 @@ namespace sw
     struct SW_DLLPUBLIC DocDisposingHint final : public SfxHint
     {
         DocDisposingHint() {}
-        virtual ~DocDisposingHint();
+        virtual ~DocDisposingHint() override;
     };
 }
 
@@ -39,8 +39,8 @@ private:
     bool m_bSkipOverProtectSections : 1;
 
 public:
-    SwUnoCursor( const SwPosition &rPos, SwPaM* pRing = nullptr );
-    virtual ~SwUnoCursor();
+    SwUnoCursor( const SwPosition &rPos );
+    virtual ~SwUnoCursor() override;
 
 protected:
 
@@ -86,7 +86,7 @@ class SwUnoTableCursor : public virtual SwUnoCursor, public virtual SwTableCurso
 
 public:
     SwUnoTableCursor( const SwPosition& rPos );
-    virtual ~SwUnoTableCursor();
+    virtual ~SwUnoTableCursor() override;
 
     // Does a selection of content exist in table?
     // Return value indicates if the cursor remains at its old position.
@@ -144,10 +144,12 @@ namespace sw
                 if(!GetRegisteredIn())
                     m_pCursor.reset();
             };
-            SwUnoCursor& operator*() const
-                { return *m_pCursor.get(); }
-            SwUnoCursor* operator->() const
+            SwUnoCursor* get() const
                 { return m_pCursor.get(); }
+            SwUnoCursor* operator->() const
+                { return get(); }
+            SwUnoCursor& operator*() const
+                { return *get(); }
             UnoCursorPointer& operator=(UnoCursorPointer aOther)
             {
                 if(aOther.m_pCursor)

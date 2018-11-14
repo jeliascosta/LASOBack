@@ -73,7 +73,7 @@ public:
         ,m_outline(false)
         {}
 
-    virtual ~ListLevel( ){ }
+    virtual ~ListLevel( ) override { }
 
     // Setters for the import
     void SetValue( Id nId, sal_Int32 nValue );
@@ -105,12 +105,12 @@ private:
 };
 
 /// Represents a numbering picture bullet: an id and a graphic.
-class NumPicBullet
+class NumPicBullet final
 {
 public:
     typedef std::shared_ptr<NumPicBullet> Pointer;
     NumPicBullet();
-    virtual ~NumPicBullet();
+    ~NumPicBullet();
 
     void SetId(sal_Int32 nId);
     sal_Int32 GetId() { return m_nId;}
@@ -178,7 +178,7 @@ public:
     typedef std::shared_ptr< ListDef > Pointer;
 
     ListDef( );
-    virtual ~ListDef( );
+    virtual ~ListDef( ) override;
 
     // Accessors
     void SetAbstractDefinition( AbstractListDef::Pointer pAbstract ) { m_pAbstractDef = pAbstract; };
@@ -215,7 +215,6 @@ private:
     // These members are used for import only
     AbstractListDef::Pointer                            m_pCurrentDefinition;
     NumPicBullet::Pointer                               m_pCurrentNumPicBullet;
-    bool                                                m_bIsLFOImport;
 
     AbstractListDef::Pointer    GetAbstractList( sal_Int32 nId );
 
@@ -229,7 +228,7 @@ private:
 public:
 
     ListsManager(DomainMapper& rDMapper, const css::uno::Reference<css::lang::XMultiServiceFactory>& xFactory);
-    virtual ~ListsManager();
+    virtual ~ListsManager() override;
 
     typedef std::shared_ptr< ListsManager >  Pointer;
 

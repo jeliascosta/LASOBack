@@ -45,7 +45,7 @@ SdVectorizeDlg::SdVectorizeDlg(vcl::Window* pParent, const Bitmap& rBmp, ::sd::D
     get(m_pBmpWin, "source");
     get(m_pMtfWin, "vectorized");
 
-    Size aSize(LogicToPixel(Size(92, 100), MAP_APPFONT));
+    Size aSize(LogicToPixel(Size(92, 100), MapUnit::MapAppFont));
     m_pBmpWin->set_width_request(aSize.Width());
     m_pMtfWin->set_width_request(aSize.Width());
     m_pBmpWin->set_height_request(aSize.Height());
@@ -159,7 +159,7 @@ void SdVectorizeDlg::Calculate( Bitmap& rBmp, GDIMetaFile& rMtf )
     if( !!aTmp )
     {
         const Link<long,void> aPrgsHdl( LINK( this, SdVectorizeDlg, ProgressHdl ) );
-        aTmp.Vectorize( rMtf, (sal_uInt8) m_pMtReduce->GetValue(), BmpVectorizeFlags::Outer | BmpVectorizeFlags::ReduceEdges, &aPrgsHdl );
+        aTmp.Vectorize( rMtf, (sal_uInt8) m_pMtReduce->GetValue(), &aPrgsHdl );
 
         if( m_pCbFillHoles->IsChecked() )
         {
@@ -260,19 +260,19 @@ void SdVectorizeDlg::AddTile( BitmapReadAccess* pRAcc, GDIMetaFile& rMtf,
     rMtf.AddAction( new MetaRectAction( aRect ) );
 }
 
-IMPL_LINK_TYPED( SdVectorizeDlg, ProgressHdl, long, nData, void )
+IMPL_LINK( SdVectorizeDlg, ProgressHdl, long, nData, void )
 {
     m_pPrgs->SetValue( (sal_uInt16)nData );
 }
 
-IMPL_LINK_NOARG_TYPED(SdVectorizeDlg, ClickPreviewHdl, Button*, void)
+IMPL_LINK_NOARG(SdVectorizeDlg, ClickPreviewHdl, Button*, void)
 {
     Calculate( aBmp, aMtf );
     m_pMtfWin->SetGraphic( aMtf );
     m_pBtnPreview->Disable();
 }
 
-IMPL_LINK_NOARG_TYPED(SdVectorizeDlg, ClickOKHdl, Button*, void)
+IMPL_LINK_NOARG(SdVectorizeDlg, ClickOKHdl, Button*, void)
 {
     if( m_pBtnPreview->IsEnabled() )
         Calculate( aBmp, aMtf );
@@ -281,7 +281,7 @@ IMPL_LINK_NOARG_TYPED(SdVectorizeDlg, ClickOKHdl, Button*, void)
     EndDialog( RET_OK );
 }
 
-IMPL_LINK_TYPED( SdVectorizeDlg, ToggleHdl, CheckBox&, rCb, void )
+IMPL_LINK( SdVectorizeDlg, ToggleHdl, CheckBox&, rCb, void )
 {
     if( rCb.IsChecked() )
     {
@@ -297,7 +297,7 @@ IMPL_LINK_TYPED( SdVectorizeDlg, ToggleHdl, CheckBox&, rCb, void )
     m_pBtnPreview->Enable();
 }
 
-IMPL_LINK_NOARG_TYPED(SdVectorizeDlg, ModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(SdVectorizeDlg, ModifyHdl, Edit&, void)
 {
     m_pBtnPreview->Enable();
 }

@@ -20,7 +20,6 @@
 #ifndef INCLUDED_SVX_SOURCE_SIDEBAR_TEXT_TEXTUNDERLINECONTROL_HXX
 #define INCLUDED_SVX_SOURCE_SIDEBAR_TEXT_TEXTUNDERLINECONTROL_HXX
 
-#include "svx/sidebar/PopupControl.hxx"
 #include <sfx2/bindings.hxx>
 #include <vcl/button.hxx>
 #include <vcl/vclenum.hxx>
@@ -32,8 +31,8 @@ namespace svx {
 class TextUnderlineControl : public SfxPopupWindow
 {
 public:
-    TextUnderlineControl(sal_uInt16 nId);
-    virtual ~TextUnderlineControl();
+    explicit TextUnderlineControl(sal_uInt16 nId);
+    virtual ~TextUnderlineControl() override;
     virtual void dispose() override;
 
 private:
@@ -52,7 +51,7 @@ private:
 
     FontLineStyle getLineStyle(Button* pButton);
 
-    DECL_LINK_TYPED(PBClickHdl, Button*, void);
+    DECL_LINK(PBClickHdl, Button*, void);
 };
 }
 

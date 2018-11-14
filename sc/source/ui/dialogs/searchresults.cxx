@@ -30,7 +30,7 @@ SearchResultsDlg::SearchResultsDlg( SfxBindings* _pBindings, vcl::Window* pParen
 
     SvSimpleTableContainer *pContainer = get<SvSimpleTableContainer>("results");
     Size aControlSize(150, 120);
-    aControlSize = pContainer->LogicToPixel(aControlSize, MAP_APPFONT);
+    aControlSize = pContainer->LogicToPixel(aControlSize, MapUnit::MapAppFont);
     pContainer->set_width_request(aControlSize.Width());
     pContainer->set_height_request(aControlSize.Height());
 
@@ -185,7 +185,7 @@ bool SearchResultsDlg::Close()
     return ModelessDialog::Close();
 }
 
-IMPL_LINK_NOARG_TYPED( SearchResultsDlg, ListSelectHdl, SvTreeListBox*, void )
+IMPL_LINK_NOARG( SearchResultsDlg, ListSelectHdl, SvTreeListBox*, void )
 {
     if (!mpDoc)
         return;

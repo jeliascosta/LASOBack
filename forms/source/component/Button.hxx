@@ -82,7 +82,7 @@ public:
                 throw (css::uno::Exception, std::exception) override;
     virtual sal_Bool SAL_CALL convertFastPropertyValue(
                 css::uno::Any& _rConvertedValue, css::uno::Any& _rOldValue, sal_Int32 _nHandle, const css::uno::Any& _rValue )
-                throw (css::lang::IllegalArgumentException) override;
+                throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Any getPropertyDefaultByHandle( sal_Int32 nHandle ) const override;
 
     // OComponentHelper
@@ -131,7 +131,7 @@ protected:
 
 public:
     explicit OButtonControl(const css::uno::Reference< css::uno::XComponentContext>& _rxFactory);
-    virtual ~OButtonControl();
+    virtual ~OButtonControl() override;
 
     // XServiceInfo
     OUString SAL_CALL getImplementationName()
@@ -181,7 +181,7 @@ protected:
     virtual void    actionPerformed_Impl( bool bNotifyListener, const css::awt::MouseEvent& _rEvt ) override;
 
 private:
-    DECL_LINK_TYPED( OnClick, void*, void );
+    DECL_LINK( OnClick, void*, void );
 
     /// to be called whenever the feature URL represented by our model has potentially changed
     void        modelFeatureUrlPotentiallyChanged( );

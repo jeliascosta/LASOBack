@@ -33,7 +33,7 @@ namespace chart
 struct ListBoxEntryData
 {
     OUString UIName;
-    ObjectHierarchy::tOID OID;
+    ObjectIdentifier OID;
     sal_Int32 nHierarchyDepth;
 
     ListBoxEntryData() : nHierarchyDepth(0)
@@ -70,7 +70,7 @@ class ElementSelectorToolbarController : public ::svt::ToolboxController
 {
 public:
     explicit ElementSelectorToolbarController();
-    virtual ~ElementSelectorToolbarController();
+    virtual ~ElementSelectorToolbarController() override;
 
     // XServiceInfo
     virtual OUString SAL_CALL getImplementationName()
@@ -80,16 +80,11 @@ public:
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
 
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
-
     // XInterface
      virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) throw (css::uno::RuntimeException, std::exception) override;
      virtual void SAL_CALL acquire() throw () override;
      virtual void SAL_CALL release() throw () override;
 
-     // XInitialization
-     virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
      // XStatusListener
      virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( css::uno::RuntimeException, std::exception ) override;
      // XToolbarController

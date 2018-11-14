@@ -23,7 +23,7 @@
 #include <com/sun/star/report/XShape.hpp>
 #include "ReportControlModel.hxx"
 #include <cppuhelper/compbase.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include "ReportHelperDefines.hxx"
 #include <comphelper/propagg.hxx>
@@ -39,7 +39,7 @@ namespace reportdesign
      * \ingroup reportdesign_api
      *
      */
-    class OShape :  public comphelper::OBaseMutex,
+    class OShape :  public cppu::BaseMutex,
                     public ShapeBase,
                     public ShapePropertySet
     {
@@ -85,7 +85,7 @@ namespace reportdesign
         }
         cppu::IPropertyArrayHelper& getInfoHelper();
     protected:
-        virtual ~OShape();
+        virtual ~OShape() override;
     public:
         explicit OShape(css::uno::Reference< css::uno::XComponentContext > const & _xContext);
         explicit OShape(css::uno::Reference< css::uno::XComponentContext > const & _xContext

@@ -36,16 +36,7 @@
 
 namespace tdoc_ucp {
 
-    class OfficeDocumentsEventListener
-    {
-    public:
-        virtual void notifyDocumentOpened( const OUString & rDocId ) = 0;
-        virtual void notifyDocumentClosed( const OUString & rDocId ) = 0;
-
-    protected:
-        ~OfficeDocumentsEventListener() {}
-    };
-
+    class ContentProvider;
 
     struct StorageInfo
     {
@@ -63,16 +54,7 @@ namespace tdoc_ucp {
     };
 
 
-    struct ltref
-    {
-        bool operator()(
-            const OUString & r1, const OUString & r2 ) const
-        {
-            return r1 < r2;
-        }
-    };
-
-    typedef std::map< OUString, StorageInfo, ltref > DocumentList;
+    typedef std::map< OUString, StorageInfo > DocumentList;
 
 
     class OfficeDocumentsManager :
@@ -111,8 +93,8 @@ namespace tdoc_ucp {
     public:
         OfficeDocumentsManager(
             const css::uno::Reference< css::uno::XComponentContext > & rxContext,
-            OfficeDocumentsEventListener * pDocEventListener );
-        virtual ~OfficeDocumentsManager();
+            ContentProvider * pDocEventListener );
+        virtual ~OfficeDocumentsManager() override;
 
         void destroy();
 
@@ -166,8 +148,8 @@ namespace tdoc_ucp {
         css::uno::Reference< css::frame::XGlobalEventBroadcaster > m_xDocEvtNotifier;
         css::uno::Reference< css::frame::XModuleManager2 >         m_xModuleMgr;
         DocumentList                                        m_aDocs;
-        OfficeDocumentsEventListener *                      m_pDocEventListener;
-        ::rtl::Reference<OfficeDocumentsCloseListener> m_xDocCloseListener;
+        ContentProvider * const                             m_pDocEventListener;
+        ::rtl::Reference<OfficeDocumentsCloseListener> const m_xDocCloseListener;
     };
 
 } // namespace tdoc_ucp

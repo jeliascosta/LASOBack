@@ -24,9 +24,9 @@
 #include "cppunit/TestFixture.h"
 #include "cppunit/extensions/HelperMacros.h"
 #include "cppunit/plugin/TestPlugIn.h"
-#include "unotest/uniquepipename.hxx"
 #include <rtl/ustring.hxx>
 
+#include <osl/test/uniquepipename.hxx>
 #include <osl/thread.hxx>
 
 #include <osl/mutex.hxx>
@@ -46,7 +46,7 @@ using ::rtl::OString;
 
 /** print last error of pipe system.
  */
-inline void printPipeError( ::osl::Pipe aPipe )
+inline void printPipeError( ::osl::Pipe const & aPipe )
 {
     oslPipeError nError = aPipe.getError( );
     printf("#printPipeError# " );
@@ -430,7 +430,7 @@ namespace osl_Pipe
                 bRes  = aPipe == aPipe;
                 aPipe.close( );
 
-                CPPUNIT_ASSERT_MESSAGE( "#test comment#: test isEqual(), compare its self.",
+                CPPUNIT_ASSERT_MESSAGE( "#test comment#: test isEqual(), compare itself.",
                                         bRes );
             }
 
@@ -485,8 +485,8 @@ namespace osl_Pipe
                 aPipe.close( );
                 int nRet = aPipe.send( m_pTestString1.getStr(), 3 );
 
-                CPPUNIT_ASSERT_MESSAGE( "#test comment#: use after close.",
-                                        OSL_PIPE_FAIL == nRet );
+                CPPUNIT_ASSERT_EQUAL_MESSAGE( "#test comment#: use after close.",
+                                        nRet, OSL_PIPE_FAIL );
             }
 
         CPPUNIT_TEST_SUITE( close );
@@ -736,7 +736,7 @@ namespace osl_StreamPipe
         sal_Char buf[256];
         Pipe_DataSink_Thread( ) { }
 
-        virtual ~Pipe_DataSink_Thread( )
+        virtual ~Pipe_DataSink_Thread( ) override
             {
             }
     protected:
@@ -782,7 +782,7 @@ namespace osl_StreamPipe
                 printf("create pipe\n");
                 aListenPipe.create( test::uniquePipeName(aTestPipeName), osl_Pipe_CREATE );
             }
-        virtual ~Pipe_DataSource_Thread( )
+        virtual ~Pipe_DataSource_Thread( ) override
             {
                 aListenPipe.close();
             }

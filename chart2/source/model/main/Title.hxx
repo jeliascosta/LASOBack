@@ -50,7 +50,7 @@ class Title :
 {
 public:
     explicit Title( css::uno::Reference< css::uno::XComponentContext > const & xContext );
-    virtual ~Title();
+    virtual ~Title() override;
 
     /// XServiceInfo declarations
     virtual OUString SAL_CALL getImplementationName()
@@ -59,9 +59,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     /// merge XInterface implementations
      DECLARE_XINTERFACE()

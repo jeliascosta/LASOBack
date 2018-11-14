@@ -20,10 +20,16 @@
 #ifndef INCLUDED_OOX_VML_VMLSHAPECONTAINER_HXX
 #define INCLUDED_OOX_VML_VMLSHAPECONTAINER_HXX
 
+#include <cstddef>
+#include <functional>
+#include <memory>
+#include <stack>
+
 #include <com/sun/star/awt/Rectangle.hpp>
+#include <com/sun/star/uno/Reference.hxx>
 #include <oox/helper/refmap.hxx>
 #include <oox/helper/refvector.hxx>
-#include <stack>
+#include <rtl/ustring.hxx>
 
 namespace com { namespace sun { namespace star {
     namespace drawing { class XShapes; }
@@ -55,10 +61,10 @@ public:
     Drawing&     getDrawing() { return mrDrawing; }
 
     /** Creates and returns a new shape template object. */
-    ShapeType&          createShapeType();
+    std::shared_ptr<ShapeType> createShapeType();
     /** Creates and returns a new shape object of the specified type. */
     template< typename ShapeT >
-    ShapeT&             createShape();
+    std::shared_ptr<ShapeT> createShape();
 
     /** Final processing after import of the drawing fragment. */
     void                finalizeFragmentImport();
@@ -117,11 +123,11 @@ private:
 
 
 template< typename ShapeT >
-ShapeT& ShapeContainer::createShape()
+std::shared_ptr<ShapeT> ShapeContainer::createShape()
 {
     std::shared_ptr< ShapeT > xShape( new ShapeT( mrDrawing ) );
     maShapes.push_back( xShape );
-    return *xShape;
+    return xShape;
 }
 
 template< typename Functor >

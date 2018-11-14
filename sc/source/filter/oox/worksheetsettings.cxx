@@ -21,10 +21,11 @@
 
 #include <com/sun/star/util/XProtectable.hpp>
 #include <oox/core/filterbase.hxx>
+#include <oox/helper/binaryinputstream.hxx>
 #include <oox/helper/attributelist.hxx>
 #include <oox/token/properties.hxx>
 #include <oox/token/tokens.hxx>
-#include "biffinputstream.hxx"
+#include "biffcodec.hxx"
 #include "pagesettings.hxx"
 #include "workbooksettings.hxx"
 #include "tabprotection.hxx"
@@ -158,7 +159,8 @@ void WorksheetSettings::importProtectedRange( const AttributeList& rAttribs )
         getAddressConverter().convertToCellRangeList( aRangeList, aRefs, getSheetIndex(), true );
         if (!aRangeList.empty())
         {
-            ScRangeList* pRangeList = aProt.maRangeList = new ScRangeList;
+            aProt.maRangeList = new ScRangeList;
+            ScRangeList* pRangeList = aProt.maRangeList.get();
             for (::std::vector< css::table::CellRangeAddress >::const_iterator itr( aRangeList.begin()), end( aRangeList.end()); itr != end; ++itr)
             {
                 ScRange aRange;
@@ -213,21 +215,21 @@ void WorksheetSettings::importSheetProtection( SequenceInputStream& rStrm )
     maSheetProt.mnPasswordHash = rStrm.readuInt16();
     // no flags field for all these boolean flags?!?
     maSheetProt.mbSheet            = rStrm.readInt32() != 0;
-    maSheetProt.mbObjects          = rStrm.readInt32() != 0;
-    maSheetProt.mbScenarios        = rStrm.readInt32() != 0;
-    maSheetProt.mbFormatCells      = rStrm.readInt32() != 0;
-    maSheetProt.mbFormatColumns    = rStrm.readInt32() != 0;
-    maSheetProt.mbFormatRows       = rStrm.readInt32() != 0;
-    maSheetProt.mbInsertColumns    = rStrm.readInt32() != 0;
-    maSheetProt.mbInsertRows       = rStrm.readInt32() != 0;
-    maSheetProt.mbInsertHyperlinks = rStrm.readInt32() != 0;
-    maSheetProt.mbDeleteColumns    = rStrm.readInt32() != 0;
-    maSheetProt.mbDeleteRows       = rStrm.readInt32() != 0;
-    maSheetProt.mbSelectLocked     = rStrm.readInt32() != 0;
-    maSheetProt.mbSort             = rStrm.readInt32() != 0;
-    maSheetProt.mbAutoFilter       = rStrm.readInt32() != 0;
-    maSheetProt.mbPivotTables      = rStrm.readInt32() != 0;
-    maSheetProt.mbSelectUnlocked   = rStrm.readInt32() != 0;
+    maSheetProt.mbObjects          = rStrm.readInt32() == 0;
+    maSheetProt.mbScenarios        = rStrm.readInt32() == 0;
+    maSheetProt.mbFormatCells      = rStrm.readInt32() == 0;
+    maSheetProt.mbFormatColumns    = rStrm.readInt32() == 0;
+    maSheetProt.mbFormatRows       = rStrm.readInt32() == 0;
+    maSheetProt.mbInsertColumns    = rStrm.readInt32() == 0;
+    maSheetProt.mbInsertRows       = rStrm.readInt32() == 0;
+    maSheetProt.mbInsertHyperlinks = rStrm.readInt32() == 0;
+    maSheetProt.mbDeleteColumns    = rStrm.readInt32() == 0;
+    maSheetProt.mbDeleteRows       = rStrm.readInt32() == 0;
+    maSheetProt.mbSelectLocked     = rStrm.readInt32() == 0;
+    maSheetProt.mbSort             = rStrm.readInt32() == 0;
+    maSheetProt.mbAutoFilter       = rStrm.readInt32() == 0;
+    maSheetProt.mbPivotTables      = rStrm.readInt32() == 0;
+    maSheetProt.mbSelectUnlocked   = rStrm.readInt32() == 0;
 }
 
 void WorksheetSettings::importChartProtection( SequenceInputStream& rStrm )

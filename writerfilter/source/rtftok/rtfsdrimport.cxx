@@ -8,8 +8,10 @@
  */
 
 #include <rtfsdrimport.hxx>
+#include <cmath>
 #include <com/sun/star/container/XNamed.hpp>
 #include <com/sun/star/drawing/FillStyle.hpp>
+#include <com/sun/star/drawing/EnhancedCustomShapeParameterPair.hpp>
 #include <com/sun/star/drawing/XEnhancedCustomShapeDefaulter.hpp>
 #include <com/sun/star/drawing/XDrawPageSupplier.hpp>
 #include <com/sun/star/drawing/LineStyle.hpp>
@@ -25,6 +27,7 @@
 #include <com/sun/star/text/WritingMode.hpp>
 #include <com/sun/star/text/TextContentAnchorType.hpp>
 #include <ooxml/resourceids.hxx>
+#include <filter/msfilter/escherex.hxx>
 #include <filter/msfilter/util.hxx>
 #include <svx/svdtrans.hxx>
 #include <comphelper/sequence.hxx>
@@ -37,6 +40,17 @@
 #include <basegfx/matrix/b2dhommatrix.hxx>
 
 using namespace com::sun::star;
+
+#if defined(ANDROID)
+namespace std
+{
+template<typename T>
+T lround(T x)
+{
+    return ::lround(x);
+}
+}
+#endif
 
 namespace writerfilter
 {
@@ -230,7 +244,7 @@ void RTFSdrImport::applyProperty(uno::Reference<drawing::XShape> const& xShape, 
         sal_Int32 nRotation = aValue.toInt32()*100/65536;
         uno::Reference<lang::XServiceInfo> xServiceInfo(xShape, uno::UNO_QUERY);
         if (!xServiceInfo->supportsService("com.sun.star.text.TextFrame"))
-            xPropertySet->setPropertyValue("RotateAngle", uno::makeAny(sal_Int32(NormAngle360(nRotation * -1))));
+            xPropertySet->setPropertyValue("RotateAngle", uno::makeAny(sal_Int32(NormAngle360(static_cast<long>(nRotation) * -1))));
     }
 
     if (nHoriOrient != 0 && xPropertySet.is())
@@ -908,8 +922,8 @@ void RTFSdrImport::resolve(RTFShape& rShape, bool bClose, ShapeOrPict const shap
             nTop = static_cast< sal_Int32 >(rShape.nTop + fHeightRatio * (*oRelTop - *oGroupTop));
 
             // See lclGetAbsRect() in the VML import.
-            aSize.Width = static_cast<sal_Int32>(fWidthRatio * (*oRelRight - *oRelLeft) + 0.5);
-            aSize.Height = static_cast<sal_Int32>(fHeightRatio * (*oRelBottom - *oRelTop) + 0.5);
+            aSize.Width = std::lround(fWidthRatio * (*oRelRight - *oRelLeft));
+            aSize.Height = std::lround(fHeightRatio * (*oRelBottom - *oRelTop));
         }
 
         if (m_bTextFrame)
@@ -927,13 +941,17 @@ void RTFSdrImport::resolve(RTFShape& rShape, bool bClose, ShapeOrPict const shap
 
         if (obFlipH == true || obFlipV == true)
         {
-            // This has to be set after position and size is set, otherwise flip will affect the position.
-            comphelper::SequenceAsHashMap aCustomShapeGeometry(xPropertySet->getPropertyValue("CustomShapeGeometry"));
-            if (obFlipH == true)
-                aCustomShapeGeometry["MirroredX"] <<= true;
-            if (obFlipV == true)
-                aCustomShapeGeometry["MirroredY"] <<= true;
-            xPropertySet->setPropertyValue("CustomShapeGeometry", uno::makeAny(aCustomShapeGeometry.getAsConstPropertyValueList()));
+            // Line shapes have no CustomShapeGeometry.
+            if (nType != ESCHER_ShpInst_Line)
+            {
+                // This has to be set after position and size is set, otherwise flip will affect the position.
+                comphelper::SequenceAsHashMap aCustomShapeGeometry(xPropertySet->getPropertyValue("CustomShapeGeometry"));
+                if (obFlipH == true)
+                    aCustomShapeGeometry["MirroredX"] <<= true;
+                if (obFlipV == true)
+                    aCustomShapeGeometry["MirroredY"] <<= true;
+                xPropertySet->setPropertyValue("CustomShapeGeometry", uno::makeAny(aCustomShapeGeometry.getAsConstPropertyValueList()));
+            }
         }
 
         if (rShape.nHoriOrientRelation != 0)

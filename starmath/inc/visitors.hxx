@@ -47,8 +47,6 @@ public:
     virtual void Visit( SmLineNode* pNode ) = 0;
     virtual void Visit( SmExpressionNode* pNode ) = 0;
     virtual void Visit( SmPolyLineNode* pNode ) = 0;
-    virtual void Visit( SmDynIntegralNode* pNode ) = 0;
-    virtual void Visit( SmDynIntegralSymbolNode* pNode ) = 0;
     virtual void Visit( SmRootNode* pNode ) = 0;
     virtual void Visit( SmRootSymbolNode* pNode ) = 0;
     virtual void Visit( SmRectangleNode* pNode ) = 0;
@@ -94,8 +92,6 @@ public:
     void Visit( SmPolyLineNode* pNode ) override;
     void Visit( SmRootNode* pNode ) override;
     void Visit( SmRootSymbolNode* pNode ) override;
-    void Visit( SmDynIntegralNode* pNode ) override;
-    void Visit( SmDynIntegralSymbolNode* pNode ) override;
     void Visit( SmRectangleNode* pNode ) override;
     void Visit( SmVerticalBraceNode* pNode ) override;
 protected:
@@ -201,15 +197,13 @@ public:
     void Visit( SmPolyLineNode* pNode ) override;
     void Visit( SmRootNode* pNode ) override;
     void Visit( SmRootSymbolNode* pNode ) override;
-    void Visit( SmDynIntegralNode* pNode ) override;
-    void Visit( SmDynIntegralSymbolNode* pNode ) override;
     void Visit( SmRectangleNode* pNode ) override;
     void Visit( SmVerticalBraceNode* pNode ) override;
 private:
     /** Draw the children of a pNode
      * This the default method, use by most pNodes
      */
-    void DrawChildren( SmNode* pNode );
+    void DrawChildren( SmStructureNode* pNode );
 
     /** Draw an SmTextNode or a subclass of this */
     void DrawTextNode( SmTextNode* pNode );
@@ -253,17 +247,17 @@ private:
      * it.
      */
     void DefaultVisit( SmNode* pNode ) override;
-    void VisitCompositionNode( SmNode* pNode );
+    void VisitCompositionNode( SmStructureNode* pNode );
     /** Caret position where the selection starts */
-    SmCaretPos  StartPos;
+    SmCaretPos maStartPos;
     /** Caret position where the selection ends */
-    SmCaretPos  EndPos;
+    SmCaretPos maEndPos;
     /** The current state of this visitor
-     * This property changes when the visitor meets either StartPos
-     * or EndPos. This means that anything visited in between will be
+     * This property changes when the visitor meets either maStartPos
+     * or maEndPos. This means that anything visited in between will be
      * selected.
      */
-    bool IsSelecting;
+    bool mbSelecting;
 };
 
 
@@ -293,7 +287,7 @@ class SmCaretPosGraphBuildingVisitor : public SmVisitor
 {
 public:
     /** Builds a caret position graph for pRootNode */
-    SmCaretPosGraphBuildingVisitor( SmNode* pRootNode );
+    explicit SmCaretPosGraphBuildingVisitor( SmNode* pRootNode );
     virtual ~SmCaretPosGraphBuildingVisitor();
     void Visit( SmTableNode* pNode ) override;
     void Visit( SmBraceNode* pNode ) override;
@@ -320,8 +314,6 @@ public:
     void Visit( SmPolyLineNode* pNode ) override;
     void Visit( SmRootNode* pNode ) override;
     void Visit( SmRootSymbolNode* pNode ) override;
-    void Visit( SmDynIntegralNode* pNode ) override;
-    void Visit( SmDynIntegralSymbolNode* pNode ) override;
     void Visit( SmRectangleNode* pNode ) override;
     void Visit( SmVerticalBraceNode* pNode ) override;
     SmCaretPosGraph* takeGraph()
@@ -369,8 +361,6 @@ public:
     void Visit( SmPolyLineNode* pNode ) override;
     void Visit( SmRootNode* pNode ) override;
     void Visit( SmRootSymbolNode* pNode ) override;
-    void Visit( SmDynIntegralNode* pNode ) override;
-    void Visit( SmDynIntegralSymbolNode* pNode ) override;
     void Visit( SmRectangleNode* pNode ) override;
     void Visit( SmVerticalBraceNode* pNode ) override;
     /** Clone a pNode */
@@ -390,7 +380,7 @@ class SmSelectionDrawingVisitor : public SmDefaultingVisitor
 {
 public:
     /** Draws a selection on rDevice for the selection on pTree */
-    SmSelectionDrawingVisitor( OutputDevice& rDevice, SmNode* pTree, Point Offset );
+    SmSelectionDrawingVisitor( OutputDevice& rDevice, SmNode* pTree, const Point& rOffset );
     virtual ~SmSelectionDrawingVisitor() {}
     void Visit( SmTextNode* pNode ) override;
     using SmDefaultingVisitor::Visit;
@@ -443,8 +433,6 @@ public:
     void Visit( SmPolyLineNode* pNode ) override;
     void Visit( SmRootNode* pNode ) override;
     void Visit( SmRootSymbolNode* pNode ) override;
-    void Visit( SmDynIntegralNode* pNode ) override;
-    void Visit( SmDynIntegralSymbolNode* pNode ) override;
     void Visit( SmRectangleNode* pNode ) override;
     void Visit( SmVerticalBraceNode* pNode ) override;
 private:

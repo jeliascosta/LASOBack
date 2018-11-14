@@ -22,12 +22,9 @@
 #include "border.hrc"
 #include <svx/dialogs.hrc>
 
-#define STD_MASKCOLOR Color { Red=0xFFFF; Green=0x0000; Blue=0xFFFF; }
-
 ImageList IL_PRE_BITMAPS
 {
     Prefix = "pr";
-    MaskColor = STD_MASKCOLOR ;
     IdList =
     {
         IID_PRE_CELL_NONE ;
@@ -58,7 +55,6 @@ ImageList IL_PRE_BITMAPS
 ImageList IL_SDW_BITMAPS
 {
     Prefix = "sh";
-    MaskColor = STD_MASKCOLOR ;
     IdList =
     {
         IID_SHADOWNONE ;

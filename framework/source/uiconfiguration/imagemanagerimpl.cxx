@@ -64,26 +64,23 @@ using namespace ::com::sun::star::beans;
 using namespace ::com::sun::star::ui;
 using namespace ::cppu;
 
-// Image sizes for our toolbars/menus
-const sal_Int32 IMAGE_SIZE_NORMAL         = 16;
-const sal_Int32 IMAGE_SIZE_LARGE          = 26;
-const sal_Int16 MAX_IMAGETYPE_VALUE       = css::ui::ImageType::SIZE_LARGE;
+const sal_Int16 MAX_IMAGETYPE_VALUE       = css::ui::ImageType::SIZE_32;
 
 static const char   IMAGE_FOLDER[]        = "images";
 static const char   BITMAPS_FOLDER[]      = "Bitmaps";
 
-static const char   ModuleImageList[]     = "private:resource/images/moduleimages";
-
 static const o3tl::enumarray<vcl::ImageType, const char*> IMAGELIST_XML_FILE =
 {
     "sc_imagelist.xml",
-    "lc_imagelist.xml"
+    "lc_imagelist.xml",
+    "xc_imagelist.xml"
 };
 
 static const o3tl::enumarray<vcl::ImageType, const char*> BITMAP_FILE_NAMES =
 {
     "sc_userimages.png",
-    "lc_userimages.png"
+    "lc_userimages.png",
+    "xc_userimages.png"
 };
 
 namespace framework
@@ -221,8 +218,9 @@ bool GlobalImageList::hasImage( vcl::ImageType nImageType, const OUString& rComm
 
 static bool implts_checkAndScaleGraphic( uno::Reference< XGraphic >& rOutGraphic, const uno::Reference< XGraphic >& rInGraphic, vcl::ImageType nImageType )
 {
-    static Size   aNormSize( IMAGE_SIZE_NORMAL, IMAGE_SIZE_NORMAL );
-    static Size   aLargeSize( IMAGE_SIZE_LARGE, IMAGE_SIZE_LARGE );
+    static Size aNormSize(16, 16);
+    static Size aLargeSize(26, 26);
+    static Size aSize32(32, 32);
 
     if ( !rInGraphic.is() )
     {
@@ -235,12 +233,14 @@ static bool implts_checkAndScaleGraphic( uno::Reference< XGraphic >& rOutGraphic
     Size   aSize = aImage.GetSizePixel();
     bool   bMustScale( false );
 
-    if ( nImageType == vcl::ImageType::Color_Large )
-        bMustScale = ( aSize != aLargeSize );
+    if (nImageType == vcl::ImageType::Size26)
+        bMustScale = (aSize != aLargeSize);
+    else if (nImageType == vcl::ImageType::Size32)
+        bMustScale = (aSize != aSize32);
     else
-        bMustScale = ( aSize != aNormSize );
+        bMustScale = (aSize != aNormSize);
 
-    if ( bMustScale )
+    if (bMustScale)
     {
         BitmapEx aBitmap = aImage.GetBitmapEx();
         aBitmap.Scale( aNormSize );
@@ -249,15 +249,18 @@ static bool implts_checkAndScaleGraphic( uno::Reference< XGraphic >& rOutGraphic
     }
     else
         rOutGraphic = rInGraphic;
+
     return true;
 }
 
 static vcl::ImageType implts_convertImageTypeToIndex( sal_Int16 nImageType )
 {
-    vcl::ImageType nIndex( vcl::ImageType::Color );
-    if ( nImageType & css::ui::ImageType::SIZE_LARGE )
-        nIndex = vcl::ImageType::Color_Large;
-    return nIndex;
+    if (nImageType & css::ui::ImageType::SIZE_LARGE)
+        return vcl::ImageType::Size26;
+    else if (nImageType & css::ui::ImageType::SIZE_32)
+        return vcl::ImageType::Size32;
+    else
+        return vcl::ImageType::Size16;
 }
 
 ImageList* ImageManagerImpl::implts_getUserImageList( vcl::ImageType nImageType )
@@ -508,13 +511,12 @@ ImageManagerImpl::ImageManagerImpl( const uno::Reference< uno::XComponentContext
     m_xContext( rxContext )
     , m_pOwner(pOwner)
     , m_pDefaultImageList( nullptr )
-    , m_aResourceString( ModuleImageList )
+    , m_aResourceString( "private:resource/images/moduleimages" )
     , m_aListenerContainer( m_mutex )
     , m_bUseGlobal(_bUseGlobal)
     , m_bReadOnly( true )
     , m_bInitialized( false )
     , m_bModified( false )
-    , m_bConfigRead( false )
     , m_bDisposed( false )
 {
     for ( vcl::ImageType n : o3tl::enumrange<vcl::ImageType>() )
@@ -531,7 +533,7 @@ ImageManagerImpl::~ImageManagerImpl()
 
 void ImageManagerImpl::dispose()
 {
-    uno::Reference< uno::XInterface > xOwner(static_cast< OWeakObject* >(m_pOwner));
+    uno::Reference< uno::XInterface > xOwner(m_pOwner);
     css::lang::EventObject aEvent( xOwner );
     m_aListenerContainer.disposeAndClear( aEvent );
 
@@ -540,7 +542,6 @@ void ImageManagerImpl::dispose()
         m_xUserConfigStorage.clear();
         m_xUserImageStorage.clear();
         m_xUserRootCommit.clear();
-        m_bConfigRead = false;
         m_bModified = false;
         m_bDisposed = true;
 
@@ -824,7 +825,7 @@ throw (css::lang::IllegalArgumentException,
         }
     }
 
-    uno::Reference< uno::XInterface > xOwner(static_cast< OWeakObject* >(m_pOwner));
+    uno::Reference< uno::XInterface > xOwner(m_pOwner);
     // Notify listeners
     if ( pInsertedImages != nullptr )
     {
@@ -929,7 +930,7 @@ throw ( css::lang::IllegalArgumentException,
     }
 
     // Notify listeners
-    uno::Reference< uno::XInterface > xOwner(static_cast< OWeakObject* >(m_pOwner));
+    uno::Reference< uno::XInterface > xOwner(m_pOwner);
     if ( pRemovedImages != nullptr )
     {
         ConfigurationEvent aRemoveEvent;
@@ -1075,7 +1076,7 @@ void ImageManagerImpl::reload()
                 aGuard.clear();
 
                 // Now notify our listeners. Unlock mutex to prevent deadlocks
-                uno::Reference< uno::XInterface > xOwner(static_cast< OWeakObject* >(m_pOwner));
+                uno::Reference< uno::XInterface > xOwner(m_pOwner);
                 if ( pInsertedImages != nullptr )
                 {
                     ConfigurationEvent aInsertEvent;

@@ -58,7 +58,6 @@ static sal_Int16 lclAnovaLabels[] =
 };
 
 static const char strWildcardRange[] = "%RANGE%";
-static const char strWildcardNumber[] = "%NUMBER%";
 
 OUString lclCreateMultiParameterFormula(
             ScRangeList&        aRangeList, const OUString& aFormulaTemplate,
@@ -140,7 +139,7 @@ sal_Int16 ScAnalysisOfVarianceDialog::GetUndoNameId()
     return STR_ANALYSIS_OF_VARIANCE_UNDO_NAME;
 }
 
-IMPL_LINK_NOARG_TYPED( ScAnalysisOfVarianceDialog, FactorChanged, RadioButton&, void )
+IMPL_LINK_NOARG( ScAnalysisOfVarianceDialog, FactorChanged, RadioButton&, void )
 {
     FactorChanged();
 }
@@ -189,7 +188,7 @@ void ScAnalysisOfVarianceDialog::RowColumn(ScRangeList& rRangeList, AddressWalke
         for (size_t i = 0; i < rRangeList.size(); i++)
         {
             aTemplate.setTemplate(aLabelTemplate);
-            aTemplate.applyNumber(strWildcardNumber, i + 1);
+            aTemplate.applyNumber("%NUMBER%", i + 1);
             aOutput.writeString(aTemplate.getTemplate());
             if (pResultRange != nullptr)
                 pResultRange->aEnd = aOutput.current();

@@ -181,7 +181,7 @@ public:
                   const Reference< XContent >& rContent,
                   const Reference< XCommandEnvironment >& rEnv );
 
-    virtual ~Content_Impl();
+    virtual ~Content_Impl() override;
 
     const OUString&           getURL() const;
     Reference< XContent >          getContent();
@@ -337,6 +337,10 @@ Content::Content( const Content& rOther )
     m_xImpl = rOther.m_xImpl;
 }
 
+Content::Content( Content&& rOther )
+{
+    m_xImpl = std::move(rOther.m_xImpl);
+}
 
 // static
 bool Content::create( const OUString& rURL,
@@ -374,6 +378,11 @@ Content& Content::operator=( const Content& rOther )
     return *this;
 }
 
+Content& Content::operator=( Content&& rOther )
+{
+    m_xImpl = std::move(rOther.m_xImpl);
+    return *this;
+}
 
 Reference< XContent > Content::get() const
 {

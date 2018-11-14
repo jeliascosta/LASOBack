@@ -4,7 +4,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
 "POT-Creation-Date: 2016-11-09 14:10+0100\n"
-"PO-Revision-Date: 2016-12-27 00:24+0000\n"
+"PO-Revision-Date: 2017-10-06 22:09+0000\n"
 "Last-Translator: Adolfo Jayme Barrientos <fito@libreoffice.org>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: es\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Accelerator-Marker: ~\n"
 "X-Generator: Pootle 2.8\n"
-"X-POOTLE-MTIME: 1482798249.000000\n"
+"X-POOTLE-MTIME: 1507327742.000000\n"
 
 #: poolfmt.src
 msgctxt ""
@@ -166,7 +166,7 @@ msgctxt ""
 "STR_POOLCHR_HTML_STRONG\n"
 "string.text"
 msgid "Strong Emphasis"
-msgstr "Muy destacado"
+msgstr "Destaque mayor"
 
 #: poolfmt.src
 msgctxt ""
@@ -1415,7 +1415,7 @@ msgctxt ""
 "STR_POOLCHR_RUBYTEXT\n"
 "string.text"
 msgid "Rubies"
-msgstr "Guías de pronunciación «ruby»"
+msgstr "Texto ágata"
 
 #: poolfmt.src
 msgctxt ""
@@ -1698,7 +1698,7 @@ msgctxt ""
 "STR_AUTOFMTREDL_DETECT_URL+1\n"
 "string.text"
 msgid "URL recognition"
-msgstr "Reconocimiento de los URL"
+msgstr "Reconocer URL"
 
 #: utlui.src
 msgctxt ""
@@ -1734,7 +1734,7 @@ msgctxt ""
 "STR_AUTOFMTREDL_SET_TMPL_TEXT +1\n"
 "string.text"
 msgid "Set \"Text body\" Style"
-msgstr "Aplicar el estilo «Cuerpo de texto»"
+msgstr "Aplicar estilo «Cuerpo de texto»"
 
 #: utlui.src
 msgctxt ""
@@ -1743,7 +1743,7 @@ msgctxt ""
 "STR_AUTOFMTREDL_SET_TMPL_INDENT  +1\n"
 "string.text"
 msgid "Set \"Text body indent\" Style"
-msgstr "Aplicar el estilo «Cuerpo de texto con sangría»"
+msgstr "Aplicar estilo «Cuerpo de texto con sangría»"
 
 #: utlui.src
 msgctxt ""
@@ -1752,7 +1752,7 @@ msgctxt ""
 "STR_AUTOFMTREDL_SET_TMPL_NEG_INDENT  +1\n"
 "string.text"
 msgid "Set \"Hanging indent\" Style"
-msgstr "Aplicar el estilo «Sangría francesa»"
+msgstr "Aplicar estilo «Sangría francesa»"
 
 #: utlui.src
 msgctxt ""
@@ -1761,7 +1761,7 @@ msgctxt ""
 "STR_AUTOFMTREDL_SET_TMPL_TEXT_INDENT +1\n"
 "string.text"
 msgid "Set \"Text body indent\" Style"
-msgstr "Aplicar el estilo «Cuerpo de texto con sangría»"
+msgstr "Aplicar estilo «Cuerpo de texto con sangría»"
 
 #: utlui.src
 msgctxt ""
@@ -1770,7 +1770,7 @@ msgctxt ""
 "STR_AUTOFMTREDL_SET_TMPL_HEADLINE +1\n"
 "string.text"
 msgid "Set \"Heading $(ARG1)\" Style"
-msgstr "Aplicar el estilo «Título $(ARG1)»"
+msgstr "Aplicar estilo «Título $(ARG1)»"
 
 #: utlui.src
 msgctxt ""
@@ -1779,7 +1779,7 @@ msgctxt ""
 "STR_AUTOFMTREDL_SET_NUMBULET +1\n"
 "string.text"
 msgid "Set \"Bullet\" or \"Numbering\" Style"
-msgstr "Aplicar el estilo «Viñetas» o «Numeración»"
+msgstr "Aplicar estilo «Viñetas» o «Numeración»"
 
 #: utlui.src
 msgctxt ""
@@ -1797,7 +1797,7 @@ msgctxt ""
 "STR_AUTOFMTREDL_NON_BREAK_SPACE +1\n"
 "string.text"
 msgid "Add non breaking space"
-msgstr "Añadir espacio de no separación"
+msgstr "Añadir espacio indivisible"
 
 #: utlui.src
 msgctxt ""
@@ -1837,7 +1837,7 @@ msgctxt ""
 "STR_EVENT_MOUSECLICK_OBJECT\n"
 "string.text"
 msgid "Trigger hyperlink"
-msgstr "Hacer clic en el hiperenlace"
+msgstr "Activar hiperenlace"
 
 #: utlui.src
 msgctxt ""
@@ -1861,7 +1861,7 @@ msgctxt ""
 "STR_EVENT_IMAGE_ABORT\n"
 "string.text"
 msgid "Image loading terminated"
-msgstr "Finalizó la carga de la imagen"
+msgstr "Se suspendió la carga de la imagen"
 
 #: utlui.src
 msgctxt ""

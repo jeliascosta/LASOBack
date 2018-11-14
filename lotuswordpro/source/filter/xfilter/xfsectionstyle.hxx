@@ -75,7 +75,7 @@ class XFSectionStyle : public XFStyle
 public:
     XFSectionStyle();
 
-    virtual ~XFSectionStyle();
+    virtual ~XFSectionStyle() override;
 
 public:
     void    SetMarginLeft(double left);
@@ -93,7 +93,6 @@ private:
     double      m_fMarginRight;
     XFColor     m_aBackColor;
     XFColumns   *m_pColumns;
-    XFBGImage   *m_pBackImage;
 };
 
 #endif

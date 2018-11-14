@@ -164,12 +164,12 @@ class XclExpControlHelper : protected XclExpRoot
 {
 public:
     explicit            XclExpControlHelper( const XclExpRoot& rRoot );
-    virtual             ~XclExpControlHelper();
+    virtual             ~XclExpControlHelper() override;
 
 protected:
     /** Tries to get spreadsheet cell link and source range link from the passed shape. */
     void                ConvertSheetLinks(
-                            css::uno::Reference< css::drawing::XShape > xShape );
+                            css::uno::Reference< css::drawing::XShape > const & xShape );
 
     /** Returns the Excel token array of the cell link, or 0, if no link present. */
     inline const XclTokenArray* GetCellLinkTokArr() const { return mxCellLink.get(); }
@@ -196,7 +196,7 @@ protected:
 
 public:
     explicit            XclMacroHelper( const XclExpRoot& rRoot );
-    virtual             ~XclMacroHelper();
+    virtual             ~XclMacroHelper() override;
     /** Writes an ftMacro subrecord containing a macro link, or nothing, if no macro present. */
     void                WriteMacroSubRec( XclExpStream& rStrm  );
     /** Sets the name of a macro for object of passed type
@@ -211,8 +211,8 @@ public:
 class XclExpShapeObj : public XclObjAny, public XclMacroHelper
 {
 public:
-    explicit            XclExpShapeObj( XclExpObjectManager& rRoot, css::uno::Reference< css::drawing::XShape > xShape, ScDocument* pDoc );
-    virtual             ~XclExpShapeObj();
+    explicit            XclExpShapeObj( XclExpObjectManager& rRoot, css::uno::Reference< css::drawing::XShape > const & xShape, ScDocument* pDoc );
+    virtual             ~XclExpShapeObj() override;
 private:
     virtual void        WriteSubRecs( XclExpStream& rStrm ) override;
 };
@@ -226,7 +226,7 @@ class XclExpOcxControlObj : public XclObj, public XclExpControlHelper
 public:
     explicit            XclExpOcxControlObj(
                             XclExpObjectManager& rObjMgr,
-                            css::uno::Reference< css::drawing::XShape > xShape,
+                            css::uno::Reference< css::drawing::XShape > const & xShape,
                             const Rectangle* pChildAnchor,
                             const OUString& rClassName,
                             sal_uInt32 nStrmStart, sal_uInt32 nStrmSize );
@@ -248,7 +248,7 @@ class XclExpTbxControlObj : public XclObj, public XclMacroHelper
 public:
     explicit            XclExpTbxControlObj(
                             XclExpObjectManager& rObjMgr,
-                            css::uno::Reference< css::drawing::XShape > xShape,
+                            css::uno::Reference< css::drawing::XShape > const & xShape,
                             const Rectangle* pChildAnchor );
 
     /** Sets the name of a macro attached to this control.
@@ -291,9 +291,9 @@ class XclExpChartObj : public XclObj, protected XclExpRoot
 public:
     explicit            XclExpChartObj(
                             XclExpObjectManager& rObjMgr,
-                            css::uno::Reference< css::drawing::XShape > xShape,
+                            css::uno::Reference< css::drawing::XShape > const & xShape,
                             const Rectangle* pChildAnchor );
-    virtual             ~XclExpChartObj();
+    virtual             ~XclExpChartObj() override;
 
     /** Writes the OBJ record and the entire chart substream. */
     virtual void        Save( XclExpStream& rStrm ) override;
@@ -355,7 +355,6 @@ private:
     bool                mbAutoScale;    /// Auto scale text
     bool                mbLocked;       /// Position & Size locked
     bool                mbAutoFill;     /// Auto Fill Style
-    bool                mbAutoLine;     /// Auto Line Style
     bool                mbColHidden;    /// Column containing the comment is hidden
     bool                mbRowHidden;    /// Row containing the comment is hidden
     Rectangle           maCommentFrom;  /// From and From Offset
@@ -383,7 +382,7 @@ class XclExpObjectManager : public XclExpRoot
 {
 public:
     explicit            XclExpObjectManager( const XclExpRoot& rRoot );
-    virtual             ~XclExpObjectManager();
+    virtual             ~XclExpObjectManager() override;
 
     /** Creates a new DFF client anchor object. Caller takes ownership! May be
         overwritten in derived  classes. */

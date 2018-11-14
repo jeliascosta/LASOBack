@@ -87,15 +87,6 @@ void DrawViewShell::GetFormTextState(SfxItemSet& rSet)
 {
     const SdrMarkList& rMarkList = mpDrawView->GetMarkedObjectList();
     const SdrObject* pObj = nullptr;
-    SvxFontWorkDialog* pDlg = nullptr;
-
-    sal_uInt16 nId = SvxFontWorkChildWindow::GetChildWindowId();
-
-    if (GetViewFrame()->HasChildWindow(nId))
-    {
-        SfxChildWindow* pWnd = GetViewFrame()->GetChildWindow(nId);
-        pDlg = pWnd ? static_cast<SvxFontWorkDialog*>(pWnd->GetWindow()) : nullptr;
-    }
 
     if ( rMarkList.GetMarkCount() == 1 )
         pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();
@@ -125,9 +116,6 @@ void DrawViewShell::GetFormTextState(SfxItemSet& rSet)
     }
     else
     {
-        if ( pDlg )
-            pDlg->SetColorList(GetDoc()->GetColorList());
-
         SfxItemSet aSet( GetDoc()->GetPool() );
         mpDrawView->GetAttributes( aSet );
         rSet.Set( aSet );
@@ -195,12 +183,12 @@ void DrawViewShell::GetAnimationWinState( SfxItemSet& rSet )
     else // 1 Object
     {
         const SdrObject* pObj = rMarkList.GetMark( 0 )->GetMarkedSdrObj();
-        sal_uInt32 nInv = pObj->GetObjInventor();
-        sal_uInt16 nId  = pObj->GetObjIdentifier();
+        SdrInventor nInv = pObj->GetObjInventor();
+        sal_uInt16  nId  = pObj->GetObjIdentifier();
         // 1 selected group object
-        if( nInv == SdrInventor && nId == OBJ_GRUP )
+        if( nInv == SdrInventor::Default && nId == OBJ_GRUP )
             nValue = 3;
-        else if( nInv == SdrInventor && nId == OBJ_GRAF ) // Animated GIF ?
+        else if( nInv == SdrInventor::Default && nId == OBJ_GRAF ) // Animated GIF ?
         {
             sal_uInt16 nCount = 0;
 
@@ -288,20 +276,17 @@ void DrawViewShell::ExecBmpMask( SfxRequest& rReq )
 
             if ( pObj && !mpDrawView->IsTextEdit() )
             {
-                SdrGrafObj* pNewObj = pObj->Clone();
+                std::unique_ptr<SdrGrafObj> xNewObj(pObj->Clone());
                 bool bCont = true;
 
-                if( pNewObj->IsLinkedGraphic() )
+                if (xNewObj->IsLinkedGraphic())
                 {
                     ScopedVclPtrInstance< MessageDialog > aQueryBox( static_cast<vcl::Window*>(GetActiveWindow()),"QueryUnlinkImageDialog","modules/sdraw/ui/queryunlinkimagedialog.ui");
 
                     if (RET_YES == aQueryBox->Execute())
-                        pNewObj->ReleaseGraphicLink();
+                        xNewObj->ReleaseGraphicLink();
                     else
-                    {
-                        delete pNewObj;
                         bCont = false;
-                    }
                 }
 
                 SfxChildWindow* pWnd = GetViewFrame()->GetChildWindow(
@@ -310,21 +295,21 @@ void DrawViewShell::ExecBmpMask( SfxRequest& rReq )
                 assert(pBmpMask);
                 if (bCont && pBmpMask)
                 {
-                    const Graphic&  rOldGraphic = pNewObj->GetGraphic();
+                    const Graphic&  rOldGraphic = xNewObj->GetGraphic();
                     const Graphic   aNewGraphic(pBmpMask->Mask(rOldGraphic));
 
                     if( aNewGraphic != rOldGraphic )
                     {
                         SdrPageView* pPV = mpDrawView->GetSdrPageView();
 
-                        pNewObj->SetEmptyPresObj( false );
-                        pNewObj->SetGraphic(pBmpMask->Mask(pNewObj->GetGraphic()));
+                        xNewObj->SetEmptyPresObj(false);
+                        xNewObj->SetGraphic(pBmpMask->Mask(xNewObj->GetGraphic()));
 
                         OUString aStr( mpDrawView->GetDescriptionOfMarkedObjects() );
                         aStr += " " + SD_RESSTR(STR_EYEDROPPER);
 
                         mpDrawView->BegUndo( aStr );
-                        mpDrawView->ReplaceObjectAtView( pObj, *pPV, pNewObj );
+                        mpDrawView->ReplaceObjectAtView(pObj, *pPV, xNewObj.release());
                         mpDrawView->EndUndo();
                     }
                 }
@@ -341,16 +326,7 @@ void DrawViewShell::GetBmpMaskState( SfxItemSet& rSet )
 {
     const SdrMarkList&  rMarkList = mpDrawView->GetMarkedObjectList();
     const SdrObject*    pObj = nullptr;
-    sal_uInt16              nId = SvxBmpMaskChildWindow::GetChildWindowId();
     bool                bEnable = false;
-
-    if ( GetViewFrame()->HasChildWindow( nId ) )
-    {
-        SfxChildWindow* pWnd = GetViewFrame()->GetChildWindow(nId);
-        SvxBmpMask* pDlg = pWnd ? static_cast<SvxBmpMask*>(pWnd->GetWindow()) : nullptr;
-        if (pDlg && pDlg->NeedsColorList())
-            pDlg->SetColorList(GetDoc()->GetColorList());
-    }
 
     if ( rMarkList.GetMarkCount() == 1 )
         pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();

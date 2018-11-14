@@ -31,7 +31,7 @@ class FormulaTreeNode;
 class UnhandledToken
 {
 public:
-    UnhandledToken( const char* m, const std::string& fn = "", int ln = 0 );
+    UnhandledToken( const char* m, const std::string& fn, int ln );
 
     std::string mMessage;
     std::string mFile;
@@ -54,7 +54,7 @@ public:
 class Unhandled
 {
 public:
-    Unhandled( const std::string& fn = "", int ln = 0 );
+    Unhandled( const std::string& fn, int ln );
 
     std::string mFile;
     int mLineNumber;
@@ -89,7 +89,7 @@ public:
     /// delete copy-assignment operator
     const DynamicKernelArgument& operator=( const DynamicKernelArgument& ) = delete;
 
-    DynamicKernelArgument( const ScCalcConfig& config, const std::string& s, FormulaTreeNodeRef ft );
+    DynamicKernelArgument( const ScCalcConfig& config, const std::string& s, const FormulaTreeNodeRef& ft );
     virtual ~DynamicKernelArgument() {}
 
     /// Generate declaration
@@ -143,8 +143,8 @@ typedef std::shared_ptr<DynamicKernelArgument> DynamicKernelArgumentRef;
 class VectorRef : public DynamicKernelArgument
 {
 public:
-    VectorRef( const ScCalcConfig& config, const std::string& s, FormulaTreeNodeRef ft, int index = 0 );
-    virtual ~VectorRef();
+    VectorRef( const ScCalcConfig& config, const std::string& s, const FormulaTreeNodeRef& ft, int index = 0 );
+    virtual ~VectorRef() override;
 
     /// Generate declaration
     virtual void GenDecl( std::stringstream& ss ) const override;
@@ -197,7 +197,7 @@ public:
     typedef std::vector<DynamicKernelArgumentRef> SubArguments;
     virtual void GenSlidingWindowFunction( std::stringstream&,
         const std::string&, SubArguments& ) = 0;
-    virtual ~SlidingFunctionBase() { }
+    virtual ~SlidingFunctionBase() override { }
 };
 
 class Normal : public SlidingFunctionBase

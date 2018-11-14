@@ -50,13 +50,6 @@ enum ScrollingMode
     ScrollingAuto
 };
 
-enum SizeSelector
-{
-    SIZE_ABS,
-    SIZE_PERCENT,
-    SIZE_REL
-};
-
 #define SPACING_NOT_SET     -1L
 #define SIZE_NOT_SET        -1L
 
@@ -69,15 +62,11 @@ class SFX2_DLLPUBLIC SfxFrameDescriptor
     INetURLObject           aActualURL;
     OUString                aName;
     Size                    aMargin;
-    long                    nWidth;
     ScrollingMode           eScroll;
-    SizeSelector            eSizeSelector;
     bool                    bHasBorder;
     bool                    bHasBorderSet;
-    sal_uInt16              nItemId;
     bool                    bResizeHorizontal;
     bool                    bResizeVertical;
-    bool                    bHasUI;
     bool                    bReadOnly;
     std::unique_ptr< SfxFrameDescriptor_Impl > pImpl;
 
@@ -90,12 +79,9 @@ public:
     const INetURLObject&    GetURL() const
                             { return aURL; }
     void                    SetURL( const OUString& rURL );
-    void                    SetActualURL( const INetURLObject& rURL );
     void                    SetActualURL( const OUString& rURL );
     void                    SetReadOnly( bool bSet ) { bReadOnly = bSet;}
-    bool                    IsReadOnly(  ) const { return bReadOnly;}
     void                    SetEditable( bool bSet );
-    bool                    IsEditable() const;
 
                             // Size
     void                    SetResizable( bool bRes )
@@ -130,9 +116,6 @@ public:
                             { return bHasBorderSet; }
     void                    ResetBorder()
                             { bHasBorder = false; bHasBorderSet = false; }
-
-                            // Copy for example for Views
-    SfxFrameDescriptor*     Clone() const;
 };
 
 #endif // INCLUDED_SFX2_FRMDESCR_HXX

@@ -3737,11 +3737,6 @@
           <value xml:lang="x-no-translate"></value><value xml:lang="en-US">~AutoCorrect...</value>
         </prop>
       </node>
-      <node oor:name=".uno:AutoPilotPresentations" oor:op="replace">
-        <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="x-no-translate"></value><value xml:lang="en-US">AutoPilot: Presentation</value>
-        </prop>
-      </node>
       <node oor:name=".uno:AutoPilotAgenda" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
           <value xml:lang="x-no-translate"></value><value xml:lang="en-US">AutoPilot: Agenda</value>
@@ -4230,14 +4225,6 @@
       <node oor:name=".uno:SearchDialog" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
           <value xml:lang="x-no-translate"></value><value xml:lang="en-US">~Find &amp; Replace...</value>
-        </prop>
-        <prop oor:name="Properties" oor:type="xs:int">
-          <value>1</value>
-        </prop>
-      </node>
-      <node oor:name=".uno:HelperDialog" oor:op="replace">
-        <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="x-no-translate"></value><value xml:lang="en-US">Help ~Agent</value>
         </prop>
         <prop oor:name="Properties" oor:type="xs:int">
           <value>1</value>

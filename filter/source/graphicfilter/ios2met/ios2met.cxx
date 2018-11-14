@@ -54,10 +54,10 @@ enum PenStyle { PEN_NULL, PEN_SOLID, PEN_DOT, PEN_DASH, PEN_DASHDOT };
 #define BegObEnv1Magic 0xC7A8 /* Begin Object Environment Group */
 #define EndObEnv1Magic 0xC7A9 /* End Object Environment Group   */
 
-#define BegGrfObjMagic 0xBBA8 /* Begin Graphics Object   */
-#define EndGrfObjMagic 0xBBA9 /* End Graphics Object     */
-#define DscGrfObjMagic 0xBBA6 /* Graphics Data Descritor */
-#define DatGrfObjMagic 0xBBEE /* Graphics Data           */
+#define BegGrfObjMagic 0xBBA8 /* Begin Graphics Object    */
+#define EndGrfObjMagic 0xBBA9 /* End Graphics Object      */
+#define DscGrfObjMagic 0xBBA6 /* Graphics Data Descriptor */
+#define DatGrfObjMagic 0xBBEE /* Graphics Data            */
 
 #define MapCodFntMagic 0x8AAB /* Map Coded Font    */
 #define MapDatResMagic 0xC3AB /* Map Data Resource */
@@ -311,16 +311,16 @@ struct OSAttr
         , nPushOrder(0)
         , nIvAttrA(0)
         , nIvAttrP(0)
-        , eLinMix(ROP_OVERPAINT)
-        , eLinBgMix(ROP_OVERPAINT)
-        , eChrMix(ROP_OVERPAINT)
-        , eChrBgMix(ROP_OVERPAINT)
-        , eMrkMix(ROP_OVERPAINT)
-        , eMrkBgMix(ROP_OVERPAINT)
-        , ePatMix(ROP_OVERPAINT)
-        , ePatBgMix(ROP_OVERPAINT)
-        , eImgMix(ROP_OVERPAINT)
-        , eImgBgMix(ROP_OVERPAINT)
+        , eLinMix(RasterOp::OverPaint)
+        , eLinBgMix(RasterOp::OverPaint)
+        , eChrMix(RasterOp::OverPaint)
+        , eChrBgMix(RasterOp::OverPaint)
+        , eMrkMix(RasterOp::OverPaint)
+        , eMrkBgMix(RasterOp::OverPaint)
+        , ePatMix(RasterOp::OverPaint)
+        , ePatBgMix(RasterOp::OverPaint)
+        , eImgMix(RasterOp::OverPaint)
+        , eImgBgMix(RasterOp::OverPaint)
         , nArcP(0)
         , nArcQ(0)
         , nArcR(0)
@@ -460,12 +460,12 @@ OS2METReader::~OS2METReader()
 
 bool OS2METReader::IsLineInfo()
 {
-    return ( ! ( aLineInfo.IsDefault() || ( aLineInfo.GetStyle() == LINE_NONE ) || ( pVirDev->GetLineColor() == COL_TRANSPARENT ) ) );
+    return ( ! ( aLineInfo.IsDefault() || ( aLineInfo.GetStyle() == LineStyle::NONE ) || ( pVirDev->GetLineColor() == COL_TRANSPARENT ) ) );
 }
 
 void OS2METReader::DrawPolyLine( const tools::Polygon& rPolygon )
 {
-    if ( aLineInfo.GetStyle() == LINE_DASH || ( aLineInfo.GetWidth() > 1 ) )
+    if ( aLineInfo.GetStyle() == LineStyle::Dash || ( aLineInfo.GetWidth() > 1 ) )
         pVirDev->DrawPolyLine( rPolygon, aLineInfo );
     else
         pVirDev->DrawPolyLine( rPolygon );
@@ -683,7 +683,7 @@ void OS2METReader::ChangeBrush(const Color& rPatColor, const Color& /*rBGColor*/
 
 void OS2METReader::SetPen( const Color& rColor, sal_uInt16 nLineWidth, PenStyle ePenStyle )
 {
-    LineStyle eLineStyle( LINE_SOLID );
+    LineStyle eLineStyle( LineStyle::Solid );
 
     if ( pVirDev->GetLineColor() != rColor )
         pVirDev->SetLineColor( rColor );
@@ -694,7 +694,7 @@ void OS2METReader::SetPen( const Color& rColor, sal_uInt16 nLineWidth, PenStyle 
     switch ( ePenStyle )
     {
         case PEN_NULL :
-            eLineStyle = LINE_NONE;
+            eLineStyle = LineStyle::NONE;
         break;
         case PEN_DASHDOT :
             nDashCount++;
@@ -710,7 +710,7 @@ void OS2METReader::SetPen( const Color& rColor, sal_uInt16 nLineWidth, PenStyle 
             aLineInfo.SetDistance( nLineWidth );
             aLineInfo.SetDotLen( nLineWidth );
             aLineInfo.SetDashLen( nLineWidth << 2 );
-            eLineStyle = LINE_DASH;
+            eLineStyle = LineStyle::Dash;
         break;
         case PEN_SOLID:
         break;  // -Wall not handled...
@@ -814,10 +814,10 @@ Point OS2METReader::ReadPoint( const bool bAdjustBoundRect )
 RasterOp OS2METReader::OS2MixToRasterOp(sal_uInt8 nMix)
 {
     switch (nMix) {
-        case 0x0c: return ROP_INVERT;
-        case 0x04: return ROP_XOR;
-        case 0x0b: return ROP_XOR;
-        default:   return ROP_OVERPAINT;
+        case 0x0c: return RasterOp::Invert;
+        case 0x04: return RasterOp::Xor;
+        case 0x0b: return RasterOp::Xor;
+        default:   return RasterOp::OverPaint;
     }
 }
 
@@ -2162,9 +2162,9 @@ void OS2METReader::ReadDsc(sal_uInt16 nDscID, sal_uInt16 /*nDscLen*/)
             ReadCoord(b32);
 
             if (nUnitType==0x00 && xr>0 && yr>0)
-                aGlobMapMode=MapMode(MAP_INCH,Point(0,0),Fraction(10,xr),Fraction(10,yr));
+                aGlobMapMode=MapMode(MapUnit::MapInch,Point(0,0),Fraction(10,xr),Fraction(10,yr));
             else if (nUnitType==0x01 && xr>0 && yr>0)
-                aGlobMapMode=MapMode(MAP_CM,Point(0,0),Fraction(10,xr),Fraction(10,yr));
+                aGlobMapMode=MapMode(MapUnit::MapCM,Point(0,0),Fraction(10,xr),Fraction(10,yr));
             else
                 aGlobMapMode=MapMode();
 
@@ -2260,7 +2260,7 @@ void OS2METReader::ReadImageData(sal_uInt16 nDataID, sal_uInt16 nDataLen)
             // OK, now the map data is being pushed. Unfortunately OS2 and BMP
             // do have a different RGB ordering when using 24-bit
             std::unique_ptr<sal_uInt8[]> pBuf(new sal_uInt8[nDataLen]);
-            pOS2MET->Read(pBuf.get(),nDataLen);
+            pOS2MET->ReadBytes(pBuf.get(), nDataLen);
             if (p->nBitsPerPixel==24) {
                 sal_uLong i, j, nAlign, nBytesPerLine;
                 sal_uInt8 nTemp;
@@ -2278,7 +2278,7 @@ void OS2METReader::ReadImageData(sal_uInt16 nDataID, sal_uInt16 nDataLen)
                     }
                 }
             }
-            p->pBMP->Write(pBuf.get(),nDataLen);
+            p->pBMP->WriteBytes(pBuf.get(), nDataLen);
             p->nMapPos+=nDataLen;
             break;
         }
@@ -2321,7 +2321,7 @@ void OS2METReader::ReadFont(sal_uInt16 nFieldSize)
                     case 0x08: { // Font Typeface
                         char str[33];
                         pOS2MET->SeekRel(1);
-                        pOS2MET->Read( &str, 32 );
+                        pOS2MET->ReadBytes( &str, 32 );
                         str[ 32 ] = 0;
                         OUString aStr( str, strlen(str), osl_getThreadTextEncoding() );
                         if ( aStr.compareToIgnoreAsciiCase( "Helv" ) == 0 )
@@ -2588,8 +2588,8 @@ void OS2METReader::ReadField(sal_uInt16 nFieldType, sal_uInt16 nFieldSize)
                 pOrdFile->SetEndian(SvStreamEndian::LITTLE);
             }
             std::unique_ptr<sal_uInt8[]> pBuf(new sal_uInt8[nFieldSize]);
-            pOS2MET->Read(pBuf.get(),nFieldSize);
-            pOrdFile->Write(pBuf.get(),nFieldSize);
+            pOS2MET->ReadBytes(pBuf.get(), nFieldSize);
+            pOrdFile->WriteBytes(pBuf.get(), nFieldSize);
             break;
         }
         case MapCodFntMagic:
@@ -2622,24 +2622,24 @@ void OS2METReader::ReadOS2MET( SvStream & rStreamOS2MET, GDIMetaFile & rGDIMetaF
 
     aDefAttr.aLinCol     =Color(COL_BLACK);
     aDefAttr.aLinBgCol   =Color(COL_WHITE);
-    aDefAttr.eLinMix     =ROP_OVERPAINT;
-    aDefAttr.eLinBgMix   =ROP_OVERPAINT;
+    aDefAttr.eLinMix     =RasterOp::OverPaint;
+    aDefAttr.eLinBgMix   =RasterOp::OverPaint;
     aDefAttr.aChrCol     =Color(COL_BLACK);
     aDefAttr.aChrBgCol   =Color(COL_WHITE);
-    aDefAttr.eChrMix     =ROP_OVERPAINT;
-    aDefAttr.eChrBgMix   =ROP_OVERPAINT;
+    aDefAttr.eChrMix     =RasterOp::OverPaint;
+    aDefAttr.eChrBgMix   =RasterOp::OverPaint;
     aDefAttr.aMrkCol     =Color(COL_BLACK);
     aDefAttr.aMrkBgCol   =Color(COL_WHITE);
-    aDefAttr.eMrkMix     =ROP_OVERPAINT;
-    aDefAttr.eMrkBgMix   =ROP_OVERPAINT;
+    aDefAttr.eMrkMix     =RasterOp::OverPaint;
+    aDefAttr.eMrkBgMix   =RasterOp::OverPaint;
     aDefAttr.aPatCol     =Color(COL_BLACK);
     aDefAttr.aPatBgCol   =Color(COL_WHITE);
-    aDefAttr.ePatMix     =ROP_OVERPAINT;
-    aDefAttr.ePatBgMix   =ROP_OVERPAINT;
+    aDefAttr.ePatMix     =RasterOp::OverPaint;
+    aDefAttr.ePatBgMix   =RasterOp::OverPaint;
     aDefAttr.aImgCol     =Color(COL_BLACK);
     aDefAttr.aImgBgCol   =Color(COL_WHITE);
-    aDefAttr.eImgMix     =ROP_OVERPAINT;
-    aDefAttr.eImgBgMix   =ROP_OVERPAINT;
+    aDefAttr.eImgMix     =RasterOp::OverPaint;
+    aDefAttr.eImgBgMix   =RasterOp::OverPaint;
     aDefAttr.nArcP       =1;
     aDefAttr.nArcQ       =1;
     aDefAttr.nArcR       =0;

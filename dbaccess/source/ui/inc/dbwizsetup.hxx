@@ -98,7 +98,7 @@ public:
         ,const css::uno::Reference< css::uno::XComponentContext >& _rxORB
         ,const css::uno::Any& _aDataSourceName
         );
-    virtual ~ODbTypeWizDialogSetup();
+    virtual ~ODbTypeWizDialogSetup() override;
     virtual void dispose() override;
 
     virtual const SfxItemSet* getOutputSet() const override;
@@ -137,7 +137,6 @@ protected:
     enum ApplyResult
     {
         AR_LEAVE_MODIFIED,      // something was modified and has successfully been committed
-        AR_LEAVE_UNCHANGED,     // no changes were made
         AR_KEEP                 // don't leave the page (e.g. because an error occurred)
     };
 
@@ -166,13 +165,12 @@ private:
 
     void updateTypeDependentStates();
     bool callSaveAsDialog();
-    bool IsConnectionUrlRequired();
-    DECL_LINK_TYPED(OnTypeSelected, OGeneralPage&, void);
-    DECL_LINK_TYPED(OnChangeCreationMode, OGeneralPageWizard&, void);
-    DECL_LINK_TYPED(OnRecentDocumentSelected, OGeneralPageWizard&, void);
-    DECL_LINK_TYPED(OnSingleDocumentChosen, OGeneralPageWizard&, void);
-    DECL_LINK_TYPED(ImplClickHdl, OMySQLIntroPageSetup*, void);
-    DECL_LINK_TYPED(ImplModifiedHdl, OGenericAdministrationPage const *, void);
+    DECL_LINK(OnTypeSelected, OGeneralPage&, void);
+    DECL_LINK(OnChangeCreationMode, OGeneralPageWizard&, void);
+    DECL_LINK(OnRecentDocumentSelected, OGeneralPageWizard&, void);
+    DECL_LINK(OnSingleDocumentChosen, OGeneralPageWizard&, void);
+    DECL_LINK(ImplClickHdl, OMySQLIntroPageSetup*, void);
+    DECL_LINK(ImplModifiedHdl, OGenericAdministrationPage const *, void);
 };
 
 }   // namespace dbaui

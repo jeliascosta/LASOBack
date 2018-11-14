@@ -169,15 +169,15 @@ void ImplConvertTransparentAction( GDIMetaFile&        o_rMtf,
 
             // assume white background for alpha blending
             Color aLineColor( rStateOutDev.GetLineColor() );
-            aLineColor.SetRed( static_cast<sal_uInt8>( (255L*nTransparency + (100L - nTransparency)*aLineColor.GetRed()) / 100L ) );
-            aLineColor.SetGreen( static_cast<sal_uInt8>( (255L*nTransparency + (100L - nTransparency)*aLineColor.GetGreen()) / 100L ) );
-            aLineColor.SetBlue( static_cast<sal_uInt8>( (255L*nTransparency + (100L - nTransparency)*aLineColor.GetBlue()) / 100L ) );
+            aLineColor.SetRed( static_cast<sal_uInt8>( (255*nTransparency + (100 - nTransparency)*aLineColor.GetRed()) / 100 ) );
+            aLineColor.SetGreen( static_cast<sal_uInt8>( (255*nTransparency + (100 - nTransparency)*aLineColor.GetGreen()) / 100 ) );
+            aLineColor.SetBlue( static_cast<sal_uInt8>( (255*nTransparency + (100 - nTransparency)*aLineColor.GetBlue()) / 100 ) );
             o_rMtf.AddAction( new MetaLineColorAction(aLineColor, true) );
 
             Color aFillColor( rStateOutDev.GetFillColor() );
-            aFillColor.SetRed( static_cast<sal_uInt8>( (255L*nTransparency + (100L - nTransparency)*aFillColor.GetRed()) / 100L ) );
-            aFillColor.SetGreen( static_cast<sal_uInt8>( (255L*nTransparency + (100L - nTransparency)*aFillColor.GetGreen()) / 100L ) );
-            aFillColor.SetBlue( static_cast<sal_uInt8>( (255L*nTransparency + (100L - nTransparency)*aFillColor.GetBlue()) / 100L ) );
+            aFillColor.SetRed( static_cast<sal_uInt8>( (255*nTransparency + (100 - nTransparency)*aFillColor.GetRed()) / 100 ) );
+            aFillColor.SetGreen( static_cast<sal_uInt8>( (255*nTransparency + (100 - nTransparency)*aFillColor.GetGreen()) / 100 ) );
+            aFillColor.SetBlue( static_cast<sal_uInt8>( (255*nTransparency + (100 - nTransparency)*aFillColor.GetBlue()) / 100 ) );
             o_rMtf.AddAction( new MetaFillColorAction(aFillColor, true) );
         }
 
@@ -1059,11 +1059,11 @@ bool OutputDevice::RemoveTransparenciesFromMetaFile( const GDIMetaFile& rInMtf, 
             // add aTotalComponents as a new entry to aCCList
             aCCList.push_back( aTotalComponents );
 
-            DBG_ASSERT( !aTotalComponents.aComponentList.empty(),
+            SAL_WARN_IF( aTotalComponents.aComponentList.empty(), "vcl",
                         "Printer::GetPreparedMetaFile empty component" );
-            DBG_ASSERT( !aTotalComponents.aBounds.IsEmpty() || (aTotalComponents.aComponentList.size() == 1),
+            SAL_WARN_IF( aTotalComponents.aBounds.IsEmpty() && (aTotalComponents.aComponentList.size() != 1), "vcl",
                         "Printer::GetPreparedMetaFile non-output generating actions must be solitary");
-            DBG_ASSERT( !aTotalComponents.bIsFullyTransparent || (aTotalComponents.aComponentList.size() == 1),
+            SAL_WARN_IF( aTotalComponents.bIsFullyTransparent && (aTotalComponents.aComponentList.size() != 1), "vcl",
                         "Printer::GetPreparedMetaFile fully transparent actions must be solitary");
         }
 
@@ -1111,7 +1111,7 @@ bool OutputDevice::RemoveTransparenciesFromMetaFile( const GDIMetaFile& rInMtf, 
         if( mpPDFWriter )
         {
             aTmpSize = mpPDFWriter->getCurPageSize();
-            aTmpSize = LogicToPixel( aTmpSize, MapMode( MAP_POINT ) );
+            aTmpSize = LogicToPixel( aTmpSize, MapMode( MapUnit::MapPoint ) );
 
             // also add error code to PDFWriter
             mpPDFWriter->insertError( vcl::PDFWriter::Warning_Transparency_Converted );
@@ -1169,13 +1169,13 @@ bool OutputDevice::RemoveTransparenciesFromMetaFile( const GDIMetaFile& rInMtf, 
                             aDstPtPix.X() = aBoundRect.Left();
                             aDstSzPix = bTiling ? Size( MAX_TILE_WIDTH, MAX_TILE_HEIGHT ) : aBoundRect.GetSize();
 
-                            if( ( aDstPtPix.Y() + aDstSzPix.Height() - 1L ) > aBoundRect.Bottom() )
-                                aDstSzPix.Height() = aBoundRect.Bottom() - aDstPtPix.Y() + 1L;
+                            if( ( aDstPtPix.Y() + aDstSzPix.Height() - 1 ) > aBoundRect.Bottom() )
+                                aDstSzPix.Height() = aBoundRect.Bottom() - aDstPtPix.Y() + 1;
 
                             while( aDstPtPix.X() <= aBoundRect.Right() )
                             {
-                                if( ( aDstPtPix.X() + aDstSzPix.Width() - 1L ) > aBoundRect.Right() )
-                                    aDstSzPix.Width() = aBoundRect.Right() - aDstPtPix.X() + 1L;
+                                if( ( aDstPtPix.X() + aDstSzPix.Width() - 1 ) > aBoundRect.Right() )
+                                    aDstSzPix.Width() = aBoundRect.Right() - aDstPtPix.X() + 1;
 
                                 if( !Rectangle( aDstPtPix, aDstSzPix ).Intersection( aBoundRect ).IsEmpty() &&
                                     aPaintVDev->SetOutputSizePixel( aDstSzPix ) )
@@ -1346,7 +1346,7 @@ void Printer::DrawGradientEx( OutputDevice* pOut, const Rectangle& rRect, const 
 
     if( rPrinterOptions.IsReduceGradients() )
     {
-        if( PRINTER_GRADIENT_STRIPES == rPrinterOptions.GetReducedGradientMode() )
+        if( PrinterGradientMode::Stripes == rPrinterOptions.GetReducedGradientMode() )
         {
             if( !rGradient.GetSteps() || ( rGradient.GetSteps() > rPrinterOptions.GetReducedGradientStepCount() ) )
             {
@@ -1362,12 +1362,12 @@ void Printer::DrawGradientEx( OutputDevice* pOut, const Rectangle& rRect, const 
         {
             const Color&    rStartColor = rGradient.GetStartColor();
             const Color&    rEndColor = rGradient.GetEndColor();
-            const long      nR = ( ( (long) rStartColor.GetRed() * rGradient.GetStartIntensity() ) / 100L +
-                                   ( (long) rEndColor.GetRed() * rGradient.GetEndIntensity() ) / 100L ) >> 1;
-            const long      nG = ( ( (long) rStartColor.GetGreen() * rGradient.GetStartIntensity() ) / 100L +
-                                   ( (long) rEndColor.GetGreen() * rGradient.GetEndIntensity() ) / 100L ) >> 1;
-            const long      nB = ( ( (long) rStartColor.GetBlue() * rGradient.GetStartIntensity() ) / 100L +
-                                   ( (long) rEndColor.GetBlue() * rGradient.GetEndIntensity() ) / 100L ) >> 1;
+            const long      nR = ( ( (long) rStartColor.GetRed() * rGradient.GetStartIntensity() ) / 100 +
+                                   ( (long) rEndColor.GetRed() * rGradient.GetEndIntensity() ) / 100 ) >> 1;
+            const long      nG = ( ( (long) rStartColor.GetGreen() * rGradient.GetStartIntensity() ) / 100 +
+                                   ( (long) rEndColor.GetGreen() * rGradient.GetEndIntensity() ) / 100 ) >> 1;
+            const long      nB = ( ( (long) rStartColor.GetBlue() * rGradient.GetStartIntensity() ) / 100 +
+                                   ( (long) rEndColor.GetBlue() * rGradient.GetEndIntensity() ) / 100 ) >> 1;
             const Color     aColor( (sal_uInt8) nR, (sal_uInt8) nG, (sal_uInt8) nB );
 
             pOut->Push( PushFlags::LINECOLOR | PushFlags::FILLCOLOR );

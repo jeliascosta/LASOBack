@@ -23,7 +23,6 @@
 #include <mailmergehelper.hxx>
 #include <vcl/lstbox.hxx>
 #include <vcl/button.hxx>
-#include <svtools/stdctrl.hxx>
 class SwMailMergeWizard;
 
 class SwMailMergeDocSelectPage : public svt::OWizardPage
@@ -44,14 +43,14 @@ class SwMailMergeDocSelectPage : public svt::OWizardPage
 
     VclPtr<SwMailMergeWizard>  m_pWizard;
 
-    DECL_LINK_TYPED(DocSelectHdl, Button*, void);
-    DECL_LINK_TYPED(FileSelectHdl, Button*, void);
+    DECL_LINK(DocSelectHdl, Button*, void);
+    DECL_LINK(FileSelectHdl, Button*, void);
 
     virtual bool    commitPage( ::svt::WizardTypes::CommitPageReason _eReason ) override;
 
 public:
         SwMailMergeDocSelectPage( SwMailMergeWizard* _pParent);
-        virtual ~SwMailMergeDocSelectPage();
+        virtual ~SwMailMergeDocSelectPage() override;
     virtual void dispose() override;
 
 };

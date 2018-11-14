@@ -49,7 +49,7 @@ class SwXFootnoteProperties : public cppu::WeakAggImplHelper2
     SwDoc*                      pDoc;
     const SfxItemPropertySet*   m_pPropertySet;
 protected:
-    virtual ~SwXFootnoteProperties();
+    virtual ~SwXFootnoteProperties() override;
 public:
     SwXFootnoteProperties(SwDoc* pDoc);
 
@@ -79,7 +79,7 @@ class SwXEndnoteProperties : public cppu::WeakAggImplHelper2
     SwDoc*                      pDoc;
     const SfxItemPropertySet*   m_pPropertySet;
 protected:
-    virtual ~SwXEndnoteProperties();
+    virtual ~SwXEndnoteProperties() override;
 public:
     SwXEndnoteProperties(SwDoc* pDoc);
 
@@ -109,7 +109,7 @@ class SwXLineNumberingProperties : public cppu::WeakAggImplHelper2
     SwDoc*                      pDoc;
     const SfxItemPropertySet*   m_pPropertySet;
 protected:
-    virtual ~SwXLineNumberingProperties();
+    virtual ~SwXLineNumberingProperties() override;
 public:
     SwXLineNumberingProperties(SwDoc* pDoc);
 
@@ -152,7 +152,7 @@ private:
     const SfxItemPropertySet*   m_pPropertySet;
     bool                        bOwnNumRuleCreated;
 protected:
-    virtual ~SwXNumberingRules();
+    virtual ~SwXNumberingRules() override;
 
 public:
     SwXNumberingRules(SwDocShell& rDocSh);  // chapter numbering
@@ -223,11 +223,11 @@ public:
 class SwXChapterNumbering : public SwXNumberingRules
 {
 protected:
-    virtual ~SwXChapterNumbering();
+    virtual ~SwXChapterNumbering() override;
 public:
     SwXChapterNumbering(SwDocShell& rDocSh);
 
-    void    Invalidate() {SwXNumberingRules::Invalidate();}
+    using SwXNumberingRules::Invalidate;
 
     //XServiceInfo
     virtual OUString SAL_CALL getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
@@ -261,9 +261,9 @@ class SwXTextColumns : public cppu::WeakAggImplHelper4
     sal_Int8                    nSepLineStyle;
 
 protected:
-    virtual ~SwXTextColumns();
+    virtual ~SwXTextColumns() override;
 public:
-    SwXTextColumns(sal_uInt16 nColCount);
+    SwXTextColumns();
     SwXTextColumns(const SwFormatCol& rFormatCol);
 
     static const css::uno::Sequence< sal_Int8 > & getUnoTunnelId();

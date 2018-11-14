@@ -59,7 +59,7 @@ static rtl_TextEncoding lcl_GetDefaultTextEncodingForRTF()
 // -------------- Methods --------------------
 
 SvxRTFParser::SvxRTFParser( SfxItemPool& rPool, SvStream& rIn,
-            uno::Reference<document::XDocumentProperties> i_xDocProps )
+            uno::Reference<document::XDocumentProperties> const & i_xDocProps )
     : SvRTFParser( rIn, 5 )
     , aPlainMap(rPool)
     , aPardMap(rPool)
@@ -112,9 +112,9 @@ SvParserState SvxRTFParser::CallParser()
     if( !aColorTbl.empty() )
         ClearColorTbl();
     if (!m_FontTable.empty())
-        ClearFontTbl();
+        m_FontTable.clear();
     if (!m_StyleTable.empty())
-        ClearStyleTbl();
+        m_StyleTable.clear();
     if( !aAttrStack.empty() )
         ClearAttrStack();
 
@@ -580,16 +580,6 @@ void SvxRTFParser::ReadFontTable()
         SetDefault( RTF_DEFF, nDfltFont );
 }
 
-void SvxRTFParser::ReadBitmapData()
-{
-    SvRTFParser::ReadBitmapData();
-}
-
-void SvxRTFParser::ReadOLEData()
-{
-    SvRTFParser::ReadOLEData();
-}
-
 OUString& SvxRTFParser::GetTextToEndGroup( OUString& rStr )
 {
     rStr.clear();
@@ -757,16 +747,6 @@ void SvxRTFParser::ClearColorTbl()
     }
 }
 
-void SvxRTFParser::ClearFontTbl()
-{
-    m_FontTable.clear();
-}
-
-void SvxRTFParser::ClearStyleTbl()
-{
-    m_StyleTable.clear();
-}
-
 void SvxRTFParser::ClearAttrStack()
 {
     for( size_t nCnt = aAttrStack.size(); nCnt; --nCnt )
@@ -835,7 +815,7 @@ void SvxRTFParser::ClearStyleAttr_( SvxRTFItemStackType& rStkType )
     {
         for( sal_uInt16 nWhich = aIter.GetCurWhich(); nWhich; nWhich = aIter.NextWhich() )
         {
-            if( SFX_WHICH_MAX > nWhich &&
+            if (SfxItemPool::IsWhich(nWhich) &&
                 SfxItemState::SET == rSet.GetItemState( nWhich, false, &pItem ) &&
                      rPool.GetDefaultItem( nWhich ) == *pItem )
                 rSet.ClearItem( nWhich );       // delete
@@ -856,7 +836,7 @@ void SvxRTFParser::ClearStyleAttr_( SvxRTFItemStackType& rStkType )
                     && *pItem == *pSItem )
                     rSet.ClearItem( nWhich );       // delete
             }
-            else if( SFX_WHICH_MAX > nWhich &&
+            else if (SfxItemPool::IsWhich(nWhich) &&
                     SfxItemState::SET == rSet.GetItemState( nWhich, false, &pItem ) &&
                      rPool.GetDefaultItem( nWhich ) == *pItem )
                 rSet.ClearItem( nWhich );       // delete
@@ -1188,7 +1168,7 @@ void SvxRTFItemStackType::MoveFullNode(const EditNodeIdx &rOldNode,
 {
     bool bSameEndAsStart = (pSttNd == pEndNd);
 
-    if (GetSttNodeIdx() == rOldNode.GetIdx())
+    if (pSttNd->GetIdx() == rOldNode.GetIdx())
     {
         delete pSttNd;
         pSttNd = rNewNode.Clone();
@@ -1196,7 +1176,7 @@ void SvxRTFItemStackType::MoveFullNode(const EditNodeIdx &rOldNode,
             pEndNd = pSttNd;
     }
 
-    if (!bSameEndAsStart && GetEndNodeIdx() == rOldNode.GetIdx())
+    if (!bSameEndAsStart && pEndNd->GetIdx() == rOldNode.GetIdx())
     {
         delete pEndNd;
         pEndNd = rNewNode.Clone();
@@ -1345,7 +1325,6 @@ RTFPlainAttrMapIds::RTFPlainAttrMapIds( const SfxItemPool& rPool )
     nCTLWeight = rPool.GetTrueWhich( SID_ATTR_CHAR_CTL_WEIGHT, false );
     nEmphasis = rPool.GetTrueWhich( SID_ATTR_CHAR_EMPHASISMARK, false );
     nTwoLines = rPool.GetTrueWhich( SID_ATTR_CHAR_TWO_LINES, false );
-    nRuby = 0; //rPool.GetTrueWhich( SID_ATTR_CHAR_CJK_RUBY, sal_False );
     nCharScaleX = rPool.GetTrueWhich( SID_ATTR_CHAR_SCALEWIDTH, false );
     nHorzVert = rPool.GetTrueWhich( SID_ATTR_CHAR_ROTATED, false );
     nRelief = rPool.GetTrueWhich( SID_ATTR_CHAR_RELIEF, false );

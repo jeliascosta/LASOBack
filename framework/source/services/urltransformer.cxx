@@ -37,7 +37,7 @@ class URLTransformer : public ::cppu::WeakImplHelper< css::util::XURLTransformer
 public:
     URLTransformer() {}
 
-    virtual ~URLTransformer() {}
+    virtual ~URLTransformer() override {}
 
     virtual OUString SAL_CALL getImplementationName()
         throw (css::uno::RuntimeException, std::exception) override
@@ -54,8 +54,7 @@ public:
     virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
         throw (css::uno::RuntimeException, std::exception) override
     {
-        css::uno::Sequence< OUString > aRet { "com.sun.star.util.URLTransformer" };
-        return aRet;
+        return {"com.sun.star.util.URLTransformer"};
     }
 
     virtual sal_Bool SAL_CALL parseStrict( css::util::URL& aURL )

@@ -22,7 +22,6 @@
 
 #include <memory>
 #include <com/sun/star/lang/XComponent.hpp>
-#include <com/sun/star/uno/XComponentContext.hpp>
 #include <com/sun/star/lang/XInitialization.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/sheet/XFilterFormulaParser.hpp>
@@ -43,7 +42,7 @@ class OOXMLFormulaParser : public OOXMLFormulaParser_BASE
 {
 public:
     explicit            OOXMLFormulaParser();
-    virtual             ~OOXMLFormulaParser();
+    virtual             ~OOXMLFormulaParser() override;
 
     // com.sun.star.lang.XServiceInfo interface -------------------------------
 

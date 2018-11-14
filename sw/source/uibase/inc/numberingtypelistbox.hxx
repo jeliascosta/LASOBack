@@ -43,8 +43,8 @@ class SW_DLLPUBLIC SwNumberingTypeListBox : public ListBox
     SwNumberingTypeListBox_Impl* pImpl;
 
 public:
-    SwNumberingTypeListBox( vcl::Window* pWin, WinBits nStyle = WB_BORDER );
-    virtual ~SwNumberingTypeListBox();
+    SwNumberingTypeListBox( vcl::Window* pWin, WinBits nStyle );
+    virtual ~SwNumberingTypeListBox() override;
     virtual void dispose() override;
 
     virtual bool set_property(const OString &rKey, const OString &rValue) override;

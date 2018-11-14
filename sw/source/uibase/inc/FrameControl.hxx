@@ -9,6 +9,9 @@
 #ifndef INCLUDED_SW_SOURCE_UIBASE_INC_FRAMECONTROL_HXX
 #define INCLUDED_SW_SOURCE_UIBASE_INC_FRAMECONTROL_HXX
 
+#include <vcl/menubtn.hxx>
+
+
 class SwEditWin;
 class SwPageFrame;
 class SwFrame;
@@ -29,13 +32,13 @@ public:
     virtual SwEditWin*   GetEditWin() = 0;
 };
 
-class SwFrameControl
+class SwFrameControl final
 {
     VclPtr<vcl::Window> mxWindow;
     ISwFrameControl    *mpIFace;
 public:
     SwFrameControl( const VclPtr<vcl::Window> &pWindow );
-    virtual ~SwFrameControl();
+    ~SwFrameControl();
 
     vcl::Window* GetWindow()  { return mxWindow.get(); }
 
@@ -43,8 +46,6 @@ public:
     void ShowAll( bool bShow )         { mpIFace->ShowAll( bShow ); }
     bool Contains( const Point &rDocPt ) const { return mpIFace->Contains( rDocPt ); }
 };
-
-#include <vcl/menubtn.hxx>
 
 /** Class sharing some MenuButton code
   */
@@ -54,7 +55,7 @@ class SwFrameMenuButtonBase : public MenuButton, public ISwFrameControl
     const SwFrame*          m_pFrame;
 
 protected:
-    virtual ~SwFrameMenuButtonBase() { disposeOnce(); }
+    virtual ~SwFrameMenuButtonBase() override { disposeOnce(); }
     virtual void dispose() override;
 
 public:

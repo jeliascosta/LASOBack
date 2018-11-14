@@ -92,7 +92,6 @@ private:
     */
     Timer maSwitchPageDelayTimer;
 
-    bool IsCurrentSlideIsValid();
     void SetCurrentSlideAtViewShellBase (const model::SharedPageDescriptor& rpSlide);
     void SetCurrentSlideAtTabControl (const model::SharedPageDescriptor& rpSlide);
     void SetCurrentSlideAtXController (const model::SharedPageDescriptor& rpSlide);
@@ -107,7 +106,7 @@ private:
     */
     void AcquireCurrentSlide (const sal_Int32 nSlideIndex);
 
-    DECL_LINK_TYPED(SwitchPageCallback, Timer*, void);
+    DECL_LINK(SwitchPageCallback, Timer*, void);
 };
 
 } } } // end of namespace ::sd::slidesorter::controller

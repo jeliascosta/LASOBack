@@ -19,7 +19,6 @@
 #ifndef INCLUDED_CUI_SOURCE_INC_CUISRCHDLG_HXX
 #define INCLUDED_CUI_SOURCE_INC_CUISRCHDLG_HXX
 
-#include <svtools/stdctrl.hxx>
 #include <vcl/combobox.hxx>
 #include <vcl/edit.hxx>
 #include <vcl/lstbox.hxx>
@@ -45,7 +44,7 @@ class SvxJSearchOptionsDialog : public SfxSingleTabDialog
 public:
     SvxJSearchOptionsDialog(vcl::Window *pParent,
         const SfxItemSet& rOptionsSet, sal_Int32 nInitialFlags);
-    virtual ~SvxJSearchOptionsDialog();
+    virtual ~SvxJSearchOptionsDialog() override;
     virtual void dispose() override;
 
     // Window

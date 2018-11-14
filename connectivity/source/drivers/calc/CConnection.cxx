@@ -31,7 +31,6 @@
 #include "calc/CPreparedStatement.hxx"
 #include "calc/CStatement.hxx"
 #include <unotools/pathoptions.hxx>
-#include <unotools/closeveto.hxx>
 #include <connectivity/dbexception.hxx>
 #include <cppuhelper/exc_hlp.hxx>
 #include <comphelper/processfactory.hxx>
@@ -97,11 +96,11 @@ void OCalcConnection::construct(const OUString& url,const Sequence< PropertyValu
             break;
         }
     } // for(;pIter != pEnd;++pIter)
-    ODocHolder aDocHodler(this); // just to test that the doc can be loaded
+    ODocHolder aDocHolder(this); // just to test that the doc can be loaded
     acquireDoc();
 }
 
-Reference< XSpreadsheetDocument> OCalcConnection::acquireDoc()
+Reference< XSpreadsheetDocument> const & OCalcConnection::acquireDoc()
 {
     if ( m_xDoc.is() )
     {
@@ -164,7 +163,8 @@ Reference< XSpreadsheetDocument> OCalcConnection::acquireDoc()
         ::dbtools::throwGenericSQLException( sError, *this, aErrorDetails );
     }
     osl_atomic_increment(&m_nDocCount);
-    m_pCloseListener.reset(new utl::CloseVeto(m_xDoc, true));
+    m_xCloseVetoButTerminateListener.set(new CloseVetoButTerminateListener);
+    m_xCloseVetoButTerminateListener->start(m_xDoc, xDesktop);
     return m_xDoc;
 }
 
@@ -172,7 +172,11 @@ void OCalcConnection::releaseDoc()
 {
     if ( osl_atomic_decrement(&m_nDocCount) == 0 )
     {
-        m_pCloseListener.reset(); // dispose m_xDoc
+        if (m_xCloseVetoButTerminateListener.is())
+        {
+            m_xCloseVetoButTerminateListener->stop();   // dispose m_xDoc
+            m_xCloseVetoButTerminateListener.clear();
+        }
         m_xDoc.clear();
     }
 }
@@ -182,7 +186,11 @@ void OCalcConnection::disposing()
     ::osl::MutexGuard aGuard(m_aMutex);
 
     m_nDocCount = 0;
-    m_pCloseListener.reset(); // dispose m_xDoc
+    if (m_xCloseVetoButTerminateListener.is())
+    {
+        m_xCloseVetoButTerminateListener->stop();   // dispose m_xDoc
+        m_xCloseVetoButTerminateListener.clear();
+    }
     m_xDoc.clear();
 
     OConnection::disposing();
@@ -211,7 +219,7 @@ Reference< XDatabaseMetaData > SAL_CALL OCalcConnection::getMetaData(  ) throw(S
 }
 
 
-::com::sun::star::uno::Reference< XTablesSupplier > OCalcConnection::createCatalog()
+css::uno::Reference< XTablesSupplier > OCalcConnection::createCatalog()
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     Reference< XTablesSupplier > xTab = m_xCatalog;

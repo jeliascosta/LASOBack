@@ -17,11 +17,11 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/standard/vclxaccessiblescrollbar.hxx>
+#include <standard/vclxaccessiblescrollbar.hxx>
 
 #include <toolkit/awt/vclxwindows.hxx>
-#include <accessibility/helper/accresmgr.hxx>
-#include <accessibility/helper/accessiblestrings.hrc>
+#include <helper/accresmgr.hxx>
+#include <helper/accessiblestrings.hrc>
 
 #include <unotools/accessiblestatesethelper.hxx>
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
@@ -109,8 +109,7 @@ OUString VCLXAccessibleScrollBar::getImplementationName() throw (RuntimeExceptio
 
 Sequence< OUString > VCLXAccessibleScrollBar::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    Sequence< OUString > aNames { "com.sun.star.awt.AccessibleScrollBar" };
-    return aNames;
+    return { "com.sun.star.awt.AccessibleScrollBar" };
 }
 
 
@@ -139,11 +138,11 @@ sal_Bool VCLXAccessibleScrollBar::doAccessibleAction ( sal_Int32 nIndex ) throw 
         ScrollType eScrollType;
         switch ( nIndex )
         {
-            case 0:     eScrollType = SCROLL_LINEUP;    break;
-            case 1:     eScrollType = SCROLL_LINEDOWN;  break;
-            case 2:     eScrollType = SCROLL_PAGEUP;    break;
-            case 3:     eScrollType = SCROLL_PAGEDOWN;  break;
-            default:    eScrollType = SCROLL_DONTKNOW;  break;
+            case 0:     eScrollType = ScrollType::LineUp;    break;
+            case 1:     eScrollType = ScrollType::LineDown;  break;
+            case 2:     eScrollType = ScrollType::PageUp;    break;
+            case 3:     eScrollType = ScrollType::PageDown;  break;
+            default:    eScrollType = ScrollType::DontKnow;  break;
         }
         if ( pScrollBar->DoScrollAction( eScrollType ) )
             bReturn = true;

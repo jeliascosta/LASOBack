@@ -70,13 +70,7 @@ LwpObjectStream::LwpObjectStream(LwpSvStream *pStrm, bool isCompressed, sal_uInt
 {
     if (size >= IO_BUFFERSIZE)
         throw std::range_error("bad Object size");
-    ReadStream();
-}
-/**
- * @descr  read object data from stream
- */
-void LwpObjectStream::ReadStream()
-{
+    // read object data from stream
     if(m_nBufSize == 0)
     {
         m_pContentBuf = nullptr;
@@ -176,7 +170,6 @@ sal_uInt16 LwpObjectStream::QuickRead(void* buf, sal_uInt16 len)
     memset(buf, 0, len);
     if( len > m_nBufSize - m_nReadPos )
     {
-        SAL_WARN("lwp", "read request longer than buffer");
         len = m_nBufSize - m_nReadPos;
     }
     if( m_pContentBuf && len)

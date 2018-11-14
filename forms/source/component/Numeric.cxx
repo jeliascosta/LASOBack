@@ -53,20 +53,7 @@ css::uno::Sequence<OUString> ONumericControl::getSupportedServiceNames() throw(s
     return aSupported;
 }
 
-
-Sequence<Type> ONumericControl::_getTypes()
-{
-    return OBoundControl::_getTypes();
-}
-
-
 // ONumericModel
-
-Sequence<Type> ONumericModel::_getTypes()
-{
-    return OEditBaseModel::_getTypes();
-}
-
 
 ONumericModel::ONumericModel(const Reference<XComponentContext>& _rxFactory)
                 :OEditBaseModel( _rxFactory, VCL_CONTROLMODEL_NUMERICFIELD, FRM_SUN_CONTROL_NUMERICFIELD, true, true )

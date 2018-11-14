@@ -38,7 +38,7 @@ class OSubComponent : public ::cppu::OComponentHelper
 protected:
     // the parent must support the tunnel implementation
     css::uno::Reference< css::uno::XInterface > m_xParent;
-    virtual ~OSubComponent();
+    virtual ~OSubComponent() override;
 
 public:
     OSubComponent(::osl::Mutex& _rMutex,
@@ -50,7 +50,6 @@ public:
 // css::uno::XInterface
     virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
             throw(css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL acquire() throw() override;
     virtual void SAL_CALL release() throw() override;
 
     inline operator css::uno::Reference< css::uno::XInterface > () const

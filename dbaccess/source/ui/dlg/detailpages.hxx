@@ -71,7 +71,7 @@ namespace dbaui
         OCommonBehaviourTabPage(vcl::Window* pParent, const OString& rId, const OUString& rUIXMLDescription, const SfxItemSet& _rCoreAttrs, sal_uInt32 nControlFlags);
     protected:
 
-        virtual ~OCommonBehaviourTabPage();
+        virtual ~OCommonBehaviourTabPage() override;
         virtual void dispose() override;
 
         // subclasses must override this, but it isn't pure virtual
@@ -83,7 +83,7 @@ namespace dbaui
         // <method>OGenericAdministrationPage::fillWindows</method>
         virtual void fillWindows(::std::vector< ISaveValueWrapper* >& _rControlList) override;
     private:
-        DECL_LINK_TYPED(CharsetSelectHdl, ListBox&, void);
+        DECL_LINK(CharsetSelectHdl, ListBox&, void);
     };
 
     // ODbaseDetailsPage
@@ -93,7 +93,7 @@ namespace dbaui
         virtual bool        FillItemSet ( SfxItemSet* _rCoreAttrs ) override;
 
         ODbaseDetailsPage(vcl::Window* pParent, const SfxItemSet& _rCoreAttrs);
-        virtual ~ODbaseDetailsPage();
+        virtual ~ODbaseDetailsPage() override;
         virtual void dispose() override;
     private:
         VclPtr<CheckBox>           m_pShowDeleted;
@@ -106,7 +106,7 @@ namespace dbaui
         virtual void implInitControls(const SfxItemSet& _rSet, bool _bSaveValue) override;
 
     private:
-        DECL_LINK_TYPED( OnButtonClicked, Button *, void );
+        DECL_LINK( OnButtonClicked, Button *, void );
     };
 
     // OAdoDetailsPage
@@ -123,7 +123,7 @@ namespace dbaui
         virtual bool        FillItemSet ( SfxItemSet* _rCoreAttrs ) override;
 
         OOdbcDetailsPage( vcl::Window* pParent, const SfxItemSet& _rCoreAttrs );
-        virtual ~OOdbcDetailsPage();
+        virtual ~OOdbcDetailsPage() override;
         virtual void dispose() override;
     protected:
         virtual void implInitControls(const SfxItemSet& _rSet, bool _bSaveValue) override;
@@ -138,7 +138,7 @@ namespace dbaui
         virtual bool        FillItemSet ( SfxItemSet* _rCoreAttrs ) override;
 
         OUserDriverDetailsPage( vcl::Window* pParent, const SfxItemSet& _rCoreAttrs );
-        virtual ~OUserDriverDetailsPage();
+        virtual ~OUserDriverDetailsPage() override;
         virtual void dispose() override;
     protected:
         virtual void implInitControls(const SfxItemSet& _rSet, bool _bSaveValue) override;
@@ -168,16 +168,16 @@ namespace dbaui
                                         , sal_uInt16 _nPortId
                                         , bool bShowSocket = true
                                         );
-        virtual ~OGeneralSpecialJDBCDetailsPage();
+        virtual ~OGeneralSpecialJDBCDetailsPage() override;
         virtual void dispose() override;
 
     protected:
 
         virtual bool FillItemSet( SfxItemSet* _rCoreAttrs ) override;
         virtual void implInitControls(const SfxItemSet& _rSet, bool _bSaveValue) override;
-        virtual void callModifiedHdl(void* pControl) override;
+        virtual void callModifiedHdl(void* pControl = nullptr) override;
 
-        DECL_LINK_TYPED(OnTestJavaClickHdl, Button*, void);
+        DECL_LINK(OnTestJavaClickHdl, Button*, void);
 
         VclPtr<Edit>               m_pEDHostname;
         VclPtr<NumericField>       m_pNFPortNumber;
@@ -199,7 +199,7 @@ namespace dbaui
     public:
         MySQLNativePage(    vcl::Window* pParent,
                             const SfxItemSet& _rCoreAttrs );
-        virtual ~MySQLNativePage();
+        virtual ~MySQLNativePage() override;
         virtual void dispose() override;
 
     private:
@@ -225,7 +225,7 @@ namespace dbaui
         virtual bool        FillItemSet ( SfxItemSet* _rCoreAttrs ) override;
 
         OLDAPDetailsPage( vcl::Window* pParent, const SfxItemSet& _rCoreAttrs );
-        virtual ~OLDAPDetailsPage();
+        virtual ~OLDAPDetailsPage() override;
         virtual void dispose() override;
     protected:
         virtual void implInitControls(const SfxItemSet& _rSet, bool _bSaveValue) override;
@@ -237,7 +237,7 @@ namespace dbaui
 
         sal_Int32           m_iSSLPort;
         sal_Int32           m_iNormalPort;
-        DECL_LINK_TYPED( OnCheckBoxClick, Button*, void );
+        DECL_LINK( OnCheckBoxClick, Button*, void );
     };
 
     // OTextDetailsPage
@@ -250,7 +250,7 @@ namespace dbaui
         VclPtr<OTextConnectionHelper>  m_pTextConnectionHelper;
 
     protected:
-        virtual ~OTextDetailsPage();
+        virtual ~OTextDetailsPage() override;
         virtual void dispose() override;
         virtual bool prepareLeave() override;
 

@@ -44,7 +44,7 @@ static bool lcl_IsURLButton( SdrObject* pObject )
     bool bRet = false;
 
     SdrUnoObj* pUnoCtrl = dynamic_cast<SdrUnoObj*>( pObject );
-    if (pUnoCtrl && FmFormInventor == pUnoCtrl->GetObjInventor())
+    if (pUnoCtrl && SdrInventor::FmForm == pUnoCtrl->GetObjInventor())
        {
         uno::Reference<awt::XControlModel> xControlModel = pUnoCtrl->GetUnoControlModel();
         OSL_ENSURE( xControlModel.is(), "uno control without model" );
@@ -92,7 +92,7 @@ ScSelectionTransferObj* ScSelectionTransferObj::CreateFromView( ScTabView* pView
 
                         if ( nSdrObjKind == OBJ_GRAF )
                         {
-                            if ( static_cast<SdrGrafObj*>(pObj)->GetGraphic().GetType() == GRAPHIC_BITMAP )
+                            if ( static_cast<SdrGrafObj*>(pObj)->GetGraphic().GetType() == GraphicType::Bitmap )
                                 eMode = SC_SELTRANS_DRAW_BITMAP;
                             else
                                 eMode = SC_SELTRANS_DRAW_GRAPHIC;
@@ -201,6 +201,7 @@ void ScSelectionTransferObj::AddSupportedFormats()
             AddFormat( SotClipboardFormatId::DIF );
             AddFormat( SotClipboardFormatId::STRING );
             AddFormat( SotClipboardFormatId::RTF );
+            AddFormat( SotClipboardFormatId::RICHTEXT );
             if ( eMode == SC_SELTRANS_CELL )
                 AddFormat( SotClipboardFormatId::EDITENGINE );
             break;
@@ -277,7 +278,7 @@ void ScSelectionTransferObj::CreateCellData()
                 aDragShellRef = new ScDocShell;     // DocShell needs a Ref immediately
                 aDragShellRef->DoInitNew();
             }
-            ScDrawLayer::SetGlobalDrawPersist(aDragShellRef);
+            ScDrawLayer::SetGlobalDrawPersist( aDragShellRef.get() );
 
             ScDocument* pClipDoc = new ScDocument( SCDOCMODE_CLIP );
             // bApi = sal_True -> no error messages
@@ -300,7 +301,7 @@ void ScSelectionTransferObj::CreateCellData()
                 // SetDragHandlePos is not used - there is no mouse position
                 //? pTransferObj->SetVisibleTab( nTab );
 
-                SfxObjectShellRef aPersistRef( aDragShellRef );
+                SfxObjectShellRef aPersistRef( aDragShellRef.get() );
                 pTransferObj->SetDrawPersist( aPersistRef );    // keep persist for ole objects alive
 
                 pTransferObj->SetDragSource( pDocSh, aNewMark );
@@ -336,7 +337,7 @@ void ScSelectionTransferObj::CreateDrawData()
                 aDragShellRef->DoInitNew();
             }
 
-            ScDrawLayer::SetGlobalDrawPersist(aDragShellRef);
+            ScDrawLayer::SetGlobalDrawPersist( aDragShellRef.get() );
             SdrModel* pModel = pDrawView->GetMarkedObjModel();
             ScDrawLayer::SetGlobalDrawPersist(nullptr);
 
@@ -351,7 +352,7 @@ void ScSelectionTransferObj::CreateDrawData()
             ScDrawTransferObj* pTransferObj = new ScDrawTransferObj( pModel, pDocSh, aObjDesc );
             uno::Reference<datatransfer::XTransferable> xTransferable( pTransferObj );
 
-            SfxObjectShellRef aPersistRef( aDragShellRef );
+            SfxObjectShellRef aPersistRef( aDragShellRef.get() );
             pTransferObj->SetDrawPersist( aPersistRef );    // keep persist for ole objects alive
             pTransferObj->SetDragSource( pDrawView );       // copies selection
 

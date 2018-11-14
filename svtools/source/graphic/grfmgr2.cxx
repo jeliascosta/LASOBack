@@ -92,7 +92,7 @@ bool GraphicManager::DrawObj( OutputDevice* pOut, const Point& rPt, const Size& 
 
     rCached = false;
 
-    if( ( rObj.GetType() == GRAPHIC_BITMAP ) || ( rObj.GetType() == GRAPHIC_GDIMETAFILE ) )
+    if( ( rObj.GetType() == GraphicType::Bitmap ) || ( rObj.GetType() == GraphicType::GdiMetafile ) )
     {
         // create output and fill cache
 
@@ -141,10 +141,10 @@ bool GraphicManager::DrawObj( OutputDevice* pOut, const Point& rPt, const Size& 
 void GraphicManager::ImplRegisterObj( const GraphicObject& rObj, Graphic& rSubstitute,
                                       const OString* pID, const GraphicObject* pCopyObj )
 {
-    assert(std::find(maObjList.begin(), maObjList.end(),
-               const_cast<GraphicObject*>(&rObj)) == maObjList.end());
+    assert(maObjList.find(const_cast<GraphicObject*>(&rObj)) == maObjList.end());
 
-    maObjList.push_back( const_cast<GraphicObject*>(&rObj) );
+    maObjList.emplace( const_cast<GraphicObject*>(&rObj) );
+
     mpCache->AddGraphicObject( rObj, rSubstitute, pID, pCopyObj );
     if( !rObj.IsSwappedOut() )
         mnUsedSize += rObj.maGraphic.GetSizeBytes();
@@ -158,13 +158,9 @@ void GraphicManager::ImplUnregisterObj( const GraphicObject& rObj )
         assert(mnUsedSize >= rObj.maGraphic.GetSizeBytes());
         mnUsedSize -= rObj.maGraphic.GetSizeBytes();
     }
-    for( GraphicObjectList_impl::iterator it = maObjList.begin(); it != maObjList.end(); ++it )
-    {
-        if ( *it == &rObj ) {
-            maObjList.erase( it );
-            return;
-        }
-    }
+    if ( 0 < maObjList.erase( const_cast<GraphicObject*>(&rObj) ) )
+        return;
+
     assert(false); // surely it should have been registered?
 }
 
@@ -203,7 +199,7 @@ void GraphicManager::ImplCheckSizeOfSwappedInGraphics(const GraphicObject* pGrap
         std::vector< GraphicObject* > aCandidates(maObjList.begin(), maObjList.end());
         // if we use more currently, sort by last DataChangeTimeStamp
         // sort by DataChangeTimeStamp so that the oldest get removed first
-        ::std::sort(aCandidates.begin(), aCandidates.end(), simpleSortByDataChangeTimeStamp());
+        std::sort(aCandidates.begin(), aCandidates.end(), simpleSortByDataChangeTimeStamp());
 
         for(sal_uInt32 a(0); mnUsedSize >= nMaxCacheSize && a < aCandidates.size(); a++)
         {
@@ -214,7 +210,7 @@ void GraphicManager::ImplCheckSizeOfSwappedInGraphics(const GraphicObject* pGrap
             {
                 continue;
             }
-            if (std::find(maObjList.begin(), maObjList.end(), pObj) == maObjList.end())
+            if (maObjList.find(pObj) == maObjList.end())
             {
                 // object has been deleted when swapping out another one
                 continue;
@@ -245,7 +241,7 @@ bool GraphicManager::ImplDraw( OutputDevice* pOut, const Point& rPt,
 
     if( rGraphic.IsSupportedGraphic() && !rObj.IsSwappedOut() )
     {
-        if( GRAPHIC_BITMAP == rGraphic.GetType() )
+        if( GraphicType::Bitmap == rGraphic.GetType() )
         {
             const BitmapEx aSrcBmpEx( rGraphic.GetBitmapEx() );
 
@@ -1287,7 +1283,7 @@ bool GraphicManager::ImplCreateOutput( OutputDevice* pOut,
                     // these actions actually output something (that's
                     // different from a bitmap)
                 case MetaActionType::RASTEROP:
-                    if( static_cast<MetaRasterOpAction*>(pAct)->GetRasterOp() == ROP_OVERPAINT )
+                    if( static_cast<MetaRasterOpAction*>(pAct)->GetRasterOp() == RasterOp::OverPaint )
                         break;
                     SAL_FALLTHROUGH;
                 case MetaActionType::PIXEL:
@@ -1513,11 +1509,11 @@ void GraphicManager::ImplAdjust( GDIMetaFile& rMtf, const GraphicAttr& rAttr, Gr
         switch( aAttr.GetDrawMode() )
         {
             case GRAPHICDRAWMODE_MONO:
-                rMtf.Convert( MTF_CONVERSION_1BIT_THRESHOLD );
+                rMtf.Convert( MtfConversion::N1BitThreshold );
             break;
 
             case GRAPHICDRAWMODE_GREYS:
-                rMtf.Convert( MTF_CONVERSION_8BIT_GREYS );
+                rMtf.Convert( MtfConversion::N8BitGreys );
             break;
 
             case GRAPHICDRAWMODE_WATERMARK:
@@ -1662,13 +1658,13 @@ struct ImplTileInfo
 };
 
 
-bool GraphicObject::ImplRenderTempTile( VirtualDevice& rVDev, int nExponent,
+bool GraphicObject::ImplRenderTempTile( VirtualDevice& rVDev,
                                         int nNumTilesX, int nNumTilesY,
                                         const Size& rTileSizePixel,
                                         const GraphicAttr* pAttr, GraphicManagerDrawFlags nFlags )
 {
-    if( nExponent <= 1 )
-        return false;
+    // how many tiles to generate per recursion step
+    const int nExponent = 2;
 
     // determine MSB factor
     int nMSBFactor( 1 );
@@ -1679,8 +1675,10 @@ bool GraphicObject::ImplRenderTempTile( VirtualDevice& rVDev, int nExponent,
     }
 
     // one less
-    nMSBFactor /= nExponent;
-
+    if(nMSBFactor > 1)
+    {
+        nMSBFactor /= nExponent;
+    }
     ImplTileInfo aTileInfo;
 
     // #105229# Switch off mapping (converting to logic and back to
@@ -1882,16 +1880,13 @@ bool GraphicObject::ImplRenderTileRecursive( VirtualDevice& rVDev, int nExponent
 bool GraphicObject::ImplDrawTiled( OutputDevice* pOut, const Rectangle& rArea, const Size& rSizePixel,
                                    const Size& rOffset, const GraphicAttr* pAttr, GraphicManagerDrawFlags nFlags, int nTileCacheSize1D )
 {
-    // how many tiles to generate per recursion step
-    enum{ SubdivisionExponent=2 };
-
     const MapMode   aOutMapMode( pOut->GetMapMode() );
     const MapMode   aMapMode( aOutMapMode.GetMapUnit(), Point(), aOutMapMode.GetScaleX(), aOutMapMode.GetScaleY() );
     bool            bRet( false );
 
     // #i42643# Casting to Int64, to avoid integer overflow for
     // huge-DPI output devices
-    if( GetGraphic().GetType() == GRAPHIC_BITMAP &&
+    if( GetGraphic().GetType() == GraphicType::Bitmap &&
         static_cast<sal_Int64>(rSizePixel.Width()) * rSizePixel.Height() <
         static_cast<sal_Int64>(nTileCacheSize1D)*nTileCacheSize1D )
     {
@@ -1907,7 +1902,7 @@ bool GraphicObject::ImplDrawTiled( OutputDevice* pOut, const Rectangle& rArea, c
         aVDev->SetMapMode( aMapMode );
 
         // draw bitmap content
-        if( ImplRenderTempTile( *aVDev.get(), SubdivisionExponent, nNumTilesInCacheX,
+        if( ImplRenderTempTile( *aVDev.get(), nNumTilesInCacheX,
                                 nNumTilesInCacheY, rSizePixel, pAttr, nFlags ) )
         {
             BitmapEx aTileBitmap( aVDev->GetBitmap( Point(0,0), aVDev->GetOutputSize() ) );
@@ -1922,7 +1917,7 @@ bool GraphicObject::ImplDrawTiled( OutputDevice* pOut, const Rectangle& rArea, c
                 else
                     aAlphaGraphic.SetGraphic( GetGraphic().GetBitmapEx().GetMask() );
 
-                if( aAlphaGraphic.ImplRenderTempTile( *aVDev.get(), SubdivisionExponent, nNumTilesInCacheX,
+                if( aAlphaGraphic.ImplRenderTempTile( *aVDev.get(), nNumTilesInCacheX,
                                                       nNumTilesInCacheY, rSizePixel, pAttr, nFlags ) )
                 {
                     // Combine bitmap and alpha/mask
@@ -1996,7 +1991,7 @@ bool GraphicObject::ImplDrawTiled( OutputDevice& rOut, const Point& rPosPixel,
     int     nX, nY;
 
     // #107607# Use logical coordinates for metafile playing, too
-    bool    bDrawInPixel( rOut.GetConnectMetaFile() == nullptr && GRAPHIC_BITMAP == GetType() );
+    bool    bDrawInPixel( rOut.GetConnectMetaFile() == nullptr && GraphicType::Bitmap == GetType() );
     bool    bRet = false;
 
     // #105229# Switch off mapping (converting to logic and back to

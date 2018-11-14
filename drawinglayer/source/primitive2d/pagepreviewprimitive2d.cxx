@@ -33,9 +33,8 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer PagePreviewPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
+        void PagePreviewPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const
         {
-            Primitive2DContainer xRetval;
             Primitive2DContainer aContent(getPageContent());
 
             if(!aContent.empty()
@@ -66,55 +65,41 @@ namespace drawinglayer
                     // create a mapping from content to object.
                     basegfx::B2DHomMatrix aPageTrans;
 
-                    if(getKeepAspectRatio())
+                    // #i101075# when keeping the aspect ratio is wanted, it is necessary to calculate
+                    // an equidistant scaling in X and Y and a corresponding translation to
+                    // center the output. Calculate needed scale factors
+                    const double fScaleX(aScale.getX() / getContentWidth());
+                    const double fScaleY(aScale.getY() / getContentHeight());
+
+                    // to keep the aspect, use the smaller scale and adapt missing size by translation
+                    if(fScaleX < fScaleY)
                     {
-                        // #i101075# when keeping the aspect ratio is wanted, it is necessary to calculate
-                        // an equidistant scaling in X and Y and a corresponding translation to
-                        // center the output. Calculate needed scale factors
-                        const double fScaleX(aScale.getX() / getContentWidth());
-                        const double fScaleY(aScale.getY() / getContentHeight());
+                        // height needs to be adapted
+                        const double fNeededHeight(aScale.getY() / fScaleX);
+                        const double fSpaceToAdd(fNeededHeight - getContentHeight());
 
-                        // to keep the aspect, use the smaller scale and adapt missing size by translation
-                        if(fScaleX < fScaleY)
-                        {
-                            // height needs to be adapted
-                            const double fNeededHeight(aScale.getY() / fScaleX);
-                            const double fSpaceToAdd(fNeededHeight - getContentHeight());
-
-                            aPageTrans.translate(0.0, fSpaceToAdd * 0.5);
-                            aPageTrans.scale(fScaleX, aScale.getY() / fNeededHeight);
-                        }
-                        else
-                        {
-                            // width needs to be adapted
-                            const double fNeededWidth(aScale.getX() / fScaleY);
-                            const double fSpaceToAdd(fNeededWidth - getContentWidth());
-
-                            aPageTrans.translate(fSpaceToAdd * 0.5, 0.0);
-                            aPageTrans.scale(aScale.getX() / fNeededWidth, fScaleY);
-                        }
-
-                        // add the missing object transformation aspects
-                        const basegfx::B2DHomMatrix aCombined(basegfx::tools::createShearXRotateTranslateB2DHomMatrix(
-                            fShearX, fRotate, aTranslate.getX(), aTranslate.getY()));
-                        aPageTrans = aCombined * aPageTrans;
+                        aPageTrans.translate(0.0, fSpaceToAdd * 0.5);
+                        aPageTrans.scale(fScaleX, aScale.getY() / fNeededHeight);
                     }
                     else
                     {
-                        // completely scale to PageObject size. Scale to unit size.
-                        aPageTrans.scale(1.0/ getContentWidth(), 1.0 / getContentHeight());
+                        // width needs to be adapted
+                        const double fNeededWidth(aScale.getX() / fScaleY);
+                        const double fSpaceToAdd(fNeededWidth - getContentWidth());
 
-                        // apply object matrix
-                        aPageTrans *= getTransform();
+                        aPageTrans.translate(fSpaceToAdd * 0.5, 0.0);
+                        aPageTrans.scale(aScale.getX() / fNeededWidth, fScaleY);
                     }
 
+                    // add the missing object transformation aspects
+                    const basegfx::B2DHomMatrix aCombined(basegfx::tools::createShearXRotateTranslateB2DHomMatrix(
+                            fShearX, fRotate, aTranslate.getX(), aTranslate.getY()));
+                    aPageTrans = aCombined * aPageTrans;
+
                     // embed in necessary transformation to map from SdrPage to SdrPageObject
-                    const Primitive2DReference xReferenceB(new TransformPrimitive2D(aPageTrans, aContent));
-                    xRetval = Primitive2DContainer { xReferenceB };
+                    rContainer.push_back(new TransformPrimitive2D(aPageTrans, aContent));
                 }
             }
-
-            return xRetval;
         }
 
         PagePreviewPrimitive2D::PagePreviewPrimitive2D(
@@ -122,15 +107,13 @@ namespace drawinglayer
             const basegfx::B2DHomMatrix& rTransform,
             double fContentWidth,
             double fContentHeight,
-            const Primitive2DContainer& rPageContent,
-            bool bKeepAspectRatio)
+            const Primitive2DContainer& rPageContent)
         :   BufferedDecompositionPrimitive2D(),
             mxDrawPage(rxDrawPage),
             maPageContent(rPageContent),
             maTransform(rTransform),
             mfContentWidth(fContentWidth),
-            mfContentHeight(fContentHeight),
-            mbKeepAspectRatio(bKeepAspectRatio)
+            mfContentHeight(fContentHeight)
         {
         }
 
@@ -144,8 +127,7 @@ namespace drawinglayer
                     && getPageContent() == rCompare.getPageContent()
                     && getTransform() == rCompare.getTransform()
                     && getContentWidth() == rCompare.getContentWidth()
-                    && getContentHeight() == rCompare.getContentHeight()
-                    && getKeepAspectRatio() == rCompare.getKeepAspectRatio());
+                    && getContentHeight() == rCompare.getContentHeight());
             }
 
             return false;

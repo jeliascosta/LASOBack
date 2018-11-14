@@ -50,7 +50,7 @@ public:
         const DataChangedEvent& rEvent) override;
 
     virtual void HandleContextChange(
-        const ::sfx2::sidebar::EnumContext& rContext) override;
+        const vcl::EnumContext& rContext) override;
 
     virtual void NotifyItemUpdate(
         const sal_uInt16 nSId,
@@ -63,7 +63,7 @@ public:
         vcl::Window* pParent,
         const css::uno::Reference<css::frame::XFrame>& rxFrame,
         ChartController* pController);
-    virtual ~ChartAxisPanel();
+    virtual ~ChartAxisPanel() override;
     virtual void dispose() override;
 
     virtual void updateData() override;
@@ -92,9 +92,9 @@ private:
 
     void Initialize();
 
-    DECL_LINK_TYPED(CheckBoxHdl, Button*, void);
-    DECL_LINK_TYPED(ListBoxHdl, ListBox&, void);
-    DECL_LINK_TYPED(TextRotationHdl, Edit&, void);
+    DECL_LINK(CheckBoxHdl, Button*, void);
+    DECL_LINK(ListBoxHdl, ListBox&, void);
+    DECL_LINK(TextRotationHdl, Edit&, void);
 };
 
 } } // end of namespace ::chart::sidebar

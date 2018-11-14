@@ -53,6 +53,7 @@
 #endif
 #endif
 
+#include <onlinecheck.hxx>
 #include "updateprotocol.hxx"
 #include "updatecheckconfig.hxx"
 
@@ -69,10 +70,6 @@ namespace uno = com::sun::star::uno ;
 #define PROPERTY_SHOW_BUBBLE    "BubbleVisible"
 #define PROPERTY_CLICK_HDL      "MenuClickHDL"
 #define PROPERTY_SHOW_MENUICON  "MenuIconVisible"
-
-#if defined(_WIN32)
-extern "C" bool SAL_CALL WNT_hasInternetConnection();
-#endif
 
 // Returns the URL of the release note for the given position
 OUString getReleaseNote(const UpdateInfo& rInfo, sal_uInt8 pos, bool autoDownloadEnabled)
@@ -234,7 +231,7 @@ public:
     virtual void cancel() override;
 
 protected:
-    virtual ~UpdateCheckThread();
+    virtual ~UpdateCheckThread() override;
 
     virtual void SAL_CALL run() override;
     virtual void SAL_CALL onTerminated() override;
@@ -319,7 +316,7 @@ public:
     virtual void SAL_CALL onTerminated() override;
 
 protected:
-    virtual ~DownloadThread();
+    virtual ~DownloadThread() override;
 
 private:
     osl::Condition& m_aCondition;
@@ -338,7 +335,7 @@ public:
     virtual void SAL_CALL onTerminated() override;
 
 protected:
-    virtual ~ShutdownThread();
+    virtual ~ShutdownThread() override;
 
 private:
     osl::Condition m_aCondition;
@@ -606,7 +603,7 @@ DownloadThread::run()
 
 #ifdef _WIN32
     CoUninitialize();
-    CoInitialize( NULL );
+    CoInitialize( nullptr );
 #endif
 
     while( schedule() )
@@ -848,7 +845,7 @@ UpdateCheck::download()
 
     if (aInfo.Sources.empty())
     {
-        SAL_WARN("extension.updatecheck", "download called without source");
+        SAL_WARN("extensions.update", "download called without source");
         return;
     }
 

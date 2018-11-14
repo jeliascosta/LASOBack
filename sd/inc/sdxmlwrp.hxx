@@ -26,7 +26,6 @@
 enum SdXMLFilterMode
 {
     SDXMLMODE_Normal,   ///< standard load and save of the complete document
-    SDXMLMODE_Preview,  ///< only for import, only the first draw page and its master page is loaded
     SDXMLMODE_Organizer ///< only for import, only the styles are loaded
 };
 
@@ -38,7 +37,7 @@ public:
         ::sd::DrawDocShell& rDocShell,
         SdXMLFilterMode eFilterMode = SDXMLMODE_Normal,
         sal_uLong nStoreVer = SOFFICE_FILEFORMAT_8 );
-    virtual ~SdXMLFilter();
+    virtual ~SdXMLFilter() override;
 
     bool        Import( ErrCode& nError );
     bool        Export() override;

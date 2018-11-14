@@ -79,7 +79,7 @@ protected:
     virtual SdrUndoManager* getSdrUndoManagerForEnhancedTextEdit() const override;
 
 public:
-    SwDrawView( SwViewShellImp &rI, SdrModel *pMd, OutputDevice* pOutDev=nullptr );
+    SwDrawView( SwViewShellImp &rI, SdrModel *pMd, OutputDevice* pOutDev );
 
     // from base class
     virtual SdrObject*   GetMaxToTopObj(SdrObject* pObj) const override;
@@ -112,6 +112,9 @@ public:
     // method to replace marked/selected <SwDrawVirtObj>
     // by its reference object for delete of selection and group selection
     static void ReplaceMarkedDrawVirtObjs( SdrMarkView& _rMarkView );
+
+    /// See SdrMarkView::GetSfxViewShell().
+    SfxViewShell* GetSfxViewShell() const override;
 };
 
 #endif

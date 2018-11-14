@@ -63,7 +63,7 @@ class ModuleUIConfigurationManagerSupplier : private cppu::BaseMutex,
 {
 public:
     explicit ModuleUIConfigurationManagerSupplier( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-    virtual ~ModuleUIConfigurationManagerSupplier();
+    virtual ~ModuleUIConfigurationManagerSupplier() override;
 
     virtual OUString SAL_CALL getImplementationName()
         throw (css::uno::RuntimeException, std::exception) override
@@ -80,8 +80,7 @@ public:
     virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
         throw (css::uno::RuntimeException, std::exception) override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.ui.ModuleUIConfigurationManagerSupplier" };
-        return aSeq;
+        return {"com.sun.star.ui.ModuleUIConfigurationManagerSupplier"};
     }
 
     // XModuleUIConfigurationManagerSupplier
@@ -89,7 +88,7 @@ public:
         throw (css::container::NoSuchElementException, css::uno::RuntimeException, std::exception) override;
 
 private:
-    virtual void SAL_CALL disposing() override;
+    virtual void SAL_CALL disposing() final override;
 
     typedef std::unordered_map< OUString, css::uno::Reference< css::ui::XModuleUIConfigurationManager2 >, OUStringHash > ModuleToModuleCfgMgr;
 

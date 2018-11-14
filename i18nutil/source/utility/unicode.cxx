@@ -957,6 +957,32 @@ OString SAL_CALL unicode::getExemplarLanguageForUScriptCode(UScriptCode eScript)
             sRet = "sa-Sidd";
             break;
 #endif
+#if (U_ICU_VERSION_MAJOR_NUM >= 58)
+        case USCRIPT_ADLAM:
+            sRet = "mis";   // Adlm - Adlam for Fulani, no language code
+            break;
+        case USCRIPT_BHAIKSUKI:
+            sRet = "mis";   // Bhks - Bhaiksuki for some Buddhist texts, no language code
+            break;
+        case USCRIPT_MARCHEN:
+            sRet = "bo-Marc";
+            break;
+        case USCRIPT_NEWA:
+            sRet = "new-Newa";
+            break;
+        case USCRIPT_OSAGE:
+            sRet = "osa-Osge";
+            break;
+        case USCRIPT_HAN_WITH_BOPOMOFO:
+            sRet = "mis";   // Hanb - Han with Bopomofo, zh-Hanb ?
+            break;
+        case USCRIPT_JAMO:
+            sRet = "mis";   // Jamo - Jamo subset of Hangul, ko-Jamo ?
+            break;
+        case USCRIPT_SYMBOLS_EMOJI:
+            sRet = "mis";   // Zsye - Emoji variant
+            break;
+#endif
     }
     return sRet;
 }
@@ -976,7 +1002,7 @@ OUString SAL_CALL unicode::formatPercent(double dNumber,
     // http://www.unicode.org/cldr/charts/24/by_type/numbers.number_formatting_patterns.html
     // so format using French which has the desired rules
     if (aLangTag.getLanguage() == "es" || aLangTag.getLanguage() == "sl")
-        aLangTag = LanguageTag("fr-FR");
+        aLangTag.reset("fr-FR");
 
     icu::Locale aLocale = LanguageTagIcu::getIcuLocale(aLangTag);
 
@@ -998,14 +1024,6 @@ OUString SAL_CALL unicode::formatPercent(double dNumber,
         return aRet.replace(0x00A0, 0x202F);
     }
     return aRet;
-}
-
-ToggleUnicodeCodepoint::ToggleUnicodeCodepoint ()
-{
-    maInput = OUStringBuffer();
-    maOutput = OUStringBuffer();
-    maUtf16 = OUStringBuffer();
-    maCombining = OUStringBuffer();
 }
 
 bool ToggleUnicodeCodepoint::AllowMoreInput(sal_Unicode uChar)
@@ -1218,7 +1236,7 @@ sal_uInt32 ToggleUnicodeCodepoint::CharsToDelete()
 OUString ToggleUnicodeCodepoint::ReplacementString()
 {
     OUString sIn = StringToReplace();
-    maOutput = "";
+    OUStringBuffer output = "";
     sal_Int32 nUPlus = sIn.indexOf("U+");
     // convert from hex notation to glyph
     if( nUPlus != -1 || (sIn.getLength() > 1 && mbIsHexString) )
@@ -1232,13 +1250,13 @@ OUString ToggleUnicodeCodepoint::ReplacementString()
         while( nUPlus > 0 )
         {
             nUnicode = sIn.copy(0, nUPlus).toUInt32(16);
-            maOutput.appendUtf32( nUnicode );
+            output.appendUtf32( nUnicode );
 
             sIn = sIn.copy(nUPlus+2);
             nUPlus = sIn.indexOf("U+");
         }
         nUnicode = sIn.toUInt32(16);
-        maOutput.appendUtf32( nUnicode );
+        output.appendUtf32( nUnicode );
     }
     // convert from glyph to hex notation
     else
@@ -1250,11 +1268,11 @@ OUString ToggleUnicodeCodepoint::ReplacementString()
             //pad with zeros - minimum length of 4.
             for( sal_Int32 i = 4 - aTmp.getLength(); i > 0; --i )
                 aTmp.insert( 0,"0" );
-            maOutput.append( "U+" );
-            maOutput.append( aTmp );
+            output.append( "U+" );
+            output.append( aTmp );
         }
     }
-    return maOutput.toString();
+    return output.toString();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

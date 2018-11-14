@@ -35,8 +35,8 @@ private:
     static void InitInterface_Impl();
 
 public:
-    SwWebDocShell(SfxObjectCreateMode eMode = SfxObjectCreateMode::EMBEDDED);
-    virtual ~SwWebDocShell();
+    SwWebDocShell();
+    virtual ~SwWebDocShell() override;
 
     virtual void        FillClass( SvGlobalName * pClassName,
                                    SotClipboardFormatId * pClipFormat,

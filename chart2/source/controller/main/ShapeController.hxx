@@ -38,10 +38,7 @@ class ShapeController: public FeatureCommandDispatchBase
 
 public:
     ShapeController( const css::uno::Reference< css::uno::XComponentContext >& rxContext, ChartController* pController );
-    virtual ~ShapeController();
-
-    // late initialisation, especially for adding as listener
-    virtual void initialize() override;
+    virtual ~ShapeController() override;
 
 protected:
     // WeakComponentImplHelperBase
@@ -61,7 +58,7 @@ protected:
     virtual void describeSupportedFeatures() override;
 
 private:
-    DECL_LINK_TYPED( CheckNameHdl, AbstractSvxObjectNameDialog&, bool);
+    DECL_LINK( CheckNameHdl, AbstractSvxObjectNameDialog&, bool);
 
     void executeDispatch_FormatLine();
     void executeDispatch_FormatArea();

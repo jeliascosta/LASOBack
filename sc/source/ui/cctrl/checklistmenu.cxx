@@ -64,7 +64,7 @@ void ScMenuFloatingWindow::SubMenuItemData::reset()
     maTimer.Stop();
 }
 
-IMPL_LINK_NOARG_TYPED(ScMenuFloatingWindow::SubMenuItemData, TimeoutHdl, Timer *, void)
+IMPL_LINK_NOARG(ScMenuFloatingWindow::SubMenuItemData, TimeoutHdl, Timer *, void)
 {
     mpParent->handleMenuTimeout(this);
 }
@@ -86,8 +86,7 @@ ScMenuFloatingWindow::ScMenuFloatingWindow(vcl::Window* pParent, ScDocument* pDo
 
     const StyleSettings& rStyle = GetSettings().GetStyleSettings();
 
-    sal_Int32 nScaleFactor = GetDPIScaleFactor();
-    const sal_uInt16 nPopupFontHeight = 12 * nScaleFactor;
+    const sal_uInt16 nPopupFontHeight = 12 * GetDPIScaleFactor();
     maLabelFont = rStyle.GetLabelFont();
     maLabelFont.SetFontHeight(nPopupFontHeight);
 }
@@ -877,7 +876,7 @@ void ScCheckListMenuWindow::CancelButton::Click()
 ScCheckListMenuWindow::ScCheckListMenuWindow(vcl::Window* pParent, ScDocument* pDoc) :
     ScMenuFloatingWindow(pParent, pDoc),
     maEdSearch(VclPtr<ScSearchEdit>::Create(this)),
-    maChecks(VclPtr<ScCheckListBox>::Create(this,  WB_HASBUTTONS | WB_HASLINES | WB_HASLINESATROOT | WB_HASBUTTONSATROOT) ),
+    maChecks(VclPtr<ScCheckListBox>::Create(this)),
     maChkToggleAll(VclPtr<TriStateBox>::Create(this, 0)),
     maBtnSelectSingle(VclPtr<ImageButton>::Create(this, 0)),
     maBtnUnselectSingle(VclPtr<ImageButton>::Create(this, 0)),
@@ -890,9 +889,9 @@ ScCheckListMenuWindow::ScCheckListMenuWindow(vcl::Window* pParent, ScDocument* p
     mePrevToggleAllState(TRISTATE_INDET),
     maTabStops(this)
 {
-    sal_Int32 nScaleFactor = GetDPIScaleFactor();
+    float fScaleFactor = GetDPIScaleFactor();
 
-    maWndSize = Size(200 * nScaleFactor, 330 * nScaleFactor);
+    maWndSize = Size(200 * fScaleFactor, 330 * fScaleFactor);
 
     maTabStops.AddTabStop( this );
     maTabStops.AddTabStop( maEdSearch.get() );
@@ -905,9 +904,6 @@ ScCheckListMenuWindow::ScCheckListMenuWindow(vcl::Window* pParent, ScDocument* p
 
     maEdSearch->SetTabStopsContainer( &maTabStops );
     maChecks->SetTabStopsContainer( &maTabStops );
-
-    // Enable type-ahead search in the check list box.
-    maChecks->SetStyle(maChecks->GetStyle() | WB_QUICK_SEARCH);
 }
 
 ScCheckListMenuWindow::~ScCheckListMenuWindow()
@@ -931,21 +927,21 @@ void ScCheckListMenuWindow::dispose()
 void ScCheckListMenuWindow::getSectionPosSize(
     Point& rPos, Size& rSize, SectionType eType) const
 {
-    sal_Int32 nScaleFactor = GetDPIScaleFactor();
+    float fScaleFactor = GetDPIScaleFactor();
 
     // constant parameters.
-    const long nSearchBoxMargin = 10 *nScaleFactor;
-    const long nListBoxMargin = 5 * nScaleFactor;            // horizontal distance from the side of the dialog to the listbox border.
-    const long nListBoxInnerPadding = 5 * nScaleFactor;
-    const long nTopMargin = 5 * nScaleFactor;
+    const long nSearchBoxMargin = 10 *fScaleFactor;
+    const long nListBoxMargin = 5 * fScaleFactor;            // horizontal distance from the side of the dialog to the listbox border.
+    const long nListBoxInnerPadding = 5 * fScaleFactor;
+    const long nTopMargin = 5 * fScaleFactor;
     const long nMenuHeight = maMenuSize.getHeight();
-    const long nSingleItemBtnAreaHeight = 32 * nScaleFactor; // height of the middle area below the list box where the single-action buttons are.
-    const long nBottomBtnAreaHeight = 50 * nScaleFactor;     // height of the bottom area where the OK and Cancel buttons are.
-    const long nBtnWidth = 90 * nScaleFactor;
+    const long nSingleItemBtnAreaHeight = 32 * fScaleFactor; // height of the middle area below the list box where the single-action buttons are.
+    const long nBottomBtnAreaHeight = 50 * fScaleFactor;     // height of the bottom area where the OK and Cancel buttons are.
+    const long nBtnWidth = 90 * fScaleFactor;
     const long nLabelHeight = getLabelFont().GetFontHeight();
     const long nBtnHeight = nLabelHeight * 2;
-    const long nBottomMargin = 10 * nScaleFactor;
-    const long nMenuListMargin = 5 * nScaleFactor;
+    const long nBottomMargin = 10 * fScaleFactor;
+    const long nMenuListMargin = 5 * fScaleFactor;
     const long nSearchBoxHeight = nLabelHeight * 2;
 
     // parameters calculated from constants.
@@ -1003,7 +999,7 @@ void ScCheckListMenuWindow::getSectionPosSize(
         break;
         case BTN_SINGLE_SELECT:
         {
-            long h = 26 * nScaleFactor;
+            long h = 26 * fScaleFactor;
             rPos = Point(nListBoxMargin, nSingleBtnAreaY);
             rPos.X() += nListBoxWidth - h - 10 - h - 10;
             rPos.Y() += (nSingleItemBtnAreaHeight - h)/2;
@@ -1012,7 +1008,7 @@ void ScCheckListMenuWindow::getSectionPosSize(
         break;
         case BTN_SINGLE_UNSELECT:
         {
-            long h = 26 * nScaleFactor;
+            long h = 26 * fScaleFactor;
             rPos = Point(nListBoxMargin, nSingleBtnAreaY);
             rPos.X() += nListBoxWidth - h - 10;
             rPos.Y() += (nSingleItemBtnAreaHeight - h)/2;
@@ -1098,13 +1094,13 @@ void ScCheckListMenuWindow::packWindow()
     maChkToggleAll->SetClickHdl( LINK(this, ScCheckListMenuWindow, TriStateHdl) );
     maChkToggleAll->Show();
 
-    sal_Int32 nScaleFactor = GetDPIScaleFactor();
+    float fScaleFactor = GetDPIScaleFactor();
 
     Image aSingleSelect(ScResId(RID_IMG_SELECT_CURRENT));
-    if (nScaleFactor != 1)
+    if (fScaleFactor > 1)
     {
         BitmapEx aBitmap = aSingleSelect.GetBitmapEx();
-        aBitmap.Scale(nScaleFactor, nScaleFactor, BmpScaleFlag::Fast);
+        aBitmap.Scale(fScaleFactor, fScaleFactor, BmpScaleFlag::Fast);
         aSingleSelect = Image(aBitmap);
     }
 
@@ -1116,10 +1112,10 @@ void ScCheckListMenuWindow::packWindow()
     maBtnSelectSingle->Show();
 
     Image aSingleUnselect(ScResId(RID_IMG_UNSELECT_CURRENT));
-    if (nScaleFactor != 1)
+    if (fScaleFactor > 1)
     {
         BitmapEx aBitmap = aSingleUnselect.GetBitmapEx();
-        aBitmap.Scale(nScaleFactor, nScaleFactor, BmpScaleFlag::Fast);
+        aBitmap.Scale(fScaleFactor, fScaleFactor, BmpScaleFlag::Fast);
         aSingleUnselect = Image(aBitmap);
     }
 
@@ -1178,7 +1174,7 @@ void ScCheckListMenuWindow::selectCurrentMemberOnly(bool bSet)
     maChecks->CheckEntry(pEntry, bSet );
 }
 
-IMPL_LINK_TYPED( ScCheckListMenuWindow, ButtonHdl, Button*, pBtn, void )
+IMPL_LINK( ScCheckListMenuWindow, ButtonHdl, Button*, pBtn, void )
 {
     if (pBtn == maBtnOk.get())
         close(true);
@@ -1194,7 +1190,7 @@ IMPL_LINK_TYPED( ScCheckListMenuWindow, ButtonHdl, Button*, pBtn, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ScCheckListMenuWindow, TriStateHdl, Button*, void)
+IMPL_LINK_NOARG(ScCheckListMenuWindow, TriStateHdl, Button*, void)
 {
     switch (mePrevToggleAllState)
     {
@@ -1216,10 +1212,10 @@ IMPL_LINK_NOARG_TYPED(ScCheckListMenuWindow, TriStateHdl, Button*, void)
     mePrevToggleAllState = maChkToggleAll->GetState();
 }
 
-IMPL_LINK_NOARG_TYPED(ScCheckListMenuWindow, EdModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(ScCheckListMenuWindow, EdModifyHdl, Edit&, void)
 {
     OUString aSearchText = maEdSearch->GetText();
-    aSearchText = aSearchText.toAsciiLowerCase();
+    aSearchText = ScGlobal::pCharClass->lowercase( aSearchText );
     bool bSearchTextEmpty = aSearchText.isEmpty();
     size_t n = maMembers.size();
     size_t nSelCount = 0;
@@ -1238,10 +1234,10 @@ IMPL_LINK_NOARG_TYPED(ScCheckListMenuWindow, EdModifyHdl, Edit&, void)
         if ( !bSearchTextEmpty )
         {
             if ( !bIsDate )
-                bPartialMatch = ( aLabelDisp.toAsciiLowerCase().indexOf( aSearchText ) != -1 );
+                bPartialMatch = ( ScGlobal::pCharClass->lowercase( aLabelDisp ).indexOf( aSearchText ) != -1 );
             else if ( maMembers[i].meDatePartType == ScCheckListMember::DAY ) // Match with both numerical and text version of month
-                bPartialMatch = bPartialMatch || ( OUString( maMembers[i].maRealName + maMembers[i].maDateParts[1] )
-                                                   .toAsciiLowerCase().indexOf( aSearchText ) != -1 );
+                bPartialMatch = bPartialMatch || ( ScGlobal::pCharClass->lowercase( OUString( maMembers[i].maRealName + maMembers[i].maDateParts[1] ) )
+                                                   .indexOf( aSearchText ) != -1 );
             else
                 continue;
         }
@@ -1292,7 +1288,7 @@ IMPL_LINK_NOARG_TYPED(ScCheckListMenuWindow, EdModifyHdl, Edit&, void)
         maBtnOk->Enable( nSelCount != 0);
 }
 
-IMPL_LINK_TYPED( ScCheckListMenuWindow, CheckHdl, SvTreeListBox*, pChecks, void )
+IMPL_LINK( ScCheckListMenuWindow, CheckHdl, SvTreeListBox*, pChecks, void )
 {
     if (pChecks != maChecks.get())
         return;
@@ -1442,7 +1438,7 @@ void ScCheckListMenuWindow::addDateMember(const OUString& rsName, double nVal, b
     Date aDate = *(pFormatter->GetNullDate());
     aDate += static_cast<long>(rtl::math::approxFloor(nVal));
 
-    sal_uInt16 nYear = aDate.GetYear();
+    sal_Int16 nYear = aDate.GetYear();
     sal_uInt16 nMonth = aDate.GetMonth();
     sal_uInt16 nDay = aDate.GetDay();
 
@@ -1614,8 +1610,8 @@ void ScTabStops::clear()
     maControls.clear();
 }
 
-ScCheckListBox::ScCheckListBox( vcl::Window* pParent, WinBits nWinStyle )
-    :  SvTreeListBox( pParent, nWinStyle ), mpCheckButton( nullptr ), mbSeenMouseButtonDown( false )
+ScCheckListBox::ScCheckListBox( vcl::Window* pParent )
+    :  SvTreeListBox( pParent, 0 ), mpCheckButton( nullptr ), mbSeenMouseButtonDown( false )
 {
     Init();
 }
@@ -1707,7 +1703,7 @@ void ScCheckListBox::CheckEntry( SvTreeListEntry* pParent, bool bCheck )
 SvTreeListEntry* ScCheckListBox::ShowCheckEntry( const OUString& sName, ScCheckListMember& rMember, bool bShow, bool bCheck )
 {
     SvTreeListEntry* pEntry = nullptr;
-    if ( !rMember.mbDate || ( rMember.mbDate && rMember.mpParent ) )
+    if (!rMember.mbDate || rMember.mpParent)
         pEntry = FindEntry( rMember.mpParent, sName );
 
     if ( bShow )
@@ -1831,6 +1827,15 @@ void ScSearchEdit::MouseButtonDown(const MouseEvent& rMEvt)
         mpTabStops->SetTabStop( this );
 }
 
+void ScCheckListMenuWindow::setHasDates(bool bHasDates)
+{
+    // WB_QUICK_SEARCH Enables type-ahead search in the check list box.
+    if (bHasDates)
+        maChecks->SetStyle(WB_QUICK_SEARCH | WB_HASBUTTONS | WB_HASLINES | WB_HASLINESATROOT | WB_HASBUTTONSATROOT);
+    else
+        maChecks->SetStyle(WB_QUICK_SEARCH | WB_HASBUTTONS);
+}
+
 void ScCheckListMenuWindow::initMembers()
 {
     size_t n = maMembers.size();
@@ -1911,12 +1916,14 @@ void ScCheckListMenuWindow::getResult(ResultType& rResult)
             if (aLabel.isEmpty())
                 aLabel = ScGlobal::GetRscString(STR_EMPTYDATA);
             bool bState =  maChecks->IsChecked( aLabel,  maMembers[i].mpParent );
-            OUString sName;
+            ResultEntry aResultEntry;
+            aResultEntry.bValid = bState;
             if ( maMembers[i].mbDate )
-                sName = maMembers[i].maRealName;
+                aResultEntry.aName = maMembers[i].maRealName;
             else
-                sName = maMembers[i].maName;
-            aResult.insert(ResultType::value_type(sName, bState));
+                aResultEntry.aName = maMembers[i].maName;
+            aResultEntry.bDate = maMembers[i].mbDate;
+            aResult.insert(aResultEntry);
         }
     }
     rResult.swap(aResult);

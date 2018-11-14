@@ -20,19 +20,27 @@
 #ifndef INCLUDED_OOX_PPT_SLIDEPERSIST_HXX
 #define INCLUDED_OOX_PPT_SLIDEPERSIST_HXX
 
-#include <memory>
-#include <oox/drawingml/shape.hxx>
-#include <oox/drawingml/theme.hxx>
-#include <oox/drawingml/clrscheme.hxx>
-#include <oox/ppt/headerfooter.hxx>
-#include <com/sun/star/frame/XModel.hpp>
-#include <com/sun/star/drawing/XDrawPage.hpp>
-#include <com/sun/star/animations/XAnimationNode.hpp>
-#include <oox/core/fragmenthandler.hxx>
-#include <oox/ppt/comments.hxx>
-
 #include <list>
+#include <map>
+#include <memory>
 
+#include <cppuhelper/weakref.hxx>
+#include <com/sun/star/uno/Reference.hxx>
+#include <oox/drawingml/clrscheme.hxx>
+#include <oox/drawingml/color.hxx>
+#include <oox/drawingml/drawingmltypes.hxx>
+#include <oox/drawingml/shape.hxx>
+#include <oox/ppt/comments.hxx>
+#include <oox/ppt/headerfooter.hxx>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
+
+namespace com { namespace sun { namespace star {
+    namespace animations { class XAnimationNode; }
+    namespace drawing { class XDrawPage; }
+} } }
+
+namespace oox { namespace core { class XmlFilterBase; } }
 namespace oox { namespace vml { class Drawing; } }
 
 namespace oox { namespace ppt {
@@ -56,7 +64,7 @@ class SlidePersist : public std::enable_shared_from_this< SlidePersist >
 public:
     SlidePersist( oox::core::XmlFilterBase& rFilter, bool bMaster, bool bNotes,
                     const css::uno::Reference< css::drawing::XDrawPage >&,
-                    oox::drawingml::ShapePtr pShapesPtr, const ::oox::drawingml::TextListStylePtr & );
+                    oox::drawingml::ShapePtr const & pShapesPtr, const ::oox::drawingml::TextListStylePtr & );
     ~SlidePersist();
 
     const css::uno::Reference< css::drawing::XDrawPage >& getPage() const { return mxPage; };

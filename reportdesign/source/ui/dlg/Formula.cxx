@@ -128,9 +128,6 @@ void FormulaDialog::dispatch(bool /*_bOK*/, bool /*_bMatrixChecked*/)
 void FormulaDialog::setDispatcherLock( bool /*bLock*/ )
 {
 }
-void FormulaDialog::setReferenceInput(const FormEditData* /*_pData*/)
-{
-}
 void FormulaDialog::deleteFormData()
 {
 }
@@ -220,7 +217,7 @@ void FormulaDialog::ToggleCollapsed( RefEdit* _pEdit, RefButton* _pButton)
 
 }
 
-IMPL_LINK_TYPED( FormulaDialog, OnClickHdl, OAddFieldWindow& ,_rAddFieldDlg, void)
+IMPL_LINK( FormulaDialog, OnClickHdl, OAddFieldWindow& ,_rAddFieldDlg, void)
 {
     const uno::Sequence< beans::PropertyValue > aArgs = _rAddFieldDlg.getSelectedFieldDescriptors();
     // we use this way to create undo actions
@@ -230,7 +227,7 @@ IMPL_LINK_TYPED( FormulaDialog, OnClickHdl, OAddFieldWindow& ,_rAddFieldDlg, voi
         aArgs[0].Value >>= aValue;
         svx::ODataAccessDescriptor aDescriptor(aValue);
         OUString sName;
-        aDescriptor[ svx::daColumnName ] >>= sName;
+        aDescriptor[ svx::DataAccessDescriptorProperty::ColumnName ] >>= sName;
         if ( !sName.isEmpty() )
         {
             sName = "[" + sName + "]";

@@ -70,8 +70,6 @@ class VCLPLUG_GEN_PUBLIC X11SalFrame : public SalFrame, public NativeWindowHandl
     ::Window        mhStackingWindow;
     // window to listen for CirculateNotify events
 
-    Pixmap          mhBackgroundPixmap;
-
     Cursor          hCursor_;
     int             nCaptured_;         // is captured
 
@@ -80,7 +78,6 @@ class VCLPLUG_GEN_PUBLIC X11SalFrame : public SalFrame, public NativeWindowHandl
 
     sal_uInt16      nKeyCode_;          // last key code
     sal_uInt16      nKeyState_;         // last key state
-    int             nCompose_;          // compose state
     bool            mbSendExtKeyModChange;
     sal_uInt16      mnExtKeyMod;
 
@@ -151,7 +148,7 @@ class VCLPLUG_GEN_PUBLIC X11SalFrame : public SalFrame, public NativeWindowHandl
     long            HandleReparentEvent ( XReparentEvent    *pEvent );
     long            HandleClientMessage ( XClientMessageEvent*pEvent );
 
-    DECL_LINK_TYPED( HandleAlwaysOnTopRaise, Timer*, void );
+    DECL_LINK( HandleAlwaysOnTopRaise, Timer*, void );
 
     void            createNewWindow( ::Window aParent, SalX11Screen nXScreen = SalX11Screen( -1 ) );
     void            updateScreenNumber();
@@ -161,12 +158,12 @@ class VCLPLUG_GEN_PUBLIC X11SalFrame : public SalFrame, public NativeWindowHandl
 
     void            updateWMClass();
 public:
-    X11SalFrame( SalFrame* pParent, SalFrameStyleFlags nSalFrameStyle, SystemParentData* pSystemParent = NULL );
-    virtual ~X11SalFrame();
+    X11SalFrame( SalFrame* pParent, SalFrameStyleFlags nSalFrameStyle, SystemParentData* pSystemParent = nullptr );
+    virtual ~X11SalFrame() override;
 
     long            Dispatch( XEvent *pEvent );
-    void            Init( SalFrameStyleFlags nSalFrameStyle, SalX11Screen nScreen = SalX11Screen( -1 ),
-                          SystemParentData* pParentData = NULL, bool bUseGeometry = false );
+    void            Init( SalFrameStyleFlags nSalFrameStyle, SalX11Screen nScreen,
+                          SystemParentData* pParentData, bool bUseGeometry = false );
 
     SalDisplay* GetDisplay() const
     {
@@ -181,7 +178,7 @@ public:
     ::Window                GetShellWindow() const { return mhShellWindow; }
     ::Window                GetForeignParent() const { return mhForeignParent; }
     ::Window                GetStackingWindow() const { return mhStackingWindow; }
-    void                    Close() const { CallCallback( SalEvent::Close, NULL ); }
+    void                    Close() const { CallCallback( SalEvent::Close, nullptr ); }
     SalFrameStyleFlags      GetStyle() const { return nStyle_; }
 
     Cursor                  GetCursor() const { return hCursor_; }

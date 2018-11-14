@@ -93,8 +93,8 @@ namespace dbaui
         AutoTimer               m_aInvalidateClipboard;             // for testing the state of the CUT/COPY/PASTE-slots
 
         TransferableDataHelper  m_aSystemClipboard;     // content of the clipboard
-        TransferableClipboardListener*
-                                m_pClipbordNotifier;    // notifier for changes in the clipboard
+        rtl::Reference<TransferableClipboardListener>
+                                m_pClipboardNotifier;    // notifier for changes in the clipboard
 
         OAsynchronousLink       m_aAsyncGetCellFocus;
         OAsynchronousLink       m_aAsyncDisplayError;
@@ -113,19 +113,18 @@ namespace dbaui
         bool                    m_bCannotSelectUnfiltered : 1;  // received an DATA_CANNOT_SELECT_UNFILTERED error
 
     protected:
-        class FormErrorHelper
+        class FormErrorHelper final
         {
             SbaXDataBrowserController*  m_pOwner;
         public:
             FormErrorHelper(SbaXDataBrowserController* pOwner) : m_pOwner(pOwner) { m_pOwner->enterFormAction(); }
-            virtual ~FormErrorHelper() { m_pOwner->leaveFormAction(); }
+            ~FormErrorHelper() { m_pOwner->leaveFormAction(); }
         };
         friend class FormErrorHelper;
 
     // attribute access
     protected:
         const css::uno::Reference< css::sdbc::XRowSet >&             getRowSet()         const   { return m_xRowSet; }
-        const css::uno::Reference< css::sdbcx::XColumnsSupplier >&   getColumnsSupplier()const   { return m_xColumnsSupplier; }
         const css::uno::Reference< css::form::XLoadable >&           getLoadable()       const   { return m_xLoadable; }
 
         const css::uno::Reference< css::form::XFormComponent >&      getFormComponent()  const   { return m_xGridModel; }
@@ -216,7 +215,7 @@ namespace dbaui
     public:
 
     protected:
-        virtual ~SbaXDataBrowserController();
+        virtual ~SbaXDataBrowserController() override;
 
         // all the features which should be handled by this class
         virtual void            describeSupportedFeatures() override;
@@ -246,8 +245,6 @@ namespace dbaui
             // you most probably don't want to override this behavior
 
         // the default implementation of disposing distributes the events to the following disposingXXX functions
-        void disposingGridControl(const css::lang::EventObject& Source);   // calls removeControlListeners
-        void disposingGridModel(const css::lang::EventObject& Source);     // calls removeModelListeners
         void disposingFormModel(const css::lang::EventObject& Source);
         void disposingColumnModel(const css::lang::EventObject& Source);
 
@@ -327,16 +324,16 @@ namespace dbaui
         void        impl_checkForCannotSelectUnfiltered( const ::dbtools::SQLExceptionInfo& _rError );
 
         // time to check the CUT/COPY/PASTE-slot-states
-        DECL_LINK_TYPED( OnInvalidateClipboard, Timer*, void );
-        DECL_LINK_TYPED( OnClipboardChanged, TransferableDataHelper*, void );
+        DECL_LINK( OnInvalidateClipboard, Timer*, void );
+        DECL_LINK( OnClipboardChanged, TransferableDataHelper*, void );
 
         // search callbacks
-        DECL_LINK_TYPED(OnSearchContextRequest, FmSearchContext&, sal_uInt32);
-        DECL_LINK_TYPED(OnFoundData, FmFoundRecordInformation&, void);
-        DECL_LINK_TYPED(OnCanceledNotFound, FmFoundRecordInformation&, void);
+        DECL_LINK(OnSearchContextRequest, FmSearchContext&, sal_uInt32);
+        DECL_LINK(OnFoundData, FmFoundRecordInformation&, void);
+        DECL_LINK(OnCanceledNotFound, FmFoundRecordInformation&, void);
 
-        DECL_LINK_TYPED( OnAsyncGetCellFocus, void*, void );
-        DECL_LINK_TYPED( OnAsyncDisplayError, void*, void );
+        DECL_LINK( OnAsyncGetCellFocus, void*, void );
+        DECL_LINK( OnAsyncDisplayError, void*, void );
     };
 }
 

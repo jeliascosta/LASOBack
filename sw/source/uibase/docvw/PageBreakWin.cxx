@@ -63,7 +63,7 @@ namespace
             SwBreakDashedLine( vcl::Window* pParent, Color& ( *pColorFn )(), SwPageBreakWin* pWin ) :
                 SwDashedLine( pParent, pColorFn ),
                 m_pWin( pWin ) {};
-            virtual ~SwBreakDashedLine() { disposeOnce(); }
+            virtual ~SwBreakDashedLine() override { disposeOnce(); }
             virtual void dispose() override { m_pWin.clear(); SwDashedLine::dispose(); }
 
             virtual void MouseMove( const MouseEvent& rMEvt ) override;
@@ -102,13 +102,13 @@ SwPageBreakWin::SwPageBreakWin( SwEditWin* pEditWin, const SwFrame *pFrame ) :
     m_pMousePt( nullptr )
 {
     // Use pixels for the rest of the drawing
-    SetMapMode( MapMode ( MAP_PIXEL ) );
+    SetMapMode( MapMode ( MapUnit::MapPixel ) );
 
     // Create the line control
     m_pLine = VclPtr<SwBreakDashedLine>::Create( GetEditWin(), &SwViewOption::GetPageBreakColor, this );
 
     // Create the popup menu
-    m_pPopupMenu = new PopupMenu( SW_RES( MN_PAGEBREAK_BUTTON ) );
+    m_pPopupMenu = VclPtr<PopupMenu>::Create( SW_RES( MN_PAGEBREAK_BUTTON ) );
     m_pPopupMenu->SetDeactivateHdl( LINK( this, SwPageBreakWin, HideHandler ) );
     SetPopupMenu( m_pPopupMenu );
 
@@ -127,8 +127,7 @@ void SwPageBreakWin::dispose()
     m_aFadeTimer.Stop();
 
     m_pLine.disposeAndClear();
-    delete m_pPopupMenu;
-    m_pPopupMenu = nullptr;
+    m_pPopupMenu.disposeAndClear();
     delete m_pMousePt;
     m_pMousePt = nullptr;
 
@@ -287,7 +286,7 @@ void SwPageBreakWin::Select( )
                             RES_PAGEDESC, RES_PAGEDESC,
                             RES_BREAK, RES_BREAK,
                             nullptr );
-                    aSet.Put( SvxFormatBreakItem( SVX_BREAK_NONE, RES_BREAK ) );
+                    aSet.Put( SvxFormatBreakItem( SvxBreak::NONE, RES_BREAK ) );
                     aSet.Put( SwFormatPageDesc( nullptr ) );
 
                     SwPaM aPaM( *pNd );
@@ -431,14 +430,14 @@ void SwPageBreakWin::Fade( bool bFadeIn )
         m_aFadeTimer.Start( );
 }
 
-IMPL_LINK_NOARG_TYPED(SwPageBreakWin, HideHandler, Menu *, bool)
+IMPL_LINK_NOARG(SwPageBreakWin, HideHandler, Menu *, bool)
 {
     Fade( false );
 
     return false;
 }
 
-IMPL_LINK_NOARG_TYPED(SwPageBreakWin, FadeHandler, Timer *, void)
+IMPL_LINK_NOARG(SwPageBreakWin, FadeHandler, Timer *, void)
 {
     const int TICKS_BEFORE_WE_APPEAR = 10;
     if ( m_bIsAppearing && m_nDelayAppearing < TICKS_BEFORE_WE_APPEAR )

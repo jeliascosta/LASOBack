@@ -248,48 +248,9 @@ bool OLEObjCache::UnloadObj(SdrOle2Obj* pObj)
     return bUnloaded;
 }
 
-IMPL_LINK_NOARG_TYPED(OLEObjCache, UnloadCheckHdl, Timer*, void)
+IMPL_LINK_NOARG(OLEObjCache, UnloadCheckHdl, Timer*, void)
 {
     UnloadOnDemand();
-}
-
-
-void SdrLinkList::Clear()
-{
-    aList.clear();
-}
-
-unsigned SdrLinkList::FindEntry(const Link<SdrObjFactory*,void>& rLink) const
-{
-    unsigned nCount=GetLinkCount();
-    for (unsigned i=0; i<nCount; i++) {
-        if (GetLink(i)==rLink) return i;
-    }
-    return 0xFFFF;
-}
-
-void SdrLinkList::InsertLink(const Link<SdrObjFactory*,void>& rLink)
-{
-    unsigned nFnd=FindEntry(rLink);
-    if (nFnd==0xFFFF) {
-        if (rLink.IsSet()) {
-            aList.push_back(rLink);
-        } else {
-            OSL_FAIL("SdrLinkList::InsertLink(): Tried to insert a link that was not set already.");
-        }
-    } else {
-        OSL_FAIL("SdrLinkList::InsertLink(): Link already in place.");
-    }
-}
-
-void SdrLinkList::RemoveLink(const Link<SdrObjFactory*,void>& rLink)
-{
-    unsigned nFnd=FindEntry(rLink);
-    if (nFnd!=0xFFFF) {
-        aList.erase( aList.begin() + nFnd );
-    } else {
-        OSL_FAIL("SdrLinkList::RemoveLink(): Link not found.");
-    }
 }
 
 
@@ -391,7 +352,6 @@ bool GetDraftFillColor(const SfxItemSet& rSet, Color& rCol)
 SdrEngineDefaults::SdrEngineDefaults():
     aFontColor(COL_AUTO),
     nFontHeight(847),             // 847/100mm = ca. 24 Point
-    eMapUnit(MAP_100TH_MM),
     aMapFraction(1,1)
 {
 }
@@ -419,13 +379,13 @@ SdrOutliner* SdrMakeOutliner(OutlinerMode nOutlinerMode, SdrModel& rModel)
     return pOutl;
 }
 
-SdrLinkList& ImpGetUserMakeObjHdl()
+std::vector<Link<SdrObjCreatorParams, SdrObject*>>& ImpGetUserMakeObjHdl()
 {
     SdrGlobalData& rGlobalData=GetSdrGlobalData();
     return rGlobalData.aUserMakeObjHdl;
 }
 
-SdrLinkList& ImpGetUserMakeObjUserDataHdl()
+std::vector<Link<SdrObjUserDataCreatorParams, SdrObjUserData*>>& ImpGetUserMakeObjUserDataHdl()
 {
     SdrGlobalData& rGlobalData=GetSdrGlobalData();
     return rGlobalData.aUserMakeObjUserDataHdl;
@@ -560,13 +520,13 @@ SvdProgressInfo::SvdProgressInfo( const Link<void*,bool>&_rLink )
     m_nCurInsert   = 0;
 }
 
-void SvdProgressInfo::Init( sal_uIntPtr nSumActionCount, sal_uIntPtr nObjCount )
+void SvdProgressInfo::Init( size_t nSumActionCount, size_t nObjCount )
 {
     m_nSumActionCount = nSumActionCount;
     m_nObjCount = nObjCount;
 }
 
-bool SvdProgressInfo::ReportActions( sal_uIntPtr nActionCount )
+bool SvdProgressInfo::ReportActions( size_t nActionCount )
 {
     m_nSumCurAction += nActionCount;
     m_nCurAction += nActionCount;
@@ -576,7 +536,7 @@ bool SvdProgressInfo::ReportActions( sal_uIntPtr nActionCount )
     return maLink.Call(nullptr);
 }
 
-void SvdProgressInfo::ReportInserts( sal_uIntPtr nInsertCount )
+void SvdProgressInfo::ReportInserts( size_t nInsertCount )
 {
     m_nSumCurAction += nInsertCount;
     m_nCurInsert += nInsertCount;
@@ -584,18 +544,18 @@ void SvdProgressInfo::ReportInserts( sal_uIntPtr nInsertCount )
     maLink.Call(nullptr);
 }
 
-void SvdProgressInfo::ReportRescales( sal_uIntPtr nRescaleCount )
+void SvdProgressInfo::ReportRescales( size_t nRescaleCount )
 {
     m_nSumCurAction += nRescaleCount;
     maLink.Call(nullptr);
 }
 
-void SvdProgressInfo::SetActionCount( sal_uIntPtr nActionCount )
+void SvdProgressInfo::SetActionCount( size_t nActionCount )
 {
     m_nActionCount = nActionCount;
 }
 
-void SvdProgressInfo::SetInsertCount( sal_uIntPtr nInsertCount )
+void SvdProgressInfo::SetInsertCount( size_t nInsertCount )
 {
     m_nInsertCount = nInsertCount;
 }
@@ -717,12 +677,12 @@ namespace
             const sal_uInt16 SPOTCOUNT(5);
             Point aSpotPos[SPOTCOUNT];
             Color aSpotColor[SPOTCOUNT];
-            sal_uIntPtr nHeight( rArea.GetSize().Height() );
-            sal_uIntPtr nWidth( rArea.GetSize().Width() );
-            sal_uIntPtr nWidth14  = nWidth / 4;
-            sal_uIntPtr nHeight14 = nHeight / 4;
-            sal_uIntPtr nWidth34  = ( 3 * nWidth ) / 4;
-            sal_uIntPtr nHeight34 = ( 3 * nHeight ) / 4;
+            sal_uInt32 nHeight( rArea.GetSize().Height() );
+            sal_uInt32 nWidth( rArea.GetSize().Width() );
+            sal_uInt32 nWidth14  = nWidth / 4;
+            sal_uInt32 nHeight14 = nHeight / 4;
+            sal_uInt32 nWidth34  = ( 3 * nWidth ) / 4;
+            sal_uInt32 nHeight34 = ( 3 * nHeight ) / 4;
 
             sal_uInt16 i;
             for ( i = 0; i < SPOTCOUNT; i++ )

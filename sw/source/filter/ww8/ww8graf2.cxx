@@ -273,7 +273,7 @@ bool SwWW8ImplReader::ReadGrafFile(OUString& rFileName, Graphic*& rpGraphic,
     if (!bOk || pSt->GetError() || !aWMF.GetActionSize())
         return false;
 
-    if (m_pWwFib->envr != 1) // !MAC as creator
+    if (m_pWwFib->m_envr != 1) // !MAC as creator
     {
         rpGraphic = new Graphic( aWMF );
         return true;
@@ -445,10 +445,10 @@ void SwWW8ImplReader::PicRead(SvStream *pDataStream, WW8_PIC *pPic,
 {
     //Only the first 0x2e bytes are the same between version 6/7 and 8+
     WW8_PIC_SHADOW aPicS;
-    pDataStream->Read( &aPicS, sizeof( aPicS ) );
+    pDataStream->ReadBytes( &aPicS, sizeof( aPicS ) );
     WW8PicShadowToReal( &aPicS, pPic );
     for (WW8_BRC & i : pPic->rgbrc)
-        pDataStream->Read( &i, bVer67 ? 2 : 4);
+        pDataStream->ReadBytes(&i, bVer67 ? 2 : 4);
     pDataStream->ReadInt16( pPic->dxaOrigin );
     pDataStream->ReadInt16( pPic->dyaOrigin );
     if (!bVer67)
@@ -696,7 +696,7 @@ SwFrameFormat* SwWW8ImplReader::ImportGraf(SdrTextObj* pTextObj,
                     {
                         if (pOurNewObject != pObject)
                         {
-                            m_pMSDffManager->ExchangeInShapeOrder( pObject, 0, nullptr,
+                            m_pMSDffManager->ExchangeInShapeOrder( pObject, 0,
                                 pOurNewObject );
 
                             // delete and destroy old SdrGrafObj from page

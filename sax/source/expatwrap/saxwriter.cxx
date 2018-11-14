@@ -107,7 +107,7 @@ private:
                         sal_uInt32& rPos) throw( SAXException );
     inline void FinishStartElement() throw( SAXException );
 public:
-    explicit SaxWriterHelper(Reference< XOutputStream > m_TempOut)
+    explicit SaxWriterHelper(Reference< XOutputStream > const & m_TempOut)
         : m_out(m_TempOut)
         , m_Sequence(SEQUENCESIZE)
         , mp_Sequence(nullptr)
@@ -884,7 +884,7 @@ public:
         , m_nLevel(0)
     {
     }
-    virtual ~SAXWriter()
+    virtual ~SAXWriter() override
     {
         delete m_pSaxWriterHelper;
     }

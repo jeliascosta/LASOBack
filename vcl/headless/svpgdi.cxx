@@ -20,9 +20,7 @@
 #include "headless/svpgdi.hxx"
 #include "headless/svpbmp.hxx"
 #include "headless/svpframe.hxx"
-#ifndef IOS
 #include "headless/svpcairotextrender.hxx"
-#endif
 #include "saldatabasic.hxx"
 
 #include <vcl/sysdata.hxx>
@@ -87,8 +85,6 @@ namespace
     }
 }
 
-#ifndef IOS
-
 bool SvpSalGraphics::blendBitmap( const SalTwoRect&, const SalBitmap& /*rBitmap*/ )
 {
     SAL_WARN("vcl.gdi", "unsupported SvpSalGraphics::blendBitmap case");
@@ -140,6 +136,9 @@ namespace
     private:
         SvpSalBitmap aTmpBmp;
         cairo_surface_t* source;
+
+        SourceHelper(const SourceHelper&) = delete;
+        SourceHelper& operator=(const SourceHelper&) = delete;
     };
 
     class MaskHelper
@@ -200,6 +199,9 @@ namespace
     private:
         cairo_surface_t *mask;
         unsigned char* pAlphaBits;
+
+        MaskHelper(const MaskHelper&) = delete;
+        MaskHelper& operator=(const MaskHelper&) = delete;
     };
 }
 
@@ -312,8 +314,6 @@ bool SvpSalGraphics::drawTransformedBitmap(
     return true;
 }
 
-#endif
-
 void SvpSalGraphics::clipRegion(cairo_t* cr)
 {
     RectangleVector aRectangles;
@@ -400,8 +400,6 @@ void SvpSalGraphics::GetResolution( sal_Int32& rDPIX, sal_Int32& rDPIY )
     rDPIX = rDPIY = 96;
 }
 
-#ifndef IOS
-
 sal_uInt16 SvpSalGraphics::GetBitCount() const
 {
     if (CAIRO_FORMAT_A1 == cairo_image_surface_get_format(m_pSurface))
@@ -445,9 +443,9 @@ void SvpSalGraphics::SetFillColor( SalColor nSalColor )
     m_aFillColor = nSalColor;
 }
 
-void SvpSalGraphics::SetXORMode(bool bSet, bool bInvert)
+void SvpSalGraphics::SetXORMode(bool bSet )
 {
-    m_ePaintMode = bInvert ? INVERT : (bSet ? XOR : OVERPAINT);
+    m_ePaintMode = bSet ? XOR : OVERPAINT;
 }
 
 void SvpSalGraphics::SetROPLineColor( SalROPColor nROPColor )
@@ -655,14 +653,16 @@ static void AddPolygonToPath(cairo_t* cr, const basegfx::B2DPolygon& rPolygon, b
 
             // tdf#99165 if the control points are 'empty', create the mathematical
             // correct replacement ones to avoid problems with the graphical sub-system
-            if(aCP1.equal(aLast))
+            // tdf#101026 The 1st attempt to create a mathematically correct replacement control
+            // vector was wrong. Best alternative is one as close as possible which means short.
+            if (aCP1.equal(aLast))
             {
-                aCP1 = aLast + ((aCP2 - aLast) * 0.3);
+                aCP1 = aLast + ((aCP2 - aLast) * 0.0005);
             }
 
             if(aCP2.equal(aPoint))
             {
-                aCP2 = aPoint + ((aCP1 - aPoint) * 0.3);
+                aCP2 = aPoint + ((aCP1 - aPoint) * 0.0005);
             }
 
             cairo_curve_to(cr, aCP1.getX(), aCP1.getY(), aCP2.getX(), aCP2.getY(),
@@ -1223,8 +1223,6 @@ void SvpSalGraphics::invert(sal_uInt32 nPoints, const SalPoint* pPtAry, SalInver
     invert(aPoly, nFlags);
 }
 
-#endif
-
 bool SvpSalGraphics::drawEPS( long, long, long, long, void*, sal_uLong )
 {
     return false;
@@ -1293,6 +1291,7 @@ cairo_t* SvpSalGraphics::getCairoContext(bool bXorModeAllowed) const
         cr = cairo_create(m_pSurface);
     cairo_set_line_width(cr, 1);
     cairo_set_fill_rule(cr, CAIRO_FILL_RULE_EVEN_ODD);
+    cairo_set_antialias(cr, getAntiAliasB2DDraw() ? CAIRO_ANTIALIAS_DEFAULT : CAIRO_ANTIALIAS_NONE);
     if (m_ePaintMode == INVERT)
         cairo_set_operator(cr, CAIRO_OPERATOR_DIFFERENCE);
     else
@@ -1409,8 +1408,6 @@ css::uno::Any SvpSalGraphics::GetNativeSurfaceHandle(cairo::SurfaceSharedPtr& /*
 
 #endif // ENABLE_CAIRO_CANVAS
 
-#ifndef IOS
-
 SystemGraphicsData SvpSalGraphics::GetGraphicsData() const
 {
     return SystemGraphicsData();
@@ -1420,13 +1417,11 @@ bool SvpSalGraphics::supportsOperation(OutDevSupportType eType) const
 {
     switch (eType)
     {
-        case OutDevSupport_TransparentRect:
-        case OutDevSupport_B2DDraw:
+        case OutDevSupportType::TransparentRect:
+        case OutDevSupportType::B2DDraw:
             return true;
     }
     return false;
 }
-
-#endif
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

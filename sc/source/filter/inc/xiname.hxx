@@ -39,8 +39,8 @@ class XclImpName : protected XclImpRoot
     {
         XclImpStream& mrStrm;
         XclImpStreamPos maStrmPos;
-        sal_Size mnStrmPos;
-        sal_Size mnStrmSize;
+        std::size_t mnStrmPos;
+        std::size_t mnStrmSize;
 
         TokenStrmData( XclImpStream& rStrm );
     };
@@ -94,7 +94,7 @@ public:
         @param nScTab  The sheet index for local names or SCTAB_MAX for global names.
         If no local name is found, tries to find a matching global name.
         @return  Pointer to the defined name or 0 on error. */
-    const XclImpName*   FindName( const OUString& rXclName, SCTAB nScTab = SCTAB_MAX ) const;
+    const XclImpName*   FindName( const OUString& rXclName, SCTAB nScTab ) const;
 
     /** Returns the defined name specified by its Excel index.
         @param nXclNameIdx  The index of the internal defined name.

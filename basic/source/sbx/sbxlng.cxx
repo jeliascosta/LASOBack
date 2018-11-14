@@ -21,6 +21,8 @@
 #include <basic/sbx.hxx>
 #include "sbxconv.hxx"
 
+#include <rtl/math.hxx>
+
 sal_Int32 ImpGetLong( const SbxValues* p )
 {
     SbxValues aTmp;
@@ -63,7 +65,7 @@ start:
                 SbxBase::SetError( ERRCODE_SBX_OVERFLOW ); nRes = SbxMINLNG;
             }
             else
-                nRes = (sal_Int32) ImpRound( p->nSingle );
+                nRes = (sal_Int32) rtl::math::round( p->nSingle );
             break;
         case SbxSALINT64:
             nRes = p->nInt64;
@@ -104,7 +106,7 @@ start:
                 SbxBase::SetError( ERRCODE_SBX_OVERFLOW ); nRes = SbxMINLNG;
             }
             else
-                nRes = (sal_Int32) ImpRound( dVal );
+                nRes = (sal_Int32) rtl::math::round( dVal );
             break;
             }
         case SbxBYREF | SbxSTRING:
@@ -127,7 +129,7 @@ start:
                     SbxBase::SetError( ERRCODE_SBX_OVERFLOW ); nRes = SbxMINLNG;
                 }
                 else
-                    nRes = (sal_Int32) ImpRound( d );
+                    nRes = (sal_Int32) rtl::math::round( d );
             }
             break;
         case SbxOBJECT:

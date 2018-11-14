@@ -56,11 +56,10 @@ OStatement_Base::OStatement_Base(OConnection* _pConnection )
     ,::comphelper::OPropertyContainer(OStatement_BASE::rBHelper)
     ,m_xDBMetaData(_pConnection->getMetaData())
     ,m_aParser( _pConnection->getDriver()->getComponentContext() )
-    ,m_aSQLIterator( _pConnection, _pConnection->createCatalog()->getTables(), m_aParser, nullptr )
+    ,m_aSQLIterator( _pConnection, _pConnection->createCatalog()->getTables(), m_aParser )
     ,m_pConnection(_pConnection)
     ,m_pParseTree(nullptr)
     ,m_pSQLAnalyzer(nullptr)
-    ,m_pTable(nullptr)
     ,m_nMaxFieldSize(0)
     ,m_nMaxRows(0)
     ,m_nQueryTimeOut(0)
@@ -70,8 +69,6 @@ OStatement_Base::OStatement_Base(OConnection* _pConnection )
     ,m_nResultSetConcurrency(ResultSetConcurrency::UPDATABLE)
     ,m_bEscapeProcessing(true)
 {
-    m_pConnection->acquire();
-
     sal_Int32 nAttrib = 0;
 
     registerProperty(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_CURSORNAME),      PROPERTY_ID_CURSORNAME,         nAttrib,&m_aCursorName,     ::cppu::UnoType<OUString>::get());
@@ -121,17 +118,9 @@ void OStatement_BASE2::disposing()
 
     m_aSQLIterator.dispose();
 
-    if(m_pTable)
-    {
-        m_pTable->release();
-        m_pTable = nullptr;
-    }
+    m_pTable.clear();
 
-    if (m_pConnection)
-    {
-        m_pConnection->release();
-        m_pConnection = nullptr;
-    }
+    m_pConnection.clear();
 
     dispose_ChildImpl();
 
@@ -151,7 +140,7 @@ void SAL_CALL OStatement_Base::acquire() throw()
 
 void SAL_CALL OStatement_BASE2::release() throw()
 {
-    relase_ChildImpl();
+    release_ChildImpl();
 }
 
 Any SAL_CALL OStatement_Base::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
@@ -162,9 +151,9 @@ Any SAL_CALL OStatement_Base::queryInterface( const Type & rType ) throw(Runtime
 
 Sequence< Type > SAL_CALL OStatement_Base::getTypes(  ) throw(RuntimeException, std::exception)
 {
-    ::cppu::OTypeCollection aTypes( cppu::UnoType<com::sun::star::beans::XMultiPropertySet>::get(),
-                                                                    cppu::UnoType<com::sun::star::beans::XFastPropertySet>::get(),
-                                                                    cppu::UnoType<com::sun::star::beans::XPropertySet>::get());
+    ::cppu::OTypeCollection aTypes( cppu::UnoType<css::beans::XMultiPropertySet>::get(),
+                                    cppu::UnoType<css::beans::XFastPropertySet>::get(),
+                                    cppu::UnoType<css::beans::XPropertySet>::get());
 
     return ::comphelper::concatSequences(aTypes.getTypes(),OStatement_BASE::getTypes());
 }
@@ -279,7 +268,7 @@ Reference< XResultSet > SAL_CALL OStatement::executeQuery( const OUString& sql )
 
 Reference< XConnection > SAL_CALL OStatement::getConnection(  ) throw(SQLException, RuntimeException, std::exception)
 {
-    return Reference< XConnection >(m_pConnection);
+    return Reference< XConnection >(m_pConnection.get());
 }
 
 sal_Int32 SAL_CALL OStatement::executeUpdate( const OUString& sql ) throw(SQLException, RuntimeException, std::exception)
@@ -308,7 +297,7 @@ void SAL_CALL OStatement_Base::disposing()
     OStatement_BASE::disposing();
 }
 
-Reference< ::com::sun::star::beans::XPropertySetInfo > SAL_CALL OStatement_Base::getPropertySetInfo(  ) throw(RuntimeException, std::exception)
+Reference< css::beans::XPropertySetInfo > SAL_CALL OStatement_Base::getPropertySetInfo(  ) throw(RuntimeException, std::exception)
 {
     return ::cppu::OPropertySetHelper::createPropertySetInfo(getInfoHelper());
 }
@@ -317,11 +306,6 @@ Any SAL_CALL OStatement::queryInterface( const Type & rType ) throw(RuntimeExcep
 {
     Any aRet = OStatement_XStatement::queryInterface( rType);
     return aRet.hasValue() ? aRet : OStatement_BASE2::queryInterface( rType);
-}
-
-OSQLAnalyzer* OStatement_Base::createAnalyzer()
-{
-    return new OSQLAnalyzer(m_pConnection);
 }
 
 void OStatement_Base::anylizeSQL()
@@ -385,8 +369,7 @@ void OStatement_Base::setOrderbyColumn( OSQLParseNode* pColumnRef,
     m_aOrderbyAscending.push_back((SQL_ISTOKEN(pAscendingDescending,DESC)) ? TAscendingOrder::DESC : TAscendingOrder::ASC);
 }
 
-
-void OStatement_Base::construct(const OUString& sql)  throw(SQLException, RuntimeException)
+void OStatement_Base::construct(const OUString& sql)  throw(SQLException, RuntimeException, std::exception)
 {
     OUString aErr;
     m_pParseTree = m_aParser.parseTree(aErr,sql);
@@ -421,17 +404,13 @@ void OStatement_Base::construct(const OUString& sql)  throw(SQLException, Runtim
         }
 
         // at this moment we support only one table per select statement
-        Reference< ::com::sun::star::lang::XUnoTunnel> xTunnel(rTabs.begin()->second,UNO_QUERY);
+        Reference< css::lang::XUnoTunnel> xTunnel(rTabs.begin()->second,UNO_QUERY);
         if(xTunnel.is())
         {
-            if(m_pTable)
-                m_pTable->release();
             m_pTable = reinterpret_cast<OFileTable*>(xTunnel->getSomething(OFileTable::getUnoTunnelImplementationId()));
-            if(m_pTable)
-                m_pTable->acquire();
         }
-        OSL_ENSURE(m_pTable,"No table!");
-        if ( m_pTable )
+        OSL_ENSURE(m_pTable.is(),"No table!");
+        if ( m_pTable.is() )
             m_xColNames     = m_pTable->getColumns();
         Reference<XIndexAccess> xNames(m_xColNames,UNO_QUERY);
         // set the binding of the resultrow
@@ -452,7 +431,7 @@ void OStatement_Base::construct(const OUString& sql)  throw(SQLException, Runtim
         // create the column mapping
         createColumnMapping();
 
-        m_pSQLAnalyzer  = createAnalyzer();
+        m_pSQLAnalyzer = new OSQLAnalyzer(m_pConnection.get());
 
         Reference<XIndexesSupplier> xIndexSup(xTunnel,UNO_QUERY);
         if(xIndexSup.is())

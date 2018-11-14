@@ -29,14 +29,12 @@ namespace sdr { namespace contact {
 class ViewObjectContactOfSdrOle2Obj : public ViewObjectContactOfSdrObj
 {
 protected:
-    const SdrOle2Obj& getSdrOle2Object() const;
-
     // This method is responsible for creating the graphical visualisation data
     virtual drawinglayer::primitive2d::Primitive2DContainer createPrimitive2DSequence(const DisplayInfo& rDisplayInfo) const override;
 
 public:
     ViewObjectContactOfSdrOle2Obj(ObjectContact& rObjectContact, ViewContact& rViewContact);
-    virtual ~ViewObjectContactOfSdrOle2Obj();
+    virtual ~ViewObjectContactOfSdrOle2Obj() override;
 };
 
 }}

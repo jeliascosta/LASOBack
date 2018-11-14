@@ -49,7 +49,7 @@ protected:
 
 public:
     Svx3DPreviewControl(vcl::Window* pParent, WinBits nStyle = 0);
-    virtual ~Svx3DPreviewControl();
+    virtual ~Svx3DPreviewControl() override;
     virtual void dispose() override;
 
     virtual void Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
@@ -85,12 +85,10 @@ class SAL_WARN_UNUSED SVX_DLLPUBLIC Svx3DLightControl : public Svx3DPreviewContr
 
     // interaction parameters
     Point                       maActionStartPoint;
-    sal_Int32                   mnInteractionStartDistance;
     double                      mfSaveActionStartHor;
     double                      mfSaveActionStartVer;
     double                      mfSaveActionStartRotZ;
 
-    // bitfield
     bool                        mbMouseMoved : 1;
     bool                        mbGeometrySelected : 1;
 
@@ -100,7 +98,7 @@ class SAL_WARN_UNUSED SVX_DLLPUBLIC Svx3DLightControl : public Svx3DPreviewContr
     void TrySelection(Point aPosPixel);
 
 public:
-    Svx3DLightControl(vcl::Window* pParent, WinBits nStyle = 0);
+    Svx3DLightControl(vcl::Window* pParent, WinBits nStyle);
 
     virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
     virtual void MouseButtonDown(const MouseEvent& rMEvt) override;
@@ -150,7 +148,7 @@ private:
 
 public:
     SvxLightCtl3D(vcl::Window* pParent);
-    virtual ~SvxLightCtl3D();
+    virtual ~SvxLightCtl3D() override;
     virtual void dispose() override;
 
     // react to size changes
@@ -175,10 +173,10 @@ public:
 
 protected:
 
-    DECL_LINK_TYPED( InternalInteractiveChange, Svx3DLightControl*, void);
-    DECL_LINK_TYPED( InternalSelectionChange, Svx3DLightControl*, void);
-    DECL_LINK_TYPED( ScrollBarMove, ScrollBar*, void);
-    DECL_LINK_TYPED( ButtonPress, Button*, void);
+    DECL_LINK( InternalInteractiveChange, Svx3DLightControl*, void);
+    DECL_LINK( InternalSelectionChange, Svx3DLightControl*, void);
+    DECL_LINK( ScrollBarMove, ScrollBar*, void);
+    DECL_LINK( ButtonPress, Button*, void);
 
     // initialize local parameters
     void Init();

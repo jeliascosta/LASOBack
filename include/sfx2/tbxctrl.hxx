@@ -77,8 +77,6 @@ friend class SfxFrameStatusListener;
     css::uno::Reference< css::lang::XComponent >           m_xStatusListener;
 
 private:
-    void                    GetOrCreateStatusListener();
-
     SfxPopupWindow(SfxPopupWindow &) = delete;
     void operator =(SfxPopupWindow &) = delete;
     void Delete();
@@ -86,19 +84,13 @@ private:
 protected:
     virtual void            PopupModeEnd() override;
     virtual bool            Close() override;
-    void                    DeleteFloatingWindow();
 
     sal_uInt16              GetId() const { return m_nId; }
     const css::uno::Reference< css::frame::XFrame >& GetFrame() const { return m_xFrame; }
 
-    void                    BindListener();
-    void                    UnbindListener();
     void                    AddStatusListener( const OUString& rCommandURL );
 
-    // SfxStatusListenerInterface
-    using FloatingWindow::StateChanged;
-    virtual void            StateChanged( sal_uInt16 nSID, SfxItemState eState,
-                                          const SfxPoolItem* pState );
+    virtual void            statusChanged( const css::frame::FeatureStateEvent& rEvent );
 
 public:
                             SfxPopupWindow( sal_uInt16 nId,
@@ -116,7 +108,7 @@ public:
                                             const css::uno::Reference< css::frame::XFrame >& rFrame,
                                             vcl::Window* pParentWindow,
                                             WinBits nBits );
-                            virtual ~SfxPopupWindow();
+                            virtual ~SfxPopupWindow() override;
     virtual void            dispose() override;
 
     virtual void            MouseMove( const MouseEvent& rMEvt ) override;
@@ -154,8 +146,8 @@ friend struct SfxTbxCtrlFactory;
     std::unique_ptr< SfxToolBoxControl_Impl>    pImpl;
 
 protected:
-    DECL_LINK_TYPED( PopupModeEndHdl, FloatingWindow*, void );
-    DECL_LINK_TYPED( ClosePopupWindow, SfxPopupWindow *, void );
+    DECL_LINK( PopupModeEndHdl, FloatingWindow*, void );
+    DECL_LINK( ClosePopupWindow, SfxPopupWindow *, void );
 
     // old SfxToolBoxControl methods
     virtual void               StateChanged( sal_uInt16 nSID, SfxItemState eState, const SfxPoolItem* pState );
@@ -173,10 +165,6 @@ protected:
     bool    hasBigImages() const;
 
 public:
-    // XEventListener
-    using ::cppu::OPropertySetHelper::disposing;
-    virtual void SAL_CALL disposing( const css::lang::EventObject& aEvent ) throw( css::uno::RuntimeException, std::exception ) override;
-
     // XComponent
     virtual void SAL_CALL dispose() throw (css::uno::RuntimeException, std::exception) override;
 
@@ -207,7 +195,7 @@ public:
                                SFX_DECL_TOOLBOX_CONTROL();
 
                                SfxToolBoxControl( sal_uInt16 nSlotID, sal_uInt16 nId, ToolBox& rBox, bool bShowStrings = false );
-    virtual                    ~SfxToolBoxControl();
+    virtual                    ~SfxToolBoxControl() override;
 
     ToolBox&                   GetToolBox() const;
     unsigned short             GetId() const;

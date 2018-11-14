@@ -57,8 +57,7 @@ OUString MimeConfigurationHelper::GetStringClassIDRepresentation( const uno::Seq
 
             sal_Int32 nDigit1 = (sal_Int32)( (sal_uInt8)aClassID[nInd] / 16 );
             sal_Int32 nDigit2 = (sal_uInt8)aClassID[nInd] % 16;
-            aResult += OUString::number( nDigit1, 16 );
-            aResult += OUString::number( nDigit2, 16 );
+            aResult += OUString::number( nDigit1, 16 ) + OUString::number( nDigit2, 16 );
         }
     }
 
@@ -694,7 +693,7 @@ SfxFilterFlags MimeConfigurationHelper::GetFilterFlags( const OUString& aFilterN
 bool MimeConfigurationHelper::AddFilterNameCheckOwnFile(
                         uno::Sequence< beans::PropertyValue >& aMediaDescr )
 {
-    OUString aFilterName = UpdateMediaDescriptorWithFilterName( aMediaDescr, sal_False );
+    OUString aFilterName = UpdateMediaDescriptorWithFilterName( aMediaDescr, false );
     if ( !aFilterName.isEmpty() )
     {
         SfxFilterFlags nFlags = GetFilterFlags( aFilterName );

@@ -40,7 +40,7 @@ struct AllocatorTraits
         : m_signature (s)
     {}
 
-    std::size_t size (std::size_t n) const
+    static std::size_t size (std::size_t n)
     {
         n = std::max(n, std::size_t(1));
 #if OSL_DEBUG_LEVEL > 0
@@ -54,6 +54,8 @@ struct AllocatorTraits
 #if OSL_DEBUG_LEVEL > 0
         memcpy (p, m_signature, sizeof(signature_type));
         p = static_cast<char*>(p) + sizeof(signature_type);
+#else
+        (void) this; // silence loplugin:staticmethods
 #endif  /* OSL_DEBUG_LEVEL */
         return p;
     }
@@ -66,6 +68,8 @@ struct AllocatorTraits
         {
             OSL_FAIL("operator delete mismatch");
         }
+#else
+        (void) this; // silence loplugin:staticmethods
 #endif  /* OSL_DEBUG_LEVEL */
         return p;
     }
@@ -105,7 +109,7 @@ static void default_handler()
 static void* allocate (
     std::size_t n, AllocatorTraits const & rTraits)
 {
-    n = rTraits.size (n);
+    n = AllocatorTraits::size (n);
     for (;;)
     {
         void * p = rtl_allocateMemory (sal_Size(n));
@@ -192,7 +196,7 @@ void* SAL_CALL operator new[] (std::size_t n) throw (std::bad_alloc)
 }
 
 void SAL_CALL operator delete[] (void * p)
-#if !defined _MSC_VER
+#if !defined _MSC_VER || _MSC_VER >= 1900
     throw ()
 #endif
 {

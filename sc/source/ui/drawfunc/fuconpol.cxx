@@ -64,10 +64,10 @@ bool FuConstPolygon::MouseButtonDown(const MouseEvent& rMEvt)
 
     SdrViewEvent aVEvt;
     (void)pView->PickAnything(rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt);
-    if (aVEvt.eEvent == SDREVENT_BEGTEXTEDIT)
+    if (aVEvt.eEvent == SdrEventKind::BeginTextEdit)
     {
         // Texteingabe hier nicht zulassen
-        aVEvt.eEvent = SDREVENT_BEGDRAGOBJ;
+        aVEvt.eEvent = SdrEventKind::BeginDragObj;
         pView->EnableExtendedMouseEventDispatcher(false);
     }
     else
@@ -112,7 +112,7 @@ bool FuConstPolygon::MouseButtonUp(const MouseEvent& rMEvt)
 
     pView->MouseButtonUp(rMEvt, pWindow);
 
-    if (aVEvt.eEvent == SDREVENT_ENDCREATE)
+    if (aVEvt.eEvent == SdrEventKind::EndCreate)
     {
         bReturn = true;
         bSimple = true;         // Doppelklick nicht weiterreichen
@@ -125,20 +125,6 @@ bool FuConstPolygon::MouseButtonUp(const MouseEvent& rMEvt)
         bParent = FuConstruct::MouseButtonUp(rMEvt);
 
     return (bParent || bReturn);
-}
-
-/*************************************************************************
-|*
-|* Tastaturereignisse bearbeiten
-|*
-|* Wird ein KeyEvent bearbeitet, so ist der Return-Wert sal_True, andernfalls
-|* FALSE.
-|*
-\************************************************************************/
-
-bool FuConstPolygon::KeyInput(const KeyEvent& rKEvt)
-{
-    return FuConstruct::KeyInput(rKEvt);
 }
 
 /*************************************************************************
@@ -202,7 +188,7 @@ void FuConstPolygon::Activate()
 
     pView->SetCurrentObj(sal::static_int_cast<sal_uInt16>(eKind));
 
-    pView->SetEditMode(SDREDITMODE_CREATE);
+    pView->SetEditMode(SdrViewEditMode::Create);
 
     FuConstruct::Activate();
 
@@ -219,7 +205,7 @@ void FuConstPolygon::Activate()
 
 void FuConstPolygon::Deactivate()
 {
-    pView->SetEditMode(SDREDITMODE_EDIT);
+    pView->SetEditMode(SdrViewEditMode::Edit);
 
     pView->EnableExtendedMouseEventDispatcher(false);
 

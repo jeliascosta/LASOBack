@@ -27,10 +27,6 @@ using ::com::sun::star::uno::RuntimeException;
 
 using namespace ::com::sun::star;
 
-namespace
-{
-static const char lcl_aServiceName[] = "com.sun.star.comp.chart.DataSource";
-}  // anonymous namespace
 
 namespace chart
 {
@@ -61,21 +57,10 @@ void SAL_CALL DataSource::setData( const Sequence< Reference< chart2::data::XLab
     m_aDataSeq = aData;
 }
 
-Sequence< OUString > DataSource::getSupportedServiceNames_Static()
-{
-    Sequence<OUString> aServices { "com.sun.star.chart2.data.DataSource" };
-    return aServices;
-}
-
 OUString SAL_CALL DataSource::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString DataSource::getImplementationName_Static()
-{
-    return OUString(lcl_aServiceName);
+    return OUString("com.sun.star.comp.chart.DataSource");
 }
 
 sal_Bool SAL_CALL DataSource::supportsService( const OUString& rServiceName )
@@ -87,7 +72,7 @@ sal_Bool SAL_CALL DataSource::supportsService( const OUString& rServiceName )
 css::uno::Sequence< OUString > SAL_CALL DataSource::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return { "com.sun.star.chart2.data.DataSource" };
 }
 
 } // namespace chart

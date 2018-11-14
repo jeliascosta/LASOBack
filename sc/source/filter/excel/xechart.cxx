@@ -126,7 +126,7 @@ XclExpStream& operator<<( XclExpStream& rStrm, const XclChRectangle& rRect )
     return rStrm << rRect.mnX << rRect.mnY << rRect.mnWidth << rRect.mnHeight;
 }
 
-inline void lclSaveRecord( XclExpStream& rStrm, XclExpRecordRef xRec )
+inline void lclSaveRecord( XclExpStream& rStrm, XclExpRecordRef const & xRec )
 {
     if( xRec )
         xRec->Save( rStrm );
@@ -134,7 +134,7 @@ inline void lclSaveRecord( XclExpStream& rStrm, XclExpRecordRef xRec )
 
 /** Saves the passed record (group) together with a leading value record. */
 template< typename Type >
-void lclSaveRecord( XclExpStream& rStrm, XclExpRecordRef xRec, sal_uInt16 nRecId, Type nValue )
+void lclSaveRecord( XclExpStream& rStrm, XclExpRecordRef const & xRec, sal_uInt16 nRecId, Type nValue )
 {
     if( xRec )
     {
@@ -304,7 +304,7 @@ XclExpChRoot::~XclExpChRoot()
 {
 }
 
-Reference< XChartDocument > XclExpChRoot::GetChartDocument() const
+Reference< XChartDocument > const & XclExpChRoot::GetChartDocument() const
 {
     return mxChData->mxChartDoc;
 }
@@ -329,7 +329,7 @@ const XclChFormatInfo& XclExpChRoot::GetFormatInfo( XclChObjectType eObjType ) c
     return mxChData->mxFmtInfoProv->GetFormatInfo( eObjType );
 }
 
-void XclExpChRoot::InitConversion( css::uno::Reference< css::chart2::XChartDocument > xChartDoc, const Rectangle& rChartRect ) const
+void XclExpChRoot::InitConversion( css::uno::Reference< css::chart2::XChartDocument > const & xChartDoc, const Rectangle& rChartRect ) const
 {
     mxChData->InitConversion( GetRoot(), xChartDoc, rChartRect );
 }
@@ -423,7 +423,7 @@ void XclExpChRoot::FinalizeFutureRecBlock( XclExpStream& rStrm )
 }
 
 XclExpChGroupBase::XclExpChGroupBase( const XclExpChRoot& rRoot,
-        sal_uInt16 nFrType, sal_uInt16 nRecId, sal_Size nRecSize ) :
+        sal_uInt16 nFrType, sal_uInt16 nRecId, std::size_t nRecSize ) :
     XclExpRecord( nRecId, nRecSize ),
     XclExpChRoot( rRoot ),
     maFrBlock( nFrType )
@@ -467,7 +467,7 @@ void XclExpChGroupBase::SetFutureRecordContext( sal_uInt16 nFrContext, sal_uInt1
 }
 
 XclExpChFutureRecordBase::XclExpChFutureRecordBase( const XclExpChRoot& rRoot,
-        XclFutureRecType eRecType, sal_uInt16 nRecId, sal_Size nRecSize ) :
+        XclFutureRecType eRecType, sal_uInt16 nRecId, std::size_t nRecSize ) :
     XclExpFutureRecord( eRecType, nRecId, nRecSize ),
     XclExpChRoot( rRoot )
 {
@@ -481,11 +481,11 @@ void XclExpChFutureRecordBase::Save( XclExpStream& rStrm )
 
 // Frame formatting ===========================================================
 
-XclExpChFramePos::XclExpChFramePos( sal_uInt16 nTLMode, sal_uInt16 nBRMode ) :
+XclExpChFramePos::XclExpChFramePos( sal_uInt16 nTLMode ) :
     XclExpRecord( EXC_ID_CHFRAMEPOS, 20 )
 {
     maData.mnTLMode = nTLMode;
-    maData.mnBRMode = nBRMode;
+    maData.mnBRMode = EXC_CHFRAMEPOS_PARENT;
 }
 
 void XclExpChFramePos::WriteBody( XclExpStream& rStrm )
@@ -871,7 +871,7 @@ void lclAddDoubleRefData(
         "lclAddDoubleRefData - double reference token expected");
     if( rToken.GetType() == ::formula::svExternalDoubleRef )
         orArray.AddExternalDoubleReference(
-            rToken.GetIndex(), rToken.GetString().getString(), aComplexRef);
+            rToken.GetIndex(), rToken.GetString(), aComplexRef);
     else
         orArray.AddDoubleReference( aComplexRef );
 }
@@ -886,7 +886,7 @@ XclExpChSourceLink::XclExpChSourceLink( const XclExpChRoot& rRoot, sal_uInt8 nDe
     maData.mnLinkType = EXC_CHSRCLINK_DIRECTLY;
 }
 
-sal_uInt16 XclExpChSourceLink::ConvertDataSequence( Reference< XDataSequence > xDataSeq, bool bSplitToColumns, sal_uInt16 nDefCount )
+sal_uInt16 XclExpChSourceLink::ConvertDataSequence( Reference< XDataSequence > const & xDataSeq, bool bSplitToColumns, sal_uInt16 nDefCount )
 {
     mxLinkFmla.reset();
     maData.mnLinkType = EXC_CHSRCLINK_DEFAULT;
@@ -1061,7 +1061,7 @@ void XclExpChSourceLink::Save( XclExpStream& rStrm )
     // CHFORMATRUNS record
     if( mxString && mxString->IsRich() )
     {
-        sal_Size nRecSize = (1 + mxString->GetFormatsCount()) * ((GetBiff() == EXC_BIFF8) ? 2 : 1);
+        std::size_t nRecSize = (1 + mxString->GetFormatsCount()) * ((GetBiff() == EXC_BIFF8) ? 2 : 1);
         rStrm.StartRecord( EXC_ID_CHFORMATRUNS, nRecSize );
         mxString->WriteFormats( rStrm, true );
         rStrm.EndRecord();
@@ -1176,7 +1176,7 @@ void XclExpChText::SetRotation( sal_uInt16 nRotation )
     ::insert_value( maData.mnFlags, XclTools::GetXclOrientFromRot( nRotation ), 8, 3 );
 }
 
-void XclExpChText::ConvertTitle( Reference< XTitle > xTitle, sal_uInt16 nTarget, const OUString* pSubTitle )
+void XclExpChText::ConvertTitle( Reference< XTitle > const & xTitle, sal_uInt16 nTarget, const OUString* pSubTitle )
 {
     switch( nTarget )
     {
@@ -1212,7 +1212,7 @@ void XclExpChText::ConvertTitle( Reference< XTitle > xTitle, sal_uInt16 nTarget,
         ConvertRotationBase( aTitleProp, true );
 
         // manual text position - only for main title
-        mxFramePos.reset( new XclExpChFramePos( EXC_CHFRAMEPOS_PARENT, EXC_CHFRAMEPOS_PARENT ) );
+        mxFramePos.reset( new XclExpChFramePos( EXC_CHFRAMEPOS_PARENT ) );
         if( nTarget == EXC_CHOBJLINK_TITLE )
         {
             Any aRelPos;
@@ -1412,7 +1412,7 @@ void XclExpChText::WriteBody( XclExpStream& rStrm )
 namespace {
 
 /** Creates and returns an Excel text object from the passed title. */
-XclExpChTextRef lclCreateTitle( const XclExpChRoot& rRoot, Reference< XTitled > xTitled, sal_uInt16 nTarget,
+XclExpChTextRef lclCreateTitle( const XclExpChRoot& rRoot, Reference< XTitled > const & xTitled, sal_uInt16 nTarget,
                                 const OUString* pSubTitle = nullptr )
 {
     Reference< XTitle > xTitle;
@@ -1645,7 +1645,7 @@ XclExpChSerTrendLine::XclExpChSerTrendLine( const XclExpChRoot& rRoot ) :
 {
 }
 
-bool XclExpChSerTrendLine::Convert( Reference< XRegressionCurve > xRegCurve, sal_uInt16 nSeriesIdx )
+bool XclExpChSerTrendLine::Convert( Reference< XRegressionCurve > const & xRegCurve, sal_uInt16 nSeriesIdx )
 {
     if( !xRegCurve.is() )
         return false;
@@ -1812,7 +1812,7 @@ void XclExpChSerErrorBar::WriteBody( XclExpStream& rStrm )
 namespace {
 
 /** Returns the property set of the specified data point. */
-ScfPropertySet lclGetPointPropSet( Reference< XDataSeries > xDataSeries, sal_Int32 nPointIdx )
+ScfPropertySet lclGetPointPropSet( Reference< XDataSeries > const & xDataSeries, sal_Int32 nPointIdx )
 {
     ScfPropertySet aPropSet;
     try
@@ -1843,7 +1843,7 @@ XclExpChSeries::XclExpChSeries( const XclExpChRoot& rRoot, sal_uInt16 nSeriesIdx
 }
 
 bool XclExpChSeries::ConvertDataSeries(
-        Reference< XDiagram > xDiagram, Reference< XDataSeries > xDataSeries,
+        Reference< XDiagram > const & xDiagram, Reference< XDataSeries > const & xDataSeries,
         const XclChExtTypeInfo& rTypeInfo, sal_uInt16 nGroupIdx, sal_uInt16 nFormatIdx )
 {
     bool bOk = false;
@@ -1963,7 +1963,7 @@ bool XclExpChSeries::ConvertDataSeries(
     return bOk;
 }
 
-bool XclExpChSeries::ConvertStockSeries( css::uno::Reference< css::chart2::XDataSeries > xDataSeries,
+bool XclExpChSeries::ConvertStockSeries( css::uno::Reference< css::chart2::XDataSeries > const & xDataSeries,
         const OUString& rValueRole, sal_uInt16 nGroupIdx, sal_uInt16 nFormatIdx, bool bCloseSymbol )
 {
     bool bOk = false;
@@ -2005,7 +2005,7 @@ bool XclExpChSeries::ConvertStockSeries( css::uno::Reference< css::chart2::XData
     return bOk;
 }
 
-bool XclExpChSeries::ConvertTrendLine( const XclExpChSeries& rParent, Reference< XRegressionCurve > xRegCurve )
+bool XclExpChSeries::ConvertTrendLine( const XclExpChSeries& rParent, Reference< XRegressionCurve > const & xRegCurve )
 {
     InitFromParent( rParent );
 
@@ -2039,7 +2039,7 @@ bool XclExpChSeries::ConvertErrorBar( const XclExpChSeries& rParent, const ScfPr
     return bOk;
 }
 
-void XclExpChSeries::ConvertCategSequence( Reference< XLabeledDataSequence > xCategSeq )
+void XclExpChSeries::ConvertCategSequence( Reference< XLabeledDataSequence > const & xCategSeq )
 {
     if( xCategSeq.is() )
         maData.mnCategCount = mxCategLink->ConvertDataSequence( xCategSeq->getValues(), false );
@@ -2071,7 +2071,7 @@ void XclExpChSeries::InitFromParent( const XclExpChSeries& rParent )
     maData.mnValueCount = rParent.maData.mnValueCount;
 }
 
-void XclExpChSeries::CreateTrendLines( css::uno::Reference< css::chart2::XDataSeries > xDataSeries )
+void XclExpChSeries::CreateTrendLines( css::uno::Reference< css::chart2::XDataSeries > const & xDataSeries )
 {
     Reference< XRegressionCurveContainer > xRegCurveCont( xDataSeries, UNO_QUERY );
     if( xRegCurveCont.is() )
@@ -2127,7 +2127,7 @@ XclExpChType::XclExpChType( const XclExpChRoot& rRoot ) :
 {
 }
 
-void XclExpChType::Convert( Reference< XDiagram > xDiagram, Reference< XChartType > xChartType,
+void XclExpChType::Convert( Reference< XDiagram > const & xDiagram, Reference< XChartType > const & xChartType,
         sal_Int32 nApiAxesSetIdx, bool bSwappedAxesSet, bool bHasXLabels )
 {
     if( xChartType.is() )
@@ -2307,7 +2307,7 @@ void XclExpChLegend::Convert( const ScfPropertySet& rPropSet )
             Reference< cssc::XChartDocument > xChart1Doc( GetChartDocument(), UNO_QUERY_THROW );
             Reference< XShape > xChart1Legend( xChart1Doc->getLegend(), UNO_SET_THROW );
             // coordinates in CHLEGEND record written but not used by Excel
-            mxFramePos.reset( new XclExpChFramePos( EXC_CHFRAMEPOS_CHARTSIZE, EXC_CHFRAMEPOS_PARENT ) );
+            mxFramePos.reset( new XclExpChFramePos( EXC_CHFRAMEPOS_CHARTSIZE ) );
             XclChFramePos& rFramePos = mxFramePos->GetFramePosData();
             rFramePos.mnTLMode = EXC_CHFRAMEPOS_CHARTSIZE;
             css::awt::Point aLegendPos = xChart1Legend->getPosition();
@@ -2406,7 +2406,7 @@ XclExpChTypeGroup::XclExpChTypeGroup( const XclExpChRoot& rRoot, sal_uInt16 nGro
 }
 
 void XclExpChTypeGroup::ConvertType(
-        Reference< XDiagram > xDiagram, Reference< XChartType > xChartType,
+        Reference< XDiagram > const & xDiagram, Reference< XChartType > const & xChartType,
         sal_Int32 nApiAxesSetIdx, bool b3dChart, bool bSwappedAxesSet, bool bHasXLabels )
 {
     // chart type settings
@@ -2431,7 +2431,7 @@ void XclExpChTypeGroup::ConvertType(
 }
 
 void XclExpChTypeGroup::ConvertSeries(
-        Reference< XDiagram > xDiagram, Reference< XChartType > xChartType,
+        Reference< XDiagram > const & xDiagram, Reference< XChartType > const & xChartType,
         sal_Int32 nGroupAxesSetIdx, bool bPercent, bool bConnectBars )
 {
     Reference< XDataSeriesContainer > xSeriesCont( xChartType, UNO_QUERY );
@@ -2501,7 +2501,7 @@ void XclExpChTypeGroup::ConvertSeries(
     }
 }
 
-void XclExpChTypeGroup::ConvertCategSequence( Reference< XLabeledDataSequence > xCategSeq )
+void XclExpChTypeGroup::ConvertCategSequence( Reference< XLabeledDataSequence > const & xCategSeq )
 {
     for( size_t nIdx = 0, nSize = maSeries.GetSize(); nIdx < nSize; ++nIdx )
         maSeries.GetRecord( nIdx )->ConvertCategSequence( xCategSeq );
@@ -2535,7 +2535,7 @@ sal_uInt16 XclExpChTypeGroup::GetFreeFormatIdx() const
 }
 
 void XclExpChTypeGroup::CreateDataSeries(
-        Reference< XDiagram > xDiagram, Reference< XDataSeries > xDataSeries )
+        Reference< XDiagram > const & xDiagram, Reference< XDataSeries > const & xDataSeries )
 {
     // let chart create series object with correct series index
     XclExpChSeriesRef xSeries = GetChartData().CreateSeries();
@@ -2549,7 +2549,7 @@ void XclExpChTypeGroup::CreateDataSeries(
 }
 
 void XclExpChTypeGroup::CreateAllStockSeries(
-        Reference< XChartType > xChartType, Reference< XDataSeries > xDataSeries )
+        Reference< XChartType > const & xChartType, Reference< XDataSeries > const & xDataSeries )
 {
     // create existing series objects
     bool bHasOpen = CreateStockSeries( xDataSeries, EXC_CHPROP_ROLE_OPENVALUES, false );
@@ -2586,7 +2586,7 @@ void XclExpChTypeGroup::CreateAllStockSeries(
     }
 }
 
-bool XclExpChTypeGroup::CreateStockSeries( Reference< XDataSeries > xDataSeries,
+bool XclExpChTypeGroup::CreateStockSeries( Reference< XDataSeries > const & xDataSeries,
         const OUString& rValueRole, bool bCloseSymbol )
 {
     bool bOk = false;
@@ -2889,7 +2889,7 @@ void XclExpChTick::WriteBody( XclExpStream& rStrm )
 namespace {
 
 /** Returns an API axis object from the passed coordinate system. */
-Reference< XAxis > lclGetApiAxis( Reference< XCoordinateSystem > xCoordSystem,
+Reference< XAxis > lclGetApiAxis( Reference< XCoordinateSystem > const & xCoordSystem,
         sal_Int32 nApiAxisDim, sal_Int32 nApiAxesSetIdx )
 {
     Reference< XAxis > xAxis;
@@ -2903,7 +2903,7 @@ Reference< XAxis > lclGetApiAxis( Reference< XCoordinateSystem > xCoordSystem,
     return xAxis;
 }
 
-Reference< cssc::XAxis > lclGetApiChart1Axis( Reference< XChartDocument > xChartDoc,
+Reference< cssc::XAxis > lclGetApiChart1Axis( Reference< XChartDocument > const & xChartDoc,
         sal_Int32 nApiAxisDim, sal_Int32 nApiAxesSetIdx )
 {
     Reference< cssc::XAxis > xChart1Axis;
@@ -2949,8 +2949,8 @@ void XclExpChAxis::SetRotation( sal_uInt16 nRotation )
         mxTick->SetRotation( nRotation );
 }
 
-void XclExpChAxis::Convert( Reference< XAxis > xAxis, Reference< XAxis > xCrossingAxis,
-        Reference< cssc::XAxis > xChart1Axis, const XclChExtTypeInfo& rTypeInfo )
+void XclExpChAxis::Convert( Reference< XAxis > const & xAxis, Reference< XAxis > const & xCrossingAxis,
+        Reference< cssc::XAxis > const & xChart1Axis, const XclChExtTypeInfo& rTypeInfo )
 {
     ScfPropertySet aAxisProp( xAxis );
     bool bCategoryAxis = ((GetAxisType() == EXC_CHAXIS_X) && rTypeInfo.mbCategoryAxis) || (GetAxisType() == EXC_CHAXIS_Z);
@@ -3023,7 +3023,7 @@ void XclExpChAxis::Convert( Reference< XAxis > xAxis, Reference< XAxis > xCrossi
     }
 }
 
-void XclExpChAxis::ConvertWall( css::uno::Reference< css::chart2::XDiagram > xDiagram )
+void XclExpChAxis::ConvertWall( css::uno::Reference< css::chart2::XDiagram > const & xDiagram )
 {
     if( xDiagram.is() ) switch( GetAxisType() )
     {
@@ -3080,7 +3080,7 @@ XclExpChAxesSet::XclExpChAxesSet( const XclExpChRoot& rRoot, sal_uInt16 nAxesSet
     maData.maRect.mnHeight = 2633;
 }
 
-sal_uInt16 XclExpChAxesSet::Convert( Reference< XDiagram > xDiagram, sal_uInt16 nFirstGroupIdx )
+sal_uInt16 XclExpChAxesSet::Convert( Reference< XDiagram > const & xDiagram, sal_uInt16 nFirstGroupIdx )
 {
     /*  First unused chart type group index is passed to be able to continue
         counting of chart type groups for secondary axes set. */
@@ -3215,7 +3215,7 @@ sal_uInt16 XclExpChAxesSet::Convert( Reference< XDiagram > xDiagram, sal_uInt16 
         // the CHAXESSET record contains the inner plot area
         maData.maRect = CalcChartRectFromHmm( xPositioning->calculateDiagramPositionExcludingAxes() );
         // the embedded CHFRAMEPOS record contains the outer plot area
-        mxFramePos.reset( new XclExpChFramePos( EXC_CHFRAMEPOS_PARENT, EXC_CHFRAMEPOS_PARENT ) );
+        mxFramePos.reset( new XclExpChFramePos( EXC_CHFRAMEPOS_PARENT ) );
         // for pie charts, always use inner plot area size to exclude the data labels as Excel does
         const XclExpChTypeGroup* pFirstTypeGroup = GetFirstTypeGroup().get();
         bool bPieChart = pFirstTypeGroup && (pFirstTypeGroup->GetTypeInfo().meTypeCateg == EXC_CHTYPECATEG_PIE);
@@ -3266,7 +3266,7 @@ XclExpChTypeGroupRef XclExpChAxesSet::GetLastTypeGroup() const
 void XclExpChAxesSet::ConvertAxis(
         XclExpChAxisRef& rxChAxis, sal_uInt16 nAxisType,
         XclExpChTextRef& rxChAxisTitle, sal_uInt16 nTitleTarget,
-        Reference< XCoordinateSystem > xCoordSystem, const XclChExtTypeInfo& rTypeInfo,
+        Reference< XCoordinateSystem > const & xCoordSystem, const XclChExtTypeInfo& rTypeInfo,
         sal_Int32 nCrossingAxisDim )
 {
     // create and convert axis object
@@ -3308,10 +3308,10 @@ static void lcl_getChartSubTitle(const Reference<XChartDocument>& xChartDoc,
 }
 
 XclExpChChart::XclExpChChart( const XclExpRoot& rRoot,
-        Reference< XChartDocument > xChartDoc, const Rectangle& rChartRect ) :
+        Reference< XChartDocument > const & xChartDoc, const Rectangle& rChartRect ) :
     XclExpChGroupBase( XclExpChRoot( rRoot, *this ), EXC_CHFRBLOCK_TYPE_CHART, EXC_ID_CHCHART, 16 )
 {
-    Size aPtSize = OutputDevice::LogicToLogic( rChartRect.GetSize(), MapMode( MAP_100TH_MM ), MapMode( MAP_POINT ) );
+    Size aPtSize = OutputDevice::LogicToLogic( rChartRect.GetSize(), MapMode( MapUnit::Map100thMM ), MapMode( MapUnit::MapPoint ) );
     // rectangle is stored in 16.16 fixed-point format
     maRect.mnX = maRect.mnY = 0;
     maRect.mnWidth = static_cast< sal_Int32 >( aPtSize.Width() << 16 );
@@ -3391,7 +3391,7 @@ void XclExpChChart::RemoveLastSeries()
         maSeries.RemoveRecord( maSeries.GetSize() - 1 );
 }
 
-void XclExpChChart::SetDataLabel( XclExpChTextRef xText )
+void XclExpChChart::SetDataLabel( XclExpChTextRef const & xText )
 {
     if( xText )
         maLabels.AppendRecord( xText );
@@ -3468,7 +3468,7 @@ void XclExpChartDrawing::Save( XclExpStream& rStrm )
         mxObjRecs->Save( rStrm );
 }
 
-XclExpChart::XclExpChart( const XclExpRoot& rRoot, Reference< XModel > xModel, const Rectangle& rChartRect ) :
+XclExpChart::XclExpChart( const XclExpRoot& rRoot, Reference< XModel > const & xModel, const Rectangle& rChartRect ) :
     XclExpSubStream( EXC_BOF_CHART ),
     XclExpRoot( rRoot )
 {

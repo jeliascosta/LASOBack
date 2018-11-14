@@ -2201,6 +2201,8 @@ namespace xmloff { namespace token {
         TOKEN( "regression-period",               XML_REGRESSION_PERIOD ),
         TOKEN( "regression-force-intercept",      XML_REGRESSION_FORCE_INTERCEPT ),
         TOKEN( "regression-intercept-value",      XML_REGRESSION_INTERCEPT_VALUE ),
+        TOKEN( "regression-x-name",               XML_REGRESSION_X_NAME ),
+        TOKEN( "regression-y-name",               XML_REGRESSION_Y_NAME ),
 
         TOKEN( "error-indicator",                 XML_ERROR_INDICATOR ),
 
@@ -3065,6 +3067,14 @@ namespace xmloff { namespace token {
         TOKEN( "odd-rows",              XML_ODD_ROWS        ),
         TOKEN( "even-columns",          XML_EVEN_COLUMNS    ),
         TOKEN( "odd-columns",           XML_ODD_COLUMNS     ),
+        // table styles
+        TOKEN( "first-row-even-column",  XML_FIRST_ROW_EVEN_COLUMN    ),
+        TOKEN( "last-row-even-column",   XML_LAST_ROW_EVEN_COLUMN     ),
+        TOKEN( "first-row-end-column",   XML_FIRST_ROW_END_COLUMN     ),
+        TOKEN( "first-row-start-column", XML_FIRST_ROW_START_COLUMN   ),
+        TOKEN( "last-row-end-column",    XML_LAST_ROW_END_COLUMN      ),
+        TOKEN( "last-row-start-column",  XML_LAST_ROW_START_COLUMN    ),
+
         TOKEN( "horizontal-on-odd",         XML_HORIZONTAL_ON_ODD ),
         // Password error from 1.4 to 2.0 Beta (#i45874#)
         TOKEN( "restart-numbering",               XML_RESTART_NUMBERING),
@@ -3255,6 +3265,11 @@ namespace xmloff { namespace token {
         TOKEN( "exponent-interval",               XML_EXPONENT_INTERVAL ),
         TOKEN( "forced-exponent-sign",            XML_FORCED_EXPONENT_SIGN ),
         TOKEN( "min-decimal-places",              XML_MIN_DECIMAL_PLACES ),
+        TOKEN( "max-denominator-value",           XML_MAX_DENOMINATOR_VALUE ),
+        TOKEN( "max-numerator-digits",            XML_MAX_NUMERATOR_DIGITS ),
+        TOKEN( "zeros-numerator-digits",          XML_ZEROS_NUMERATOR_DIGITS ),
+        TOKEN( "zeros-denominator-digits",        XML_ZEROS_DENOMINATOR_DIGITS ),
+        TOKEN( "integer-fraction-delimiter",      XML_INTEGER_FRACTION_DELIMITER ),
 
 #if OSL_DEBUG_LEVEL > 0
         { 0, nullptr, nullptr,                       XML_TOKEN_END }

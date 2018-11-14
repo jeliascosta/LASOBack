@@ -31,6 +31,11 @@ struct SwPosition;
 
 namespace sw { namespace mark
 {
+    enum class InsertMode
+    {
+        New,
+        CopyText,
+    };
 
     class SW_DLLPUBLIC IMark
         : virtual public SwModify // inherited as interface
@@ -98,7 +103,7 @@ namespace sw { namespace mark
             IFieldmark() = default;
 
         public:
-            typedef ::std::map< OUString, css::uno::Any> parameter_map_t;
+            typedef std::map< OUString, css::uno::Any> parameter_map_t;
             //getters
             virtual OUString GetFieldname() const =0;
             virtual OUString GetFieldHelptext() const =0;

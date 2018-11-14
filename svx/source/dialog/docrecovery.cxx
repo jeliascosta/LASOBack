@@ -631,10 +631,8 @@ SaveDialog::SaveDialog(vcl::Window* pParent, RecoveryCore* pCore)
         "svx/ui/docrecoverysavedialog.ui")
     , m_pCore(pCore)
 {
-    get(m_pTitleFT, "title");
     get(m_pFileListLB, "filelist");
     m_pFileListLB->set_height_request(m_pFileListLB->GetTextHeight() * 10);
-    m_pFileListLB->set_width_request(m_pFileListLB->approximate_char_width() * 72);
     get(m_pOkBtn, "ok");
 
     // Prepare the office for the following crash save step.
@@ -643,8 +641,6 @@ SaveDialog::SaveDialog(vcl::Window* pParent, RecoveryCore* pCore)
     m_pCore->doEmergencySavePrepare();
 
     const StyleSettings& rStyleSettings = GetSettings().GetStyleSettings();
-    m_pTitleFT->SetBackground(rStyleSettings.GetWindowColor());
-    m_pTitleFT->set_height_request(m_pTitleFT->get_preferred_size().Height() + 48);
 
     m_pOkBtn->SetClickHdl( LINK( this, SaveDialog, OKButtonHdl ) );
     m_pFileListLB->SetControlBackground( rStyleSettings.GetDialogColor() );
@@ -671,13 +667,12 @@ SaveDialog::~SaveDialog()
 
 void SaveDialog::dispose()
 {
-    m_pTitleFT.clear();
     m_pFileListLB.clear();
     m_pOkBtn.clear();
     Dialog::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED(SaveDialog, OKButtonHdl, Button*, void)
+IMPL_LINK_NOARG(SaveDialog, OKButtonHdl, Button*, void)
 {
     // start crash-save with progress
     ScopedVclPtrInstance< SaveProgressDialog > pProgress(this, m_pCore);
@@ -698,9 +693,6 @@ SaveProgressDialog::SaveProgressDialog(vcl::Window* pParent, RecoveryCore* pCore
     , m_pCore(pCore)
 {
     get(m_pProgrParent, "progress");
-    Size aSize(LogicToPixel(Size(SAVEPROGR_CONTROLWIDTH, PROGR_HEIGHT)));
-    m_pProgrParent->set_width_request(aSize.Width());
-    m_pProgrParent->set_height_request(aSize.Height());
 
     PluginProgress* pProgress   = new PluginProgress(m_pProgrParent, pCore->getComponentContext());
     m_xProgress.set(static_cast< css::task::XStatusIndicator* >(pProgress), css::uno::UNO_QUERY_THROW);
@@ -849,7 +841,7 @@ void RecovDocList::InitEntry(SvTreeListEntry* pEntry,
 
 short impl_askUserForWizardCancel(vcl::Window* pParent, sal_Int16 nRes)
 {
-    ScopedVclPtrInstance< MessageDialog > aQuery(pParent, SVX_RES(nRes), VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO);
+    ScopedVclPtrInstance< MessageDialog > aQuery(pParent, SVX_RES(nRes), VclMessageType::Question, VCL_BUTTONS_YES_NO);
     if (aQuery->Execute() == RET_YES)
         return DLG_RET_OK;
     else
@@ -867,16 +859,13 @@ RecoveryDialog::RecoveryDialog(vcl::Window* pParent, RecoveryCore* pCore)
     , m_bWaitForCore(false)
     , m_bWasRecoveryStarted(false)
 {
-    get(m_pTitleFT, "title");
     get(m_pDescrFT, "desc");
     get(m_pProgrParent, "progress");
-    m_pProgrParent->set_height_request(LogicToPixel(Size(0, PROGR_HEIGHT), MAP_APPFONT).Height());
     get(m_pNextBtn, "next");
     get(m_pCancelBtn, "cancel");
 
     SvSimpleTableContainer* pFileListLBContainer = get<SvSimpleTableContainer>("filelist");
-    Size aSize(LogicToPixel(Size(RECOV_CONTROLWIDTH, RECOV_FILELISTHEIGHT), MAP_APPFONT));
-    pFileListLBContainer->set_width_request(aSize.Width());
+    Size aSize(LogicToPixel(Size(RECOV_CONTROLWIDTH, RECOV_FILELISTHEIGHT), MapUnit::MapAppFont));
     pFileListLBContainer->set_height_request(aSize.Height());
     m_pFileListLB = VclPtr<RecovDocList>::Create(*pFileListLBContainer, DIALOG_MGR());
 
@@ -888,8 +877,6 @@ RecoveryDialog::RecoveryDialog(vcl::Window* pParent, RecoveryCore* pCore)
     m_xProgress.set(static_cast< css::task::XStatusIndicator* >(pProgress), css::uno::UNO_QUERY_THROW);
 
     const StyleSettings& rStyleSettings = GetSettings().GetStyleSettings();
-    m_pTitleFT->SetBackground(rStyleSettings.GetWindowColor());
-    m_pTitleFT->set_height_request(m_pTitleFT->get_preferred_size().Height() + 48);
 
     m_pFileListLB->SetBackground( rStyleSettings.GetDialogColor() );
 
@@ -927,7 +914,6 @@ RecoveryDialog::~RecoveryDialog()
 void RecoveryDialog::dispose()
 {
     m_pFileListLB.disposeAndClear();
-    m_pTitleFT.clear();
     m_pDescrFT.clear();
     m_pProgrParent.clear();
     m_pNextBtn.clear();
@@ -1160,7 +1146,7 @@ void RecoveryDialog::end()
     m_bWaitForCore = false;
 }
 
-IMPL_LINK_NOARG_TYPED(RecoveryDialog, NextButtonHdl, Button*, void)
+IMPL_LINK_NOARG(RecoveryDialog, NextButtonHdl, Button*, void)
 {
     switch (m_eRecoveryState)
     {
@@ -1180,7 +1166,7 @@ IMPL_LINK_NOARG_TYPED(RecoveryDialog, NextButtonHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(RecoveryDialog, CancelButtonHdl, Button*, void)
+IMPL_LINK_NOARG(RecoveryDialog, CancelButtonHdl, Button*, void)
 {
     switch (m_eRecoveryState)
     {
@@ -1320,7 +1306,7 @@ const OUString& BrokenRecoveryDialog::getSaveDirURL()
 }
 
 
-IMPL_LINK_NOARG_TYPED(BrokenRecoveryDialog, OkButtonHdl, Button*, void)
+IMPL_LINK_NOARG(BrokenRecoveryDialog, OkButtonHdl, Button*, void)
 {
     OUString sPhysicalPath = comphelper::string::strip(m_pSaveDirED->GetText(), ' ');
     OUString sURL;
@@ -1333,13 +1319,13 @@ IMPL_LINK_NOARG_TYPED(BrokenRecoveryDialog, OkButtonHdl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(BrokenRecoveryDialog, CancelButtonHdl, Button*, void)
+IMPL_LINK_NOARG(BrokenRecoveryDialog, CancelButtonHdl, Button*, void)
 {
     EndDialog();
 }
 
 
-IMPL_LINK_NOARG_TYPED(BrokenRecoveryDialog, SaveButtonHdl, Button*, void)
+IMPL_LINK_NOARG(BrokenRecoveryDialog, SaveButtonHdl, Button*, void)
 {
     impl_askForSavePath();
 }

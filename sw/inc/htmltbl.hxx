@@ -242,11 +242,9 @@ class SwHTMLTableLayout
     SwFrameFormat *FindFlyFrameFormat() const;
     const SwDoc *GetDoc() const { return GetAnyBoxStartNode()->GetDoc(); }
 
-    void ClearPass1Info() { m_nMin = m_nMax = 0; }
+    void Resize_( sal_uInt16 nAbsAvail, bool bRecalc );
 
-    void Resize_( sal_uInt16 nAbsAvail, bool bRecalc=false );
-
-    DECL_LINK_TYPED( DelayedResize_Impl, Timer*, void );
+    DECL_LINK( DelayedResize_Impl, Timer*, void );
 
     static sal_uInt16 GetBrowseWidthByVisArea( const SwDoc& rDoc );
 public:

@@ -127,11 +127,11 @@ namespace offapp
     {
         EditBrowseBox::Init();
 
-        Size aColWidth = LogicToPixel(Size(160, 0), MAP_APPFONT);
+        Size aColWidth = LogicToPixel(Size(160, 0), MapUnit::MapAppFont);
         InsertDataColumn(1, OUString(CUI_RES(RID_SVXSTR_DRIVER_NAME)), aColWidth.Width());
-        aColWidth = LogicToPixel(Size(30, 0), MAP_APPFONT);
+        aColWidth = LogicToPixel(Size(30, 0), MapUnit::MapAppFont);
         InsertDataColumn(2, OUString(CUI_RES(RID_SVXSTR_POOLED_FLAG)), aColWidth.Width());
-        aColWidth = LogicToPixel(Size(60, 0), MAP_APPFONT);
+        aColWidth = LogicToPixel(Size(60, 0), MapUnit::MapAppFont);
         InsertDataColumn(3, OUString(CUI_RES(RID_SVXSTR_POOL_TIMEOUT)), aColWidth.Width());
             // Attention: the resource of the string is local to the resource of the enclosing dialog!
     }
@@ -303,7 +303,7 @@ namespace offapp
         get(m_pTimeout, "timeout");
 
         Size aControlSize(248, 100);
-        aControlSize = LogicToPixel(aControlSize, MAP_APPFONT);
+        aControlSize = LogicToPixel(aControlSize, MapUnit::MapAppFont);
         m_pDriverList->set_width_request(aControlSize.Width());
         m_pDriverList->set_height_request(aControlSize.Height());
         m_pDriverList->Init();
@@ -381,14 +381,14 @@ namespace offapp
         // the enabled flag
         if (m_pEnablePooling->IsValueChangedFromSaved())
         {
-            _rSet->Put(SfxBoolItem(SID_SB_POOLING_ENABLED, m_pEnablePooling->IsChecked()), SID_SB_POOLING_ENABLED);
+            _rSet->Put(SfxBoolItem(SID_SB_POOLING_ENABLED, m_pEnablePooling->IsChecked()));
             bModified = true;
         }
 
         // the settings for the single drivers
         if (m_pDriverList->isModified())
         {
-            _rSet->Put(DriverPoolingSettingsItem(SID_SB_DRIVER_TIMEOUTS, m_pDriverList->getSettings()), SID_SB_DRIVER_TIMEOUTS);
+            _rSet->Put(DriverPoolingSettingsItem(SID_SB_DRIVER_TIMEOUTS, m_pDriverList->getSettings()));
             bModified = true;
         }
 
@@ -409,7 +409,7 @@ namespace offapp
     }
 
 
-    IMPL_LINK_TYPED( ConnectionPoolOptionsPage, OnDriverRowChanged, const DriverPooling*, pDriverPos, void )
+    IMPL_LINK( ConnectionPoolOptionsPage, OnDriverRowChanged, const DriverPooling*, pDriverPos, void )
     {
         bool bValidRow = (nullptr != pDriverPos);
         m_pDriverPoolingEnabled->Enable(bValidRow && m_pEnablePooling->IsChecked());
@@ -441,7 +441,7 @@ namespace offapp
     }
 
 
-    IMPL_LINK_TYPED( ConnectionPoolOptionsPage, OnEnabledDisabled, Button*, _pCheckBox, void )
+    IMPL_LINK( ConnectionPoolOptionsPage, OnEnabledDisabled, Button*, _pCheckBox, void )
     {
         bool bGloballyEnabled = m_pEnablePooling->IsChecked();
         bool bLocalDriverChanged = m_pDriverPoolingEnabled == _pCheckBox;

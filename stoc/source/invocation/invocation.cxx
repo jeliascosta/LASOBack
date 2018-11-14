@@ -99,7 +99,7 @@ public:
     Invocation_Impl( const Any & rAdapted, const Reference<XTypeConverter> &,
                                            const Reference<XIntrospection> &,
                                            const Reference<XIdlReflection> & );
-    virtual ~Invocation_Impl();
+    virtual ~Invocation_Impl() override;
 
     // XInterface
     virtual Any         SAL_CALL queryInterface( const Type & aType) throw( RuntimeException, std::exception ) override;
@@ -360,14 +360,10 @@ Any Invocation_Impl::getMaterial() throw(RuntimeException, std::exception)
 void Invocation_Impl::setMaterial( const Any& rMaterial )
 {
     // set the material first and only once
-    Reference<XInterface> xObj;
-
-    if (rMaterial.getValueType().getTypeClass() == TypeClass_INTERFACE)
-        xObj = *static_cast<Reference<XInterface> const *>(rMaterial.getValue());
     _aMaterial = rMaterial;
 
     // First do this outside the guard
-    _xDirect.set( xObj, UNO_QUERY );
+    _xDirect.set( rMaterial, UNO_QUERY );
 
     if( _xDirect.is() )
     {
@@ -1076,7 +1072,7 @@ class InvocationService
 {
 public:
     explicit InvocationService( const Reference<XComponentContext> & xCtx );
-    virtual ~InvocationService();
+    virtual ~InvocationService() override;
 
     // XServiceInfo
     OUString                    SAL_CALL getImplementationName() throw( RuntimeException, std::exception ) override;

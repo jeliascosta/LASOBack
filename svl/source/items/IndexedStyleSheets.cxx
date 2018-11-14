@@ -53,7 +53,6 @@ IndexedStyleSheets::IndexedStyleSheets()
     }
 ;}
 
-
 void
 IndexedStyleSheets::Register(const SfxStyleSheetBase& style, unsigned pos)
 {
@@ -207,7 +206,8 @@ IndexedStyleSheets::Clear(StyleSheetDisposer& disposer)
 }
 
 IndexedStyleSheets::~IndexedStyleSheets()
-{;}
+{
+}
 
 bool
 IndexedStyleSheets::HasStyleSheet(const rtl::Reference< SfxStyleSheetBase >& style) const

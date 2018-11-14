@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/standard/vclxaccessiblemenu.hxx>
+#include <standard/vclxaccessiblemenu.hxx>
 
 #include <com/sun/star/accessibility/AccessibleRole.hpp>
 #include <vcl/menu.hxx>
@@ -93,8 +93,7 @@ OUString VCLXAccessibleMenu::getImplementationName() throw (RuntimeException, st
 
 Sequence< OUString > VCLXAccessibleMenu::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    Sequence< OUString > aNames { "com.sun.star.awt.AccessibleMenu" };
-    return aNames;
+    return { "com.sun.star.awt.AccessibleMenu" };
 }
 
 

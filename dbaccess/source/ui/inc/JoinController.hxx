@@ -77,7 +77,7 @@ namespace dbaui
         */
         void saveTableWindows( ::comphelper::NamedValueCollection& o_rViewSettings ) const;
 
-        virtual ~OJoinController();
+        virtual ~OJoinController() override;
     public:
         OJoinController(const css::uno::Reference< css::uno::XComponentContext >& _rM);
 
@@ -116,7 +116,7 @@ namespace dbaui
 
         // UNO interface overridables
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw(css::uno::RuntimeException, std::exception) override;
+        using OJoinController_BASE::disposing;
 
         // css::lang::XComponent
         virtual void    SAL_CALL disposing() override;

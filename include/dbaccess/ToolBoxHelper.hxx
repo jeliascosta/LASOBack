@@ -20,13 +20,13 @@
 #ifndef INCLUDED_DBACCESS_TOOLBOXHELPER_HXX
 #define INCLUDED_DBACCESS_TOOLBOXHELPER_HXX
 
+#include <dbaccess/dbaccessdllapi.h>
 #include <sal/types.h>
 #include <tools/link.hxx>
-#include <vcl/image.hxx>
 #include <vcl/vclptr.hxx>
-#include <dbaccess/dbaccessdllapi.h>
 
-class SvtMiscOptions;
+class LinkParamNone;
+class Size;
 class ToolBox;
 class VclSimpleEvent;
 
@@ -69,8 +69,8 @@ namespace dbaui
         void checkImageList();
 
     protected:
-        DECL_LINK_TYPED(ConfigOptionsChanged, LinkParamNone*, void);
-        DECL_LINK_TYPED(SettingsChanged, VclSimpleEvent&, void );
+        DECL_LINK(ConfigOptionsChanged, LinkParamNone*, void);
+        DECL_LINK(SettingsChanged, VclSimpleEvent&, void );
     };
 }
 #endif // INCLUDED_DBACCESS_TOOLBOXHELPER_HXX

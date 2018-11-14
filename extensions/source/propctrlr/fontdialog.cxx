@@ -21,7 +21,6 @@
 #include "fontdialog.hxx"
 #include "formresid.hrc"
 #include "modulepcr.hxx"
-#include "formlocalid.hrc"
 #include <vcl/svapp.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
 #include <comphelper/types.hxx>
@@ -224,7 +223,7 @@ namespace pcr
             // build SfxItems with the values
             SvxFontItem aFontItem((FontFamily)nFontFamily, aFontName, aFontStyleName, PITCH_DONTKNOW, nFontCharset, CFID_FONT);
 
-            nFontHeight = (float)OutputDevice::LogicToLogic(Size(0, (sal_Int32)nFontHeight), MAP_POINT, MAP_TWIP).Height();
+            nFontHeight = (float)OutputDevice::LogicToLogic(Size(0, (sal_Int32)nFontHeight), MapUnit::MapPoint, MapUnit::MapTwip).Height();
             SvxFontHeightItem aSvxFontHeightItem((sal_uInt32)nFontHeight,100,CFID_HEIGHT);
 
             FontWeight      eWeight=VCLUnoHelper::ConvertFontWeight(nFontWeight);
@@ -248,17 +247,17 @@ namespace pcr
             SvxCharReliefItem aFontReliefItem((FontRelief)nFontRelief, CFID_RELIEF);
             SvxEmphasisMarkItem aEmphasisMarkitem((FontEmphasisMark)nFontEmphasisMark, CFID_EMPHASIS);
 
-            _pSet->Put(aFontItem, CFID_FONT);
-            _pSet->Put(aSvxFontHeightItem,CFID_HEIGHT);
-            _pSet->Put(aWeightItem, CFID_WEIGHT);
-            _pSet->Put(aPostureItem, CFID_POSTURE);
-            _pSet->Put(aLanguageItem, CFID_LANGUAGE);
-            _pSet->Put(aUnderlineItem,CFID_UNDERLINE);
-            _pSet->Put(aCrossedOutItem,CFID_STRIKEOUT);
-            _pSet->Put(aWordLineModeItem, CFID_WORDLINEMODE);
-            _pSet->Put(aSvxColorItem, CFID_CHARCOLOR);
-            _pSet->Put(aFontReliefItem, CFID_RELIEF);
-            _pSet->Put(aEmphasisMarkitem, CFID_EMPHASIS);
+            _pSet->Put(aFontItem);
+            _pSet->Put(aSvxFontHeightItem);
+            _pSet->Put(aWeightItem);
+            _pSet->Put(aPostureItem);
+            _pSet->Put(aLanguageItem);
+            _pSet->Put(aUnderlineItem);
+            _pSet->Put(aCrossedOutItem);
+            _pSet->Put(aWordLineModeItem);
+            _pSet->Put(aSvxColorItem);
+            _pSet->Put(aFontReliefItem);
+            _pSet->Put(aEmphasisMarkitem);
 
             aPropExtractor.invalidateItem(PROPERTY_FONT_NAME, CFID_FONT, *_pSet);
             aPropExtractor.invalidateItem(PROPERTY_FONT_HEIGHT, CFID_HEIGHT, *_pSet);
@@ -328,7 +327,7 @@ namespace pcr
                 const SvxFontHeightItem& rSvxFontHeightItem =
                     static_cast<const SvxFontHeightItem&>(_rSet.Get(CFID_HEIGHT));
 
-                float nHeight = (float)OutputDevice::LogicToLogic(Size(0, rSvxFontHeightItem.GetHeight()), MAP_TWIP, MAP_POINT).Height();
+                float nHeight = (float)OutputDevice::LogicToLogic(Size(0, rSvxFontHeightItem.GetHeight()), MapUnit::MapTwip, MapUnit::MapPoint).Height();
                 lcl_pushBackPropertyValue( _out_properties, PROPERTY_FONT_HEIGHT,makeAny(nHeight));
 
             }
@@ -542,7 +541,7 @@ namespace pcr
         _rpPool->FreezeIdRanges();
 
         // and, finally, the set
-        _rpSet = new SfxItemSet(*_rpPool, true);
+        _rpSet = new SfxItemSet(*_rpPool);
 
         return _rpSet;
     }

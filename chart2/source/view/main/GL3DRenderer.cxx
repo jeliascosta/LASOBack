@@ -211,11 +211,6 @@ OpenGL3DRenderer::ShaderResources::~ShaderResources()
     glDeleteProgram(m_BatchTextProID);
 }
 
-void OpenGL3DRenderer::CheckGLSLVersion()
-{
-    maResources.m_b330Support = GLEW_VERSION_3_3;
-}
-
 void OpenGL3DRenderer::ShaderResources::LoadShaders()
 {
     CHECK_GL_ERROR();
@@ -406,7 +401,7 @@ void OpenGL3DRenderer::init()
     m_fViewAngle = 30.0f;
     m_3DProjection = glm::perspective(m_fViewAngle, (float)m_iWidth / (float)m_iHeight, 0.01f, 6000.0f);
 
-    CheckGLSLVersion();
+    maResources.m_b330Support = GLEW_VERSION_3_3;
     CHECK_GL_ERROR();
     maResources.LoadShaders();
     maPickingResources.LoadShaders();
@@ -1115,7 +1110,7 @@ void OpenGL3DRenderer::SetLightInfo(bool lightOn, sal_uInt32 nColor, const glm::
     {
         if (maResources.m_b330Support)
         {
-            if (m_LightsInfo.lightNum >= MAX_LIGHT_NUM)
+            if (m_LightsInfo.lightNum >= maxLights)
             {
                 return;
             }
@@ -1126,7 +1121,7 @@ void OpenGL3DRenderer::SetLightInfo(bool lightOn, sal_uInt32 nColor, const glm::
         }
         else
         {
-            if (m_iLightNum >= MAX_LIGHT_NUM)
+            if (m_iLightNum >= maxLights)
             {
                 return;
             }
@@ -1358,7 +1353,7 @@ void OpenGL3DRenderer::UpdateBatch3DUniformBlock()
     glBufferSubData(GL_UNIFORM_BUFFER, 16, sizeof(glm::vec4), &m_LightsInfo.ambient[0]);
     CHECK_GL_ERROR();
     //current std140 alignment: 16
-    glBufferSubData(GL_UNIFORM_BUFFER, 32, sizeof(LightSource) * MAX_LIGHT_NUM, &m_LightsInfo.light);
+    glBufferSubData(GL_UNIFORM_BUFFER, 32, sizeof(LightSource) * maxLights, &m_LightsInfo.light);
     CHECK_GL_ERROR();
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
@@ -1377,7 +1372,7 @@ void OpenGL3DRenderer::Update3DUniformBlock()
     glBufferSubData(GL_UNIFORM_BUFFER, 16, sizeof(glm::vec4), &m_LightsInfo.ambient[0]);
     CHECK_GL_ERROR();
     //current std140 alignment: 16
-    glBufferSubData(GL_UNIFORM_BUFFER, 32, sizeof(LightSource) * MAX_LIGHT_NUM, &m_LightsInfo.light);
+    glBufferSubData(GL_UNIFORM_BUFFER, 32, sizeof(LightSource) * maxLights, &m_LightsInfo.light);
     CHECK_GL_ERROR();
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }

@@ -88,11 +88,10 @@ namespace
         /// font, etc.
         vcl::Font               maFont;
         RasterOp                maRasterOp;
-        ComplexTextLayoutMode   mnLayoutMode;
+        ComplexTextLayoutFlags   mnLayoutMode;
         LanguageType            maLanguageType;
         PushFlags               mnPushFlags;
 
-        /// bitfield
         /// contains all active markers
         bool                    mbLineColor : 1;
         bool                    mbFillColor : 1;
@@ -105,7 +104,7 @@ namespace
     public:
         PropertyHolder()
         :   maTransformation(),
-            maMapUnit(MAP_100TH_MM),
+            maMapUnit(MapUnit::Map100thMM),
             maLineColor(),
             maFillColor(),
             maTextColor(COL_BLACK),
@@ -114,8 +113,8 @@ namespace
             maOverlineColor(),
             maClipPolyPoygon(),
             maFont(),
-            maRasterOp(ROP_OVERPAINT),
-            mnLayoutMode(TEXT_LAYOUT_DEFAULT),
+            maRasterOp(RasterOp::OverPaint),
+            mnLayoutMode(ComplexTextLayoutFlags::Default),
             maLanguageType(0),
             mnPushFlags(PushFlags::NONE),
             mbLineColor(false),
@@ -179,12 +178,12 @@ namespace
 
         const RasterOp& getRasterOp() const { return maRasterOp; }
         void setRasterOp(const RasterOp& rRasterOp) { if(rRasterOp != maRasterOp) maRasterOp = rRasterOp; }
-        bool isRasterOpInvert() const { return (ROP_XOR == maRasterOp || ROP_INVERT == maRasterOp); }
-        bool isRasterOpForceBlack() const { return ROP_0 == maRasterOp; }
+        bool isRasterOpInvert() const { return (RasterOp::Xor == maRasterOp || RasterOp::Invert == maRasterOp); }
+        bool isRasterOpForceBlack() const { return RasterOp::N0 == maRasterOp; }
         bool isRasterOpActive() const { return isRasterOpInvert() || isRasterOpForceBlack(); }
 
-        ComplexTextLayoutMode getLayoutMode() const { return mnLayoutMode; }
-        void setLayoutMode(ComplexTextLayoutMode nNew) { if(nNew != mnLayoutMode) mnLayoutMode = nNew; }
+        ComplexTextLayoutFlags getLayoutMode() const { return mnLayoutMode; }
+        void setLayoutMode(ComplexTextLayoutFlags nNew) { if(nNew != mnLayoutMode) mnLayoutMode = nNew; }
 
         LanguageType getLanguageType() const { return maLanguageType; }
         void setLanguageType(LanguageType aNew) { if(aNew != maLanguageType) maLanguageType = aNew; }
@@ -529,7 +528,7 @@ namespace drawinglayer
         {
         protected:
             /// local decomposition.
-            virtual Primitive2DContainer create2DDecomposition(
+            virtual void create2DDecomposition(Primitive2DContainer& rContainer,
                 const geometry::ViewInformation2D& rViewInformation) const override;
 
         public:
@@ -542,16 +541,13 @@ namespace drawinglayer
             }
         };
 
-        Primitive2DContainer NonOverlappingFillGradientPrimitive2D::create2DDecomposition(
+        void NonOverlappingFillGradientPrimitive2D::create2DDecomposition(
+            Primitive2DContainer& rContainer,
             const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
             if(!getFillGradient().isDefault())
             {
-                return createFill(false);
-            }
-            else
-            {
-                return Primitive2DContainer();
+                createFill(rContainer, false);
             }
         }
     } // end of namespace primitive2d
@@ -658,7 +654,7 @@ namespace
     {
         if(rLinePolygon.count())
         {
-            const bool bDashDotUsed(LINE_DASH == rLineInfo.GetStyle());
+            const bool bDashDotUsed(LineStyle::Dash == rLineInfo.GetStyle());
             const bool bWidthUsed(rLineInfo.GetWidth() > 1);
 
             if(bDashDotUsed || bWidthUsed)
@@ -852,32 +848,32 @@ namespace
 
         switch(rGradient.GetStyle())
         {
-            case GradientStyle_LINEAR :
+            case GradientStyle::Linear :
             {
                 aGradientStyle = drawinglayer::attribute::GradientStyle::Linear;
                 break;
             }
-            case GradientStyle_AXIAL :
+            case GradientStyle::Axial :
             {
                 aGradientStyle = drawinglayer::attribute::GradientStyle::Axial;
                 break;
             }
-            case GradientStyle_RADIAL :
+            case GradientStyle::Radial :
             {
                 aGradientStyle = drawinglayer::attribute::GradientStyle::Radial;
                 break;
             }
-            case GradientStyle_ELLIPTICAL :
+            case GradientStyle::Elliptical :
             {
                 aGradientStyle = drawinglayer::attribute::GradientStyle::Elliptical;
                 break;
             }
-            case GradientStyle_SQUARE :
+            case GradientStyle::Square :
             {
                 aGradientStyle = drawinglayer::attribute::GradientStyle::Square;
                 break;
             }
-            default : // GradientStyle_RECT
+            default : // GradientStyle::Rect
             {
                 aGradientStyle = drawinglayer::attribute::GradientStyle::Rect;
                 break;
@@ -904,17 +900,17 @@ namespace
 
         switch(rHatch.GetStyle())
         {
-            default : // case HATCH_SINGLE :
+            default : // case HatchStyle::Single :
             {
                 aHatchStyle = drawinglayer::attribute::HatchStyle::Single;
                 break;
             }
-            case HATCH_DOUBLE :
+            case HatchStyle::Double :
             {
                 aHatchStyle = drawinglayer::attribute::HatchStyle::Double;
                 break;
             }
-            case HATCH_TRIPLE :
+            case HatchStyle::Triple :
             {
                 aHatchStyle = drawinglayer::attribute::HatchStyle::Triple;
                 break;
@@ -1015,8 +1011,8 @@ namespace
     /** helper to handle the change of RasterOp. It takes care of encapsulating all current
         geometry to the current RasterOp (if changed) and needs to be called on any RasterOp
         change. It will also start a new geometry target to embrace to the new RasterOp if
-        a changing RasterOp is used. Currently, ROP_XOR and ROP_INVERT are supported using
-        InvertPrimitive2D, and ROP_0 by using a ModifiedColorPrimitive2D to force to black paint
+        a changing RasterOp is used. Currently, RasterOp::Xor and RasterOp::Invert are supported using
+        InvertPrimitive2D, and RasterOp::N0 by using a ModifiedColorPrimitive2D to force to black paint
      */
     void HandleNewRasterOp(
         RasterOp aRasterOp,
@@ -1220,8 +1216,8 @@ namespace
             drawinglayer::primitive2d::getFontAttributeFromVclFont(
                 aFontScaling,
                 rFont,
-                bool(rProperty.getLayoutMode() & TEXT_LAYOUT_BIDI_RTL),
-                bool(rProperty.getLayoutMode() & TEXT_LAYOUT_BIDI_STRONG)));
+                bool(rProperty.getLayoutMode() & ComplexTextLayoutFlags::BiDiRtl),
+                bool(rProperty.getLayoutMode() & ComplexTextLayoutFlags::BiDiStrong)));
 
         // add FontScaling
         rTextTransform.scale(aFontScaling.getX(), aFontScaling.getY());
@@ -1293,7 +1289,7 @@ namespace
                 || LINESTYLE_NONE != rFont.GetUnderline()
                 || STRIKEOUT_NONE != rFont.GetStrikeout()
                 || FontEmphasisMark::NONE != (rFont.GetEmphasisMark() & FontEmphasisMark::Style)
-                || RELIEF_NONE != rFont.GetRelief()
+                || FontRelief::NONE != rFont.GetRelief()
                 || rFont.IsShadow()
                 || bWordLineMode);
 
@@ -1327,8 +1323,8 @@ namespace
 
                 switch(rFont.GetRelief())
                 {
-                    case RELIEF_EMBOSSED : eTextRelief = drawinglayer::primitive2d::TEXT_RELIEF_EMBOSSED; break;
-                    case RELIEF_ENGRAVED : eTextRelief = drawinglayer::primitive2d::TEXT_RELIEF_ENGRAVED; break;
+                    case FontRelief::Embossed : eTextRelief = drawinglayer::primitive2d::TEXT_RELIEF_EMBOSSED; break;
+                    case FontRelief::Engraved : eTextRelief = drawinglayer::primitive2d::TEXT_RELIEF_ENGRAVED; break;
                     default : break; // RELIEF_NONE, FontRelief_FORCE_EQUAL_SIZE
                 }
 
@@ -2662,14 +2658,14 @@ namespace
                 case MetaActionType::MAPMODE :
                 {
                     /** CHECKED, WORKS WELL */
-                    // the most necessary MapMode to be interpreted is MAP_RELATIVE,
+                    // the most necessary MapMode to be interpreted is MapUnit::MapRelative,
                     // but also the others may occur. Even not yet supported ones
                     // may need to be added here later
                     const MetaMapModeAction* pA = static_cast<const MetaMapModeAction*>(pAction);
                     const MapMode& rMapMode = pA->GetMapMode();
                     basegfx::B2DHomMatrix aMapping;
 
-                    if(MAP_RELATIVE == rMapMode.GetMapUnit())
+                    if(MapUnit::MapRelative == rMapMode.GetMapUnit())
                     {
                         aMapping = getTransformFromMapMode(rMapMode);
                     }
@@ -2677,21 +2673,21 @@ namespace
                     {
                         switch(rMapMode.GetMapUnit())
                         {
-                            case MAP_100TH_MM :
+                            case MapUnit::Map100thMM :
                             {
-                                if(MAP_TWIP == rPropertyHolders.Current().getMapUnit())
+                                if(MapUnit::MapTwip == rPropertyHolders.Current().getMapUnit())
                                 {
-                                    // MAP_TWIP -> MAP_100TH_MM
+                                    // MapUnit::MapTwip -> MapUnit::Map100thMM
                                     const double fTwipTo100thMm(127.0 / 72.0);
                                     aMapping.scale(fTwipTo100thMm, fTwipTo100thMm);
                                 }
                                 break;
                             }
-                            case MAP_TWIP :
+                            case MapUnit::MapTwip :
                             {
-                                if(MAP_100TH_MM == rPropertyHolders.Current().getMapUnit())
+                                if(MapUnit::Map100thMM == rPropertyHolders.Current().getMapUnit())
                                 {
-                                    // MAP_100TH_MM -> MAP_TWIP
+                                    // MapUnit::Map100thMM -> MapUnit::MapTwip
                                     const double f100thMmToTwip(72.0 / 127.0);
                                     aMapping.scale(f100thMmToTwip, f100thMmToTwip);
                                 }
@@ -2734,7 +2730,7 @@ namespace
 
                         // convert to target MapUnit if not pixels
                         aFontSize = OutputDevice::LogicToLogic(
-                            aFontSize, MAP_PIXEL, rPropertyHolders.Current().getMapUnit());
+                            aFontSize, MapUnit::MapPixel, rPropertyHolders.Current().getMapUnit());
 
                         aCorrectedFont.SetFontSize(aFontSize);
                         rPropertyHolders.Current().setFont(aCorrectedFont);
@@ -2794,7 +2790,7 @@ namespace
                     if(bRasterOpMayChange && rPropertyHolders.Current().isRasterOpActive())
                     {
                         // end evtl. RasterOp
-                        HandleNewRasterOp(ROP_OVERPAINT, rTargetHolders, rPropertyHolders);
+                        HandleNewRasterOp(RasterOp::OverPaint, rTargetHolders, rPropertyHolders);
                     }
 
                     rPropertyHolders.Pop();
@@ -3166,9 +3162,9 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer MetafilePrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
+        void MetafilePrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const
         {
-            // prepare target and porperties; each will have one default entry
+            // prepare target and properties; each will have one default entry
             TargetHolders aTargetHolders;
             PropertyHolders aPropertyHolders;
 
@@ -3215,7 +3211,7 @@ namespace drawinglayer
                 xRetval = Primitive2DContainer { aEmbeddedTransform };
             }
 
-            return xRetval;
+            rContainer.insert(rContainer.end(), xRetval.begin(), xRetval.end());
         }
 
         MetafilePrimitive2D::MetafilePrimitive2D(

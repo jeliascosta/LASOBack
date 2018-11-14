@@ -134,12 +134,12 @@ OUString LogarithmicRegressionCurveCalculator::ImplGetRepresentation(
     sal_Int32 nNumberFormatKey, sal_Int32* pFormulaMaxWidth /* = nullptr */ ) const
 {
     bool bHasSlope = !rtl::math::approxEqual( fabs( m_fSlope ), 1.0 );
-    OUStringBuffer aBuf( "f(x) = " );
+    OUStringBuffer aBuf( mYName + " = " );
     sal_Int32 nLineLength = aBuf.getLength();
     sal_Int32 nValueLength=0;
     if ( pFormulaMaxWidth && *pFormulaMaxWidth > 0 ) // count nValueLength
     {
-        sal_Int32 nCharMin = nLineLength + 7;  // 7 = "ln(x)" + 2 extra characters
+        sal_Int32 nCharMin = nLineLength + 6 + mXName.getLength();  // 6 = "ln(x)" + 2 extra characters
         if( m_fSlope < 0.0 )
             nCharMin += 2;  // "- "
         if( m_fSlope != 0.0 && m_fIntercept != 0.0 )
@@ -162,7 +162,7 @@ OUString LogarithmicRegressionCurveCalculator::ImplGetRepresentation(
     {
         if( m_fSlope < 0.0 )
         {
-            aTmpBuf.append( aMinusSign + " " );
+            aTmpBuf.append( OUStringLiteral1(aMinusSign) + " " );
         }
         if( bHasSlope )
         {
@@ -172,7 +172,7 @@ OUString LogarithmicRegressionCurveCalculator::ImplGetRepresentation(
                 aTmpBuf.append( aValueString + " " );
             }
         }
-        aTmpBuf.append( "ln(x) " );
+        aTmpBuf.append( "ln(" + mXName + ") " );
         addStringToEquation( aBuf, nLineLength, aTmpBuf, pFormulaMaxWidth );
         aTmpBuf.truncate();
 
@@ -181,7 +181,7 @@ OUString LogarithmicRegressionCurveCalculator::ImplGetRepresentation(
     }
              // add intercept value
     if( m_fIntercept < 0.0 )
-        aTmpBuf.append( aMinusSign+" " );
+        aTmpBuf.append( OUStringLiteral1(aMinusSign)+" " );
     OUString aValueString = getFormattedString( xNumFormatter, nNumberFormatKey, fabs(m_fIntercept), pValueLength );
     if ( aValueString != "0" )  // aValueString may be rounded to 0 if nValueLength is small
     {
@@ -189,7 +189,7 @@ OUString LogarithmicRegressionCurveCalculator::ImplGetRepresentation(
         addStringToEquation( aBuf, nLineLength, aTmpBuf, pFormulaMaxWidth );
     }
 
-    if ( aBuf.toString() == "f(x) = " )
+    if ( aBuf.toString().equals( OUString(mYName + " = ") ) )
         aBuf.append( "0" );
 
     return aBuf.makeStringAndClear();

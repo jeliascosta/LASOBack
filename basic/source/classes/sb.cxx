@@ -67,7 +67,7 @@ class DocBasicItem : public ::cppu::WeakImplHelper< util::XCloseListener >
 {
 public:
     explicit DocBasicItem( StarBASIC& rDocBasic );
-    virtual ~DocBasicItem();
+    virtual ~DocBasicItem() override;
 
     inline const SbxObjectRef& getClassModules() const { return mxClassModules; }
     inline bool isDocClosed() const { return mbDocClosed; }
@@ -232,7 +232,7 @@ StarBASIC* lclGetDocBasicForModule( SbModule* pModule )
 
 SbxObject* StarBASIC::getVBAGlobals( )
 {
-    if ( !pVBAGlobals )
+    if ( !pVBAGlobals.Is() )
     {
         Any aThisDoc;
         if ( GetUNOConstant("ThisComponent", aThisDoc) )
@@ -253,7 +253,7 @@ SbxObject* StarBASIC::getVBAGlobals( )
         const OUString aVBAHook("VBAGlobals");
         pVBAGlobals = static_cast<SbUnoObject*>(Find( aVBAHook , SbxClassType::DontCare ));
     }
-    return pVBAGlobals;
+    return pVBAGlobals.get();
 }
 
 //  i#i68894#
@@ -427,7 +427,7 @@ SbxBase* SbiFactory::Create( sal_uInt16 nSbxId, sal_uInt32 nCreator )
         case SBXID_JSCRIPTMOD:
             return new SbJScriptModule( "" );
         case SBXID_JSCRIPTMETH:
-            return new SbJScriptMethod( "", SbxVARIANT, nullptr );
+            return new SbJScriptMethod( "", SbxVARIANT );
         }
     }
     return nullptr;
@@ -468,7 +468,7 @@ SbxObject* SbiFactory::CreateObject( const OUString& rClass )
 class SbOLEFactory : public SbxFactory
 {
 public:
-    virtual SbxBase* Create( sal_uInt16 nSbxId, sal_uInt32 = SBXCR_SBX ) override;
+    virtual SbxBase* Create( sal_uInt16 nSbxId, sal_uInt32 ) override;
     virtual SbxObject* CreateObject( const OUString& ) override;
 };
 
@@ -490,7 +490,7 @@ SbxObject* SbOLEFactory::CreateObject( const OUString& rClassName )
 class SbFormFactory : public SbxFactory
 {
 public:
-    virtual SbxBase* Create( sal_uInt16 nSbxId, sal_uInt32 = SBXCR_SBX ) override;
+    virtual SbxBase* Create( sal_uInt16 nSbxId, sal_uInt32 ) override;
     virtual SbxObject* CreateObject( const OUString& ) override;
 };
 
@@ -593,7 +593,7 @@ SbxObject* cloneTypeObjectImpl( const SbxObject& rTypeObj )
 class SbTypeFactory : public SbxFactory
 {
 public:
-    virtual SbxBase* Create( sal_uInt16 nSbxId, sal_uInt32 = SBXCR_SBX ) override;
+    virtual SbxBase* Create( sal_uInt16 nSbxId, sal_uInt32 ) override;
     virtual SbxObject* CreateObject( const OUString& ) override;
 };
 
@@ -641,7 +641,7 @@ SbClassModuleObject::SbClassModuleObject( SbModule* pClassModule )
     ResetFlag( SbxFlagBits::GlobalSearch );
 
     // Copy the methods from original class module
-    SbxArray* pClassMethods = pClassModule->GetMethods();
+    SbxArray* pClassMethods = pClassModule->GetMethods().get();
     sal_uInt32 nMethodCount = pClassMethods->Count32();
     sal_uInt32 i;
     for( i = 0 ; i < nMethodCount ; i++ )
@@ -1098,11 +1098,12 @@ void StarBASIC::Insert( SbxVariable* pVar )
 
 void StarBASIC::Remove( SbxVariable* pVar )
 {
-    if( dynamic_cast<const SbModule*>(pVar) != nullptr)
+    SbModule* pModule = dynamic_cast<SbModule*>(pVar);
+    if( pModule )
     {
         // #87540 Can be last reference!
-        SbxVariableRef xVar = pVar;
-        pModules.erase(std::remove(pModules.begin(), pModules.end(), pVar));
+        SbModuleRef xVar = pModule;
+        pModules.erase(std::remove(pModules.begin(), pModules.end(), xVar));
         pVar->SetParent( nullptr );
         EndListening( pVar->GetBroadcaster() );
     }
@@ -1162,7 +1163,7 @@ void SbModule::implProcessModuleRunInit( ModuleInitDependencyMap& rMap, ClassMod
     SbModule* pModule = rItem.m_pModule;
     if( pModule->pClassData != nullptr )
     {
-        StringVector& rReqTypes = pModule->pClassData->maRequiredTypes;
+        std::vector< OUString >& rReqTypes = pModule->pClassData->maRequiredTypes;
         if( rReqTypes.size() > 0 )
         {
             for( const auto& rStr : rReqTypes )
@@ -1290,12 +1291,12 @@ SbxVariable* StarBASIC::Find( const OUString& rName, SbxClassType t )
         {
             if( rName.equalsIgnoreAsciiCase( RTLNAME ) )
             {
-                pRes = pRtl;
+                pRes = pRtl.get();
             }
         }
         if( !pRes )
         {
-            pRes = static_cast<SbiStdObject*>(static_cast<SbxObject*>(pRtl))->Find( rName, t );
+            pRes = static_cast<SbiStdObject*>(pRtl.get())->Find( rName, t );
         }
         if( pRes )
         {
@@ -1361,7 +1362,7 @@ bool StarBASIC::Call( const OUString& rName, SbxArray* pParam )
         SbxBase::ResetError();
         if( eErr != ERRCODE_SBX_OK )
         {
-            RTError( (SbError)eErr, 0, 0, 0 );
+            RTError( (SbError)eErr, OUString(), 0, 0, 0 );
         }
     }
     return bRes;
@@ -1390,11 +1391,8 @@ void StarBASIC::QuitAndExitApplication()
 void StarBASIC::Stop()
 {
     SbiInstance* p = GetSbData()->pInst;
-    while( p )
-    {
+    if( p )
         p->Stop();
-        p = p->pNext;
-    }
 }
 
 bool StarBASIC::IsRunning()
@@ -1422,7 +1420,7 @@ SbMethod* StarBASIC::GetActiveMethod( sal_uInt16 nLevel )
 
 SbModule* StarBASIC::GetActiveModule()
 {
-    if( GetSbData()->pInst && !IsCompilerError() )
+    if( GetSbData()->pInst && !GetSbData()->bCompilerError )
     {
         return GetSbData()->pInst->GetActiveModule();
     }
@@ -1473,7 +1471,6 @@ sal_uInt16 StarBASIC::GetCol2()     { return GetSbData()->nCol2; }
 // Specific to error handler
 SbError StarBASIC::GetErrorCode()       { return GetSbData()->nCode; }
 const OUString& StarBASIC::GetErrorText() { return GetSbData()->aErrMsg; }
-bool StarBASIC::IsCompilerError()       { return GetSbData()->bCompiler; }
 
 // From 1996-03-29:
 // The mapping between the old and the new error codes take place by searching
@@ -1527,7 +1524,7 @@ sal_uInt16 StarBASIC::GetVBErrorCode( SbError nError )
 
 SbError StarBASIC::GetSfxFromVBError( sal_uInt16 nError )
 {
-    SbError nRet = 0L;
+    SbError nRet = 0;
 
     if( SbiRuntime::isVBAEnabled() )
     {
@@ -1539,7 +1536,7 @@ SbError StarBASIC::GetSfxFromVBError( sal_uInt16 nError )
         case 8:
         case 12:
         case 73:
-            return 0L;
+            return 0;
         case 10:
             return ERRCODE_BASIC_ARRAY_FIX;
         case 14:
@@ -1553,7 +1550,7 @@ SbError StarBASIC::GetSfxFromVBError( sal_uInt16 nError )
         case 92:
             return ERRCODE_BASIC_LOOP_NOT_INIT;
         default:
-            nRet = 0L;
+            nRet = 0;
         }
     }
     const SFX_VB_ErrorItem* pErrItem;
@@ -1669,7 +1666,7 @@ bool StarBASIC::CError( SbError code, const OUString& rMsg,
         code = (SbError)*new StringErrorInfo( code, rMsg );
     }
     SetErrorData( code, l, c1, c2 );
-    GetSbData()->bCompiler = true;
+    GetSbData()->bCompilerError = true;
     bool bRet;
     if( GetSbData()->aErrHdl.IsSet() )
     {
@@ -1679,13 +1676,8 @@ bool StarBASIC::CError( SbError code, const OUString& rMsg,
     {
         bRet = ErrorHdl();
     }
-    GetSbData()->bCompiler = false;     // only true for error handler
+    GetSbData()->bCompilerError = false;     // only true for error handler
     return bRet;
-}
-
-void StarBASIC::RTError( SbError code, sal_Int32 l, sal_Int32 c1, sal_Int32 c2 )
-{
-    RTError( code, OUString(), l, c1, c2 );
 }
 
 bool StarBASIC::RTError( SbError code, const OUString& rMsg, sal_Int32 l, sal_Int32 c1, sal_Int32 c2 )
@@ -1815,7 +1807,7 @@ void StarBASIC::SetGlobalBreakHdl( const Link<StarBASIC*,sal_uInt16>& rLink )
     GetSbData()->aBreakHdl = rLink;
 }
 
-SbxArrayRef StarBASIC::getUnoListeners()
+SbxArrayRef const & StarBASIC::getUnoListeners()
 {
     if( !xUnoListeners.Is() )
     {
@@ -2109,12 +2101,12 @@ void BasicCollection::Notify( SfxBroadcaster& rCst, const SfxHint& rHint )
             if( pVar->GetHashCode() == nAddHash
                   && aVarName.equalsIgnoreAsciiCase( pAddStr ) )
             {
-                pVar->SetInfo( xAddInfo );
+                pVar->SetInfo( xAddInfo.get() );
             }
             else if( pVar->GetHashCode() == nItemHash
                   && aVarName.equalsIgnoreAsciiCase( pItemStr ) )
             {
-                pVar->SetInfo( xItemInfo );
+                pVar->SetInfo( xItemInfo.get() );
             }
         }
     }
@@ -2222,7 +2214,7 @@ void BasicCollection::CollAdd( SbxArray* pPar_ )
             }
         }
         pNewItem->SetFlag( SbxFlagBits::ReadWrite );
-        xItemArray->Insert32( pNewItem, nNextIndex );
+        xItemArray->Insert32( pNewItem.get(), nNextIndex );
     }
     else
     {
@@ -2267,7 +2259,7 @@ void BasicCollection::CollRemove( SbxArray* pPar_ )
     sal_Int32 nIndex = implGetIndex( p );
     if( nIndex >= 0 && nIndex < (sal_Int32)xItemArray->Count32() )
     {
-        xItemArray->Remove32( nIndex );
+        xItemArray->Remove( nIndex );
 
         // Correct for stack if necessary
         SbiInstance* pInst = GetSbData()->pInst;

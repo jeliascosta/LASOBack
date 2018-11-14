@@ -46,8 +46,6 @@
 #include <ucbhelper/cancelcommandexecution.hxx>
 #include <ucbhelper/content.hxx>
 #include <ucbhelper/contentidentifier.hxx>
-#include <ucbhelper/std_inputstream.hxx>
-#include <ucbhelper/std_outputstream.hxx>
 #include <ucbhelper/propertyvalueset.hxx>
 #include <ucbhelper/proxydecider.hxx>
 #include <sax/tools/converter.hxx>
@@ -58,6 +56,8 @@
 #include "cmis_provider.hxx"
 #include "cmis_resultset.hxx"
 #include "cmis_strings.hxx"
+#include <std_inputstream.hxx>
+#include <std_outputstream.hxx>
 
 #define OUSTR_TO_STDSTR(s) string( OUStringToOString( s, RTL_TEXTENCODING_UTF8 ).getStr() )
 #define STD_TO_OUSTR( str ) OUString( str.c_str(), str.length( ), RTL_TEXTENCODING_UTF8 )
@@ -285,7 +285,7 @@ namespace cmis
 {
     Content::Content( const uno::Reference< uno::XComponentContext >& rxContext,
         ContentProvider *pProvider, const uno::Reference< ucb::XContentIdentifier >& Identifier,
-        libcmis::ObjectPtr pObject )
+        libcmis::ObjectPtr const & pObject )
             throw ( ucb::ContentCreationException )
         : ContentImplHelper( rxContext, pProvider, Identifier ),
         m_pProvider( pProvider ),
@@ -361,7 +361,7 @@ namespace cmis
             libcmis::SessionFactory::setCertificateValidationHandler( certHandler );
 
             // Get the auth credentials
-            AuthProvider authProvider( xEnv, m_xIdentifier->getContentIdentifier( ), m_aURL.getBindingUrl( ) );
+            AuthProvider aAuthProvider(xEnv, m_xIdentifier->getContentIdentifier(), m_aURL.getBindingUrl());
             AuthProvider::setXEnv( xEnv );
 
             string rUsername = OUSTR_TO_STDSTR( m_aURL.getUsername( ) );
@@ -371,13 +371,13 @@ namespace cmis
 
             while ( !bIsDone )
             {
-                if ( authProvider.authenticationQuery( rUsername, rPassword ) )
+                if (aAuthProvider.authenticationQuery(rUsername, rPassword))
                 {
                     // Initiate a CMIS session and register it as we found nothing
                     libcmis::OAuth2DataPtr oauth2Data;
                     if ( m_aURL.getBindingUrl( ) == GDRIVE_BASE_URL )
                     {
-                        libcmis::SessionFactory::setOAuth2AuthCodeProvider( authProvider.gdriveAuthCodeFallback );
+                        libcmis::SessionFactory::setOAuth2AuthCodeProvider(AuthProvider::gdriveAuthCodeFallback);
                         oauth2Data.reset( new libcmis::OAuth2Data(
                             GDRIVE_AUTH_URL, GDRIVE_TOKEN_URL,
                             GDRIVE_SCOPE, GDRIVE_REDIRECT_URI,
@@ -390,7 +390,7 @@ namespace cmis
                             ALFRESCO_CLOUD_CLIENT_ID, ALFRESCO_CLOUD_CLIENT_SECRET ) );
                     if ( m_aURL.getBindingUrl( ) == ONEDRIVE_BASE_URL )
                     {
-                        libcmis::SessionFactory::setOAuth2AuthCodeProvider( authProvider.onedriveAuthCodeFallback );
+                        libcmis::SessionFactory::setOAuth2AuthCodeProvider(AuthProvider::onedriveAuthCodeFallback);
                         oauth2Data.reset( new libcmis::OAuth2Data(
                             ONEDRIVE_AUTH_URL, ONEDRIVE_TOKEN_URL,
                             ONEDRIVE_SCOPE, ONEDRIVE_REDIRECT_URI,
@@ -446,7 +446,7 @@ namespace cmis
         return m_pSession;
     }
 
-    libcmis::ObjectTypePtr Content::getObjectType( const uno::Reference< ucb::XCommandEnvironment >& xEnv )
+    libcmis::ObjectTypePtr const & Content::getObjectType( const uno::Reference< ucb::XCommandEnvironment >& xEnv )
     {
         if ( nullptr == m_pObjectType.get( ) && m_bTransient )
         {
@@ -496,7 +496,7 @@ namespace cmis
     }
 
 
-    libcmis::ObjectPtr Content::getObject( const uno::Reference< ucb::XCommandEnvironment >& xEnv ) throw (css::uno::RuntimeException, css::ucb::CommandFailedException, libcmis::Exception)
+    libcmis::ObjectPtr const & Content::getObject( const uno::Reference< ucb::XCommandEnvironment >& xEnv ) throw (css::uno::RuntimeException, css::ucb::CommandFailedException, libcmis::Exception)
     {
         // can't get the session for some reason
         // the recent file opening at start up is an example.
@@ -538,17 +538,20 @@ namespace cmis
                     string sName = OUSTR_TO_STDSTR( aParentUrl.getName( INetURLObject::LAST_SEGMENT, true, INetURLObject::DECODE_WITH_CHARSET ) );
                     aParentUrl.removeSegment( );
                     OUString sParentUrl = aParentUrl.GetMainURL( INetURLObject::NO_DECODE );
-
-                    uno::Reference<Content> xParent( new Content(m_xContext, m_pProvider, new ucbhelper::ContentIdentifier( sParentUrl )) );
-                    libcmis::FolderPtr pParentFolder = boost::dynamic_pointer_cast< libcmis::Folder >( xParent->getObject( xEnv ) );
-                    if ( pParentFolder )
+                    // Avoid infinite recursion if sParentUrl == m_sURL
+                    if (sParentUrl != m_sURL)
                     {
-                        vector< libcmis::ObjectPtr > children = pParentFolder->getChildren( );
-                        for ( vector< libcmis::ObjectPtr >::iterator it = children.begin( );
-                                it != children.end() && !m_pObject; ++it )
+                        rtl::Reference<Content> xParent(new Content(m_xContext, m_pProvider, new ucbhelper::ContentIdentifier(sParentUrl)));
+                        libcmis::FolderPtr pParentFolder = boost::dynamic_pointer_cast< libcmis::Folder >(xParent->getObject(xEnv));
+                        if (pParentFolder)
                         {
-                            if ( ( *it )->getName( ) == sName )
-                                m_pObject = *it;
+                            vector< libcmis::ObjectPtr > children = pParentFolder->getChildren();
+                            for (vector< libcmis::ObjectPtr >::iterator it = children.begin();
+                                it != children.end() && !m_pObject; ++it)
+                            {
+                                if ((*it)->getName() == sName)
+                                    m_pObject = *it;
+                            }
                         }
                     }
 
@@ -1063,7 +1066,7 @@ namespace cmis
         }
 
         boost::shared_ptr< ostream > pOut( new ostringstream ( ios_base::binary | ios_base::in | ios_base::out ) );
-        uno::Reference < io::XOutputStream > xOutput = new ucbhelper::StdOutputStream( pOut );
+        uno::Reference < io::XOutputStream > xOutput = new StdOutputStream( pOut );
         copyData( xIn, xOutput );
 
         map< string, libcmis::PropertyPtr > newProperties;
@@ -1338,7 +1341,7 @@ namespace cmis
                     if ( nullptr != document )
                     {
                         boost::shared_ptr< ostream > pOut( new ostringstream ( ios_base::binary | ios_base::in | ios_base::out ) );
-                        uno::Reference < io::XOutputStream > xOutput = new ucbhelper::StdOutputStream( pOut );
+                        uno::Reference < io::XOutputStream > xOutput = new StdOutputStream( pOut );
                         copyData( xInputStream, xOutput );
                         try
                         {
@@ -1377,7 +1380,7 @@ namespace cmis
                     else
                     {
                         boost::shared_ptr< ostream > pOut( new ostringstream ( ios_base::binary | ios_base::in | ios_base::out ) );
-                        uno::Reference < io::XOutputStream > xOutput = new ucbhelper::StdOutputStream( pOut );
+                        uno::Reference < io::XOutputStream > xOutput = new StdOutputStream( pOut );
                         copyData( xInputStream, xOutput );
                         try
                         {
@@ -1545,7 +1548,7 @@ namespace cmis
 
             boost::shared_ptr< istream > aIn = document->getContentStream( );
 
-            uno::Reference< io::XInputStream > xIn = new ucbhelper::StdInputStream( aIn );
+            uno::Reference< io::XInputStream > xIn = new StdInputStream( aIn );
             if( !xIn.is( ) )
                 return false;
 

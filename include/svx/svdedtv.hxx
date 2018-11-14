@@ -33,24 +33,24 @@ class SfxStyleSheet;
 class SdrLayer;
 class SvdProgressInfo;
 
-enum SdrHorAlign  {
-    SDRHALIGN_NONE,
-    SDRHALIGN_LEFT,
-    SDRHALIGN_RIGHT,
-    SDRHALIGN_CENTER
+enum class SdrHorAlign  {
+    NONE,
+    Left,
+    Right,
+    Center
 };
 
-enum SdrVertAlign {
-    SDRVALIGN_NONE,
-    SDRVALIGN_TOP,
-    SDRVALIGN_BOTTOM,
-    SDRVALIGN_CENTER
+enum class SdrVertAlign {
+    NONE,
+    Top,
+    Bottom,
+    Center
 };
 
-enum SdrMergeMode {
-    SDR_MERGE_MERGE,
-    SDR_MERGE_SUBSTRACT,
-    SDR_MERGE_INTERSECT
+enum class SdrMergeMode {
+    Merge,
+    Subtract,
+    Intersect
 };
 
 // Options for InsertObject()
@@ -96,8 +96,6 @@ protected:
     bool                        bOneOrMoreMovable : 1;        // at least one object is moveable
     bool                        bMoreThanOneNoMovRot : 1;     // more then one object is not movable nor turnable (Crook)
     bool                        bContortionPossible : 1;      // all polygones (grouped if necessary)
-    bool                        bAllPolys : 1;                // all polygones (not grouped)
-    bool                        bOneOrMorePolys : 1;          // at least one polygon (not grouped)
     bool                        bMoveAllowed : 1;
     bool                        bResizeFreeAllowed : 1;
     bool                        bResizePropAllowed : 1;
@@ -146,8 +144,8 @@ protected:
     // for CombineMarkedObjects
     static bool ImpCanConvertForCombine1(const SdrObject* pObj);
     static bool ImpCanConvertForCombine(const SdrObject* pObj);
-    static basegfx::B2DPolyPolygon ImpGetPolyPolygon1(const SdrObject* pObj, bool bCombine);
-    static basegfx::B2DPolyPolygon ImpGetPolyPolygon(const SdrObject* pObj, bool bCombine);
+    static basegfx::B2DPolyPolygon ImpGetPolyPolygon1(const SdrObject* pObj);
+    static basegfx::B2DPolyPolygon ImpGetPolyPolygon(const SdrObject* pObj);
     static basegfx::B2DPolygon ImpCombineToSinglePolygon(const basegfx::B2DPolyPolygon& rPolyPolygon);
 
     // for DismantleMarkedObjects
@@ -170,8 +168,8 @@ protected:
 
 protected:
     // #i71538# make constructors of SdrView sub-components protected to avoid incomplete incarnations which may get casted to SdrView
-    SdrEditView(SdrModel* pModel1, OutputDevice* pOut = nullptr);
-    virtual ~SdrEditView();
+    SdrEditView(SdrModel* pModel1, OutputDevice* pOut);
+    virtual ~SdrEditView() override;
 
 public:
     // each call of an undo-capable method from its view, generates an undo action.
@@ -182,11 +180,10 @@ public:
     // NotifyNewUndoAction() is not called for an empty group.
     void BegUndo()                         { mpModel->BegUndo();         } // open undo-grouping
     void BegUndo(const OUString& rComment) { mpModel->BegUndo(rComment); } // open undo-grouping
-    void BegUndo(const OUString& rComment, const OUString& rObjDescr, SdrRepeatFunc eFunc=SDRREPFUNC_OBJ_NONE) { mpModel->BegUndo(rComment,rObjDescr,eFunc); } // open undo-grouping
+    void BegUndo(const OUString& rComment, const OUString& rObjDescr, SdrRepeatFunc eFunc=SdrRepeatFunc::NONE) { mpModel->BegUndo(rComment,rObjDescr,eFunc); } // open undo-grouping
     void EndUndo();                                                   // close undo-grouping  (incl. BroadcastEdges)
     void AddUndo(SdrUndoAction* pUndo)   { mpModel->AddUndo(pUndo);    } // add action
     // only after first BegUndo or befor last EndUndo:
-    void SetUndoComment(const OUString& rComment) { mpModel->SetUndoComment(rComment); }
     void SetUndoComment(const OUString& rComment, const OUString& rObjDescr) { mpModel->SetUndoComment(rComment,rObjDescr); }
     bool IsUndoEnabled() const;
 
@@ -194,7 +191,7 @@ public:
     void AddUndoActions( std::vector< SdrUndoAction* >& );
 
     // Layermanagement with Undo.
-    void InsertNewLayer(const OUString& rName, sal_uInt16 nPos=0xFFFF);
+    void InsertNewLayer(const OUString& rName, sal_uInt16 nPos);
     // Delete a layer including all objects contained
     void DeleteLayer(const OUString& rName);
 
@@ -220,8 +217,8 @@ public:
     void MirrorMarkedObjVertical();
     long GetMarkedObjShear() const;
     void ShearMarkedObj(const Point& rRef, long nAngle, bool bVShear=false, bool bCopy=false);
-    void CrookMarkedObj(const Point& rRef, const Point& rRad, SdrCrookMode eMode, bool bVertical=false, bool bNoContortion=false, bool bCopy=false);
-    void DistortMarkedObj(const Rectangle& rRef, const XPolygon& rDistortedRect, bool bNoContortion=false, bool bCopy=false);
+    void CrookMarkedObj(const Point& rRef, const Point& rRad, SdrCrookMode eMode, bool bVertical, bool bNoContortion, bool bCopy=false);
+    void DistortMarkedObj(const Rectangle& rRef, const XPolygon& rDistortedRect, bool bNoContortion, bool bCopy=false);
 
     // copy marked objects and mark them instead of the old ones
     void CopyMarkedObj();

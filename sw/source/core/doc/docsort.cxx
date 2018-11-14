@@ -63,8 +63,8 @@ LocaleDataWrapper*  SwSortElement::pLclData = nullptr;
 
 // List of all sorted elements
 
-typedef ::std::multiset<SwSortTextElement> SwSortTextElements;
-typedef ::std::multiset<SwSortBoxElement> SwSortBoxElements;
+typedef std::multiset<SwSortTextElement> SwSortTextElements;
+typedef std::multiset<SwSortBoxElement> SwSortBoxElements;
 
 /// Construct a SortElement for the Sort
 void SwSortElement::Init( SwDoc* pD, const SwSortOptions& rOpt,
@@ -339,7 +339,7 @@ bool SwDoc::SortText(const SwPaM& rPaM, const SwSortOptions& rOpt)
         if( pCNd )
             pRedlPam->GetMark()->nContent = pCNd->Len();
 
-        if( getIDocumentRedlineAccess().IsRedlineOn() && !IDocumentRedlineAccess::IsShowOriginal( getIDocumentRedlineAccess().GetRedlineMode() ) )
+        if( getIDocumentRedlineAccess().IsRedlineOn() && !IDocumentRedlineAccess::IsShowOriginal( getIDocumentRedlineAccess().GetRedlineFlags() ) )
         {
             if( bUndo )
             {

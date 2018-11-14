@@ -75,7 +75,7 @@ void OPreparedStatement::disposing()
     }
 }
 
-void OPreparedStatement::construct(const OUString& sql)  throw(SQLException, RuntimeException)
+void OPreparedStatement::construct(const OUString& sql)  throw(SQLException, RuntimeException, std::exception)
 {
     OStatement_Base::construct(sql);
 
@@ -117,7 +117,7 @@ Any SAL_CALL OPreparedStatement::queryInterface( const Type & rType ) throw(Runt
                                         static_cast< XResultSetMetaDataSupplier*>(this));
 }
 
-::com::sun::star::uno::Sequence< ::com::sun::star::uno::Type > SAL_CALL OPreparedStatement::getTypes(  ) throw(::com::sun::star::uno::RuntimeException, std::exception)
+css::uno::Sequence< css::uno::Type > SAL_CALL OPreparedStatement::getTypes(  ) throw(css::uno::RuntimeException, std::exception)
 {
         ::cppu::OTypeCollection aTypes( cppu::UnoType<XPreparedStatement>::get(),
                                         cppu::UnoType<XParameters>::get(),
@@ -134,8 +134,8 @@ Reference< XResultSetMetaData > SAL_CALL OPreparedStatement::getMetaData(  ) thr
 
 
     if(!m_xMetaData.is())
-        m_xMetaData = new OResultSetMetaData(m_aSQLIterator.getSelectColumns(),m_aSQLIterator.getTables().begin()->first,m_pTable);
-    return m_xMetaData;
+        m_xMetaData = new OResultSetMetaData(m_aSQLIterator.getSelectColumns(),m_aSQLIterator.getTables().begin()->first,m_pTable.get());
+    return m_xMetaData.get();
 }
 
 
@@ -191,7 +191,7 @@ Reference< XConnection > SAL_CALL OPreparedStatement::getConnection(  ) throw(SQ
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OStatement_BASE::rBHelper.bDisposed);
 
-    return Reference< XConnection >(m_pConnection);
+    return Reference< XConnection >(m_pConnection.get());
 }
 
 
@@ -339,13 +339,13 @@ void SAL_CALL OPreparedStatement::setBytes( sal_Int32 parameterIndex, const Sequ
 }
 
 
-void SAL_CALL OPreparedStatement::setCharacterStream( sal_Int32 parameterIndex, const Reference< ::com::sun::star::io::XInputStream >& x, sal_Int32 length ) throw(SQLException, RuntimeException, std::exception)
+void SAL_CALL OPreparedStatement::setCharacterStream( sal_Int32 parameterIndex, const Reference< css::io::XInputStream >& x, sal_Int32 length ) throw(SQLException, RuntimeException, std::exception)
 {
     setBinaryStream(parameterIndex,x,length );
 }
 
 
-void SAL_CALL OPreparedStatement::setBinaryStream( sal_Int32 parameterIndex, const Reference< ::com::sun::star::io::XInputStream >& x, sal_Int32 length ) throw(SQLException, RuntimeException, std::exception)
+void SAL_CALL OPreparedStatement::setBinaryStream( sal_Int32 parameterIndex, const Reference< css::io::XInputStream >& x, sal_Int32 length ) throw(SQLException, RuntimeException, std::exception)
 {
     if(!x.is())
         ::dbtools::throwFunctionSequenceException(*this);

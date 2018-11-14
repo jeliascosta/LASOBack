@@ -38,7 +38,7 @@ class DateScaling :
 {
 public:
     DateScaling( const Date& rNullDate, sal_Int32 nTimeUnit, bool bShifted );
-    virtual ~DateScaling();
+    virtual ~DateScaling() override;
 
     /// declare XServiceInfo methods
     virtual OUString SAL_CALL getImplementationName()
@@ -47,9 +47,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // ____ XScaling ____
     virtual double SAL_CALL doScaling( double value )
@@ -78,7 +75,7 @@ class InverseDateScaling :
 {
 public:
     InverseDateScaling( const Date& rNullDate, sal_Int32 nTimeUnit, bool bShifted );
-    virtual ~InverseDateScaling();
+    virtual ~InverseDateScaling() override;
 
     /// declare XServiceInfo methods
     virtual OUString SAL_CALL getImplementationName()
@@ -87,9 +84,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // ____ XScaling ____
     virtual double SAL_CALL doScaling( double value )

@@ -52,7 +52,7 @@ class AccessibleCell : public AccessibleCellBase
 {
 public:
     AccessibleCell( const css::uno::Reference< css::accessibility::XAccessible>& rxParent, const sdr::table::CellRef& rCell, sal_Int32 nIndex, const AccessibleShapeTreeInfo& rShapeTreeInfo);
-    virtual ~AccessibleCell();
+    virtual ~AccessibleCell() override;
     AccessibleCell(const AccessibleCell&) = delete;
     AccessibleCell& operator=(const AccessibleCell&) = delete;
 
@@ -83,8 +83,6 @@ public:
     virtual css::awt::Point SAL_CALL getLocation() throw(css::uno::RuntimeException, std::exception) override;
     virtual css::awt::Point SAL_CALL getLocationOnScreen() throw(css::uno::RuntimeException, std::exception) override;
     virtual css::awt::Size SAL_CALL getSize() throw(css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL addFocusListener ( const css::uno::Reference< css::awt::XFocusListener >& xListener) throw (css::uno::RuntimeException) override;
-    virtual void SAL_CALL removeFocusListener (const css::uno::Reference< css::awt::XFocusListener >& xListener ) throw (css::uno::RuntimeException) override;
     virtual void SAL_CALL grabFocus() throw (css::uno::RuntimeException, std::exception) override;
     virtual sal_Int32 SAL_CALL getForeground() throw(css::uno::RuntimeException, std::exception) override;
     virtual sal_Int32 SAL_CALL getBackground() throw(css::uno::RuntimeException, std::exception) override;
@@ -103,7 +101,7 @@ public:
     virtual css::uno::Sequence< OUString> SAL_CALL getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception) override;
 
     // IAccessibleViewForwarderListener
-    virtual void ViewForwarderChanged (ChangeType aChangeType, const IAccessibleViewForwarder* pViewForwarder) override;
+    virtual void ViewForwarderChanged() override;
 
     // Misc
 

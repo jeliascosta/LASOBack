@@ -18,8 +18,7 @@
 using namespace css;
 using namespace framework;
 
-DispatchDisabler::DispatchDisabler(const uno::Reference< uno::XComponentContext >& rxContext) :
-    mxContext( rxContext )
+DispatchDisabler::DispatchDisabler(const uno::Reference< uno::XComponentContext >& )
 {
 }
 
@@ -95,7 +94,7 @@ uno::Sequence< OUString > SAL_CALL
 {
     uno::Sequence< OUString > aDisabledURLs(maDisabledURLs.size());
     sal_Int32 n = 0;
-    for (auto i = aDisabledURLs.begin(); i != aDisabledURLs.end(); ++i)
+    for (auto i = maDisabledURLs.begin(); i != maDisabledURLs.end(); ++i)
         aDisabledURLs[n++] = *i;
     return aDisabledURLs;
 }

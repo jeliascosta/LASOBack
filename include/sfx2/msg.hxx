@@ -38,7 +38,6 @@ enum class SfxSlotMode {
     RECORDPERITEM   =    0x0200L, // each item, one statement
     RECORDPERSET    =    0x0400L, // The whole Set is a Statement, default
     RECORDABSOLUTE  = 0x1000000L, // Recording with absolute Target
-    STANDARD        =   0x00400L, // RECORDPERSET;
 
     METHOD          =    0x4000L,
 
@@ -49,14 +48,12 @@ enum class SfxSlotMode {
     ACCELCONFIG     =   0x80000L, // configurable keys
 
     CONTAINER       =  0x100000L, // Operated by the container at InPlace
-    READONLYDOC     =  0x200000L, // also available for read-only Documents
-    IMAGEROTATION   =  0x400000L, // Rotate image on Vertical/Bi-directional writing
-    IMAGEREFLECTION =  0x800000L  // Mirror image on Vertical/Bi-directional writing
+    READONLYDOC     =  0x200000L  // also available for read-only Documents
 };
 
 namespace o3tl
 {
-    template<> struct typed_flags<SfxSlotMode> : is_typed_flags<SfxSlotMode, 0x1fec72cL> {};
+    template<> struct typed_flags<SfxSlotMode> : is_typed_flags<SfxSlotMode, 0x13ec72cL> {};
 }
 
 
@@ -66,7 +63,7 @@ class SfxRequest;
  void SfxStub##aShellClass##aExecMethod( \
    SfxShell *pShell, SfxRequest& rReq) \
   { \
-      static_cast<aShellClass*>(pShell)->aExecMethod( rReq ); \
+      ::tools::detail::castTo<aShellClass*>(pShell)->aExecMethod( rReq ); \
   }
 
 #define SFX_STATE_STUB( aShellClass, aStateMethod) \
@@ -111,7 +108,7 @@ struct SfxType
 
     const std::type_info* Type() const{return pType;}
     SfxPoolItem*    CreateItem() const
-                    { return static_cast<SfxPoolItem*>(createSfxPoolItemFunc()); }
+                    { return createSfxPoolItemFunc(); }
 };
 
 struct SfxType0

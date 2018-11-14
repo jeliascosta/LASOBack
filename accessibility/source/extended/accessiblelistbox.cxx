@@ -17,8 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/extended/accessiblelistbox.hxx>
-#include <accessibility/extended/accessiblelistboxentry.hxx>
+#include <extended/accessiblelistbox.hxx>
+#include <extended/accessiblelistboxentry.hxx>
 #include <svtools/treelistbox.hxx>
 #include <svtools/treelistentry.hxx>
 #include <com/sun/star/awt/Point.hpp>
@@ -118,7 +118,7 @@ namespace accessibility
                 break;
             case VCLEVENT_LISTBOX_TREEFOCUS:
                 {
-                    SvTreeListBox* pBox = getListBox();
+                    VclPtr<SvTreeListBox> pBox = getListBox();
                     bool bNeedFocus = false;
                     if (pBox)
                     {
@@ -137,19 +137,19 @@ namespace accessibility
                     }
                     if( pBox && (pBox->HasFocus() || bNeedFocus) )
                     {
-                        uno::Any aOldValue, aNewValue;
+                        uno::Any aNewValue;
                         SvTreeListEntry* pEntry = static_cast< SvTreeListEntry* >( rVclWindowEvent.GetData() );
                         if ( pEntry )
                         {
                             AccessibleListBoxEntry* pEntryFocus =static_cast< AccessibleListBoxEntry* >(m_xFocusedChild.get());
                             if (pEntryFocus && pEntryFocus->GetSvLBoxEntry() == pEntry)
                             {
-                                aOldValue <<= uno::Any();
                                 aNewValue <<= m_xFocusedChild;
-                                NotifyAccessibleEvent( AccessibleEventId::ACTIVE_DESCENDANT_CHANGED, aOldValue, aNewValue );
+                                NotifyAccessibleEvent( AccessibleEventId::ACTIVE_DESCENDANT_CHANGED, uno::Any(), aNewValue );
                                 return ;
                             }
 
+                            uno::Any aOldValue;
                             aOldValue <<= m_xFocusedChild;
 
                             MAP_ENTRY::iterator mi = m_mapEntry.find(pEntry);
@@ -170,9 +170,8 @@ namespace accessibility
                         }
                         else
                         {
-                            aOldValue <<= uno::Any();
                             aNewValue <<= AccessibleStateType::FOCUSED;
-                            NotifyAccessibleEvent( AccessibleEventId::STATE_CHANGED, aOldValue, aNewValue );
+                            NotifyAccessibleEvent( AccessibleEventId::STATE_CHANGED, uno::Any(), aNewValue );
                         }
                     }
                 }
@@ -277,7 +276,7 @@ namespace accessibility
             m_mapEntry.erase(mi);
         }
 
-        SvTreeListBox* pBox = getListBox();
+        VclPtr<SvTreeListBox> pBox = getListBox();
         SvTreeListEntry* pEntryChild = pBox->FirstChild(pEntry);
         while (pEntryChild)
         {
@@ -320,33 +319,19 @@ namespace accessibility
 
     OUString SAL_CALL AccessibleListBox::getImplementationName() throw(RuntimeException, std::exception)
     {
-        return getImplementationName_Static();
+        return OUString( "com.sun.star.comp.svtools.AccessibleTreeListBox" );
     }
 
     Sequence< OUString > SAL_CALL AccessibleListBox::getSupportedServiceNames() throw(RuntimeException, std::exception)
     {
-        return getSupportedServiceNames_Static();
+        return {"com.sun.star.accessibility.AccessibleContext",
+                "com.sun.star.accessibility.AccessibleComponent",
+                "com.sun.star.awt.AccessibleTreeListBox"};
     }
 
     sal_Bool SAL_CALL AccessibleListBox::supportsService( const OUString& _rServiceName ) throw (RuntimeException, std::exception)
     {
         return cppu::supportsService(this, _rServiceName);
-    }
-
-    // XServiceInfo - static methods
-
-    Sequence< OUString > AccessibleListBox::getSupportedServiceNames_Static() throw( RuntimeException )
-    {
-        Sequence< OUString > aSupported(3);
-        aSupported[0] = "com.sun.star.accessibility.AccessibleContext";
-        aSupported[1] = "com.sun.star.accessibility.AccessibleComponent";
-        aSupported[2] = "com.sun.star.awt.AccessibleTreeListBox";
-        return aSupported;
-    }
-
-    OUString AccessibleListBox::getImplementationName_Static() throw( RuntimeException )
-    {
-        return OUString( "com.sun.star.comp.svtools.AccessibleTreeListBox" );
     }
 
     // XAccessible
@@ -366,7 +351,7 @@ namespace accessibility
         ensureAlive();
 
         sal_Int32 nCount = 0;
-        SvTreeListBox* pSvTreeListBox = getListBox();
+        VclPtr<SvTreeListBox> pSvTreeListBox = getListBox();
         if ( pSvTreeListBox )
             nCount = pSvTreeListBox->GetLevelChildCount( nullptr );
 
@@ -582,7 +567,7 @@ namespace accessibility
         {
             rStateSet.AddState( AccessibleStateType::FOCUSABLE );
             rStateSet.AddState( AccessibleStateType::MANAGES_DESCENDANTS );
-            if ( getListBox()->GetSelectionMode() == MULTIPLE_SELECTION )
+            if ( getListBox()->GetSelectionMode() == SelectionMode::Multiple )
                 rStateSet.AddState( AccessibleStateType::MULTI_SELECTABLE );
         }
     }

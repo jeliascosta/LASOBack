@@ -40,10 +40,9 @@ static const int defaultScope = 0x80;
 
 OConnection::OConnection(MorkDriver* _pDriver)
     :OSubComponent<OConnection, OConnection_BASE>(static_cast<cppu::OWeakObject*>(_pDriver), this)
-    ,m_pDriver(_pDriver)
+    ,m_xDriver(_pDriver)
     ,m_aColumnAlias( _pDriver->getFactory() )
 {
-    m_pDriver->acquire();
     m_pBook = new MorkParser();
     m_pHistory = new MorkParser();
 }
@@ -52,15 +51,13 @@ OConnection::~OConnection()
 {
     if(!isClosed())
         close();
-    m_pDriver->release();
-    m_pDriver = nullptr;
     delete m_pBook;
     delete m_pHistory;
 }
 
 void SAL_CALL OConnection::release() throw()
 {
-    relase_ChildImpl();
+    release_ChildImpl();
 }
 
 
@@ -112,7 +109,7 @@ void OConnection::construct(const OUString& url,const Sequence< PropertyValue >&
     // production?
     if (unittestIndex == -1)
     {
-        OUString path = m_pDriver->getProfilePath();
+        OUString path = m_xDriver->getProfilePath();
         SAL_INFO("connectivity.mork", "ProfilePath: " << path);
         abook = path + "/abook.mab";
         history = path + "/history.mab";
@@ -315,13 +312,13 @@ sal_Int32 SAL_CALL OConnection::getTransactionIsolation(  ) throw(SQLException, 
     return TransactionIsolation::NONE;
 }
 
-Reference< ::com::sun::star::container::XNameAccess > SAL_CALL OConnection::getTypeMap(  ) throw(SQLException, RuntimeException, std::exception)
+Reference< css::container::XNameAccess > SAL_CALL OConnection::getTypeMap(  ) throw(SQLException, RuntimeException, std::exception)
 {
     // if your driver has special database types you can return it here
     return nullptr;
 }
 
-void SAL_CALL OConnection::setTypeMap( const Reference< ::com::sun::star::container::XNameAccess >& /*typeMap*/ ) throw(SQLException, RuntimeException, std::exception)
+void SAL_CALL OConnection::setTypeMap( const Reference< css::container::XNameAccess >& /*typeMap*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XConnection::setTypeMap", *this );
 }

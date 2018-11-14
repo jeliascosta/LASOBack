@@ -236,7 +236,7 @@ void SwHTMLParser::SetAnchorAndAdjustment( sal_Int16 eVertOri,
             {
                 NewAttr( &m_aAttrTab.pULSpace, SvxULSpaceItem( 0, nLower, RES_UL_SPACE ) );
                 m_aParaAttrs.push_back( m_aAttrTab.pULSpace );
-                EndAttr( m_aAttrTab.pULSpace, nullptr, false );
+                EndAttr( m_aAttrTab.pULSpace, false );
             }
         }
 
@@ -547,41 +547,41 @@ IMAGE_SETEVENT:
     SetSpace( Size( nHSpace, nVSpace), aItemSet, aPropInfo, aFrameSet );
 
     // Sonstige CSS1-Attribute Setzen
-    SetFrameFormatAttrs( aItemSet, aPropInfo, HTML_FF_BOX, aFrameSet );
+    SetFrameFormatAttrs( aItemSet, aPropInfo, HtmlFrameFormatFlags::Box, aFrameSet );
 
     Size aTwipSz( bPrcWidth ? 0 : nWidth, bPrcHeight ? 0 : nHeight );
     if( (aTwipSz.Width() || aTwipSz.Height()) && Application::GetDefaultDevice() )
     {
         aTwipSz = Application::GetDefaultDevice()
-                    ->PixelToLogic( aTwipSz, MapMode( MAP_TWIP ) );
+                    ->PixelToLogic( aTwipSz, MapMode( MapUnit::MapTwip ) );
     }
 
     // CSS1-Groesse auf "normale" Groesse umrechnen
-    switch( aPropInfo.eWidthType )
+    switch( aPropInfo.m_eWidthType )
     {
         case SVX_CSS1_LTYPE_TWIP:
-            aTwipSz.Width() = aPropInfo.nWidth;
+            aTwipSz.Width() = aPropInfo.m_nWidth;
             nWidth = 1; // != 0
             bPrcWidth = false;
             break;
         case SVX_CSS1_LTYPE_PERCENTAGE:
             aTwipSz.Width() = 0;
-            nWidth = aPropInfo.nWidth;
+            nWidth = aPropInfo.m_nWidth;
             bPrcWidth = true;
             break;
         default:
             ;
     }
-    switch( aPropInfo.eHeightType )
+    switch( aPropInfo.m_eHeightType )
     {
         case SVX_CSS1_LTYPE_TWIP:
-            aTwipSz.Height() = aPropInfo.nHeight;
+            aTwipSz.Height() = aPropInfo.m_nHeight;
             nHeight = 1;    // != 0
             bPrcHeight = false;
             break;
         case SVX_CSS1_LTYPE_PERCENTAGE:
             aTwipSz.Height() = 0;
-            nHeight = aPropInfo.nHeight;
+            nHeight = aPropInfo.m_nHeight;
             bPrcHeight = true;
             break;
         default:
@@ -1162,7 +1162,7 @@ ANCHOR_SETEVENT:
         sal_Int32 nPos = sDecoded.lastIndexOf( cMarkSeparator );
         if( nPos != -1 )
         {
-            OUString sCmp(comphelper::string::remove(sDecoded.copy(nPos+1), ' '));
+            OUString sCmp= sDecoded.copy(nPos+1).replaceAll(" ","");
             if( !sCmp.isEmpty() )
             {
                 sCmp = sCmp.toAsciiLowerCase();
@@ -1411,7 +1411,7 @@ void SwHTMLParser::StripTrailingPara()
             m_pPam->SetMark();
             m_pPam->DeleteMark();
             m_pDoc->GetNodes().Delete( m_pPam->GetPoint()->nNode );
-            m_pPam->Move( fnMoveBackward, fnGoNode );
+            m_pPam->Move( fnMoveBackward, GoInNode );
         }
         else if( pCNd && pCNd->IsTextNode() && m_pTable )
         {

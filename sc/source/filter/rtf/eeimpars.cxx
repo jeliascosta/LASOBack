@@ -149,7 +149,7 @@ void ScEEImport::WriteToDocument( bool bSizeColsRows, double nOutputFactor, SvNu
         if ( nRow <= nOverlapRowMax )
         {
             while ( nCol <= MAXCOL && mpDoc->HasAttrib( nCol, nRow, nTab,
-                nCol, nRow, nTab, HASATTR_OVERLAPPED ) )
+                nCol, nRow, nTab, HasAttrFlags::Overlapped ) )
             {
                 nCol++;
                 nMergeColAdd++;
@@ -183,7 +183,7 @@ void ScEEImport::WriteToDocument( bool bSizeColsRows, double nOutputFactor, SvNu
                     if ( nId == EE_CHAR_ESCAPEMENT ) // Super-/Subscript always via EE
                     {
                         if ( (SvxEscapement)static_cast<const SvxEscapementItem*>(pItem)->GetEnumValue()
-                                != SVX_ESCAPEMENT_OFF )
+                                != SvxEscapement::Off )
                             bSimple = false;
                     }
                 }
@@ -267,17 +267,29 @@ void ScEEImport::WriteToDocument( bool bSizeColsRows, double nOutputFactor, SvNu
                         if ( nScriptType & nScript )
                         {
                             if ( pFont )
-                                rSet.Put( *pFont, ScGlobal::GetScriptedWhichID(
-                                            nScript, ATTR_FONT ));
+                            {
+                                std::unique_ptr<SfxPoolItem> pNewItem(pFont->CloneSetWhich(
+                                        ScGlobal::GetScriptedWhichID(nScript, ATTR_FONT )));
+                                rSet.Put( *pNewItem );
+                            }
                             if ( pHeight )
-                                rSet.Put( *pHeight, ScGlobal::GetScriptedWhichID(
-                                            nScript, ATTR_FONT_HEIGHT ));
+                            {
+                                std::unique_ptr<SfxPoolItem> pNewItem(pHeight->CloneSetWhich(
+                                        ScGlobal::GetScriptedWhichID(nScript, ATTR_FONT_HEIGHT )));
+                                rSet.Put( *pNewItem );
+                            }
                             if ( pWeight )
-                                rSet.Put( *pWeight, ScGlobal::GetScriptedWhichID(
-                                            nScript, ATTR_FONT_WEIGHT ));
+                            {
+                                std::unique_ptr<SfxPoolItem> pNewItem(pWeight->CloneSetWhich(
+                                        ScGlobal::GetScriptedWhichID(nScript, ATTR_FONT_WEIGHT )));
+                                rSet.Put( *pNewItem );
+                            }
                             if ( pPosture )
-                                rSet.Put( *pPosture, ScGlobal::GetScriptedWhichID(
-                                            nScript, ATTR_FONT_POSTURE ));
+                            {
+                                std::unique_ptr<SfxPoolItem> pNewItem(pPosture->CloneSetWhich(
+                                        ScGlobal::GetScriptedWhichID(nScript, ATTR_FONT_POSTURE )));
+                                rSet.Put( *pNewItem );
+                            }
                         }
                     }
                 }
@@ -484,7 +496,7 @@ bool ScEEImport::GraphicSize( SCCOL nCol, SCROW nRow, SCTAB /*nTab*/, ScEEParseE
         Size aSizePix = pI->aSize;
         aSizePix.Width() += 2 * pI->aSpace.X();
         aSizePix.Height() += 2 * pI->aSpace.Y();
-        Size aLogicSize = pDefaultDev->PixelToLogic( aSizePix, MapMode( MAP_TWIP ) );
+        Size aLogicSize = pDefaultDev->PixelToLogic( aSizePix, MapMode( MapUnit::MapTwip ) );
         if ( nDir & nHorizontal )
             nWidth += aLogicSize.Width();
         else if ( nWidth < aLogicSize.Width() )
@@ -568,11 +580,11 @@ void ScEEImport::InsertGraphic( SCCOL nCol, SCROW nRow, SCTAB nTab,
             aInsertPos.Y() += aSpace.Y();
         }
         // Add offset of Spacing
-        aSpace = pDefaultDev->PixelToLogic( pI->aSpace, MapMode( MAP_100TH_MM ) );
+        aSpace = pDefaultDev->PixelToLogic( pI->aSpace, MapMode( MapUnit::Map100thMM ) );
         aInsertPos += aSpace;
 
         Size aSizePix = pI->aSize;
-        aLogicSize = pDefaultDev->PixelToLogic( aSizePix, MapMode( MAP_100TH_MM ) );
+        aLogicSize = pDefaultDev->PixelToLogic( aSizePix, MapMode( MapUnit::Map100thMM ) );
 
         // Limit size
         ::ScLimitSizeOnDrawPage( aLogicSize, aInsertPos, pPage->GetSize() );

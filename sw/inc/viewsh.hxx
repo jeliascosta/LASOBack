@@ -91,7 +91,6 @@ namespace vcl
 #define VSHELLFLAG_SHARELAYOUT          ((long)0x2)
 typedef std::shared_ptr<SwRootFrame> SwRootFramePtr;
 
-class SwViewShell;
 class SW_DLLPUBLIC SwViewShell : public sw::Ring<SwViewShell>
 {
     friend void SetOutDev( SwViewShell *pSh, OutputDevice *pOut );
@@ -190,8 +189,6 @@ protected:
     sal_uInt16 mnLockPaint;   ///< != 0 if Paint is locked.
     bool      mbSelectAll; ///< Special select all mode: whole document selected, even if doc starts with table.
 
-    bool mbInLibreOfficeKitCallback;
-
     /// The virtual device we paint to will end up on the screen.
     bool mbOutputToWindow;
 
@@ -209,7 +206,7 @@ public:
     inline void StartAction();
            void ImplStartAction();
     inline void EndAction( const bool bIdleEnd = false );
-           void ImplEndAction( const bool bIdleEnd = false );
+           void ImplEndAction( const bool bIdleEnd );
     sal_uInt16 ActionCount() const { return mnStartAction; }
     bool ActionPend() const { return mnStartAction != 0; }
     bool IsInEndAction() const { return mbInEndAction; }
@@ -546,12 +543,12 @@ public:
 
     SwAccessibleMap* GetAccessibleMap();
 
-    SwViewShell( SwViewShell&, vcl::Window *pWin = nullptr, OutputDevice *pOut = nullptr,
+    SwViewShell( SwViewShell&, vcl::Window *pWin, OutputDevice *pOut = nullptr,
                 long nFlags = 0 );
     SwViewShell( SwDoc& rDoc, vcl::Window *pWin,
-               const SwViewOption *pOpt = nullptr, OutputDevice *pOut = nullptr,
+               const SwViewOption *pOpt, OutputDevice *pOut = nullptr,
                long nFlags = 0 );
-    virtual ~SwViewShell();
+    virtual ~SwViewShell() override;
 
     sal_Int32 GetPageNumAndSetOffsetForPDF( OutputDevice& rOut, const SwRect& rRect ) const;
 
@@ -570,11 +567,6 @@ public:
     bool IsShowHeaderFooterSeparator( FrameControlType eControl ) { return (eControl == Header)? mbShowHeaderSeparator: mbShowFooterSeparator; }
     virtual void SetShowHeaderFooterSeparator( FrameControlType eControl, bool bShow ) { if ( eControl == Header ) mbShowHeaderSeparator = bShow; else mbShowFooterSeparator = bShow; }
     bool IsSelectAll() { return mbSelectAll; }
-
-    /// The actual implementation of the vcl::ITiledRenderable::registerCallback() API for Writer.
-    void registerLibreOfficeKitCallback(LibreOfficeKitCallback pCallback, void* pLibreOfficeKitData);
-    /// Invokes the registered callback, if there are any.
-    void libreOfficeKitCallback(int nType, const char* pPayload) const;
 
     void setOutputToWindow(bool bOutputToWindow);
     bool isOutputToWindow() const;

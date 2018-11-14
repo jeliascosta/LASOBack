@@ -160,7 +160,7 @@ namespace pcr
         virtual void SAL_CALL release() throw() override;
 
     protected:
-        virtual ~PropertyControlContext_Impl();
+        virtual ~PropertyControlContext_Impl() override;
 
         // XPropertyControlObserver
         virtual void SAL_CALL focusGained( const Reference< XPropertyControl >& Control ) throw (RuntimeException, std::exception) override;
@@ -179,13 +179,6 @@ namespace pcr
                 our mutex (well, the SolarMutex) is locked
         */
         void impl_processEvent_throw( const ::comphelper::AnyEvent& _rEvent );
-
-        /** checks whether we're alive
-
-            @throws DisposedException
-                if the instance is already disposed
-        */
-        void impl_checkAlive_throw() const;
 
         /** checks whether the instance is already disposed
         */
@@ -214,13 +207,6 @@ namespace pcr
     }
 
 
-    void PropertyControlContext_Impl::impl_checkAlive_throw() const
-    {
-        if ( impl_isDisposed_nothrow() )
-            throw DisposedException( OUString(), *const_cast< PropertyControlContext_Impl* >( this ) );
-    }
-
-
     void SAL_CALL PropertyControlContext_Impl::dispose()
     {
         SolarMutexGuard aGuard;
@@ -245,7 +231,8 @@ namespace pcr
 
         {
             SolarMutexGuard aGuard;
-            impl_checkAlive_throw();
+            if ( impl_isDisposed_nothrow() )
+                 throw DisposedException( OUString(), *this );
             pEvent = new ControlEvent( _rxControl, _eType );
 
             if ( m_eMode == eSynchronously )
@@ -331,8 +318,8 @@ namespace pcr
         }
     }
 
-    OBrowserListBox::OBrowserListBox( vcl::Window* pParent, WinBits nWinStyle)
-            :Control(pParent, nWinStyle| WB_CLIPCHILDREN)
+    OBrowserListBox::OBrowserListBox( vcl::Window* pParent)
+            :Control(pParent, WB_DIALOGCONTROL | WB_CLIPCHILDREN)
             ,m_aLinesPlayground(VclPtr<vcl::Window>::Create(this,WB_DIALOGCONTROL | WB_CLIPCHILDREN))
             ,m_aVScroll(VclPtr<ScrollBar>::Create(this,WB_VSCROLL|WB_REPEAT|WB_DRAG))
             ,m_pHelpWindow( VclPtr<InspectorHelpWindow>::Create( this ) )
@@ -345,9 +332,11 @@ namespace pcr
             ,m_bUpdate(true)
             ,m_pControlContextImpl( new PropertyControlContext_Impl( *this ) )
     {
-        ScopedVclPtrInstance< ListBox > aListBox(this,WB_DROPDOWN);
-        aListBox->SetPosSizePixel(Point(0,0),Size(100,100));
-        m_nRowHeight = aListBox->GetSizePixel().Height()+2;
+        ScopedVclPtrInstance<ListBox> aListBox(this, WB_DROPDOWN);
+        ScopedVclPtrInstance<Edit> aEditBox(this);
+        m_nRowHeight = std::max(aListBox->get_preferred_size().Height(),
+                                aEditBox->get_preferred_size().Height());
+        m_nRowHeight += 2;
         SetBackground( pParent->GetBackground() );
         m_aLinesPlayground->SetBackground( GetBackground() );
 
@@ -357,7 +346,6 @@ namespace pcr
         m_aVScroll->Hide();
         m_aVScroll->SetScrollHdl(LINK(this, OBrowserListBox, ScrollHdl));
     }
-
 
     OBrowserListBox::~OBrowserListBox()
     {
@@ -436,7 +424,7 @@ namespace pcr
     void OBrowserListBox::Resize()
     {
         Rectangle aPlayground( Point( 0, 0 ), GetOutputSizePixel() );
-        Size aHelpWindowDistance( LogicToPixel( Size( 0, LAYOUT_HELP_WINDOW_DISTANCE_APPFONT ), MAP_APPFONT ) );
+        Size aHelpWindowDistance( LogicToPixel( Size( 0, LAYOUT_HELP_WINDOW_DISTANCE_APPFONT ), MapUnit::MapAppFont ) );
 
         long nHelpWindowHeight = m_nCurrentPreferredHelpHeight = impl_getPrefererredHelpHeight();
         bool bPositionHelpWindow = ( nHelpWindowHeight != 0 );
@@ -623,12 +611,6 @@ namespace pcr
     }
 
 
-    void OBrowserListBox::UpdateAll()
-    {
-        Resize();
-    }
-
-
     void OBrowserListBox::DisableUpdate()
     {
         m_bUpdate = false;
@@ -638,7 +620,7 @@ namespace pcr
     void OBrowserListBox::EnableUpdate()
     {
         m_bUpdate = true;
-        UpdateAll();
+        Resize();
     }
 
 
@@ -773,7 +755,7 @@ namespace pcr
 
         if ( HasHelpSection() )
         {
-            Size aHelpWindowDistance( LogicToPixel( Size( 0, LAYOUT_HELP_WINDOW_DISTANCE_APPFONT ), MAP_APPFONT ) );
+            Size aHelpWindowDistance( LogicToPixel( Size( 0, LAYOUT_HELP_WINDOW_DISTANCE_APPFONT ), MapUnit::MapAppFont ) );
             nMinHeight += aHelpWindowDistance.Height();
 
             nMinHeight += m_pHelpWindow->GetMinimalHeightPixel();
@@ -839,7 +821,7 @@ namespace pcr
     }
 
 
-    IMPL_LINK_TYPED(OBrowserListBox, ScrollHdl, ScrollBar*, _pScrollBar, void )
+    IMPL_LINK(OBrowserListBox, ScrollHdl, ScrollBar*, _pScrollBar, void )
     {
         DBG_ASSERT(_pScrollBar == m_aVScroll.get(), "OBrowserListBox::ScrollHdl: where does this come from?");
         (void)_pScrollBar;
@@ -865,7 +847,7 @@ namespace pcr
         {
             PositionLine((sal_uInt16)nThumbPos);
         }
-        else if (nDelta!=0 || m_aVScroll->GetType() == SCROLL_DONTKNOW)
+        else if (nDelta!=0 || m_aVScroll->GetType() == ScrollType::DontKnow)
         {
             UpdatePlayGround();
         }

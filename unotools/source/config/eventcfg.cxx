@@ -26,7 +26,7 @@
 #include <cppuhelper/weakref.hxx>
 #include <o3tl/enumarray.hxx>
 #include <o3tl/enumrange.hxx>
-
+#include <rtl/ref.hxx>
 #include <rtl/ustrbuf.hxx>
 #include <osl/diagnose.h>
 
@@ -40,7 +40,6 @@ using namespace ::osl;
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star;
 
-static const char ROOTNODE_EVENTS[] = "Office.Events/ApplicationEvents";
 #define PATHDELIMITER "/"
 #define SETNODE_BINDINGS "Bindings"
 #define PROPERTYNAME_BINDINGURL "BindingURL"
@@ -94,7 +93,7 @@ private:
 
 public:
     GlobalEventConfig_Impl( );
-    virtual ~GlobalEventConfig_Impl( );
+    virtual ~GlobalEventConfig_Impl( ) override;
 
     void            Notify( const css::uno::Sequence<OUString>& aPropertyNames) override;
 
@@ -109,7 +108,7 @@ public:
 
 
 GlobalEventConfig_Impl::GlobalEventConfig_Impl()
-    :   ConfigItem( ROOTNODE_EVENTS, ConfigItemMode::ImmediateUpdate )
+    :   ConfigItem( "Office.Events/ApplicationEvents", ConfigItemMode::ImmediateUpdate )
 {
     // the supported event names
     for (const GlobalEventId id : o3tl::enumrange<GlobalEventId>())
@@ -146,13 +145,16 @@ void GlobalEventConfig_Impl::Notify( const Sequence< OUString >& )
 
     // don't forget to update all existing frames and her might cached dispatch objects!
     // But look for already killed frames. We hold weak references instead of hard ones ...
-    for (FrameVector::const_iterator pIt  = m_lFrames.begin();
-                                        pIt != m_lFrames.end();
-                                      ++pIt                     )
+    for (FrameVector::iterator pIt  = m_lFrames.begin(); pIt != m_lFrames.end(); )
     {
         css::uno::Reference< css::frame::XFrame > xFrame(pIt->get(), css::uno::UNO_QUERY);
         if (xFrame.is())
+        {
             xFrame->contextChanged();
+            ++pIt;
+        }
+        else
+            pIt = m_lFrames.erase(pIt);
     }
 }
 
@@ -168,15 +170,15 @@ void GlobalEventConfig_Impl::ImplCommit()
     ClearNodeSet( SETNODE_BINDINGS );
     Sequence< beans::PropertyValue > seqValues( 1 );
     OUString sNode;
-    static const char sPrefix[] = SETNODE_BINDINGS PATHDELIMITER "BindingType['";
-    static const char sPostfix[] = "']" PATHDELIMITER PROPERTYNAME_BINDINGURL;
     //step through the list of events
     for(int i=0;it!=it_end;++it,++i)
     {
         //no point in writing out empty bindings!
         if(it->second.isEmpty() )
             continue;
-        sNode = sPrefix + it->first + sPostfix;
+        sNode = SETNODE_BINDINGS PATHDELIMITER "BindingType['" +
+                it->first +
+                "']" PATHDELIMITER PROPERTYNAME_BINDINGURL;
         OSL_TRACE("writing binding for: %s",OUStringToOString(sNode , RTL_TEXTENCODING_ASCII_US ).pData->buffer);
         seqValues[ 0 ].Name = sNode;
         seqValues[ 0 ].Value <<= it->second;
@@ -388,7 +390,8 @@ OUString GlobalEventConfig::GetEventName( GlobalEventId nIndex )
 {
     if (utl::ConfigManager::IsAvoidConfig())
         return OUString();
-    return GlobalEventConfig().m_pImpl->GetEventName( nIndex );
+    rtl::Reference<GlobalEventConfig> createImpl(new GlobalEventConfig);
+    return GlobalEventConfig::m_pImpl->GetEventName( nIndex );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

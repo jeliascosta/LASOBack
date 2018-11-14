@@ -92,7 +92,7 @@ public:
         const OUString& rsEventType,
         const ::sd::framework::FrameworkHelper::ConfigurationChangeEventFilter& rFilter,
         const ::sd::framework::FrameworkHelper::Callback& rCallback);
-    virtual ~CallbackCaller();
+    virtual ~CallbackCaller() override;
 
     virtual void SAL_CALL disposing() override;
     // XEventListener
@@ -127,7 +127,7 @@ class LifetimeController
 {
 public:
     explicit LifetimeController (::sd::ViewShellBase& rBase);
-    virtual ~LifetimeController();
+    virtual ~LifetimeController() override;
 
     virtual void SAL_CALL disposing() override;
 
@@ -297,7 +297,7 @@ class FrameworkHelper::DisposeListener
 {
 public:
     explicit DisposeListener (const ::std::shared_ptr<FrameworkHelper>& rpHelper);
-    virtual ~DisposeListener();
+    virtual ~DisposeListener() override;
 
     virtual void SAL_CALL disposing() override;
 
@@ -620,11 +620,11 @@ void FrameworkHelper::HandleModeChangeSlot (
         }
 
         // Compute requested mode
-        EditMode eEMode = EM_PAGE;
+        EditMode eEMode = EditMode::Page;
         if (nSlotId == SID_SLIDE_MASTER_MODE
             || nSlotId == SID_NOTES_MASTER_MODE
             || nSlotId == SID_HANDOUT_MASTER_MODE)
-            eEMode = EM_MASTERPAGE;
+            eEMode = EditMode::MasterPage;
         // Ensure we have the expected view shell
         if (!(xView.is() && xView->getResourceId()->getResourceURL().equals(sRequestedView)))
 
@@ -980,8 +980,7 @@ void SAL_CALL LifetimeController::disposing (const lang::EventObject& rEvent)
 void LifetimeController::Notify (SfxBroadcaster& rBroadcaster, const SfxHint& rHint)
 {
     (void)rBroadcaster;
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if (pSimpleHint != nullptr && pSimpleHint->GetId() == SFX_HINT_DYING)
+    if (rHint.GetId() == SFX_HINT_DYING)
     {
         mbListeningToViewShellBase = false;
         Update();

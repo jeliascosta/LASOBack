@@ -118,7 +118,7 @@ void OP_Label(LotusContext& rContext, SvStream& r, sal_uInt16 n)
     n -= (n > 5) ? 5 : n;
 
     std::unique_ptr<sal_Char[]> pText(new sal_Char[n + 1]);
-    r.Read( pText.get(), n );
+    r.ReadBytes(pText.get(), n);
     pText[n] = 0;
 
     if (ValidColRow(nCol, nRow))
@@ -196,7 +196,7 @@ void OP_NamedRange(LotusContext& rContext, SvStream& r, sal_uInt16 /*n*/)
     sal_uInt16              nColSt, nRowSt, nColEnd, nRowEnd;
 
     sal_Char cPuffer[ 16+1 ];
-    r.Read( cPuffer, 16 );
+    r.ReadBytes(cPuffer, 16);
     cPuffer[ 16 ] = 0;
 
     r.ReadUInt16( nColSt ).ReadUInt16( nRowSt ).ReadUInt16( nColEnd ).ReadUInt16( nRowEnd );
@@ -235,7 +235,7 @@ void OP_SymphNamedRange(LotusContext& rContext, SvStream& r, sal_uInt16 /*n*/)
     sal_uInt8               nType;
 
     sal_Char cPuffer[ 16+1 ];
-    r.Read( cPuffer, 16 );
+    r.ReadBytes(cPuffer, 16);
     cPuffer[ 16 ] = 0;
 
     r.ReadUInt16( nColSt ).ReadUInt16( nRowSt ).ReadUInt16( nColEnd ).ReadUInt16( nRowEnd ).ReadUChar( nType );
@@ -357,7 +357,7 @@ void OP_Label123(LotusContext& rContext, SvStream& r, sal_uInt16 n)
     n -= (n > 4) ? 4 : n;
 
     std::unique_ptr<sal_Char[]> pText(new sal_Char[n + 1]);
-    r.Read( pText.get(), n );
+    r.ReadBytes(pText.get(), n);
     pText[ n ] = 0;
 
     PutFormString(rContext, nCol, nRow, nTab, pText.get());
@@ -438,7 +438,7 @@ void OP_Note123(LotusContext& rContext, SvStream& r, sal_uInt16 n)
     n -= (n > 4) ? 4 : n;
 
     std::unique_ptr<sal_Char[]> pText(new sal_Char[n + 1]);
-    r.Read( pText.get(), n );
+    r.ReadBytes(pText.get(), n);
     pText[ n ] = 0;
 
     OUString aNoteText(pText.get(), strlen(pText.get()), rContext.pLotusRoot->eCharsetQ);
@@ -451,7 +451,7 @@ void OP_Note123(LotusContext& rContext, SvStream& r, sal_uInt16 n)
 void OP_HorAlign123(LotusContext& /*rContext*/, sal_uInt8 nAlignPattern, SfxItemSet& rPatternItemSet)
 {
 //      pre:  Pattern is stored in the last 3 bites of the 21st byte
-//      post: Appropriate Horizontal Alignement is set in rPattern according to the bit pattern.
+//      post: Appropriate Horizontal Alignment is set in rPattern according to the bit pattern.
 //
 //      LEFT:001, RIGHT:010, CENTER:011, JUSTIFY:110,
 //      LEFT-Text/RIGHT-NUMBER:100, DEFAULT:000
@@ -484,7 +484,7 @@ void OP_HorAlign123(LotusContext& /*rContext*/, sal_uInt8 nAlignPattern, SfxItem
 void OP_VerAlign123(LotusContext& /*rContext*/, sal_uInt8 nAlignPattern, SfxItemSet& rPatternItemSet)
 {
 //      pre:  Pattern is stored in the last 3 bites of the 22nd byte
-//      post: Appropriate Verticle Alignement is set in rPattern according to the bit pattern.
+//      post: Appropriate Vertical Alignment is set in rPattern according to the bit pattern.
 //
 //      TOP:001, MIDDLE:010, DOWN:100, DEFAULT:000
 

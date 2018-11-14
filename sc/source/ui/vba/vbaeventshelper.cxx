@@ -37,6 +37,7 @@
 #include <unotools/eventcfg.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/window.hxx>
+#include <vbahelper/vbaaccesshelper.hxx>
 
 #include "cellsuno.hxx"
 #include "convuno.hxx"
@@ -115,7 +116,7 @@ class ScVbaEventListener : public ::cppu::WeakImplHelper< awt::XTopWindowListene
 {
 public:
     ScVbaEventListener( ScVbaEventsHelper& rVbaEvents, const uno::Reference< frame::XModel >& rxModel, ScDocShell* pDocShell );
-    virtual ~ScVbaEventListener();
+    virtual ~ScVbaEventListener() override;
 
     /** Starts listening to the passed document controller. */
     void startControllerListening( const uno::Reference< frame::XController >& rxController );
@@ -160,7 +161,7 @@ private:
     /** Posts a Workbook_WindowResize user event. */
     void postWindowResizeEvent( vcl::Window* pWindow );
     /** Callback link for Application::PostUserEvent(). */
-    DECL_LINK_TYPED( processWindowResizeEvent, void*, void );
+    DECL_LINK( processWindowResizeEvent, void*, void );
 
 private:
     typedef ::std::map< VclPtr<vcl::Window>, uno::Reference< frame::XController > > WindowControllerMap;
@@ -220,7 +221,7 @@ void ScVbaEventListener::startControllerListening( const uno::Reference< frame::
     if( xControllerBorder.is() )
         try { xControllerBorder->addBorderResizeListener( this ); } catch( uno::Exception& ) {}
 
-    if( vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow ) )
+    if( VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow ) )
     {
         maControllers[ pWindow ] = rxController;
     }
@@ -242,7 +243,7 @@ void ScVbaEventListener::stopControllerListening( const uno::Reference< frame::X
     if( xControllerBorder.is() )
         try { xControllerBorder->removeBorderResizeListener( this ); } catch( uno::Exception& ) {}
 
-    if( vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow ) )
+    if( VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow ) )
     {
         maControllers.erase( pWindow );
         if( pWindow == mpActiveWindow )
@@ -277,8 +278,8 @@ void SAL_CALL ScVbaEventListener::windowActivated( const lang::EventObject& rEve
     if( !mbDisposed )
     {
         uno::Reference< awt::XWindow > xWindow( rEvent.Source, uno::UNO_QUERY );
-        vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow );
-        OSL_TRACE( "ScVbaEventListener::windowActivated - pWindow = 0x%p, mpActiveWindow = 0x%p", pWindow, mpActiveWindow.get() );
+        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
+        OSL_TRACE( "ScVbaEventListener::windowActivated - pWindow = 0x%p, mpActiveWindow = 0x%p", pWindow.get(), mpActiveWindow.get() );
         // do not fire activation event multiple time for the same window
         if( pWindow && (pWindow != mpActiveWindow) )
         {
@@ -299,8 +300,8 @@ void SAL_CALL ScVbaEventListener::windowDeactivated( const lang::EventObject& rE
     if( !mbDisposed )
     {
         uno::Reference< awt::XWindow > xWindow( rEvent.Source, uno::UNO_QUERY );
-        vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow );
-        OSL_TRACE( "ScVbaEventListener::windowDeactivated - pWindow = 0x%p, mpActiveWindow = 0x%p", pWindow, mpActiveWindow.get() );
+        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
+        OSL_TRACE( "ScVbaEventListener::windowDeactivated - pWindow = 0x%p, mpActiveWindow = 0x%p", pWindow.get(), mpActiveWindow.get() );
         // do not fire the deactivation event, if the window is not active (prevent multiple deactivation)
         if( pWindow && (pWindow == mpActiveWindow) )
             processWindowActivateEvent( pWindow, false );
@@ -477,7 +478,7 @@ void ScVbaEventListener::postWindowResizeEvent( vcl::Window* pWindow )
     }
 }
 
-IMPL_LINK_TYPED( ScVbaEventListener, processWindowResizeEvent, void*, p, void )
+IMPL_LINK( ScVbaEventListener, processWindowResizeEvent, void*, p, void )
 {
     vcl::Window* pWindow = static_cast<vcl::Window*>(p);
     ::osl::MutexGuard aGuard( maMutex );
@@ -527,47 +528,44 @@ ScVbaEventsHelper::ScVbaEventsHelper( const uno::Sequence< uno::Any >& rArgs, co
     if( !mxModel.is() || !mpDocShell || !mpDoc )
         return;
 
-#define REGISTER_EVENT( eventid, moduletype, classname, eventname, cancelindex, worksheet ) \
-    registerEventHandler( eventid, moduletype, classname "_" eventname, cancelindex, uno::Any( worksheet ) )
-#define REGISTER_AUTO_EVENT( eventid, eventname ) \
-    REGISTER_EVENT( AUTO_##eventid, script::ModuleType::NORMAL, "Auto", eventname, -1, false )
-#define REGISTER_WORKBOOK_EVENT( eventid, eventname, cancelindex ) \
-    REGISTER_EVENT( WORKBOOK_##eventid, script::ModuleType::DOCUMENT, "Workbook", eventname, cancelindex, false )
-#define REGISTER_WORKSHEET_EVENT( eventid, eventname, cancelindex ) \
-    REGISTER_EVENT( WORKSHEET_##eventid, script::ModuleType::DOCUMENT, "Worksheet", eventname, cancelindex, true ); \
-    REGISTER_EVENT( (USERDEFINED_START + WORKSHEET_##eventid), script::ModuleType::DOCUMENT, "Workbook", "Sheet" eventname, (((cancelindex) >= 0) ? ((cancelindex) + 1) : -1), false )
-
     // global
-    REGISTER_AUTO_EVENT( OPEN,  "Open" );
-    REGISTER_AUTO_EVENT( CLOSE, "Close" );
+    auto registerAutoEvent = [this](sal_Int32 nID, const sal_Char* sName)
+    { registerEventHandler(nID, script::ModuleType::NORMAL, (OString("Auto_").concat(sName)).getStr(), -1, uno::Any(false)); };
+    registerAutoEvent(AUTO_OPEN,  "Open");
+    registerAutoEvent(AUTO_CLOSE, "Close");
 
     // Workbook
-    REGISTER_WORKBOOK_EVENT( ACTIVATE,            "Activate",           -1 );
-    REGISTER_WORKBOOK_EVENT( DEACTIVATE,          "Deactivate",         -1 );
-    REGISTER_WORKBOOK_EVENT( OPEN,                "Open",               -1 );
-    REGISTER_WORKBOOK_EVENT( BEFORECLOSE,         "BeforeClose",        0 );
-    REGISTER_WORKBOOK_EVENT( BEFOREPRINT,         "BeforePrint",        0 );
-    REGISTER_WORKBOOK_EVENT( BEFORESAVE,          "BeforeSave",         1 );
-    REGISTER_WORKBOOK_EVENT( AFTERSAVE,           "AfterSave",          -1 );
-    REGISTER_WORKBOOK_EVENT( NEWSHEET,            "NewSheet",           -1 );
-    REGISTER_WORKBOOK_EVENT( WINDOWACTIVATE,      "WindowActivate",     -1 );
-    REGISTER_WORKBOOK_EVENT( WINDOWDEACTIVATE,    "WindowDeactivate",   -1 );
-    REGISTER_WORKBOOK_EVENT( WINDOWRESIZE,        "WindowResize",       -1 );
+    auto registerWorkbookEvent = [this](sal_Int32 nID, const sal_Char* sName, sal_Int32 nCancelIndex)
+    { registerEventHandler(nID, script::ModuleType::DOCUMENT, (OString("Workbook_").concat(sName)).getStr(), nCancelIndex, uno::Any(false)); };
+    registerWorkbookEvent( WORKBOOK_ACTIVATE,            "Activate",           -1 );
+    registerWorkbookEvent( WORKBOOK_DEACTIVATE,          "Deactivate",         -1 );
+    registerWorkbookEvent( WORKBOOK_OPEN,                "Open",               -1 );
+    registerWorkbookEvent( WORKBOOK_BEFORECLOSE,         "BeforeClose",         0 );
+    registerWorkbookEvent( WORKBOOK_BEFOREPRINT,         "BeforePrint",         0 );
+    registerWorkbookEvent( WORKBOOK_BEFORESAVE,          "BeforeSave",          1 );
+    registerWorkbookEvent( WORKBOOK_AFTERSAVE,           "AfterSave",          -1 );
+    registerWorkbookEvent( WORKBOOK_NEWSHEET,            "NewSheet",           -1 );
+    registerWorkbookEvent( WORKBOOK_WINDOWACTIVATE,      "WindowActivate",     -1 );
+    registerWorkbookEvent( WORKBOOK_WINDOWDEACTIVATE,    "WindowDeactivate",   -1 );
+    registerWorkbookEvent( WORKBOOK_WINDOWRESIZE,        "WindowResize",       -1 );
 
     // Worksheet events. All events have a corresponding workbook event.
-    REGISTER_WORKSHEET_EVENT( ACTIVATE,           "Activate",           -1 );
-    REGISTER_WORKSHEET_EVENT( DEACTIVATE,         "Deactivate",         -1 );
-    REGISTER_WORKSHEET_EVENT( BEFOREDOUBLECLICK,  "BeforeDoubleClick",  1 );
-    REGISTER_WORKSHEET_EVENT( BEFORERIGHTCLICK,   "BeforeRightClick",   1 );
-    REGISTER_WORKSHEET_EVENT( CALCULATE,          "Calculate",          -1 );
-    REGISTER_WORKSHEET_EVENT( CHANGE,             "Change",             -1 );
-    REGISTER_WORKSHEET_EVENT( SELECTIONCHANGE,    "SelectionChange",    -1 );
-    REGISTER_WORKSHEET_EVENT( FOLLOWHYPERLINK,    "FollowHyperlink",    -1 );
-
-#undef REGISTER_WORKSHEET_EVENT
-#undef REGISTER_WORKBOOK_EVENT
-#undef REGISTER_AUTO_EVENT
-#undef REGISTER_EVENT
+    auto registerWorksheetEvent = [this](sal_Int32 nID, const sal_Char* sName, sal_Int32 nCancelIndex)
+    {
+        registerEventHandler(nID, script::ModuleType::DOCUMENT, (OString("Worksheet_").concat(sName)).getStr(),
+                             nCancelIndex, uno::Any(true));
+        registerEventHandler(USERDEFINED_START + nID, script::ModuleType::DOCUMENT,
+                             (OString("Workbook_Worksheet").concat(sName)).getStr(),
+                             ((nCancelIndex >= 0) ? (nCancelIndex + 1) : -1), uno::Any(false));
+    };
+    registerWorksheetEvent( WORKSHEET_ACTIVATE,           "Activate",           -1 );
+    registerWorksheetEvent( WORKSHEET_DEACTIVATE,         "Deactivate",         -1 );
+    registerWorksheetEvent( WORKSHEET_BEFOREDOUBLECLICK,  "BeforeDoubleClick",   1 );
+    registerWorksheetEvent( WORKSHEET_BEFORERIGHTCLICK,   "BeforeRightClick",    1 );
+    registerWorksheetEvent( WORKSHEET_CALCULATE,          "Calculate",          -1 );
+    registerWorksheetEvent( WORKSHEET_CHANGE,             "Change",             -1 );
+    registerWorksheetEvent( WORKSHEET_SELECTIONCHANGE,    "SelectionChange",    -1 );
+    registerWorksheetEvent( WORKSHEET_FOLLOWHYPERLINK,    "FollowHyperlink",    -1 );
 }
 
 ScVbaEventsHelper::~ScVbaEventsHelper()

@@ -56,6 +56,7 @@
 #include <vcl/svapp.hxx>
 
 #include <memory>
+#include <osl/endian.h>
 
 // We don't want to end up with 2GB read in one line just because of malformed
 // multiline fields, so chop it _somewhere_, which is twice supported columns
@@ -67,8 +68,15 @@ static const sal_Int32 nArbitraryLineLengthLimit = 2 * MAXCOLCOUNT * 65536;
 namespace
 {
     const char SYLK_LF[]  = "\x1b :";
-    const char DOUBLE_SEMICOLON[] = ";;";
-    const char DOUBLE_DOUBLEQUOTE[] = "\"\"";
+
+    inline bool lcl_IsEndianSwap( const SvStream& rStrm )
+    {
+    #ifdef OSL_BIGENDIAN
+        return rStrm.GetEndian() != SvStreamEndian::BIG;
+    #else
+        return rStrm.GetEndian() != SvStreamEndian::LITTLE;
+    #endif
+    }
 }
 
 enum SylkVersion
@@ -221,7 +229,7 @@ bool ScImportExport::StartPaste()
     {
         pUndoDoc = new ScDocument( SCDOCMODE_UNDO );
         pUndoDoc->InitUndo( pDoc, aRange.aStart.Tab(), aRange.aEnd.Tab() );
-        pDoc->CopyToDocument( aRange, InsertDeleteFlags::ALL | InsertDeleteFlags::NOCAPTIONS, false, pUndoDoc );
+        pDoc->CopyToDocument(aRange, InsertDeleteFlags::ALL | InsertDeleteFlags::NOCAPTIONS, false, *pUndoDoc);
     }
     return true;
 }
@@ -236,7 +244,7 @@ void ScImportExport::EndPaste(bool bAutoRowHeight)
     {
         ScDocument* pRedoDoc = new ScDocument( SCDOCMODE_UNDO );
         pRedoDoc->InitUndo( pDoc, aRange.aStart.Tab(), aRange.aEnd.Tab() );
-        pDoc->CopyToDocument( aRange, InsertDeleteFlags::ALL | InsertDeleteFlags::NOCAPTIONS, false, pRedoDoc );
+        pDoc->CopyToDocument(aRange, InsertDeleteFlags::ALL | InsertDeleteFlags::NOCAPTIONS, false, *pRedoDoc);
         ScMarkData aDestMark;
         aDestMark.SetMarkArea(aRange);
         pDocSh->GetUndoManager()->AddUndoAction(
@@ -246,7 +254,7 @@ void ScImportExport::EndPaste(bool bAutoRowHeight)
     if( pDocSh )
     {
         if (!bHeight)
-            pDocSh->PostPaint( aRange, PAINT_GRID );
+            pDocSh->PostPaint( aRange, PaintPartFlags::Grid );
         pDocSh->SetDocumentModified();
     }
     ScTabViewShell* pViewSh = ScTabViewShell::GetActiveViewShell();
@@ -377,7 +385,7 @@ bool ScImportExport::ImportStream( SvStream& rStrm, const OUString& rBaseURL, So
         if( Dif2Doc( rStrm ) )
             return true;
     }
-    if( nFmt == SotClipboardFormatId::RTF )
+    if( nFmt == SotClipboardFormatId::RTF || nFmt == SotClipboardFormatId::RICHTEXT )
     {
         if( RTF2Doc( rStrm, rBaseURL ) )
             return true;
@@ -465,7 +473,7 @@ bool ScImportExport::ExportStream( SvStream& rStrm, const OUString& rBaseURL, So
         if( Doc2HTML( rStrm, rBaseURL ) )
             return true;
     }
-    if( nFmt == SotClipboardFormatId::RTF )
+    if( nFmt == SotClipboardFormatId::RTF || nFmt == SotClipboardFormatId::RICHTEXT )
     {
         if( Doc2RTF( rStrm ) )
             return true;
@@ -479,8 +487,8 @@ void ScImportExport::WriteUnicodeOrByteString( SvStream& rStrm, const OUString& 
     rtl_TextEncoding eEnc = rStrm.GetStreamCharSet();
     if ( eEnc == RTL_TEXTENCODING_UNICODE )
     {
-        if ( !IsEndianSwap( rStrm ) )
-            rStrm.Write( rString.getStr(), rString.getLength() * sizeof(sal_Unicode) );
+        if ( !lcl_IsEndianSwap( rStrm ) )
+            rStrm.WriteBytes(rString.getStr(), rString.getLength() * sizeof(sal_Unicode));
         else
         {
             const sal_Unicode* p = rString.getStr();
@@ -521,6 +529,15 @@ void ScImportExport::WriteUnicodeOrByteEndl( SvStream& rStrm )
     }
     else
         endl( rStrm );
+}
+
+void ScImportExport::SetNoEndianSwap( SvStream& rStrm )
+{
+#ifdef OSL_BIGENDIAN
+    rStrm.SetEndian( SvStreamEndian::BIG );
+#else
+    rStrm.SetEndian( SvStreamEndian::LITTLE );
+#endif
 }
 
 enum QuoteType
@@ -696,9 +713,9 @@ static void lcl_UnescapeSylk( OUString & rString, SylkVersion eVersion )
     // Older versions quoted the string and doubled embedded quotes, but not
     // the semicolons, which was plain wrong.
     if (eVersion >= SYLK_OOO32)
-        rString = rString.replaceAll(DOUBLE_SEMICOLON, ";");
+        rString = rString.replaceAll(";;", ";");
     else
-        rString = rString.replaceAll(DOUBLE_DOUBLEQUOTE, "\"");
+        rString = rString.replaceAll("\"\"", "\"");
 
     rString = rString.replaceAll(SYLK_LF, "\n");
 }
@@ -826,7 +843,7 @@ static void lcl_WriteString( SvStream& rStrm, OUString& rString, sal_Unicode cQu
 
     if (cQuote)
     {
-        rString = OUString(cQuote) + rString + OUString(cQuote);
+        rString = OUStringLiteral1(cQuote) + rString + OUStringLiteral1(cQuote);
     }
 
     ScImportExport::WriteUnicodeOrByteString( rStrm, rString );
@@ -940,8 +957,15 @@ static bool lcl_PutString(
 {
     ScDocument* pDoc = &rDocImport.getDoc();
     bool bMultiLine = false;
-    if ( nColFormat == SC_COL_SKIP || rStr.isEmpty() || !ValidCol(nCol) || !ValidRow(nRow) )
+    if ( nColFormat == SC_COL_SKIP || !ValidCol(nCol) || !ValidRow(nRow) )
         return bMultiLine;
+    if ( rStr.isEmpty() ) {
+        if ( bUseDocImport )
+            rDocImport.setAutoInput(ScAddress(nCol, nRow, nTab), rStr );
+        else
+            pDoc->SetString( nCol, nRow, nTab, rStr );
+        return false;
+    }
 
     if ( nColFormat == SC_COL_TEXT )
     {
@@ -1080,8 +1104,7 @@ static bool lcl_PutString(
             sal_Int16 nMonth = (sal_Int16) aMStr.toInt32();
             if (!nMonth)
             {
-                static const char aSeptCorrect[] =  "SEPT";
-                static const char aSepShortened[] =  "SEP";
+                static const char aSepShortened[] = "SEP";
                 uno::Sequence< i18n::CalendarItem2 > xMonths;
                 sal_Int32 i, nMonthCount;
                 //  first test all month names from local international
@@ -1092,7 +1115,7 @@ static bool lcl_PutString(
                     if ( rTransliteration.isEqual( aMStr, xMonths[i].FullName ) ||
                          rTransliteration.isEqual( aMStr, xMonths[i].AbbrevName ) )
                         nMonth = sal::static_int_cast<sal_Int16>( i+1 );
-                    else if ( i == 8 && rTransliteration.isEqual( aSeptCorrect,
+                    else if ( i == 8 && rTransliteration.isEqual( "SEPT",
                                 xMonths[i].AbbrevName ) &&
                             rTransliteration.isEqual( aMStr, aSepShortened ) )
                     {   // correct English abbreviation is SEPT,
@@ -1342,6 +1365,12 @@ bool ScImportExport::ExtText2Doc( SvStream& rStrm )
             if ( rStrm.IsEof() && aLine.isEmpty() )
                 break;
 
+            if ( nRow > MAXROW )
+            {
+                bOverflowRow = true;    // display warning on import
+                break;  // for
+            }
+
             EmbeddedNullTreatment( aLine);
 
             sal_Int32 nLineLen = aLine.getLength();
@@ -1433,11 +1462,6 @@ bool ScImportExport::ExtText2Doc( SvStream& rStrm )
                 xProgress->SetStateOnPercent( rStrm.Tell() - nOldPos );
             }
             ++nRow;
-            if ( nRow > MAXROW )
-            {
-                bOverflowRow = true;    // display warning on import
-                break;  // for
-            }
         }
         // so far nRow/nEndCol pointed to the next free
         if (nRow > nStartRow)
@@ -1600,7 +1624,8 @@ bool ScImportExport::Doc2Text( SvStream& rStrm )
     SCTAB nEndTab = aRange.aEnd.Tab();
 
     if (!pDoc->GetClipParam().isMultiRange() && nStartTab == nEndTab)
-        pDoc->ShrinkToDataArea( nStartTab, nStartCol, nStartRow, nEndCol, nEndRow );
+        if (!pDoc->ShrinkToDataArea( nStartTab, nStartCol, nStartRow, nEndCol, nEndRow ))
+            return false;
 
     OUString aCellStr;
 
@@ -1644,7 +1669,7 @@ bool ScImportExport::Doc2Text( SvStream& rStrm )
                             }
 
                             if( mExportTextOptions.mcSeparatorConvertTo && cSep )
-                                aCellStr = aCellStr.replaceAll( OUString(cSep), OUString(mExportTextOptions.mcSeparatorConvertTo) );
+                                aCellStr = aCellStr.replaceAll( OUStringLiteral1(cSep), OUStringLiteral1(mExportTextOptions.mcSeparatorConvertTo) );
 
                             if( mExportTextOptions.mbAddQuotes && ( aCellStr.indexOf( cSep ) != -1 ) )
                                 lcl_WriteString( rStrm, aCellStr, cStr, cStr );
@@ -1677,7 +1702,7 @@ bool ScImportExport::Doc2Text( SvStream& rStrm )
                         }
 
                         if( mExportTextOptions.mcSeparatorConvertTo && cSep )
-                            aCellStr = aCellStr.replaceAll( OUString(cSep), OUString(mExportTextOptions.mcSeparatorConvertTo) );
+                            aCellStr = aCellStr.replaceAll( OUStringLiteral1(cSep), OUStringLiteral1(mExportTextOptions.mcSeparatorConvertTo) );
 
                         if( mExportTextOptions.mbAddQuotes && hasLineBreaksOrSeps(aCellStr, cSep) )
                             lcl_WriteString( rStrm, aCellStr, cStr, cStr );
@@ -1751,15 +1776,35 @@ bool ScImportExport::Sylk2Doc( SvStream& rStrm )
                     {
                         case 'X':
                             nCol = static_cast<SCCOL>(OUString(p).toInt32()) + nStartCol - 1;
+                            if (nCol < 0 || MAXCOL < nCol)
+                            {
+                                SAL_WARN("sc.ui","ScImportExport::Sylk2Doc - ;X invalid nCol=" << nCol);
+                                nCol = std::max<SCCOL>( 0, std::min<SCCOL>( nCol, MAXCOL));
+                            }
                             break;
                         case 'Y':
                             nRow = OUString(p).toInt32() + nStartRow - 1;
+                            if (nRow < 0 || MAXROW < nRow)
+                            {
+                                SAL_WARN("sc.ui","ScImportExport::Sylk2Doc - ;Y invalid nRow=" << nRow);
+                                nRow = std::max<SCROW>( 0, std::min<SCROW>( nRow, MAXROW));
+                            }
                             break;
                         case 'C':
                             nRefCol = static_cast<SCCOL>(OUString(p).toInt32()) + nStartCol - 1;
+                            if (nRefCol < 0 || MAXCOL < nRefCol)
+                            {
+                                SAL_WARN("sc.ui","ScImportExport::Sylk2Doc - ;C invalid nRefCol=" << nRefCol);
+                                nRefCol = std::max<SCCOL>( 0, std::min<SCCOL>( nRefCol, MAXCOL));
+                            }
                             break;
                         case 'R':
                             nRefRow = OUString(p).toInt32() + nStartRow - 1;
+                            if (nRefRow < 0 || MAXROW < nRefRow)
+                            {
+                                SAL_WARN("sc.ui","ScImportExport::Sylk2Doc - ;R invalid nRefRow=" << nRefRow);
+                                nRefRow = std::max<SCROW>( 0, std::min<SCROW>( nRefRow, MAXROW));
+                            }
                             break;
                         case 'K':
                         {
@@ -1830,7 +1875,8 @@ bool ScImportExport::Sylk2Doc( SvStream& rStrm )
                             ScAddress aPos( nCol, nRow, aRange.aStart.Tab() );
                             /* FIXME: do we want GRAM_ODFF_A1 instead? At the
                              * end it probably should be GRAM_ODFF_R1C1, since
-                             * R1C1 is what Excel writes in SYLK. */
+                             * R1C1 is what Excel writes in SYLK, or even
+                             * better GRAM_ENGLISH_XL_R1C1. */
                             const formula::FormulaGrammar::Grammar eGrammar = formula::FormulaGrammar::GRAM_PODF_A1;
                             ScCompiler aComp( pDoc, aPos);
                             aComp.SetGrammar(eGrammar);
@@ -1871,9 +1917,19 @@ bool ScImportExport::Sylk2Doc( SvStream& rStrm )
                     {
                         case 'X':
                             nCol = static_cast<SCCOL>(OUString(p).toInt32()) + nStartCol - 1;
+                            if (nCol < 0 || MAXCOL < nCol)
+                            {
+                                SAL_WARN("sc.ui","ScImportExport::Sylk2Doc - ;X invalid nCol=" << nCol);
+                                nCol = std::max<SCCOL>( 0, std::min<SCCOL>( nCol, MAXCOL));
+                            }
                             break;
                         case 'Y':
                             nRow = OUString(p).toInt32() + nStartRow - 1;
+                            if (nRow < 0 || MAXROW < nRow)
+                            {
+                                SAL_WARN("sc.ui","ScImportExport::Sylk2Doc - ;Y invalid nRow=" << nRow);
+                                nRow = std::max<SCROW>( 0, std::min<SCROW>( nRow, MAXROW));
+                            }
                             break;
                         case 'P' :
                             if ( bData )
@@ -2034,7 +2090,8 @@ bool ScImportExport::Doc2Sylk( SvStream& rStrm )
                                 /* FIXME: do we want GRAM_ODFF_A1 instead? At
                                  * the end it probably should be
                                  * GRAM_ODFF_R1C1, since R1C1 is what Excel
-                                 * writes in SYLK. */
+                                 * writes in SYLK, or even better
+                                 * GRAM_ENGLISH_XL_R1C1. */
                         }
                         if ( pFCell->GetMatrixFlag() != MM_NONE &&
                                 aCellStr.startsWith("{") &&
@@ -2140,7 +2197,7 @@ bool ScImportExport::Dif2Doc( SvStream& rStrm )
     {
         InsertDeleteFlags nFlags = InsertDeleteFlags::ALL & ~InsertDeleteFlags::STYLES;
         pDoc->DeleteAreaTab( aRange, nFlags );
-        pImportDoc->CopyToDocument( aRange, nFlags, false, pDoc );
+        pImportDoc->CopyToDocument(aRange, nFlags, false, *pDoc);
         EndPaste();
     }
 
@@ -2220,7 +2277,7 @@ class ScFormatFilterMissing : public ScFormatFilterPlugin {
     virtual FltError ScImportExcel( SfxMedium&, ScDocument*, const EXCIMPFORMAT ) override { return eERR_INTERN; }
     virtual FltError ScImportStarCalc10( SvStream&, ScDocument* ) override { return eERR_INTERN; }
     virtual FltError ScImportDif( SvStream&, ScDocument*, const ScAddress&,
-                 const rtl_TextEncoding, sal_uInt32 ) override { return eERR_INTERN; }
+                 const rtl_TextEncoding ) override { return eERR_INTERN; }
     virtual FltError ScImportRTF( SvStream&, const OUString&, ScDocument*, ScRange& ) override { return eERR_INTERN; }
     virtual FltError ScImportHTML( SvStream&, const OUString&, ScDocument*, ScRange&, double, bool, SvNumberFormatter*, bool ) override { return eERR_INTERN; }
 
@@ -2230,7 +2287,7 @@ class ScFormatFilterMissing : public ScFormatFilterPlugin {
 
     virtual FltError ScExportExcel5( SfxMedium&, ScDocument*, ExportFormatExcel, rtl_TextEncoding ) override { return eERR_INTERN; }
     virtual void ScExportDif( SvStream&, ScDocument*, const ScAddress&, const rtl_TextEncoding ) override {}
-    virtual FltError ScExportDif( SvStream&, ScDocument*, const ScRange&, const rtl_TextEncoding ) override { return eERR_INTERN; }
+    virtual void ScExportDif( SvStream&, ScDocument*, const ScRange&, const rtl_TextEncoding ) override {}
     virtual void ScExportHTML( SvStream&, const OUString&, ScDocument*, const ScRange&, const rtl_TextEncoding, bool,
                   const OUString&, OUString&, const OUString& ) override {}
     virtual void ScExportRTF( SvStream&, ScDocument*, const ScRange&, const rtl_TextEncoding ) override {}
@@ -2289,6 +2346,18 @@ static inline const sal_Unicode* lcl_UnicodeStrChr( const sal_Unicode* pStr,
         ++pStr;
     }
     return nullptr;
+}
+
+ScImportStringStream::ScImportStringStream( const OUString& rStr )
+    : SvMemoryStream( const_cast<sal_Unicode *>(rStr.getStr()),
+            rStr.getLength() * sizeof(sal_Unicode), StreamMode::READ)
+{
+    SetStreamCharSet( RTL_TEXTENCODING_UNICODE );
+#ifdef OSL_BIGENDIAN
+    SetEndian(SvStreamEndian::BIG);
+#else
+    SetEndian(SvStreamEndian::LITTLE);
+#endif
 }
 
 OUString ReadCsvLine( SvStream &rStream, bool bEmbeddedLineBreak,

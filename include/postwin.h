@@ -23,6 +23,7 @@
 #undef CompareString
 #undef CopyFile
 #undef DELETE
+#undef DocumentProperties
 #undef DrawText
 #undef FindWindow
 #undef Folder
@@ -64,7 +65,8 @@
 #define STRETCH_DELETESCANS     3
 #endif
 
-#ifdef __cplusplus
+#if !defined INCLUDED_POSTWIN_H && defined __cplusplus
+#define INCLUDED_POSTWIN_H
 extern "C"
 {
 BOOL WINAPI WIN_Rectangle( HDC hDC, int X1, int Y1, int X2, int Y2 );

@@ -196,14 +196,14 @@ bool FuText::MouseButtonDown(const MouseEvent& rMEvt)
             }
         }
 
-        SdrObject* pObj;
-        SdrPageView* pPV;
+        SdrPageView* pPV = nullptr;
 
         if ( pHdl != nullptr || pView->IsMarkedHit(aMDPos) )
         {
-            if (pHdl == nullptr &&
-//              pView->TakeTextEditObject(aMDPos, pObj, pPV) )
-                pView->PickObj(aMDPos, pView->getHitTolLog(), pObj, pPV, SdrSearchOptions::PICKTEXTEDIT) )
+            SdrObject* pObj = (pHdl == nullptr) ?
+                pView->PickObj(aMDPos, pView->getHitTolLog(), pPV, SdrSearchOptions::PICKTEXTEDIT) :
+                nullptr;
+            if (pObj)
             {
                 SdrOutliner* pO = MakeOutliner();
                 lcl_UpdateHyphenator( *pO, pObj );
@@ -239,7 +239,7 @@ bool FuText::MouseButtonDown(const MouseEvent& rMEvt)
                     SdrObject* pMarkedObj = rMarkList.GetMark( 0 )->GetMarkedSdrObj();
                     if( ScDrawLayer::IsNoteCaption( pMarkedObj ) )
                     {
-                        if(pHdl->GetKind() != HDL_POLY && pHdl->GetKind() != HDL_CIRC)
+                        if(pHdl->GetKind() != SdrHdlKind::Poly && pHdl->GetKind() != SdrHdlKind::Circle)
                             bDrag = true;
                     }
                     else
@@ -272,7 +272,7 @@ bool FuText::MouseButtonDown(const MouseEvent& rMEvt)
                         pView->UnmarkAll();
                     }
 
-                    pView->SetDragMode(SDRDRAG_MOVE);
+                    pView->SetDragMode(SdrDragMode::Move);
                     SfxBindings& rBindings = pViewShell->GetViewFrame()->GetBindings();
                     rBindings.Invalidate( SID_OBJECT_ROTATE );
                     rBindings.Invalidate( SID_OBJECT_MIRROR );
@@ -329,7 +329,7 @@ bool FuText::MouseButtonDown(const MouseEvent& rMEvt)
                     if ( bRet )
                     pView->GetCreateObj()->SetGridOffset( aGridOff );
                 }
-                else if (pView->PickObj(aMDPos, pView->getHitTolLog(), pObj, pPV, SdrSearchOptions::ALSOONMASTER | SdrSearchOptions::BEFOREMARK))
+                else if (SdrObject* pObj = pView->PickObj(aMDPos, pView->getHitTolLog(), pPV, SdrSearchOptions::ALSOONMASTER | SdrSearchOptions::BEFOREMARK))
                 {
                     pView->UnmarkAllObj();
                     ScViewData& rViewData = pViewShell->GetViewData();
@@ -441,7 +441,7 @@ bool FuText::MouseButtonUp(const MouseEvent& rMEvt)
     {
         if (rMEvt.IsLeft())
         {
-            pView->EndCreateObj(SDRCREATE_FORCEEND);
+            pView->EndCreateObj(SdrCreateCmd::ForceEnd);
             if (aSfxRequest.GetSlot() == SID_DRAW_TEXT_MARQUEE)
             {
                 //  Lauftext-Objekt erzeugen?
@@ -458,7 +458,7 @@ bool FuText::MouseButtonUp(const MouseEvent& rMEvt)
                     aItemSet.Put( makeSdrTextAutoGrowWidthItem( false ) );
                     aItemSet.Put( makeSdrTextAutoGrowHeightItem( false ) );
                     aItemSet.Put( SdrTextAniKindItem( SDRTEXTANI_SLIDE ) );
-                    aItemSet.Put( SdrTextAniDirectionItem( SDRTEXTANI_LEFT ) );
+                    aItemSet.Put( SdrTextAniDirectionItem( SdrTextAniDirection::Left ) );
                     aItemSet.Put( SdrTextAniCountItem( 1 ) );
                     aItemSet.Put( SdrTextAniAmountItem(
                                     (sal_Int16)pWindow->PixelToLogic(Size(2,1)).Width()) );
@@ -577,7 +577,7 @@ bool FuText::KeyInput(const KeyEvent& rKEvt)
 
 void FuText::Activate()
 {
-    pView->SetDragMode(SDRDRAG_MOVE);
+    pView->SetDragMode(SdrDragMode::Move);
     SfxBindings& rBindings = pViewShell->GetViewFrame()->GetBindings();
     rBindings.Invalidate( SID_OBJECT_ROTATE );
     rBindings.Invalidate( SID_OBJECT_MIRROR );
@@ -762,7 +762,7 @@ SdrObject* FuText::CreateDefaultObject(const sal_uInt16 nID, const Rectangle& rR
                 aSet.Put( makeSdrTextAutoGrowWidthItem( false ) );
                 aSet.Put( makeSdrTextAutoGrowHeightItem( false ) );
                 aSet.Put( SdrTextAniKindItem( SDRTEXTANI_SLIDE ) );
-                aSet.Put( SdrTextAniDirectionItem( SDRTEXTANI_LEFT ) );
+                aSet.Put( SdrTextAniDirectionItem( SdrTextAniDirection::Left ) );
                 aSet.Put( SdrTextAniCountItem( 1 ) );
                 aSet.Put( SdrTextAniAmountItem( (sal_Int16)pWindow->PixelToLogic(Size(2,1)).Width()) );
 

@@ -41,7 +41,7 @@ namespace svt { namespace table
 
     public:
         explicit TableDataWindow( TableControl_Impl& _rTableControl );
-        virtual ~TableDataWindow();
+        virtual ~TableDataWindow() override;
         virtual void dispose() override;
 
         inline void SetSelectHdl(const Link<LinkParamNone*,void>& rLink)
@@ -56,8 +56,6 @@ namespace svt { namespace table
         virtual void        MouseButtonUp( const MouseEvent& rMEvt) override;
         virtual bool        Notify(NotifyEvent& rNEvt) override;
         virtual void        RequestHelp( const HelpEvent& rHEvt ) override;
-
-        void                SetBackground(const Wallpaper& rColor);
 
     private:
         static void impl_hideTipWindow();

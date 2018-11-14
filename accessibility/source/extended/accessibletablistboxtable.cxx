@@ -18,9 +18,9 @@
  */
 
 
-#include "accessibility/extended/accessibletablistboxtable.hxx"
-#include "accessibility/extended/AccessibleBrowseBoxTableCell.hxx"
-#include "accessibility/extended/AccessibleBrowseBoxCheckBoxCell.hxx"
+#include "extended/accessibletablistboxtable.hxx"
+#include "extended/AccessibleBrowseBoxTableCell.hxx"
+#include "extended/AccessibleBrowseBoxCheckBoxCell.hxx"
 #include <svtools/svtabbx.hxx>
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 
@@ -251,7 +251,7 @@ namespace accessibility
         }
     }
 
-    IMPL_LINK_TYPED( AccessibleTabListBoxTable, WindowEventListener, VclWindowEvent&, rEvent, void )
+    IMPL_LINK( AccessibleTabListBoxTable, WindowEventListener, VclWindowEvent&, rEvent, void )
     {
         OSL_ENSURE( rEvent.GetWindow() && m_pTabListBox, "no event window" );
         ProcessWindowEvent( rEvent );
@@ -260,13 +260,8 @@ namespace accessibility
 
     void AccessibleTabListBoxTable::ensureValidIndex( sal_Int32 _nIndex ) const
     {
-        if ( ( _nIndex < 0 ) || ( _nIndex >= implGetCellCount() ) )
+        if ( ( _nIndex < 0 ) || ( _nIndex >= (implGetRowCount() * implGetColumnCount()) ) )
             throw IndexOutOfBoundsException();
-    }
-
-    bool AccessibleTabListBoxTable::implIsRowSelected( sal_Int32 _nRow ) const
-    {
-        return m_pTabListBox && m_pTabListBox->IsSelected( m_pTabListBox->GetEntry( _nRow ) );
     }
 
     void AccessibleTabListBoxTable::implSelectRow( sal_Int32 _nRow, bool _bSelect )
@@ -341,7 +336,7 @@ namespace accessibility
         ensureIsAlive();
         ensureValidIndex( nChildIndex );
 
-        return implIsRowSelected( implGetRow( nChildIndex ) );
+        return m_pTabListBox && m_pTabListBox->IsSelected( m_pTabListBox->GetEntry( implGetRow( nChildIndex ) ) );
     }
 
     void SAL_CALL AccessibleTabListBoxTable::clearAccessibleSelection(  ) throw (RuntimeException, std::exception)

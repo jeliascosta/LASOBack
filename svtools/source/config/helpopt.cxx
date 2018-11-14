@@ -36,15 +36,19 @@ using namespace utl;
 using namespace com::sun::star::uno;
 using namespace com::sun::star;
 
+namespace {
+    //global
+    std::weak_ptr<SvtHelpOptions_Impl> g_pHelpOptions;
+}
 
-static SvtHelpOptions_Impl* pOptions = nullptr;
-static sal_Int32           nRefCount = 0;
-
-#define EXTENDEDHELP        0
-#define HELPTIPS            1
-#define LOCALE              2
-#define SYSTEM              3
-#define STYLESHEET          4
+enum class HelpProperty
+{
+    ExtendedHelp    = 0,
+    HelpTips        = 1,
+    Locale          = 2,
+    System          = 3,
+    StyleSheet      = 4
+};
 
 class SvtHelpOptions_Impl : public utl::ConfigItem
 {
@@ -57,10 +61,11 @@ class SvtHelpOptions_Impl : public utl::ConfigItem
 
     static Sequence< OUString > GetPropertyNames();
 
-    virtual void    ImplCommit() override;
+    virtual void    ImplCommit() final override;
 
 public:
                     SvtHelpOptions_Impl();
+                    ~SvtHelpOptions_Impl() override;
 
     virtual void    Notify( const css::uno::Sequence< OUString >& aPropertyNames ) override;
     void            Load( const css::uno::Sequence< OUString>& aPropertyNames);
@@ -116,7 +121,6 @@ Sequence< OUString > SvtHelpOptions_Impl::GetPropertyNames()
     return *pMutex;
 }
 
-
 SvtHelpOptions_Impl::SvtHelpOptions_Impl()
     : ConfigItem( OUString( "Office.Common/Help" ) )
     , bExtendedHelp( false )
@@ -128,6 +132,11 @@ SvtHelpOptions_Impl::SvtHelpOptions_Impl()
     EnableNotification( aNames );
 }
 
+SvtHelpOptions_Impl::~SvtHelpOptions_Impl()
+{
+    if ( IsModified() )
+        Commit();
+}
 
 static int lcl_MapPropertyName( const OUString& rCompare,
                 const uno::Sequence< OUString>& aInternalPropertyNames)
@@ -158,12 +167,13 @@ void  SvtHelpOptions_Impl::Load(const uno::Sequence< OUString>& rPropertyNames)
                 sal_Int32 nTmpInt = 0;
                 if ( pValues[nProp] >>= bTmp )
                 {
-                    switch ( lcl_MapPropertyName(rPropertyNames[nProp], aInternalPropertyNames) )
+                    switch ( static_cast< HelpProperty >(
+                        lcl_MapPropertyName(rPropertyNames[nProp], aInternalPropertyNames) ) )
                     {
-                        case EXTENDEDHELP :
+                        case HelpProperty::ExtendedHelp:
                             bExtendedHelp = bTmp;
                             break;
-                        case HELPTIPS :
+                        case HelpProperty::HelpTips:
                             bHelpTips = bTmp;
                             break;
                         default:
@@ -173,16 +183,16 @@ void  SvtHelpOptions_Impl::Load(const uno::Sequence< OUString>& rPropertyNames)
                 }
                 else if ( pValues[nProp] >>= aTmpStr )
                 {
-                    switch ( nProp )
+                    switch ( static_cast< HelpProperty >(nProp) )
                     {
-                        case LOCALE:
+                        case HelpProperty::Locale:
                             aLocale = aTmpStr;
                             break;
 
-                        case SYSTEM:
+                        case HelpProperty::System:
                             aSystem = aTmpStr;
                             break;
-                        case STYLESHEET :
+                        case HelpProperty::StyleSheet:
                             sHelpStyleSheet = aTmpStr;
                         break;
                         default:
@@ -207,7 +217,6 @@ void  SvtHelpOptions_Impl::Load(const uno::Sequence< OUString>& rPropertyNames)
     }
 }
 
-
 void SvtHelpOptions_Impl::ImplCommit()
 {
     Sequence< OUString > aNames = GetPropertyNames();
@@ -215,24 +224,24 @@ void SvtHelpOptions_Impl::ImplCommit()
     Any* pValues = aValues.getArray();
     for ( int nProp = 0; nProp < aNames.getLength(); nProp++ )
     {
-        switch ( nProp )
+        switch ( static_cast< HelpProperty >(nProp) )
         {
-            case EXTENDEDHELP :
+            case HelpProperty::ExtendedHelp:
                 pValues[nProp] <<= bExtendedHelp;
                 break;
 
-            case HELPTIPS :
+            case HelpProperty::HelpTips:
                 pValues[nProp] <<= bHelpTips;
                 break;
 
-            case LOCALE:
+            case HelpProperty::Locale:
                 pValues[nProp] <<= OUString(aLocale);
                 break;
 
-            case SYSTEM:
+            case HelpProperty::System:
                 pValues[nProp] <<= OUString(aSystem);
                 break;
-            case STYLESHEET :
+            case HelpProperty::StyleSheet:
                 pValues[nProp] <<= OUString(sHelpStyleSheet);
             break;
 
@@ -241,7 +250,6 @@ void SvtHelpOptions_Impl::ImplCommit()
 
     PutProperties( aNames, aValues );
 }
-
 
 void SvtHelpOptions_Impl::Notify( const Sequence<OUString>& aPropertyNames )
 {
@@ -252,73 +260,67 @@ SvtHelpOptions::SvtHelpOptions()
 {
     // Global access, must be guarded (multithreading)
     ::osl::MutexGuard aGuard( SvtHelpOptions_Impl::getInitMutex() );
-    ++nRefCount;
-    if ( !pOptions )
-    {
-        pOptions = new SvtHelpOptions_Impl;
 
+    pImpl = g_pHelpOptions.lock();
+    if ( !pImpl )
+    {
+        pImpl = std::make_shared<SvtHelpOptions_Impl>();
+        g_pHelpOptions = pImpl;
         svtools::ItemHolder2::holdConfigItem(E_HELPOPTIONS);
     }
-    pImp = pOptions;
 }
-
 
 SvtHelpOptions::~SvtHelpOptions()
 {
     // Global access, must be guarded (multithreading)
     ::osl::MutexGuard aGuard( SvtHelpOptions_Impl::getInitMutex() );
-    if ( !--nRefCount )
-    {
-        if ( pOptions->IsModified() )
-            pOptions->Commit();
-        DELETEZ( pOptions );
-    }
+
+    pImpl.reset();
 }
 
 void SvtHelpOptions::SetExtendedHelp( bool b )
 {
-    pImp->SetExtendedHelp( b );
+    pImpl->SetExtendedHelp( b );
 }
 
 bool SvtHelpOptions::IsExtendedHelp() const
 {
-    return pImp->IsExtendedHelp();
+    return pImpl->IsExtendedHelp();
 }
 
 void SvtHelpOptions::SetHelpTips( bool b )
 {
-    pImp->SetHelpTips( b );
+    pImpl->SetHelpTips( b );
 }
 
 bool SvtHelpOptions::IsHelpTips() const
 {
-    return pImp->IsHelpTips();
+    return pImpl->IsHelpTips();
 }
-
 
 void SvtHelpOptions::SetWelcomeScreen( bool b )
 {
-    pImp->SetWelcomeScreen( b );
+    pImpl->SetWelcomeScreen( b );
 }
 
 bool SvtHelpOptions::IsWelcomeScreen() const
 {
-    return pImp->IsWelcomeScreen();
+    return pImpl->IsWelcomeScreen();
 }
 
 OUString SvtHelpOptions::GetSystem() const
 {
-    return pImp->GetSystem();
+    return pImpl->GetSystem();
 }
 
 const OUString&   SvtHelpOptions::GetHelpStyleSheet()const
 {
-    return pImp->GetHelpStyleSheet();
+    return pImpl->GetHelpStyleSheet();
 }
 
 void  SvtHelpOptions::SetHelpStyleSheet(const OUString& rStyleSheet)
 {
-    pImp->SetHelpStyleSheet(rStyleSheet);
+    pImpl->SetHelpStyleSheet(rStyleSheet);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

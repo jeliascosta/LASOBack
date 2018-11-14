@@ -76,46 +76,43 @@ enum class SfxSlotFilterState
 };
 
 
-class SFX2_DLLPUBLIC SfxDispatcher
+class SFX2_DLLPUBLIC SfxDispatcher final
 {
     std::unique_ptr<SfxDispatcher_Impl> xImp;
 
-private:
     // Search for temporary evaluated Todos
     SAL_DLLPRIVATE bool CheckVirtualStack( const SfxShell& rShell );
 
 friend class SfxApplication;
 friend class SfxViewFrame;
-
-    DECL_DLLPRIVATE_LINK_TYPED( EventHdl_Impl, Idle *, void );
-    DECL_DLLPRIVATE_LINK_TYPED( PostMsgHandler, SfxRequest *, void );
-
-    SAL_DLLPRIVATE void Call_Impl( SfxShell& rShell, const SfxSlot &rSlot, SfxRequest &rReq, bool bRecord );
-    SAL_DLLPRIVATE void Update_Impl_( bool,bool,bool,SfxWorkWindow*);
-
-protected:
 friend class SfxBindings;
 friend class SfxStateCache;
 friend class SfxPopupMenuManager;
 friend class SfxHelp;
+
+    DECL_DLLPRIVATE_LINK( EventHdl_Impl, Idle *, void );
+    DECL_DLLPRIVATE_LINK( PostMsgHandler, SfxRequest *, void );
+
+    SAL_DLLPRIVATE void Call_Impl( SfxShell& rShell, const SfxSlot &rSlot, SfxRequest &rReq, bool bRecord );
+    SAL_DLLPRIVATE void Update_Impl_( bool,bool,bool,SfxWorkWindow*);
+
 
     bool                FindServer_( sal_uInt16 nId, SfxSlotServer &rServer, bool bModal );
     bool                FillState_( const SfxSlotServer &rServer,
                                     SfxItemSet &rState, const SfxSlot *pRealSlot );
     void                Execute_( SfxShell &rShell, const SfxSlot &rSlot,
                                   SfxRequest &rReq,
-                                  SfxCallMode eCall = SfxCallMode::RECORD);
+                                  SfxCallMode eCall);
 
-protected:
     void FlushImpl();
 
 public:
-                        SfxDispatcher( SfxDispatcher* pParent );
-                        SfxDispatcher( SfxViewFrame *pFrame = nullptr );
+                        SfxDispatcher();
+                        SfxDispatcher( SfxViewFrame *pFrame );
 
-    SAL_DLLPRIVATE void Construct_Impl( SfxDispatcher* pParent );
+    SAL_DLLPRIVATE void Construct_Impl();
 
-    virtual             ~SfxDispatcher();
+                        ~SfxDispatcher();
 
     const SfxPoolItem*  Execute( sal_uInt16 nSlot,
                                  SfxCallMode nCall = SfxCallMode::SLOT,
@@ -127,7 +124,7 @@ public:
                                  SfxCallMode nCall,
                                  SfxItemSet* pArgs,
                                  SfxItemSet* pInternalArgs,
-                                 sal_uInt16 nModi = 0);
+                                 sal_uInt16 nModi);
 
     const SfxPoolItem*  ExecuteList( sal_uInt16 nSlot,
                                  SfxCallMode nCall,
@@ -181,9 +178,7 @@ public:
     SAL_DLLPRIVATE void SetQuietMode_Impl( bool bOn );
     SAL_DLLPRIVATE bool IsReadOnlyShell_Impl( sal_uInt16 nShell ) const;
     SAL_DLLPRIVATE void RemoveShell_Impl( SfxShell& rShell );
-    SAL_DLLPRIVATE void DoParentActivate_Impl();
-    SAL_DLLPRIVATE void DoParentDeactivate_Impl();
-    SAL_DLLPRIVATE void DoActivate_Impl( bool bMDI, SfxViewFrame* pOld );
+    SAL_DLLPRIVATE void DoActivate_Impl( bool bMDI );
     SAL_DLLPRIVATE void DoDeactivate_Impl( bool bMDI, SfxViewFrame* pNew );
     SAL_DLLPRIVATE void InvalidateBindings_Impl(bool);
 };

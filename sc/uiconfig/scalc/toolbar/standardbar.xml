@@ -47,12 +47,14 @@
  <toolbar:toolbaritem xlink:href=".uno:SpellOnline" toolbar:visible="false"/>
  <toolbar:toolbaritem xlink:href=".uno:Navigator" toolbar:visible="false"/>
  <toolbar:toolbarseparator/>
- <toolbar:toolbaritem xlink:href=".uno:InsertRowsBefore"/>
+ <toolbar:toolbaritem xlink:href=".uno:RowOperations"/>
+ <toolbar:toolbaritem xlink:href=".uno:InsertRowsBefore" toolbar:visible="false"/>
  <toolbar:toolbaritem xlink:href=".uno:InsertRowsAfter" toolbar:visible="false"/>
- <toolbar:toolbaritem xlink:href=".uno:InsertColumnsBefore"/>
+ <toolbar:toolbaritem xlink:href=".uno:DeleteRows" toolbar:visible="false"/>
+ <toolbar:toolbaritem xlink:href=".uno:ColumnOperations"/>
+ <toolbar:toolbaritem xlink:href=".uno:InsertColumnsBefore" toolbar:visible="false"/>
  <toolbar:toolbaritem xlink:href=".uno:InsertColumnsAfter" toolbar:visible="false"/>
- <toolbar:toolbaritem xlink:href=".uno:DeleteRows"/>
- <toolbar:toolbaritem xlink:href=".uno:DeleteColumns"/>
+ <toolbar:toolbaritem xlink:href=".uno:DeleteColumns" toolbar:visible="false"/>
  <toolbar:toolbarseparator/>
  <toolbar:toolbaritem xlink:href=".uno:DataSort"/>
  <toolbar:toolbaritem xlink:href=".uno:SortAscending"/>
@@ -63,6 +65,7 @@
  <toolbar:toolbaritem xlink:href=".uno:GoalSeekDialog" toolbar:visible="false"/>
  <toolbar:toolbarseparator/>
  <toolbar:toolbaritem xlink:href=".uno:InsertGraphic"/>
+ <toolbar:toolbaritem xlink:href=".uno:EmojiControl" toolbar:visible="false"/>
  <toolbar:toolbaritem xlink:href=".uno:Gallery" toolbar:visible="false"/>
  <toolbar:toolbaritem xlink:href=".uno:InsertObjectChart"/>
  <toolbar:toolbaritem xlink:href=".uno:InsertObjectStarMath" toolbar:visible="false"/>

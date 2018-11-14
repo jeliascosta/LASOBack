@@ -154,7 +154,9 @@ enum RndStdIds
     RND_DRAW_OBJECT     // A draw-Object! For the SwDoc-interface only!
 };
 
-extern ResMgr* pSwResMgr;           // Is in swapp0.cxx.
+extern ResMgr* pSwResMgr;
+    // defined in sw/source/uibase/app/swmodule.cxx for the sw library and in
+    // sw/source/ui/dialog/swdialmgr.cxx for the swui library
 #define SW_RES(i)       ResId(i,*pSwResMgr)
 #define SW_RESSTR(i)    SW_RES(i).toString()
 
@@ -186,13 +188,14 @@ enum class SetAttrMode
     /// when using this need to pay attention to ignore start/end flags of hint
     NOHINTADJUST    = 0x0008,  // No merging of ranges.
     NOFORMATATTR    = 0x0010,  // Do not change into format attribute.
-    DONTCHGNUMRULE  = 0x0020,  // Do not change NumRule.
-    APICALL         = 0x0040,  // Called from API (all UI related
+    APICALL         = 0x0020,  // Called from API (all UI related
                                                         // functionality will be disabled).
     /// Force hint expand (only matters for hints with CH_TXTATR).
-    FORCEHINTEXPAND = 0x0080,
+    FORCEHINTEXPAND = 0x0040,
     /// The inserted item is a copy -- intended for use in ndtxt.cxx.
-    IS_COPY         = 0x0100
+    IS_COPY         = 0x0080,
+    /// for Undo, translated to SwInsertFlags::NOHINTEXPAND
+    NOHINTEXPAND    = 0x0100,
 };
 namespace o3tl
 {
@@ -273,7 +276,6 @@ enum PrepareHint
                             // Direction is communicated via pVoid:
                             //     MoveFwd: pVoid == 0
                             //     MoveBwd: pVoid == pOldPage
-    PREP_SWAP,              // Swap graphic; for graphics in visible area.
     PREP_REGISTER,          // Invalidate frames with registers.
     PREP_FTN_GONE,          // A Follow loses its footnote, possibly its first line can move up.
     PREP_MOVEFTN,           // A footnote changes its page. Its contents receives at first a

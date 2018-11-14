@@ -44,7 +44,7 @@ DragAndDropContext::DragAndDropContext (SlideSorter& rSlideSorter)
       mnInsertionIndex(-1)
 {
     // No Drag-and-Drop for master pages.
-    if (rSlideSorter.GetModel().GetEditMode() != EM_PAGE)
+    if (rSlideSorter.GetModel().GetEditMode() != EditMode::Page)
         return;
 
     // For properly handling transferables created by the navigator we
@@ -109,9 +109,8 @@ void DragAndDropContext::UpdatePosition (
     }
 }
 
-void DragAndDropContext::SetTargetSlideSorter (
-    const Point& rMousePosition,
-    const InsertionIndicatorHandler::Mode eMode)
+void DragAndDropContext::SetTargetSlideSorter(
+    const Point& rMousePosition)
 {
     if (mpTargetSlideSorter != nullptr)
     {
@@ -128,7 +127,7 @@ void DragAndDropContext::SetTargetSlideSorter (
             false/*bIsOverSourceView*/);
         mpTargetSlideSorter->GetController().GetInsertionIndicatorHandler()->UpdatePosition(
             rMousePosition,
-            eMode);
+            InsertionIndicatorHandler::UnknownMode);
 
     }
 }

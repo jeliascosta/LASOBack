@@ -30,9 +30,8 @@ class ScTextImportOptionsDlg : public ModalDialog
 {
 public:
     ScTextImportOptionsDlg(vcl::Window* pParent);
-    virtual ~ScTextImportOptionsDlg();
+    virtual ~ScTextImportOptionsDlg() override;
     virtual void dispose() override;
-    virtual short Execute() override;
 
     LanguageType getLanguageType() const;
     bool isDateConversionSet() const;
@@ -50,9 +49,9 @@ private:
 
     VclPtr<CheckBox>       m_pBtnConvertDate;
 
-    DECL_LINK_TYPED(OKHdl, Button*, void);
+    DECL_LINK(OKHdl, Button*, void);
 
-    DECL_LINK_TYPED( RadioHdl, Button*, void );
+    DECL_LINK( RadioHdl, Button*, void );
 };
 
 #endif

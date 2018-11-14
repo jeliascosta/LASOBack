@@ -97,7 +97,7 @@ static vector< OUString > getInfoFromInd( const OUString& aInd )
         while( *pLine && !( pLine[0] == '_' && pLine[1] == '_' ))
             if( *pLine != '_' )
             {
-                newItem += OUString( (sal_Unicode) *pLine );
+                newItem += OUStringLiteral1( *pLine );
                 pLine++;
             }
             else
@@ -114,10 +114,10 @@ static vector< OUString > getInfoFromInd( const OUString& aInd )
                         return aResult;
                     }
 
-                    aNum += OUString( (sal_Unicode) pLine[i] );
+                    aNum += OUStringLiteral1( pLine[i] );
                 }
 
-                newItem += OUString( (sal_Unicode) aNum.toUInt32( 16 ) );
+                newItem += OUStringLiteral1( aNum.toUInt32( 16 ) );
                 pLine += 3;
             }
 
@@ -402,7 +402,6 @@ PasswordContainer::~PasswordContainer()
     }
 }
 
-
 void SAL_CALL PasswordContainer::disposing( const EventObject& ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( mMutex );
@@ -420,8 +419,7 @@ void SAL_CALL PasswordContainer::disposing( const EventObject& ) throw(RuntimeEx
     }
 }
 
-
-vector< OUString > PasswordContainer::DecodePasswords( const OUString& aLine, const OUString& aMasterPasswd ) throw(RuntimeException)
+vector< OUString > PasswordContainer::DecodePasswords( const OUString& aLine, const OUString& aMasterPasswd ) throw(RuntimeException, std::exception)
 {
     if( !aMasterPasswd.isEmpty() )
     {
@@ -640,7 +638,7 @@ void SAL_CALL PasswordContainer::addPersistent( const OUString& Url, const OUStr
 void PasswordContainer::PrivateAdd( const OUString& Url, const OUString& UserName, const Sequence< OUString >& Passwords, char Mode, const Reference< XInteractionHandler >& aHandler ) throw(RuntimeException, std::exception)
 {
     NamePassRecord aRecord( UserName );
-    ::std::vector< OUString > aStorePass = comphelper::sequenceToContainer< std::vector<OUString>, OUString>( Passwords );
+    ::std::vector< OUString > aStorePass = comphelper::sequenceToContainer< std::vector<OUString> >( Passwords );
 
     if( Mode == PERSISTENT_RECORD )
         aRecord.SetPersPasswords( EncodePasswords( aStorePass, GetMasterPassword( aHandler ) ) );
@@ -818,7 +816,7 @@ OUString PasswordContainer::RequestPasswordFromUser( PasswordRequestMode aRMode,
 }
 
 
-OUString PasswordContainer::GetMasterPassword( const Reference< XInteractionHandler >& aHandler ) throw(RuntimeException, std::exception)
+OUString const & PasswordContainer::GetMasterPassword( const Reference< XInteractionHandler >& aHandler ) throw(RuntimeException, std::exception)
 {
     PasswordRequestMode aRMode = PasswordRequestMode_PASSWORD_ENTER;
     if( !m_pStorageFile || !m_pStorageFile->useStorage() )
@@ -1360,12 +1358,10 @@ OUString SAL_CALL PasswordContainer::impl_getStaticImplementationName() throw(un
     return OUString("stardiv.svl.PasswordContainer");
 }
 
-
-Reference< XInterface > SAL_CALL PasswordContainer::impl_createInstance( const Reference< XMultiServiceFactory >& xServiceManager ) throw( RuntimeException )
+Reference< XInterface > SAL_CALL PasswordContainer::impl_createInstance( const Reference< XMultiServiceFactory >& xServiceManager ) throw( RuntimeException, std::exception )
 {
     return Reference< XInterface >( *new PasswordContainer( xServiceManager ) );
 }
-
 
 Reference< XSingleServiceFactory > SAL_CALL PasswordContainer::impl_createFactory( const Reference< XMultiServiceFactory >& ServiceManager ) throw(RuntimeException)
 {

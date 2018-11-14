@@ -49,7 +49,7 @@ AquaSalInfoPrinter::AquaSalInfoPrinter( const SalPrinterQueueInfo& i_rQueue ) :
     mbJob( false ),
     mpPrinter( nil ),
     mpPrintInfo( nil ),
-    mePageOrientation( ORIENTATION_PORTRAIT ),
+    mePageOrientation( Orientation::Portrait ),
     mnStartPageOffsetX( 0 ),
     mnStartPageOffsetY( 0 ),
     mnCurPageRangeStart( 0 ),
@@ -65,10 +65,10 @@ AquaSalInfoPrinter::AquaSalInfoPrinter( const SalPrinterQueueInfo& i_rQueue ) :
         mpPrintInfo = [pShared copy];
         [mpPrintInfo setPrinter: mpPrinter];
 #if MACOSX_SDK_VERSION >= 1090
-        mePageOrientation = ([mpPrintInfo orientation] == NSPaperOrientationPortrait) ? ORIENTATION_LANDSCAPE : ORIENTATION_PORTRAIT;
+        mePageOrientation = ([mpPrintInfo orientation] == NSPaperOrientationPortrait) ? Orientation::Landscape : Orientation::Portrait;
         [mpPrintInfo setOrientation: NSPaperOrientationPortrait];
 #else
-        mePageOrientation = ([mpPrintInfo orientation] == NSLandscapeOrientation) ? ORIENTATION_LANDSCAPE : ORIENTATION_PORTRAIT;
+        mePageOrientation = ([mpPrintInfo orientation] == NSLandscapeOrientation) ? Orientation::Landscape : Orientation::Portrait;
         [mpPrintInfo setOrientation: NSPortraitOrientation];
 #endif
     }
@@ -109,7 +109,7 @@ void AquaSalInfoPrinter::SetupPrinterGraphics( CGContextRef i_rContext ) const
             NSSize aPaperSize = [mpPrintInfo paperSize];
 
             NSRect aImageRect = [mpPrintInfo imageablePageBounds];
-            if( mePageOrientation == ORIENTATION_PORTRAIT )
+            if( mePageOrientation == Orientation::Portrait )
             {
                 // move mirrored CTM back into paper
                 double dX = 0, dY = aPaperSize.height;
@@ -161,13 +161,13 @@ bool AquaSalInfoPrinter::Setup( SalFrame*, ImplJobSetup* )
 bool AquaSalInfoPrinter::SetPrinterData( ImplJobSetup* io_pSetupData )
 {
     // FIXME: implement driver data
-    if( io_pSetupData && io_pSetupData->mpDriverData )
+    if( io_pSetupData && io_pSetupData->GetDriverData() )
         return SetData( JobSetFlags::ALL, io_pSetupData );
 
     bool bSuccess = true;
 
     // set system type
-    io_pSetupData->mnSystem = JOBSETUP_SYSTEM_MAC;
+    io_pSetupData->SetSystem( JOBSETUP_SYSTEM_MAC );
 
     // get paper format
     if( mpPrintInfo )
@@ -177,24 +177,24 @@ bool AquaSalInfoPrinter::SetPrinterData( ImplJobSetup* io_pSetupData )
         // set paper
         PaperInfo aInfo( PtTo10Mu( width ), PtTo10Mu( height ) );
         aInfo.doSloppyFit();
-        io_pSetupData->mePaperFormat = aInfo.getPaper();
-        if( io_pSetupData->mePaperFormat == PAPER_USER )
+        io_pSetupData->SetPaperFormat( aInfo.getPaper() );
+        if( io_pSetupData->GetPaperFormat() == PAPER_USER )
         {
-            io_pSetupData->mnPaperWidth = PtTo10Mu( width );
-            io_pSetupData->mnPaperHeight = PtTo10Mu( height );
+            io_pSetupData->SetPaperWidth( PtTo10Mu( width ) );
+            io_pSetupData->SetPaperHeight( PtTo10Mu( height ) );
         }
         else
         {
-            io_pSetupData->mnPaperWidth = 0;
-            io_pSetupData->mnPaperHeight = 0;
+            io_pSetupData->SetPaperWidth( 0 );
+            io_pSetupData->SetPaperHeight( 0 );
         }
 
         // set orientation
-        io_pSetupData->meOrientation = mePageOrientation;
+        io_pSetupData->SetOrientation( mePageOrientation );
 
-        io_pSetupData->mnPaperBin = 0;
-        io_pSetupData->mpDriverData = static_cast<sal_uInt8*>(rtl_allocateMemory( 4 ));
-        io_pSetupData->mnDriverDataLen = 4;
+        io_pSetupData->SetPaperBin( 0 );
+        io_pSetupData->SetDriverData( static_cast<sal_uInt8*>(rtl_allocateMemory( 4 )) );
+        io_pSetupData->SetDriverDataLen( 4 );
     }
     else
         bSuccess = false;
@@ -205,7 +205,7 @@ bool AquaSalInfoPrinter::SetPrinterData( ImplJobSetup* io_pSetupData )
 void AquaSalInfoPrinter::setPaperSize( long i_nWidth, long i_nHeight, Orientation i_eSetOrientation )
 {
 
-    Orientation ePaperOrientation = ORIENTATION_PORTRAIT;
+    Orientation ePaperOrientation = Orientation::Portrait;
     const PaperInfo* pPaper = matchPaper( i_nWidth, i_nHeight, ePaperOrientation );
 
     if( pPaper )
@@ -224,30 +224,30 @@ void AquaSalInfoPrinter::setPaperSize( long i_nWidth, long i_nHeight, Orientatio
 
 bool AquaSalInfoPrinter::SetData( JobSetFlags i_nFlags, ImplJobSetup* io_pSetupData )
 {
-    if( ! io_pSetupData || io_pSetupData->mnSystem != JOBSETUP_SYSTEM_MAC )
+    if( ! io_pSetupData || io_pSetupData->GetSystem() != JOBSETUP_SYSTEM_MAC )
         return false;
 
     if( mpPrintInfo )
     {
         if( i_nFlags & JobSetFlags::ORIENTATION )
-            mePageOrientation = io_pSetupData->meOrientation;
+            mePageOrientation = io_pSetupData->GetOrientation();
 
         if( i_nFlags & JobSetFlags::PAPERSIZE )
         {
             // set paper format
             long width = 21000, height = 29700;
-            if( io_pSetupData->mePaperFormat == PAPER_USER )
+            if( io_pSetupData->GetPaperFormat() == PAPER_USER )
             {
                 // #i101108# sanity check
-                if( io_pSetupData->mnPaperWidth && io_pSetupData->mnPaperHeight )
+                if( io_pSetupData->GetPaperWidth() && io_pSetupData->GetPaperHeight() )
                 {
-                    width = io_pSetupData->mnPaperWidth;
-                    height = io_pSetupData->mnPaperHeight;
+                    width = io_pSetupData->GetPaperWidth();
+                    height = io_pSetupData->GetPaperHeight();
                 }
             }
             else
             {
-                PaperInfo aInfo( io_pSetupData->mePaperFormat );
+                PaperInfo aInfo( io_pSetupData->GetPaperFormat() );
                 width = aInfo.getWidth();
                 height = aInfo.getHeight();
             }
@@ -323,7 +323,7 @@ void AquaSalInfoPrinter::GetPageInfo( const ImplJobSetup*,
         o_rOutWidth   = static_cast<long>( aImageRect.size.width * fXScaling );
         o_rOutHeight  = static_cast<long>( aImageRect.size.height * fYScaling );
 
-        if( mePageOrientation == ORIENTATION_LANDSCAPE )
+        if( mePageOrientation == Orientation::Landscape )
         {
             std::swap( o_rOutWidth, o_rOutHeight );
             std::swap( o_rPageWidth, o_rPageHeight );
@@ -449,7 +449,7 @@ bool AquaSalInfoPrinter::StartJob( const OUString* i_pFileName,
             // also SetPaperSizeUser has the advantage that we can share a
             // platform independent paper matching algorithm
             VclPtr<Printer> pPrinter( i_rController.getPrinter() );
-            pPrinter->SetMapMode( MapMode( MAP_100TH_MM ) );
+            pPrinter->SetMapMode( MapMode( MapUnit::Map100thMM ) );
             pPrinter->SetPaperSizeUser( aCurSize, true );
 
             // create view
@@ -669,7 +669,7 @@ const PaperInfo* AquaSalInfoPrinter::matchPaper( long i_nWidth, long i_nHeight, 
         const_cast<AquaSalInfoPrinter*>(this)->InitPaperFormats( nullptr );
 
     const PaperInfo* pMatch = nullptr;
-    o_rOrientation = ORIENTATION_PORTRAIT;
+    o_rOrientation = Orientation::Portrait;
     for( int n = 0; n < 2 ; n++ )
     {
         for( size_t i = 0; i < m_aPaperFormats.size(); i++ )
@@ -681,7 +681,7 @@ const PaperInfo* AquaSalInfoPrinter::matchPaper( long i_nWidth, long i_nHeight, 
                 return pMatch;
             }
         }
-        o_rOrientation = ORIENTATION_LANDSCAPE;
+        o_rOrientation = Orientation::Landscape;
         std::swap( i_nWidth, i_nHeight );
     }
     return pMatch;

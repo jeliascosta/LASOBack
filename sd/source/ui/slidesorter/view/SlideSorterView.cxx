@@ -88,7 +88,7 @@ namespace {
     {
     public:
         explicit Painter (SlideSorterView& rView) : mrView(rView) {}
-        virtual ~Painter() {}
+        virtual ~Painter() override {}
 
         virtual void Paint (OutputDevice& rDevice, const Rectangle& rRepaintArea) override
         {
@@ -107,7 +107,7 @@ class BackgroundPainter
 {
 public:
     explicit BackgroundPainter (const Color& rBackgroundColor) : maBackgroundColor(rBackgroundColor) {}
-    virtual ~BackgroundPainter() {}
+    virtual ~BackgroundPainter() override {}
     BackgroundPainter(const BackgroundPainter&) = delete;
     BackgroundPainter& operator=(const BackgroundPainter&) = delete;
 
@@ -140,7 +140,6 @@ SlideSorterView::SlideSorterView (SlideSorter& rSlideSorter)
       mpPreviewCache(),
       mpLayeredDevice(new LayeredDevice(rSlideSorter.GetContentWindow())),
       maVisiblePageRange(-1,-1),
-      mbModelChangedWhileModifyEnabled(true),
       maPreviewSize(0,0),
       mbPreciousFlagUpdatePending(true),
       meOrientation(Layouter::GRID),
@@ -430,7 +429,7 @@ void SlideSorterView::Layout ()
         while (aPageEnumeration.HasMoreElements())
         {
             model::SharedPageDescriptor pDescriptor (aPageEnumeration.GetNextElement());
-            pDescriptor->SetBoundingBox(mpLayouter->GetPageObjectBox(pDescriptor->GetPageIndex()));
+            pDescriptor->SetBoundingBox(mpLayouter->GetPageObjectBox(pDescriptor->GetPageIndex(), false));
         }
     }
 
@@ -690,7 +689,7 @@ void SlideSorterView::ConfigurationChanged (
 
 }
 
-std::shared_ptr<cache::PageCache> SlideSorterView::GetPreviewCache()
+std::shared_ptr<cache::PageCache> const & SlideSorterView::GetPreviewCache()
 {
     sd::Window *pWindow (mrSlideSorter.GetContentWindow());
     if (pWindow && mpPreviewCache.get() == nullptr)
@@ -705,7 +704,7 @@ std::shared_ptr<cache::PageCache> SlideSorterView::GetPreviewCache()
     return mpPreviewCache;
 }
 
-Pair SlideSorterView::GetVisiblePageRange()
+Pair const & SlideSorterView::GetVisiblePageRange()
 {
     if ( ! mbPageObjectVisibilitiesValid)
         DeterminePageObjectVisibilities();
@@ -743,15 +742,6 @@ void SlideSorterView::DragFinished (sal_Int8 nDropAction)
     mrSlideSorter.GetController().GetClipboard().DragFinished(nDropAction);
 
     View::DragFinished(nDropAction);
-}
-
-void SlideSorterView::Notify (SfxBroadcaster& rBroadcaster, const SfxHint& rHint)
-{
-    ::sd::DrawDocShell* pDocShell = mrModel.GetDocument()->GetDocSh();
-    if (pDocShell!=nullptr && pDocShell->IsEnableSetModified())
-        mbModelChangedWhileModifyEnabled = true;
-
-    ::sd::View::Notify(rBroadcaster, rHint);
 }
 
 void SlideSorterView::UpdatePageUnderMouse ()
@@ -832,7 +822,7 @@ bool SlideSorterView::SetState (
     return bModified;
 }
 
-std::shared_ptr<PageObjectPainter> SlideSorterView::GetPageObjectPainter()
+std::shared_ptr<PageObjectPainter> const & SlideSorterView::GetPageObjectPainter()
 {
     if ( ! mpPageObjectPainter)
         mpPageObjectPainter.reset(new PageObjectPainter(mrSlideSorter));

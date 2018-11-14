@@ -49,9 +49,9 @@
 #include "lnktrans.hxx"
 #include "formulacell.hxx"
 #include "dociter.hxx"
+#include "sc.hrc"
 #include "scresid.hxx"
 #include "globstr.hrc"
-#include "navipi.hrc"
 #include "arealink.hxx"
 #include "navicfg.hxx"
 #include "navsett.hxx"
@@ -111,22 +111,20 @@ ScDocShell* ScContentTree::GetManualOrCurrent()
 
 //          ScContentTree
 
-ScContentTree::ScContentTree( vcl::Window* pParent, const ResId& rResId ) :
-    SvTreeListBox   ( pParent, rResId ),
-    aEntryImages    ( ScResId( RID_IMAGELIST_NAVCONT ) ),
-    nRootType       ( ScContentId::ROOT ),
-    bHiddenDoc      ( false ),
-    pHiddenDocument ( nullptr ),
-    bisInNavigatoeDlg  ( false )
+ScContentTree::ScContentTree(vcl::Window* pParent, ScNavigatorDlg* pNavigatorDlg)
+    : SvTreeListBox(pParent, WB_BORDER | WB_QUICK_SEARCH)
+    , pParentWindow(pNavigatorDlg)
+    , aEntryImages(ScResId(RID_IMAGELIST_NAVCONT))
+    , nRootType(ScContentId::ROOT)
+    , bHiddenDoc(false)
+    , pHiddenDocument(nullptr)
+    , bisInNavigatoeDlg(false)
 {
-    sal_uInt16 i;
-    for (i=0; i<=(int)ScContentId::LAST; i++)
+    for (sal_uInt16 i = 0; i <= (int)ScContentId::LAST; ++i)
         pPosList[pTypeList[i]] = i;         // invers zum suchen
 
-    pParentWindow = static_cast<ScNavigatorDlg*>(pParent);
-
     pRootNodes[ScContentId::ROOT] = nullptr;
-    for (i=1; i<(int)ScContentId::LAST; i++)
+    for (sal_uInt16 i = 1; i < (int)ScContentId::LAST; ++i)
         InitRoot((ScContentId)i);
 
     SetNodeDefaultImages();
@@ -134,9 +132,11 @@ ScContentTree::ScContentTree( vcl::Window* pParent, const ResId& rResId ) :
     SetDoubleClickHdl( LINK( this, ScContentTree, ContentDoubleClickHdl ) );
 
     pTmpEntry= nullptr;
-    m_bFirstPaint=true;
+}
 
-    SetStyle( GetStyle() | WB_QUICK_SEARCH );
+Size ScContentTree::GetOptimalSize() const
+{
+    return LogicToPixel(Size(110, 100), MapUnit::MapAppFont);
 }
 
 ScContentTree::~ScContentTree()
@@ -165,7 +165,7 @@ OUString ScContentTree::getAltLongDescText( SvTreeListEntry* pEntry, bool isAltT
         {
             SdrObject* pFound = nullptr;
             ScDocument* pDoc = ( const_cast< ScContentTree* >(this) )->GetSourceDocument();
-            SdrIterMode eIter = ( nType == ScContentId::DRAWING ) ? IM_FLAT : IM_DEEPNOGROUPS;
+            SdrIterMode eIter = ( nType == ScContentId::DRAWING ) ? SdrIterMode::Flat : SdrIterMode::DeepNoGroups;
             ScDrawLayer* pDrawLayer = pDoc->GetDrawLayer();
             SfxObjectShell* pShell = pDoc->GetDocumentShell();
             if (pDrawLayer && pShell)
@@ -344,7 +344,7 @@ static OUString lcl_GetDBAreaRange( ScDocument* pDoc, const OUString& rDBName )
     return aRet;
 }
 
-IMPL_LINK_NOARG_TYPED(ScContentTree, ContentDoubleClickHdl, SvTreeListBox*, bool)
+IMPL_LINK_NOARG(ScContentTree, ContentDoubleClickHdl, SvTreeListBox*, bool)
 {
     ScContentId nType;
     sal_uLong nChild;
@@ -579,16 +579,16 @@ void ScContentTree::Command( const CommandEvent& rCEvt )
             {
                 //  Drag-Drop Modus
 
-                PopupMenu aPop;
-                ScPopupMenu aDropMenu( ScResId( RID_POPUP_DROPMODE ) );
-                aDropMenu.CheckItem( RID_DROPMODE_URL + pParentWindow->GetDropMode() );
-                aPop.InsertItem( 1, pParentWindow->GetStrDragMode() );
-                aPop.SetPopupMenu( 1, &aDropMenu );
+                ScopedVclPtrInstance<PopupMenu> aPop;
+                VclPtrInstance<ScPopupMenu> aDropMenu( ScResId( RID_POPUP_DROPMODE ) );
+                aDropMenu->CheckItem( RID_DROPMODE_URL + pParentWindow->GetDropMode() );
+                aPop->InsertItem( 1, pParentWindow->GetStrDragMode() );
+                aPop->SetPopupMenu( 1, aDropMenu.get() );
 
                 //  angezeigtes Dokument
 
-                ScPopupMenu aDocMenu;
-                aDocMenu.SetMenuFlags( aDocMenu.GetMenuFlags() | MenuFlags::NoAutoMnemonics );
+                VclPtrInstance<ScPopupMenu> aDocMenu;
+                aDocMenu->SetMenuFlags( aDocMenu->GetMenuFlags() | MenuFlags::NoAutoMnemonics );
                 sal_uInt16 i=0;
                 sal_uInt16 nPos=0;
                 //  geladene Dokumente
@@ -604,14 +604,14 @@ void ScContentTree::Command( const CommandEvent& rCEvt )
                             aEntry += pParentWindow->aStrActive;
                         else
                             aEntry += pParentWindow->aStrNotActive;
-                        aDocMenu.InsertItem( ++i, aEntry );
+                        aDocMenu->InsertItem( ++i, aEntry );
                         if ( !bHiddenDoc && aName == aManualDoc )
                             nPos = i;
                     }
                     pSh = SfxObjectShell::GetNext( *pSh );
                 }
                 //  "aktives Fenster"
-                aDocMenu.InsertItem( ++i, pParentWindow->aStrActiveWin );
+                aDocMenu->InsertItem( ++i, pParentWindow->aStrActiveWin );
                 if (!bHiddenDoc && aManualDoc.isEmpty())
                     nPos = i;
                 //  verstecktes Dokument
@@ -619,28 +619,28 @@ void ScContentTree::Command( const CommandEvent& rCEvt )
                 {
                     OUString aEntry = aHiddenTitle;
                     aEntry += pParentWindow->aStrHidden;
-                    aDocMenu.InsertItem( ++i, aEntry );
+                    aDocMenu->InsertItem( ++i, aEntry );
                     if (bHiddenDoc)
                         nPos = i;
                 }
-                aDocMenu.CheckItem( nPos );
-                aPop.InsertItem( 2, pParentWindow->GetStrDisplay() );
-                aPop.SetPopupMenu( 2, &aDocMenu );
+                aDocMenu->CheckItem( nPos );
+                aPop->InsertItem( 2, pParentWindow->GetStrDisplay() );
+                aPop->SetPopupMenu( 2, aDocMenu.get() );
 
                 //  ausfuehren
 
-                aPop.Execute( this, rCEvt.GetMousePosPixel() );
+                aPop->Execute( this, rCEvt.GetMousePosPixel() );
 
-                if ( aDropMenu.WasHit() )               //  Drag-Drop Modus
+                if ( aDropMenu->WasHit() )               //  Drag-Drop Modus
                 {
-                    sal_uInt16 nId = aDropMenu.GetSelected();
+                    sal_uInt16 nId = aDropMenu->GetSelected();
                     if ( nId >= RID_DROPMODE_URL && nId <= RID_DROPMODE_COPY )
                         pParentWindow->SetDropMode( nId - RID_DROPMODE_URL );
                 }
-                else if ( aDocMenu.WasHit() )           //  angezeigtes Dokument
+                else if ( aDocMenu->WasHit() )           //  angezeigtes Dokument
                 {
-                    sal_uInt16 nId = aDocMenu.GetSelected();
-                    OUString aName = aDocMenu.GetItemText(nId);
+                    sal_uInt16 nId = aDocMenu->GetSelected();
+                    OUString aName = aDocMenu->GetItemText(nId);
                     SelectDoc( aName );
                 }
             }
@@ -934,7 +934,7 @@ void ScContentTree::GetDrawNames( ScContentId nType )
         return;
 
     // iterate in flat mode for groups
-    SdrIterMode eIter = ( nType == ScContentId::DRAWING ) ? IM_FLAT : IM_DEEPNOGROUPS;
+    SdrIterMode eIter = ( nType == ScContentId::DRAWING ) ? SdrIterMode::Flat : SdrIterMode::DeepNoGroups;
 
     ScDrawLayer* pDrawLayer = pDoc->GetDrawLayer();
     SfxObjectShell* pShell = pDoc->GetDocumentShell();
@@ -1141,7 +1141,7 @@ bool ScContentTree::DrawNamesChanged( ScContentId nType )
     SvTreeListEntry* pEntry = FirstChild( pParent );
 
     // iterate in flat mode for groups
-    SdrIterMode eIter = ( nType == ScContentId::DRAWING ) ? IM_FLAT : IM_DEEPNOGROUPS;
+    SdrIterMode eIter = ( nType == ScContentId::DRAWING ) ? SdrIterMode::Flat : SdrIterMode::DeepNoGroups;
 
     bool bEqual = true;
     ScDrawLayer* pDrawLayer = pDoc->GetDrawLayer();
@@ -1247,7 +1247,7 @@ static void lcl_DoDragObject( ScDocShell* pSrcShell, const OUString& rName, ScCo
             uno::Reference<datatransfer::XTransferable> xTransferable( pTransferObj );
 
             pTransferObj->SetDragSourceObj( pObject, nTab );
-            pTransferObj->SetDragSourceFlags( SC_DROP_NAVIGATOR );
+            pTransferObj->SetDragSourceFlags(ScDragSrc::Navigator);
 
             SC_MOD()->SetDragObject( nullptr, pTransferObj );
             pWin->ReleaseMouse();
@@ -1256,7 +1256,7 @@ static void lcl_DoDragObject( ScDocShell* pSrcShell, const OUString& rName, ScCo
     }
 }
 
-static void lcl_DoDragCells( ScDocShell* pSrcShell, const ScRange& rRange, sal_uInt16 nFlags, vcl::Window* pWin )
+static void lcl_DoDragCells( ScDocShell* pSrcShell, const ScRange& rRange, ScDragSrc nFlags, vcl::Window* pWin )
 {
     ScMarkData aMark;
     aMark.SelectTable( rRange.aStart.Tab(), true );
@@ -1395,7 +1395,7 @@ void ScContentTree::DoDrag()
                             ScRange aRange;
                             if ( lcl_GetRange( &rSrcDoc, nType, aText, aRange ) )
                             {
-                                lcl_DoDragCells( pSrcShell, aRange, SC_DROP_NAVIGATOR, this );
+                                lcl_DoDragCells( pSrcShell, aRange, ScDragSrc::Navigator, this );
                             }
                         }
                         else if ( nType == ScContentId::TABLE )
@@ -1404,7 +1404,7 @@ void ScContentTree::DoDrag()
                             if ( rSrcDoc.GetTable( aText, nTab ) )
                             {
                                 ScRange aRange( 0,0,nTab, MAXCOL,MAXROW,nTab );
-                                lcl_DoDragCells( pSrcShell, aRange, SC_DROP_NAVIGATOR | SC_DROP_TABLE, this );
+                                lcl_DoDragCells( pSrcShell, aRange, (ScDragSrc::Navigator | ScDragSrc::Table), this );
                             }
                         }
                         else if ( nType == ScContentId::GRAPHIC || nType == ScContentId::OLEOBJECT ||
@@ -1440,7 +1440,7 @@ void ScContentTree::DoDrag()
     delete pDocLoader;              // falls Dokument zum Draggen geladen wurde
 }
 
-IMPL_LINK_NOARG_TYPED(ScContentTree, ExecDragHdl, void*, void)
+IMPL_LINK_NOARG(ScContentTree, ExecDragHdl, void*, void)
 {
     //  als Link, damit asynchron ohne ImpMouseMoveMsg auf dem Stack auch der
     //  Navigator geloescht werden darf

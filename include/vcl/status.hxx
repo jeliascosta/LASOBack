@@ -27,8 +27,6 @@
 #include <vector>
 
 struct ImplStatusItem;
-typedef ::std::vector< ImplStatusItem* > ImplStatusItemList;
-
 
 void VCL_DLLPUBLIC DrawProgress(vcl::Window* pWindow, vcl::RenderContext& rRenderContext, const Point& rPos,
                                 long nOffset, long nPrgsWidth, long nPrgsHeight,
@@ -61,7 +59,7 @@ class VCL_DLLPUBLIC StatusBar : public vcl::Window
 {
     class   ImplData;
 private:
-    ImplStatusItemList* mpItemList;
+    std::vector<ImplStatusItem *> mpItemList;
     ImplData*           mpImplData;
     OUString            maPrgsTxt;
     Point               maPrgsTxtPos;
@@ -104,14 +102,13 @@ protected:
 public:
                         StatusBar( vcl::Window* pParent,
                                    WinBits nWinStyle = WB_BORDER | WB_RIGHT );
-    virtual             ~StatusBar();
+    virtual             ~StatusBar() override;
     virtual void        dispose() override;
 
     void                AdjustItemWidthsForHiDPI();
 
     virtual void        MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual void        Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
-    virtual void        Move() override;
     virtual void        Resize() override;
     virtual void        RequestHelp( const HelpEvent& rHEvt ) override;
     virtual void        StateChanged( StateChangedType nType ) override;

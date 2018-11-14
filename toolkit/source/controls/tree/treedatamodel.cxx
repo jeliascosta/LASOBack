@@ -44,19 +44,14 @@ typedef rtl::Reference< MutableTreeNode > MutableTreeNodeRef;
 typedef std::vector< MutableTreeNodeRef > TreeNodeVector;
 typedef rtl::Reference< MutableTreeDataModel > MutableTreeDataModelRef;
 
-void implThrowIllegalArgumentException() throw( IllegalArgumentException )
-{
-    throw IllegalArgumentException();
-}
-
 class MutableTreeDataModel : public ::cppu::WeakAggImplHelper2< XMutableTreeDataModel, XServiceInfo >,
                              public MutexAndBroadcastHelper
 {
 public:
     MutableTreeDataModel();
-    virtual ~MutableTreeDataModel();
+    virtual ~MutableTreeDataModel() override;
 
-    void broadcast( broadcast_type eType, const Reference< XTreeNode >& xParentNode, const Reference< XTreeNode >* pNodes, sal_Int32 nNodes );
+    void broadcast( broadcast_type eType, const Reference< XTreeNode >& xParentNode, const Reference< XTreeNode >& rNode );
 
     // XMutableTreeDataModel
     virtual css::uno::Reference< css::awt::tree::XMutableTreeNode > SAL_CALL createNode( const css::uno::Any& DisplayValue, sal_Bool ChildrenOnDemand ) throw (css::uno::RuntimeException, std::exception) override;
@@ -88,7 +83,7 @@ class MutableTreeNode: public ::cppu::WeakAggImplHelper2< XMutableTreeNode, XSer
 
 public:
     MutableTreeNode( const MutableTreeDataModelRef& xModel, const Any& rValue, bool bChildrenOnDemand );
-    virtual ~MutableTreeNode();
+    virtual ~MutableTreeNode() override;
 
     void setParent( MutableTreeNode* pParent );
     void broadcast_changes();
@@ -122,7 +117,6 @@ public:
     virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (RuntimeException, std::exception) override;
     virtual Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (RuntimeException, std::exception) override;
 
-    static MutableTreeNode* getImplementation( const Reference< XTreeNode >& xNode, bool bThrows ) throw (IllegalArgumentException);
     static Reference< XTreeNode > getReference( MutableTreeNode* pNode )
     {
         return Reference< XTreeNode >( pNode );
@@ -151,13 +145,13 @@ MutableTreeDataModel::~MutableTreeDataModel()
 {
 }
 
-void MutableTreeDataModel::broadcast( broadcast_type eType, const Reference< XTreeNode >& xParentNode, const Reference< XTreeNode >* pNodes, sal_Int32 nNodes )
+void MutableTreeDataModel::broadcast( broadcast_type eType, const Reference< XTreeNode >& xParentNode, const Reference< XTreeNode >& rNode )
 {
     ::cppu::OInterfaceContainerHelper* pIter = BrdcstHelper.getContainer( cppu::UnoType<XTreeDataModelListener>::get() );
     if( pIter )
     {
         Reference< XInterface > xSource( static_cast< ::cppu::OWeakObject* >( this ) );
-        const Sequence< Reference< XTreeNode > > aNodes( pNodes, nNodes );
+        const Sequence< Reference< XTreeNode > > aNodes { rNode };
         TreeDataModelEvent aEvent( xSource, aNodes, xParentNode );
 
         ::cppu::OInterfaceIteratorHelper aListIter(*pIter);
@@ -203,7 +197,7 @@ void SAL_CALL MutableTreeDataModel::setRoot( const Reference< XMutableTreeNode >
         mxRootNode.set(xImpl.get());
 
         Reference< XTreeNode > xParentNode;
-        broadcast( structure_changed, xParentNode, &mxRootNode, 1 );
+        broadcast( structure_changed, xParentNode, mxRootNode );
     }
 }
 
@@ -283,22 +277,13 @@ void MutableTreeNode::setParent( MutableTreeNode* pParent )
     mpParent = pParent;
 }
 
-MutableTreeNode* MutableTreeNode::getImplementation( const Reference< XTreeNode >& xNode, bool bThrows ) throw (IllegalArgumentException)
-{
-    MutableTreeNode* pImpl = dynamic_cast< MutableTreeNode* >( xNode.get() );
-    if( bThrows && !pImpl )
-        implThrowIllegalArgumentException();
-
-    return pImpl;
-}
-
 void MutableTreeNode::broadcast_changes()
 {
     if( mxModel.is() )
     {
         Reference< XTreeNode > xParent( getReference( mpParent ) );
         Reference< XTreeNode > xNode( getReference( this ) );
-        mxModel->broadcast( nodes_changed, xParent, &xNode, 1 );
+        mxModel->broadcast( nodes_changed, xParent, xNode );
     }
 }
 
@@ -307,7 +292,7 @@ void MutableTreeNode::broadcast_changes(const Reference< XTreeNode >& xNode, boo
     if( mxModel.is() )
     {
         Reference< XTreeNode > xParent( getReference( this ) );
-        mxModel->broadcast( bNew ? nodes_inserted : nodes_removed, xParent, &xNode, 1 );
+        mxModel->broadcast( bNew ? nodes_inserted : nodes_removed, xParent, xNode );
     }
 }
 
@@ -478,7 +463,7 @@ sal_Int32 SAL_CALL MutableTreeNode::getIndex( const Reference< XTreeNode >& xNod
 {
     ::osl::Guard< ::osl::Mutex > aGuard( maMutex );
 
-    MutableTreeNodeRef xImpl( MutableTreeNode::getImplementation( xNode, false ) );
+    MutableTreeNodeRef xImpl( dynamic_cast< MutableTreeNode* >( xNode.get() ) );
     if( xImpl.is() )
     {
         sal_Int32 nChildCount = maChildren.size();

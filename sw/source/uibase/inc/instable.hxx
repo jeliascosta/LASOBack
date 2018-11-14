@@ -55,17 +55,17 @@ class SwInsTableDlg : public SfxModalDialog
     SwTableAutoFormat* pTAutoFormat;
     sal_Int64       nEnteredValRepeatHeaderNF;
 
-    DECL_LINK_TYPED( ModifyName, Edit&, void );
-    DECL_LINK_TYPED( ModifyRowCol, Edit&, void );
-    DECL_LINK_TYPED( AutoFormatHdl, Button*, void );
-    DECL_LINK_TYPED( OKHdl, Button*, void);
-    DECL_LINK_TYPED( CheckBoxHdl, Button* = nullptr, void);
-    DECL_LINK_TYPED( ReapeatHeaderCheckBoxHdl, Button* = nullptr, void);
-    DECL_LINK_TYPED( ModifyRepeatHeaderNF_Hdl, Edit&, void );
+    DECL_LINK( ModifyName, Edit&, void );
+    DECL_LINK( ModifyRowCol, Edit&, void );
+    DECL_LINK( AutoFormatHdl, Button*, void );
+    DECL_LINK( OKHdl, Button*, void);
+    DECL_LINK( CheckBoxHdl, Button* = nullptr, void);
+    DECL_LINK( ReapeatHeaderCheckBoxHdl, Button* = nullptr, void);
+    DECL_LINK( ModifyRepeatHeaderNF_Hdl, Edit&, void );
 
 public:
     SwInsTableDlg( SwView& rView );
-    virtual ~SwInsTableDlg();
+    virtual ~SwInsTableDlg() override;
     virtual void dispose() override;
 
     void GetValues( OUString& rName, sal_uInt16& rRow, sal_uInt16& rCol,

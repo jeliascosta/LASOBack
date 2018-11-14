@@ -17,7 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svtools/stdctrl.hxx>
 #include <vcl/msgbox.hxx>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/container/XNameAccess.hpp>
@@ -69,7 +68,7 @@ SwChangeDBDlg::SwChangeDBDlg(SwView& rVw)
     m_pDefineBT->SetClickHdl(LINK(this, SwChangeDBDlg, ButtonHdl));
     m_pAddDBPB->SetClickHdl(LINK(this, SwChangeDBDlg, AddDBHdl));
 
-    m_pUsedDBTLB->SetSelectionMode(MULTIPLE_SELECTION);
+    m_pUsedDBTLB->SetSelectionMode(SelectionMode::Multiple);
     m_pUsedDBTLB->SetStyle(m_pUsedDBTLB->GetStyle()|WB_HASLINES|WB_CLIPCHILDREN|WB_SORT|WB_HASBUTTONS|WB_HASBUTTONSATROOT|WB_HSCROLL);
     m_pUsedDBTLB->SetSpaceBetweenEntries(0);
     m_pUsedDBTLB->SetNodeBitmaps( aImageList.GetImage(IMG_COLLAPSE), aImageList.GetImage(IMG_EXPAND));
@@ -192,7 +191,7 @@ void SwChangeDBDlg::UpdateFields()
         if( m_pUsedDBTLB->GetParent( pEntry ))
         {
             OUString sTmp(m_pUsedDBTLB->GetEntryText( m_pUsedDBTLB->GetParent( pEntry )) +
-                          OUString(DB_DELIM) + m_pUsedDBTLB->GetEntryText( pEntry ) + OUString(DB_DELIM) +
+                          OUStringLiteral1(DB_DELIM) + m_pUsedDBTLB->GetEntryText( pEntry ) + OUStringLiteral1(DB_DELIM) +
                           OUString::number((int)reinterpret_cast<sal_uLong>(pEntry->GetUserData())));
             aDBNames.push_back(sTmp);
         }
@@ -205,9 +204,9 @@ void SwChangeDBDlg::UpdateFields()
     sal_Bool bIsTable = false;
     const OUString DBName(m_pAvailDBTLB->GetDBName(sTableName, sColumnName, &bIsTable));
     const OUString sTemp = DBName
-        + OUString(DB_DELIM)
+        + OUStringLiteral1(DB_DELIM)
         + sTableName
-        + OUString(DB_DELIM)
+        + OUStringLiteral1(DB_DELIM)
         + OUString::number(bIsTable
                             ? CommandType::TABLE
                             : CommandType::QUERY);
@@ -215,7 +214,7 @@ void SwChangeDBDlg::UpdateFields()
     pSh->EndAllAction();
 }
 
-IMPL_LINK_NOARG_TYPED(SwChangeDBDlg, ButtonHdl, Button*, void)
+IMPL_LINK_NOARG(SwChangeDBDlg, ButtonHdl, Button*, void)
 {
     OUString sTableName;
     OUString sColumnName;
@@ -229,7 +228,7 @@ IMPL_LINK_NOARG_TYPED(SwChangeDBDlg, ButtonHdl, Button*, void)
     EndDialog(RET_OK);
 }
 
-IMPL_LINK_NOARG_TYPED(SwChangeDBDlg, TreeSelectHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(SwChangeDBDlg, TreeSelectHdl, SvTreeListBox*, void)
 {
     SvTreeListEntry* pEntry = m_pAvailDBTLB->GetCurEntry();
 
@@ -256,7 +255,7 @@ void SwChangeDBDlg::ShowDBName(const SwDBData& rDBData)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SwChangeDBDlg, AddDBHdl, Button*, void)
+IMPL_LINK_NOARG(SwChangeDBDlg, AddDBHdl, Button*, void)
 {
     const OUString sNewDB = SwDBManager::LoadAndRegisterDataSource();
     if (!sNewDB.isEmpty())

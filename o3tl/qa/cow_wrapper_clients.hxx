@@ -69,7 +69,9 @@ public:
     ~cow_wrapper_client2();
 
     cow_wrapper_client2( const cow_wrapper_client2& );
+    cow_wrapper_client2( cow_wrapper_client2&& );
     cow_wrapper_client2& operator=( const cow_wrapper_client2& );
+    cow_wrapper_client2& operator=( cow_wrapper_client2&& );
 
     void modify( int nVal );
     int  queryUnmodified() const;
@@ -98,7 +100,9 @@ public:
     ~cow_wrapper_client3();
 
     cow_wrapper_client3( const cow_wrapper_client3& );
+    cow_wrapper_client3( cow_wrapper_client3&& );
     cow_wrapper_client3& operator=( const cow_wrapper_client3& );
+    cow_wrapper_client3& operator=( cow_wrapper_client3&& );
 
     void modify( int nVal );
     int  queryUnmodified() const;
@@ -186,6 +190,7 @@ public:
     cow_wrapper_client5& operator=( const cow_wrapper_client5& );
     cow_wrapper_client5& operator=( cow_wrapper_client5&& );
 
+    int queryUnmodified() const { return *maImpl; }
     sal_uInt32 use_count() const { return maImpl.use_count(); }
 
     bool operator==( const cow_wrapper_client5& rRHS ) const;
@@ -194,6 +199,14 @@ public:
 private:
     o3tl::cow_wrapper< int, BogusRefCountPolicy > maImpl;
 };
+
+template< typename charT, typename traits >
+inline std::basic_ostream<charT, traits> & operator <<(
+    std::basic_ostream<charT, traits> & stream, const cow_wrapper_client5& client )
+{
+    return stream << client.queryUnmodified();
+}
+
 } // namespace o3tltests
 
 #endif // INCLUDED_O3TL_QA_COW_WRAPPER_CLIENTS_HXX

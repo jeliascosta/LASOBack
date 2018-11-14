@@ -19,9 +19,29 @@
 #ifndef INCLUDED_VBAHELPER_VBADOCUMENTBASE_HXX
 #define INCLUDED_VBAHELPER_VBADOCUMENTBASE_HXX
 
-#include <com/sun/star/frame/XModel.hpp>
+#include <exception>
+
+#include <com/sun/star/uno/Any.hxx>
+#include <com/sun/star/uno/Reference.hxx>
+#include <com/sun/star/uno/RuntimeException.hpp>
+#include <com/sun/star/uno/Sequence.hxx>
+#include <com/sun/star/uno/XInterface.hpp>
 #include <ooo/vba/XDocumentBase.hpp>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
+#include <vbahelper/vbadllapi.h>
+#include <vbahelper/vbahelper.hxx>
 #include <vbahelper/vbahelperinterface.hxx>
+
+namespace com { namespace sun { namespace star {
+    namespace frame { class XModel; }
+    namespace uno { class XComponentContext; }
+} } }
+
+namespace ooo { namespace vba {
+    class XDocumentBase;
+    class XHelperInterface;
+} }
 
 typedef InheritedHelperInterfaceWeakImpl< ooo::vba::XDocumentBase > VbaDocumentBase_BASE;
 
@@ -34,9 +54,9 @@ protected:
     const css::uno::Reference< css::frame::XModel >& getModel() { return mxModel; }
 public:
     VbaDocumentBase(    const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext >& xContext,
-            css::uno::Reference< css::frame::XModel > xModel );
+            css::uno::Reference< css::frame::XModel > const & xModel );
     VbaDocumentBase(    css::uno::Sequence< css::uno::Any > const& aArgs, css::uno::Reference< css::uno::XComponentContext >const& xContext );
-    virtual ~VbaDocumentBase() {}
+    virtual ~VbaDocumentBase() override {}
 
     // Attributes
     virtual OUString SAL_CALL getName() throw (css::uno::RuntimeException, std::exception) override;

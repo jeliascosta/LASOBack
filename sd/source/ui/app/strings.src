@@ -1159,6 +1159,10 @@ String STR_GRAPHICS_STYLE_FAMILY
 {
     Text [ en-US ] = "Graphic Styles";
 };
+String STR_PRESENTATIONS_STYLE_FAMILY
+{
+    Text [ en-US ] = "Presentation Styles";
+};
 String STR_CELL_STYLE_FAMILY
 {
     Text [ en-US ] = "Cell Styles";
@@ -1169,7 +1173,7 @@ String DLG_TABLEDESIGNPANE
 };
 String STR_CUSTOMANIMATIONPANE
 {
-    Text [ en-US ] = "Custom Animation";
+    Text [ en-US ] = "Animation";
 };
 String STR_SLIDE_TRANSITION_PANE
 {
@@ -1255,6 +1259,11 @@ String STR_INSERT_3D_MODEL_TITLE
 String STR_INSERT_3D_MODEL_ALL_SUPPORTED_FORMATS
 {
     Text [ en-US ] = "All supported formats";
+};
+
+String STR_OBJECTS_TREE
+{
+    Text [ en-US ] = "Page Tree";
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

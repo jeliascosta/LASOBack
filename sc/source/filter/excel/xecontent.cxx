@@ -61,7 +61,7 @@ struct XclExpHashEntry
 {
     const XclExpString* mpString;       /// Pointer to the string (no ownership).
     sal_uInt32          mnSstIndex;     /// The SST index of this string.
-    inline explicit     XclExpHashEntry( const XclExpString* pString = nullptr, sal_uInt32 nSstIndex = 0 ) :
+    inline explicit     XclExpHashEntry( const XclExpString* pString, sal_uInt32 nSstIndex ) :
                             mpString( pString ), mnSstIndex( nSstIndex ) {}
 };
 
@@ -321,8 +321,7 @@ XclExpHyperlink::XclExpHyperlink( const XclExpRoot& rRoot, const SvxURLField& rU
     XclExpRecord( EXC_ID_HLINK ),
     maScPos( rScPos ),
     mxVarData( new SvMemoryStream ),
-    mnFlags( 0 ),
-    mbSetDisplay( true )
+    mnFlags( 0 )
 {
     const OUString& rUrl = rUrlField.GetURL();
     const OUString& rRepr = rUrlField.GetRepresentation();
@@ -514,9 +513,7 @@ void XclExpHyperlink::SaveXml( XclExpXmlStream& rStrm )
                                         ? XclXmlUtils::ToOString( *mxTextMark ).getStr()
                                         : nullptr,
             // OOXTODO: XML_tooltip,    from record HLinkTooltip 800h wzTooltip
-            XML_display,            mbSetDisplay
-                                       ? XclXmlUtils::ToOString(m_Repr).getStr()
-                                       : nullptr,
+            XML_display,            XclXmlUtils::ToOString(m_Repr).getStr(),
             FSEND );
 }
 
@@ -571,7 +568,7 @@ void XclExpLabelranges::Save( XclExpStream& rStrm )
 class XclExpCFImpl : protected XclExpRoot
 {
 public:
-    explicit            XclExpCFImpl( const XclExpRoot& rRoot, const ScCondFormatEntry& rFormatEntry, sal_Int32 nPriority = 0 );
+    explicit            XclExpCFImpl( const XclExpRoot& rRoot, const ScCondFormatEntry& rFormatEntry, sal_Int32 nPriority );
 
     /** Writes the body of the CF record. */
     void                WriteBody( XclExpStream& rStrm );
@@ -839,6 +836,18 @@ const char* GetOperatorString(ScConditionMode eMode, bool& bFrmla2)
         case SC_COND_NOTDUPLICATE:
             pRet = nullptr;
             break;
+        case SC_COND_BEGINS_WITH:
+            pRet = "beginsWith";
+        break;
+        case SC_COND_ENDS_WITH:
+            pRet = "endsWith";
+        break;
+        case SC_COND_CONTAINS_TEXT:
+            pRet = "containsText";
+        break;
+        case SC_COND_NOT_CONTAINS_TEXT:
+            pRet = "notContains";
+        break;
         case SC_COND_DIRECT:
             break;
         case SC_COND_NONE:
@@ -1422,7 +1431,7 @@ namespace {
 
 const char* getIconSetName( ScIconSetType eType )
 {
-    ScIconSetMap* pMap = ScIconSetFormat::getIconSetMap();
+    const ScIconSetMap* pMap = ScIconSetFormat::g_IconSetMap;
     for(; pMap->pName; ++pMap)
     {
         if(pMap->eType == eType)

@@ -27,10 +27,6 @@ class SwFlyFrame;
 class SwFrameFormat;
 class SdrObjMacroHitRec;
 
-const sal_uInt32 SWGInventor =  sal_uInt32('S')*0x00000001 +
-                                sal_uInt32('W')*0x00000100 +
-                                sal_uInt32('G')*0x00010000;
-
 const sal_uInt16 SwFlyDrawObjIdentifier = 0x0001;
 
 // DrawObjects for Flys
@@ -47,11 +43,11 @@ protected:
 public:
 
     SwFlyDrawObj();
-    virtual ~SwFlyDrawObj();
+    virtual ~SwFlyDrawObj() override;
 
     // for instantiation of this class while loading (via factory)
-    virtual sal_uInt32 GetObjInventor()     const override;
-    virtual sal_uInt16 GetObjIdentifier()   const override;
+    virtual SdrInventor GetObjInventor()     const override;
+    virtual sal_uInt16  GetObjIdentifier()   const override;
 };
 
 // virtual objects for Flys
@@ -79,7 +75,7 @@ public:
 
 
     SwVirtFlyDrawObj(SdrObject& rNew, SwFlyFrame* pFly);
-    virtual ~SwVirtFlyDrawObj();
+    virtual ~SwVirtFlyDrawObj() override;
 
     // override method of base class SdrVirtObj
     virtual void     TakeObjInfo( SdrObjTransformInfoRec& rInfo ) const override;
@@ -119,10 +115,6 @@ public:
     virtual bool       HasMacro() const override;
     virtual SdrObject* CheckMacroHit       (const SdrObjMacroHitRec& rRec) const override;
     virtual Pointer    GetMacroPointer     (const SdrObjMacroHitRec& rRec) const override;
-
-    // FullDrag support
-    virtual bool supportsFullDrag() const override;
-    virtual SdrObject* getFullDragClone() const override;
 };
 
 #endif

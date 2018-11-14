@@ -65,6 +65,7 @@
 #include <com/sun/star/sdb/SQLContext.hpp>
 #include <com/sun/star/sdb/XBookmarksSupplier.hpp>
 #include <com/sun/star/sdb/XCompletedConnection.hpp>
+#include <com/sun/star/sdb/XDatabaseContext.hpp>
 #include <com/sun/star/sdb/XDatabaseRegistrations.hpp>
 #include <com/sun/star/sdb/XDocumentDataSource.hpp>
 #include <com/sun/star/sdb/XParametersSupplier.hpp>
@@ -347,7 +348,7 @@ bool SbaTableQueryBrowser::Construct(vcl::Window* pParent)
     {
 
         // create controls and set sizes
-        const long  nFrameWidth = getBrowserView()->LogicToPixel( ::Size( 3, 0 ), MAP_APPFONT ).Width();
+        const long  nFrameWidth = getBrowserView()->LogicToPixel( ::Size( 3, 0 ), MapUnit::MapAppFont ).Width();
 
         m_pSplitter = VclPtr<Splitter>::Create(getBrowserView(),WB_HSCROLL);
         m_pSplitter->SetPosSizePixel( ::Point(0,0), ::Size(nFrameWidth,0) );
@@ -363,7 +364,7 @@ bool SbaTableQueryBrowser::Construct(vcl::Window* pParent)
         m_pTreeView->SetHelpId(HID_CTL_TREEVIEW);
 
         // a default pos for the splitter, so that the listbox is about 80 (logical) pixels wide
-        m_pSplitter->SetSplitPosPixel( getBrowserView()->LogicToPixel( ::Size( 80, 0 ), MAP_APPFONT ).Width() );
+        m_pSplitter->SetSplitPosPixel( getBrowserView()->LogicToPixel( ::Size( 80, 0 ), MapUnit::MapAppFont ).Width() );
 
         getBrowserView()->setSplitter(m_pSplitter);
         getBrowserView()->setTreeView(m_pTreeView);
@@ -479,11 +480,7 @@ void SbaTableQueryBrowser::impl_sanitizeRowSetClauses_nothrow()
         // "SELECT * FROM <table> WHERE <other_table>.<column> = <value>", it will return "<column>". But
         // there's no API at all to retrieve the information about  "<other_table>" - which is what would
         // be needed here.
-        // That'd be a chance to replace getStructuredFilter with something more reasonable. This method
-        // has at least one other problem: for a clause like "<column> != <value>", it will return "<column>"
-        // as column name, "NOT_EQUAL" as operator, and "!= <value>" as value, effectively duplicating the
-        // information about the operator, and begging all clients to manually remove the "!=" from the value
-        // string.
+        // That'd be a chance to replace getStructuredFilter with something more reasonable.
         // So, what really would be handy, is some
         //   XNormalizedFilter getNormalizedFilter();
         // with
@@ -1005,11 +1002,11 @@ void SAL_CALL SbaTableQueryBrowser::statusChanged( const FeatureStateEvent& _rEv
                     OSL_ENSURE(bProperFormat, "SbaTableQueryBrowser::statusChanged: need a data access descriptor here!");
                     m_aDocumentDataSource.initializeFrom(aDescriptor);
 
-                    OSL_ENSURE( (   m_aDocumentDataSource.has(daDataSource)
-                                ||  m_aDocumentDataSource.has(daDatabaseLocation)
+                    OSL_ENSURE( (   m_aDocumentDataSource.has(DataAccessDescriptorProperty::DataSource)
+                                ||  m_aDocumentDataSource.has(DataAccessDescriptorProperty::DatabaseLocation)
                                 )
-                                &&  m_aDocumentDataSource.has(daCommand)
-                                &&  m_aDocumentDataSource.has(daCommandType),
+                                &&  m_aDocumentDataSource.has(DataAccessDescriptorProperty::Command)
+                                &&  m_aDocumentDataSource.has(DataAccessDescriptorProperty::CommandType),
                         "SbaTableQueryBrowser::statusChanged: incomplete descriptor!");
 
                     // check if we know the object which is set as document data source
@@ -1044,13 +1041,13 @@ void SbaTableQueryBrowser::checkDocumentDataSource()
                 // TODO: should we expand the object container? This may be too expensive just for checking ....
             else
             {
-                if ((nullptr == pObjectEntry) && m_aDocumentDataSource.has(daCommandType) && m_aDocumentDataSource.has(daCommand))
+                if ((nullptr == pObjectEntry) && m_aDocumentDataSource.has(DataAccessDescriptorProperty::CommandType) && m_aDocumentDataSource.has(DataAccessDescriptorProperty::Command))
                 {   // maybe we have a command to be displayed ?
                     sal_Int32 nCommandType = CommandType::TABLE;
-                    m_aDocumentDataSource[daCommandType] >>= nCommandType;
+                    m_aDocumentDataSource[DataAccessDescriptorProperty::CommandType] >>= nCommandType;
 
                     OUString sCommand;
-                    m_aDocumentDataSource[daCommand] >>= sCommand;
+                    m_aDocumentDataSource[DataAccessDescriptorProperty::Command] >>= sCommand;
 
                     bKnownDocDataSource = (CommandType::COMMAND == nCommandType) && (!sCommand.isEmpty());
                 }
@@ -1068,15 +1065,15 @@ void SbaTableQueryBrowser::checkDocumentDataSource()
 void SbaTableQueryBrowser::extractDescriptorProps(const svx::ODataAccessDescriptor& _rDescriptor, OUString& _rDataSource, OUString& _rCommand, sal_Int32& _rCommandType, bool& _rEscapeProcessing)
 {
     _rDataSource = _rDescriptor.getDataSource();
-    if ( _rDescriptor.has(daCommand) )
-        _rDescriptor[daCommand] >>= _rCommand;
-    if ( _rDescriptor.has(daCommandType) )
-        _rDescriptor[daCommandType] >>= _rCommandType;
+    if ( _rDescriptor.has(DataAccessDescriptorProperty::Command) )
+        _rDescriptor[DataAccessDescriptorProperty::Command] >>= _rCommand;
+    if ( _rDescriptor.has(DataAccessDescriptorProperty::CommandType) )
+        _rDescriptor[DataAccessDescriptorProperty::CommandType] >>= _rCommandType;
 
     // escape processing is the only one allowed not to be present
     _rEscapeProcessing = true;
-    if (_rDescriptor.has(daEscapeProcessing))
-        _rEscapeProcessing = ::cppu::any2bool(_rDescriptor[daEscapeProcessing]);
+    if (_rDescriptor.has(DataAccessDescriptorProperty::EscapeProcessing))
+        _rEscapeProcessing = ::cppu::any2bool(_rDescriptor[DataAccessDescriptorProperty::EscapeProcessing]);
 }
 
 namespace
@@ -1330,8 +1327,8 @@ void SbaTableQueryBrowser::implCheckExternalSlot( sal_uInt16 _nId )
     if ( !m_xMainToolbar.is() )
         return;
 
-    vcl::Window* pToolboxWindow = VCLUnoHelper::GetWindow( m_xMainToolbar );
-    ToolBox* pToolbox = dynamic_cast< ToolBox* >( pToolboxWindow );
+    VclPtr<vcl::Window> pToolboxWindow = VCLUnoHelper::GetWindow( m_xMainToolbar );
+    ToolBox* pToolbox = dynamic_cast< ToolBox* >( pToolboxWindow.get() );
     OSL_ENSURE( pToolbox, "SbaTableQueryBrowser::implCheckExternalSlot: cannot obtain the toolbox window!" );
 
     // check if we have to hide this item from the toolbox
@@ -1449,7 +1446,7 @@ sal_Bool SAL_CALL SbaTableQueryBrowser::select( const Any& _rSelection ) throw (
     }
 
     // check the presence of the props we need
-    if ( !(aDescriptor.has(daDataSource) || aDescriptor.has(daDatabaseLocation)) || !aDescriptor.has(daCommand) || !aDescriptor.has(daCommandType))
+    if ( !(aDescriptor.has(DataAccessDescriptorProperty::DataSource) || aDescriptor.has(DataAccessDescriptorProperty::DatabaseLocation)) || !aDescriptor.has(DataAccessDescriptorProperty::Command) || !aDescriptor.has(DataAccessDescriptorProperty::CommandType))
         throw IllegalArgumentException(OUString(), *this, 1);
         // TODO: error message
 
@@ -1468,8 +1465,8 @@ Any SAL_CALL SbaTableQueryBrowser::getSelection(  ) throw (RuntimeException, std
             Reference< XPropertySet > aFormProps(getRowSet(), UNO_QUERY);
             ODataAccessDescriptor aDescriptor(aFormProps);
             // remove properties which are not part of our "selection"
-            aDescriptor.erase(daConnection);
-            aDescriptor.erase(daCursor);
+            aDescriptor.erase(DataAccessDescriptorProperty::Connection);
+            aDescriptor.erase(DataAccessDescriptorProperty::Cursor);
 
             aReturn <<= aDescriptor.createPropertyValueSequence();
         }
@@ -1977,14 +1974,14 @@ void SbaTableQueryBrowser::Execute(sal_uInt16 nId, const Sequence< PropertyValue
                         xProp->getPropertyValue(PROPERTY_DATASOURCENAME) >>= sDataSourceName;
 
                         aDescriptor.setDataSource(sDataSourceName);
-                        aDescriptor[daCommand]      =   xProp->getPropertyValue(PROPERTY_COMMAND);
-                        aDescriptor[daCommandType]  =   xProp->getPropertyValue(PROPERTY_COMMAND_TYPE);
-                        aDescriptor[daConnection]   =   xProp->getPropertyValue(PROPERTY_ACTIVE_CONNECTION);
-                        aDescriptor[daCursor]       <<= xCursorClone;
+                        aDescriptor[DataAccessDescriptorProperty::Command]      =   xProp->getPropertyValue(PROPERTY_COMMAND);
+                        aDescriptor[DataAccessDescriptorProperty::CommandType]  =   xProp->getPropertyValue(PROPERTY_COMMAND_TYPE);
+                        aDescriptor[DataAccessDescriptorProperty::Connection]   =   xProp->getPropertyValue(PROPERTY_ACTIVE_CONNECTION);
+                        aDescriptor[DataAccessDescriptorProperty::Cursor]       <<= xCursorClone;
                         if ( aSelection.getLength() )
                         {
-                            aDescriptor[daSelection]            <<= aSelection;
-                            aDescriptor[daBookmarkSelection]    <<= false;
+                            aDescriptor[DataAccessDescriptorProperty::Selection]            <<= aSelection;
+                            aDescriptor[DataAccessDescriptorProperty::BookmarkSelection]    <<= false;
                                 // these are selection indices
                                 // before we change this, all clients have to be adjusted
                                 // so that they recognize the new BookmarkSelection property!
@@ -2149,7 +2146,7 @@ SvTreeListEntry* SbaTableQueryBrowser::implAppendEntry( SvTreeListEntry* _pParen
     return pNewEntry;
 }
 
-IMPL_LINK_TYPED(SbaTableQueryBrowser, OnExpandEntry, SvTreeListEntry*, _pParent, bool)
+IMPL_LINK(SbaTableQueryBrowser, OnExpandEntry, SvTreeListEntry*, _pParent, bool)
 {
     if (_pParent->HasChildren())
         // nothing to do...
@@ -2482,7 +2479,7 @@ bool SbaTableQueryBrowser::implSelect(const OUString& _rDataSourceName, const OU
     return false;
 }
 
-IMPL_LINK_NOARG_TYPED(SbaTableQueryBrowser, OnSelectionChange, LinkParamNone*, void)
+IMPL_LINK_NOARG(SbaTableQueryBrowser, OnSelectionChange, LinkParamNone*, void)
 {
     implSelect( m_pTreeView->getListBox().FirstSelected() );
 }
@@ -3347,7 +3344,7 @@ bool SbaTableQueryBrowser::ensureConnection( SvTreeListEntry* _pDSEntry, void* p
     return _rConnection.is();
 }
 
-IMPL_LINK_TYPED( SbaTableQueryBrowser, OnTreeEntryCompare, const SvSortData&, _rSortData, sal_Int32 )
+IMPL_LINK( SbaTableQueryBrowser, OnTreeEntryCompare, const SvSortData&, _rSortData, sal_Int32 )
 {
     const SvTreeListEntry* pLHS = static_cast<const SvTreeListEntry*>(_rSortData.pLeft);
     const SvTreeListEntry* pRHS = static_cast<const SvTreeListEntry*>(_rSortData.pRight);
@@ -3385,8 +3382,8 @@ IMPL_LINK_TYPED( SbaTableQueryBrowser, OnTreeEntryCompare, const SvSortData&, _r
         return 0;
     }
 
-    const SvLBoxString* pLeftTextItem = static_cast<const SvLBoxString*>(pLHS->GetFirstItem(SV_ITEM_ID_LBOXSTRING));
-    const SvLBoxString* pRightTextItem = static_cast<const SvLBoxString*>(pRHS->GetFirstItem(SV_ITEM_ID_LBOXSTRING));
+    const SvLBoxString* pLeftTextItem = static_cast<const SvLBoxString*>(pLHS->GetFirstItem(SvLBoxItemType::String));
+    const SvLBoxString* pRightTextItem = static_cast<const SvLBoxString*>(pRHS->GetFirstItem(SvLBoxItemType::String));
     OSL_ENSURE(pLeftTextItem && pRightTextItem, "SbaTableQueryBrowser::OnTreeEntryCompare: invalid text items!");
 
     OUString sLeftText = pLeftTextItem->GetText();
@@ -3472,14 +3469,19 @@ bool SbaTableQueryBrowser::requestQuickHelp( const SvTreeListEntry* _pEntry, OUS
     return false;
 }
 
-PopupMenu* SbaTableQueryBrowser::getContextMenu( Control& _rControl ) const
+OUString SbaTableQueryBrowser::getContextMenuResourceName( Control& ) const
+{
+    return OUString();
+}
+
+VclPtr<PopupMenu> SbaTableQueryBrowser::getContextMenu( Control& _rControl ) const
 {
     OSL_PRECOND( &m_pTreeView->getListBox() == &_rControl,
         "SbaTableQueryBrowser::getContextMenu: where does this come from?" );
     if ( &m_pTreeView->getListBox() != &_rControl )
         return nullptr;
 
-    return new PopupMenu( ModuleRes( MENU_BROWSER_DEFAULTCONTEXT ) );
+    return VclPtr<PopupMenu>::Create( ModuleRes( MENU_BROWSER_DEFAULTCONTEXT ) );
 }
 
 IController& SbaTableQueryBrowser::getCommandController()
@@ -3546,8 +3548,8 @@ bool SbaTableQueryBrowser::implGetQuerySignature( OUString& _rCommand, bool& _bE
         Reference< XPropertySet > xRowsetProps( getRowSet(), UNO_QUERY );
         ODataAccessDescriptor aDesc( xRowsetProps );
         sDataSourceName = aDesc.getDataSource();
-        aDesc[ daCommand ]      >>= sCommand;
-        aDesc[ daCommandType ]  >>= nCommandType;
+        aDesc[ DataAccessDescriptorProperty::Command ]      >>= sCommand;
+        aDesc[ DataAccessDescriptorProperty::CommandType ]  >>= nCommandType;
 
         // do we need to do anything?
         if ( CommandType::QUERY != nCommandType )

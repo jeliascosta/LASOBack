@@ -20,7 +20,9 @@
 #include <doc.hxx>
 #include <list.hxx>
 #include <numrule.hxx>
-#include <rtl/random.h>
+
+#include <comphelper/random.hxx>
+
 #include <vector>
 
 
@@ -83,25 +85,25 @@ SwList* DocumentListsManager::getListByName( const OUString& sListId ) const
     return pList;
 }
 
-SwList* DocumentListsManager::createListForListStyle( const OUString& sListStyleName )
+void DocumentListsManager::createListForListStyle( const OUString& sListStyleName )
 {
     if ( sListStyleName.isEmpty() )
     {
         OSL_FAIL( "<DocumentListsManager::createListForListStyle(..)> - no list style name provided. Serious defect." );
-        return nullptr;
+        return;
     }
 
     if ( getListForListStyle( sListStyleName ) )
     {
         OSL_FAIL( "<DocumentListsManager::createListForListStyle(..)> - a list for the provided list style name already exists. Serious defect." );
-        return nullptr;
+        return;
     }
 
     SwNumRule* pNumRule = m_rDoc.FindNumRulePtr( sListStyleName );
     if ( !pNumRule )
     {
         OSL_FAIL( "<DocumentListsManager::createListForListStyle(..)> - for provided list style name no list style is found. Serious defect." );
-        return nullptr;
+        return;
     }
 
     OUString sListId( pNumRule->GetDefaultListId() ); // can be empty String
@@ -112,8 +114,6 @@ SwList* DocumentListsManager::createListForListStyle( const OUString& sListStyle
     SwList* pNewList = createList( sListId, sListStyleName );
     maListStyleLists[sListStyleName] = pNewList;
     pNumRule->SetDefaultListId( pNewList->GetListId() );
-
-    return pNewList;
 }
 
 SwList* DocumentListsManager::getListForListStyle( const OUString& sListStyleName ) const
@@ -232,13 +232,9 @@ const OUString DocumentListsManager::CreateUniqueListId()
     else
     {
         // #i92478#
-        OUString aNewListId( "list" );
-        // #o12311627#
-        static rtlRandomPool s_RandomPool( rtl_random_createPool() );
-        sal_Int64 n;
-        rtl_random_getBytes( s_RandomPool, &n, sizeof(n) );
-        aNewListId += OUString::number( (n < 0 ? -n : n) );
-
+        unsigned int const n(comphelper::rng::uniform_uint_distribution(0,
+                                std::numeric_limits<unsigned int>::max()));
+        OUString const aNewListId = "list" + OUString::number(n);
         return MakeListIdUnique( aNewListId );
     }
 }

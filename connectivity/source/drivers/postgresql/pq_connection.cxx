@@ -54,6 +54,7 @@
 #include <rtl/strbuf.hxx>
 #include <rtl/uuid.h>
 #include <rtl/bootstrap.hxx>
+#include <o3tl/enumarray.hxx>
 #include <osl/module.h>
 
 #include <cppuhelper/implementationentry.hxx>
@@ -94,30 +95,26 @@ namespace pq_sdbc_driver
 
 
 // Helper class for statement lifetime management
-class ClosableReference : public cppu::WeakImplHelper< com::sun::star::uno::XReference >
+class ClosableReference : public cppu::WeakImplHelper< css::uno::XReference >
 {
-    Connection *m_conn;
+    rtl::Reference<Connection> m_conn;
     ::rtl::ByteSequence m_id;
 public:
     ClosableReference( const ::rtl::ByteSequence & id , Connection *that )
       :  m_conn( that ), m_id( id )
     {
-        that->acquire();
     }
 
-    virtual ~ClosableReference()
+    virtual ~ClosableReference() override
     {
-        if( m_conn )
-            m_conn->release();
     }
 
     virtual void SAL_CALL dispose() throw (std::exception) override
     {
-        if( m_conn )
+        if( m_conn.is() )
         {
             m_conn->removeFromWeakMap(m_id);
-            m_conn->release();
-            m_conn = nullptr;
+            m_conn.clear();
         }
     }
 };
@@ -126,14 +123,14 @@ OUString    ConnectionGetImplementationName()
 {
     return OUString( "org.openoffice.comp.connectivity.pq.Connection.noext" );
 }
-com::sun::star::uno::Sequence<OUString> ConnectionGetSupportedServiceNames()
+css::uno::Sequence<OUString> ConnectionGetSupportedServiceNames()
 {
     return Sequence< OUString > { "com.sun.star.sdbc.Connection" };
 }
 
-static sal_Int32 readLogLevelFromConfiguration()
+static LogLevel readLogLevelFromConfiguration()
 {
-    sal_Int32 loglevel = LogLevel::NONE;
+    LogLevel nLogLevel = LogLevel::NONE;
     OUString fileName;
     osl_getModuleURLFromFunctionAddress(
         reinterpret_cast<oslGenericFunction>(readLogLevelFromConfiguration), &fileName.pData );
@@ -148,38 +145,38 @@ static sal_Int32 readLogLevelFromConfiguration()
     if( bootstrapHandle.getFrom( "PQ_LOGLEVEL", str ) )
     {
         if ( str == "NONE" )
-            loglevel = LogLevel::NONE;
+            nLogLevel = LogLevel::NONE;
         else if ( str == "ERROR" )
-            loglevel = LogLevel::ERROR;
+            nLogLevel = LogLevel::Error;
         else if ( str == "SQL" )
-            loglevel = LogLevel::SQL;
+            nLogLevel = LogLevel::Sql;
         else if ( str == "INFO" )
-            loglevel = LogLevel::INFO;
+            nLogLevel = LogLevel::Info;
         else
         {
             fprintf( stderr, "unknown loglevel %s\n",
                      OUStringToOString( str, RTL_TEXTENCODING_UTF8 ).getStr() );
         }
     }
-    return loglevel;
+    return nLogLevel;
 }
 
 Connection::Connection(
     const rtl::Reference< RefCountedMutex > &refMutex,
-    const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XComponentContext > & ctx )
+    const css::uno::Reference< css::uno::XComponentContext > & ctx )
     : ConnectionBase( refMutex->mutex ),
       m_ctx( ctx ) ,
       m_refMutex( refMutex )
 {
-    m_settings.loglevel = readLogLevelFromConfiguration();
+    m_settings.m_nLogLevel = readLogLevelFromConfiguration();
 
-    if( m_settings.loglevel > LogLevel::NONE )
+    if (m_settings.m_nLogLevel != LogLevel::NONE)
     {
         m_settings.logFile = fopen( "sdbc-pqsql.log", "a" );
         if( m_settings.logFile )
         {
             setvbuf( m_settings.logFile, nullptr, _IONBF, 0 );
-            log( &m_settings, m_settings.loglevel , "set this loglevel" );
+            log(&m_settings, m_settings.m_nLogLevel , "set this loglevel");
         }
         else
         {
@@ -202,9 +199,9 @@ Connection::~Connection()
         m_settings.logFile = nullptr;
     }
 }
-typedef ::std::list< ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XCloseable > > CloseableList;
+typedef ::std::list< css::uno::Reference< css::sdbc::XCloseable > > CloseableList;
 
-typedef ::std::list< ::com::sun::star::uno::Reference< ::com::sun::star::lang::XComponent > > DisposeableList;
+typedef ::std::list< css::uno::Reference< css::lang::XComponent > > DisposeableList;
 
 void Connection::close() throw ( SQLException, RuntimeException, std::exception )
 {
@@ -215,7 +212,7 @@ void Connection::close() throw ( SQLException, RuntimeException, std::exception 
         // silently ignore, if the connection has been closed already
         if( m_settings.pConnection )
         {
-            log( &m_settings, LogLevel::INFO, "closing connection" );
+            log(&m_settings, LogLevel::Info, "closing connection");
             PQfinish( m_settings.pConnection );
             m_settings.pConnection = nullptr;
         }
@@ -280,7 +277,7 @@ Reference< XPreparedStatement > Connection::prepareStatement( const OUString& sq
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
 
-    OString byteSql = OUStringToOString( sql, m_settings.encoding );
+    OString byteSql = OUStringToOString( sql, ConnectionSettings::encoding );
     PreparedStatement *stmt = new PreparedStatement( m_refMutex, this, &m_settings, byteSql );
     Reference< XPreparedStatement > ret = stmt;
 
@@ -369,7 +366,7 @@ OUString Connection::getCatalog() throw (SQLException, RuntimeException, std::ex
                             OUString(), 1, Any() );
     }
     char * p = PQdb(m_settings.pConnection );
-    return OUString( p, strlen(p) ,  m_settings.encoding );
+    return OUString( p, strlen(p) ,  ConnectionSettings::encoding );
 }
 
 void Connection::setTransactionIsolation( sal_Int32 )
@@ -527,7 +524,7 @@ void Connection::initialize( const Sequence< Any >& aArguments )
         nColon = url.indexOf( ':' , 1+ nColon );
         if( nColon != -1 )
         {
-             o = OUStringToOString( url.getStr()+nColon+1, m_settings.encoding );
+             o = OUStringToOString( url.getStr()+nColon+1, ConnectionSettings::encoding );
         }
     }
     {
@@ -543,7 +540,7 @@ void Connection::initialize( const Sequence< Any >& aArguments )
                 OUString errorMessage;
                 if ( err != nullptr)
                 {
-                    errorMessage = OUString( err, strlen(err), m_settings.encoding );
+                    errorMessage = OUString( err, strlen(err), ConnectionSettings::encoding );
                     free(err);
                 }
                 else
@@ -567,7 +564,7 @@ void Connection::initialize( const Sequence< Any >& aArguments )
                 }
             }
         }
-        properties2arrays( args , tc, m_settings.encoding, keywords, values );
+        properties2arrays( args , tc, ConnectionSettings::encoding, keywords, values );
         keywords.push_back(nullptr, SAL_NO_ACQUIRE);
         values.push_back(nullptr, SAL_NO_ACQUIRE);
 
@@ -596,13 +593,13 @@ void Connection::initialize( const Sequence< Any >& aArguments )
     m_settings.catalog = OUString( p, strlen(p), RTL_TEXTENCODING_UTF8);
     m_settings.tc = tc;
 
-    if( isLog( &m_settings, LogLevel::INFO ) )
+    if (isLog(&m_settings, LogLevel::Info))
     {
         OUStringBuffer buf( 128 );
         buf.append( "connection to '" );
         buf.append( url );
         buf.append( "' successfully opened" );
-        log( &m_settings, LogLevel::INFO, buf.makeStringAndClear() );
+        log(&m_settings, LogLevel::Info, buf.makeStringAndClear());
     }
 }
 
@@ -619,44 +616,44 @@ void Connection::checkClosed() throw ( SQLException, RuntimeException )
 }
 
 Reference< XNameAccess > Connection::getTables()
-    throw (::com::sun::star::uno::RuntimeException, std::exception)
+    throw (css::uno::RuntimeException, std::exception)
 {
-    if( isLog( &m_settings, LogLevel::INFO ) )
+    if (isLog(&m_settings, LogLevel::Info))
     {
-        log( &m_settings, LogLevel::INFO, "Connection::getTables() got called" );
+        log(&m_settings, LogLevel::Info, "Connection::getTables() got called");
     }
     MutexGuard guard( m_refMutex->mutex );
     if( !m_settings.tables.is() )
         m_settings.tables = Tables::create( m_refMutex, this, &m_settings , &m_settings.pTablesImpl);
     else
         // TODO: how to overcome the performance problem ?
-        Reference< com::sun::star::util::XRefreshable > ( m_settings.tables, UNO_QUERY )->refresh();
+        Reference< css::util::XRefreshable > ( m_settings.tables, UNO_QUERY )->refresh();
     return m_settings.tables;
 }
 
 Reference< XNameAccess > Connection::getViews()
-    throw (::com::sun::star::uno::RuntimeException, std::exception)
+    throw (css::uno::RuntimeException, std::exception)
 {
-    if( isLog( &m_settings, LogLevel::INFO ) )
+    if (isLog(&m_settings, LogLevel::Info))
     {
-        log( &m_settings, LogLevel::INFO, "Connection::getViews() got called" );
+        log(&m_settings, LogLevel::Info, "Connection::getViews() got called");
     }
     MutexGuard guard( m_refMutex->mutex );
     if( !m_settings.views.is() )
         m_settings.views = Views::create( m_refMutex, this, &m_settings, &(m_settings.pViewsImpl) );
     else
         // TODO: how to overcome the performance problem ?
-        Reference< com::sun::star::util::XRefreshable > ( m_settings.views, UNO_QUERY )->refresh();
+        Reference< css::util::XRefreshable > ( m_settings.views, UNO_QUERY )->refresh();
     return m_settings.views;
 }
 
 
 Reference< XNameAccess > Connection::getUsers()
-    throw (::com::sun::star::uno::RuntimeException, std::exception)
+    throw (css::uno::RuntimeException, std::exception)
 {
-    if( isLog( &m_settings, LogLevel::INFO ) )
+    if (isLog(&m_settings, LogLevel::Info))
     {
-        log( &m_settings, LogLevel::INFO, "Connection::getUsers() got called" );
+        log(&m_settings, LogLevel::Info, "Connection::getUsers() got called");
     }
 
     MutexGuard guard( m_refMutex->mutex );
@@ -674,20 +671,21 @@ Reference< XInterface >  ConnectionCreateInstance(
 }
 
 
-bool isLog( ConnectionSettings *settings, int loglevel )
+bool isLog(ConnectionSettings *settings, LogLevel nLevel)
 {
-    return settings->loglevel >= loglevel && settings->logFile;
+    return static_cast<int>(settings->m_nLogLevel) >= static_cast<int>(nLevel)
+           && settings->logFile;
 }
 
-void log( ConnectionSettings *settings, sal_Int32 level, const OUString &logString )
+void log(ConnectionSettings *settings, LogLevel nLevel, const OUString &logString)
 {
-    log( settings, level, OUStringToOString( logString, settings->encoding ).getStr() );
+    log( settings, nLevel, OUStringToOString( logString, ConnectionSettings::encoding ).getStr() );
 }
-void log( ConnectionSettings *settings, sal_Int32 level, const char *str )
+void log(ConnectionSettings *settings, LogLevel nLevel, const char *str)
 {
-    if( isLog( settings, level ) )
+    if (isLog(settings, nLevel))
     {
-        static const char *strLevel[] = { "NONE", "ERROR", "SQL", "INFO", "DATA" };
+        static const o3tl::enumarray<LogLevel, const char*> strLevel = {"NONE", "ERROR", "SQL", "INFO"};
 
         time_t t = ::time( nullptr );
         char *pString;
@@ -709,7 +707,7 @@ void log( ConnectionSettings *settings, sal_Int32 level, const char *str )
                 break;
             }
         }
-        fprintf( settings->logFile, "%s [%s]: %s\n", pString, strLevel[level], str );
+        fprintf(settings->logFile, "%s [%s]: %s\n", pString, strLevel[nLevel], str);
     }
 }
 

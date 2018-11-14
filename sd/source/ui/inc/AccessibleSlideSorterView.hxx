@@ -69,7 +69,7 @@ public:
 
     void Init();
 
-    virtual ~AccessibleSlideSorterView();
+    virtual ~AccessibleSlideSorterView() override;
 
     /** This method acts like a dispose call.  It sends a disposing to all
         of its listeners.  It may be called twice.
@@ -290,14 +290,6 @@ private:
     */
     void ThrowIfDisposed()
         throw (css::lang::DisposedException);
-
-    /** Check whether or not the object has been disposed (or is in the
-        state of being disposed).
-
-        @return sal_True, if the object is disposed or in the course
-        of being disposed. Otherwise, sal_False is returned.
-    */
-    bool IsDisposed();
 };
 
 } // end of namespace ::accessibility

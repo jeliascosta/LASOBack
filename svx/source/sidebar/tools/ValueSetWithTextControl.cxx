@@ -30,64 +30,19 @@
 
 namespace svx { namespace sidebar {
 
-ValueSetWithTextControl::ValueSetWithTextControl(
-    const tControlType eControlType,
-    vcl::Window* pParent,
-    const ResId& rResId)
-    : ValueSet( pParent, rResId )
-    , meControlType( eControlType )
-    , maItems()
+ValueSetWithTextControl::ValueSetWithTextControl(Window* pParent, WinBits nBits)
+    : ValueSet( pParent, nBits )
+    , meControlType( svx::sidebar::ValueSetWithTextControl::ControlType::TextText )
 {
     SetColCount();
 }
 
-void ValueSetWithTextControl::AddItem(
-    const Image& rItemImage,
-    const Image* pSelectedItemImage,
-    const OUString& rItemText,
-    const OUString* pItemHelpText )
-{
-    if ( meControlType != IMAGE_TEXT )
-    {
-        return;
-    }
-
-    ValueSetWithTextItem aItem;
-    aItem.maItemImage = rItemImage;
-    aItem.maSelectedItemImage = (pSelectedItemImage != nullptr)
-                                ? *pSelectedItemImage
-                                : rItemImage;
-
-    if ( GetDPIScaleFactor() > 1 )
-    {
-        BitmapEx b = aItem.maItemImage.GetBitmapEx();
-        b.Scale(GetDPIScaleFactor(), GetDPIScaleFactor());
-        aItem.maItemImage = Image(b);
-
-        if ( pSelectedItemImage != nullptr )
-        {
-            b = aItem.maSelectedItemImage.GetBitmapEx();
-            b.Scale(GetDPIScaleFactor(), GetDPIScaleFactor());
-            aItem.maSelectedItemImage = Image(b);
-        }
-    }
-
-    aItem.maItemText = rItemText;
-
-    maItems.push_back( aItem );
-
-    InsertItem( maItems.size() );
-    SetItemText( maItems.size(),
-                    (pItemHelpText != nullptr) ? *pItemHelpText : rItemText );
-}
-
 
 void ValueSetWithTextControl::AddItem(
     const OUString& rItemText,
-    const OUString& rItemText2,
-    const OUString* pItemHelpText )
+    const OUString& rItemText2 )
 {
-    if ( meControlType != TEXT_TEXT )
+    if ( meControlType != ControlType::TextText )
     {
         return;
     }
@@ -99,10 +54,8 @@ void ValueSetWithTextControl::AddItem(
     maItems.push_back( aItem );
 
     InsertItem( maItems.size() );
-    SetItemText( maItems.size(),
-                    (pItemHelpText != nullptr) ? *pItemHelpText : rItemText );
+    SetItemText( maItems.size(), rItemText );
 }
-
 
 void ValueSetWithTextControl::UserDraw( const UserDrawEvent& rUDEvt )
 {
@@ -156,7 +109,7 @@ void ValueSetWithTextControl::UserDraw( const UserDrawEvent& rUDEvt )
 
         switch ( meControlType )
         {
-        case IMAGE_TEXT:
+        case ControlType::ImageText:
             {
                 Point aImgStart(
                     aBLPos.X() + 4,
@@ -168,7 +121,7 @@ void ValueSetWithTextControl::UserDraw( const UserDrawEvent& rUDEvt )
                 pDev->DrawText(aStrRect, maItems[nItemId-1].maItemText, DrawTextFlags::EndEllipsis);
             }
             break;
-        case TEXT_TEXT:
+        case ControlType::TextText:
             {
                 const long nRectWidth = aRect.GetWidth();
                 aStrRect.Left() += 8;

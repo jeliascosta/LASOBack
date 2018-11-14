@@ -22,7 +22,7 @@
 #ifndef INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCCOMPONENTBASE_H
 #define INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCCOMPONENTBASE_H
 
-#include <com/sun/star/uno/reference.hxx>
+#include <com/sun/star/uno/Reference.hxx>
 #include <com/sun/star/accessibility/XAccessibleComponent.hpp>
 #include "UNOXWrapper.h"
 
@@ -53,7 +53,7 @@ public:
     STDMETHOD(get_background)(IA2Color * background);
 
     // Override of IUNOXWrapper.
-    STDMETHOD(put_XInterface)(hyper pXInterface);
+    STDMETHOD(put_XInterface)(hyper pXInterface) override;
 
 protected:
 

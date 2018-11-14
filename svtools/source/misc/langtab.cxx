@@ -17,7 +17,10 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <com/sun/star/container/XNameAccess.hpp>
 #include <com/sun/star/i18n/DirectionProperty.hpp>
+#include <com/sun/star/uno/Sequence.hxx>
+#include <com/sun/star/uno/Any.h>
 
 #include <i18nlangtag/lang.h>
 #include <i18nlangtag/mslangid.hxx>
@@ -28,6 +31,7 @@
 #include <svtools/langtab.hxx>
 #include <unotools/syslocale.hxx>
 #include <tools/resary.hxx>
+#include <officecfg/VCL.hxx>
 
 
 using namespace ::com::sun::star;
@@ -40,7 +44,7 @@ public:
     virtual ~SvtLanguageTableImpl();
 
     bool            HasType( const LanguageType eType ) const;
-    const OUString  GetString( const LanguageType eType, bool bUserInterfaceSelection = false ) const;
+    const OUString  GetString( const LanguageType eType, bool bUserInterfaceSelection ) const;
     LanguageType    GetType( const OUString& rStr ) const;
     sal_uInt32      GetEntryCount() const;
     LanguageType    GetTypeAtIndex( sal_uInt32 nIndex ) const;
@@ -119,7 +123,8 @@ const OUString ApplyLreOrRleEmbedding( const OUString &rText )
     OUString aRes( rText );
     if (bFound)
     {
-        aRes = OUString(cStart) + aRes + OUString(cPopDirectionalFormat);
+        aRes = OUStringLiteral1(cStart) + aRes
+            + OUStringLiteral1(cPopDirectionalFormat);
     }
 
     return aRes;
@@ -128,6 +133,28 @@ const OUString ApplyLreOrRleEmbedding( const OUString &rText )
 SvtLanguageTableImpl::SvtLanguageTableImpl() :
     ResStringArray( SvtResId( STR_ARR_SVT_LANGUAGE_TABLE ) )
 {
+    auto xNA = officecfg::VCL::ExtraLanguages::get();
+    uno::Sequence <OUString> rElementNames = xNA->getElementNames();
+    sal_Int32 nLen = rElementNames.getLength();
+    for (sal_Int32 i = 0; i < nLen; ++i)
+    {
+        OUString aName;
+        sal_Int32 nType = 0;
+        uno::Reference <container::XNameAccess> xNB;
+        xNA->getByName(rElementNames[i]) >>= xNB;
+        bool bSuccess = (xNB->getByName("Name") >>= aName) &&
+                        (xNB->getByName("ScriptType") >>= nType);
+        if (bSuccess)
+        {
+            LanguageTag aLang(rElementNames[i]);
+            LanguageType nLangType = aLang.getLanguageType();
+            if (nType <= LanguageTag::ScriptType::RTL && nType > LanguageTag::ScriptType::UNKNOWN)
+                aLang.setScriptType(LanguageTag::ScriptType(nType));
+            sal_uInt32 nPos = FindIndex(nLangType);
+            if (nPos == RESARRAY_INDEX_NOTFOUND)
+                AddItem((aName.isEmpty() ? rElementNames[i] : aName), nLangType);
+        }
+    }
 }
 
 SvtLanguageTableImpl::~SvtLanguageTableImpl()
@@ -174,7 +201,7 @@ const OUString SvtLanguageTableImpl::GetString( const LanguageType eType, bool b
 
 OUString SvtLanguageTable::GetLanguageString( const LanguageType eType )
 {
-    return theLanguageTable::get().GetString( eType );
+    return theLanguageTable::get().GetString( eType, false );
 }
 
 OUString SvtLanguageTable::GetLanguageString( const LanguageType eType, bool bUserInterfaceSelection )

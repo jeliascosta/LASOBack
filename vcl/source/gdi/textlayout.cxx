@@ -87,16 +87,6 @@ namespace vcl
         Rectangle   DrawText( const Rectangle& _rRect, const OUString& _rText, DrawTextFlags _nStyle, MetricVector* _pVector, OUString* _pDisplayText, const Size* i_pDeviceSize );
         Rectangle   GetTextRect( const Rectangle& _rRect, const OUString& _rText, DrawTextFlags _nStyle, Size* o_pDeviceSize );
 
-    protected:
-        void onBeginDrawText()
-        {
-            m_aCompleteTextRect.SetEmpty();
-        }
-        const Rectangle& onEndDrawText()
-        {
-            return m_aCompleteTextRect;
-        }
-
     private:
         long        GetTextArray( const OUString& _rText, long* _pDXAry, sal_Int32 _nStartIndex, sal_Int32 _nLength ) const;
 
@@ -131,26 +121,26 @@ namespace vcl
 
         // also, use a higher-resolution map unit than "pixels", which should save us some rounding errors when
         // translating coordinates between the reference device and the target device.
-        OSL_ENSURE( aTargetMapMode.GetMapUnit() == MAP_PIXEL,
+        OSL_ENSURE( aTargetMapMode.GetMapUnit() == MapUnit::MapPixel,
             "ReferenceDeviceTextLayout::ReferenceDeviceTextLayout: this class is not expected to work with such target devices!" );
             // we *could* adjust all the code in this class to handle this case, but at the moment, it's not necessary
         const MapUnit eTargetMapUnit = m_rReferenceDevice.GetMapMode().GetMapUnit();
         aTargetMapMode.SetMapUnit( eTargetMapUnit );
-        OSL_ENSURE( aTargetMapMode.GetMapUnit() != MAP_PIXEL,
+        OSL_ENSURE( aTargetMapMode.GetMapUnit() != MapUnit::MapPixel,
             "ReferenceDeviceTextLayout::ReferenceDeviceTextLayout: a reference device which has map mode PIXEL?!" );
 
         m_rTargetDevice.SetMapMode( aTargetMapMode );
 
         // now that the Zoom is part of the map mode, reset the target device's font to the "unzoomed" version
         Font aDrawFont( m_aUnzoomedPointFont );
-        aDrawFont.SetFontSize( OutputDevice::LogicToLogic( aDrawFont.GetFontSize(), MAP_POINT, eTargetMapUnit ) );
+        aDrawFont.SetFontSize( OutputDevice::LogicToLogic( aDrawFont.GetFontSize(), MapUnit::MapPoint, eTargetMapUnit ) );
         _rTargetDevice.SetFont( aDrawFont );
 
         // transfer font to the reference device
         m_rReferenceDevice.Push( PushFlags::FONT | PushFlags::TEXTLAYOUTMODE );
         Font aRefFont( m_aUnzoomedPointFont );
         aRefFont.SetFontSize( OutputDevice::LogicToLogic(
-            aRefFont.GetFontSize(), MAP_POINT, m_rReferenceDevice.GetMapMode().GetMapUnit() ) );
+            aRefFont.GetFontSize(), MapUnit::MapPoint, m_rReferenceDevice.GetMapMode().GetMapUnit() ) );
         m_rReferenceDevice.SetFont( aRefFont );
     }
 
@@ -261,11 +251,11 @@ namespace vcl
             return Rectangle();
 
         // determine text layout mode from the RTL-ness of the control whose text we render
-        ComplexTextLayoutMode nTextLayoutMode = m_bRTLEnabled ? TEXT_LAYOUT_BIDI_RTL : TEXT_LAYOUT_DEFAULT;
+        ComplexTextLayoutFlags nTextLayoutMode = m_bRTLEnabled ? ComplexTextLayoutFlags::BiDiRtl : ComplexTextLayoutFlags::Default;
         m_rReferenceDevice.SetLayoutMode( nTextLayoutMode );
-        m_rTargetDevice.SetLayoutMode( nTextLayoutMode | TEXT_LAYOUT_TEXTORIGIN_LEFT );
+        m_rTargetDevice.SetLayoutMode( nTextLayoutMode | ComplexTextLayoutFlags::TextOriginLeft );
 
-        // TEXT_LAYOUT_TEXTORIGIN_LEFT is because when we do actually draw the text (in DrawText( Point, ... )), then
+        // ComplexTextLayoutFlags::TextOriginLeft is because when we do actually draw the text (in DrawText( Point, ... )), then
         // our caller gives us the left border of the draw position, regardless of script type, text layout,
         // and the like in our ctor, we set the map mode of the target device from pixel to twip, but our caller doesn't know this,
         // but passed pixel coordinates. So, adjust the rect.
@@ -278,9 +268,9 @@ namespace vcl
             aRect.SetSize(*i_pDeviceSize);
         }
 
-        onBeginDrawText();
+        m_aCompleteTextRect.SetEmpty();
         m_rTargetDevice.DrawText( aRect, _rText, _nStyle, _pVector, _pDisplayText, this );
-        Rectangle aTextRect = onEndDrawText();
+        Rectangle aTextRect = m_aCompleteTextRect;
 
         if ( aTextRect.IsEmpty() && !aRect.IsEmpty() )
         {
@@ -318,11 +308,11 @@ namespace vcl
             return Rectangle();
 
         // determine text layout mode from the RTL-ness of the control whose text we render
-        ComplexTextLayoutMode nTextLayoutMode = m_bRTLEnabled ? TEXT_LAYOUT_BIDI_RTL : TEXT_LAYOUT_DEFAULT;
+        ComplexTextLayoutFlags nTextLayoutMode = m_bRTLEnabled ? ComplexTextLayoutFlags::BiDiRtl : ComplexTextLayoutFlags::Default;
         m_rReferenceDevice.SetLayoutMode( nTextLayoutMode );
-        m_rTargetDevice.SetLayoutMode( nTextLayoutMode | TEXT_LAYOUT_TEXTORIGIN_LEFT );
+        m_rTargetDevice.SetLayoutMode( nTextLayoutMode | ComplexTextLayoutFlags::TextOriginLeft );
 
-        // TEXT_LAYOUT_TEXTORIGIN_LEFT is because when we do actually draw the text (in DrawText( Point, ... )), then
+        // ComplexTextLayoutFlags::TextOriginLeft is because when we do actually draw the text (in DrawText( Point, ... )), then
         // our caller gives us the left border of the draw position, regardless of script type, text layout,
         // and the like in our ctor, we set the map mode of the target device from pixel to twip, but our caller doesn't know this,
         // but passed pixel coordinates. So, adjust the rect.

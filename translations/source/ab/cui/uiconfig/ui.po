@@ -3,17 +3,17 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2015-06-24 17:06+0200\n"
-"PO-Revision-Date: 2015-05-11 19:34+0000\n"
-"Last-Translator: system user <>\n"
+"POT-Creation-Date: 2017-06-01 14:03+0200\n"
+"PO-Revision-Date: 2017-09-03 08:32+0000\n"
+"Last-Translator: Андрей Абухба <aabuchba@mail.ru>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: ab\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Pootle 2.7\n"
 "X-Accelerator-Marker: ~\n"
-"X-POOTLE-MTIME: 1431372863.000000\n"
+"X-Generator: Pootle 2.8\n"
+"X-POOTLE-MTIME: 1504427523.000000\n"
 
 #: aboutconfigdialog.ui
 msgctxt ""
@@ -58,7 +58,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Type"
-msgstr ""
+msgstr "Атип"
 
 #: aboutconfigdialog.ui
 msgctxt ""
@@ -183,7 +183,7 @@ msgctxt ""
 "copyright\n"
 "label\n"
 "string.text"
-msgid "Copyright © 2000 - 2015 LibreOffice contributors."
+msgid "Copyright © 2000–2017 LibreOffice contributors."
 msgstr ""
 
 #: aboutdialog.ui
@@ -274,7 +274,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Save..."
-msgstr ""
+msgstr "_ Иеиқәырхатәуп..."
 
 #: accelconfigpage.ui
 msgctxt ""
@@ -744,274 +744,58 @@ msgctxt ""
 msgid "Transparency"
 msgstr ""
 
-#: areadialog.ui
-msgctxt ""
-"areadialog.ui\n"
-"RID_SVXPAGE_COLOR\n"
-"label\n"
-"string.text"
-msgid "Colors"
-msgstr ""
-
-#: areadialog.ui
-msgctxt ""
-"areadialog.ui\n"
-"RID_SVXPAGE_GRADIENT\n"
-"label\n"
-"string.text"
-msgid "Gradients"
-msgstr ""
-
-#: areadialog.ui
-msgctxt ""
-"areadialog.ui\n"
-"RID_SVXPAGE_HATCH\n"
-"label\n"
-"string.text"
-msgid "Hatching"
-msgstr ""
-
-#: areadialog.ui
-msgctxt ""
-"areadialog.ui\n"
-"RID_SVXPAGE_BITMAP\n"
-"label\n"
-"string.text"
-msgid "Bitmaps"
-msgstr ""
-
 #: areatabpage.ui
 msgctxt ""
 "areatabpage.ui\n"
-"CTL_COLOR_PREVIEW-atkobject\n"
-"AtkObject::accessible-name\n"
-"string.text"
-msgid "Example"
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"CTL_BITMAP_PREVIEW-atkobject\n"
-"AtkObject::accessible-name\n"
-"string.text"
-msgid "Example"
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"label1\n"
+"btnnone\n"
 "label\n"
 "string.text"
-msgid "Fill"
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"TSB_STEPCOUNT\n"
-"label\n"
-"string.text"
-msgid "_Automatic"
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"label2\n"
-"label\n"
-"string.text"
-msgid "Increments"
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"CB_HATCHBCKGRD\n"
-"label\n"
-"string.text"
-msgid "_Background color"
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"label3\n"
-"label\n"
-"string.text"
-msgid "Colors"
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"TSB_ORIGINAL\n"
-"label\n"
-"string.text"
-msgid "_Original"
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"TSB_SCALE\n"
-"label\n"
-"string.text"
-msgid "Re_lative"
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"FT_X_SIZE\n"
-"label\n"
-"string.text"
-msgid "Wi_dth:"
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"FT_Y_SIZE\n"
-"label\n"
-"string.text"
-msgid "H_eight:"
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"label4\n"
-"label\n"
-"string.text"
-msgid "Size"
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"FT_X_OFFSET\n"
-"label\n"
-"string.text"
-msgid "_X offset:"
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"FT_Y_OFFSET\n"
-"label\n"
-"string.text"
-msgid "_Y offset:"
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"label5\n"
-"label\n"
-"string.text"
-msgid "Position"
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"TSB_TILE\n"
-"label\n"
-"string.text"
-msgid "_Tile"
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"TSB_STRETCH\n"
-"label\n"
-"string.text"
-msgid "Auto_Fit"
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"RBT_ROW\n"
-"label\n"
-"string.text"
-msgid "Ro_w"
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"RBT_COLUMN\n"
-"label\n"
-"string.text"
-msgid "Colu_mn"
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"label6\n"
-"label\n"
-"string.text"
-msgid "Offset"
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"btnimport\n"
-"label\n"
-"string.text"
-msgid "Import Graphic..."
-msgstr ""
-
-#: areatabpage.ui
-msgctxt ""
-"areatabpage.ui\n"
-"liststoreLB_AREA_TYPE\n"
-"0\n"
-"stringlist.text"
 msgid "None"
 msgstr ""
 
 #: areatabpage.ui
 msgctxt ""
 "areatabpage.ui\n"
-"liststoreLB_AREA_TYPE\n"
-"1\n"
-"stringlist.text"
+"btncolor\n"
+"label\n"
+"string.text"
 msgid "Color"
 msgstr ""
 
 #: areatabpage.ui
 msgctxt ""
 "areatabpage.ui\n"
-"liststoreLB_AREA_TYPE\n"
-"2\n"
-"stringlist.text"
+"btngradient\n"
+"label\n"
+"string.text"
 msgid "Gradient"
 msgstr ""
 
 #: areatabpage.ui
 msgctxt ""
 "areatabpage.ui\n"
-"liststoreLB_AREA_TYPE\n"
-"3\n"
-"stringlist.text"
-msgid "Hatching"
+"btnhatch\n"
+"label\n"
+"string.text"
+msgid "Hatch"
 msgstr ""
 
 #: areatabpage.ui
 msgctxt ""
 "areatabpage.ui\n"
-"liststoreLB_AREA_TYPE\n"
-"4\n"
-"stringlist.text"
+"btnbitmap\n"
+"label\n"
+"string.text"
 msgid "Bitmap"
+msgstr ""
+
+#: areatabpage.ui
+msgctxt ""
+"areatabpage.ui\n"
+"btnpattern\n"
+"label\n"
+"string.text"
+msgid "Pattern"
 msgstr ""
 
 #: asiantypography.ui
@@ -1048,7 +832,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Line Change"
-msgstr ""
+msgstr "Ацәаҳәа аиҿкаара"
 
 #: assigncomponentdialog.ui
 msgctxt ""
@@ -1197,33 +981,6 @@ msgstr ""
 #: backgroundpage.ui
 msgctxt ""
 "backgroundpage.ui\n"
-"paralb\n"
-"0\n"
-"stringlist.text"
-msgid "Paragraph"
-msgstr ""
-
-#: backgroundpage.ui
-msgctxt ""
-"backgroundpage.ui\n"
-"paralb\n"
-"1\n"
-"stringlist.text"
-msgid "Character"
-msgstr ""
-
-#: backgroundpage.ui
-msgctxt ""
-"backgroundpage.ui\n"
-"transparencyft\n"
-"label\n"
-"string.text"
-msgid "_Transparency:"
-msgstr ""
-
-#: backgroundpage.ui
-msgctxt ""
-"backgroundpage.ui\n"
 "background_label\n"
 "label\n"
 "string.text"
@@ -1236,7 +993,7 @@ msgctxt ""
 "unlinkedft\n"
 "label\n"
 "string.text"
-msgid "Unlinked graphic"
+msgid "Unlinked image"
 msgstr ""
 
 #: backgroundpage.ui
@@ -1245,8 +1002,8 @@ msgctxt ""
 "findgraphicsft\n"
 "label\n"
 "string.text"
-msgid "Find graphics"
-msgstr ""
+msgid "Find images"
+msgstr "Иҧшаатәуп асахьақәа"
 
 #: backgroundpage.ui
 msgctxt ""
@@ -1309,16 +1066,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Type"
-msgstr ""
-
-#: backgroundpage.ui
-msgctxt ""
-"backgroundpage.ui\n"
-"label7\n"
-"label\n"
-"string.text"
-msgid "Transparency"
-msgstr ""
+msgstr "Атип"
 
 #: backgroundpage.ui
 msgctxt ""
@@ -1344,7 +1092,7 @@ msgctxt ""
 "liststore1\n"
 "1\n"
 "stringlist.text"
-msgid "Graphic"
+msgid "Image"
 msgstr ""
 
 #: baselinksdialog.ui
@@ -1372,7 +1120,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Open"
-msgstr ""
+msgstr "_Иаарттәуп"
 
 #: baselinksdialog.ui
 msgctxt ""
@@ -1417,7 +1165,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Type"
-msgstr ""
+msgstr "Атип"
 
 #: baselinksdialog.ui
 msgctxt ""
@@ -1462,7 +1210,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Type:"
-msgstr ""
+msgstr "Атип:"
 
 #: baselinksdialog.ui
 msgctxt ""
@@ -1494,106 +1242,16 @@ msgstr ""
 #: bitmaptabpage.ui
 msgctxt ""
 "bitmaptabpage.ui\n"
-"FT_PIXEL_EDIT\n"
-"label\n"
-"string.text"
-msgid "Pattern Editor:"
-msgstr ""
-
-#: bitmaptabpage.ui
-msgctxt ""
-"bitmaptabpage.ui\n"
-"CTL_PIXEL-atkobject\n"
-"AtkObject::accessible-name\n"
-"string.text"
-msgid "Pattern Editor"
-msgstr ""
-
-#: bitmaptabpage.ui
-msgctxt ""
-"bitmaptabpage.ui\n"
-"FT_COLOR\n"
-"label\n"
-"string.text"
-msgid "_Foreground color:"
-msgstr ""
-
-#: bitmaptabpage.ui
-msgctxt ""
-"bitmaptabpage.ui\n"
-"FT_BACKGROUND_COLOR\n"
-"label\n"
-"string.text"
-msgid "_Background color:"
-msgstr ""
-
-#: bitmaptabpage.ui
-msgctxt ""
-"bitmaptabpage.ui\n"
-"CTL_PREVIEW-atkobject\n"
-"AtkObject::accessible-name\n"
-"string.text"
-msgid "Example"
-msgstr ""
-
-#: bitmaptabpage.ui
-msgctxt ""
-"bitmaptabpage.ui\n"
-"BTN_MODIFY\n"
-"label\n"
-"string.text"
-msgid "_Modify"
-msgstr ""
-
-#: bitmaptabpage.ui
-msgctxt ""
-"bitmaptabpage.ui\n"
 "BTN_IMPORT\n"
 "label\n"
 "string.text"
-msgid "_Import"
-msgstr ""
+msgid "Add / Import"
+msgstr "Иацҵатәуп / Аимпорт"
 
 #: bitmaptabpage.ui
 msgctxt ""
 "bitmaptabpage.ui\n"
-"BTN_LOAD\n"
-"tooltip_markup\n"
-"string.text"
-msgid "Load Bitmap List"
-msgstr ""
-
-#: bitmaptabpage.ui
-msgctxt ""
-"bitmaptabpage.ui\n"
-"BTN_LOAD\n"
-"tooltip_text\n"
-"string.text"
-msgid "Load Bitmap List"
-msgstr ""
-
-#: bitmaptabpage.ui
-msgctxt ""
-"bitmaptabpage.ui\n"
-"BTN_SAVE\n"
-"tooltip_markup\n"
-"string.text"
-msgid "Save Bitmap List"
-msgstr ""
-
-#: bitmaptabpage.ui
-msgctxt ""
-"bitmaptabpage.ui\n"
-"BTN_SAVE\n"
-"tooltip_text\n"
-"string.text"
-msgid "Save Bitmap List"
-msgstr ""
-
-#: bitmaptabpage.ui
-msgctxt ""
-"bitmaptabpage.ui\n"
-"FT_BITMAPS_HIDDEN\n"
+"label1\n"
 "label\n"
 "string.text"
 msgid "Bitmap"
@@ -1602,10 +1260,271 @@ msgstr ""
 #: bitmaptabpage.ui
 msgctxt ""
 "bitmaptabpage.ui\n"
-"label1\n"
+"label3\n"
 "label\n"
 "string.text"
-msgid "Properties"
+msgid "Style:"
+msgstr "Астиль:"
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"bitmapstyle\n"
+"0\n"
+"stringlist.text"
+msgid "Original"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"bitmapstyle\n"
+"1\n"
+"stringlist.text"
+msgid "Filled"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"bitmapstyle\n"
+"2\n"
+"stringlist.text"
+msgid "Stretched"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"bitmapstyle\n"
+"3\n"
+"stringlist.text"
+msgid "Zoomed"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"bitmapstyle\n"
+"4\n"
+"stringlist.text"
+msgid "Custom"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"bitmapstyle\n"
+"5\n"
+"stringlist.text"
+msgid "Tiled"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"label4\n"
+"label\n"
+"string.text"
+msgid "Size:"
+msgstr "Ашәагаа:"
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"label5\n"
+"label\n"
+"string.text"
+msgid "W:"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"label6\n"
+"label\n"
+"string.text"
+msgid "H:"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"scaletsb\n"
+"label\n"
+"string.text"
+msgid "Scale"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"label7\n"
+"label\n"
+"string.text"
+msgid "Position:"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"positionlb\n"
+"0\n"
+"stringlist.text"
+msgid "Top Left"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"positionlb\n"
+"1\n"
+"stringlist.text"
+msgid "Top Center"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"positionlb\n"
+"2\n"
+"stringlist.text"
+msgid "Top Right"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"positionlb\n"
+"3\n"
+"stringlist.text"
+msgid "Center Left"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"positionlb\n"
+"4\n"
+"stringlist.text"
+msgid "Center"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"positionlb\n"
+"5\n"
+"stringlist.text"
+msgid "Center Right"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"positionlb\n"
+"6\n"
+"stringlist.text"
+msgid "Bottom Left"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"positionlb\n"
+"7\n"
+"stringlist.text"
+msgid "Bottom Center"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"positionlb\n"
+"8\n"
+"stringlist.text"
+msgid "Bottom Right"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"label9\n"
+"label\n"
+"string.text"
+msgid "Tiling Position:"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"label10\n"
+"label\n"
+"string.text"
+msgid "X:"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"label11\n"
+"label\n"
+"string.text"
+msgid "Y:"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"label15\n"
+"label\n"
+"string.text"
+msgid "Tiling Offset:"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"tileofflb\n"
+"0\n"
+"stringlist.text"
+msgid "Row"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"tileofflb\n"
+"1\n"
+"stringlist.text"
+msgid "Column"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"label2\n"
+"label\n"
+"string.text"
+msgid "Options"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"CTL_BITMAP_PREVIEW-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Example"
+msgstr ""
+
+#: bitmaptabpage.ui
+msgctxt ""
+"bitmaptabpage.ui\n"
+"label8\n"
+"label\n"
+"string.text"
+msgid "Preview"
 msgstr ""
 
 #: blackorwhitelistentrydialog.ui
@@ -1785,7 +1704,25 @@ msgctxt ""
 "label14\n"
 "label\n"
 "string.text"
-msgid "_Default:"
+msgid "Pr_esets:"
+msgstr ""
+
+#: borderpage.ui
+msgctxt ""
+"borderpage.ui\n"
+"rmadjcellbordersft\n"
+"label\n"
+"string.text"
+msgid "_Adjacent Cells:"
+msgstr ""
+
+#: borderpage.ui
+msgctxt ""
+"borderpage.ui\n"
+"rmadjcellborders\n"
+"label\n"
+"string.text"
+msgid "Remove border"
 msgstr ""
 
 #: borderpage.ui
@@ -1795,7 +1732,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Line Arrangement"
-msgstr ""
+msgstr "Ацәаӷәақәа рҭыҧ"
 
 #: borderpage.ui
 msgctxt ""
@@ -1831,7 +1768,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Line"
-msgstr ""
+msgstr "Аҵәаӷәа"
 
 #: borderpage.ui
 msgctxt ""
@@ -1921,7 +1858,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Shadow Style"
-msgstr ""
+msgstr "Агага астиль"
 
 #: borderpage.ui
 msgctxt ""
@@ -1993,7 +1930,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Position and Size"
-msgstr ""
+msgstr "Аҭыҧи ашәагааи"
 
 #: calloutdialog.ui
 msgctxt ""
@@ -2002,7 +1939,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Position and Size"
-msgstr ""
+msgstr "Аҭыҧи ашәагааи"
 
 #: calloutdialog.ui
 msgctxt ""
@@ -2011,7 +1948,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Position and Size"
-msgstr ""
+msgstr "Аҭыҧи ашәагааи"
 
 #: calloutdialog.ui
 msgctxt ""
@@ -2137,7 +2074,7 @@ msgctxt ""
 "0\n"
 "stringlist.text"
 msgid "Straight Line"
-msgstr ""
+msgstr "Аҵәаӷәа иаша"
 
 #: calloutpage.ui
 msgctxt ""
@@ -2146,7 +2083,7 @@ msgctxt ""
 "1\n"
 "stringlist.text"
 msgid "Angled Line"
-msgstr ""
+msgstr "Иҧыҵәҵәоу аҵәаӷәа"
 
 #: calloutpage.ui
 msgctxt ""
@@ -2281,7 +2218,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Te_xt direction:"
-msgstr ""
+msgstr "Атеқст ахырхарҭа:"
 
 #: cellalignment.ui
 msgctxt ""
@@ -2533,7 +2470,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Directory"
-msgstr ""
+msgstr "Акаталог"
 
 #: certdialog.ui
 msgctxt ""
@@ -2542,7 +2479,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Select a Certificate directory"
-msgstr ""
+msgstr "Иалышәх акаталог асертификат"
 
 #: certdialog.ui
 msgctxt ""
@@ -2560,7 +2497,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Language:"
-msgstr ""
+msgstr "Абызшәа:"
 
 #: charnamepage.ui
 msgctxt ""
@@ -2578,7 +2515,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Style:"
-msgstr ""
+msgstr "Астиль:"
 
 #: charnamepage.ui
 msgctxt ""
@@ -2587,7 +2524,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Size:"
-msgstr ""
+msgstr "Акегль:"
 
 #: charnamepage.ui
 msgctxt ""
@@ -2605,7 +2542,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Style:"
-msgstr ""
+msgstr "Астиль:"
 
 #: charnamepage.ui
 msgctxt ""
@@ -2614,7 +2551,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Size:"
-msgstr ""
+msgstr "Акегль:"
 
 #: charnamepage.ui
 msgctxt ""
@@ -2623,7 +2560,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Language:"
-msgstr ""
+msgstr "Абызшәа:"
 
 #: charnamepage.ui
 msgctxt ""
@@ -2632,7 +2569,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Western Text Font"
-msgstr ""
+msgstr "Мраҭашәаратәи атеқст ашрифт"
 
 #: charnamepage.ui
 msgctxt ""
@@ -2650,7 +2587,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Style:"
-msgstr ""
+msgstr "Астиль:"
 
 #: charnamepage.ui
 msgctxt ""
@@ -2659,7 +2596,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Size:"
-msgstr ""
+msgstr "Акегль:"
 
 #: charnamepage.ui
 msgctxt ""
@@ -2668,7 +2605,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Language:"
-msgstr ""
+msgstr "Абызшәа:"
 
 #: charnamepage.ui
 msgctxt ""
@@ -2695,7 +2632,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Style:"
-msgstr ""
+msgstr "Астиль:"
 
 #: charnamepage.ui
 msgctxt ""
@@ -2704,7 +2641,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Size:"
-msgstr ""
+msgstr "Акегль:"
 
 #: charnamepage.ui
 msgctxt ""
@@ -2713,7 +2650,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Language:"
-msgstr ""
+msgstr "Абызшәа:"
 
 #: charnamepage.ui
 msgctxt ""
@@ -2794,7 +2731,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Font color"
-msgstr ""
+msgstr "Ашрифт аҧштәы"
 
 #: colorconfigwin.ui
 msgctxt ""
@@ -2938,7 +2875,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Comment highlighting"
-msgstr ""
+msgstr "Акомментариқәа рырлашара"
 
 #: colorconfigwin.ui
 msgctxt ""
@@ -2974,7 +2911,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Grid lines"
-msgstr ""
+msgstr "Акаҭа аҵәаӷәақәа"
 
 #: colorconfigwin.ui
 msgctxt ""
@@ -3082,7 +3019,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Comment"
-msgstr ""
+msgstr "Акомментари"
 
 #: colorconfigwin.ui
 msgctxt ""
@@ -3199,7 +3136,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Comment"
-msgstr ""
+msgstr "Акомментари"
 
 #: colorconfigwin.ui
 msgctxt ""
@@ -3213,28 +3150,64 @@ msgstr ""
 #: colorpage.ui
 msgctxt ""
 "colorpage.ui\n"
-"label5\n"
+"label21\n"
 "label\n"
 "string.text"
-msgid "_Name:"
+msgid "Palette:"
 msgstr ""
 
 #: colorpage.ui
 msgctxt ""
 "colorpage.ui\n"
-"label6\n"
+"label20\n"
 "label\n"
 "string.text"
-msgid "C_olor:"
+msgid "Recent Colors"
+msgstr "Ааигәатәи аҧштәқәа"
+
+#: colorpage.ui
+msgctxt ""
+"colorpage.ui\n"
+"RGB\n"
+"label\n"
+"string.text"
+msgid "RGB"
 msgstr ""
 
 #: colorpage.ui
 msgctxt ""
 "colorpage.ui\n"
-"colortableft\n"
+"CMYK\n"
 "label\n"
 "string.text"
-msgid "Color table:"
+msgid "CMYK"
+msgstr ""
+
+#: colorpage.ui
+msgctxt ""
+"colorpage.ui\n"
+"delete\n"
+"label\n"
+"string.text"
+msgid "Delete"
+msgstr "Ианыхтәуп"
+
+#: colorpage.ui
+msgctxt ""
+"colorpage.ui\n"
+"label22\n"
+"label\n"
+"string.text"
+msgid "Custom Palette"
+msgstr ""
+
+#: colorpage.ui
+msgctxt ""
+"colorpage.ui\n"
+"label1\n"
+"label\n"
+"string.text"
+msgid "Colors"
 msgstr ""
 
 #: colorpage.ui
@@ -3249,37 +3222,109 @@ msgstr ""
 #: colorpage.ui
 msgctxt ""
 "colorpage.ui\n"
+"label7\n"
+"label\n"
+"string.text"
+msgid "B"
+msgstr ""
+
+#: colorpage.ui
+msgctxt ""
+"colorpage.ui\n"
+"label8\n"
+"label\n"
+"string.text"
+msgid "G"
+msgstr ""
+
+#: colorpage.ui
+msgctxt ""
+"colorpage.ui\n"
+"label9\n"
+"label\n"
+"string.text"
+msgid "R"
+msgstr ""
+
+#: colorpage.ui
+msgctxt ""
+"colorpage.ui\n"
+"label18\n"
+"label\n"
+"string.text"
+msgid "Hex"
+msgstr ""
+
+#: colorpage.ui
+msgctxt ""
+"colorpage.ui\n"
+"label10\n"
+"label\n"
+"string.text"
+msgid "_C"
+msgstr ""
+
+#: colorpage.ui
+msgctxt ""
+"colorpage.ui\n"
+"label16\n"
+"label\n"
+"string.text"
+msgid "_K"
+msgstr ""
+
+#: colorpage.ui
+msgctxt ""
+"colorpage.ui\n"
+"label17\n"
+"label\n"
+"string.text"
+msgid "_Y"
+msgstr ""
+
+#: colorpage.ui
+msgctxt ""
+"colorpage.ui\n"
+"label15\n"
+"label\n"
+"string.text"
+msgid "_M"
+msgstr ""
+
+#: colorpage.ui
+msgctxt ""
+"colorpage.ui\n"
+"label5\n"
+"label\n"
+"string.text"
+msgid "Active"
+msgstr ""
+
+#: colorpage.ui
+msgctxt ""
+"colorpage.ui\n"
 "newpreview-atkobject\n"
 "AtkObject::accessible-name\n"
 "string.text"
 msgid "New Color"
-msgstr ""
+msgstr "Аҧштәы ҿыц"
 
 #: colorpage.ui
 msgctxt ""
 "colorpage.ui\n"
-"modellb\n"
-"0\n"
-"stringlist.text"
-msgid "RGB"
-msgstr ""
-
-#: colorpage.ui
-msgctxt ""
-"colorpage.ui\n"
-"modellb\n"
-"1\n"
-"stringlist.text"
-msgid "CMYK"
-msgstr ""
-
-#: colorpage.ui
-msgctxt ""
-"colorpage.ui\n"
-"modellb-atkobject\n"
-"AtkObject::accessible-name\n"
+"B_custom\n"
+"primary_icon_tooltip_text\n"
 "string.text"
-msgid "Color Mode"
+msgid "Blue"
+msgstr ""
+
+#: colorpage.ui
+msgctxt ""
+"colorpage.ui\n"
+"R_custom\n"
+"primary_icon_tooltip_text\n"
+"string.text"
+msgid "Red"
 msgstr ""
 
 #: colorpage.ui
@@ -3307,6 +3352,24 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_R"
+msgstr ""
+
+#: colorpage.ui
+msgctxt ""
+"colorpage.ui\n"
+"G_custom\n"
+"primary_icon_tooltip_text\n"
+"string.text"
+msgid "Green"
+msgstr ""
+
+#: colorpage.ui
+msgctxt ""
+"colorpage.ui\n"
+"label19\n"
+"label\n"
+"string.text"
+msgid "_Hex"
 msgstr ""
 
 #: colorpage.ui
@@ -3351,71 +3414,17 @@ msgctxt ""
 "edit\n"
 "label\n"
 "string.text"
-msgid "_Pick…"
+msgid "Pick"
 msgstr ""
 
 #: colorpage.ui
 msgctxt ""
 "colorpage.ui\n"
-"modify\n"
+"label6\n"
 "label\n"
 "string.text"
-msgid "_Modify"
-msgstr ""
-
-#: colorpage.ui
-msgctxt ""
-"colorpage.ui\n"
-"load\n"
-"tooltip_markup\n"
-"string.text"
-msgid "Load Color List"
-msgstr ""
-
-#: colorpage.ui
-msgctxt ""
-"colorpage.ui\n"
-"load\n"
-"tooltip_text\n"
-"string.text"
-msgid "Load Color List"
-msgstr ""
-
-#: colorpage.ui
-msgctxt ""
-"colorpage.ui\n"
-"save\n"
-"tooltip_markup\n"
-"string.text"
-msgid "Save Color List"
-msgstr ""
-
-#: colorpage.ui
-msgctxt ""
-"colorpage.ui\n"
-"save\n"
-"tooltip_text\n"
-"string.text"
-msgid "Save Color List"
-msgstr ""
-
-#: colorpage.ui
-msgctxt ""
-"colorpage.ui\n"
-"embed\n"
-"label\n"
-"string.text"
-msgid "Embed"
-msgstr ""
-
-#: colorpage.ui
-msgctxt ""
-"colorpage.ui\n"
-"label1\n"
-"label\n"
-"string.text"
-msgid "Properties"
-msgstr ""
+msgid "New"
+msgstr "Иаҧҵатәуп"
 
 #: colorpickerdialog.ui
 msgctxt ""
@@ -3559,7 +3568,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Insert Comment"
-msgstr ""
+msgstr "Ибжьаргылатәуп акомментари"
 
 #: comment.ui
 msgctxt ""
@@ -3604,7 +3613,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Edit Comment"
-msgstr ""
+msgstr "Иҧсахтәуп акомментари "
 
 #: comment.ui
 msgctxt ""
@@ -3622,7 +3631,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Type:"
-msgstr ""
+msgstr "_Атип:"
 
 #: connectortabpage.ui
 msgctxt ""
@@ -3631,7 +3640,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Line _1:"
-msgstr ""
+msgstr "Аҵәаӷәа_1:"
 
 #: connectortabpage.ui
 msgctxt ""
@@ -3640,7 +3649,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Line _2:"
-msgstr ""
+msgstr "Аҵәаӷәа_2:"
 
 #: connectortabpage.ui
 msgctxt ""
@@ -3649,7 +3658,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Line _3:"
-msgstr ""
+msgstr "Аҵәаӷәа_3:"
 
 #: connectortabpage.ui
 msgctxt ""
@@ -3658,7 +3667,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Line Skew"
-msgstr ""
+msgstr "Анаара"
 
 #: connectortabpage.ui
 msgctxt ""
@@ -3703,7 +3712,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Line Spacing"
-msgstr ""
+msgstr "Аинтервал"
 
 #: connectortabpage.ui
 msgctxt ""
@@ -3892,7 +3901,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Image Size"
-msgstr ""
+msgstr "Асахьа ашәагаа"
 
 #: croppage.ui
 msgctxt ""
@@ -3901,7 +3910,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Original Size"
-msgstr ""
+msgstr "_Ахалагаратә шәагаа"
 
 #: cuiimapdlg.ui
 msgctxt ""
@@ -3973,6 +3982,15 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Menus"
+msgstr ""
+
+#: customizedialog.ui
+msgctxt ""
+"customizedialog.ui\n"
+"contextmenus\n"
+"label\n"
+"string.text"
+msgid "Context Menus"
 msgstr ""
 
 #: customizedialog.ui
@@ -4054,7 +4072,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_New..."
-msgstr ""
+msgstr "_Иаҧҵатәуп..."
 
 #: dbregisterpage.ui
 msgctxt ""
@@ -4063,7 +4081,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Delete"
-msgstr ""
+msgstr "_Ианыхтәуп"
 
 #: dbregisterpage.ui
 msgctxt ""
@@ -4153,7 +4171,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Line"
-msgstr ""
+msgstr "Аҵәаӷәа"
 
 #: dimensionlinestabpage.ui
 msgctxt ""
@@ -4189,7 +4207,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Parallel to line"
-msgstr ""
+msgstr "_Аҵәаӷәа иапараллелны"
 
 #: dimensionlinestabpage.ui
 msgctxt ""
@@ -4360,7 +4378,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Language:"
-msgstr ""
+msgstr "_Абызшәа:"
 
 #: editdictionarydialog.ui
 msgctxt ""
@@ -4387,7 +4405,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_New"
-msgstr ""
+msgstr "_Иаҧҵатәуп"
 
 #: editdictionarydialog.ui
 msgctxt ""
@@ -4396,7 +4414,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Delete"
-msgstr ""
+msgstr "_Ианыхтәуп"
 
 #: editmodulesdialog.ui
 msgctxt ""
@@ -4414,7 +4432,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Get more dictionaries online..."
-msgstr ""
+msgstr "Егьырҭ ажәарқәа аИнтернет аҟны..."
 
 #: editmodulesdialog.ui
 msgctxt ""
@@ -4423,7 +4441,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Language:"
-msgstr ""
+msgstr "Абызшәа:"
 
 #: editmodulesdialog.ui
 msgctxt ""
@@ -4468,7 +4486,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Font color:"
-msgstr ""
+msgstr "Ашрифт аҧштәы:"
 
 #: effectspage.ui
 msgctxt ""
@@ -4522,7 +4540,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Overline color:"
-msgstr ""
+msgstr "Ақәшь аҧштәы:"
 
 #: effectspage.ui
 msgctxt ""
@@ -4531,7 +4549,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Underline color:"
-msgstr ""
+msgstr "Аҵшьра аҧштәы:"
 
 #: effectspage.ui
 msgctxt ""
@@ -4540,7 +4558,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Outline"
-msgstr ""
+msgstr "Аконтур"
 
 #: effectspage.ui
 msgctxt ""
@@ -4549,7 +4567,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Blinking"
-msgstr ""
+msgstr "Алацәҟәра"
 
 #: effectspage.ui
 msgctxt ""
@@ -4599,6 +4617,15 @@ msgstr ""
 #: effectspage.ui
 msgctxt ""
 "effectspage.ui\n"
+"a11ywarning\n"
+"label\n"
+"string.text"
+msgid "Accessibility option \"Use automatic font color for screen display\" is active. Font color attributes are not currently used to display text."
+msgstr ""
+
+#: effectspage.ui
+msgctxt ""
+"effectspage.ui\n"
 "preview\n"
 "AtkObject::accessible-name\n"
 "string.text"
@@ -4639,7 +4666,7 @@ msgctxt ""
 "3\n"
 "stringlist.text"
 msgid "Title"
-msgstr ""
+msgstr "Ахьӡ"
 
 #: effectspage.ui
 msgctxt ""
@@ -4990,7 +5017,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Existing Macros"
-msgstr ""
+msgstr "Иҟоу амакросқәа"
 
 #: eventassignpage.ui
 msgctxt ""
@@ -5080,7 +5107,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Save in:"
-msgstr ""
+msgstr "Иеиқәырхатәуп абра:"
 
 #: eventsconfigpage.ui
 msgctxt ""
@@ -5179,7 +5206,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Form:"
-msgstr ""
+msgstr "Аформа:"
 
 #: fmsearchdialog.ui
 msgctxt ""
@@ -5341,7 +5368,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Format Cells"
-msgstr ""
+msgstr "Абларҭақәа рформат"
 
 #: formatcellsdialog.ui
 msgctxt ""
@@ -5350,7 +5377,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Font"
-msgstr ""
+msgstr "Ашрифт"
 
 #: formatcellsdialog.ui
 msgctxt ""
@@ -5359,7 +5386,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Font Effects"
-msgstr ""
+msgstr "Ашрифт аеффектқәа"
 
 #: formatcellsdialog.ui
 msgctxt ""
@@ -5386,7 +5413,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Format Number"
-msgstr ""
+msgstr "Ахыҧхьаӡарақәа рформат"
 
 #: galleryapplyprogress.ui
 msgctxt ""
@@ -5413,7 +5440,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_File type:"
-msgstr ""
+msgstr "_Афаил атип:"
 
 #: galleryfilespage.ui
 msgctxt ""
@@ -5449,7 +5476,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Find Files..."
-msgstr ""
+msgstr "_Иҧшаатәуп афаилқәа..."
 
 #: galleryfilespage.ui
 msgctxt ""
@@ -5476,7 +5503,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Type:"
-msgstr ""
+msgstr "Атип:"
 
 #: gallerygeneralpage.ui
 msgctxt ""
@@ -5512,7 +5539,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Find"
-msgstr ""
+msgstr "Иҧшаатәуп"
 
 #: gallerysearchprogress.ui
 msgctxt ""
@@ -5521,7 +5548,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "File Type"
-msgstr ""
+msgstr "Афаил атип"
 
 #: gallerysearchprogress.ui
 msgctxt ""
@@ -5530,7 +5557,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Directory"
-msgstr ""
+msgstr "Акаталог"
 
 #: gallerythemedialog.ui
 msgctxt ""
@@ -5616,11 +5643,29 @@ msgstr ""
 #: gradientpage.ui
 msgctxt ""
 "gradientpage.ui\n"
+"modify\n"
+"label\n"
+"string.text"
+msgid "_Modify"
+msgstr ""
+
+#: gradientpage.ui
+msgctxt ""
+"gradientpage.ui\n"
+"label1\n"
+"label\n"
+"string.text"
+msgid "Gradient"
+msgstr ""
+
+#: gradientpage.ui
+msgctxt ""
+"gradientpage.ui\n"
 "typeft\n"
 "label\n"
 "string.text"
 msgid "_Type:"
-msgstr ""
+msgstr "_Атип:"
 
 #: gradientpage.ui
 msgctxt ""
@@ -5629,7 +5674,7 @@ msgctxt ""
 "0\n"
 "stringlist.text"
 msgid "Linear"
-msgstr ""
+msgstr "Аҵәаӷәатә"
 
 #: gradientpage.ui
 msgctxt ""
@@ -5679,19 +5724,19 @@ msgstr ""
 #: gradientpage.ui
 msgctxt ""
 "gradientpage.ui\n"
-"centerxft\n"
+"incrementft\n"
 "label\n"
 "string.text"
-msgid "Center _X:"
+msgid "Increment:"
 msgstr ""
 
 #: gradientpage.ui
 msgctxt ""
 "gradientpage.ui\n"
-"centeryft\n"
+"autoincrement\n"
 "label\n"
 "string.text"
-msgid "Center _Y:"
+msgid "Automatic"
 msgstr ""
 
 #: gradientpage.ui
@@ -5701,6 +5746,15 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "A_ngle:"
+msgstr ""
+
+#: gradientpage.ui
+msgctxt ""
+"gradientpage.ui\n"
+"centerft\n"
+"label\n"
+"string.text"
+msgid "Center ( X / Y ) :"
 msgstr ""
 
 #: gradientpage.ui
@@ -5733,6 +5787,15 @@ msgstr ""
 #: gradientpage.ui
 msgctxt ""
 "gradientpage.ui\n"
+"propfl\n"
+"label\n"
+"string.text"
+msgid "Options"
+msgstr ""
+
+#: gradientpage.ui
+msgctxt ""
+"gradientpage.ui\n"
 "previewctl-atkobject\n"
 "AtkObject::accessible-name\n"
 "string.text"
@@ -5742,55 +5805,10 @@ msgstr ""
 #: gradientpage.ui
 msgctxt ""
 "gradientpage.ui\n"
-"modify\n"
+"label2\n"
 "label\n"
 "string.text"
-msgid "_Modify"
-msgstr ""
-
-#: gradientpage.ui
-msgctxt ""
-"gradientpage.ui\n"
-"load\n"
-"tooltip_markup\n"
-"string.text"
-msgid "Load Gradient List"
-msgstr ""
-
-#: gradientpage.ui
-msgctxt ""
-"gradientpage.ui\n"
-"load\n"
-"tooltip_text\n"
-"string.text"
-msgid "Load Gradient List"
-msgstr ""
-
-#: gradientpage.ui
-msgctxt ""
-"gradientpage.ui\n"
-"save\n"
-"tooltip_markup\n"
-"string.text"
-msgid "Save Gradient List"
-msgstr ""
-
-#: gradientpage.ui
-msgctxt ""
-"gradientpage.ui\n"
-"save\n"
-"tooltip_text\n"
-"string.text"
-msgid "Save Gradient List"
-msgstr ""
-
-#: gradientpage.ui
-msgctxt ""
-"gradientpage.ui\n"
-"propfl\n"
-"label\n"
-"string.text"
-msgid "Properties"
+msgid "Preview"
 msgstr ""
 
 #: hangulhanjaadddialog.ui
@@ -5800,7 +5818,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "New Dictionary"
-msgstr ""
+msgstr "Иаҧҵатәуп ажәар"
 
 #: hangulhanjaadddialog.ui
 msgctxt ""
@@ -5854,7 +5872,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Find"
-msgstr ""
+msgstr "_Иҧшаатәуп"
 
 #: hangulhanjaconversiondialog.ui
 msgctxt ""
@@ -5872,7 +5890,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Format"
-msgstr ""
+msgstr "Аформат"
 
 #: hangulhanjaconversiondialog.ui
 msgctxt ""
@@ -6070,7 +6088,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "New..."
-msgstr ""
+msgstr "Иаҧҵатәуп..."
 
 #: hangulhanjaoptdialog.ui
 msgctxt ""
@@ -6129,6 +6147,24 @@ msgstr ""
 #: hatchpage.ui
 msgctxt ""
 "hatchpage.ui\n"
+"modify\n"
+"label\n"
+"string.text"
+msgid "_Modify"
+msgstr ""
+
+#: hatchpage.ui
+msgctxt ""
+"hatchpage.ui\n"
+"label2\n"
+"label\n"
+"string.text"
+msgid "Hatch"
+msgstr ""
+
+#: hatchpage.ui
+msgctxt ""
+"hatchpage.ui\n"
 "distanceft\n"
 "label\n"
 "string.text"
@@ -6151,16 +6187,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Line type:"
-msgstr ""
-
-#: hatchpage.ui
-msgctxt ""
-"hatchpage.ui\n"
-"linecolorft\n"
-"label\n"
-"string.text"
-msgid "Line _color:"
-msgstr ""
+msgstr "_Аҵәаӷәа атип:"
 
 #: hatchpage.ui
 msgctxt ""
@@ -6192,6 +6219,33 @@ msgstr ""
 #: hatchpage.ui
 msgctxt ""
 "hatchpage.ui\n"
+"linecolorft\n"
+"label\n"
+"string.text"
+msgid "Line _color:"
+msgstr "Аҵәаӷәа аҧштәы:"
+
+#: hatchpage.ui
+msgctxt ""
+"hatchpage.ui\n"
+"backgroundcolor\n"
+"label\n"
+"string.text"
+msgid "Background Color"
+msgstr ""
+
+#: hatchpage.ui
+msgctxt ""
+"hatchpage.ui\n"
+"propfl\n"
+"label\n"
+"string.text"
+msgid "Options"
+msgstr ""
+
+#: hatchpage.ui
+msgctxt ""
+"hatchpage.ui\n"
 "previewctl-atkobject\n"
 "AtkObject::accessible-name\n"
 "string.text"
@@ -6201,55 +6255,10 @@ msgstr ""
 #: hatchpage.ui
 msgctxt ""
 "hatchpage.ui\n"
-"modify\n"
+"label1\n"
 "label\n"
 "string.text"
-msgid "_Modify"
-msgstr ""
-
-#: hatchpage.ui
-msgctxt ""
-"hatchpage.ui\n"
-"load\n"
-"tooltip_markup\n"
-"string.text"
-msgid "Load Hatching List"
-msgstr ""
-
-#: hatchpage.ui
-msgctxt ""
-"hatchpage.ui\n"
-"load\n"
-"tooltip_text\n"
-"string.text"
-msgid "Load Hatching List"
-msgstr ""
-
-#: hatchpage.ui
-msgctxt ""
-"hatchpage.ui\n"
-"save\n"
-"tooltip_markup\n"
-"string.text"
-msgid "Save Hatching List"
-msgstr ""
-
-#: hatchpage.ui
-msgctxt ""
-"hatchpage.ui\n"
-"save\n"
-"tooltip_text\n"
-"string.text"
-msgid "Save Hatching List"
-msgstr ""
-
-#: hatchpage.ui
-msgctxt ""
-"hatchpage.ui\n"
-"propfl\n"
-"label\n"
-"string.text"
-msgid "Properties"
+msgid "Preview"
 msgstr ""
 
 #: hyperlinkdialog.ui
@@ -6258,8 +6267,8 @@ msgctxt ""
 "HyperlinkDialog\n"
 "title\n"
 "string.text"
-msgid "Hyperlink"
-msgstr ""
+msgid "Link"
+msgstr "Азхьарҧш"
 
 #: hyperlinkdialog.ui
 msgctxt ""
@@ -6295,7 +6304,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Open File"
-msgstr ""
+msgstr "Иаарттәуп афаил"
 
 #: hyperlinkdocpage.ui
 msgctxt ""
@@ -6304,7 +6313,7 @@ msgctxt ""
 "tooltip_text\n"
 "string.text"
 msgid "Open File"
-msgstr ""
+msgstr "Иаарттәуп афаил"
 
 #: hyperlinkdocpage.ui
 msgctxt ""
@@ -6447,25 +6456,7 @@ msgctxt ""
 "target_label\n"
 "label\n"
 "string.text"
-msgid "Tar_get:"
-msgstr ""
-
-#: hyperlinkinternetpage.ui
-msgctxt ""
-"hyperlinkinternetpage.ui\n"
-"browse\n"
-"label\n"
-"string.text"
-msgid "WWW Browser"
-msgstr ""
-
-#: hyperlinkinternetpage.ui
-msgctxt ""
-"hyperlinkinternetpage.ui\n"
-"browse\n"
-"tooltip_text\n"
-"string.text"
-msgid "Open web browser, copy an URL, and paste it to Target field"
+msgid "_URL:"
 msgstr ""
 
 #: hyperlinkinternetpage.ui
@@ -6501,8 +6492,8 @@ msgctxt ""
 "label2\n"
 "label\n"
 "string.text"
-msgid "Hyperlink Type"
-msgstr ""
+msgid "Link Type"
+msgstr "Азхьарҧш атип"
 
 #: hyperlinkinternetpage.ui
 msgctxt ""
@@ -6682,7 +6673,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Close"
-msgstr ""
+msgstr "Иарктәуп"
 
 #: hyperlinkmarkdialog.ui
 msgctxt ""
@@ -6727,7 +6718,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Select Path"
-msgstr ""
+msgstr "Иалышәх амҩа"
 
 #: hyperlinknewdocpage.ui
 msgctxt ""
@@ -6736,7 +6727,7 @@ msgctxt ""
 "tooltip_text\n"
 "string.text"
 msgid "Select Path"
-msgstr ""
+msgstr "Иалышәх амҩа"
 
 #: hyperlinknewdocpage.ui
 msgctxt ""
@@ -6745,7 +6736,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "File _type:"
-msgstr ""
+msgstr "Афаил атип:"
 
 #: hyperlinknewdocpage.ui
 msgctxt ""
@@ -6754,7 +6745,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "New Document"
-msgstr ""
+msgstr "Иаҧҵатәуп адокумент"
 
 #: hyperlinknewdocpage.ui
 msgctxt ""
@@ -6909,7 +6900,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Delete..."
-msgstr ""
+msgstr "_Ианыхтәуп..."
 
 #: iconselectordialog.ui
 msgctxt ""
@@ -7083,7 +7074,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Create new"
-msgstr ""
+msgstr "Иаҧҵатәуп аҿыц"
 
 #: insertoleobject.ui
 msgctxt ""
@@ -7101,7 +7092,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Object Type"
-msgstr ""
+msgstr "Аобиеқт атип"
 
 #: insertoleobject.ui
 msgctxt ""
@@ -7128,42 +7119,6 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "File"
-msgstr ""
-
-#: insertplugin.ui
-msgctxt ""
-"insertplugin.ui\n"
-"InsertPluginDialog\n"
-"title\n"
-"string.text"
-msgid "Insert Plug-in"
-msgstr ""
-
-#: insertplugin.ui
-msgctxt ""
-"insertplugin.ui\n"
-"urlbtn\n"
-"label\n"
-"string.text"
-msgid "Browse..."
-msgstr ""
-
-#: insertplugin.ui
-msgctxt ""
-"insertplugin.ui\n"
-"label1\n"
-"label\n"
-"string.text"
-msgid "File/URL"
-msgstr ""
-
-#: insertplugin.ui
-msgctxt ""
-"insertplugin.ui\n"
-"label2\n"
-"label\n"
-"string.text"
-msgid "Options"
 msgstr ""
 
 #: insertrowcolumn.ui
@@ -7307,7 +7262,16 @@ msgctxt ""
 "assignbtn\n"
 "label\n"
 "string.text"
-msgid "_Assign"
+msgid "_Add"
+msgstr ""
+
+#: javastartparametersdialog.ui
+msgctxt ""
+"javastartparametersdialog.ui\n"
+"editbtn\n"
+"label\n"
+"string.text"
+msgid "_Edit"
 msgstr ""
 
 #: javastartparametersdialog.ui
@@ -7326,7 +7290,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Line"
-msgstr ""
+msgstr "Аҵәаӷәа"
 
 #: linedialog.ui
 msgctxt ""
@@ -7335,7 +7299,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Line"
-msgstr ""
+msgstr "Аҵәаӷәа"
 
 #: linedialog.ui
 msgctxt ""
@@ -7353,7 +7317,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Line Styles"
-msgstr ""
+msgstr "Аҵәаӷәа астиль"
 
 #: linedialog.ui
 msgctxt ""
@@ -7404,27 +7368,9 @@ msgstr ""
 msgctxt ""
 "lineendstabpage.ui\n"
 "BTN_LOAD\n"
-"tooltip_markup\n"
-"string.text"
-msgid "Load arrow styles"
-msgstr ""
-
-#: lineendstabpage.ui
-msgctxt ""
-"lineendstabpage.ui\n"
-"BTN_LOAD\n"
 "tooltip_text\n"
 "string.text"
 msgid "Load arrow styles"
-msgstr ""
-
-#: lineendstabpage.ui
-msgctxt ""
-"lineendstabpage.ui\n"
-"BTN_SAVE\n"
-"tooltip_markup\n"
-"string.text"
-msgid "Save arrow styles"
 msgstr ""
 
 #: lineendstabpage.ui
@@ -7452,7 +7398,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Line _style:"
-msgstr ""
+msgstr "Аҵәаӷәа астиль:"
 
 #: linestyletabpage.ui
 msgctxt ""
@@ -7461,7 +7407,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Type:"
-msgstr ""
+msgstr "_Атип:"
 
 #: linestyletabpage.ui
 msgctxt ""
@@ -7497,7 +7443,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Fit to line width"
-msgstr ""
+msgstr "Аҵәаӷәа аҭбаарала"
 
 #: linestyletabpage.ui
 msgctxt ""
@@ -7512,28 +7458,10 @@ msgstr ""
 msgctxt ""
 "linestyletabpage.ui\n"
 "BTN_LOAD\n"
-"tooltip_markup\n"
-"string.text"
-msgid "Load Line Styles"
-msgstr ""
-
-#: linestyletabpage.ui
-msgctxt ""
-"linestyletabpage.ui\n"
-"BTN_LOAD\n"
 "tooltip_text\n"
 "string.text"
 msgid "Load Line Styles"
-msgstr ""
-
-#: linestyletabpage.ui
-msgctxt ""
-"linestyletabpage.ui\n"
-"BTN_SAVE\n"
-"tooltip_markup\n"
-"string.text"
-msgid "Save Line Styles"
-msgstr ""
+msgstr "Иҭагалатәуп аҵәаӷәақәа рстильқа реизак"
 
 #: linestyletabpage.ui
 msgctxt ""
@@ -7542,7 +7470,7 @@ msgctxt ""
 "tooltip_text\n"
 "string.text"
 msgid "Save Line Styles"
-msgstr ""
+msgstr "Иеиқәырхатәуп аҵәаӷәақәа рстильқәа реизак"
 
 #: linestyletabpage.ui
 msgctxt ""
@@ -7578,7 +7506,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Style:"
-msgstr ""
+msgstr "_Астиль:"
 
 #: linetabpage.ui
 msgctxt ""
@@ -7614,7 +7542,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Line Properties"
-msgstr ""
+msgstr "Аҵәаӷәа аҷыдаҟазшьақәа"
 
 #: linetabpage.ui
 msgctxt ""
@@ -7695,7 +7623,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Corner style:"
-msgstr ""
+msgstr "_Акәакь астиль:"
 
 #: linetabpage.ui
 msgctxt ""
@@ -7704,7 +7632,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Ca_p style:"
-msgstr ""
+msgstr "Анҵәамҭа астиль:"
 
 #: linetabpage.ui
 msgctxt ""
@@ -7713,7 +7641,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Corner and Cap Styles"
-msgstr ""
+msgstr "Акәакьқәеи анҵәамҭақеи рстильқәа"
 
 #: linetabpage.ui
 msgctxt ""
@@ -7722,7 +7650,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Select..."
-msgstr ""
+msgstr "Алхра..."
 
 #: linetabpage.ui
 msgctxt ""
@@ -7956,7 +7884,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Macro Selector"
-msgstr ""
+msgstr "Амакрос алхра"
 
 #: macroselectordialog.ui
 msgctxt ""
@@ -8033,11 +7961,56 @@ msgstr ""
 #: menuassignpage.ui
 msgctxt ""
 "menuassignpage.ui\n"
+"toplevelft\n"
+"label\n"
+"string.text"
+msgid "Menu"
+msgstr ""
+
+#: menuassignpage.ui
+msgctxt ""
+"menuassignpage.ui\n"
+"toolbarstyleft\n"
+"label\n"
+"string.text"
+msgid "Style"
+msgstr "Астиль"
+
+#: menuassignpage.ui
+msgctxt ""
+"menuassignpage.ui\n"
+"iconsandtextrb\n"
+"label\n"
+"string.text"
+msgid "Icons & Text"
+msgstr ""
+
+#: menuassignpage.ui
+msgctxt ""
+"menuassignpage.ui\n"
+"iconsrb\n"
+"label\n"
+"string.text"
+msgid "Icons"
+msgstr ""
+
+#: menuassignpage.ui
+msgctxt ""
+"menuassignpage.ui\n"
+"textrb\n"
+"label\n"
+"string.text"
+msgid "Text"
+msgstr ""
+
+#: menuassignpage.ui
+msgctxt ""
+"menuassignpage.ui\n"
 "toplevelbutton\n"
 "label\n"
 "string.text"
 msgid "New..."
-msgstr ""
+msgstr "Иаҧҵатәуп..."
 
 #: menuassignpage.ui
 msgctxt ""
@@ -8051,37 +8024,10 @@ msgstr ""
 #: menuassignpage.ui
 msgctxt ""
 "menuassignpage.ui\n"
-"toplevelft\n"
-"label\n"
-"string.text"
-msgid "Menu"
-msgstr ""
-
-#: menuassignpage.ui
-msgctxt ""
-"menuassignpage.ui\n"
 "label26\n"
 "label\n"
 "string.text"
 msgid "%PRODUCTNAME %MODULENAME Menus"
-msgstr ""
-
-#: menuassignpage.ui
-msgctxt ""
-"menuassignpage.ui\n"
-"add\n"
-"label\n"
-"string.text"
-msgid "Add..."
-msgstr ""
-
-#: menuassignpage.ui
-msgctxt ""
-"menuassignpage.ui\n"
-"modify\n"
-"label\n"
-"string.text"
-msgid "Modify"
 msgstr ""
 
 #: menuassignpage.ui
@@ -8100,6 +8046,60 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Entries"
+msgstr ""
+
+#: menuassignpage.ui
+msgctxt ""
+"menuassignpage.ui\n"
+"resetbtn\n"
+"label\n"
+"string.text"
+msgid "Reset"
+msgstr ""
+
+#: menuassignpage.ui
+msgctxt ""
+"menuassignpage.ui\n"
+"modify\n"
+"label\n"
+"string.text"
+msgid "Modify"
+msgstr ""
+
+#: menuassignpage.ui
+msgctxt ""
+"menuassignpage.ui\n"
+"deletebtn\n"
+"label\n"
+"string.text"
+msgid "Remove"
+msgstr ""
+
+#: menuassignpage.ui
+msgctxt ""
+"menuassignpage.ui\n"
+"add\n"
+"label\n"
+"string.text"
+msgid "Add Command"
+msgstr ""
+
+#: menuassignpage.ui
+msgctxt ""
+"menuassignpage.ui\n"
+"addseparatorbtn\n"
+"label\n"
+"string.text"
+msgid "Add Separator"
+msgstr ""
+
+#: menuassignpage.ui
+msgctxt ""
+"menuassignpage.ui\n"
+"addsubmenubtn\n"
+"label\n"
+"string.text"
+msgid "Add Submenu"
 msgstr ""
 
 #: menuassignpage.ui
@@ -8145,25 +8145,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Delete..."
-msgstr ""
-
-#: menuassignpage.ui
-msgctxt ""
-"menuassignpage.ui\n"
-"addsubmenu\n"
-"label\n"
-"string.text"
-msgid "Add Submenu..."
-msgstr ""
-
-#: menuassignpage.ui
-msgctxt ""
-"menuassignpage.ui\n"
-"addseparator\n"
-"label\n"
-"string.text"
-msgid "Add Separator"
-msgstr ""
+msgstr "Ианыхтәуп..."
 
 #: menuassignpage.ui
 msgctxt ""
@@ -8172,15 +8154,6 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Rename..."
-msgstr ""
-
-#: menuassignpage.ui
-msgctxt ""
-"menuassignpage.ui\n"
-"moddelete\n"
-"label\n"
-"string.text"
-msgid "Delete"
 msgstr ""
 
 #: mosaicdialog.ui
@@ -8244,7 +8217,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "New Menu"
-msgstr ""
+msgstr "Ахкынҵа аҧҵара"
 
 #: movemenu.ui
 msgctxt ""
@@ -8289,7 +8262,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Select Paths"
-msgstr ""
+msgstr "Иалышәх амҩақәа"
 
 #: multipathdialog.ui
 msgctxt ""
@@ -8343,7 +8316,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Enter the name for the new library."
-msgstr ""
+msgstr "Иҭажәгал абиблиотека ҿыц ахьӡ."
 
 #: newlibdialog.ui
 msgctxt ""
@@ -8352,7 +8325,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Enter the name for the new macro."
-msgstr ""
+msgstr "Иҭажәгал амакрос ҿыц ахьӡ."
 
 #: newlibdialog.ui
 msgctxt ""
@@ -8361,7 +8334,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Enter the new name for the selected object."
-msgstr ""
+msgstr "Иҭажәгал иалху аобиеқт ҿыц ахьӡ."
 
 #: newlibdialog.ui
 msgctxt ""
@@ -8439,15 +8412,6 @@ msgstr ""
 msgctxt ""
 "numberingformatpage.ui\n"
 "add\n"
-"tooltip_markup\n"
-"string.text"
-msgid "Add"
-msgstr ""
-
-#: numberingformatpage.ui
-msgctxt ""
-"numberingformatpage.ui\n"
-"add\n"
 "tooltip_text\n"
 "string.text"
 msgid "Add"
@@ -8457,28 +8421,10 @@ msgstr ""
 msgctxt ""
 "numberingformatpage.ui\n"
 "edit\n"
-"tooltip_markup\n"
-"string.text"
-msgid "Edit Comment"
-msgstr ""
-
-#: numberingformatpage.ui
-msgctxt ""
-"numberingformatpage.ui\n"
-"edit\n"
 "tooltip_text\n"
 "string.text"
 msgid "Edit Comment"
-msgstr ""
-
-#: numberingformatpage.ui
-msgctxt ""
-"numberingformatpage.ui\n"
-"delete\n"
-"tooltip_markup\n"
-"string.text"
-msgid "Remove"
-msgstr ""
+msgstr "Иҧсахтәуп акомментари "
 
 #: numberingformatpage.ui
 msgctxt ""
@@ -8496,7 +8442,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Format code"
-msgstr ""
+msgstr "Аформат_акод"
 
 #: numberingformatpage.ui
 msgctxt ""
@@ -8505,6 +8451,15 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Decimal places:"
+msgstr ""
+
+#: numberingformatpage.ui
+msgctxt ""
+"numberingformatpage.ui\n"
+"denominatorft\n"
+"label\n"
+"string.text"
+msgid "Den_ominator places:"
 msgstr ""
 
 #: numberingformatpage.ui
@@ -8532,6 +8487,15 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Thousands separator"
+msgstr ""
+
+#: numberingformatpage.ui
+msgctxt ""
+"numberingformatpage.ui\n"
+"engineering\n"
+"label\n"
+"string.text"
+msgid "_Engineering notation"
 msgstr ""
 
 #: numberingformatpage.ui
@@ -8577,7 +8541,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Language"
-msgstr ""
+msgstr "_Абызшәа"
 
 #: numberingformatpage.ui
 msgctxt ""
@@ -8730,7 +8694,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Character style:"
-msgstr ""
+msgstr "Асимвол астиль:"
 
 #: numberingoptionspage.ui
 msgctxt ""
@@ -8802,7 +8766,7 @@ msgctxt ""
 "0\n"
 "stringlist.text"
 msgid "Top of baseline"
-msgstr ""
+msgstr "Ихадоу аҵәаӷәа хыхьла"
 
 #: numberingoptionspage.ui
 msgctxt ""
@@ -8811,7 +8775,7 @@ msgctxt ""
 "1\n"
 "stringlist.text"
 msgid "Center of baseline"
-msgstr ""
+msgstr "Ихадоу аҵәаӷәа ацентр аҟны"
 
 #: numberingoptionspage.ui
 msgctxt ""
@@ -8820,7 +8784,7 @@ msgctxt ""
 "2\n"
 "stringlist.text"
 msgid "Bottom of baseline"
-msgstr ""
+msgstr "Ихадоу аҵәаӷәа ҵаҟала"
 
 #: numberingoptionspage.ui
 msgctxt ""
@@ -8829,7 +8793,7 @@ msgctxt ""
 "3\n"
 "stringlist.text"
 msgid "Top of character"
-msgstr ""
+msgstr "Асимвол хыхьла"
 
 #: numberingoptionspage.ui
 msgctxt ""
@@ -8838,7 +8802,7 @@ msgctxt ""
 "4\n"
 "stringlist.text"
 msgid "Center of character"
-msgstr ""
+msgstr "Асимвол ацентр аҟны"
 
 #: numberingoptionspage.ui
 msgctxt ""
@@ -8847,7 +8811,7 @@ msgctxt ""
 "5\n"
 "stringlist.text"
 msgid "Bottom of character"
-msgstr ""
+msgstr "Асимвол ҵаҟала"
 
 #: numberingoptionspage.ui
 msgctxt ""
@@ -8856,7 +8820,7 @@ msgctxt ""
 "6\n"
 "stringlist.text"
 msgid "Top of line"
-msgstr ""
+msgstr "Хыхьтәи ацәаҳәа"
 
 #: numberingoptionspage.ui
 msgctxt ""
@@ -8865,7 +8829,7 @@ msgctxt ""
 "7\n"
 "stringlist.text"
 msgid "Center of line"
-msgstr ""
+msgstr "Ацәаҳәа ацентр аҟны"
 
 #: numberingoptionspage.ui
 msgctxt ""
@@ -8874,7 +8838,7 @@ msgctxt ""
 "8\n"
 "stringlist.text"
 msgid "Bottom of line"
-msgstr ""
+msgstr "Ҵаҟатәи ацәаҳәа"
 
 #: numberingoptionspage.ui
 msgctxt ""
@@ -8883,7 +8847,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Select..."
-msgstr ""
+msgstr "Алхра..."
 
 #: numberingoptionspage.ui
 msgctxt ""
@@ -8901,7 +8865,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Relative size:"
-msgstr ""
+msgstr "_Амасштаб:"
 
 #: numberingoptionspage.ui
 msgctxt ""
@@ -8946,7 +8910,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Character:"
-msgstr ""
+msgstr "Асимволқәа:"
 
 #: numberingoptionspage.ui
 msgctxt ""
@@ -8955,7 +8919,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Select..."
-msgstr ""
+msgstr "Алхра..."
 
 #: numberingoptionspage.ui
 msgctxt ""
@@ -8991,7 +8955,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Numbering"
-msgstr ""
+msgstr "Аномерркра"
 
 #: numberingoptionspage.ui
 msgctxt ""
@@ -9117,7 +9081,7 @@ msgctxt ""
 "11\n"
 "stringlist.text"
 msgid "Native Numbering"
-msgstr ""
+msgstr "Амилаҭтә номерркра"
 
 #: numberingoptionspage.ui
 msgctxt ""
@@ -9261,7 +9225,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Numbering followed by:"
-msgstr ""
+msgstr "Аномерркра ашьҭахь:"
 
 #: numberingpositionpage.ui
 msgctxt ""
@@ -9296,7 +9260,7 @@ msgctxt ""
 "at\n"
 "label\n"
 "string.text"
-msgid "at:"
+msgid "Tab stop at:"
 msgstr ""
 
 #: numberingpositionpage.ui
@@ -9324,7 +9288,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Width of numbering:"
-msgstr ""
+msgstr "Аномерркра аҭбаара:"
 
 #: numberingpositionpage.ui
 msgctxt ""
@@ -9487,7 +9451,7 @@ msgctxt ""
 "animatedgraphics\n"
 "label\n"
 "string.text"
-msgid "Allow animated _graphics"
+msgid "Allow animated _images"
 msgstr ""
 
 #: optaccessibilitypage.ui
@@ -9497,24 +9461,6 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Allow animated _text"
-msgstr ""
-
-#: optaccessibilitypage.ui
-msgctxt ""
-"optaccessibilitypage.ui\n"
-"tiphelptimeout\n"
-"label\n"
-"string.text"
-msgid "_Help tips disappear after"
-msgstr ""
-
-#: optaccessibilitypage.ui
-msgctxt ""
-"optaccessibilitypage.ui\n"
-"label3\n"
-"label\n"
-"string.text"
-msgid "seconds"
 msgstr ""
 
 #: optaccessibilitypage.ui
@@ -9650,7 +9596,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Select a Java Runtime Environment"
-msgstr ""
+msgstr "Иалхтәуп Java Runtime Environment"
 
 #: optadvancedpage.ui
 msgctxt ""
@@ -9676,7 +9622,7 @@ msgctxt ""
 "experimental\n"
 "label\n"
 "string.text"
-msgid "Enable experimental features"
+msgid "Enable experimental features (may be unstable)"
 msgstr ""
 
 #: optadvancedpage.ui
@@ -9685,7 +9631,7 @@ msgctxt ""
 "macrorecording\n"
 "label\n"
 "string.text"
-msgid "Enable macro recording (limited)"
+msgid "Enable macro recording (may be limited)"
 msgstr ""
 
 #: optadvancedpage.ui
@@ -9694,8 +9640,8 @@ msgctxt ""
 "expertconfig\n"
 "label\n"
 "string.text"
-msgid "Expert Configuration"
-msgstr ""
+msgid "Open Expert Configuration"
+msgstr "Иаарттәуп аекперттә рхиарақәа"
 
 #: optadvancedpage.ui
 msgctxt ""
@@ -9703,7 +9649,7 @@ msgctxt ""
 "label12\n"
 "label\n"
 "string.text"
-msgid "Optional (Unstable) Options"
+msgid "Optional Features"
 msgstr ""
 
 #: optappearancepage.ui
@@ -9848,7 +9794,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Language:"
-msgstr ""
+msgstr "_Абызшәа:"
 
 #: optasianpage.ui
 msgctxt ""
@@ -9884,7 +9830,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "First and Last Characters"
-msgstr ""
+msgstr "Алагамҭатәии анҵәамҭатәии асимволқәа"
 
 #: optbasicidepage.ui
 msgctxt ""
@@ -9965,7 +9911,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Language Features"
-msgstr ""
+msgstr "Абызшәа аҷыдарақәа"
 
 #: optchartcolorspage.ui
 msgctxt ""
@@ -10081,7 +10027,7 @@ msgctxt ""
 "numerals\n"
 "0\n"
 "stringlist.text"
-msgid "Arabic"
+msgid "Arabic (1, 2, 3…)"
 msgstr ""
 
 #: optctlpage.ui
@@ -10090,7 +10036,7 @@ msgctxt ""
 "numerals\n"
 "1\n"
 "stringlist.text"
-msgid "Hindi"
+msgid "Eastern Arabic (٣ ,٢ ,١…)"
 msgstr ""
 
 #: optctlpage.ui
@@ -10199,7 +10145,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Export as:"
-msgstr ""
+msgstr "Иекспорттәуп иаба(ишҧа):"
 
 #: optfltrembedpage.ui
 msgctxt ""
@@ -10253,7 +10199,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Save _original Basic code"
-msgstr ""
+msgstr "Иеиқәырхалатәуп Basic ахыҵхырҭатә код"
 
 #: optfltrpage.ui
 msgctxt ""
@@ -10334,7 +10280,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Font:"
-msgstr ""
+msgstr "_Ашрифт:"
 
 #: optfontspage.ui
 msgctxt ""
@@ -10370,7 +10316,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Font"
-msgstr ""
+msgstr "Ашрифт"
 
 #: optfontspage.ui
 msgctxt ""
@@ -10409,13 +10355,14 @@ msgid "Fon_ts:"
 msgstr ""
 
 #: optfontspage.ui
+#, fuzzy
 msgctxt ""
 "optfontspage.ui\n"
 "label9\n"
 "label\n"
 "string.text"
 msgid "_Size:"
-msgstr ""
+msgstr "_Ашәагаа:"
 
 #: optfontspage.ui
 msgctxt ""
@@ -10442,15 +10389,6 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Font Settings for HTML, Basic and SQL Sources"
-msgstr ""
-
-#: optgeneralpage.ui
-msgctxt ""
-"optgeneralpage.ui\n"
-"tooltips\n"
-"label\n"
-"string.text"
-msgid "_Tips"
 msgstr ""
 
 #: optgeneralpage.ui
@@ -10487,7 +10425,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Open/Save Dialogs"
-msgstr ""
+msgstr "Аартра/Аиқәырхара рдиалогқәа"
 
 #: optgeneralpage.ui
 msgctxt ""
@@ -10514,15 +10452,6 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Printing sets \"document modified\" status"
-msgstr ""
-
-#: optgeneralpage.ui
-msgctxt ""
-"optgeneralpage.ui\n"
-"savealways\n"
-"label\n"
-"string.text"
-msgid "_Allow to save document even when the document is not modified "
 msgstr ""
 
 #: optgeneralpage.ui
@@ -10586,7 +10515,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Size _7:"
-msgstr ""
+msgstr "_7:"
 
 #: opthtmlpage.ui
 msgctxt ""
@@ -10595,7 +10524,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Size _6:"
-msgstr ""
+msgstr "_6:"
 
 #: opthtmlpage.ui
 msgctxt ""
@@ -10604,7 +10533,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Size _5:"
-msgstr ""
+msgstr "_5:"
 
 #: opthtmlpage.ui
 msgctxt ""
@@ -10613,7 +10542,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Size _4:"
-msgstr ""
+msgstr "_4:"
 
 #: opthtmlpage.ui
 msgctxt ""
@@ -10622,7 +10551,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Size _3:"
-msgstr ""
+msgstr "_3:"
 
 #: opthtmlpage.ui
 msgctxt ""
@@ -10631,7 +10560,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Size _2:"
-msgstr ""
+msgstr "_2:"
 
 #: opthtmlpage.ui
 msgctxt ""
@@ -10640,7 +10569,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Size _1:"
-msgstr ""
+msgstr "_1:"
 
 #: opthtmlpage.ui
 msgctxt ""
@@ -10649,7 +10578,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Font Sizes"
-msgstr ""
+msgstr "Акегльқәа"
 
 #: opthtmlpage.ui
 msgctxt ""
@@ -10685,7 +10614,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Import"
-msgstr ""
+msgstr "Аимпорт"
 
 #: opthtmlpage.ui
 msgctxt ""
@@ -10694,7 +10623,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Character _set:"
-msgstr ""
+msgstr "Акодркра:"
 
 #: opthtmlpage.ui
 msgctxt ""
@@ -10702,7 +10631,7 @@ msgctxt ""
 "savegrflocal\n"
 "label\n"
 "string.text"
-msgid "_Copy local graphics to Internet"
+msgid "_Copy local images to Internet"
 msgstr ""
 
 #: opthtmlpage.ui
@@ -10735,38 +10664,11 @@ msgstr ""
 #: opthtmlpage.ui
 msgctxt ""
 "opthtmlpage.ui\n"
-"export\n"
-"0\n"
-"stringlist.text"
-msgid "Microsoft Internet Explorer"
-msgstr ""
-
-#: opthtmlpage.ui
-msgctxt ""
-"opthtmlpage.ui\n"
-"export\n"
-"1\n"
-"stringlist.text"
-msgid "Mozilla Firefox"
-msgstr ""
-
-#: opthtmlpage.ui
-msgctxt ""
-"opthtmlpage.ui\n"
-"export\n"
-"2\n"
-"stringlist.text"
-msgid "%PRODUCTNAME Writer"
-msgstr ""
-
-#: opthtmlpage.ui
-msgctxt ""
-"opthtmlpage.ui\n"
 "label3\n"
 "label\n"
 "string.text"
 msgid "Export"
-msgstr ""
+msgstr "Аекспорт"
 
 #: optionsdialog.ui
 msgctxt ""
@@ -10937,7 +10839,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Pu_nctuation characters"
-msgstr ""
+msgstr "Апунктуациа адыргақәа"
 
 #: optjsearchpage.ui
 msgctxt ""
@@ -11027,7 +10929,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Language Of"
-msgstr ""
+msgstr "Абызшәа"
 
 #: optlanguagespage.ui
 msgctxt ""
@@ -11113,6 +11015,15 @@ msgstr ""
 #: optlingupage.ui
 msgctxt ""
 "optlingupage.ui\n"
+"lingumodulesedit-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Edit Available language modules"
+msgstr ""
+
+#: optlingupage.ui
+msgctxt ""
+"optlingupage.ui\n"
 "lingudictsft\n"
 "label\n"
 "string.text"
@@ -11126,7 +11037,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_New..."
-msgstr ""
+msgstr "_Иаҧҵатәуп"
 
 #: optlingupage.ui
 msgctxt ""
@@ -11140,11 +11051,20 @@ msgstr ""
 #: optlingupage.ui
 msgctxt ""
 "optlingupage.ui\n"
+"lingudictsedit-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Edit User-defined dictionaries"
+msgstr ""
+
+#: optlingupage.ui
+msgctxt ""
+"optlingupage.ui\n"
 "lingudictsdelete\n"
 "label\n"
 "string.text"
 msgid "_Delete"
-msgstr ""
+msgstr "_Ианыхтәуп"
 
 #: optlingupage.ui
 msgctxt ""
@@ -11162,7 +11082,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Get more dictionaries online..."
-msgstr ""
+msgstr "Егьырҭ ажәарқәа аИнтернет аҟны..."
 
 #: optlingupage.ui
 msgctxt ""
@@ -11176,28 +11096,19 @@ msgstr ""
 #: optlingupage.ui
 msgctxt ""
 "optlingupage.ui\n"
+"linguoptionsedit-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Edit Options"
+msgstr ""
+
+#: optlingupage.ui
+msgctxt ""
+"optlingupage.ui\n"
 "label1\n"
 "label\n"
 "string.text"
 msgid "Writing Aids"
-msgstr ""
-
-#: optmemorypage.ui
-msgctxt ""
-"optmemorypage.ui\n"
-"label5\n"
-"label\n"
-"string.text"
-msgid "_Number of steps:"
-msgstr ""
-
-#: optmemorypage.ui
-msgctxt ""
-"optmemorypage.ui\n"
-"label1\n"
-"label\n"
-"string.text"
-msgid "Undo"
 msgstr ""
 
 #: optmemorypage.ui
@@ -11260,7 +11171,7 @@ msgctxt ""
 "label2\n"
 "label\n"
 "string.text"
-msgid "Graphics Cache"
+msgid "Image Cache"
 msgstr ""
 
 #: optmemorypage.ui
@@ -11270,7 +11181,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Number of objects:"
-msgstr ""
+msgstr "Аобиеқтқәа рхыҧхьаӡара"
 
 #: optmemorypage.ui
 msgctxt ""
@@ -11315,7 +11226,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "New Dictionary"
-msgstr ""
+msgstr "Иаҧҵатәуп ажәар"
 
 #: optnewdictionarydialog.ui
 msgctxt ""
@@ -11333,7 +11244,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Language:"
-msgstr ""
+msgstr "_Абызшәа:"
 
 #: optnewdictionarydialog.ui
 msgctxt ""
@@ -11437,6 +11348,42 @@ msgstr ""
 #: optonlineupdatepage.ui
 msgctxt ""
 "optonlineupdatepage.ui\n"
+"extrabits\n"
+"label\n"
+"string.text"
+msgid "_Send OS version and basic hardware information"
+msgstr ""
+
+#: optonlineupdatepage.ui
+msgctxt ""
+"optonlineupdatepage.ui\n"
+"extrabits\n"
+"tooltip_text\n"
+"string.text"
+msgid "This information lets us make optimizations for your hardware and operating system."
+msgstr ""
+
+#: optonlineupdatepage.ui
+msgctxt ""
+"optonlineupdatepage.ui\n"
+"useragent_label\n"
+"label\n"
+"string.text"
+msgid "User Agent:"
+msgstr ""
+
+#: optonlineupdatepage.ui
+msgctxt ""
+"optonlineupdatepage.ui\n"
+"useragent_changed\n"
+"label\n"
+"string.text"
+msgid "Hit apply to update"
+msgstr ""
+
+#: optonlineupdatepage.ui
+msgctxt ""
+"optonlineupdatepage.ui\n"
 "neverchecked\n"
 "label\n"
 "string.text"
@@ -11450,6 +11397,15 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Online Update Options"
+msgstr "Арҿыцрақәа ргәаҭара архиарақәа"
+
+#: optopenclpage.ui
+msgctxt ""
+"optopenclpage.ui\n"
+"useswinterpreter\n"
+"label\n"
+"string.text"
+msgid "Allow use of Software Interpreter (even when OpenCL is not available)"
 msgstr ""
 
 #: optopenclpage.ui
@@ -11464,118 +11420,19 @@ msgstr ""
 #: optopenclpage.ui
 msgctxt ""
 "optopenclpage.ui\n"
-"bledit\n"
+"openclused\n"
 "label\n"
 "string.text"
-msgid "_Edit..."
+msgid "OpenCL is available for use."
 msgstr ""
 
 #: optopenclpage.ui
 msgctxt ""
 "optopenclpage.ui\n"
-"bladd\n"
+"openclnotused\n"
 "label\n"
 "string.text"
-msgid "_Add..."
-msgstr ""
-
-#: optopenclpage.ui
-msgctxt ""
-"optopenclpage.ui\n"
-"bldelete\n"
-"label\n"
-"string.text"
-msgid "_Delete"
-msgstr ""
-
-#: optopenclpage.ui
-msgctxt ""
-"optopenclpage.ui\n"
-"os\n"
-"label\n"
-"string.text"
-msgid "Operating System"
-msgstr ""
-
-#: optopenclpage.ui
-msgctxt ""
-"optopenclpage.ui\n"
-"osversion\n"
-"label\n"
-"string.text"
-msgid "OS Version"
-msgstr ""
-
-#: optopenclpage.ui
-msgctxt ""
-"optopenclpage.ui\n"
-"vendor\n"
-"label\n"
-"string.text"
-msgid "Platform Vendor"
-msgstr ""
-
-#: optopenclpage.ui
-msgctxt ""
-"optopenclpage.ui\n"
-"device\n"
-"label\n"
-"string.text"
-msgid "Device"
-msgstr ""
-
-#: optopenclpage.ui
-msgctxt ""
-"optopenclpage.ui\n"
-"driverversion\n"
-"label\n"
-"string.text"
-msgid "Driver version"
-msgstr ""
-
-#: optopenclpage.ui
-msgctxt ""
-"optopenclpage.ui\n"
-"label4\n"
-"label\n"
-"string.text"
-msgid "OpenCL blacklist"
-msgstr ""
-
-#: optopenclpage.ui
-msgctxt ""
-"optopenclpage.ui\n"
-"wledit\n"
-"label\n"
-"string.text"
-msgid "_Edit..."
-msgstr ""
-
-#: optopenclpage.ui
-msgctxt ""
-"optopenclpage.ui\n"
-"wladd\n"
-"label\n"
-"string.text"
-msgid "_Add..."
-msgstr ""
-
-#: optopenclpage.ui
-msgctxt ""
-"optopenclpage.ui\n"
-"wldelete\n"
-"label\n"
-"string.text"
-msgid "_Delete"
-msgstr ""
-
-#: optopenclpage.ui
-msgctxt ""
-"optopenclpage.ui\n"
-"label5\n"
-"label\n"
-"string.text"
-msgid "OpenCL whitelist"
+msgid "OpenCL is not used."
 msgstr ""
 
 #: optopenclpage.ui
@@ -11585,7 +11442,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "OpenCL Options"
-msgstr ""
+msgstr "OpenCL апараметрқәа"
 
 #: optpathspage.ui
 msgctxt ""
@@ -11594,7 +11451,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Type"
-msgstr ""
+msgstr "Атип"
 
 #: optpathspage.ui
 msgctxt ""
@@ -11855,7 +11712,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Save"
-msgstr ""
+msgstr "Аиқәырхара"
 
 #: optsavepage.ui
 msgctxt ""
@@ -11918,7 +11775,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "ODF format version:"
-msgstr ""
+msgstr "ODF аверсиа аформат:"
 
 #: optsavepage.ui
 msgctxt ""
@@ -11990,7 +11847,7 @@ msgctxt ""
 "6\n"
 "stringlist.text"
 msgid "Formula"
-msgstr ""
+msgstr "Аформула"
 
 #: optsavepage.ui
 msgctxt ""
@@ -11999,7 +11856,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "D_ocument type:"
-msgstr ""
+msgstr "Адокумент атип:"
 
 #: optsavepage.ui
 msgctxt ""
@@ -12254,7 +12111,7 @@ msgctxt ""
 "AtkObject::accessible-description\n"
 "string.text"
 msgid "Home telephone number"
-msgstr ""
+msgstr "Аҩнтәи аҭел аномер"
 
 #: optuserpage.ui
 msgctxt ""
@@ -12344,7 +12201,7 @@ msgctxt ""
 "AtkObject::accessible-name\n"
 "string.text"
 msgid "Home telephone number"
-msgstr ""
+msgstr "Аҩнтәи аҭел аномер"
 
 #: optuserpage.ui
 msgctxt ""
@@ -12353,7 +12210,7 @@ msgctxt ""
 "AtkObject::accessible-name\n"
 "string.text"
 msgid "Work telephone number"
-msgstr ""
+msgstr "Аусурҭа аҭел аномер"
 
 #: optuserpage.ui
 msgctxt ""
@@ -12362,7 +12219,7 @@ msgctxt ""
 "AtkObject::accessible-name\n"
 "string.text"
 msgid "FAX number"
-msgstr ""
+msgstr "Афакс аномер"
 
 #: optuserpage.ui
 msgctxt ""
@@ -12470,7 +12327,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Street/apartment number:"
-msgstr ""
+msgstr "Амҩа, аҩны/ауаҭах:"
 
 #: optuserpage.ui
 msgctxt ""
@@ -12488,7 +12345,7 @@ msgctxt ""
 "AtkObject::accessible-name\n"
 "string.text"
 msgid "Apartment number"
-msgstr ""
+msgstr "Аҩны аномер"
 
 #: optuserpage.ui
 msgctxt ""
@@ -12529,6 +12386,15 @@ msgstr ""
 #: optviewpage.ui
 msgctxt ""
 "optviewpage.ui\n"
+"grid3\n"
+"tooltip_text\n"
+"string.text"
+msgid "Requires restart"
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
 "useaccel\n"
 "label\n"
 "string.text"
@@ -12559,7 +12425,7 @@ msgctxt ""
 "forceopengl\n"
 "label\n"
 "string.text"
-msgid "Force OpenGL even if blacklisted"
+msgid "Ignore OpenGL blacklist"
 msgstr ""
 
 #: optviewpage.ui
@@ -12568,7 +12434,25 @@ msgctxt ""
 "forceopengl\n"
 "tooltip_text\n"
 "string.text"
-msgid "Enabling this may expose driver bugs"
+msgid "Requires restart. Enabling this may expose driver bugs"
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"openglenabled\n"
+"label\n"
+"string.text"
+msgid "GL is currently enabled."
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"opengldisabled\n"
+"label\n"
+"string.text"
+msgid "GL is currently disabled."
 msgstr ""
 
 #: optviewpage.ui
@@ -12583,28 +12467,46 @@ msgstr ""
 #: optviewpage.ui
 msgctxt ""
 "optviewpage.ui\n"
-"trans\n"
-"label\n"
-"string.text"
-msgid "_Transparency:"
-msgstr ""
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
-"label14\n"
-"label\n"
-"string.text"
-msgid "Selection"
-msgstr ""
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
 "label13\n"
 "label\n"
 "string.text"
 msgid "Icons in men_us:"
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"contextmenushortcuts\n"
+"0\n"
+"stringlist.text"
+msgid "Automatic"
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"contextmenushortcuts\n"
+"1\n"
+"stringlist.text"
+msgid "Hide"
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"contextmenushortcuts\n"
+"2\n"
+"stringlist.text"
+msgid "Show"
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"label10\n"
+"label\n"
+"string.text"
+msgid "Shortcuts in context menus:"
 msgstr ""
 
 #: optviewpage.ui
@@ -12650,16 +12552,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Show p_review of fonts"
-msgstr ""
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
-"showfonthistory\n"
-"label\n"
-"string.text"
-msgid "Show font h_istory"
-msgstr ""
+msgstr "Ашрифтқәа рыхәаҧшра"
 
 #: optviewpage.ui
 msgctxt ""
@@ -12668,16 +12561,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Font Lists"
-msgstr ""
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
-"label7\n"
-"label\n"
-"string.text"
-msgid "Sc_aling:"
-msgstr ""
+msgstr "Ашрифтқәа рыхьӡынҵа"
 
 #: optviewpage.ui
 msgctxt ""
@@ -12685,35 +12569,8 @@ msgctxt ""
 "label8\n"
 "label\n"
 "string.text"
-msgid "Icon _size and style:"
-msgstr ""
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
-"iconsize\n"
-"0\n"
-"stringlist.text"
-msgid "Automatic"
-msgstr ""
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
-"iconsize\n"
-"1\n"
-"stringlist.text"
-msgid "Small"
-msgstr ""
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
-"iconsize\n"
-"2\n"
-"stringlist.text"
-msgid "Large"
-msgstr ""
+msgid "Toolbar icon _size:"
+msgstr "Амаругақәа рпанель:"
 
 #: optviewpage.ui
 msgctxt ""
@@ -12748,7 +12605,7 @@ msgctxt ""
 "iconstyle\n"
 "3\n"
 "stringlist.text"
-msgid "Industrial"
+msgid "Crystal"
 msgstr ""
 
 #: optviewpage.ui
@@ -12757,7 +12614,7 @@ msgctxt ""
 "iconstyle\n"
 "4\n"
 "stringlist.text"
-msgid "Crystal"
+msgid "Tango"
 msgstr ""
 
 #: optviewpage.ui
@@ -12766,7 +12623,7 @@ msgctxt ""
 "iconstyle\n"
 "5\n"
 "stringlist.text"
-msgid "Tango"
+msgid "Oxygen"
 msgstr ""
 
 #: optviewpage.ui
@@ -12775,7 +12632,7 @@ msgctxt ""
 "iconstyle\n"
 "6\n"
 "stringlist.text"
-msgid "Oxygen"
+msgid "Classic"
 msgstr ""
 
 #: optviewpage.ui
@@ -12784,7 +12641,7 @@ msgctxt ""
 "iconstyle\n"
 "7\n"
 "stringlist.text"
-msgid "Classic"
+msgid "Sifr"
 msgstr ""
 
 #: optviewpage.ui
@@ -12793,7 +12650,7 @@ msgctxt ""
 "iconstyle\n"
 "8\n"
 "stringlist.text"
-msgid "Human"
+msgid "Breeze"
 msgstr ""
 
 #: optviewpage.ui
@@ -12802,25 +12659,52 @@ msgctxt ""
 "iconstyle\n"
 "9\n"
 "stringlist.text"
-msgid "Sifr"
-msgstr ""
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
-"iconstyle\n"
-"10\n"
-"stringlist.text"
-msgid "Breeze"
-msgstr ""
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
-"iconstyle\n"
-"11\n"
-"stringlist.text"
 msgid "Tango Testing"
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"iconsize\n"
+"0\n"
+"stringlist.text"
+msgid "Automatic"
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"iconsize\n"
+"1\n"
+"stringlist.text"
+msgid "Small"
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"iconsize\n"
+"2\n"
+"stringlist.text"
+msgid "Large"
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"iconsize\n"
+"3\n"
+"stringlist.text"
+msgid "Extra Large"
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"label6\n"
+"label\n"
+"string.text"
+msgid "Icon s_tyle:"
 msgstr ""
 
 #: optviewpage.ui
@@ -12830,6 +12714,78 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Screen font antialiasin_g"
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"label9\n"
+"label\n"
+"string.text"
+msgid "Sidebar _icon size:"
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"sidebariconsize\n"
+"0\n"
+"stringlist.text"
+msgid "Automatic"
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"sidebariconsize\n"
+"1\n"
+"stringlist.text"
+msgid "Small"
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"sidebariconsize\n"
+"2\n"
+"stringlist.text"
+msgid "Large"
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"label7\n"
+"label\n"
+"string.text"
+msgid "_Notebookbar icon size:"
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"notebookbariconsize\n"
+"0\n"
+"stringlist.text"
+msgid "Automatic"
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"notebookbariconsize\n"
+"1\n"
+"stringlist.text"
+msgid "Small"
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"notebookbariconsize\n"
+"2\n"
+"stringlist.text"
+msgid "Large"
 msgstr ""
 
 #: optviewpage.ui
@@ -12938,7 +12894,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Format:"
-msgstr ""
+msgstr "_Аформат:"
 
 #: pageformatpage.ui
 msgctxt ""
@@ -12992,7 +12948,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Text direction:"
-msgstr ""
+msgstr "_Атеқст ахырхарҭа:"
 
 #: pageformatpage.ui
 msgctxt ""
@@ -13010,7 +12966,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Paper Format"
-msgstr ""
+msgstr "Ақьаад аформат"
 
 #: pageformatpage.ui
 msgctxt ""
@@ -13082,7 +13038,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Page layout:"
-msgstr ""
+msgstr "Адаҟьа амакет:"
 
 #: pageformatpage.ui
 msgctxt ""
@@ -13090,8 +13046,8 @@ msgctxt ""
 "label4\n"
 "label\n"
 "string.text"
-msgid "_Format:"
-msgstr ""
+msgid "Page numbers:"
+msgstr "Адаҟьақәа рномерқәа:"
 
 #: pageformatpage.ui
 msgctxt ""
@@ -13145,7 +13101,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Reference _Style:"
-msgstr ""
+msgstr "Азхьарҧш астиль:"
 
 #: pageformatpage.ui
 msgctxt ""
@@ -13166,213 +13122,6 @@ msgid ""
 "The margin settings are out of print range.\n"
 "\n"
 "Do you still want to apply these settings?"
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"0\n"
-"stringlist.text"
-msgid "1, 2, 3, ..."
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"1\n"
-"stringlist.text"
-msgid "A, B, C, ..."
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"2\n"
-"stringlist.text"
-msgid "a, b, c, ..."
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"3\n"
-"stringlist.text"
-msgid "I, II, III, ..."
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"4\n"
-"stringlist.text"
-msgid "i, ii, iii, ..."
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"5\n"
-"stringlist.text"
-msgid "None"
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"6\n"
-"stringlist.text"
-msgid "A, .., AA, .., AAA, ..."
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"7\n"
-"stringlist.text"
-msgid "a, .., aa, .., aaa, ..."
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"8\n"
-"stringlist.text"
-msgid "Native Numbering"
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"9\n"
-"stringlist.text"
-msgid "А, Б, .., Аа, Аб, ... (Bulgarian)"
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"10\n"
-"stringlist.text"
-msgid "а, б, .., аа, аб, ... (Bulgarian)"
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"11\n"
-"stringlist.text"
-msgid "А, Б, .., Аа, Бб, ... (Bulgarian)"
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"12\n"
-"stringlist.text"
-msgid "а, б, .., аа, бб, ... (Bulgarian)"
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"13\n"
-"stringlist.text"
-msgid "А, Б, .., Аа, Аб, ... (Russian)"
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"14\n"
-"stringlist.text"
-msgid "а, б, .., аа, аб, ... (Russian)"
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"15\n"
-"stringlist.text"
-msgid "А, Б, .., Аа, Бб, ... (Russian)"
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"16\n"
-"stringlist.text"
-msgid "а, б, .., аа, бб, ... (Russian)"
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"17\n"
-"stringlist.text"
-msgid "А, Б, .., Аа, Аб, ... (Serbian)"
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"18\n"
-"stringlist.text"
-msgid "а, б, .., аа, аб, ... (Serbian)"
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"19\n"
-"stringlist.text"
-msgid "А, Б, .., Аа, Бб, ... (Serbian)"
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"20\n"
-"stringlist.text"
-msgid "а, б, .., аа, бб, ... (Serbian)"
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"21\n"
-"stringlist.text"
-msgid "Α, Β, Γ, ... (Greek Upper Letter)"
-msgstr ""
-
-#: pageformatpage.ui
-msgctxt ""
-"pageformatpage.ui\n"
-"liststoreNumberFormat\n"
-"22\n"
-"stringlist.text"
-msgid "α, β, γ, ... (Greek Lower Letter)"
 msgstr ""
 
 #: pageformatpage.ui
@@ -13481,7 +13230,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Last line:"
-msgstr ""
+msgstr "_Аҵыхәтәантәи ацәаҳәа:"
 
 #: paragalignpage.ui
 msgctxt ""
@@ -13535,7 +13284,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Text direction:"
-msgstr ""
+msgstr "_Атеқст ахырхарҭа:"
 
 #: paragalignpage.ui
 msgctxt ""
@@ -13598,7 +13347,7 @@ msgctxt ""
 "1\n"
 "stringlist.text"
 msgid "Base line"
-msgstr ""
+msgstr "Абазатә ҵәаӷәа ала"
 
 #: paragalignpage.ui
 msgctxt ""
@@ -13661,7 +13410,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_First line:"
-msgstr ""
+msgstr "_Актәи ацәаҳәа:"
 
 #: paraindentspacing.ui
 msgctxt ""
@@ -13742,7 +13491,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Line Spacing"
-msgstr ""
+msgstr "Ацәаҳәабжьаратә интервал"
 
 #: paraindentspacing.ui
 msgctxt ""
@@ -13777,14 +13526,23 @@ msgctxt ""
 "liststoreLB_LINEDIST\n"
 "1\n"
 "stringlist.text"
-msgid "1.5 lines"
-msgstr ""
+msgid "1.15 Lines"
+msgstr "1,15 ацәаҳәақәа"
 
 #: paraindentspacing.ui
 msgctxt ""
 "paraindentspacing.ui\n"
 "liststoreLB_LINEDIST\n"
 "2\n"
+"stringlist.text"
+msgid "1.5 Lines"
+msgstr "1,5 ацәаҳәақәа"
+
+#: paraindentspacing.ui
+msgctxt ""
+"paraindentspacing.ui\n"
+"liststoreLB_LINEDIST\n"
+"3\n"
 "stringlist.text"
 msgid "Double"
 msgstr ""
@@ -13793,7 +13551,7 @@ msgstr ""
 msgctxt ""
 "paraindentspacing.ui\n"
 "liststoreLB_LINEDIST\n"
-"3\n"
+"4\n"
 "stringlist.text"
 msgid "Proportional"
 msgstr ""
@@ -13802,7 +13560,7 @@ msgstr ""
 msgctxt ""
 "paraindentspacing.ui\n"
 "liststoreLB_LINEDIST\n"
-"4\n"
+"5\n"
 "stringlist.text"
 msgid "At least"
 msgstr ""
@@ -13811,7 +13569,7 @@ msgstr ""
 msgctxt ""
 "paraindentspacing.ui\n"
 "liststoreLB_LINEDIST\n"
-"5\n"
+"6\n"
 "stringlist.text"
 msgid "Leading"
 msgstr ""
@@ -13886,7 +13644,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Character"
-msgstr ""
+msgstr "_Асимвол"
 
 #: paratabspage.ui
 msgctxt ""
@@ -13895,7 +13653,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Type"
-msgstr ""
+msgstr "Атип"
 
 #: paratabspage.ui
 msgctxt ""
@@ -13949,7 +13707,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Fill Character"
-msgstr ""
+msgstr "Ахарҭәаага"
 
 #: paratabspage.ui
 msgctxt ""
@@ -13958,6 +13716,33 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Delete _all"
+msgstr "Ианыхтәуп_зегьы"
+
+#: paratabspage.ui
+msgctxt ""
+"paratabspage.ui\n"
+"label4\n"
+"label\n"
+"string.text"
+msgid "points"
+msgstr ""
+
+#: paratabspage.ui
+msgctxt ""
+"paratabspage.ui\n"
+"label5\n"
+"label\n"
+"string.text"
+msgid "dashes"
+msgstr ""
+
+#: paratabspage.ui
+msgctxt ""
+"paratabspage.ui\n"
+"label6\n"
+"label\n"
+"string.text"
+msgid "underscores"
 msgstr ""
 
 #: password.ui
@@ -13985,7 +13770,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Enter password to open"
-msgstr ""
+msgstr "Аартраз иҭажәгал ажәамаӡа"
 
 #: password.ui
 msgctxt ""
@@ -14003,7 +13788,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Open file read-only"
-msgstr ""
+msgstr "Иаарттәуп аҧхьараз мацара"
 
 #: password.ui
 msgctxt ""
@@ -14075,6 +13860,87 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Selection"
+msgstr "Алхра"
+
+#: patterntabpage.ui
+msgctxt ""
+"patterntabpage.ui\n"
+"BTN_MODIFY\n"
+"label\n"
+"string.text"
+msgid "_Modify"
+msgstr ""
+
+#: patterntabpage.ui
+msgctxt ""
+"patterntabpage.ui\n"
+"label3\n"
+"label\n"
+"string.text"
+msgid "Pattern"
+msgstr ""
+
+#: patterntabpage.ui
+msgctxt ""
+"patterntabpage.ui\n"
+"label4\n"
+"label\n"
+"string.text"
+msgid "Pattern Editor:"
+msgstr ""
+
+#: patterntabpage.ui
+msgctxt ""
+"patterntabpage.ui\n"
+"CTL_PIXEL-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Pattern Editor"
+msgstr ""
+
+#: patterntabpage.ui
+msgctxt ""
+"patterntabpage.ui\n"
+"label5\n"
+"label\n"
+"string.text"
+msgid "Foreground Color:"
+msgstr ""
+
+#: patterntabpage.ui
+msgctxt ""
+"patterntabpage.ui\n"
+"label6\n"
+"label\n"
+"string.text"
+msgid "Background Color:"
+msgstr ""
+
+#: patterntabpage.ui
+msgctxt ""
+"patterntabpage.ui\n"
+"label1\n"
+"label\n"
+"string.text"
+msgid "Options"
+msgstr ""
+
+#: patterntabpage.ui
+msgctxt ""
+"patterntabpage.ui\n"
+"CTL_PREVIEW-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Example"
+msgstr ""
+
+#: patterntabpage.ui
+msgctxt ""
+"patterntabpage.ui\n"
+"label2\n"
+"label\n"
+"string.text"
+msgid "Preview"
 msgstr ""
 
 #: percentdialog.ui
@@ -14129,7 +13995,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Select Theme"
-msgstr ""
+msgstr "Иалхтәуп атема"
 
 #: personalization_tab.ui
 msgctxt ""
@@ -14156,7 +14022,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Selection"
-msgstr ""
+msgstr "Алхра"
 
 #: pickgraphicpage.ui
 msgctxt ""
@@ -14183,7 +14049,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Selection"
-msgstr ""
+msgstr "Алхра"
 
 #: picknumberingpage.ui
 msgctxt ""
@@ -14192,7 +14058,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Selection"
-msgstr ""
+msgstr "Алхра"
 
 #: pickoutlinepage.ui
 msgctxt ""
@@ -14201,7 +14067,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Selection"
-msgstr ""
+msgstr "Алхра"
 
 #: positionpage.ui
 msgctxt ""
@@ -14255,7 +14121,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Relative font size"
-msgstr ""
+msgstr "Ашрифт амасштаб"
 
 #: positionpage.ui
 msgctxt ""
@@ -14300,7 +14166,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Fit to line"
-msgstr ""
+msgstr "Иҭагӡатәуп ацәаҳәа"
 
 #: positionpage.ui
 msgctxt ""
@@ -14323,19 +14189,10 @@ msgstr ""
 #: positionpage.ui
 msgctxt ""
 "positionpage.ui\n"
-"rotate\n"
+"scale\n"
 "label\n"
 "string.text"
-msgid "Rotation"
-msgstr ""
-
-#: positionpage.ui
-msgctxt ""
-"positionpage.ui\n"
-"kerningft\n"
-"label\n"
-"string.text"
-msgid "by"
+msgid "Scaling"
 msgstr ""
 
 #: positionpage.ui
@@ -14363,33 +14220,6 @@ msgctxt ""
 "AtkObject::accessible-name\n"
 "string.text"
 msgid "Preview"
-msgstr ""
-
-#: positionpage.ui
-msgctxt ""
-"positionpage.ui\n"
-"liststore1\n"
-"0\n"
-"stringlist.text"
-msgid "Default"
-msgstr ""
-
-#: positionpage.ui
-msgctxt ""
-"positionpage.ui\n"
-"liststore1\n"
-"1\n"
-"stringlist.text"
-msgid "Expanded"
-msgstr ""
-
-#: positionpage.ui
-msgctxt ""
-"positionpage.ui\n"
-"liststore1\n"
-"2\n"
-"stringlist.text"
-msgid "Condensed"
 msgstr ""
 
 #: positionsizedialog.ui
@@ -14633,7 +14463,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Delete Bitmap?"
-msgstr ""
+msgstr "Ианыхтәума арастр?"
 
 #: querydeletebitmapdialog.ui
 msgctxt ""
@@ -14642,7 +14472,7 @@ msgctxt ""
 "text\n"
 "string.text"
 msgid "Are you sure you want to delete the bitmap?"
-msgstr ""
+msgstr "Ианыхтәума арастр?"
 
 #: querydeletechartcolordialog.ui
 msgctxt ""
@@ -14651,7 +14481,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Delete Color?"
-msgstr ""
+msgstr "Ианыхтәума аҧштәы?"
 
 #: querydeletechartcolordialog.ui
 msgctxt ""
@@ -14660,7 +14490,7 @@ msgctxt ""
 "text\n"
 "string.text"
 msgid "Do you really want to delete the chart color?"
-msgstr ""
+msgstr "Ианыхтәума адиаграмма аҧштәы?"
 
 #: querydeletechartcolordialog.ui
 msgctxt ""
@@ -14678,7 +14508,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Delete color?"
-msgstr ""
+msgstr "Ианыхтәума аҧштәы?"
 
 #: querydeletecolordialog.ui
 msgctxt ""
@@ -14687,7 +14517,7 @@ msgctxt ""
 "text\n"
 "string.text"
 msgid "Do you want to delete the color?"
-msgstr ""
+msgstr "Ианыхтәума аҧштәы?"
 
 #: querydeletedictionarydialog.ui
 msgctxt ""
@@ -14696,7 +14526,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Delete Dictionary?"
-msgstr ""
+msgstr "Ианыхтәума ажәар?"
 
 #: querydeletedictionarydialog.ui
 msgctxt ""
@@ -14705,7 +14535,7 @@ msgctxt ""
 "text\n"
 "string.text"
 msgid "Do you really want to delete the dictionary?"
-msgstr ""
+msgstr "Ианыхтәума ажәар?"
 
 #: querydeletedictionarydialog.ui
 msgctxt ""
@@ -14723,7 +14553,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Delete gradient?"
-msgstr ""
+msgstr "Ианыхтәума аградиент?"
 
 #: querydeletegradientdialog.ui
 msgctxt ""
@@ -14732,7 +14562,7 @@ msgctxt ""
 "text\n"
 "string.text"
 msgid "Do you want to delete the gradient?"
-msgstr ""
+msgstr "Ианыхтәуп аградиент?"
 
 #: querydeletehatchdialog.ui
 msgctxt ""
@@ -14759,7 +14589,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Delete Arrowhead?"
-msgstr ""
+msgstr "Ианыхтәума аҵәаӷәа анҵәамҭа?"
 
 #: querydeletelineenddialog.ui
 msgctxt ""
@@ -14786,7 +14616,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Delete Line Style?"
-msgstr ""
+msgstr "Ианыхтәума аҵәаӷәа астиль?"
 
 #: querydeletelinestyledialog.ui
 msgctxt ""
@@ -14795,7 +14625,7 @@ msgctxt ""
 "text\n"
 "string.text"
 msgid "Do you want to delete the line style?"
-msgstr ""
+msgstr "Ианыхтәума аҵәаӷәа астиль?"
 
 #: queryduplicatedialog.ui
 msgctxt ""
@@ -14849,7 +14679,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "No Saved File"
-msgstr ""
+msgstr "Афаил еиқәырхаӡам"
 
 #: querynosavefiledialog.ui
 msgctxt ""
@@ -14858,7 +14688,7 @@ msgctxt ""
 "text\n"
 "string.text"
 msgid "The file could not be saved!"
-msgstr ""
+msgstr "Адокумент аиқәырхара ауам!"
 
 #: querysavelistdialog.ui
 msgctxt ""
@@ -14867,7 +14697,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Save List?"
-msgstr ""
+msgstr "Иеиқәырхатәума ахьӡынҵа?"
 
 #: querysavelistdialog.ui
 msgctxt ""
@@ -14885,7 +14715,7 @@ msgctxt ""
 "secondary_text\n"
 "string.text"
 msgid "Would you like to save the list now?"
-msgstr ""
+msgstr "Иеиқәырхатәума ахьӡынҵа?"
 
 #: queryupdategalleryfilelistdialog.ui
 msgctxt ""
@@ -14912,7 +14742,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Record Number"
-msgstr ""
+msgstr "Анҵамҭа аномер"
 
 #: recordnumberdialog.ui
 msgctxt ""
@@ -14948,15 +14778,6 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Default settings:"
-msgstr ""
-
-#: rotationtabpage.ui
-msgctxt ""
-"rotationtabpage.ui\n"
-"CTL_RECT\n"
-"tooltip_markup\n"
-"string.text"
-msgid "Rotation point"
 msgstr ""
 
 #: rotationtabpage.ui
@@ -14999,15 +14820,6 @@ msgstr ""
 msgctxt ""
 "rotationtabpage.ui\n"
 "CTL_ANGLE\n"
-"tooltip_markup\n"
-"string.text"
-msgid "Rotation Angle"
-msgstr ""
-
-#: rotationtabpage.ui
-msgctxt ""
-"rotationtabpage.ui\n"
-"CTL_ANGLE\n"
 "tooltip_text\n"
 "string.text"
 msgid "Rotation Angle"
@@ -15022,6 +14834,42 @@ msgctxt ""
 msgid "Rotation Angle"
 msgstr ""
 
+#: screenshotannotationdialog.ui
+msgctxt ""
+"screenshotannotationdialog.ui\n"
+"ScreenshotAnnotationDialog\n"
+"title\n"
+"string.text"
+msgid "Interactive Screenshot Annotation"
+msgstr ""
+
+#: screenshotannotationdialog.ui
+msgctxt ""
+"screenshotannotationdialog.ui\n"
+"save\n"
+"label\n"
+"string.text"
+msgid "Save Screenshot..."
+msgstr "Иеиқәырхатәуп аекран ақәҭыхымҭа..."
+
+#: screenshotannotationdialog.ui
+msgctxt ""
+"screenshotannotationdialog.ui\n"
+"label2\n"
+"label\n"
+"string.text"
+msgid "Click the widgets to add annotation:"
+msgstr ""
+
+#: screenshotannotationdialog.ui
+msgctxt ""
+"screenshotannotationdialog.ui\n"
+"label1\n"
+"label\n"
+"string.text"
+msgid "Paste the following markup into the help file:"
+msgstr ""
+
 #: scriptorganizer.ui
 msgctxt ""
 "scriptorganizer.ui\n"
@@ -15029,7 +14877,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "%MACROLANG Macros"
-msgstr ""
+msgstr "%MACROLANG амакросқәа"
 
 #: scriptorganizer.ui
 msgctxt ""
@@ -15065,7 +14913,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Delete..."
-msgstr ""
+msgstr "Ианыхтәуп..."
 
 #: scriptorganizer.ui
 msgctxt ""
@@ -15074,7 +14922,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Macros"
-msgstr ""
+msgstr "Амакросқәа"
 
 #: searchattrdialog.ui
 msgctxt ""
@@ -15092,7 +14940,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Text Format"
-msgstr ""
+msgstr "Атеқст аформат"
 
 #: searchformatdialog.ui
 msgctxt ""
@@ -15101,7 +14949,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Font"
-msgstr ""
+msgstr "Ашрифт"
 
 #: searchformatdialog.ui
 msgctxt ""
@@ -15110,7 +14958,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Font Effects"
-msgstr ""
+msgstr "Ашрифт аеффектқәа"
 
 #: searchformatdialog.ui
 msgctxt ""
@@ -15262,7 +15110,7 @@ msgctxt ""
 "ctrlclick\n"
 "label\n"
 "string.text"
-msgid "Ctrl-click required _to follow hyperlinks"
+msgid "Ctrl-click required _to follow links"
 msgstr ""
 
 #: securityoptionsdialog.ui
@@ -15290,7 +15138,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Select Firefox Theme"
-msgstr ""
+msgstr "Firefox атема алхра"
 
 #: select_persona_dialog.ui
 msgctxt ""
@@ -15298,25 +15146,16 @@ msgctxt ""
 "search_personas\n"
 "label\n"
 "string.text"
-msgid "_Search"
+msgid "_Go"
 msgstr ""
 
 #: select_persona_dialog.ui
 msgctxt ""
 "select_persona_dialog.ui\n"
-"label7\n"
+"label1\n"
 "label\n"
 "string.text"
-msgid "Custom Search"
-msgstr ""
-
-#: select_persona_dialog.ui
-msgctxt ""
-"select_persona_dialog.ui\n"
-"label2\n"
-"label\n"
-"string.text"
-msgid "Categories:"
+msgid "Search Term or Firefox Theme URL"
 msgstr ""
 
 #: select_persona_dialog.ui
@@ -15325,7 +15164,7 @@ msgctxt ""
 "label6\n"
 "label\n"
 "string.text"
-msgid "Suggested Themes by Category"
+msgid "Categories"
 msgstr ""
 
 #: selectpathdialog.ui
@@ -15335,7 +15174,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Select Paths"
-msgstr ""
+msgstr "Иалхтәуп амҩақәа"
 
 #: selectpathdialog.ui
 msgctxt ""
@@ -15452,7 +15291,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Add characters:"
-msgstr ""
+msgstr "Иацҵоуп:"
 
 #: similaritysearchdialog.ui
 msgctxt ""
@@ -15461,7 +15300,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Remove characters:"
-msgstr ""
+msgstr "Ианыхуп:"
 
 #: similaritysearchdialog.ui
 msgctxt ""
@@ -15470,6 +15309,33 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Combine"
+msgstr ""
+
+#: slantcornertabpage.ui
+msgctxt ""
+"slantcornertabpage.ui\n"
+"label5\n"
+"label\n"
+"string.text"
+msgid "_X:"
+msgstr ""
+
+#: slantcornertabpage.ui
+msgctxt ""
+"slantcornertabpage.ui\n"
+"label6\n"
+"label\n"
+"string.text"
+msgid "_Y:"
+msgstr ""
+
+#: slantcornertabpage.ui
+msgctxt ""
+"slantcornertabpage.ui\n"
+"label3\n"
+"label\n"
+"string.text"
+msgid "Control Point 1"
 msgstr ""
 
 #: slantcornertabpage.ui
@@ -15506,6 +15372,33 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Slant"
+msgstr ""
+
+#: slantcornertabpage.ui
+msgctxt ""
+"slantcornertabpage.ui\n"
+"label4\n"
+"label\n"
+"string.text"
+msgid "_X:"
+msgstr ""
+
+#: slantcornertabpage.ui
+msgctxt ""
+"slantcornertabpage.ui\n"
+"label7\n"
+"label\n"
+"string.text"
+msgid "_Y:"
+msgstr ""
+
+#: slantcornertabpage.ui
+msgctxt ""
+"slantcornertabpage.ui\n"
+"label8\n"
+"label\n"
+"string.text"
+msgid "Control Point 2"
 msgstr ""
 
 #: smarttagoptionspage.ui
@@ -15605,7 +15498,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Special Characters"
-msgstr ""
+msgstr "Асимвол алхра"
 
 #: specialcharacters.ui
 msgctxt ""
@@ -15623,7 +15516,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Font:"
-msgstr ""
+msgstr "Ашрифт:"
 
 #: specialcharacters.ui
 msgctxt ""
@@ -15641,6 +15534,24 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Characters:"
+msgstr "Асимволқәа:"
+
+#: specialcharacters.ui
+msgctxt ""
+"specialcharacters.ui\n"
+"hexlabel\n"
+"label\n"
+"string.text"
+msgid "Hexadecimal:"
+msgstr ""
+
+#: specialcharacters.ui
+msgctxt ""
+"specialcharacters.ui\n"
+"decimallabel\n"
+"label\n"
+"string.text"
+msgid "Decimal:"
 msgstr ""
 
 #: spellingdialog.ui
@@ -15664,28 +15575,10 @@ msgstr ""
 #: spellingdialog.ui
 msgctxt ""
 "spellingdialog.ui\n"
-"notindictft\n"
-"label\n"
-"string.text"
-msgid "_Not in dictionary"
-msgstr ""
-
-#: spellingdialog.ui
-msgctxt ""
-"spellingdialog.ui\n"
 "ignore\n"
 "label\n"
 "string.text"
 msgid "_Ignore Once"
-msgstr ""
-
-#: spellingdialog.ui
-msgctxt ""
-"spellingdialog.ui\n"
-"suggestionsft\n"
-"label\n"
-"string.text"
-msgid "_Suggestions"
 msgstr ""
 
 #: spellingdialog.ui
@@ -15805,6 +15698,42 @@ msgctxt ""
 msgid "_Add to Dictionary"
 msgstr ""
 
+#: spellingdialog.ui
+msgctxt ""
+"spellingdialog.ui\n"
+"suggestionsft\n"
+"label\n"
+"string.text"
+msgid "_Suggestions"
+msgstr ""
+
+#: spellingdialog.ui
+msgctxt ""
+"spellingdialog.ui\n"
+"notindictft\n"
+"label\n"
+"string.text"
+msgid "_Not in dictionary"
+msgstr ""
+
+#: spellingdialog.ui
+msgctxt ""
+"spellingdialog.ui\n"
+"paste\n"
+"label\n"
+"string.text"
+msgid "Paste"
+msgstr ""
+
+#: spellingdialog.ui
+msgctxt ""
+"spellingdialog.ui\n"
+"insert\n"
+"label\n"
+"string.text"
+msgid "Special Character"
+msgstr "Асимвол алхра"
+
 #: spelloptionsdialog.ui
 msgctxt ""
 "spelloptionsdialog.ui\n"
@@ -15875,7 +15804,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Direction"
-msgstr ""
+msgstr "Ахырхарҭа"
 
 #: storedwebconnectiondialog.ui
 msgctxt ""
@@ -15974,7 +15903,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "To _page"
-msgstr ""
+msgstr "Адаҟьахь"
 
 #: swpossizepage.ui
 msgctxt ""
@@ -16001,7 +15930,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_As character"
-msgstr ""
+msgstr "Асимвол еиҧш"
 
 #: swpossizepage.ui
 msgctxt ""
@@ -16145,16 +16074,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Direction:"
-msgstr ""
-
-#: textanimtabpage.ui
-msgctxt ""
-"textanimtabpage.ui\n"
-"BTN_UP\n"
-"tooltip_markup\n"
-"string.text"
-msgid "To top"
-msgstr ""
+msgstr "Ахырхарҭа:"
 
 #: textanimtabpage.ui
 msgctxt ""
@@ -16172,15 +16092,6 @@ msgctxt ""
 "AtkObject::accessible-name\n"
 "string.text"
 msgid "Up"
-msgstr ""
-
-#: textanimtabpage.ui
-msgctxt ""
-"textanimtabpage.ui\n"
-"BTN_RIGHT\n"
-"tooltip_markup\n"
-"string.text"
-msgid "To right"
 msgstr ""
 
 #: textanimtabpage.ui
@@ -16205,15 +16116,6 @@ msgstr ""
 msgctxt ""
 "textanimtabpage.ui\n"
 "BTN_LEFT\n"
-"tooltip_markup\n"
-"string.text"
-msgid "To left"
-msgstr ""
-
-#: textanimtabpage.ui
-msgctxt ""
-"textanimtabpage.ui\n"
-"BTN_LEFT\n"
 "tooltip_text\n"
 "string.text"
 msgid "To left"
@@ -16226,15 +16128,6 @@ msgctxt ""
 "AtkObject::accessible-name\n"
 "string.text"
 msgid "Left"
-msgstr ""
-
-#: textanimtabpage.ui
-msgctxt ""
-"textanimtabpage.ui\n"
-"BTN_DOWN\n"
-"tooltip_markup\n"
-"string.text"
-msgid "To bottom"
 msgstr ""
 
 #: textanimtabpage.ui
@@ -16352,7 +16245,7 @@ msgctxt ""
 "1\n"
 "stringlist.text"
 msgid "Blink"
-msgstr ""
+msgstr "Алацәҟәра"
 
 #: textanimtabpage.ui
 msgctxt ""
@@ -16420,6 +16313,15 @@ msgstr ""
 #: textattrtabpage.ui
 msgctxt ""
 "textattrtabpage.ui\n"
+"label1\n"
+"label\n"
+"string.text"
+msgid "Drawing Object Text"
+msgstr ""
+
+#: textattrtabpage.ui
+msgctxt ""
+"textattrtabpage.ui\n"
 "TSB_WORDWRAP_TEXT\n"
 "label\n"
 "string.text"
@@ -16438,10 +16340,10 @@ msgstr ""
 #: textattrtabpage.ui
 msgctxt ""
 "textattrtabpage.ui\n"
-"label1\n"
+"label8\n"
 "label\n"
 "string.text"
-msgid "Text"
+msgid "Custom Shape Text"
 msgstr ""
 
 #: textattrtabpage.ui
@@ -16604,7 +16506,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Type:"
-msgstr ""
+msgstr "_Атип:"
 
 #: textflowpage.ui
 msgctxt ""
@@ -16613,7 +16515,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Page _number:"
-msgstr ""
+msgstr "Адаҟьа аномер:"
 
 #: textflowpage.ui
 msgctxt ""
@@ -16627,11 +16529,20 @@ msgstr ""
 #: textflowpage.ui
 msgctxt ""
 "textflowpage.ui\n"
+"comboPageStyle-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Page Style"
+msgstr "Адаҟьа астиль"
+
+#: textflowpage.ui
+msgctxt ""
+"textflowpage.ui\n"
 "comboBreakType\n"
 "0\n"
 "stringlist.text"
 msgid "Page"
-msgstr ""
+msgstr "Адаҟьа"
 
 #: textflowpage.ui
 msgctxt ""
@@ -16712,7 +16623,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "lines"
-msgstr ""
+msgstr "Аҵәаӷәақәа"
 
 #: textflowpage.ui
 msgctxt ""
@@ -16721,7 +16632,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "lines"
-msgstr ""
+msgstr "Аҵәаӷәақәа"
 
 #: textflowpage.ui
 msgctxt ""
@@ -16901,7 +16812,7 @@ msgctxt ""
 "0\n"
 "stringlist.text"
 msgid "Linear"
-msgstr ""
+msgstr "Аҵәаӷәатә"
 
 #: transparencytabpage.ui
 msgctxt ""
@@ -16960,19 +16871,19 @@ msgstr ""
 #: tsaurldialog.ui
 msgctxt ""
 "tsaurldialog.ui\n"
-"add\n"
-"label\n"
-"string.text"
-msgid "_Add..."
-msgstr ""
-
-#: tsaurldialog.ui
-msgctxt ""
-"tsaurldialog.ui\n"
 "delete\n"
 "label\n"
 "string.text"
 msgid "_Delete..."
+msgstr "_Ианыхтәуп..."
+
+#: tsaurldialog.ui
+msgctxt ""
+"tsaurldialog.ui\n"
+"add\n"
+"label\n"
+"string.text"
+msgid "_Add..."
 msgstr ""
 
 #: tsaurldialog.ui
@@ -17018,7 +16929,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Double-lined"
-msgstr ""
+msgstr "Ҩ-ганкла"
 
 #: twolinespage.ui
 msgctxt ""
@@ -17027,7 +16938,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Initial character"
-msgstr ""
+msgstr "Алагамҭатәи асимвол"
 
 #: twolinespage.ui
 msgctxt ""
@@ -17036,7 +16947,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Final character"
-msgstr ""
+msgstr "Анҵәамҭатәи асимвол"
 
 #: twolinespage.ui
 msgctxt ""
@@ -17108,7 +17019,7 @@ msgctxt ""
 "5\n"
 "stringlist.text"
 msgid "Other Characters..."
-msgstr ""
+msgstr "Егьырҭ асимволқәа..."
 
 #: twolinespage.ui
 msgctxt ""
@@ -17162,7 +17073,7 @@ msgctxt ""
 "5\n"
 "stringlist.text"
 msgid "Other Characters..."
-msgstr ""
+msgstr "Егьырҭ асимволқәа..."
 
 #: wordcompletionpage.ui
 msgctxt ""
@@ -17171,7 +17082,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Delete Entry"
-msgstr ""
+msgstr "_Ианыхтәуп анҵамҭа"
 
 #: wordcompletionpage.ui
 msgctxt ""
@@ -17302,6 +17213,15 @@ msgstr ""
 #: zoomdialog.ui
 msgctxt ""
 "zoomdialog.ui\n"
+"zoomsb\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Variable"
+msgstr ""
+
+#: zoomdialog.ui
+msgctxt ""
+"zoomdialog.ui\n"
 "label2\n"
 "label\n"
 "string.text"
@@ -17324,7 +17244,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Single page"
-msgstr ""
+msgstr "Даҟьак"
 
 #: zoomdialog.ui
 msgctxt ""
@@ -17338,11 +17258,20 @@ msgstr ""
 #: zoomdialog.ui
 msgctxt ""
 "zoomdialog.ui\n"
+"columnssb-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Columns"
+msgstr ""
+
+#: zoomdialog.ui
+msgctxt ""
+"zoomdialog.ui\n"
 "bookmode\n"
 "label\n"
 "string.text"
 msgid "Book mode"
-msgstr ""
+msgstr "Ашәҟәы арежим"
 
 #: zoomdialog.ui
 msgctxt ""

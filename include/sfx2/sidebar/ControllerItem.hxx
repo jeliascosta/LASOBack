@@ -81,7 +81,7 @@ public:
     /// releases our action listener
     virtual void dispose() override;
 
-    virtual ~ControllerItem();
+    virtual ~ControllerItem() override;
 
     /** Returns </TRUE> when the slot/command has not been disabled.
         Changes of this state are notified via the
@@ -93,10 +93,6 @@ public:
         callback with up-to-date data.
     */
     void RequestUpdate();
-
-    /** Return the icon for the command.
-    */
-    Image GetIcon() const;
 
     /** Do not call.  Used by local class only.  Should be a member of
         a local and hidden interface.

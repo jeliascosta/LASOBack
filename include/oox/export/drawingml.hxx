@@ -44,6 +44,7 @@
 #endif
 
 class Graphic;
+class SdrObjCustomShape;
 
 namespace com { namespace sun { namespace star {
 namespace awt {
@@ -57,6 +58,8 @@ namespace beans {
 }
 namespace drawing {
     class XShape;
+    struct EnhancedCustomShapeParameterPair;
+    struct EnhancedCustomShapeParameter;
 }
 namespace style {
     struct LineSpacing;
@@ -182,7 +185,7 @@ public:
     void WriteSrcRect( const css::uno::Reference< css::beans::XPropertySet >&, const OUString& );
     void WriteOutline( const css::uno::Reference< css::beans::XPropertySet >& rXPropSet );
     void WriteStretch( const css::uno::Reference< css::beans::XPropertySet >& rXPropSet, const OUString& rURL );
-    void WriteLinespacing( css::style::LineSpacing& rLineSpacing );
+    void WriteLinespacing( const css::style::LineSpacing& rLineSpacing );
 
     OUString WriteBlip( const css::uno::Reference< css::beans::XPropertySet >& rXPropSet,
             const OUString& rURL, bool bRelPathToMedia = false , const Graphic *pGraphic=nullptr );
@@ -204,9 +207,12 @@ public:
     void WriteRunProperties( const css::uno::Reference< css::beans::XPropertySet >& rRun, bool bIsField, sal_Int32 nElement, bool bCheckDirect,
                              bool& rbOverridingCharHeight, sal_Int32& rnCharHeight );
 
+    void WritePresetShape( const char* pShape , std::vector< std::pair<sal_Int32,sal_Int32>> & rAvList );
     void WritePresetShape( const char* pShape );
     void WritePresetShape( const char* pShape, MSO_SPT eShapeType, bool bPredefinedHandlesUsed, sal_Int32 nAdjustmentsWhichNeedsToBeConverted, const css::beans::PropertyValue& rProp );
-    bool WriteCustomGeometry( const css::uno::Reference<css::drawing::XShape>& rXShape );
+    bool WriteCustomGeometry( const css::uno::Reference<css::drawing::XShape>& rXShape, const SdrObjCustomShape* pShape );
+    void WriteCustomGeometryPoint(const css::drawing::EnhancedCustomShapeParameterPair& rParamPair, const SdrObjCustomShape* pShape);
+    static sal_Int32 GetCustomGeometryPointValue(const css::drawing::EnhancedCustomShapeParameter& rParam, const SdrObjCustomShape* pShape);
     void WritePolyPolygon( const tools::PolyPolygon& rPolyPolygon );
     void WriteFill( const css::uno::Reference< css::beans::XPropertySet >& xPropSet );
     void WriteShapeStyle( const css::uno::Reference< css::beans::XPropertySet >& rXPropSet );

@@ -352,7 +352,7 @@ void ImportExcel8::Feat()
         sal_uInt32 nCbSD = aIn.ReaduInt32();
         // TODO: could here be some sanity check applied to not allocate 4GB?
         aProt.maSecurityDescriptor.resize( nCbSD);
-        sal_Size nRead = aIn.Read( &aProt.maSecurityDescriptor.front(), nCbSD);
+        std::size_t nRead = aIn.Read( &aProt.maSecurityDescriptor.front(), nCbSD);
         if (nRead < nCbSD)
             aProt.maSecurityDescriptor.resize( nRead);
     }
@@ -374,7 +374,7 @@ void ImportExcel8::ReadBasic()
             rFilterOpt.IsLoadExcelBasicExecutable() )
         {
             // see if we have the XCB stream
-            tools::SvRef<SotStorageStream> xXCB = xRootStrg->OpenSotStream( "XCB", STREAM_STD_READ | StreamMode::NOCREATE  );
+            tools::SvRef<SotStorageStream> xXCB = xRootStrg->OpenSotStream( "XCB", StreamMode::STD_READ );
             if ( xXCB.Is()|| SVSTREAM_OK == xXCB->GetError() )
             {
                 ScCTBWrapper wrapper;
@@ -446,15 +446,6 @@ void ImportExcel8::PostDocLoad()
     }
 
     // read doc info (no docshell while pasting from clipboard)
-    LoadDocumentProperties();
-
-    // #i45843# Pivot tables are now handled outside of PostDocLoad, so they are available
-    // when formula cells are calculated, for the GETPIVOTDATA function.
-}
-
-void ImportExcel8::LoadDocumentProperties()
-{
-    // no docshell while pasting from clipboard
     if( SfxObjectShell* pShell = GetDocShell() )
     {
         // BIFF5+ without storage is possible
@@ -463,12 +454,15 @@ void ImportExcel8::LoadDocumentProperties()
         {
             uno::Reference< document::XDocumentPropertiesSupplier > xDPS( pShell->GetModel(), uno::UNO_QUERY_THROW );
             uno::Reference< document::XDocumentProperties > xDocProps( xDPS->getDocumentProperties(), uno::UNO_SET_THROW );
-            sfx2::LoadOlePropertySet( xDocProps, xRootStrg );
+            sfx2::LoadOlePropertySet( xDocProps, xRootStrg.get() );
         }
         catch( uno::Exception& )
         {
         }
     }
+
+    // #i45843# Pivot tables are now handled outside of PostDocLoad, so they are available
+    // when formula cells are calculated, for the GETPIVOTDATA function.
 }
 
 // autofilter
@@ -788,17 +782,6 @@ void XclImpAutoFilterData::SetExtractPos( const ScAddress& rAddr )
 
 void XclImpAutoFilterData::Apply()
 {
-    CreateScDBData();
-
-    if( bActive )
-    {
-        InsertQueryParam();
-    }
-}
-
-void XclImpAutoFilterData::CreateScDBData()
-{
-
     // Create the ScDBData() object if the AutoFilter is activated
     // or if we need to create the Advanced Filter.
     if( bActive || bCriteria)
@@ -819,6 +802,10 @@ void XclImpAutoFilterData::CreateScDBData()
         rDoc.SetAnonymousDBData(Tab(), pCurrDBData);
     }
 
+    if( bActive )
+    {
+        InsertQueryParam();
+    }
 }
 
 void XclImpAutoFilterData::EnableRemoveFilter()

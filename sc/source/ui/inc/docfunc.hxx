@@ -69,7 +69,7 @@ protected:
 public:
     virtual         ~ScDocFunc() {}
 
-    DECL_LINK_TYPED( NotifyDrawUndo, SdrUndoAction*, void );
+    DECL_LINK( NotifyDrawUndo, SdrUndoAction*, void );
 
     // for grouping multiple operations into one with a new name
     void            EnterListAction( sal_uInt16 nNameResId );
@@ -113,7 +113,7 @@ public:
         const ScAddress& rPos, const OUString& rText, bool bInterpret, bool bEnglish, bool bApi,
         const formula::FormulaGrammar::Grammar eGrammar );
 
-    bool            ShowNote( const ScAddress& rPos, bool bShow = true );
+    bool            ShowNote( const ScAddress& rPos, bool bShow );
 
     void            SetNoteText( const ScAddress& rPos, const OUString& rNoteText, bool bApi );
     void            ReplaceNote( const ScAddress& rPos, const OUString& rNoteText, const OUString* pAuthor, const OUString* pDate, bool bApi );
@@ -189,11 +189,11 @@ public:
     void            ResizeMatrix( const ScRange& rOldRange, const ScAddress& rNewEnd );
 
     bool            MergeCells( const ScCellMergeOption& rOption, bool bContents,
-                                        bool bRecord, bool bApi );
+                                        bool bRecord, bool bApi, bool bEmptyMergedCells = false );
     bool            UnmergeCells( const ScRange& rRange, bool bRecord, ScUndoRemoveMerge* pUndoRemoveMerge );
     bool            UnmergeCells( const ScCellMergeOption& rOption, bool bRecord, ScUndoRemoveMerge* pUndoRemoveMerge );
 
-    void            SetNewRangeNames( ScRangeName* pNewRanges, bool bModifyDoc = true, SCTAB nTab = -1 );     // takes ownership of pNewRanges //nTab = -1 for local range names
+    void            SetNewRangeNames( ScRangeName* pNewRanges, bool bModifyDoc, SCTAB nTab = -1 );     // takes ownership of pNewRanges //nTab = -1 for local range names
     void            ModifyRangeNames( const ScRangeName& rNewRanges, SCTAB nTab = -1 );
     /**
      * Modify all range names, global scope names as well as sheet local ones,
@@ -232,7 +232,7 @@ class ScDocFuncDirect : public ScDocFunc
 {
 public:
             ScDocFuncDirect( ScDocShell& rDocSh ) : ScDocFunc( rDocSh ) {}
-    virtual ~ScDocFuncDirect() {}
+    virtual ~ScDocFuncDirect() override {}
 };
 
 void VBA_DeleteModule( ScDocShell& rDocSh, const OUString& sModuleName );

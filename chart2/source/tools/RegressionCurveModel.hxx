@@ -65,10 +65,9 @@ public:
         CURVE_TYPE_MOVING_AVERAGE
     };
 
-    RegressionCurveModel( css::uno::Reference< css::uno::XComponentContext > const & xContext,
-                          tCurveType eCurveType );
+    RegressionCurveModel( tCurveType eCurveType );
     RegressionCurveModel( const RegressionCurveModel & rOther );
-    virtual ~RegressionCurveModel();
+    virtual ~RegressionCurveModel() override;
 
     /// merge XInterface implementations
      DECLARE_XINTERFACE()
@@ -127,9 +126,6 @@ protected:
     void fireModifyEvent();
 
 private:
-    css::uno::Reference< css::uno::XComponentContext >
-                        m_xContext;
-
     const tCurveType    m_eRegressionCurveType;
 
     css::uno::Reference< css::util::XModifyListener > m_xModifyEventForwarder;
@@ -141,11 +137,10 @@ private:
 class MeanValueRegressionCurve : public RegressionCurveModel
 {
 public:
-    explicit MeanValueRegressionCurve(
-        const css::uno::Reference< css::uno::XComponentContext > & xContext );
+    explicit MeanValueRegressionCurve();
     explicit MeanValueRegressionCurve(
         const MeanValueRegressionCurve & rOther );
-    virtual ~MeanValueRegressionCurve();
+    virtual ~MeanValueRegressionCurve() override;
 
     // ____ XCloneable ____
     virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone()
@@ -158,20 +153,14 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static const OUString& getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 };
 
 class LinearRegressionCurve : public RegressionCurveModel
 {
 public:
-    explicit LinearRegressionCurve(
-        const css::uno::Reference<
-        css::uno::XComponentContext > & xContext );
-    explicit LinearRegressionCurve(
-        const LinearRegressionCurve & rOther );
-    virtual ~LinearRegressionCurve();
+    explicit LinearRegressionCurve();
+    explicit LinearRegressionCurve( const LinearRegressionCurve & rOther );
+    virtual ~LinearRegressionCurve() override;
 
     // ____ XCloneable ____
     virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone()
@@ -184,20 +173,14 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static const OUString& getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 };
 
 class LogarithmicRegressionCurve : public RegressionCurveModel
 {
 public:
-    explicit LogarithmicRegressionCurve(
-        const css::uno::Reference<
-        css::uno::XComponentContext > & xContext );
-    explicit LogarithmicRegressionCurve(
-        const LogarithmicRegressionCurve & rOther );
-    virtual ~LogarithmicRegressionCurve();
+    explicit LogarithmicRegressionCurve();
+    explicit LogarithmicRegressionCurve( const LogarithmicRegressionCurve & rOther );
+    virtual ~LogarithmicRegressionCurve() override;
 
     // ____ XCloneable ____
     virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone()
@@ -210,19 +193,14 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static const OUString& getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 };
 
 class ExponentialRegressionCurve : public RegressionCurveModel
 {
 public:
-    explicit ExponentialRegressionCurve(
-        const css::uno::Reference< css::uno::XComponentContext > & xContext );
-    explicit ExponentialRegressionCurve(
-        const ExponentialRegressionCurve & rOther );
-    virtual ~ExponentialRegressionCurve();
+    explicit ExponentialRegressionCurve();
+    explicit ExponentialRegressionCurve( const ExponentialRegressionCurve & rOther );
+    virtual ~ExponentialRegressionCurve() override;
 
     // ____ XCloneable ____
     virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone()
@@ -235,20 +213,14 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static const OUString& getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 };
 
 class PotentialRegressionCurve : public RegressionCurveModel
 {
 public:
-    explicit PotentialRegressionCurve(
-        const css::uno::Reference<
-        css::uno::XComponentContext > & xContext );
-    explicit PotentialRegressionCurve(
-        const PotentialRegressionCurve & rOther );
-    virtual ~PotentialRegressionCurve();
+    explicit PotentialRegressionCurve();
+    explicit PotentialRegressionCurve( const PotentialRegressionCurve & rOther );
+    virtual ~PotentialRegressionCurve() override;
 
     // ____ XCloneable ____
     virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone()
@@ -261,19 +233,14 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static const OUString& getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 };
 
 class PolynomialRegressionCurve : public RegressionCurveModel
 {
 public:
-    explicit PolynomialRegressionCurve(
-        const css::uno::Reference< css::uno::XComponentContext > & xContext );
-    explicit PolynomialRegressionCurve(
-        const PolynomialRegressionCurve & rOther );
-    virtual ~PolynomialRegressionCurve();
+    explicit PolynomialRegressionCurve();
+    explicit PolynomialRegressionCurve( const PolynomialRegressionCurve & rOther );
+    virtual ~PolynomialRegressionCurve() override;
 
     // ____ XCloneable ____
     virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone()
@@ -286,19 +253,14 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static const OUString& getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 };
 
 class MovingAverageRegressionCurve : public RegressionCurveModel
 {
 public:
-    explicit MovingAverageRegressionCurve(
-        const css::uno::Reference< css::uno::XComponentContext > & xContext );
-    explicit MovingAverageRegressionCurve(
-        const MovingAverageRegressionCurve & rOther );
-    virtual ~MovingAverageRegressionCurve();
+    explicit MovingAverageRegressionCurve();
+    explicit MovingAverageRegressionCurve( const MovingAverageRegressionCurve & rOther );
+    virtual ~MovingAverageRegressionCurve() override;
 
     // ____ XCloneable ____
     virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone()
@@ -311,9 +273,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static const OUString& getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 };
 
 } //  namespace chart

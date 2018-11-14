@@ -116,10 +116,9 @@ class PopupMenuDispatcher :     public  ::cppu::WeakImplHelper<
 
     //  protected methods
     protected:
-        virtual ~PopupMenuDispatcher();
+        virtual ~PopupMenuDispatcher() override;
 
         void impl_RetrievePopupControllerQuery();
-        void impl_CreateUriRefFactory();
 
 
     //  variables

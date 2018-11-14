@@ -25,7 +25,6 @@
 #include <vcl/fixed.hxx>
 #include <vcl/field.hxx>
 #include <vcl/FilterConfigItem.hxx>
-#include <svtools/stdctrl.hxx>
 
 #include <com/sun/star/uno/Sequence.h>
 #include <com/sun/star/beans/PropertyValue.hpp>
@@ -58,13 +57,13 @@ private:
     FilterConfigItem            maConfigItem;
     bool                        mbOldNativeDecoration;
 
-    DECL_LINK_TYPED( OnToggleCheckbox, CheckBox&, void );
+    DECL_LINK( OnToggleCheckbox, CheckBox&, void );
 
 public:
 
     ImpSVGDialog( vcl::Window* pParent, /*ResMgr& rResMgr,*/
                   css::uno::Sequence< css::beans::PropertyValue >& rFilterData );
-    virtual ~ImpSVGDialog();
+    virtual ~ImpSVGDialog() override;
     virtual void dispose() override;
 
     css::uno::Sequence< css::beans::PropertyValue > GetFilterData();

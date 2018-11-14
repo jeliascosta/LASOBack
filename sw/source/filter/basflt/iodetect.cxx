@@ -127,7 +127,7 @@ bool SwIoSystem::IsValidStgFilter(SotStorage& rStg, const SfxFilter& rFilter)
             {
                 tools::SvRef<SotStorageStream> xRef =
                     rStg.OpenSotStream("WordDocument",
-                            STREAM_STD_READ | StreamMode::NOCREATE );
+                            StreamMode::STD_READ );
                 xRef->Seek(10);
                 sal_uInt8 nByte;
                 xRef->ReadUChar( nByte );
@@ -160,7 +160,7 @@ std::shared_ptr<const SfxFilter> SwIoSystem::GetFileFilter(const OUString& rFile
         INetURLObject aObj;
         aObj.SetSmartProtocol( INetProtocol::File );
         aObj.SetSmartURL( rFileName );
-        SfxMedium aMedium(aObj.GetMainURL(INetURLObject::NO_DECODE), STREAM_STD_READ);
+        SfxMedium aMedium(aObj.GetMainURL(INetURLObject::NO_DECODE), StreamMode::STD_READ);
 
         // templates should not get precedence over "normal" filters (#i35508, #i33168)
         std::shared_ptr<const SfxFilter> pTemplateFilter;
@@ -270,7 +270,7 @@ bool SwIoSystem::IsDetectableText(const sal_Char* pBuf, sal_uLong &rLen,
     {
         std::unique_ptr<sal_Unicode[]> aWork(new sal_Unicode[rLen+1]);
         sal_Unicode *pNewBuf = aWork.get();
-        sal_Size nNewLen;
+        std::size_t nNewLen;
         if (eCharSet != RTL_TEXTENCODING_UCS2)
         {
             nNewLen = rLen;

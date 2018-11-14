@@ -150,7 +150,7 @@ static const char* setPasswordCallback( const char* pIn )
     const char* pRet = nullptr;
 
     PrinterInfoManager& rMgr = PrinterInfoManager::get();
-    if( rMgr.getType() == PrinterInfoManager::CUPS ) // sanity check
+    if( rMgr.getType() == PrinterInfoManager::Type::CUPS ) // sanity check
         pRet = static_cast<CUPSManager&>(rMgr).authenticateUser( pIn );
     return pRet;
 }
@@ -179,7 +179,7 @@ static void run_dest_thread_stub( void* pThis )
 }
 
 CUPSManager::CUPSManager() :
-        PrinterInfoManager( CUPS ),
+        PrinterInfoManager( PrinterInfoManager::Type::CUPS ),
         m_nDests( 0 ),
         m_pDests( nullptr ),
         m_bNewDests( false ),
@@ -670,7 +670,7 @@ bool CUPSManager::endSpool( const OUString& rPrintername, const OUString& rJobTi
                 "    option " << pOptions[n].name << "=" << pOptions[n].value);
 #if OSL_DEBUG_LEVEL > 1
         OString aCmd( "cp " );
-        aCmd = aCmd + files.front();
+        aCmd = aCmd + it->second.getStr();
         aCmd = aCmd + OString( " $HOME/cupsprint.ps" );
         system( aCmd.getStr() );
 #endif
@@ -682,11 +682,6 @@ bool CUPSManager::endSpool( const OUString& rPrintername, const OUString& rJobTi
     }
 
     return nJobID != 0;
-}
-
-void CUPSManager::changePrinterInfo( const OUString& rPrinter, const PrinterInfo& rNewInfo )
-{
-    PrinterInfoManager::changePrinterInfo( rPrinter, rNewInfo );
 }
 
 bool CUPSManager::checkPrintersChanged( bool bWait )
@@ -844,7 +839,7 @@ namespace
 
     public:
         RTSPWDialog(const OString& rServer, const OString& rUserName, vcl::Window* pParent);
-        virtual ~RTSPWDialog();
+        virtual ~RTSPWDialog() override;
         virtual void dispose() override;
         OString getUserName() const;
         OString getPassword() const;

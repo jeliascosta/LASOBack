@@ -125,12 +125,12 @@ OString DbgOutItem(const SfxItemPool& rPool, const SfxPoolItem& rItem)
         break;
         case EE_PARA_SBL:
             aDebStr.append("SBL=");
-            if ( static_cast<const SvxLineSpacingItem&>(rItem).GetLineSpaceRule() == SVX_LINE_SPACE_MIN )
+            if ( static_cast<const SvxLineSpacingItem&>(rItem).GetLineSpaceRule() == SvxLineSpaceRule::Min )
             {
                 aDebStr.append("Min: ");
                 aDebStr.append(static_cast<sal_Int32>(static_cast<const SvxLineSpacingItem&>(rItem).GetInterLineSpace()));
             }
-            else if ( static_cast<const SvxLineSpacingItem&>(rItem).GetInterLineSpaceRule() == SVX_INTER_LINE_SPACE_PROP )
+            else if ( static_cast<const SvxLineSpacingItem&>(rItem).GetInterLineSpaceRule() == SvxInterLineSpaceRule::Prop )
             {
                 aDebStr.append("Prop: ");
                 aDebStr.append(static_cast<sal_Int32>(static_cast<const SvxLineSpacingItem&>(rItem).GetPropLineSpace()));
@@ -206,9 +206,9 @@ OString DbgOutItem(const SfxItemPool& rPool, const SfxPoolItem& rItem)
             aDebStr.append("Groesse=");
             aDebStr.append(static_cast<sal_Int32>(static_cast<const SvxFontHeightItem&>(rItem).GetHeight()));
             Size aSz( 0, static_cast<const SvxFontHeightItem&>(rItem).GetHeight() );
-            SfxMapUnit eUnit = rPool.GetMetric( rItem.Which() );
-            MapMode aItemMapMode( (MapUnit) eUnit );
-            MapMode aPntMap( MAP_POINT );
+            MapUnit eUnit = rPool.GetMetric( rItem.Which() );
+            MapMode aItemMapMode(eUnit);
+            MapMode aPntMap( MapUnit::MapPoint );
             aSz = OutputDevice::LogicToLogic( aSz, aItemMapMode, aPntMap );
             aDebStr.append(" Points=");
             aDebStr.append(static_cast<sal_Int32>(aSz.Height()));
@@ -276,9 +276,9 @@ OString DbgOutItem(const SfxItemPool& rPool, const SfxPoolItem& rItem)
             aDebStr.append("Kerning=");
             aDebStr.append(static_cast<sal_Int32>(static_cast<const SvxKerningItem&>(rItem).GetValue()));
             Size aSz( 0, (short)static_cast<const SvxKerningItem&>(rItem).GetValue() );
-            SfxMapUnit eUnit = rPool.GetMetric( rItem.Which() );
-            MapMode aItemMapMode( (MapUnit) eUnit );
-            MapMode aPntMap( MAP_POINT );
+            MapUnit eUnit = rPool.GetMetric( rItem.Which() );
+            MapMode aItemMapMode(eUnit);
+            MapMode aPntMap( MapUnit::MapPoint );
             aSz = OutputDevice::LogicToLogic( aSz, aItemMapMode, aPntMap );
             aDebStr.append(" Points=");
             aDebStr.append(static_cast<sal_Int32>(aSz.Height()));
@@ -455,7 +455,7 @@ void EditDbg::ShowEditEngineData( EditEngine* pEE, bool bInfoBox )
     fprintf( fp, "\n==================   EditEngine & Views   ======================================" );
     fprintf( fp, "\n================================================================================" );
     fprintf( fp, "\nControl: %x", unsigned( pEE->GetControlWord() ) );
-    fprintf( fp, "\nRefMapMode: %i", pEE->pImpEditEngine->pRefDev->GetMapMode().GetMapUnit() );
+    fprintf( fp, "\nRefMapMode: %i", int( pEE->pImpEditEngine->pRefDev->GetMapMode().GetMapUnit() ) );
     fprintf( fp, "\nPaperSize: %li x %li", pEE->GetPaperSize().Width(), pEE->GetPaperSize().Height() );
     fprintf( fp, "\nMaxAutoPaperSize: %li x %li", pEE->GetMaxAutoPaperSize().Width(), pEE->GetMaxAutoPaperSize().Height() );
     fprintf( fp, "\nMinAutoPaperSize: %li x %li", pEE->GetMinAutoPaperSize().Width(), pEE->GetMinAutoPaperSize().Height() );
@@ -467,7 +467,7 @@ void EditDbg::ShowEditEngineData( EditEngine* pEE, bool bInfoBox )
         DBG_ASSERT( pV, "View not found!" );
         fprintf( fp, "\nView %zu: Focus=%i", nView, pV->GetWindow()->HasFocus() );
         Rectangle aR( pV->GetOutputArea() );
-        fprintf( fp, "\n  OutputArea: nX=%li, nY=%li, dX=%li, dY=%li, MapMode = %i", aR.TopLeft().X(), aR.TopLeft().Y(), aR.GetSize().Width(), aR.GetSize().Height() , pV->GetWindow()->GetMapMode().GetMapUnit() );
+        fprintf( fp, "\n  OutputArea: nX=%li, nY=%li, dX=%li, dY=%li, MapMode = %i", aR.TopLeft().X(), aR.TopLeft().Y(), aR.GetSize().Width(), aR.GetSize().Height() , int( pV->GetWindow()->GetMapMode().GetMapUnit() ) );
         aR = pV->GetVisArea();
         fprintf( fp, "\n  VisArea: nX=%li, nY=%li, dX=%li, dY=%li", aR.TopLeft().X(), aR.TopLeft().Y(), aR.GetSize().Width(), aR.GetSize().Height() );
         ESelection aSel = pV->GetSelection();

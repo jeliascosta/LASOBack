@@ -1,6 +1,6 @@
-# generated automatically by aclocal 1.14.1 -*- Autoconf -*-
+# generated automatically by aclocal 1.15 -*- Autoconf -*-
 
-# Copyright (C) 1996-2013 Free Software Foundation, Inc.
+# Copyright (C) 1996-2014 Free Software Foundation, Inc.
 
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -288,7 +288,7 @@ AS_VAR_COPY([$1], [pkg_cv_][$1])
 AS_VAR_IF([$1], [""], [$5], [$4])dnl
 ])dnl PKG_CHECK_VAR
 
-# Copyright (C) 1999-2013 Free Software Foundation, Inc.
+# Copyright (C) 1999-2014 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -523,7 +523,7 @@ for i in list(range(0, 4)): minverhex = (minverhex << 8) + minver[[i]]
 sys.exit(sys.hexversion < minverhex)"
   AS_IF([AM_RUN_LOG([$1 -c "$prog"])], [$3], [$4])])
 
-# Copyright (C) 2001-2013 Free Software Foundation, Inc.
+# Copyright (C) 2001-2014 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -909,7 +909,7 @@ AC_DEFUN([AX_BOOST_DATE_TIME],
 
             fi
             if test "x$ax_lib" = "x"; then
-                AC_MSG_ERROR(Could not find a version of the library!)
+                AC_MSG_ERROR(Could not find a version of the boost date_time library!)
             fi
 			if test "x$link_date_time" != "xyes"; then
 				AC_MSG_ERROR(Could not link against $ax_lib !)
@@ -1027,7 +1027,7 @@ AC_DEFUN([AX_BOOST_FILESYSTEM],
 
             fi
             if test "x$ax_lib" = "x"; then
-                AC_MSG_ERROR(Could not find a version of the library!)
+                AC_MSG_ERROR(Could not find a version of the boost filesystem library!)
             fi
 			if test "x$link_filesystem" != "xyes"; then
 				AC_MSG_ERROR(Could not link against $ax_lib !)
@@ -1145,7 +1145,7 @@ AC_DEFUN([AX_BOOST_IOSTREAMS],
 
             fi
             if test "x$ax_lib" = "x"; then
-                AC_MSG_ERROR(Could not find a version of the library!)
+                AC_MSG_ERROR(Could not find a version of the boost iostreams library!)
             fi
 			if test "x$link_iostreams" != "xyes"; then
 				AC_MSG_ERROR(Could not link against $ax_lib !)
@@ -1267,7 +1267,7 @@ AC_DEFUN([AX_BOOST_SYSTEM],
 
             fi
             if test "x$ax_lib" = "x"; then
-                AC_MSG_ERROR(Could not find a version of the library!)
+                AC_MSG_ERROR(Could not find a version of the boost system library!)
             fi
 			if test "x$link_system" = "xno"; then
 				AC_MSG_ERROR(Could not link against $ax_lib !)

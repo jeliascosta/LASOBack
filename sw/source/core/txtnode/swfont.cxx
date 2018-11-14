@@ -699,7 +699,6 @@ void SwFont::SetDiffFnt( const SfxItemSet *pAttrSet,
         m_bBlink = false;
     }
     m_bPaintBlank = false;
-    m_bPaintWrong = false;
     OSL_ENSURE( m_aSub[SwFontScript::Latin].IsTransparent(), "SwFont: Transparent revolution" );
 }
 
@@ -729,7 +728,6 @@ SwFont::SwFont( const SwFont &rFont )
     m_bFontChg = rFont.m_bFontChg;
     m_bOrgChg = rFont.m_bOrgChg;
     m_bPaintBlank = rFont.m_bPaintBlank;
-    m_bPaintWrong = false;
     m_bURL = rFont.m_bURL;
     m_bGreyWave = rFont.m_bGreyWave;
     m_bNoColorReplace = rFont.m_bNoColorReplace;
@@ -747,7 +745,6 @@ SwFont::SwFont( const SwAttrSet* pAttrSet,
     m_nMetaCount = 0;
     m_nInputFieldCount = 0;
     m_bPaintBlank = false;
-    m_bPaintWrong = false;
     m_bURL = false;
     m_bGreyWave = false;
     m_bNoColorReplace = false;
@@ -948,7 +945,6 @@ SwFont& SwFont::operator=( const SwFont &rFont )
     m_bFontChg = rFont.m_bFontChg;
     m_bOrgChg = rFont.m_bOrgChg;
     m_bPaintBlank = rFont.m_bPaintBlank;
-    m_bPaintWrong = false;
     m_bURL = rFont.m_bURL;
     m_bGreyWave = rFont.m_bGreyWave;
     m_bNoColorReplace = rFont.m_bNoColorReplace;
@@ -1478,7 +1474,7 @@ void SwDrawTextInfo::Shift( sal_uInt16 nDir )
 #endif
 
     const bool bBidiPor = ( GetFrame() && GetFrame()->IsRightToLeft() ) !=
-                          ( TEXT_LAYOUT_DEFAULT != ( TEXT_LAYOUT_BIDI_RTL & GetpOut()->GetLayoutMode() ) );
+                          ( ComplexTextLayoutFlags::Default != ( ComplexTextLayoutFlags::BiDiRtl & GetpOut()->GetLayoutMode() ) );
 
     nDir = bBidiPor ?
             1800 :
@@ -1505,8 +1501,8 @@ void SwDrawTextInfo::Shift( sal_uInt16 nDir )
 /**
  * @note Used for the "continuous underline" feature.
  **/
-SwUnderlineFont::SwUnderlineFont( SwFont& rFnt, const Point& rPoint )
-        : m_aPos( rPoint ), m_pFont( &rFnt )
+SwUnderlineFont::SwUnderlineFont( SwFont& rFnt, sal_Int32 nEnd, const Point& rPoint )
+        : m_aPos( rPoint ), m_nEnd( nEnd ), m_pFont( &rFnt )
 {
 };
 

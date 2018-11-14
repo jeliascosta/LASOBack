@@ -17,9 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/standard/vclxaccessiblelistbox.hxx>
-#include <accessibility/standard/vclxaccessiblelistitem.hxx>
-#include <accessibility/helper/listboxhelper.hxx>
+#include <standard/vclxaccessiblelistbox.hxx>
+#include <standard/vclxaccessiblelistitem.hxx>
+#include <helper/listboxhelper.hxx>
 
 #include <algorithm>
 
@@ -55,11 +55,6 @@ VCLXAccessibleListBox::~VCLXAccessibleListBox()
 bool VCLXAccessibleListBox::IsValid() const
 {
     return GetWindow().get() != nullptr;
-}
-
-void VCLXAccessibleListBox::ProcessWindowEvent (const VclWindowEvent& rVclWindowEvent)
-{
-    VCLXAccessibleBox::ProcessWindowEvent( rVclWindowEvent );
 }
 
 // XServiceInfo

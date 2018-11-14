@@ -35,6 +35,7 @@
 #include <com/sun/star/ucb/XAnyCompareFactory.hpp>
 #include <com/sun/star/ucb/ListAction.hpp>
 #include <cppuhelper/implbase.hxx>
+#include <rtl/ref.hxx>
 #include <deque>
 
 namespace comphelper {
@@ -126,7 +127,7 @@ class SortedResultSet: public cppu::WeakImplHelper <
     css::uno::Reference < css::sdbc::XResultSet >            mxOriginal;
     css::uno::Reference < css::sdbc::XResultSet >            mxOther;
 
-    SRSPropertySetInfo* mpPropSetInfo;
+    rtl::Reference<SRSPropertySetInfo> mpPropSetInfo;
     SortInfo*           mpSortInfo;
     osl::Mutex          maMutex;
     SortedEntryList     maS2O;          // maps the sorted entries to the original ones
@@ -160,14 +161,10 @@ private:
     void                PropertyChanged( const css::beans::PropertyChangeEvent& rEvt );
 
 public:
-                        SortedResultSet( css::uno::Reference< css::sdbc::XResultSet > aResult );
-                        virtual ~SortedResultSet();
+                        SortedResultSet( css::uno::Reference< css::sdbc::XResultSet > const & aResult );
+                        virtual ~SortedResultSet() override;
 
-    const SortedEntryList&      GetS2OList() const { return maS2O; }
-    const SimpleList&           GetO2SList() const { return maO2S; }
-    const css::uno::Reference < css::sdbc::XResultSet >& GetResultSet() const { return mxOriginal; }
-    SortInfo*                   GetSortInfo() const { return mpSortInfo; }
-    sal_IntPtr                  GetCount() const { return mnCount; }
+    sal_IntPtr          GetCount() const { return mnCount; }
 
     void                CopyData( SortedResultSet* pSource );
     void                Initialize( const css::uno::Sequence < css::ucb::NumberedSortingInfo > &xSortInfo,
@@ -192,9 +189,6 @@ public:
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
         throw( css::uno::RuntimeException,
                std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // XComponent
     virtual void SAL_CALL

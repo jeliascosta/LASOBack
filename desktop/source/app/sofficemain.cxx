@@ -81,7 +81,7 @@ static bool dumpCallback(const google_breakpad::MinidumpDescriptor& descriptor, 
 {
     std::string ini_path = CrashReporter::getIniFileName();
     std::ofstream minidump_file(ini_path, std::ios_base::app);
-    minidump_file << "DumpFile=" << descriptor.path() << "\n";;
+    minidump_file << "DumpFile=" << descriptor.path() << "\n";
     minidump_file.close();
     SAL_WARN("desktop", "minidump generated: " << descriptor.path());
     return succeeded;

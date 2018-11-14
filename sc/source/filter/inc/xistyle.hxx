@@ -388,7 +388,7 @@ public:
     const XclImpXF& operator=(const XclImpXF&) = delete;
 
     explicit            XclImpXF( const XclImpRoot& rRoot );
-    virtual             ~XclImpXF();
+    virtual             ~XclImpXF() override;
 
     /** Reads an XF record. */
     void                ReadXF( XclImpStream& rStrm );
@@ -403,7 +403,7 @@ public:
 
     void                ApplyPatternToAttrList(
                             ::std::list<ScAttrEntry>& rAttrs, SCROW nRow1, SCROW nRow2,
-                            sal_uInt32 nForceScNumFmt = NUMBERFORMAT_ENTRY_NOT_FOUND);
+                            sal_uInt32 nForceScNumFmt);
 
     /** Inserts all formatting attributes to the specified area in the Calc document.
         @param nForcedNumFmt  If not set to NUMBERFORMAT_ENTRY_NOT_FOUND, it will overwrite
@@ -619,7 +619,7 @@ public:
     const XclImpXFRangeBuffer& operator=(const XclImpXFRangeBuffer&) = delete;
 
     explicit            XclImpXFRangeBuffer( const XclImpRoot& rRoot );
-    virtual             ~XclImpXFRangeBuffer();
+    virtual             ~XclImpXFRangeBuffer() override;
 
     /** Clears all buffered data, used to set up for a new sheet. */
     void                Initialize();
@@ -638,8 +638,6 @@ public:
     /** Inserts a range of hyperlink cells. */
     void                SetHyperlink( const XclRange& rXclRange, const OUString& rUrl );
 
-    /** Inserts the first cell of a merged cell range. */
-    void                SetMerge( SCCOL nScCol, SCROW nScRow );
     /** Inserts a complete merged cell range. */
     void                SetMerge( SCCOL nScCol1, SCROW nScRow1, SCCOL nScCol2, SCROW nScRow2 );
 

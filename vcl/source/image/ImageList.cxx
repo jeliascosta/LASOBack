@@ -30,20 +30,14 @@
 #include <vcl/svapp.hxx>
 #include <vcl/image.hxx>
 #include <vcl/imagerepository.hxx>
-#include <vcl/implimagetree.hxx>
+#include <vcl/ImageTree.hxx>
 #include <image.h>
 
-#if OSL_DEBUG_LEVEL > 0
-#include <rtl/strbuf.hxx>
-#endif
-
-ImageList::ImageList() :
-    mpImplData( nullptr )
+ImageList::ImageList()
 {
 }
 
-ImageList::ImageList( const ResId& rResId ) :
-    mpImplData( nullptr )
+ImageList::ImageList(const ResId& rResId)
 {
     SAL_INFO( "vcl.gdi", "vcl: ImageList::ImageList( const ResId& rResId )" );
 
@@ -57,12 +51,6 @@ ImageList::ImageList( const ResId& rResId ) :
 
         RscImageListFlags nObjMask = (RscImageListFlags)pResMgr->ReadLong();
         pResMgr->ReadString(); //skip string
-        std::unique_ptr< Color >        xMaskColor;
-
-        if( nObjMask & RscImageListFlags::MaskColor )
-            xMaskColor.reset( new Color( ResId( static_cast<RSHEADER_TYPE*>(pResMgr->GetClass()), *pResMgr ) ) );
-
-        pResMgr->Increment( ResMgr::GetObjSize( static_cast<RSHEADER_TYPE*>(pResMgr->GetClass()) ) );
 
         if( nObjMask & RscImageListFlags::IdList )
         {
@@ -86,9 +74,8 @@ ImageList::ImageList( const ResId& rResId ) :
     }
 }
 
-ImageList::ImageList( const std::vector< OUString >& rNameVector,
-                      const OUString& rPrefix) :
-    mpImplData( nullptr )
+ImageList::ImageList(const std::vector< OUString >& rNameVector,
+                     const OUString& rPrefix)
 {
     SAL_INFO( "vcl.gdi", "vcl: ImageList::ImageList(const vector< OUString >& ..." );
 
@@ -101,47 +88,11 @@ ImageList::ImageList( const std::vector< OUString >& rNameVector,
     }
 }
 
-ImageList::ImageList( const ImageList& rImageList ) :
-    mpImplData( rImageList.mpImplData )
-{
-
-    if( mpImplData )
-        ++mpImplData->mnRefCount;
-}
-
-ImageList::~ImageList()
-{
-    if( mpImplData && ( 0 == --mpImplData->mnRefCount ) )
-        delete mpImplData;
-}
-
 void ImageList::ImplInit( sal_uInt16 nItems, const Size &rSize )
 {
-    mpImplData = new ImplImageList;
+    mpImplData.reset(new ImplImageList);
     mpImplData->maImages.reserve( nItems );
     mpImplData->maImageSize = rSize;
-}
-
-void ImageAryData::Load(const OUString &rPrefix)
-{
-    OUString aIconTheme = Application::GetSettings().GetStyleSettings().DetermineIconTheme();
-
-    OUString aFileName = rPrefix;
-    aFileName += maName;
-#if OSL_DEBUG_LEVEL > 0
-    bool bSuccess =
-#endif
-        ImplImageTree::get().loadImage(aFileName, aIconTheme, maBitmapEx, true);
-#if OSL_DEBUG_LEVEL > 0
-    if ( !bSuccess )
-    {
-        OStringBuffer aMessage;
-        aMessage.append( "ImageAryData::Load: failed to load image '" );
-        aMessage.append( OUStringToOString( aFileName, RTL_TEXTENCODING_UTF8 ).getStr() );
-        aMessage.append( "'" );
-        OSL_FAIL( aMessage.makeStringAndClear().getStr() );
-    }
-#endif
 }
 
 // FIXME: Rather a performance hazard
@@ -228,7 +179,6 @@ void ImageList::InsertFromHorizontalBitmap( const ResId& rResId,
 
 sal_uInt16 ImageList::ImplGetImageId( const OUString& rImageName ) const
 {
-
     ImageAryData *pImg = mpImplData->maNameHash[ rImageName ];
     if( pImg )
         return pImg->mnId;
@@ -238,7 +188,7 @@ sal_uInt16 ImageList::ImplGetImageId( const OUString& rImageName ) const
 
 void ImageList::AddImage( const OUString& rImageName, const Image& rImage )
 {
-    DBG_ASSERT( GetImagePos( rImageName ) == IMAGELIST_IMAGE_NOTFOUND, "ImageList::AddImage() - ImageName already exists" );
+    SAL_WARN_IF( GetImagePos( rImageName ) != IMAGELIST_IMAGE_NOTFOUND, "vcl", "ImageList::AddImage() - ImageName already exists" );
 
     if( !mpImplData )
         ImplInit( 0, rImage.GetSizePixel() );
@@ -262,7 +212,6 @@ void ImageList::ReplaceImage( const OUString& rImageName, const Image& rImage )
 
 void ImageList::RemoveImage( sal_uInt16 nId )
 {
-
     for( size_t i = 0; i < mpImplData->maImages.size(); ++i )
     {
         if( mpImplData->maImages[ i ]->mnId == nId )
@@ -275,21 +224,17 @@ void ImageList::RemoveImage( sal_uInt16 nId )
 
 Image ImageList::GetImage( sal_uInt16 nId ) const
 {
-
     Image aRet;
 
-    if( mpImplData )
+    if (mpImplData)
     {
-        std::vector<ImageAryData *>::iterator aIter;
-        for( aIter = mpImplData->maImages.begin();
-             aIter != mpImplData->maImages.end(); ++aIter)
+        for (ImageAryData* pImageData : mpImplData->maImages)
         {
-            if ((*aIter)->mnId == nId)
+            if (pImageData->mnId == nId)
             {
-                if( (*aIter)->IsLoadable() )
-                    (*aIter)->Load( mpImplData->maPrefix );
-
-                aRet = Image( (*aIter)->maBitmapEx );
+                if (pImageData->IsLoadable())
+                    pImageData->Load(mpImplData->maPrefix);
+                aRet = Image(pImageData->maBitmapEx);
             }
         }
     }
@@ -297,9 +242,9 @@ Image ImageList::GetImage( sal_uInt16 nId ) const
     if (!aRet)
     {
         BitmapEx rBitmap;
-        bool res = vcl::ImageRepository::loadDefaultImage(rBitmap);
-        if (res)
-            aRet =  Image(rBitmap);
+        bool bResult = vcl::ImageRepository::loadDefaultImage(rBitmap);
+        if (bResult)
+            aRet = Image(rBitmap);
     }
 
     return aRet;
@@ -324,7 +269,6 @@ Image ImageList::GetImage( const OUString& rImageName ) const
 
 sal_uInt16 ImageList::GetImageCount() const
 {
-
     return mpImplData ? static_cast< sal_uInt16 >( mpImplData->maImages.size() ) : 0;
 }
 
@@ -350,7 +294,6 @@ bool ImageList::HasImageAtPos( sal_uInt16 nId ) const
 
 sal_uInt16 ImageList::GetImagePos( const OUString& rImageName ) const
 {
-
     if( mpImplData && !rImageName.isEmpty() )
     {
         for( size_t i = 0; i < mpImplData->maImages.size(); i++ )
@@ -365,7 +308,6 @@ sal_uInt16 ImageList::GetImagePos( const OUString& rImageName ) const
 
 sal_uInt16 ImageList::GetImageId( sal_uInt16 nPos ) const
 {
-
     if( mpImplData && (nPos < GetImageCount()) )
         return mpImplData->maImages[ nPos ]->mnId;
 
@@ -374,7 +316,6 @@ sal_uInt16 ImageList::GetImageId( sal_uInt16 nPos ) const
 
 OUString ImageList::GetImageName( sal_uInt16 nPos ) const
 {
-
     if( mpImplData && (nPos < GetImageCount()) )
         return mpImplData->maImages[ nPos ]->maName;
 
@@ -400,7 +341,6 @@ void ImageList::GetImageNames( std::vector< OUString >& rNames ) const
 
 Size ImageList::GetImageSize() const
 {
-
     Size aRet;
 
     if( mpImplData )
@@ -418,23 +358,8 @@ Size ImageList::GetImageSize() const
     return aRet;
 }
 
-ImageList& ImageList::operator=( const ImageList& rImageList )
-{
-
-    if( rImageList.mpImplData )
-        ++rImageList.mpImplData->mnRefCount;
-
-    if( mpImplData && ( 0 == --mpImplData->mnRefCount ) )
-        delete mpImplData;
-
-    mpImplData = rImageList.mpImplData;
-
-    return *this;
-}
-
 bool ImageList::operator==( const ImageList& rImageList ) const
 {
-
     bool bRet = false;
 
     if( rImageList.mpImplData == mpImplData )

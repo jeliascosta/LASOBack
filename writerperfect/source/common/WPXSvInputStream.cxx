@@ -44,8 +44,8 @@ class PositionHolder
 public:
     explicit PositionHolder(const Reference<XSeekable> &rxSeekable);
     ~PositionHolder();
-    PositionHolder(const PositionHolder&) = delete;
-    PositionHolder& operator=(const PositionHolder&) = delete;
+    PositionHolder(const PositionHolder &) = delete;
+    PositionHolder &operator=(const PositionHolder &) = delete;
 
 private:
     const Reference<XSeekable> mxSeekable;
@@ -143,7 +143,7 @@ struct OLEStorageImpl
     void initialize(SvStream *pStream);
 
     tools::SvRef<SotStorageStream> getStream(const rtl::OUString &rPath);
-    tools::SvRef<SotStorageStream> getStream(std::size_t nId);
+    tools::SvRef<SotStorageStream> const &getStream(std::size_t nId);
 
 private:
     void traverse(const tools::SvRef<SotStorage> &rStorage, const rtl::OUString &rPath);
@@ -202,7 +202,7 @@ tools::SvRef<SotStorageStream> OLEStorageImpl::getStream(const rtl::OUString &rP
     return maStreams[aIt->second].stream.ref;
 }
 
-tools::SvRef<SotStorageStream> OLEStorageImpl::getStream(const std::size_t nId)
+tools::SvRef<SotStorageStream> const &OLEStorageImpl::getStream(const std::size_t nId)
 {
     if (!maStreams[nId].stream.ref.Is())
         maStreams[nId].stream.ref = createStream(rtl::OStringToOUString(maStreams[nId].name, RTL_TEXTENCODING_UTF8));
@@ -227,7 +227,7 @@ void OLEStorageImpl::traverse(const tools::SvRef<SotStorage> &rStorage, const rt
         {
             const rtl::OUString aPath = concatPath(rPath, aIt->GetName());
             SotStorageRefWrapper aStorage;
-            aStorage.ref = rStorage->OpenSotStorage(aIt->GetName(), STREAM_STD_READ);
+            aStorage.ref = rStorage->OpenSotStorage(aIt->GetName(), StreamMode::STD_READ);
             maStorageMap[aPath] = aStorage;
 
             // deep-first traversal
@@ -245,7 +245,7 @@ tools::SvRef<SotStorageStream> OLEStorageImpl::createStream(const rtl::OUString 
     const sal_Int32 nDelim = rPath.lastIndexOf(sal_Unicode('/'));
 
     if (-1 == nDelim)
-        return mxRootStorage.ref->OpenSotStream(rPath, STREAM_STD_READ);
+        return mxRootStorage.ref->OpenSotStream(rPath, StreamMode::STD_READ);
 
     const rtl::OUString aDir = rPath.copy(0, nDelim);
     const rtl::OUString aName = rPath.copy(nDelim + 1);
@@ -255,7 +255,7 @@ tools::SvRef<SotStorageStream> OLEStorageImpl::createStream(const rtl::OUString 
     if (maStorageMap.end() == aIt)
         return nullptr;
 
-    return aIt->second.ref->OpenSotStream(aName, STREAM_STD_READ);
+    return aIt->second.ref->OpenSotStream(aName, StreamMode::STD_READ);
 }
 
 }
@@ -400,7 +400,7 @@ class WPXSvInputStreamImpl
 {
 public:
     explicit WPXSvInputStreamImpl(css::uno::Reference<
-                                  css::io::XInputStream > xStream);
+                                  css::io::XInputStream > const &xStream);
     ~WPXSvInputStreamImpl();
 
     bool isStructured();
@@ -442,7 +442,7 @@ public:
     unsigned long mnReadBufferPos;
 };
 
-WPXSvInputStreamImpl::WPXSvInputStreamImpl(Reference< XInputStream > xStream) :
+WPXSvInputStreamImpl::WPXSvInputStreamImpl(Reference< XInputStream > const &xStream) :
     mxStream(xStream),
     mxSeekable(xStream, UNO_QUERY),
     maData(0),
@@ -735,7 +735,7 @@ librevenge::RVNGInputStream *WPXSvInputStreamImpl::createWPXStream(const tools::
 {
     if (rxStorage.Is())
     {
-        Reference < XInputStream > xContents(new utl::OSeekableInputStreamWrapper(rxStorage));
+        Reference < XInputStream > xContents(new utl::OSeekableInputStreamWrapper(rxStorage.get()));
         return new WPXSvInputStream(xContents);
     }
     return nullptr;
@@ -809,7 +809,7 @@ void WPXSvInputStreamImpl::ensureZipIsInitialized()
         mpZipStorage->initialize();
 }
 
-WPXSvInputStream::WPXSvInputStream(Reference< XInputStream > xStream) :
+WPXSvInputStream::WPXSvInputStream(Reference< XInputStream > const &xStream) :
     mpImpl(new WPXSvInputStreamImpl(xStream))
 {
 }

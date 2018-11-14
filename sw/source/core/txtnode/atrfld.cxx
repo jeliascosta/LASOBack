@@ -39,7 +39,6 @@
 #include "hints.hxx"
 #include <IDocumentFieldsAccess.hxx>
 #include <fieldhint.hxx>
-#include <svl/smplhint.hxx>
 
 
 // constructor for default item in attribute-pool
@@ -334,7 +333,7 @@ bool SwFormatField::IsProtect() const
 
 void SwFormatField::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swFormatField"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwFormatField"));
     xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("ptr"), "%p", this);
     xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("mpTextField"), "%p", mpTextField);
 
@@ -451,7 +450,7 @@ void SwTextField::CopyTextField( SwTextField *pDest ) const
             static_cast<SwDDEFieldType*>(pFieldType)->IncRefCnt();
         }
 
-        OSL_ENSURE( pFieldType, "unbekannter FieldType" );
+        OSL_ENSURE( pFieldType, "unknown FieldType" );
         pFieldType->Add( &rDestFormatField );          // ummelden
         rDestFormatField.GetField()->ChgTyp( pFieldType );
     }

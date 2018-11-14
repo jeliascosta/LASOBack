@@ -19,26 +19,43 @@
 #ifndef INCLUDED_SVX_SOURCE_SIDEBAR_AREA_AREATRANSPARENCYGRADIENTPOPUP_HXX
 #define INCLUDED_SVX_SOURCE_SIDEBAR_AREA_AREATRANSPARENCYGRADIENTPOPUP_HXX
 
-#include "svx/sidebar/Popup.hxx"
-
-#include <functional>
-
+#include <vcl/edit.hxx>
+#include <vcl/field.hxx>
+#include <vcl/floatwin.hxx>
+#include <vcl/toolbox.hxx>
 
 class XFillFloatTransparenceItem;
 
-
 namespace svx { namespace sidebar {
 
-class AreaTransparencyGradientPopup
-    : public Popup
-{
-public:
-    AreaTransparencyGradientPopup (
-        vcl::Window* pParent,
-        ::std::function<PopupControl*(PopupContainer*)> const& rControlCreator);
-    virtual ~AreaTransparencyGradientPopup();
+class AreaTransparencyGradientControl;
+class AreaPropertyPanelBase;
 
+class AreaTransparencyGradientPopup : public FloatingWindow
+{
+private:
+    AreaPropertyPanelBase& mrAreaPropertyPanel;
+    VclPtr<VclContainer>   maCenterGrid;
+    VclPtr<VclContainer>   maAngleGrid;
+    VclPtr<MetricField>    maMtrTrgrCenterX;
+    VclPtr<MetricField>    maMtrTrgrCenterY;
+    VclPtr<MetricField>    maMtrTrgrAngle;
+    VclPtr<ToolBox>        maBtnLeft45;
+    VclPtr<ToolBox>        maBtnRight45;
+    VclPtr<MetricField>    maMtrTrgrStartValue;
+    VclPtr<MetricField>    maMtrTrgrEndValue;
+    VclPtr<MetricField>    maMtrTrgrBorder;
+
+    void InitStatus(XFillFloatTransparenceItem* pGradientItem);
+    void ExecuteValueModify(sal_uInt8 nStartCol, sal_uInt8 nEndCol);
+    DECL_LINK(ModifiedTrgrHdl_Impl, Edit&, void);
+    DECL_LINK(Left_Click45_Impl, ToolBox*, void);
+    DECL_LINK(Right_Click45_Impl, ToolBox*, void);
+public:
+    AreaTransparencyGradientPopup(AreaPropertyPanelBase& rPanel);
+    virtual ~AreaTransparencyGradientPopup() override;
     void Rearrange (XFillFloatTransparenceItem* pItem);
+    virtual void dispose() override;
 };
 
 } } // end of namespace svx::sidebar

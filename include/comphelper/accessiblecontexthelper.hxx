@@ -21,11 +21,12 @@
 #define INCLUDED_COMPHELPER_ACCESSIBLECONTEXTHELPER_HXX
 
 #include <cppuhelper/compbase2.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <com/sun/star/accessibility/XAccessibleContext.hpp>
 #include <com/sun/star/accessibility/XAccessibleEventBroadcaster.hpp>
 #include <com/sun/star/lang/DisposedException.hpp>
-#include <comphelper/broadcasthelper.hxx>
 #include <comphelper/comphelperdllapi.h>
+#include <memory>
 
 
 namespace comphelper
@@ -82,14 +83,14 @@ namespace comphelper
     /** helper class for implementing an AccessibleContext
     */
     class COMPHELPER_DLLPUBLIC OAccessibleContextHelper
-                :public ::comphelper::OBaseMutex
+                :public ::cppu::BaseMutex
                 ,public OAccessibleContextHelper_Base
     {
     private:
-        OContextHelper_Impl*    m_pImpl;
+        std::unique_ptr<OContextHelper_Impl>    m_pImpl;
 
     protected:
-        virtual ~OAccessibleContextHelper( );
+        virtual ~OAccessibleContextHelper( ) override;
 
         /** ctor
 
@@ -138,16 +139,6 @@ namespace comphelper
         */
         css::uno::Reference< css::accessibility::XAccessible >
                 getAccessibleCreator( ) const;
-
-    private:
-        /** forgets the reference to the external lock, if present.
-
-            <p>This means any further locking will not be guard the external lock anymore, never.</p>
-
-            <p>To be used in derived classes which do not supply the external lock themself, but instead get
-            them passed from own derivees (or clients).</p>
-        */
-        void    forgetExternalLock();
 
     public:
         // XAccessibleEventBroadcaster
@@ -232,8 +223,6 @@ namespace comphelper
                     implGetParentContext();
 
         // access to the base class' broadcast helper/mutex
-        ::cppu::OBroadcastHelper&       GetBroadcastHelper()        { return rBHelper; }
-        const ::cppu::OBroadcastHelper& GetBroadcastHelper() const  { return rBHelper; }
         ::osl::Mutex&                   GetMutex()                  { return m_aMutex; }
         IMutex*                         getExternalLock( );
     };

@@ -118,7 +118,6 @@ $(eval $(call gb_Library_add_exception_objects,dbu,\
     dbaccess/source/ui/control/SqlNameEdit \
     dbaccess/source/ui/control/TableGrantCtrl \
     dbaccess/source/ui/control/tabletree \
-    dbaccess/source/ui/control/toolboxcontroller \
     dbaccess/source/ui/control/undosqledit \
     dbaccess/source/ui/control/VertSplitView \
     dbaccess/source/ui/dlg/admincontrols \
@@ -215,7 +214,6 @@ $(eval $(call gb_Library_add_exception_objects,dbu,\
     dbaccess/source/ui/querydesign/QueryTableView \
     dbaccess/source/ui/querydesign/QueryTabWinUndoAct \
     dbaccess/source/ui/querydesign/QueryTextView \
-    dbaccess/source/ui/querydesign/queryview \
     dbaccess/source/ui/querydesign/QueryViewSwitch \
     dbaccess/source/ui/querydesign/SelectionBrowseBox \
     dbaccess/source/ui/querydesign/TableConnection \

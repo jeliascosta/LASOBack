@@ -39,7 +39,7 @@ class GenericToolbarController : public svt::ToolboxController
                                   ToolBox* pToolBar,
                                   sal_uInt16 nID,
                                   const OUString& aCommand );
-        virtual ~GenericToolbarController();
+        virtual ~GenericToolbarController() override;
 
         // XComponent
         virtual void SAL_CALL dispose() throw ( css::uno::RuntimeException, std::exception ) override;
@@ -50,7 +50,7 @@ class GenericToolbarController : public svt::ToolboxController
         // XStatusListener
         virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( css::uno::RuntimeException, std::exception ) override;
 
-        DECL_STATIC_LINK_TYPED( GenericToolbarController, ExecuteHdl_Impl, void*, void );
+        DECL_STATIC_LINK( GenericToolbarController, ExecuteHdl_Impl, void*, void );
 
         struct ExecuteInfo
         {
@@ -70,7 +70,7 @@ class GenericToolbarController : public svt::ToolboxController
 class MenuToolbarController : public GenericToolbarController
 {
     css::uno::Reference< css::container::XIndexAccess > m_xMenuDesc;
-    PopupMenu*                                          pMenu;
+    VclPtr<PopupMenu>                                   pMenu;
     css::uno::Reference< css::lang::XComponent >        m_xMenuManager;
     OUString                                            m_aModuleIdentifier;
     public:
@@ -82,7 +82,7 @@ class MenuToolbarController : public GenericToolbarController
                                   const OUString& aModuleIdentifier,
                                   const css::uno::Reference< css::container::XIndexAccess >& xMenuDesc );
 
-    virtual ~MenuToolbarController();
+    virtual ~MenuToolbarController() override;
     // XToolbarController
     virtual void SAL_CALL click() throw ( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Reference< css::awt::XWindow > SAL_CALL createPopupWindow() throw (css::uno::RuntimeException, std::exception) override;

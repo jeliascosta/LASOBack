@@ -21,7 +21,6 @@
 #include "sqlmessage.hxx"
 #include <tools/debug.hxx>
 #include <tools/diagnose_ex.h>
-#include <svtools/localresaccess.hxx>
 #include "dbaccess_helpid.hrc"
 #include "dbu_resource.hrc"
 #include "dbu_dlg.hrc"
@@ -73,7 +72,7 @@ public:
         ,m_bAllowViews(true)
     {
     }
-    virtual ~TableListFacade();
+    virtual ~TableListFacade() override;
 
 private:
     virtual void    updateTableObjectList( bool _bAllowViews ) override;
@@ -233,7 +232,7 @@ public:
         ,m_xConnection( _rxConnection )
     {
     }
-    virtual ~QueryListFacade();
+    virtual ~QueryListFacade() override;
 
 private:
     virtual void    updateTableObjectList( bool _bAllowViews ) override;
@@ -322,7 +321,7 @@ OAddTableDlg::OAddTableDlg( vcl::Window* pParent, IAddTableDialogContext& _rCont
 
     get(m_pTableList, "tablelist");
     get(m_pQueryList, "querylist");
-    Size aSize(LogicToPixel(Size(106 , 122), MAP_APPFONT));
+    Size aSize(LogicToPixel(Size(106 , 122), MapUnit::MapAppFont));
     m_pTableList->set_height_request(aSize.Height());
     m_pTableList->set_width_request(aSize.Width());
     get(m_pQueryList, "querylist");
@@ -344,12 +343,12 @@ OAddTableDlg::OAddTableDlg( vcl::Window* pParent, IAddTableDialogContext& _rCont
     m_pTableList->EnableInplaceEditing( false );
     m_pTableList->SetStyle(m_pTableList->GetStyle() | WB_BORDER | WB_HASLINES |WB_HASBUTTONS | WB_HASBUTTONSATROOT | WB_HASLINESATROOT | WB_SORT | WB_HSCROLL );
     m_pTableList->EnableCheckButton( nullptr ); // do not show any buttons
-    m_pTableList->SetSelectionMode( SINGLE_SELECTION );
+    m_pTableList->SetSelectionMode( SelectionMode::Single );
     m_pTableList->notifyHiContrastChanged();
     m_pTableList->suppressEmptyFolders();
 
     m_pQueryList->EnableInplaceEditing( false );
-    m_pQueryList->SetSelectionMode( SINGLE_SELECTION );
+    m_pQueryList->SetSelectionMode( SelectionMode::Single );
 
     if ( !m_rContext.allowQueries() )
     {
@@ -406,27 +405,22 @@ void OAddTableDlg::Update()
         m_xCurrentList->updateTableObjectList( m_rContext.allowViews() );
 }
 
-void OAddTableDlg::impl_addTable()
-{
-    if ( m_xCurrentList->isLeafSelected() )
-    {
-        OUString sSelectedName, sAliasName;
-        sSelectedName = m_xCurrentList->getSelectedName( sAliasName );
-
-        m_rContext.addTableWindow( sSelectedName, sAliasName );
-    }
-}
-
-IMPL_LINK_NOARG_TYPED( OAddTableDlg, AddClickHdl, Button*, void )
+IMPL_LINK_NOARG( OAddTableDlg, AddClickHdl, Button*, void )
 {
     TableListDoubleClickHdl(nullptr);
 }
 
-IMPL_LINK_NOARG_TYPED( OAddTableDlg, TableListDoubleClickHdl, SvTreeListBox*, bool )
+IMPL_LINK_NOARG( OAddTableDlg, TableListDoubleClickHdl, SvTreeListBox*, bool )
 {
     if ( impl_isAddAllowed() )
     {
-        impl_addTable();
+        if ( m_xCurrentList->isLeafSelected() )
+        {
+            OUString sSelectedName, sAliasName;
+            sSelectedName = m_xCurrentList->getSelectedName( sAliasName );
+
+            m_rContext.addTableWindow( sSelectedName, sAliasName );
+        }
         if ( !impl_isAddAllowed() )
             Close();
         return true;  // handled
@@ -435,17 +429,17 @@ IMPL_LINK_NOARG_TYPED( OAddTableDlg, TableListDoubleClickHdl, SvTreeListBox*, bo
     return false;  // not handled
 }
 
-IMPL_LINK_NOARG_TYPED( OAddTableDlg, TableListSelectHdl, SvTreeListBox*, void )
+IMPL_LINK_NOARG( OAddTableDlg, TableListSelectHdl, SvTreeListBox*, void )
 {
     m_pAddButton->Enable( m_xCurrentList->isLeafSelected() );
 }
 
-IMPL_LINK_NOARG_TYPED( OAddTableDlg, CloseClickHdl, Button*, void )
+IMPL_LINK_NOARG( OAddTableDlg, CloseClickHdl, Button*, void )
 {
     Close();
 }
 
-IMPL_LINK_NOARG_TYPED( OAddTableDlg, OnTypeSelected, Button*, void )
+IMPL_LINK_NOARG( OAddTableDlg, OnTypeSelected, Button*, void )
 {
     if ( m_pCaseTables->IsChecked() )
         impl_switchTo( Tables );

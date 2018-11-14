@@ -30,24 +30,23 @@ namespace connectivity
     namespace hsqldb
     {
         class ODriverDelegator;
-        class OConnectionController : public ::cppu::WeakImplHelper<
-                                                    ::com::sun::star::frame::XTerminateListener >
+        class OConnectionController : public ::cppu::WeakImplHelper< css::frame::XTerminateListener >
         {
             ODriverDelegator* m_pDriver;
             protected:
-                virtual ~OConnectionController() {m_pDriver = nullptr;}
+                virtual ~OConnectionController() override {m_pDriver = nullptr;}
             public:
                 explicit OConnectionController(ODriverDelegator* _pDriver) : m_pDriver(_pDriver){}
 
                 // XEventListener
-                virtual void SAL_CALL disposing( const ::com::sun::star::lang::EventObject& Source )
-                    throw( ::com::sun::star::uno::RuntimeException, std::exception ) override;
+                virtual void SAL_CALL disposing( const css::lang::EventObject& Source )
+                    throw( css::uno::RuntimeException, std::exception ) override;
 
                 // XTerminateListener
-                virtual void SAL_CALL queryTermination( const ::com::sun::star::lang::EventObject& aEvent )
-                    throw( ::com::sun::star::frame::TerminationVetoException, ::com::sun::star::uno::RuntimeException, std::exception ) override;
-                virtual void SAL_CALL notifyTermination( const ::com::sun::star::lang::EventObject& aEvent )
-                    throw( ::com::sun::star::uno::RuntimeException, std::exception ) override;
+                virtual void SAL_CALL queryTermination( const css::lang::EventObject& aEvent )
+                    throw( css::frame::TerminationVetoException, css::uno::RuntimeException, std::exception ) override;
+                virtual void SAL_CALL notifyTermination( const css::lang::EventObject& aEvent )
+                    throw( css::uno::RuntimeException, std::exception ) override;
         };
     }
 

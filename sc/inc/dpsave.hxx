@@ -84,7 +84,7 @@ public:
     void WriteToSource( const css::uno::Reference<css::uno::XInterface>& xMember,
                             sal_Int32 nPosition );
 
-#if DEBUG_PIVOT_TABLE
+#if DUMP_PIVOT_TABLE
     void Dump(int nIndent = 0) const;
 #endif
 };
@@ -98,13 +98,13 @@ private:
     bool bIsDataLayout;
     bool bDupFlag;
     sal_uInt16 nOrientation;
-    sal_uInt16 nFunction; // enum GeneralFunction, for data dimensions
+    sal_uInt16 nFunction; // GeneralFunction2, for data dimensions
     long nUsedHierarchy;
     sal_uInt16 nShowEmptyMode; //! at level
     bool bRepeatItemLabels; //! at level
     bool bSubTotalDefault; //! at level
     long nSubTotalCount;
-    sal_uInt16* pSubTotalFuncs; // enum GeneralFunction
+    sal_uInt16* pSubTotalFuncs; // GeneralFunction2
     css::sheet::DataPilotFieldReference* pReferenceValue;
     css::sheet::DataPilotFieldSortInfo* pSortInfo; // (level)
     css::sheet::DataPilotFieldAutoShowInfo* pAutoShowInfo; // (level)
@@ -226,7 +226,7 @@ public:
 
     void RemoveObsoleteMembers(const MemberSetType& rMembers);
 
-#if DEBUG_PIVOT_TABLE
+#if DUMP_PIVOT_TABLE
     void Dump(int nIndent = 0) const;
 #endif
 };
@@ -363,7 +363,7 @@ public:
      */
     SC_DLLPUBLIC bool HasInvisibleMember(const OUString& rDimName) const;
 
-#if DEBUG_PIVOT_TABLE
+#if DUMP_PIVOT_TABLE
     void Dump() const;
 #endif
 

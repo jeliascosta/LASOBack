@@ -84,8 +84,8 @@ using namespace com::sun::star;
 // List for 3D-Objects
 
 
-E3dObjList::E3dObjList(SdrModel* pNewModel, SdrPage* pNewPage, E3dObjList* pNewUpList)
-:   SdrObjList(pNewModel, pNewPage, pNewUpList)
+E3dObjList::E3dObjList()
+:   SdrObjList(nullptr, nullptr)
 {
 }
 
@@ -187,7 +187,7 @@ E3dObject::E3dObject()
 {
     bIs3DObj = true;
     maSubList.SetOwnerObj(this);
-    maSubList.SetListKind(SDROBJLIST_GROUPOBJ);
+    maSubList.SetListKind(SdrObjListKind::GroupObj);
     bClosedObj = true;
 }
 
@@ -243,9 +243,9 @@ void E3dObject::SetRectsDirty(bool bNotMyself)
     }
 }
 
-sal_uInt32 E3dObject::GetObjInventor() const
+SdrInventor E3dObject::GetObjInventor() const
 {
-    return E3dInventor;
+    return SdrInventor::E3d;
 }
 
 sal_uInt16 E3dObject::GetObjIdentifier() const
@@ -652,7 +652,7 @@ void E3dObject::SetTransform(const basegfx::B3DHomMatrix& rMatrix)
         NbcSetTransform(rMatrix);
         SetChanged();
         BroadcastObjectChange();
-        if (pUserCall != nullptr) pUserCall->Changed(*this, SDRUSERCALL_RESIZE, Rectangle());
+        if (pUserCall != nullptr) pUserCall->Changed(*this, SdrUserCallType::Resize, Rectangle());
     }
 }
 
@@ -866,7 +866,7 @@ void E3dCompoundObject::AddToHdlList(SdrHdlList& rHdlList) const
                 // to 2d world coor
                 aPos2D *= rVCScene.getObjectTransformation();
 
-                rHdlList.AddHdl(new SdrHdl(Point(basegfx::fround(aPos2D.getX()), basegfx::fround(aPos2D.getY())), HDL_BWGT));
+                rHdlList.AddHdl(new SdrHdl(Point(basegfx::fround(aPos2D.getX()), basegfx::fround(aPos2D.getY())), SdrHdlKind::BezierWeight));
             }
         }
     }

@@ -59,7 +59,9 @@ enum RTFBufferTypes
     /// Imports a shape.
     BUFFER_RESOLVESHAPE,
     BUFFER_ENDSHAPE,
-    BUFFER_RESOLVESUBSTREAM
+    BUFFER_RESOLVESUBSTREAM,
+    /// Restores RTFParserState::aPicture.
+    BUFFER_PICTURE
 };
 
 /// Form field types
@@ -268,7 +270,8 @@ public:
     RTFFrame aFrame;
 
     /// Maps to OOXML's ascii, cs or eastAsia.
-    enum { LOCH, HICH, DBCH } eRunType;
+    enum class RunType { LOCH, HICH, DBCH };
+    RunType eRunType;
     /// ltrch or rtlch
     bool isRightToLeft;
 
@@ -284,7 +287,7 @@ public:
     /// point to the buffer of the current destination
     OUStringBuffer* pDestinationText;
 
-    void appendDestinationText(const OUString &rString)
+    void appendDestinationText(const OUString& rString)
     {
         if (pDestinationText)
             pDestinationText->append(rString);
@@ -384,7 +387,7 @@ public:
                     css::uno::Reference<css::frame::XFrame> const& xFrame,
                     css::uno::Reference<css::task::XStatusIndicator> const& xStatusIndicator,
                     const utl::MediaDescriptor& rMediaDescriptor);
-    virtual ~RTFDocumentImpl();
+    virtual ~RTFDocumentImpl() override;
 
     // RTFDocument
     virtual void resolve(Stream& rHandler) override;
@@ -412,11 +415,6 @@ public:
         return *m_pMapperStream;
     }
     void setSuperstream(RTFDocumentImpl* pSuperstream);
-    void setStreamType(Id nId);
-    void setAuthor(OUString& rAuthor);
-    void setAuthorInitials(OUString& rAuthorInitials);
-    void setIgnoreFirst(OUString& rIgnoreFirst);
-    void seek(sal_Size nPos);
     const css::uno::Reference<css::lang::XMultiServiceFactory>& getModelFactory()
     {
         return m_xModelFactory;
@@ -428,6 +426,8 @@ public:
 
     /// If this is the first run of the document, starts the initial paragraph.
     void checkFirstRun();
+    /// Send NS_ooxml::LN_settings_settings to dmapper.
+    void outputSettingsTable();
     /// If the initial paragraph is started.
     bool getFirstRun()
     {
@@ -459,8 +459,8 @@ private:
     writerfilter::Reference<Properties>::Pointer_t createStyleProperties();
     void resetSprms();
     void resetAttributes();
-    void resolveSubstream(sal_Size nPos, Id nId);
-    void resolveSubstream(sal_Size nPos, Id nId, OUString& rIgnoreFirst);
+    void resolveSubstream(std::size_t nPos, Id nId);
+    void resolveSubstream(std::size_t nPos, Id nId, OUString& rIgnoreFirst);
 
     void text(OUString& rString);
     // Sends a single character to dmapper, taking care of buffering.
@@ -584,8 +584,8 @@ private:
     RTFDocumentImpl* m_pSuperstream;
     /// Type of the stream: header, footer, footnote, etc.
     Id m_nStreamType;
-    std::queue< std::pair<Id, sal_Size> > m_nHeaderFooterPositions;
-    sal_Size m_nGroupStartPos;
+    std::queue< std::pair<Id, std::size_t> > m_nHeaderFooterPositions;
+    std::size_t m_nGroupStartPos;
     /// Ignore the first occurrence of this text.
     OUString m_aIgnoreFirst;
     /// Bookmark name <-> index map.

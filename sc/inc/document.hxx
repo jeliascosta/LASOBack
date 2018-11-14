@@ -49,6 +49,7 @@
 
 enum class SvtScriptType;
 enum class ScMF;
+enum class FormulaError : sal_uInt16;
 namespace editeng { class SvxBorderLine; }
 namespace formula { struct VectorRefArray; }
 namespace svl {
@@ -477,6 +478,9 @@ private:
 
     std::unique_ptr<sc::IconSetBitmapMap> m_pIconSetBitmapMap;
 
+    bool                mbTrackFormulasPending  : 1;
+    bool                mbFinalTrackFormulas    : 1;
+
 public:
     bool IsCellInChangeTrack(const ScAddress &cell,Color *pColCellBoder);
     void GetCellChangeTrackNote(const ScAddress &cell, OUString &strTrackText, bool &pbLeftEdge);
@@ -485,7 +489,7 @@ public:
     SC_DLLPUBLIC sal_uLong          GetCellCount() const;       // all cells
     SC_DLLPUBLIC sal_uLong          GetFormulaGroupCount() const;       // all cells
     sal_uLong           GetCodeCount() const;       // RPN-Code in formulas
-    DECL_LINK_TYPED( GetUserDefinedColor, sal_uInt16, Color* );
+    DECL_LINK( GetUserDefinedColor, sal_uInt16, Color* );
                                                                 // number formatter
 public:
     SC_DLLPUBLIC                ScDocument( ScDocumentMode eMode = SCDOCMODE_DOCUMENT,
@@ -500,7 +504,6 @@ public:
     void            GetDocStat( ScDocStat& rDocStat );
 
     SC_DLLPUBLIC void  InitDrawLayer( SfxObjectShell* pDocShell = nullptr );
-    rtl::Reference<XColorList>          GetColorList();
 
     SC_DLLPUBLIC sfx2::LinkManager* GetLinkManager();
     SC_DLLPUBLIC const sfx2::LinkManager* GetLinkManager() const;
@@ -537,7 +540,6 @@ public:
      */
     SC_DLLPUBLIC void GetAllTabRangeNames(ScRangeName::TabNameCopyMap& rRangeNames) const;
     SC_DLLPUBLIC void SetAllRangeNames(const std::map<OUString, std::unique_ptr<ScRangeName>>& rRangeMap);
-    SC_DLLPUBLIC void GetTabRangeNameMap(std::map<OUString, ScRangeName*>& rRangeName);
     SC_DLLPUBLIC void GetRangeNameMap(std::map<OUString, ScRangeName*>& rRangeName);
     SC_DLLPUBLIC ScRangeName* GetRangeName(SCTAB nTab) const;
     SC_DLLPUBLIC ScRangeName* GetRangeName() const;
@@ -648,8 +650,12 @@ public:
     /**
      * Call this immediately before updating all named ranges.
      */
+    SC_DLLPUBLIC void PreprocessAllRangeNamesUpdate( const std::map<OUString, std::unique_ptr<ScRangeName>>& rRangeMap );
     SC_DLLPUBLIC void PreprocessRangeNameUpdate();
     SC_DLLPUBLIC void PreprocessDBDataUpdate();
+    /**
+     * Call this immediately after updating named ranges.
+     */
     SC_DLLPUBLIC void CompileHybridFormula();
 
     /**
@@ -679,8 +685,8 @@ public:
 
     SCTAB           GetMaxTableNumber() { return static_cast<SCTAB>(maTabs.size()) - 1; }
 
-    ScRangePairList*    GetColNameRanges() { return &xColNameRanges; }
-    ScRangePairList*    GetRowNameRanges() { return &xRowNameRanges; }
+    ScRangePairList*    GetColNameRanges() { return xColNameRanges.get(); }
+    ScRangePairList*    GetRowNameRanges() { return xRowNameRanges.get(); }
     ScRangePairListRef& GetColNameRangesRef() { return xColNameRanges; }
     ScRangePairListRef& GetRowNameRangesRef() { return xRowNameRanges; }
 
@@ -693,7 +699,7 @@ public:
     ScDBData* GetDBAtArea(SCTAB nTab, SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2);
     void RefreshDirtyTableColumnNames();
 
-    SC_DLLPUBLIC const ScRangeData* GetRangeAtBlock( const ScRange& rBlock, OUString* pName=nullptr ) const;
+    SC_DLLPUBLIC const ScRangeData* GetRangeAtBlock( const ScRange& rBlock, OUString* pName ) const;
 
     SC_DLLPUBLIC bool HasPivotTable() const;
     SC_DLLPUBLIC ScDPCollection*       GetDPCollection();
@@ -802,6 +808,7 @@ public:
                                             bool bNamesValid = false );
     SC_DLLPUBLIC bool DeleteTabs( SCTAB nTab, SCTAB nSheets );
     SC_DLLPUBLIC bool DeleteTab( SCTAB nTab );
+    SC_DLLPUBLIC void           ClearTabs();
     SC_DLLPUBLIC bool           RenameTab( SCTAB nTab, const OUString& rName,
                                 bool bUpdateRef = true,
                                 bool bExternalDocument = false );
@@ -825,14 +832,14 @@ public:
     SC_DLLPUBLIC bool           IsNegativePage( SCTAB nTab ) const;
     SC_DLLPUBLIC void           SetScenario( SCTAB nTab, bool bFlag );
     SC_DLLPUBLIC bool           IsScenario( SCTAB nTab ) const;
-    SC_DLLPUBLIC void GetScenarioData( SCTAB nTab, OUString& rComment,
-                                       Color& rColor, sal_uInt16& rFlags ) const;
-    SC_DLLPUBLIC void           SetScenarioData( SCTAB nTab, const OUString& rComment,
-                                        const Color& rColor, sal_uInt16 nFlags );
+    SC_DLLPUBLIC void           GetScenarioData(SCTAB nTab, OUString& rComment,
+                                                Color& rColor, ScScenarioFlags &rFlags) const;
+    SC_DLLPUBLIC void           SetScenarioData(SCTAB nTab, const OUString& rComment,
+                                          const Color& rColor, ScScenarioFlags nFlags);
     SC_DLLPUBLIC Color GetTabBgColor( SCTAB nTab ) const;
     SC_DLLPUBLIC void SetTabBgColor( SCTAB nTab, const Color& rColor );
     SC_DLLPUBLIC bool IsDefaultTabBgColor( SCTAB nTab ) const;
-    void            GetScenarioFlags( SCTAB nTab, sal_uInt16& rFlags ) const;
+    void                        GetScenarioFlags(SCTAB nTab, ScScenarioFlags &rFlags) const;
     SC_DLLPUBLIC bool           IsActiveScenario( SCTAB nTab ) const;
     SC_DLLPUBLIC void           SetActiveScenario( SCTAB nTab, bool bActive );      // only for Undo etc.
     SC_DLLPUBLIC formula::FormulaGrammar::AddressConvention GetAddressConvention() const;
@@ -996,14 +1003,14 @@ public:
 
     void SetValues( const ScAddress& rPos, const std::vector<double>& rVals );
 
-    void SetError( SCCOL nCol, SCROW nRow, SCTAB nTab, const sal_uInt16 nError);
+    void SetError( SCCOL nCol, SCROW nRow, SCTAB nTab, const FormulaError nError);
 
     SC_DLLPUBLIC void SetFormula(
         const ScAddress& rPos, const ScTokenArray& rArray );
 
     SC_DLLPUBLIC void SetFormula(
         const ScAddress& rPos, const OUString& rFormula,
-        formula::FormulaGrammar::Grammar eGram = formula::FormulaGrammar::GRAM_DEFAULT );
+        formula::FormulaGrammar::Grammar eGram );
 
     /**
      * Set formula cell, and transfer its ownership to the document. This call
@@ -1053,7 +1060,7 @@ public:
     std::shared_ptr<sc::FormulaGroupContext>& GetFormulaGroupContext();
 
     SC_DLLPUBLIC void GetInputString( SCCOL nCol, SCROW nRow, SCTAB nTab, OUString& rString );
-    sal_uInt16 GetStringForFormula( const ScAddress& rPos, OUString& rString );
+    FormulaError GetStringForFormula( const ScAddress& rPos, OUString& rString );
     SC_DLLPUBLIC double GetValue( const ScAddress& rPos ) const;
     SC_DLLPUBLIC double GetValue( SCCOL nCol, SCROW nRow, SCTAB nTab ) const;
     SC_DLLPUBLIC void GetValue( SCCOL nCol, SCROW nRow, SCTAB nTab, double& rValue ) const;
@@ -1102,7 +1109,7 @@ public:
      * code uses sdr objects to export note data.
      */
     void CreateAllNoteCaptions();
-    void ForgetNoteCaptions( const ScRangeList& rRanges );
+    void ForgetNoteCaptions( const ScRangeList& rRanges, bool bPreserveData );
 
     ScAddress GetNotePosition( size_t nIndex ) const;
     ScAddress GetNotePosition( size_t nIndex, SCTAB nTab ) const;
@@ -1133,6 +1140,8 @@ public:
 
     SC_DLLPUBLIC void           DoMergeContents( SCTAB nTab, SCCOL nStartCol, SCROW nStartRow,
                                     SCCOL nEndCol, SCROW nEndRow );
+    SC_DLLPUBLIC void           DoEmptyBlock( SCTAB nTab, SCCOL nStartCol, SCROW nStartRow,
+                                    SCCOL nEndCol, SCROW nEndRow );
                     //  without checking:
     SC_DLLPUBLIC void           DoMerge( SCTAB nTab, SCCOL nStartCol, SCROW nStartRow,
                                     SCCOL nEndCol, SCROW nEndRow, bool bDeleteCaptions = true );
@@ -1151,8 +1160,8 @@ public:
     bool            IsVerOverlapped( SCCOL nCol, SCROW nRow, SCTAB nTab ) const;
 
     SC_DLLPUBLIC bool HasAttrib( SCCOL nCol1, SCROW nRow1, SCTAB nTab1,
-                                 SCCOL nCol2, SCROW nRow2, SCTAB nTab2, sal_uInt16 nMask ) const;
-    SC_DLLPUBLIC bool HasAttrib( const ScRange& rRange, sal_uInt16 nMask ) const;
+                                 SCCOL nCol2, SCROW nRow2, SCTAB nTab2, HasAttrFlags nMask ) const;
+    SC_DLLPUBLIC bool HasAttrib( const ScRange& rRange, HasAttrFlags nMask ) const;
 
     SC_DLLPUBLIC void GetBorderLines( SCCOL nCol, SCROW nRow, SCTAB nTab,
                                     const ::editeng::SvxBorderLine** ppLeft,
@@ -1162,6 +1171,7 @@ public:
 
     void            ResetChanged( const ScRange& rRange );
 
+    void CheckVectorizationState();
     void SetAllFormulasDirty( const sc::SetFormulaDirtyContext& rCxt );
     void            SetDirty( const ScRange&, bool bIncludeEmptyCells );
     void            SetTableOpDirty( const ScRange& );  // for Interpreter TableOp
@@ -1181,7 +1191,7 @@ public:
      * @return true if at least one cell is re-compiled, false if no cells are
      *         re-compiled.
      */
-    bool CompileErrorCells(sal_uInt16 nErrCode);
+    bool CompileErrorCells(FormulaError nErrCode);
 
     ScAutoNameCache* GetAutoNameCache()     { return pAutoNameCache; }
     void             SetPreviewFont( SfxItemSet* pFontSet );
@@ -1218,7 +1228,7 @@ public:
                     // if CalcFormulaTree() is currently running
     bool            IsCalculatingFormulaTree() { return bCalculatingFormulaTree; }
 
-    sal_uInt16          GetErrCode( const ScAddress& ) const;
+    FormulaError    GetErrCode( const ScAddress& ) const;
 
                     /** Shrink a range to only include data area.
 
@@ -1242,13 +1252,16 @@ public:
                                 If TRUE, do not adjust the top row.
                         @param  bStickyLeftCol
                                 If TRUE, do not adjust the left column.
+                        @param  bConsiderCellNotes
+                                If TRUE, consider the presence of cell notes besides data.
 
                         @returns true if there is any data, false if not.
                      */
     bool            ShrinkToUsedDataArea( bool& o_bShrunk,
                                           SCTAB nTab, SCCOL& rStartCol, SCROW& rStartRow,
                                           SCCOL& rEndCol, SCROW& rEndRow, bool bColumnsOnly,
-                                          bool bStickyTopRow = false, bool bStickyLeftCol = false ) const;
+                                          bool bStickyTopRow = false, bool bStickyLeftCol = false,
+                                          bool bConsiderCellNotes = false ) const;
 
     /**
      * Return the last non-empty row position in given columns that's no
@@ -1284,9 +1297,9 @@ public:
     SC_DLLPUBLIC bool           GetPrintArea( SCTAB nTab, SCCOL& rEndCol, SCROW& rEndRow,
                                     bool bNotes = true ) const;
     SC_DLLPUBLIC bool           GetPrintAreaHor( SCTAB nTab, SCROW nStartRow, SCROW nEndRow,
-                                        SCCOL& rEndCol, bool bNotes = true ) const;
+                                        SCCOL& rEndCol, bool bNotes ) const;
     SC_DLLPUBLIC bool           GetPrintAreaVer( SCTAB nTab, SCCOL nStartCol, SCCOL nEndCol,
-                                        SCROW& rEndRow, bool bNotes = true ) const;
+                                        SCROW& rEndRow, bool bNotes ) const;
     void            InvalidateTableArea();
 
     /// Return the number of columns / rows that should be visible for the tiled rendering.
@@ -1411,7 +1424,7 @@ public:
     void CopyCellToDocument( const ScAddress& rSrcPos, const ScAddress& rDestPos, ScDocument& rDestDoc );
 
     void            CopyTabToClip(SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2,
-                                SCTAB nTab, ScDocument* pClipDoc = nullptr);
+                                SCTAB nTab, ScDocument* pClipDoc);
 
     bool InitColumnBlockPosition( sc::ColumnBlockPosition& rBlokPos, SCTAB nTab, SCCOL nCol );
 
@@ -1439,8 +1452,8 @@ public:
         case is the overall encompassing range. */
     void            CopyFromClip( const ScRange& rDestRange, const ScMarkData& rMark,
                                     InsertDeleteFlags nInsFlag,
-                                    ScDocument* pRefUndoDoc = nullptr,
-                                    ScDocument* pClipDoc = nullptr,
+                                    ScDocument* pRefUndoDoc,
+                                    ScDocument* pClipDoc,
                                     bool bResetCut = true,
                                     bool bAsLink = false,
                                     bool bIncludeFiltered = true,
@@ -1487,23 +1500,23 @@ public:
                     //  don't use anymore:
     void            CopyToDocument(SCCOL nCol1, SCROW nRow1, SCTAB nTab1,
                                 SCCOL nCol2, SCROW nRow2, SCTAB nTab2,
-                                InsertDeleteFlags nFlags, bool bMarked, ScDocument* pDestDoc,
+                                InsertDeleteFlags nFlags, bool bMarked, ScDocument& rDestDoc,
                                 const ScMarkData* pMarks = nullptr, bool bColRowFlags = true);
     void            UndoToDocument(SCCOL nCol1, SCROW nRow1, SCTAB nTab1,
                                 SCCOL nCol2, SCROW nRow2, SCTAB nTab2,
-                                InsertDeleteFlags nFlags, bool bMarked, ScDocument* pDestDoc);
+                                InsertDeleteFlags nFlags, bool bMarked, ScDocument& rDestDoc);
 
     void            CopyToDocument(const ScRange& rRange,
-                                InsertDeleteFlags nFlags, bool bMarked, ScDocument* pDestDoc,
+                                InsertDeleteFlags nFlags, bool bMarked, ScDocument& rDestDoc,
                                 const ScMarkData* pMarks = nullptr, bool bColRowFlags = true);
     void            UndoToDocument(const ScRange& rRange,
-                                InsertDeleteFlags nFlags, bool bMarked, ScDocument* pDestDoc);
+                                InsertDeleteFlags nFlags, bool bMarked, ScDocument& rDestDoc);
 
     void            CopyScenario( SCTAB nSrcTab, SCTAB nDestTab, bool bNewScenario = false );
     bool            TestCopyScenario( SCTAB nSrcTab, SCTAB nDestTab ) const;
-    void            MarkScenario( SCTAB nSrcTab, SCTAB nDestTab,
-                                    ScMarkData& rDestMark, bool bResetMark = true,
-                                    sal_uInt16 nNeededBits = 0 ) const;
+    void            MarkScenario(SCTAB nSrcTab, SCTAB nDestTab,
+                                ScMarkData& rDestMark, bool bResetMark = true,
+                                ScScenarioFlags nNeededBits = ScScenarioFlags::NONE) const;
     bool            HasScenarioRange( SCTAB nTab, const ScRange& rRange ) const;
     SC_DLLPUBLIC const ScRangeList* GetScenarioRanges( SCTAB nTab ) const;
 
@@ -1514,7 +1527,7 @@ public:
         bool bUpdateNoteCaptionPos = true );
 
     SC_DLLPUBLIC void           UpdateTranspose( const ScAddress& rDestPos, ScDocument* pClipDoc,
-                                        const ScMarkData& rMark, ScDocument* pUndoDoc = nullptr );
+                                        const ScMarkData& rMark, ScDocument* pUndoDoc );
 
     void            UpdateGrow( const ScRange& rArea, SCCOL nGrowX, SCROW nGrowY );
 
@@ -1678,6 +1691,12 @@ public:
     SC_DLLPUBLIC sal_uInt16         GetRowHeight( SCROW nRow, SCTAB nTab, bool bHiddenAsZero = true ) const;
     SC_DLLPUBLIC sal_uInt16         GetRowHeight( SCROW nRow, SCTAB nTab, SCROW* pStartRow, SCROW* pEndRow ) const;
     SC_DLLPUBLIC sal_uLong          GetRowHeight( SCROW nStartRow, SCROW nEndRow, SCTAB nTab, bool bHiddenAsZero = true ) const;
+
+    /**
+     * Given the height i.e. total vertical distance from the top of the sheet
+     * grid, return the first visible row whose top position is below the
+     * specified height.
+     */
     SCROW                       GetRowForHeight( SCTAB nTab, sal_uLong nHeight ) const;
     sal_uLong                       GetScaledRowHeight( SCROW nStartRow, SCROW nEndRow, SCTAB nTab, double fScale ) const;
     SC_DLLPUBLIC sal_uLong          GetColOffset( SCCOL nCol, SCTAB nTab, bool bHiddenAsZero = true ) const;
@@ -1700,7 +1719,7 @@ public:
     SC_DLLPUBLIC bool SetOptimalHeight(
         sc::RowHeightContext& rCxt, SCROW nStartRow, SCROW nEndRow, SCTAB nTab );
 
-    void UpdateAllRowHeights( sc::RowHeightContext& rCxt, const ScMarkData* pTabMark = nullptr );
+    void UpdateAllRowHeights( sc::RowHeightContext& rCxt, const ScMarkData* pTabMark );
 
     long            GetNeededSize( SCCOL nCol, SCROW nRow, SCTAB nTab,
                                     OutputDevice* pDev,
@@ -1711,11 +1730,11 @@ public:
     SC_DLLPUBLIC void           ShowCol(SCCOL nCol, SCTAB nTab, bool bShow);
     SC_DLLPUBLIC void           ShowRow(SCROW nRow, SCTAB nTab, bool bShow);
     SC_DLLPUBLIC void           ShowRows(SCROW nRow1, SCROW nRow2, SCTAB nTab, bool bShow);
-    SC_DLLPUBLIC void           SetRowFlags( SCROW nRow, SCTAB nTab, sal_uInt8 nNewFlags );
-    SC_DLLPUBLIC void           SetRowFlags( SCROW nStartRow, SCROW nEndRow, SCTAB nTab, sal_uInt8 nNewFlags );
+    SC_DLLPUBLIC void           SetRowFlags( SCROW nRow, SCTAB nTab, CRFlags nNewFlags );
+    SC_DLLPUBLIC void           SetRowFlags( SCROW nStartRow, SCROW nEndRow, SCTAB nTab, CRFlags nNewFlags );
 
-    SC_DLLPUBLIC sal_uInt8          GetColFlags( SCCOL nCol, SCTAB nTab ) const;
-    SC_DLLPUBLIC sal_uInt8          GetRowFlags( SCROW nRow, SCTAB nTab ) const;
+    SC_DLLPUBLIC CRFlags        GetColFlags( SCCOL nCol, SCTAB nTab ) const;
+    SC_DLLPUBLIC CRFlags        GetRowFlags( SCROW nRow, SCTAB nTab ) const;
 
     SC_DLLPUBLIC void           GetAllRowBreaks(std::set<SCROW>& rBreaks, SCTAB nTab, bool bPage, bool bManual) const;
     SC_DLLPUBLIC void           GetAllColBreaks(std::set<SCCOL>& rBreaks, SCTAB nTab, bool bPage, bool bManual) const;
@@ -1793,7 +1812,7 @@ public:
     void            RemoveManualBreaks( SCTAB nTab );
     bool            HasManualBreaks( SCTAB nTab ) const;
 
-    bool            IsPageStyleInUse( const OUString& rStrPageStyle, SCTAB* pInTab = nullptr );
+    bool            IsPageStyleInUse( const OUString& rStrPageStyle, SCTAB* pInTab );
     bool            RemovePageStyleInUse( const OUString& rStrPageStyle );
     bool            RenamePageStyleInUse( const OUString& rOld, const OUString& rNew );
     void            ModifyStyleSheet( SfxStyleSheetBase& rPageStyle,
@@ -1843,14 +1862,13 @@ public:
         const ScMarkData* pMarkData = nullptr );
 
     SC_DLLPUBLIC SvNumberFormatter* GetFormatTable() const;
-    SC_DLLPUBLIC SvNumberFormatter* CreateFormatTable() const;
 
     /** Sort a range of data. */
     void Sort(
         SCTAB nTab, const ScSortParam& rSortParam, bool bKeepQuery, bool bUpdateRefs,
         ScProgress* pProgress, sc::ReorderParam* pUndo );
 
-    void Reorder( const sc::ReorderParam& rParam, ScProgress* pProgress );
+    void Reorder( const sc::ReorderParam& rParam );
 
     SCSIZE          Query( SCTAB nTab, const ScQueryParam& rQueryParam, bool bKeepSub );
     SC_DLLPUBLIC bool           CreateQueryParam( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2,
@@ -1913,8 +1931,6 @@ public:
     bool            GetHasMacroFunc() const      { return bHasMacroFunc; }
     void            SetHasMacroFunc(bool bSet)   { bHasMacroFunc = bSet; }
 
-    static bool     CheckMacroWarn();
-
     void            SetRangeOverflowType(sal_uInt32 nType)  { nRangeOverflowType = nType; }
     bool            HasRangeOverflow() const                { return nRangeOverflowType != 0; }
     SC_DLLPUBLIC sal_uInt32      GetRangeOverflowType() const            { return nRangeOverflowType; }
@@ -1932,7 +1948,7 @@ public:
 
     SC_DLLPUBLIC ScChartListenerCollection* GetChartListenerCollection() const { return pChartListenerCollection;}
     void            SetChartListenerCollection( ScChartListenerCollection*,
-                        bool bSetChartRangeLists = false );
+                        bool bSetChartRangeLists );
     void            UpdateChart( const OUString& rName );
     void            RestoreChartListener( const OUString& rName );
     SC_DLLPUBLIC void           UpdateChartListenerCollection();
@@ -1976,7 +1992,7 @@ public:
      */
     void SC_DLLPUBLIC SetFormulaResults( const ScAddress& rTopPos, const double* pResults, size_t nLen );
 
-    void SC_DLLPUBLIC SetFormulaResults( const ScAddress& rTopPos, const formula::FormulaTokenRef* pResults, size_t nLen );
+    void SC_DLLPUBLIC SetFormulaResults( const ScAddress& rTopPos, const formula::FormulaConstTokenRef* pResults, size_t nLen );
 
     /**
      * Transfer a series of contiguous cell values from specified position to
@@ -2011,7 +2027,7 @@ private:
                                         SCCOLROW nEndCol, SCCOLROW* pTranslate,
                                         ScProgress* pProgress, sal_uLong nProAdd );
 
-    DECL_LINK_TYPED(TrackTimeHdl, Idle *, void);
+    DECL_LINK(TrackTimeHdl, Idle *, void);
 
     static ScRecursionHelper*   CreateRecursionHelperInstance();
 
@@ -2070,6 +2086,10 @@ public:
     void                AppendToFormulaTrack( ScFormulaCell* pCell );
     void                RemoveFromFormulaTrack( ScFormulaCell* pCell );
     void                TrackFormulas( sal_uInt32 nHintId = SC_HINT_DATACHANGED );
+    void                SetTrackFormulasPending() { mbTrackFormulasPending = true; }
+    bool                IsTrackFormulasPending() const { return mbTrackFormulasPending; }
+    void                FinalTrackFormulas( sal_uInt32 nHintId );
+    bool                IsFinalTrackFormulas() const { return mbFinalTrackFormulas; }
     bool                IsInFormulaTree( ScFormulaCell* pCell ) const;
     bool                IsInFormulaTrack( ScFormulaCell* pCell ) const;
     HardRecalcState     GetHardRecalcState() { return eHardRecalcState; }
@@ -2255,14 +2275,14 @@ public:
      * Call this before any operations that might trigger one or more formula
      * cells to get calculated.
      */
-    void ClearFormulaContext();
+    void PrepareFormulaCalc();
 
     SvtBroadcaster* GetBroadcaster( const ScAddress& rPos );
     const SvtBroadcaster* GetBroadcaster( const ScAddress& rPos ) const;
     void DeleteBroadcasters( sc::ColumnBlockPosition& rBlockPos, const ScAddress& rTopPos, SCROW nLength );
 
-#if DEBUG_COLUMN_STORAGE
-    SC_DLLPUBLIC void DumpFormulaGroups( SCTAB nTab, SCCOL nCol ) const;
+#if DUMP_COLUMN_STORAGE
+    SC_DLLPUBLIC void DumpColumnStorage( SCTAB nTab, SCCOL nCol ) const;
 #endif
 
 #if DEBUG_AREA_BROADCASTER
@@ -2306,8 +2326,6 @@ private:
 
     void    DeleteDrawLayer();
     SC_DLLPUBLIC bool   DrawGetPrintArea( ScRange& rRange, bool bSetHor, bool bSetVer ) const;
-    void    DrawMovePage( sal_uInt16 nOldPos, sal_uInt16 nNewPos );
-    void    DrawCopyPage( sal_uInt16 nOldPos, sal_uInt16 nNewPos );
 
     void    UpdateDrawPrinter();
     void    UpdateDrawLanguages();
@@ -2335,10 +2353,10 @@ private:
     void SharePooledResources( ScDocument* pSrcDoc );
 
     void EndListeningIntersectedGroup(
-        sc::EndListeningContext& rCxt, const ScAddress& rPos, std::vector<ScAddress>* pGroupPos = nullptr );
+        sc::EndListeningContext& rCxt, const ScAddress& rPos, std::vector<ScAddress>* pGroupPos );
 
     void EndListeningIntersectedGroups(
-        sc::EndListeningContext& rCxt, const ScRange& rRange, std::vector<ScAddress>* pGroupPos = nullptr );
+        sc::EndListeningContext& rCxt, const ScRange& rRange, std::vector<ScAddress>* pGroupPos );
 
     void EndListeningGroups( const std::vector<ScAddress>& rPosArray );
     void SetNeedsListeningGroups( const std::vector<ScAddress>& rPosArray );

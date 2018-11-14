@@ -31,26 +31,26 @@ class GfxLink;
 struct ImpSwapFile;
 class GraphicConversionParameters;
 
-class ImpGraphic
+class ImpGraphic final
 {
     friend class Graphic;
 
 private:
 
-    GDIMetaFile         maMetaFile;
-    BitmapEx            maEx;
-    ImpSwapInfo         maSwapInfo;
-    Animation*          mpAnimation;
-    GraphicReader*      mpContext;
-    ImpSwapFile*        mpSwapFile;
-    GfxLink*            mpGfxLink;
-    GraphicType         meType;
-    mutable sal_uLong   mnSizeBytes;
-    sal_uLong           mnRefCount;
-    bool                mbSwapOut;
-    bool                mbSwapUnderway;
-    bool                mbDummyContext;
-    SvgDataPtr          maSvgData;
+    GDIMetaFile                  maMetaFile;
+    BitmapEx                     maEx;
+    ImpSwapInfo                  maSwapInfo;
+    std::unique_ptr<Animation>   mpAnimation;
+    std::shared_ptr<GraphicReader> mpContext;
+    std::shared_ptr<ImpSwapFile> mpSwapFile;
+    std::unique_ptr<GfxLink>     mpGfxLink;
+    GraphicType                  meType;
+    mutable sal_uLong            mnSizeBytes;
+    bool                         mbSwapOut;
+    bool                         mbSwapUnderway;
+    bool                         mbDummyContext;
+    SvgDataPtr                   maSvgData;
+    css::uno::Sequence<sal_Int8> maPdfData;
 
 private:
 
@@ -61,7 +61,9 @@ private:
                         ImpGraphic(const SvgDataPtr& rSvgDataPtr);
                         ImpGraphic( const Animation& rAnimation );
                         ImpGraphic( const GDIMetaFile& rMtf );
-    virtual             ~ImpGraphic();
+public:
+                        ~ImpGraphic();
+private:
 
     ImpGraphic&         operator=( const ImpGraphic& rImpGraphic );
     bool                operator==( const ImpGraphic& rImpGraphic ) const;
@@ -101,10 +103,10 @@ private:
     void                ImplStartAnimation( OutputDevice* pOutDev,
                                             const Point& rDestPt,
                                             const Size& rDestSize,
-                                            long nExtraData = 0,
-                                            OutputDevice* pFirstFrameOutDev = nullptr );
-    void                ImplStopAnimation( OutputDevice* pOutputDevice = nullptr,
-                                           long nExtraData = 0 );
+                                            long nExtraData,
+                                            OutputDevice* pFirstFrameOutDev );
+    void                ImplStopAnimation( OutputDevice* pOutputDevice,
+                                           long nExtraData );
 
     void                ImplSetAnimationNotifyHdl( const Link<Animation*,void>& rLink );
     Link<Animation*,void> ImplGetAnimationNotifyHdl() const;
@@ -113,8 +115,8 @@ private:
 
 private:
 
-    GraphicReader*      ImplGetContext() { return mpContext;}
-    void                ImplSetContext( GraphicReader* pReader );
+    std::shared_ptr<GraphicReader>& ImplGetContext() { return mpContext;}
+    void                ImplSetContext( const std::shared_ptr<GraphicReader>& pReader );
     void                ImplSetDummyContext( bool value ) { mbDummyContext = value; }
     bool                ImplReadEmbedded( SvStream& rIStream );
     bool                ImplWriteEmbedded( SvStream& rOStream );

@@ -50,17 +50,10 @@
 #include <vcl/settings.hxx>
 #include <vcl/commandinfoprovider.hxx>
 
+#include <cassert>
 #include <functional>
 
 using namespace ::com::sun::star;
-
-// Property names of a menu/menu item ItemDescriptor
-static const char ITEM_DESCRIPTOR_COMMANDURL[]  = "CommandURL";
-static const char ITEM_DESCRIPTOR_HELPURL[]     = "HelpURL";
-static const char ITEM_DESCRIPTOR_OFFSET[]      = "Offset";
-static const char ITEM_DESCRIPTOR_STYLE[]       = "Style";
-static const char ITEM_DESCRIPTOR_WIDTH[]       = "Width";
-static const char ITEM_DESCRIPTOR_TYPE[]        = "Type";
 
 namespace framework
 {
@@ -169,21 +162,17 @@ throw ( uno::RuntimeException, std::exception )
 
 void SAL_CALL StatusBarManager::disposing( const lang::EventObject& Source ) throw ( uno::RuntimeException, std::exception )
 {
-    {
-        SolarMutexGuard g;
-        if ( m_bDisposed )
-            return;
-    }
+    SolarMutexGuard g;
+
+    if ( m_bDisposed )
+        return;
 
     RemoveControllers();
 
-    {
-        SolarMutexGuard g;
-        if ( Source.Source == uno::Reference< uno::XInterface >( m_xFrame, uno::UNO_QUERY ))
-            m_xFrame.clear();
+    if ( Source.Source == uno::Reference< uno::XInterface >( m_xFrame, uno::UNO_QUERY ))
+        m_xFrame.clear();
 
-        m_xContext.clear();
-    }
+    m_xContext.clear();
 }
 
 // XComponent
@@ -287,10 +276,8 @@ void StatusBarManager::UpdateControllers()
 
 void StatusBarManager::RemoveControllers()
 {
-    SolarMutexGuard g;
-
-    if ( m_bDisposed )
-        return;
+    DBG_TESTSOLARMUTEX();
+    assert(!m_bDisposed);
 
     std::for_each( m_aControllerMap.begin(),
                    m_aControllerMap.end(),
@@ -396,11 +383,7 @@ void StatusBarManager::CreateControllers()
         }
     }
 
-    AddFrameActionListener();
-}
-
-void StatusBarManager::AddFrameActionListener()
-{
+    // add frame action listeners
     if ( !m_bFrameActionRegistered && m_xFrame.is() )
     {
         m_bFrameActionRegistered = true;
@@ -440,27 +423,27 @@ void StatusBarManager::FillStatusBar( const uno::Reference< container::XIndexAcc
             {
                 for ( int i = 0; i < aProp.getLength(); i++ )
                 {
-                    if ( aProp[i].Name == ITEM_DESCRIPTOR_COMMANDURL )
+                    if ( aProp[i].Name == "CommandURL" )
                     {
                         aProp[i].Value >>= aCommandURL;
                     }
-                    else if ( aProp[i].Name == ITEM_DESCRIPTOR_HELPURL )
+                    else if ( aProp[i].Name == "HelpURL" )
                     {
                         aProp[i].Value >>= aHelpURL;
                     }
-                    else if ( aProp[i].Name == ITEM_DESCRIPTOR_STYLE )
+                    else if ( aProp[i].Name == "Style" )
                     {
                         aProp[i].Value >>= nStyle;
                     }
-                    else if ( aProp[i].Name == ITEM_DESCRIPTOR_TYPE )
+                    else if ( aProp[i].Name == "Type" )
                     {
                         aProp[i].Value >>= nType;
                     }
-                    else if ( aProp[i].Name == ITEM_DESCRIPTOR_WIDTH )
+                    else if ( aProp[i].Name == "Width" )
                     {
                         aProp[i].Value >>= nWidth;
                     }
-                    else if ( aProp[i].Name == ITEM_DESCRIPTOR_OFFSET )
+                    else if ( aProp[i].Name == "Offset" )
                     {
                         aProp[i].Value >>= nOffset;
                     }
@@ -644,7 +627,7 @@ void StatusBarManager::MouseButtonUp( const MouseEvent& rMEvt )
     MouseButton(rMEvt,&frame::XStatusbarController::mouseButtonUp);
 }
 
-IMPL_LINK_NOARG_TYPED(StatusBarManager, Click, StatusBar*, void)
+IMPL_LINK_NOARG(StatusBarManager, Click, StatusBar*, void)
 {
     SolarMutexGuard g;
 
@@ -665,7 +648,7 @@ IMPL_LINK_NOARG_TYPED(StatusBarManager, Click, StatusBar*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(StatusBarManager, DoubleClick, StatusBar*, void)
+IMPL_LINK_NOARG(StatusBarManager, DoubleClick, StatusBar*, void)
 {
     SolarMutexGuard g;
 

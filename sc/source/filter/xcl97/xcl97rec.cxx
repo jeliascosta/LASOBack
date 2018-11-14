@@ -69,8 +69,6 @@
 #include "patattr.hxx"
 #include "tabprotection.hxx"
 
-#include <com/sun/star/sheet/XCellAddressable.hpp>
-#include <com/sun/star/sheet/XCellRangeAddressable.hpp>
 #include <com/sun/star/embed/Aspects.hpp>
 #include <com/sun/star/chart2/XCoordinateSystemContainer.hpp>
 #include <com/sun/star/chart2/XChartTypeContainer.hpp>
@@ -479,7 +477,7 @@ void XclObj::SaveTextRecs( XclExpStream& rStrm )
 XclObjComment::XclObjComment( XclExpObjectManager& rObjMgr, const Rectangle& rRect, const EditTextObject& rEditObj, SdrCaptionObj* pCaption, bool bVisible, const ScAddress& rAddress, Rectangle &rFrom, Rectangle &rTo ) :
     XclObj( rObjMgr, EXC_OBJTYPE_NOTE, true )
             , maScPos( rAddress )
-            , mpCaption( static_cast< SdrCaptionObj* >( pCaption->Clone() ) )
+            , mpCaption( pCaption->Clone() )
             , mbVisible( bVisible )
             , maFrom ( rFrom )
             , maTo ( rTo )
@@ -864,7 +862,7 @@ sal_uInt16 XclTxo::GetNum() const
     return EXC_ID_TXO;
 }
 
-sal_Size XclTxo::GetLen() const
+std::size_t XclTxo::GetLen() const
 {
     return 18;
 }
@@ -874,7 +872,7 @@ sal_Size XclTxo::GetLen() const
 XclObjOle::XclObjOle( XclExpObjectManager& rObjMgr, const SdrObject& rObj ) :
     XclObj( rObjMgr, EXC_OBJTYPE_PICTURE ),
     rOleObj( rObj ),
-    pRootStorage( rObjMgr.GetRoot().GetRootStorage() )
+    pRootStorage( rObjMgr.GetRoot().GetRootStorage().get() )
 {
 }
 
@@ -990,8 +988,6 @@ ExcBof8_Base::ExcBof8_Base()
     nVers           = 0x0600;
     nRupBuild       = 0x0dbb;
     nRupYear        = 0x07cc;
-//  nFileHistory    = 0x00000001;   // last edited by Microsoft Excel for Windows
-    nFileHistory    = 0x00000000;
     nLowestBiffVer  = 0x00000006;   // Biff8
 }
 void XclObjAny::WriteFromTo( XclExpXmlStream& rStrm, const Reference< XShape >& rShape, SCTAB nTab )
@@ -1188,7 +1184,7 @@ void ExcBof8_Base::SaveCont( XclExpStream& rStrm )
 {
     rStrm.DisableEncryption();
     rStrm   << nVers << nDocType << nRupBuild << nRupYear
-            << nFileHistory << nLowestBiffVer;
+            << sal_uInt32(0)/*nFileHistory*/ << nLowestBiffVer;
 }
 
 sal_uInt16 ExcBof8_Base::GetNum() const
@@ -1196,7 +1192,7 @@ sal_uInt16 ExcBof8_Base::GetNum() const
     return 0x0809;
 }
 
-sal_Size ExcBof8_Base::GetLen() const
+std::size_t ExcBof8_Base::GetLen() const
 {
     return 16;
 }
@@ -1239,7 +1235,7 @@ void ExcBundlesheet8::SaveCont( XclExpStream& rStrm )
     rStrm << nGrbit << GetName();
 }
 
-sal_Size ExcBundlesheet8::GetLen() const
+std::size_t ExcBundlesheet8::GetLen() const
 {   // Text max 255 chars
     return 8 + GetName().GetBufferSize();
 }
@@ -1270,7 +1266,7 @@ sal_uInt16 XclObproj::GetNum() const
     return 0x00D3;
 }
 
-sal_Size XclObproj::GetLen() const
+std::size_t XclObproj::GetLen() const
 {
     return 0;
 }
@@ -1291,7 +1287,7 @@ sal_uInt16 XclCodename::GetNum() const
     return 0x01BA;
 }
 
-sal_Size XclCodename::GetLen() const
+std::size_t XclCodename::GetLen() const
 {
     return aName.GetSize();
 }
@@ -1332,7 +1328,7 @@ ExcEScenario::ExcEScenario( const XclExpRoot& rRoot, SCTAB nTab )
     OUString  sTmpComm;
     OUString aTmp;
     Color   aDummyCol;
-    sal_uInt16  nFlags;
+    ScScenarioFlags nFlags;
 
     ScDocument& rDoc = rRoot.GetDoc();
     rDoc.GetName(nTab, aTmp);
@@ -1345,7 +1341,7 @@ ExcEScenario::ExcEScenario( const XclExpRoot& rRoot, SCTAB nTab )
     sComment.Assign( sTmpComm, EXC_STR_DEFAULT, 255 );
     if( sComment.Len() )
         nRecLen += sComment.GetSize();
-    bProtected = (nFlags & SC_SCENARIO_PROTECT);
+    bProtected = (nFlags & ScScenarioFlags::Protected) != ScScenarioFlags::NONE;
 
     sUserName.Assign( rRoot.GetUserName(), EXC_STR_DEFAULT, 255 );
     nRecLen += sUserName.GetSize();
@@ -1430,7 +1426,7 @@ sal_uInt16 ExcEScenario::GetNum() const
     return 0x00AF;
 }
 
-sal_Size ExcEScenario::GetLen() const
+std::size_t ExcEScenario::GetLen() const
 {
     return nRecLen;
 }
@@ -1523,7 +1519,7 @@ sal_uInt16 ExcEScenarioManager::GetNum() const
     return 0x00AE;
 }
 
-sal_Size ExcEScenarioManager::GetLen() const
+std::size_t ExcEScenarioManager::GetLen() const
 {
     return 8;
 }
@@ -1648,7 +1644,7 @@ sal_uInt16 XclCalccount::GetNum() const
     return 0x000C;
 }
 
-sal_Size XclCalccount::GetLen() const
+std::size_t XclCalccount::GetLen() const
 {
     return 2;
 }
@@ -1675,7 +1671,7 @@ sal_uInt16 XclIteration::GetNum() const
     return 0x0011;
 }
 
-sal_Size XclIteration::GetLen() const
+std::size_t XclIteration::GetLen() const
 {
     return 2;
 }
@@ -1702,7 +1698,7 @@ sal_uInt16 XclDelta::GetNum() const
     return 0x0010;
 }
 
-sal_Size XclDelta::GetLen() const
+std::size_t XclDelta::GetLen() const
 {
     return 8;
 }
@@ -1799,8 +1795,8 @@ void XclExpWriteAccess::WriteBody( XclExpStream& rStrm )
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20 };
 
-    sal_Size nDataSize = sizeof(aData);
-    for (sal_Size i = 0; i < nDataSize; ++i)
+    std::size_t nDataSize = sizeof(aData);
+    for (std::size_t i = 0; i < nDataSize; ++i)
         rStrm << aData[i];
 }
 

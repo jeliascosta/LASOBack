@@ -85,10 +85,9 @@ class SwXMLImport: public SvXMLImport
                                             // existing styles will be
                                             // overwritten.
     bool                m_bBlock : 1;     // Load text block
-    bool                m_bShowProgress : 1;
     bool                m_bOrganizerMode : 1;
     bool                m_bInititedXForms : 1;
-    bool                m_bPreserveRedlineMode;
+    bool                m_bPreserveRedlineFlags;
 
     SwDoc*      m_pDoc; // cached for getDoc()
 
@@ -100,8 +99,6 @@ class SwXMLImport: public SvXMLImport
                      const css::uno::Reference< css::text::XTextRange > & rInsertPos );
     void         setStyleInsertMode( SfxStyleFamily nFamilies,
                                      bool bOverwrite );
-    void         setBlockMode();
-    void         setOrganizerMode();
 
 protected:
 
@@ -120,7 +117,7 @@ public:
         const css::uno::Reference< css::uno::XComponentContext >& rContext,
         OUString const & implementationName, SvXMLImportFlags nImportFlags);
 
-    virtual ~SwXMLImport() throw();
+    virtual ~SwXMLImport() throw() override;
 
     // css::xml::sax::XDocumentHandler
     virtual void SAL_CALL startDocument()
@@ -161,9 +158,7 @@ public:
     bool IsInsertMode() const { return m_bInsert; }
     bool IsStylesOnlyMode() const { return !m_bLoadDoc; }
     bool IsBlockMode() const { return m_bBlock; }
-    bool IsOrganizerMode() const { return m_bOrganizerMode; }
 
-    inline const SvXMLUnitConverter& GetTwipUnitConverter() const;
     inline const SvXMLImportItemMapper& GetTableItemMapper() const;
     inline       SvXMLImportItemMapper& GetTableItemMapper();
     SvXMLImportContext *CreateTableItemImportContext( sal_uInt16 nPrefix,
@@ -177,8 +172,7 @@ public:
 
     bool FindAutomaticStyle( sal_uInt16 nFamily,
                              const OUString& rName,
-                             const SfxItemSet **ppItemSet=nullptr,
-                             OUString *pParent=nullptr ) const;
+                             const SfxItemSet **ppItemSet ) const;
 
     virtual void SetStatistics(
         const css::uno::Sequence< css::beans::NamedValue> & i_rStats) override;
@@ -199,11 +193,6 @@ public:
     const SwDoc* getDoc() const;
     SwDoc* getDoc();
 };
-
-inline const SvXMLUnitConverter& SwXMLImport::GetTwipUnitConverter() const
-{
-    return *m_pTwipUnitConv;
-}
 
 inline const SvXMLImportItemMapper& SwXMLImport::GetTableItemMapper() const
 {

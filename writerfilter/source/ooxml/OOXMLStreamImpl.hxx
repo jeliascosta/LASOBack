@@ -63,16 +63,15 @@ public:
     OOXMLStreamImpl
     (OOXMLStreamImpl & rStream, StreamType_t nType);
     OOXMLStreamImpl
-    (css::uno::Reference<css::uno::XComponentContext> xContext,
-     css::uno::Reference<css::io::XInputStream> xStorageStream,
+    (css::uno::Reference<css::uno::XComponentContext> const & xContext,
+     css::uno::Reference<css::io::XInputStream> const & xStorageStream,
      StreamType_t nType, bool bRepairStorage);
     OOXMLStreamImpl(OOXMLStreamImpl & rStream, const OUString & rId);
 
-    virtual ~OOXMLStreamImpl();
+    virtual ~OOXMLStreamImpl() override;
 
     virtual css::uno::Reference<css::xml::sax::XFastParser> getFastParser() override;
     virtual css::uno::Reference<css::io::XInputStream> getDocumentStream() override;
-    virtual css::uno::Reference<css::io::XInputStream> getStorageStream() override;
     virtual css::uno::Reference<css::uno::XComponentContext> getContext() override;
     virtual OUString getTargetForId(const OUString & rId) override;
     virtual const OUString & getTarget() const override;

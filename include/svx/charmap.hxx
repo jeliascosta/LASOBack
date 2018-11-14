@@ -40,7 +40,7 @@ class SAL_WARN_UNUSED SVX_DLLPUBLIC SvxShowCharSet : public Control
 {
 public:
                     SvxShowCharSet( vcl::Window* pParent );
-                    virtual ~SvxShowCharSet();
+                    virtual ~SvxShowCharSet() override;
     virtual void    dispose() override;
     virtual void    ApplySettings(vcl::RenderContext& rRenderContext) override;
 
@@ -74,6 +74,8 @@ public:
 
     virtual void    Resize() override;
 
+    virtual FactoryFunction GetUITestFactory() const override;
+
 protected:
     virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& ) override;
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
@@ -105,7 +107,7 @@ private:
 
     sal_Int32       nSelectedIndex;
 
-    FontCharMapPtr  mxFontCharMap;
+    FontCharMapRef  mxFontCharMap;
     Size            maFontSize;
     VclPtr<ScrollBar>  aVscrollSB;
 
@@ -119,7 +121,7 @@ private:
     void            InitSettings(vcl::RenderContext& rRenderContext);
     // abstraction layers are: Unicode<->MapIndex<->Pixel
     Point           MapIndexToPixel( int) const;
-    DECL_LINK_TYPED(VscrollHdl, ScrollBar*, void);
+    DECL_LINK(VscrollHdl, ScrollBar*, void);
 
     void            init();
     Rectangle       getGridRectangle(const Point &rPointUL, const Size &rOutputSize);

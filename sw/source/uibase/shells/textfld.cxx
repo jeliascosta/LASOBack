@@ -70,6 +70,7 @@
 #include <PostItMgr.hxx>
 #include <calbck.hxx>
 #include <memory>
+#include <swmodule.hxx>
 
 using namespace nsSwDocInfoSubType;
 
@@ -138,7 +139,7 @@ void SwTextShell::ExecField(SfxRequest &rReq)
                         if(rLink.IsVisible())
                         {
                             SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-                            std::unique_ptr<SfxAbstractLinksDialog> pDlg(pFact->CreateLinksDialog( pMDI, &rSh.GetLinkManager(), false, &rLink ));
+                            ScopedVclPtr<SfxAbstractLinksDialog> pDlg(pFact->CreateLinksDialog( pMDI, &rSh.GetLinkManager(), false, &rLink ));
                             if ( pDlg )
                             {
                                 pDlg->Execute();
@@ -151,7 +152,7 @@ void SwTextShell::ExecField(SfxRequest &rReq)
                         SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
                         assert(pFact && "SwAbstractDialogFactory fail!");
 
-                        std::unique_ptr<SfxAbstractDialog> pDlg(pFact->CreateSwFieldEditDlg( GetView(),RC_DLG_SWFLDEDITDLG ));
+                        ScopedVclPtr<SfxAbstractDialog> pDlg(pFact->CreateSwFieldEditDlg( GetView() ));
                         assert(pDlg && "Dialog creation failed!");
                         pDlg->Execute();
                     }
@@ -231,7 +232,7 @@ void SwTextShell::ExecField(SfxRequest &rReq)
                     if( SfxItemState::SET == pArgs->GetItemState( FN_PARAM_FIELD_TYPE,
                                                                 false, &pItem ))
                         nType = static_cast<const SfxUInt16Item *>(pItem)->GetValue();
-                    aPar1 += OUString(DB_DELIM);
+                    aPar1 += OUStringLiteral1(DB_DELIM);
                     if( SfxItemState::SET == pArgs->GetItemState(
                                         FN_PARAM_1, false, &pItem ))
                     {
@@ -240,9 +241,9 @@ void SwTextShell::ExecField(SfxRequest &rReq)
                     if( SfxItemState::SET == pArgs->GetItemState(
                                         FN_PARAM_3, false, &pItem ))
                         nCommand = static_cast<const SfxInt32Item*>(pItem)->GetValue();
-                    aPar1 += OUString(DB_DELIM);
-                    aPar1 += OUString::number(nCommand);
-                    aPar1 += OUString(DB_DELIM);
+                    aPar1 += OUStringLiteral1(DB_DELIM)
+                        + OUString::number(nCommand)
+                        + OUStringLiteral1(DB_DELIM);
                     if( SfxItemState::SET == pArgs->GetItemState(
                                         FN_PARAM_2, false, &pItem ))
                     {
@@ -381,10 +382,8 @@ void SwTextShell::ExecField(SfxRequest &rReq)
                         sAuthor = pAuthorItem->GetValue();
                     else
                     {
-                        SvtUserOptions aUserOpt;
-                        if( (sAuthor = aUserOpt.GetFullName()).isEmpty())
-                            if( (sAuthor = aUserOpt.GetID()).isEmpty() )
-                                sAuthor = SW_RES( STR_REDLINE_UNKNOWN_AUTHOR );
+                        sal_uInt16 nAuthor = SW_MOD()->GetRedlineAuthor();
+                        sAuthor = SW_MOD()->GetRedlineAuthor(nAuthor);
                     }
 
                     const SvxPostItTextItem* pTextItem = rReq.GetArg<SvxPostItTextItem>(SID_ATTR_POSTIT_TEXT);
@@ -498,7 +497,7 @@ void SwTextShell::ExecField(SfxRequest &rReq)
 
                     SvxAbstractDialogFactory* pFact2 = SvxAbstractDialogFactory::Create();
                     assert(pFact2 && "Dialog creation failed!");
-                    std::unique_ptr<AbstractSvxPostItDialog> pDlg(pFact2->CreateSvxPostItDialog( pMDI, aSet, bTravel ));
+                    ScopedVclPtr<AbstractSvxPostItDialog> pDlg(pFact2->CreateSvxPostItDialog( pMDI, aSet, bTravel ));
                     assert(pDlg && "Dialog creation failed!");
                     pDlg->HideAuthor();
 
@@ -523,7 +522,7 @@ void SwTextShell::ExecField(SfxRequest &rReq)
                         rSh.SetRedlineComment(sMsg);
                     }
 
-                    pDlg.reset();
+                    pDlg.disposeAndClear();
                     SwViewShell::SetCareWin(nullptr);
                     g_bNoInterrupt = false;
                     rSh.ClearMark();
@@ -557,7 +556,7 @@ void SwTextShell::ExecField(SfxRequest &rReq)
                 {
                     SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
                     assert(pFact && "Dialog creation failed!");
-                    std::unique_ptr<AbstractJavaEditDialog> pDlg(pFact->CreateJavaEditDialog(pMDI, &rSh));
+                    ScopedVclPtr<AbstractJavaEditDialog> pDlg(pFact->CreateJavaEditDialog(pMDI, &rSh));
                     assert(pDlg && "Dialog creation failed!");
                     if ( pDlg->Execute() )
                     {
@@ -851,7 +850,7 @@ void SwTextShell::InsertHyperlink(const SvxHyperlinkItem& rHlnkItem)
     }
 }
 
-IMPL_LINK_TYPED( SwTextShell, RedlineNextHdl, AbstractSvxPostItDialog&, rDlg, void )
+IMPL_LINK( SwTextShell, RedlineNextHdl, AbstractSvxPostItDialog&, rDlg, void )
 {
     SwWrtShell* pSh = GetShellPtr();
 
@@ -898,7 +897,7 @@ IMPL_LINK_TYPED( SwTextShell, RedlineNextHdl, AbstractSvxPostItDialog&, rDlg, vo
     }
 }
 
-IMPL_LINK_TYPED( SwTextShell, RedlinePrevHdl, AbstractSvxPostItDialog&, rDlg, void )
+IMPL_LINK( SwTextShell, RedlinePrevHdl, AbstractSvxPostItDialog&, rDlg, void )
 {
     SwWrtShell* pSh = GetShellPtr();
 

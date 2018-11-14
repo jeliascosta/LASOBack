@@ -35,7 +35,7 @@ class PlainTextFilterDetect : public cppu::WeakImplHelper<
 public:
 
     PlainTextFilterDetect();
-    virtual ~PlainTextFilterDetect();
+    virtual ~PlainTextFilterDetect() override;
 
     // XExtendedFilterDetection
 
@@ -64,9 +64,6 @@ OUString PlainTextFilterDetect_getImplementationName();
 bool PlainTextFilterDetect_supportsService(const OUString& ServiceName);
 
 css::uno::Sequence<OUString> PlainTextFilterDetect_getSupportedServiceNames();
-
-css::uno::Reference<css::uno::XInterface>
-PlainTextFilterDetect_createInstance(const css::uno::Reference<css::uno::XComponentContext>& rCxt);
 
 #endif
 

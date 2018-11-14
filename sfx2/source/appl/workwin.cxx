@@ -20,6 +20,8 @@
 #include <config_features.h>
 #include <comphelper/processfactory.hxx>
 
+#include "workwin.hrc"
+
 #include <sfx2/docfile.hxx>
 #include <sfx2/objsh.hxx>
 #include <sfx2/app.hxx>
@@ -66,79 +68,60 @@ struct ResIdToResName
 
 static const ResIdToResName pToolBarResToName[] =
 {
-    // OMG! hardcoded numbers that have nice (?) symbolic names
-    // elsewhere.
-    { 558,      "fullscreenbar"        }, // This 558 for instance equals RID_FULLSCREENTOOLBOX (in
-                                          // value, and presumably also in semantics) from app.hrc in
-                                          // this very same directory, so why RID_FULLSCREENTOOLBOX
-                                          // can't be used I have no idea.
-
-    { 560,      "standardbar",         }, // 560 is called RID_ENVTOOLBOX in app.hrc, still the same?
-
-    { 18001,    "formsnavigationbar"   }, // Probably the rest are defined in .hrc files that are higher
-                                          // up in the dependency chain and/or later in the build order,
-                                          // and that is the (bad) reason why their symbolic names are
-                                          // not available? Would it really be so awful to move the .hrc
-                                          // files in question out from the modules where they now are?
-
-    { 18002,    "formsfilterbar"       },
-    { 18003,    "formtextobjectbar"    },
-    { 18004,    "formcontrols"         },
-    { 18005,    "moreformcontrols"     },
-    { 18006,    "formdesign"           },
-    { 20050,    "toolbar"              },      //math
-    { 30001,    "objectbar"            },      //chart
-    { 30513,    "toolbar"              },      //chart
-    { 25005,    "textobjectbar"        },      //calc
-    { 25053,    "drawobjectbar"        },
-    { 25054,    "graphicobjectbar"     },
-    { 25001,    "formatobjectbar"      },
-    { 25006,    "previewbar"           },
-    { 25035,    "toolbar"              },      //calc
-    { 23015,    "bezierobjectbar"      },      //draw/impress
-    { 23019,    "gluepointsobjectbar"  },
-    { 23030,    "graphicobjectbar"     },
-    { 23013,    "drawingobjectbar"     },      //impress
-    { 23016,    "textobjectbar"        },      //impress
-    { 23028,    "textobjectbar"        },      //draw
-    { 23011,    "toolbar"              },      //impress
-    { 23020,    "optionsbar"           },
-    { 23021,    "commontaskbar"        },
-    { 23025,    "toolbar"              },      //draw
-    { 23026,    "optionsbar"           },
-    { 23027,    "drawingobjectbar"     },      //draw
-    { 23017,    "outlinetoolbar"       },      //impress
-    { 23012,    "slideviewtoolbar"     },
-    { 23014,    "slideviewobjectbar"   },
-    { 23283,    "bezierobjectbar"      },      // RID_BEZIER_TOOLBOX
-    { 23269,    "drawingobjectbar"     },      // RID_DRAW_TOOLBOX
-    { 23270,    "drawtextobjectbar"    },      // RID_DRAW_TEXT_TOOLBOX
-    { 23267,    "frameobjectbar"       },      // RID_FRAME_TOOLBOX
-    { 23268,    "graphicobjectbar"     },      // RID_GRAFIK_TOOLBOX
-    { 23271,    "numobjectbar"         },      // RID_NUM_TOOLBOX
-    { 23272,    "oleobjectbar"         },      // RID_OLE_TOOLBOX
-    { 23266,    "tableobjectbar"       },      // RID_TOOLS_TOOLBOX
-    { 23265,    "textobjectbar"        },      // RID_TEXT_TOOLBOX
-    { 20631,    "previewobjectbar"     },      //writer
-    { 20402,    "toolbar"              },      //web
-    { 20403,    "textobjectbar"        },
-    { 23273,    "toolbar"              },      //writer
-    { 20408,    "frameobjectbar"       },      //web
-    { 20410,    "graphicobjectbar"     },
-    { 20411,    "oleobjectbar"         },
-    { 14850,    "macrobar"             },
-    { 10987,    "fontworkobjectbar"    },      //global
-    { 10986,    "extrusionobjectbar"   },
-    { 23022,    "formsobjectbar"       },
-    { 23310,    "viewerbar"            },      //writer (plugin)
-    { 25000,    "viewerbar"            },      //calc   (plugin)
-    { 23023,    "viewerbar"            },      //impress(plugin)
-    { 23024,    "viewerbar"            },      //draw   (plugin)
-    { 23031,    "mediaobjectbar"       },      //draw/impress
-    { 25060,    "mediaobjectbar"       },      //calc
-    { 23311,    "mediaobjectbar"       },      //writer
-    { 23313,    "navigationobjectbar"  },      //writer
-    { 0,        ""                     }
+    { RID_FULLSCREENTOOLBOX,       "fullscreenbar"        },
+    { RID_ENVTOOLBOX,              "standardbar",         },
+    { RID_SVXTBX_FORM_NAVIGATION,  "formsnavigationbar"   },
+    { RID_SVXTBX_FORM_FILTER,      "formsfilterbar"       },
+    { RID_SVXTBX_TEXT_CONTROL_ATTRIBUTES, "formtextobjectbar"    },
+    { RID_SVXTBX_CONTROLS,         "formcontrols"         },
+    { RID_SVXTBX_MORECONTROLS,     "moreformcontrols"     },
+    { RID_SVXTBX_FORMDESIGN,       "formdesign"           },
+    { RID_MATH_TOOLBOX,            "toolbar"              },      //math
+    { RID_TEXT_TOOLBOX_SC,         "textobjectbar"        },      //calc
+    { RID_DRAW_OBJECTBAR,          "drawobjectbar"        },
+    { RID_GRAPHIC_OBJECTBAR,       "graphicobjectbar"     },
+    { RID_OBJECTBAR_FORMAT,        "formatobjectbar"      },
+    { RID_OBJECTBAR_PREVIEW,       "previewbar"           },
+    { RID_OBJECTBAR_TOOLS,         "toolbar"              },      //calc
+    { RID_BEZIER_TOOLBOX_SD,       "bezierobjectbar"      },      //draw/impress
+    { RID_GLUEPOINTS_TOOLBOX,      "gluepointsobjectbar"  },
+    { RID_DRAW_GRAF_TOOLBOX,       "graphicobjectbar"     },
+    { RID_DRAW_OBJ_TOOLBOX,        "drawingobjectbar"     },      //impress
+    { RID_DRAW_TEXT_TOOLBOX_SD,    "textobjectbar"        },      //impress
+    { RID_DRAW_TOOLBOX_SD,         "toolbar"              },      //impress
+    { RID_DRAW_OPTIONS_TOOLBOX,    "optionsbar"           },
+    { RID_DRAW_COMMONTASK_TOOLBOX, "commontaskbar"        },
+    { RID_GRAPHIC_OBJ_TOOLBOX,     "drawingobjectbar"     },      //draw
+    { RID_OUTLINE_TOOLBOX,         "outlinetoolbar"       },      //impress
+    { RID_SLIDE_TOOLBOX,           "slideviewtoolbar"     },
+    { RID_SLIDE_OBJ_TOOLBOX,       "slideviewobjectbar"   },
+    { RID_BEZIER_TOOLBOX_SW,       "bezierobjectbar"      },
+    { RID_DRAW_TOOLBOX_SW,         "drawingobjectbar"     },
+    { RID_DRAW_TEXT_TOOLBOX_SW,    "drawtextobjectbar"    },
+    { RID_FRAME_TOOLBOX,           "frameobjectbar"       },
+    { RID_GRAFIK_TOOLBOX,          "graphicobjectbar"     },
+    { RID_NUM_TOOLBOX,             "numobjectbar"         },
+    { RID_OLE_TOOLBOX,             "oleobjectbar"         },
+    { RID_TABLE_TOOLBOX,           "tableobjectbar"       },
+    { RID_TEXT_TOOLBOX_SW,         "textobjectbar"        },
+    { RID_PVIEW_TOOLBOX,           "previewobjectbar"     },      //writer
+    { RID_WEBTOOLS_TOOLBOX,        "toolbar"              },      //web
+    { RID_WEBTEXT_TOOLBOX,         "textobjectbar"        },
+    { RID_TOOLS_TOOLBOX,           "toolbar"              },      //writer
+    { RID_WEBFRAME_TOOLBOX,        "frameobjectbar"       },      //web
+    { RID_WEBGRAPHIC_TOOLBOX,      "graphicobjectbar"     },
+    { RID_WEBOLE_TOOLBOX,          "oleobjectbar"         },
+    { RID_BASICIDE_OBJECTBAR,      "macrobar"             },
+    { RID_SVX_FONTWORK_BAR,        "fontworkobjectbar"    },      //global
+    { RID_SVX_EXTRUSION_BAR,       "extrusionobjectbar"   },
+    { RID_FORMLAYER_TOOLBOX,       "formsobjectbar"       },
+    { RID_MODULE_TOOLBOX,          "viewerbar"            },      //writer (plugin)
+    { RID_OBJECTBAR_APP,           "viewerbar"            },      //calc   (plugin)
+    { RID_DRAW_VIEWER_TOOLBOX,     "viewerbar"            },      //impress(plugin)
+    { RID_DRAW_MEDIA_TOOLBOX,      "mediaobjectbar"       },      //draw/impress
+    { RID_MEDIA_OBJECTBAR,         "mediaobjectbar"       },      //calc
+    { RID_MEDIA_TOOLBOX,           "mediaobjectbar"       },      //writer
+    { 0,                           ""                     }
 };
 
 //SV_IMPL_OBJARR( SfxObjectBarArr_Impl, SfxObjectBar_Impl );
@@ -478,14 +461,49 @@ void SfxWorkWindow::Sort_Impl()
 
 // constructor for workwin of a Frame
 
-SfxFrameWorkWin_Impl::SfxFrameWorkWin_Impl( vcl::Window *pWin, SfxFrame *pFrm, SfxFrame* pMaster )
-    : SfxWorkWindow(
-        pWin,
-        pFrm->GetCurrentViewFrame()->GetBindings(),
-        pFrm->GetParentFrame() ? pFrm->GetParentFrame()->GetWorkWindow_Impl() : nullptr )
-    , pMasterFrame( pMaster )
-    , pFrame( pFrm )
+SfxWorkWindow::SfxWorkWindow( vcl::Window *pWin, SfxFrame *pFrm, SfxFrame* pMaster ) :
+    pParent( nullptr ),
+    pBindings(&pFrm->GetCurrentViewFrame()->GetBindings()),
+    pWorkWin (pWin),
+    pConfigShell( nullptr ),
+    pActiveChild( nullptr ),
+    nUpdateMode(SFX_VISIBILITY_STANDARD),
+    nChildren( 0 ),
+    nOrigMode( 0 ),
+    bSorted( true ),
+    bDockingAllowed(true),
+    bInternalDockingAllowed(true),
+    bAllChildrenVisible(true),
+#if HAVE_FEATURE_DESKTOP
+    bIsFullScreen( false ),
+    bShowStatusBar( true ),
+#else
+    bIsFullScreen( sal_True ),
+    bShowStatusBar( sal_False ),
+#endif
+    m_nLock( 0 ),
+    m_aStatusBarResName( "private:resource/statusbar/statusbar" ),
+    m_aLayoutManagerPropName( "LayoutManager" ),
+    m_aTbxTypeName( "private:resource/toolbar/" ),
+    m_aProgressBarResName( "private:resource/progressbar/progressbar" ),
+    pMasterFrame( pMaster ),
+    pFrame( pFrm )
 {
+    DBG_ASSERT (pBindings, "No Bindings!");
+
+    pBindings->SetWorkWindow_Impl( this );
+
+    // For the ObjectBars a integral place in the Childlist is reserved,
+    // so that they always come in a defined order.
+    aChildren.insert( aChildren.begin(), SFX_OBJECTBAR_MAX, nullptr );
+
+    // create and initialize layout manager listener
+    Reference< css::frame::XFrame > xFrame = GetFrameInterface();
+    LayoutManagerListener* pLayoutManagerListener = new LayoutManagerListener( this );
+    m_xLayoutManagerListener.set( static_cast< cppu::OWeakObject* >( pLayoutManagerListener ),
+                                  css::uno::UNO_QUERY );
+    pLayoutManagerListener->setFrame( xFrame );
+
     pConfigShell = pFrm->GetCurrentViewFrame();
     if ( pConfigShell && pConfigShell->GetObjectShell() )
     {
@@ -511,51 +529,6 @@ SfxFrameWorkWin_Impl::SfxFrameWorkWin_Impl( vcl::Window *pWin, SfxFrame *pFrm, S
 
     nOrigMode = SFX_VISIBILITY_STANDARD;
     nUpdateMode = SFX_VISIBILITY_STANDARD;
-}
-
-
-// Constructor of the base class
-
-SfxWorkWindow::SfxWorkWindow( vcl::Window *pWin, SfxBindings& rB, SfxWorkWindow* pParentWorkwin ) :
-    pParent( pParentWorkwin ),
-    pBindings(&rB),
-    pWorkWin (pWin),
-    pConfigShell( nullptr ),
-    pActiveChild( nullptr ),
-    nUpdateMode(SFX_VISIBILITY_STANDARD),
-    nChildren( 0 ),
-    nOrigMode( 0 ),
-    bSorted( true ),
-    bDockingAllowed(true),
-    bInternalDockingAllowed(true),
-    bAllChildrenVisible(true),
-#if HAVE_FEATURE_DESKTOP
-    bIsFullScreen( false ),
-    bShowStatusBar( true ),
-#else
-    bIsFullScreen( sal_True ),
-    bShowStatusBar( sal_False ),
-#endif
-    m_nLock( 0 ),
-    m_aStatusBarResName( "private:resource/statusbar/statusbar" ),
-    m_aLayoutManagerPropName( "LayoutManager" ),
-    m_aTbxTypeName( "private:resource/toolbar/" ),
-    m_aProgressBarResName( "private:resource/progressbar/progressbar" )
-{
-    DBG_ASSERT (pBindings, "No Bindings!");
-
-    pBindings->SetWorkWindow_Impl( this );
-
-    // For the ObjectBars a integral place in the Childlist is reserved,
-    // so that they always come in a defined order.
-    aChildren.insert( aChildren.begin(), SFX_OBJECTBAR_MAX, nullptr );
-
-    // create and initialize layout manager listener
-    Reference< css::frame::XFrame > xFrame = GetFrameInterface();
-    LayoutManagerListener* pLayoutManagerListener = new LayoutManagerListener( this );
-    m_xLayoutManagerListener.set( static_cast< cppu::OWeakObject* >( pLayoutManagerListener ),
-                                  css::uno::UNO_QUERY );
-    pLayoutManagerListener->setFrame( xFrame );
 }
 
 
@@ -606,8 +579,7 @@ void SfxWorkWindow::DeleteControllers_Impl()
 
     // Lock SplitWindows (which means suppressing the Resize-Reaction of the
     // DockingWindows)
-    sal_uInt16 n;
-    for ( n=0; n<SFX_SPLITWINDOWS_MAX; n++ )
+    for (size_t n=0; n<SFX_SPLITWINDOWS_MAX; n++ )
     {
         SfxSplitWindow *p = pSplit[n];
         if (p->GetWindowCount())
@@ -615,10 +587,11 @@ void SfxWorkWindow::DeleteControllers_Impl()
     }
 
     // Delete Child-Windows
-    for ( n=0; n<aChildWins.size(); )
+    while(!aChildWins.empty())
     {
-        SfxChildWin_Impl* pCW = aChildWins[n];
-        aChildWins.erase(aChildWins.begin());
+        auto itr = aChildWins.begin();
+        SfxChildWin_Impl* pCW = *itr;
+        aChildWins.erase(itr);
         SfxChildWindow *pChild = pCW->pWin;
         if (pChild)
         {
@@ -686,14 +659,9 @@ void SfxWorkWindow::DeleteControllers_Impl()
 }
 
 
-// Virtual method for placing the child window.
+// for placing the child window.
 
-void SfxWorkWindow::ArrangeChildren_Impl( bool /*bForce*/)
-{
-    Arrange_Impl();
-}
-
-void SfxFrameWorkWin_Impl::ArrangeChildren_Impl( bool bForce )
+void SfxWorkWindow::ArrangeChildren_Impl( bool bForce )
 {
     if ( pFrame->IsClosing_Impl() || ( m_nLock && !bForce ))
         return;
@@ -1096,7 +1064,7 @@ bool SfxWorkWindow::IsVisible_Impl( sal_uInt16 nMode ) const
     }
 }
 
-void SfxFrameWorkWin_Impl::UpdateObjectBars_Impl()
+void SfxWorkWindow::UpdateObjectBars_Impl()
 {
     if ( pFrame->IsClosing_Impl() )
         return;
@@ -1104,11 +1072,11 @@ void SfxFrameWorkWin_Impl::UpdateObjectBars_Impl()
     SfxWorkWindow *pWork = pParent;
     while ( pWork )
     {
-        pWork->SfxWorkWindow::UpdateObjectBars_Impl();
+        pWork->UpdateObjectBars_Impl2();
         pWork = pWork->GetParent_Impl();
     }
 
-    SfxWorkWindow::UpdateObjectBars_Impl();
+    UpdateObjectBars_Impl2();
 
     {
         pWork = pParent;
@@ -1181,16 +1149,16 @@ css::uno::Reference< css::frame::XFrame > SfxWorkWindow::GetFrameInterface()
     SfxDispatcher* pDispatcher( GetBindings().GetDispatcher() );
     if ( pDispatcher )
     {
-        SfxViewFrame* pFrame = pDispatcher->GetFrame();
-        if ( pFrame )
-           xFrame = pFrame->GetFrame().GetFrameInterface();
+        SfxViewFrame* pViewFrame = pDispatcher->GetFrame();
+        if ( pViewFrame )
+           xFrame = pViewFrame->GetFrame().GetFrameInterface();
     }
 
     return xFrame;
 }
 
 
-void SfxWorkWindow::UpdateObjectBars_Impl()
+void SfxWorkWindow::UpdateObjectBars_Impl2()
 {
     // Lock SplitWindows (which means suppressing the Resize-Reaction of the
     // DockingWindows)
@@ -1222,9 +1190,9 @@ void SfxWorkWindow::UpdateObjectBars_Impl()
 
     if ( pDispatcher )
     {
-        SfxViewFrame* pFrame = pDispatcher->GetFrame();
-        if ( pFrame )
-           bPluginMode = IsPluginMode( pFrame->GetObjectShell() );
+        SfxViewFrame* pViewFrame = pDispatcher->GetFrame();
+        if ( pViewFrame )
+           bPluginMode = IsPluginMode( pViewFrame->GetObjectShell() );
     }
 
     // Iterate over all Toolboxes
@@ -1290,13 +1258,15 @@ void SfxWorkWindow::UpdateObjectBars_Impl()
 
 void SfxWorkWindow::UpdateChildWindows_Impl()
 {
-    // any current or in the context available Childwindows
+    // tdf#100870, tdf#101320: don't use range-based for loop when
+    // container is modified
     for ( size_t n=0; n<aChildWins.size(); n++ )
     {
+        // any current or in the context available Childwindows
         SfxChildWin_Impl *pCW = aChildWins[n];
         SfxChildWindow *pChildWin = pCW->pWin;
         bool bCreate = false;
-        if ( pCW->nId && !pCW->bDisabled  && (pCW->aInfo.nFlags & SfxChildWindowFlags::ALWAYSAVAILABLE || IsVisible_Impl( pCW->nVisibility ) ) )
+        if ( pCW->nId && (pCW->aInfo.nFlags & SfxChildWindowFlags::ALWAYSAVAILABLE || IsVisible_Impl( pCW->nVisibility ) ) )
         {
             // In the context is an appropriate ChildWindow allowed;
             // it is also turned on?
@@ -1494,7 +1464,7 @@ void SfxWorkWindow::UpdateStatusBar_Impl()
     // No status bar, if no ID is required or when in FullScreenView or
     // if disabled
     if ( aStatBar.nId && IsDockingAllowed() && bInternalDockingAllowed && bShowStatusBar &&
-         ( (aStatBar.bOn && !bIsFullScreen) || aStatBar.bTemp ) )
+         !bIsFullScreen )
     {
         // Id has changed, thus create a suitable Statusbarmanager, this takes
         // over the  current status bar;
@@ -1877,16 +1847,9 @@ void SfxWorkWindow::ToggleChildWindow_Impl(sal_uInt16 nId, bool bSetFocus)
                     if ( pChild->QueryClose() )
                     {
                         pCW->bCreate = false;
-                        if ( pChild->IsHideAtToggle() )
-                        {
-                            ShowChildWindow_Impl( nId, false, bSetFocus );
-                        }
-                        else
-                        {
-                            // The Window should be switched off
-                            pChild->SetVisible_Impl( false );
-                            RemoveChildWin_Impl( pCW );
-                        }
+                        // The Window should be switched off
+                        pChild->SetVisible_Impl( false );
+                        RemoveChildWin_Impl( pCW );
                     }
                 }
                 else
@@ -2219,20 +2182,10 @@ void SfxWorkWindow::ResetChildWindows_Impl()
     }
 }
 
-
-// Virtual method that returns the size of the area (client area) of the
+// returns the size of the area (client area) of the
 // parent windows, in which the ChildWindow can be fitted.
 
 Rectangle SfxWorkWindow::GetTopRect_Impl()
-{
-    return Rectangle (Point(), pWorkWin->GetOutputSizePixel() );
-}
-
-
-// Virtual method that returns the size of the area (client area) of the
-// parent windows, in which the ChildWindow can be fitted.
-
-Rectangle SfxFrameWorkWin_Impl::GetTopRect_Impl()
 {
     return pMasterFrame->GetTopOuterRectPixel_Impl();
 }
@@ -2261,18 +2214,18 @@ void SfxWorkWindow::SaveStatus_Impl(SfxChildWindow *pChild, const SfxChildWinInf
 void SfxWorkWindow::InitializeChild_Impl(SfxChildWin_Impl *pCW)
 {
     SfxDispatcher *pDisp = pBindings->GetDispatcher_Impl();
-    SfxViewFrame *pFrame = pDisp ? pDisp->GetFrame() :nullptr;
-    SfxModule *pMod = pFrame ? SfxModule::GetActiveModule(pFrame) :nullptr;
+    SfxViewFrame *pViewFrame = pDisp ? pDisp->GetFrame() :nullptr;
+    SfxModule *pMod = pViewFrame ? SfxModule::GetActiveModule(pViewFrame) :nullptr;
 
     OUString sModule;
-    if (pFrame)
+    if (pViewFrame)
     {
         try
         {
             using namespace ::com::sun::star;
             uno::Reference< frame::XModuleManager2 > xModuleManager(
                 frame::ModuleManager::create(::comphelper::getProcessComponentContext()));
-            sModule = xModuleManager->identify(pFrame->GetFrame().GetFrameInterface());
+            sModule = xModuleManager->identify(pViewFrame->GetFrame().GetFrameInterface());
             SvtModuleOptions::EFactory eFac = SvtModuleOptions::ClassifyFactoryByServiceName(sModule);
             sModule = SvtModuleOptions::GetFactoryShortName(eFac);
         }
@@ -2409,7 +2362,7 @@ void SfxWorkWindow::EndAutoShow_Impl( Point aPos )
 
     for (VclPtr<SfxSplitWindow> & p : pSplit)
     {
-        if ( p && p->IsAutoHide() )
+        if ( p && p->IsAutoHide(false) )
         {
             Point aLocalPos = p->ScreenToOutputPixel( aPos );
             Point aEmptyPoint;

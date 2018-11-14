@@ -85,11 +85,6 @@ public:
     /** Imports the DDEITEM_STRING record containing a string in a link result. */
     void                importDdeItemString( SequenceInputStream& rStrm );
 
-#if 0
-    /** Returns the sheet cache index if this is a sheet-local external name. */
-    sal_Int32           getSheetCacheIndex() const;
-#endif
-
     /** Returns the DDE item info needed by the XML formula parser. */
     bool                getDdeItemInfo(
                             css::sheet::DDEItemInfo& orItemInfo ) const;
@@ -216,8 +211,6 @@ public:
 
     /** Returns the type of this external link. */
     inline ExternalLinkType getLinkType() const { return meLinkType; }
-    /** Returns true, if the link refers to the current workbook. */
-    inline bool         isInternalLink() const { return (meLinkType == LINKTYPE_SELF) || (meLinkType == LINKTYPE_INTERNAL); }
 
     /** Returns the relation identifier for the external link fragment. */
     inline const OUString& getRelId() const { return maRelId; }
@@ -234,7 +227,7 @@ public:
     /** Returns the token index of the external document. */
     sal_Int32           getDocumentLinkIndex() const;
     /** Returns the external sheet cache index or for the passed sheet. */
-    sal_Int32           getSheetCacheIndex( sal_Int32 nTabId = 0 ) const;
+    sal_Int32           getSheetCacheIndex( sal_Int32 nTabId ) const;
     /** Returns the sheet cache of the external sheet with the passed index. */
     css::uno::Reference< css::sheet::XExternalSheetCache >
                         getSheetCache( sal_Int32 nTabId ) const;
@@ -317,8 +310,6 @@ public:
     /** Returns the external link for the passed reference identifier. */
     ExternalLinkRef     getExternalLink( sal_Int32 nRefId, bool bUseRefSheets = true ) const;
 
-    /** Returns the sheet range for the specified reference (BIFF2-BIFF5 only). */
-    LinkSheetRange      getSheetRange( sal_Int32 nRefId, sal_Int16 nTabId1, sal_Int16 nTabId2 ) const;
     /** Returns the sheet range for the specified reference (BIFF8 only). */
     LinkSheetRange      getSheetRange( sal_Int32 nRefId ) const;
 

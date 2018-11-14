@@ -16,6 +16,10 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <cassert>
+
 #include <uielement/toolbarmanager.hxx>
 
 #include <uielement/generictoolbarcontroller.hxx>
@@ -54,6 +58,7 @@
 #include <comphelper/processfactory.hxx>
 #include <comphelper/sequence.hxx>
 #include <svtools/miscopt.hxx>
+#include <svtools/imgdef.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/menu.hxx>
 #include <vcl/syswin.hxx>
@@ -81,27 +86,9 @@ namespace framework
 {
 
 static const char ITEM_DESCRIPTOR_COMMANDURL[] = "CommandURL";
-static const char ITEM_DESCRIPTOR_HELPURL[]    = "HelpURL";
-static const char ITEM_DESCRIPTOR_CONTAINER[]  = "ItemDescriptorContainer";
-static const char ITEM_DESCRIPTOR_LABEL[]      = "Label";
-static const char ITEM_DESCRIPTOR_TYPE[]       = "Type";
 static const char ITEM_DESCRIPTOR_VISIBLE[]    = "IsVisible";
-static const char ITEM_DESCRIPTOR_STYLE[]      = "Style";
-
-static const char MENUPREFIX[]                 = "private:resource/menubar/";
-
-static const char HELPID_PREFIX_TESTTOOL[]     = ".HelpId:";
 
 static const sal_uInt16 STARTID_CUSTOMIZE_POPUPMENU = 1000;
-
-
-static sal_Int16 getImageTypeFromBools( bool bBig )
-{
-    sal_Int16 n( 0 );
-    if ( bBig )
-        n |= css::ui::ImageType::SIZE_LARGE;
-    return n;
-}
 
 static css::uno::Reference< css::frame::XLayoutManager > getLayoutManagerFromFrame(
     css::uno::Reference< css::frame::XFrame >& rFrame )
@@ -126,6 +113,21 @@ static css::uno::Reference< css::frame::XLayoutManager > getLayoutManagerFromFra
 
     return xLayoutManager;
 }
+namespace
+{
+
+sal_Int16 getCurrentImageType()
+{
+    SvtMiscOptions aMiscOptions;
+    sal_Int16 nImageType = css::ui::ImageType::SIZE_DEFAULT;
+    if (aMiscOptions.GetCurrentSymbolsSize() == SFX_SYMBOLS_SIZE_LARGE)
+        nImageType |= css::ui::ImageType::SIZE_LARGE;
+    else if (aMiscOptions.GetCurrentSymbolsSize() == SFX_SYMBOLS_SIZE_32)
+        nImageType |= css::ui::ImageType::SIZE_32;
+    return nImageType;
+}
+
+} // end anonymous namespace
 
 //  XInterface, XTypeProvider, XServiceInfo
 
@@ -134,10 +136,10 @@ ToolBarManager::ToolBarManager( const Reference< XComponentContext >& rxContext,
                                 const OUString& rResourceName,
                                 ToolBox* pToolBar ) :
     m_bDisposed( false ),
-    m_bSmallSymbols( !SvtMiscOptions().AreCurrentSymbolsLarge() ),
     m_bAddedToTaskPaneList( true ),
     m_bFrameActionRegistered( false ),
     m_bUpdateControllers( false ),
+    m_eSymbolSize(SvtMiscOptions().GetCurrentSymbolsSize()),
     m_pToolBar( pToolBar ),
     m_aResourceName( rResourceName ),
     m_xFrame( rFrame ),
@@ -163,7 +165,13 @@ ToolBarManager::ToolBarManager( const Reference< XComponentContext >& rxContext,
     m_pToolBar->SetDoubleClickHdl( LINK( this, ToolBarManager, DoubleClick ) );
     m_pToolBar->SetStateChangedHdl( LINK( this, ToolBarManager, StateChanged ) );
     m_pToolBar->SetDataChangedHdl( LINK( this, ToolBarManager, DataChanged ) );
-    m_pToolBar->SetToolboxButtonSize( m_bSmallSymbols ? TOOLBOX_BUTTONSIZE_SMALL : TOOLBOX_BUTTONSIZE_LARGE );
+
+    if (m_eSymbolSize == SFX_SYMBOLS_SIZE_LARGE)
+        m_pToolBar->SetToolboxButtonSize(ToolBoxButtonSize::Large);
+    else if (m_eSymbolSize == SFX_SYMBOLS_SIZE_32)
+        m_pToolBar->SetToolboxButtonSize(ToolBoxButtonSize::Size32);
+    else
+        m_pToolBar->SetToolboxButtonSize(ToolBoxButtonSize::Small);
 
     // enables a menu for clipped items and customization
     SvtCommandOptions aCmdOptions;
@@ -178,7 +186,7 @@ ToolBarManager::ToolBarManager( const Reference< XComponentContext >& rxContext,
     // set name for testtool, the useful part is after the last '/'
     sal_Int32 idx = rResourceName.lastIndexOf('/');
     idx++; // will become 0 if '/' not found: use full string
-    OString  aHelpIdAsString( HELPID_PREFIX_TESTTOOL );
+    OString  aHelpIdAsString( ".HelpId:" );
     OUString  aToolbarName = rResourceName.copy( idx );
     aHelpIdAsString += OUStringToOString( aToolbarName, RTL_TEXTENCODING_UTF8 );
     m_pToolBar->SetHelpId( aHelpIdAsString );
@@ -192,7 +200,7 @@ ToolBarManager::ToolBarManager( const Reference< XComponentContext >& rxContext,
 ToolBarManager::~ToolBarManager()
 {
     assert(!m_aAsyncUpdateControllersTimer.IsActive());
-    OSL_ASSERT( !m_pToolBar );
+    assert(!m_pToolBar); // must be disposed by ToolbarLayoutManager
     OSL_ASSERT( !m_bAddedToTaskPaneList );
 }
 
@@ -252,11 +260,12 @@ void ToolBarManager::CheckAndUpdateImages()
     bool bRefreshImages = false;
 
     SvtMiscOptions aMiscOptions;
-    bool bCurrentSymbolsSmall = !aMiscOptions.AreCurrentSymbolsLarge();
-    if ( m_bSmallSymbols != bCurrentSymbolsSmall )
+    sal_Int16 eNewSymbolSize = aMiscOptions.GetCurrentSymbolsSize();
+
+    if (m_eSymbolSize != eNewSymbolSize )
     {
         bRefreshImages = true;
-        m_bSmallSymbols = bCurrentSymbolsSmall;
+        m_eSymbolSize = eNewSymbolSize;
     }
 
     const OUString& sCurrentIconTheme = aMiscOptions.GetIconTheme();
@@ -275,8 +284,22 @@ void ToolBarManager::RefreshImages()
 {
     SolarMutexGuard g;
 
-    bool  bBigImages( SvtMiscOptions().AreCurrentSymbolsLarge() );
-    m_pToolBar->SetToolboxButtonSize( bBigImages ? TOOLBOX_BUTTONSIZE_LARGE : TOOLBOX_BUTTONSIZE_SMALL );
+    vcl::ImageType eImageType = vcl::ImageType::Size16;
+
+    if (m_eSymbolSize == SFX_SYMBOLS_SIZE_LARGE)
+    {
+        m_pToolBar->SetToolboxButtonSize(ToolBoxButtonSize::Large);
+        eImageType = vcl::ImageType::Size26;
+    }
+    else if (m_eSymbolSize == SFX_SYMBOLS_SIZE_32)
+    {
+        eImageType = vcl::ImageType::Size32;
+        m_pToolBar->SetToolboxButtonSize(ToolBoxButtonSize::Size32);
+    }
+    else
+    {
+        m_pToolBar->SetToolboxButtonSize(ToolBoxButtonSize::Small);
+    }
 
     for ( auto const& it : m_aControllerMap )
     {
@@ -290,11 +313,12 @@ void ToolBarManager::RefreshImages()
         else
         {
             OUString aCommandURL = m_pToolBar->GetItemCommand( it.first );
-            Image aImage = vcl::CommandInfoProvider::Instance().GetImageForCommand(aCommandURL, bBigImages, m_xFrame);
+            Image aImage = vcl::CommandInfoProvider::Instance().GetImageForCommand(aCommandURL, m_xFrame, eImageType);
             // Try also to query for add-on images before giving up and use an
             // empty image.
+            bool bBigImages = eImageType != vcl::ImageType::Size16;
             if ( !aImage )
-                aImage = framework::AddonsOptions().GetImageFromURL( aCommandURL, bBigImages );
+                aImage = framework::AddonsOptions().GetImageFromURL(aCommandURL, bBigImages);
             m_pToolBar->SetItemImage( it.first, aImage );
         }
     }
@@ -373,7 +397,7 @@ void ToolBarManager::frameAction( const FrameActionEvent& Action )
 throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard g;
-    if ( Action.Action == FrameAction_CONTEXT_CHANGED )
+    if ( Action.Action == FrameAction_CONTEXT_CHANGED && !m_bDisposed )
     {
         m_aAsyncUpdateControllersTimer.Start();
     }
@@ -381,50 +405,46 @@ throw ( RuntimeException, std::exception )
 
 void SAL_CALL ToolBarManager::disposing( const EventObject& Source ) throw ( RuntimeException, std::exception )
 {
-    {
-        SolarMutexGuard g;
-        if ( m_bDisposed )
-            return;
-    }
+    SolarMutexGuard g;
+
+    if ( m_bDisposed )
+        return;
 
     RemoveControllers();
 
+    if ( m_xDocImageManager.is() )
     {
-        SolarMutexGuard g;
-        if ( m_xDocImageManager.is() )
+        try
         {
-            try
-            {
-                m_xDocImageManager->removeConfigurationListener(
-                    Reference< XUIConfigurationListener >(
-                        static_cast< OWeakObject* >( this ), UNO_QUERY ));
-            }
-            catch (const Exception&)
-            {
-            }
+            m_xDocImageManager->removeConfigurationListener(
+                Reference< XUIConfigurationListener >(
+                    static_cast< OWeakObject* >( this ), UNO_QUERY ));
         }
-
-        if ( m_xModuleImageManager.is() )
+        catch (const Exception&)
         {
-            try
-            {
-                m_xModuleImageManager->removeConfigurationListener(
-                    Reference< XUIConfigurationListener >(
-                        static_cast< OWeakObject* >( this ), UNO_QUERY ));
-            }
-            catch (const Exception&)
-            {
-            }
         }
-
-        m_xDocImageManager.clear();
-        m_xModuleImageManager.clear();
-
-        if ( Source.Source == Reference< XInterface >( m_xFrame, UNO_QUERY ))
-            m_xFrame.clear();
-
-        m_xContext.clear();
     }
+
+    if ( m_xModuleImageManager.is() )
+    {
+        try
+        {
+            m_xModuleImageManager->removeConfigurationListener(
+                Reference< XUIConfigurationListener >(
+                    static_cast< OWeakObject* >( this ), UNO_QUERY ));
+        }
+        catch (const Exception&)
+        {
+        }
+    }
+
+    m_xDocImageManager.clear();
+    m_xModuleImageManager.clear();
+
+    if ( Source.Source == Reference< XInterface >( m_xFrame, UNO_QUERY ))
+        m_xFrame.clear();
+
+    m_xContext.clear();
 }
 
 // XComponent
@@ -437,6 +457,11 @@ void SAL_CALL ToolBarManager::dispose() throw( RuntimeException, std::exception 
 
     {
         SolarMutexGuard g;
+
+        if (m_bDisposed)
+        {
+            return;
+        }
 
         RemoveControllers();
 
@@ -533,9 +558,7 @@ void ToolBarManager::impl_elementChanged(bool const isRemove,
 
     Reference< XNameAccess > xNameAccess;
     sal_Int16                nImageType = sal_Int16();
-    sal_Int16                nCurrentImageType = getImageTypeFromBools(
-                                                    SvtMiscOptions().AreCurrentSymbolsLarge()
-                                                    );
+    sal_Int16                nCurrentImageType = getCurrentImageType();
 
     if (( Event.aInfo >>= nImageType ) &&
         ( nImageType == nCurrentImageType ) &&
@@ -601,10 +624,8 @@ void SAL_CALL ToolBarManager::elementReplaced( const css::ui::ConfigurationEvent
 
 void ToolBarManager::RemoveControllers()
 {
-    SolarMutexGuard g;
-
-    if ( m_bDisposed )
-        return;
+    DBG_TESTSOLARMUTEX();
+    assert(!m_bDisposed);
 
     m_aSubToolBarControllerMap.clear();
 
@@ -827,7 +848,7 @@ void ToolBarManager::CreateControllers()
                 Reference< XWindow > xWindow = xTbxController->createItemWindow( xToolbarWindow );
                 if ( xWindow.is() )
                 {
-                    vcl::Window* pItemWin = VCLUnoHelper::GetWindow( xWindow );
+                    VclPtr<vcl::Window> pItemWin = VCLUnoHelper::GetWindow( xWindow );
                     if ( pItemWin )
                     {
                         WindowType nType = pItemWin->GetType();
@@ -978,7 +999,7 @@ void ToolBarManager::FillToolbar( const Reference< XIndexAccess >& rItemContaine
                     if ( aProp[i].Name == ITEM_DESCRIPTOR_COMMANDURL )
                     {
                         aProp[i].Value >>= aCommandURL;
-                        if ( aCommandURL.startsWith(MENUPREFIX) )
+                        if ( aCommandURL.startsWith("private:resource/menubar/") )
                         {
                             try
                             {
@@ -999,7 +1020,7 @@ void ToolBarManager::FillToolbar( const Reference< XIndexAccess >& rItemContaine
                                     xMenuContainer->getByIndex(0) >>= aProps;
                                     for ( sal_Int32 index=0; index<aProps.getLength(); ++index )
                                     {
-                                        if ( aProps[ index ].Name == ITEM_DESCRIPTOR_CONTAINER )
+                                        if ( aProps[ index ].Name == "ItemDescriptorContainer" )
 
                                         {
                                             aProps[ index ].Value >>= aMenuDesc;
@@ -1013,16 +1034,22 @@ void ToolBarManager::FillToolbar( const Reference< XIndexAccess >& rItemContaine
                             }
                         }
                     }
-                    else if ( aProp[i].Name == ITEM_DESCRIPTOR_HELPURL )
+                    else if ( aProp[i].Name == "HelpURL" )
                         aProp[i].Value >>= aHelpURL;
-                    else if ( aProp[i].Name == ITEM_DESCRIPTOR_LABEL )
+                    else if ( aProp[i].Name == "Label" )
                         aProp[i].Value >>= aLabel;
-                    else if ( aProp[i].Name == ITEM_DESCRIPTOR_TYPE )
+                    else if ( aProp[i].Name == "Type" )
                         aProp[i].Value >>= nType;
                     else if ( aProp[i].Name == ITEM_DESCRIPTOR_VISIBLE )
                         aProp[i].Value >>= bIsVisible;
-                    else if ( aProp[i].Name == ITEM_DESCRIPTOR_STYLE )
+                    else if ( aProp[i].Name == "Style" )
                         aProp[i].Value >>= nStyle;
+                }
+
+                if (vcl::CommandInfoProvider::Instance().IsExperimental(aCommandURL, m_aModuleIdentifier) &&
+                    !SvtMiscOptions().IsExperimentalMode())
+                {
+                    continue;
                 }
 
                 if (( nType == css::ui::ItemType::DEFAULT ) && !aCommandURL.isEmpty() )
@@ -1191,12 +1218,13 @@ void ToolBarManager::RequestImages()
     Sequence< Reference< XGraphic > > aDocGraphicSeq;
     Sequence< Reference< XGraphic > > aModGraphicSeq;
 
-    bool  bBigImages( SvtMiscOptions().AreCurrentSymbolsLarge() );
-    sal_Int16 p = getImageTypeFromBools( SvtMiscOptions().AreCurrentSymbolsLarge() );
+    SvtMiscOptions aMiscOptions;
+
+    sal_Int16 nImageType = getCurrentImageType();
 
     if ( m_xDocImageManager.is() )
-        aDocGraphicSeq = m_xDocImageManager->getImages( p, aCmdURLSeq );
-    aModGraphicSeq = m_xModuleImageManager->getImages( p, aCmdURLSeq );
+        aDocGraphicSeq = m_xDocImageManager->getImages(nImageType, aCmdURLSeq);
+    aModGraphicSeq = m_xModuleImageManager->getImages(nImageType, aCmdURLSeq);
 
     sal_uInt32 i = 0;
     CommandToInfoMap::iterator pIter = m_aCommandMap.begin();
@@ -1212,7 +1240,7 @@ void ToolBarManager::RequestImages()
             // Try also to query for add-on images before giving up and use an
             // empty image.
             if ( !aImage )
-                aImage = framework::AddonsOptions().GetImageFromURL( aCmdURLSeq[i], bBigImages );
+                aImage = framework::AddonsOptions().GetImageFromURL( aCmdURLSeq[i], aMiscOptions.AreCurrentSymbolsLarge());
 
             pIter->second.nImageInfo = 1; // mark image as module based
         }
@@ -1282,12 +1310,12 @@ void ToolBarManager::HandleClick(void ( SAL_CALL XToolbarController::*_pClick )(
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ToolBarManager, Click, ToolBox *, void)
+IMPL_LINK_NOARG(ToolBarManager, Click, ToolBox *, void)
 {
     HandleClick(&XToolbarController::click);
 }
 
-IMPL_LINK_NOARG_TYPED(ToolBarManager, DropdownClick, ToolBox *, void)
+IMPL_LINK_NOARG(ToolBarManager, DropdownClick, ToolBox *, void)
 {
     SolarMutexGuard g;
 
@@ -1309,7 +1337,7 @@ IMPL_LINK_NOARG_TYPED(ToolBarManager, DropdownClick, ToolBox *, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ToolBarManager, DoubleClick, ToolBox *, void)
+IMPL_LINK_NOARG(ToolBarManager, DoubleClick, ToolBox *, void)
 {
     HandleClick(&XToolbarController::doubleClick);
 }
@@ -1326,14 +1354,7 @@ void ToolBarManager::ImplClearPopupMenu( ToolBox *pToolBar )
 
     // remove config entries from menu, so we have a clean menu to start with
     // remove submenu first
-    ::PopupMenu*  pItemMenu = pMenu->GetPopupMenu( 1 );
-    if( pItemMenu )
-    {
-        pItemMenu->Clear();
-        delete pItemMenu;
-        pItemMenu = nullptr;
-        pMenu->SetPopupMenu( 1, pItemMenu );
-    }
+    pMenu->SetPopupMenu( 1, nullptr );
 
     // remove all items that were not added by the toolbar itself
     sal_uInt16 i;
@@ -1412,12 +1433,12 @@ bool ToolBarManager::MenuItemAllowed( sal_uInt16 ) const
 
     // popup menu for quick customization
     bool bHideDisabledEntries = !SvtMenuOptions().IsEntryHidingEnabled();
-    ::PopupMenu aQuickCustomizationMenu( FwkResId( POPUPMENU_TOOLBAR_QUICKCUSTOMIZATION ));
+    ScopedVclPtrInstance<::PopupMenu> aQuickCustomizationMenu( FwkResId( POPUPMENU_TOOLBAR_QUICKCUSTOMIZATION ));
 
     if ( m_pToolBar->IsCustomize() )
     {
         sal_uInt16    nPos( 0 );
-        ::PopupMenu*  pVisibleItemsPopupMenu( aQuickCustomizationMenu.GetPopupMenu( 1 ));
+        ::PopupMenu*  pVisibleItemsPopupMenu( aQuickCustomizationMenu->GetPopupMenu( 1 ));
 
         bool    bIsFloating( false );
 
@@ -1427,25 +1448,25 @@ bool ToolBarManager::MenuItemAllowed( sal_uInt16 ) const
 
         if ( !bIsFloating )
         {
-            aQuickCustomizationMenu.EnableItem( MENUITEM_TOOLBAR_DOCKTOOLBAR, false );
-            aQuickCustomizationMenu.EnableItem( MENUITEM_TOOLBAR_DOCKALLTOOLBAR, false );
+            aQuickCustomizationMenu->EnableItem( MENUITEM_TOOLBAR_DOCKTOOLBAR, false );
+            aQuickCustomizationMenu->EnableItem( MENUITEM_TOOLBAR_DOCKALLTOOLBAR, false );
             Reference< XDockableWindow > xDockable( VCLUnoHelper::GetInterface( m_pToolBar ), UNO_QUERY );
             if( xDockable.is() )
-                aQuickCustomizationMenu.CheckItem( MENUITEM_TOOLBAR_LOCKTOOLBARPOSITION, xDockable->isLocked() );
+                aQuickCustomizationMenu->CheckItem( MENUITEM_TOOLBAR_LOCKTOOLBARPOSITION, xDockable->isLocked() );
         }
         else
-            aQuickCustomizationMenu.EnableItem( MENUITEM_TOOLBAR_LOCKTOOLBARPOSITION, false );
+            aQuickCustomizationMenu->EnableItem( MENUITEM_TOOLBAR_LOCKTOOLBARPOSITION, false );
 
         if ( SvtMiscOptions().DisableUICustomization() )
         {
-            aQuickCustomizationMenu.EnableItem( MENUITEM_TOOLBAR_VISIBLEBUTTON, false );
-            aQuickCustomizationMenu.EnableItem( MENUITEM_TOOLBAR_CUSTOMIZETOOLBAR, false );
-            aQuickCustomizationMenu.EnableItem( MENUITEM_TOOLBAR_LOCKTOOLBARPOSITION, false );
+            aQuickCustomizationMenu->EnableItem( MENUITEM_TOOLBAR_VISIBLEBUTTON, false );
+            aQuickCustomizationMenu->EnableItem( MENUITEM_TOOLBAR_CUSTOMIZETOOLBAR, false );
+            aQuickCustomizationMenu->EnableItem( MENUITEM_TOOLBAR_LOCKTOOLBARPOSITION, false );
         }
 
         // Disable menu item CLOSE if the toolbar has no closer
         if( !(pToolBar->GetFloatStyle() & WB_CLOSEABLE) )
-            aQuickCustomizationMenu.EnableItem(MENUITEM_TOOLBAR_CLOSE, false);
+            aQuickCustomizationMenu->EnableItem(MENUITEM_TOOLBAR_CLOSE, false);
 
         // Temporary stores a Command --> Url map to update contextual menu with the
         // correct icons. The popup icons are by default the same as those in the
@@ -1462,7 +1483,7 @@ bool ToolBarManager::MenuItemAllowed( sal_uInt16 ) const
                 pVisibleItemsPopupMenu->InsertItem( STARTID_CUSTOMIZE_POPUPMENU+nPos, m_pToolBar->GetItemText( nId ), MenuItemBits::CHECKABLE );
                 pVisibleItemsPopupMenu->CheckItem( STARTID_CUSTOMIZE_POPUPMENU+nPos, m_pToolBar->IsItemVisible( nId ) );
                 pVisibleItemsPopupMenu->SetItemCommand( STARTID_CUSTOMIZE_POPUPMENU+nPos, aCommandURL );
-                Image aImage( vcl::CommandInfoProvider::Instance().GetImageForCommand(aCommandURL, false, m_xFrame) );
+                Image aImage(vcl::CommandInfoProvider::Instance().GetImageForCommand(aCommandURL, m_xFrame));
                 commandToImage[aCommandURL] = aImage;
                 pVisibleItemsPopupMenu->SetItemImage( STARTID_CUSTOMIZE_POPUPMENU+nPos, aImage );
             }
@@ -1486,9 +1507,9 @@ bool ToolBarManager::MenuItemAllowed( sal_uInt16 ) const
     }
     else
     {
-        sal_uInt16 nPos = aQuickCustomizationMenu.GetItemPos( MENUITEM_TOOLBAR_CUSTOMIZETOOLBAR );
+        sal_uInt16 nPos = aQuickCustomizationMenu->GetItemPos( MENUITEM_TOOLBAR_CUSTOMIZETOOLBAR );
         if ( nPos != MENU_ITEM_NOTFOUND )
-            aQuickCustomizationMenu.RemoveItem( nPos );
+            aQuickCustomizationMenu->RemoveItem( nPos );
     }
 
     // copy all menu items 'Visible buttons, Customize toolbar, Dock toolbar,
@@ -1497,23 +1518,11 @@ bool ToolBarManager::MenuItemAllowed( sal_uInt16 ) const
         pMenu->InsertSeparator();
 
     sal_uInt16 i;
-    for( i=0; i< aQuickCustomizationMenu.GetItemCount(); i++)
+    for( i=0; i< aQuickCustomizationMenu->GetItemCount(); i++)
     {
-        sal_uInt16 nId = aQuickCustomizationMenu.GetItemId( i );
+        sal_uInt16 nId = aQuickCustomizationMenu->GetItemId( i );
         if ( MenuItemAllowed( nId ))
-            pMenu->CopyItem( aQuickCustomizationMenu, i );
-    }
-
-    // set submenu to toolbar menu
-    if( aQuickCustomizationMenu.GetPopupMenu( 1 ) )
-    {
-        // create an own submenu to avoid auto-delete when resource menu is deleted
-        ::PopupMenu *pItemMenu = new ::PopupMenu();
-
-        for( i=0; i< aQuickCustomizationMenu.GetPopupMenu( 1 )->GetItemCount(); i++)
-            pItemMenu->CopyItem( *aQuickCustomizationMenu.GetPopupMenu( 1 ), i );
-
-        pMenu->SetPopupMenu( 1, pItemMenu );
+            pMenu->CopyItem( *aQuickCustomizationMenu.get(), i );
     }
 
     // Set the title of the menu
@@ -1525,7 +1534,7 @@ bool ToolBarManager::MenuItemAllowed( sal_uInt16 ) const
     return pMenu;
 }
 
-IMPL_LINK_TYPED( ToolBarManager, Command, CommandEvent const *, pCmdEvt, void )
+IMPL_LINK( ToolBarManager, Command, CommandEvent const *, pCmdEvt, void )
 {
     SolarMutexGuard g;
 
@@ -1564,7 +1573,7 @@ IMPL_LINK_TYPED( ToolBarManager, Command, CommandEvent const *, pCmdEvt, void )
     }
 }
 
-IMPL_LINK_TYPED( ToolBarManager, MenuButton, ToolBox*, pToolBar, void )
+IMPL_LINK( ToolBarManager, MenuButton, ToolBox*, pToolBar, void )
 {
     SolarMutexGuard g;
 
@@ -1576,7 +1585,7 @@ IMPL_LINK_TYPED( ToolBarManager, MenuButton, ToolBox*, pToolBar, void )
     ImplClearPopupMenu( pToolBar );
  }
 
-IMPL_LINK_TYPED( ToolBarManager, MenuSelect, Menu*, pMenu, bool )
+IMPL_LINK( ToolBarManager, MenuSelect, Menu*, pMenu, bool )
 {
     // We have to hold a reference to ourself as it is possible that we will be disposed and
     // our refcount could be zero (destruction) otherwise.
@@ -1756,7 +1765,7 @@ IMPL_LINK_TYPED( ToolBarManager, MenuSelect, Menu*, pMenu, bool )
     return true;
 }
 
-IMPL_LINK_NOARG_TYPED(ToolBarManager, Select, ToolBox *, void)
+IMPL_LINK_NOARG(ToolBarManager, Select, ToolBox *, void)
 {
     if ( m_bDisposed )
         return;
@@ -1774,7 +1783,7 @@ IMPL_LINK_NOARG_TYPED(ToolBarManager, Select, ToolBox *, void)
     }
 }
 
-IMPL_LINK_TYPED( ToolBarManager, StateChanged, StateChangedType const *, pStateChangedType, void )
+IMPL_LINK( ToolBarManager, StateChanged, StateChangedType const *, pStateChangedType, void )
 {
     if ( m_bDisposed )
         return;
@@ -1796,7 +1805,7 @@ IMPL_LINK_TYPED( ToolBarManager, StateChanged, StateChangedType const *, pStateC
     }
 }
 
-IMPL_LINK_TYPED( ToolBarManager, DataChanged, DataChangedEvent const *, pDataChangedEvent, void )
+IMPL_LINK( ToolBarManager, DataChanged, DataChangedEvent const *, pDataChangedEvent, void )
 {
     if ((( pDataChangedEvent->GetType() == DataChangedEventType::SETTINGS )   ||
         (  pDataChangedEvent->GetType() == DataChangedEventType::DISPLAY  ))  &&
@@ -1826,12 +1835,12 @@ IMPL_LINK_TYPED( ToolBarManager, DataChanged, DataChangedEvent const *, pDataCha
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ToolBarManager, MiscOptionsChanged, LinkParamNone*, void)
+IMPL_LINK_NOARG(ToolBarManager, MiscOptionsChanged, LinkParamNone*, void)
 {
     CheckAndUpdateImages();
 }
 
-IMPL_LINK_NOARG_TYPED(ToolBarManager, AsyncUpdateControllersHdl, Timer *, void)
+IMPL_LINK_NOARG(ToolBarManager, AsyncUpdateControllersHdl, Timer *, void)
 {
     // The guard must be in its own context as the we can get destroyed when our
     // own xInterface reference get destroyed!
@@ -1847,7 +1856,7 @@ IMPL_LINK_NOARG_TYPED(ToolBarManager, AsyncUpdateControllersHdl, Timer *, void)
     UpdateControllers();
 }
 
-IMPL_STATIC_LINK_TYPED( ToolBarManager, ExecuteHdl_Impl, void*, p, void )
+IMPL_STATIC_LINK( ToolBarManager, ExecuteHdl_Impl, void*, p, void )
 {
     ExecuteInfo* pExecuteInfo = static_cast<ExecuteInfo*>(p);
     try
@@ -1860,8 +1869,8 @@ IMPL_STATIC_LINK_TYPED( ToolBarManager, ExecuteHdl_Impl, void*, p, void )
             // Use docking window close to close the toolbar. The toolbar layout manager is
             // listener and will react correctly according to the context sensitive
             // flag of our toolbar.
-            vcl::Window* pWin = VCLUnoHelper::GetWindow( pExecuteInfo->xWindow );
-            DockingWindow* pDockWin = dynamic_cast< DockingWindow* >( pWin );
+            VclPtr<vcl::Window> pWin = VCLUnoHelper::GetWindow( pExecuteInfo->xWindow );
+            DockingWindow* pDockWin = dynamic_cast< DockingWindow* >( pWin.get() );
             if ( pDockWin )
                 pDockWin->Close();
         }

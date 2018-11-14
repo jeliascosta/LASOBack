@@ -146,12 +146,11 @@ bool OptimizerSettings::operator==( const OptimizerSettings& rOptimizerSettings 
 }
 
 
-ConfigurationAccess::ConfigurationAccess( const Reference< uno::XComponentContext >& rxContext, OptimizerSettings* pDefaultSettings ) :
+ConfigurationAccess::ConfigurationAccess( const Reference< uno::XComponentContext >& rxContext ) :
     mxContext( rxContext )
 {
     LoadStrings();
-    maSettings.push_back( pDefaultSettings ?
-        *pDefaultSettings : OptimizerSettings() );
+    maSettings.push_back( OptimizerSettings() );
     maSettings.back().maName = "LastUsedSettings";
     LoadConfiguration();
     maInitialSettings = maSettings;
@@ -163,7 +162,7 @@ ConfigurationAccess::~ConfigurationAccess()
 
 OUString ConfigurationAccess::getString( const PPPOptimizerTokenEnum eToken ) const
 {
-    std::map< PPPOptimizerTokenEnum, OUString, Compare >::const_iterator aIter( maStrings.find( eToken ) );
+    std::map< PPPOptimizerTokenEnum, OUString >::const_iterator aIter( maStrings.find( eToken ) );
     return aIter != maStrings.end() ? ((*aIter).second) : OUString();
 }
 

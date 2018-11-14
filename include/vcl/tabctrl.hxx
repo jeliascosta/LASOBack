@@ -22,6 +22,8 @@
 
 #include <vcl/dllapi.h>
 #include <vcl/ctrl.hxx>
+#include <vcl/EnumContext.hxx>
+#include <sfx2/notebookbar/NotebookbarContextControl.hxx>
 
 struct ImplTabItem;
 struct ImplTabCtrlData;
@@ -45,11 +47,10 @@ class ListBox;
 
 class VCL_DLLPUBLIC TabControl : public Control
 {
-private:
+protected:
     ImplTabCtrlData*    mpTabCtrlData;
     long                mnLastWidth;
     long                mnLastHeight;
-    long                mnBtnSize;
     long                mnMaxPageWidth;
     sal_uInt16          mnActPageId;
     sal_uInt16          mnCurPageId;
@@ -64,24 +65,20 @@ private:
     SAL_DLLPRIVATE void         ImplInitSettings( bool bFont, bool bForeground, bool bBackground );
     SAL_DLLPRIVATE ImplTabItem* ImplGetItem( sal_uInt16 nId ) const;
     SAL_DLLPRIVATE Size         ImplGetItemSize( ImplTabItem* pItem, long nMaxWidth );
-    SAL_DLLPRIVATE bool         ImplPlaceTabs( long nWidth );
     SAL_DLLPRIVATE Rectangle    ImplGetTabRect( sal_uInt16 nPos, long nWidth = -1, long nHeight = -1 );
     SAL_DLLPRIVATE void         ImplChangeTabPage( sal_uInt16 nId, sal_uInt16 nOldId );
     SAL_DLLPRIVATE bool         ImplPosCurTabPage();
     SAL_DLLPRIVATE void         ImplActivateTabPage( bool bNext );
     SAL_DLLPRIVATE void         ImplShowFocus();
     SAL_DLLPRIVATE void         ImplDrawItem(vcl::RenderContext& rRenderContext, ImplTabItem* pItem,
-                                             const Rectangle& rCurRect, bool bFirstInGroup = false,
-                                             bool bLastInGroup = false, bool bIsCurrentItem = false);
-    SAL_DLLPRIVATE void         ImplPaint(vcl::RenderContext& rRenderContext, const Rectangle& rRect);
+                                             const Rectangle& rCurRect, bool bFirstInGroup,
+                                             bool bLastInGroup, bool bIsCurrentItem);
     SAL_DLLPRIVATE void         ImplFreeLayoutData();
     SAL_DLLPRIVATE bool         ImplHandleKeyEvent( const KeyEvent& rKeyEvent );
 
-    DECL_DLLPRIVATE_LINK_TYPED( ImplListBoxSelectHdl, ListBox&, void );
-    DECL_DLLPRIVATE_LINK_TYPED( ImplWindowEventListener, VclWindowEvent&, void );
+    DECL_DLLPRIVATE_LINK( ImplListBoxSelectHdl, ListBox&, void );
+    DECL_DLLPRIVATE_LINK( ImplWindowEventListener, VclWindowEvent&, void );
 
-
-protected:
     using Window::ImplInit;
     SAL_DLLPRIVATE void         ImplInit( vcl::Window* pParent, WinBits nStyle );
 
@@ -89,11 +86,13 @@ protected:
     virtual const vcl::Font&    GetCanonicalFont( const StyleSettings& _rStyle ) const override;
     virtual const Color&        GetCanonicalTextColor( const StyleSettings& _rStyle ) const override;
     SAL_DLLPRIVATE Rectangle*   ImplFindPartRect( const Point& rPt );
+    virtual bool                ImplPlaceTabs( long nWidth );
+    virtual void                ImplPaint(vcl::RenderContext& rRenderContext, const Rectangle& rRect);
 
 public:
                         TabControl( vcl::Window* pParent,
                                     WinBits nStyle = WB_STDTABCONTROL );
-                        virtual ~TabControl();
+                        virtual ~TabControl() override;
     virtual void        dispose() override;
 
     virtual void        MouseButtonDown( const MouseEvent& rMEvt ) override;
@@ -130,20 +129,20 @@ public:
     sal_uInt16          GetPagePos( sal_uInt16 nPageId ) const;
     sal_uInt16          GetPageCount() const;
     sal_uInt16          GetPageId( sal_uInt16 nPos ) const;
-    sal_uInt16          GetPageId( const Point& rPos ) const;
+    virtual sal_uInt16  GetPageId( const Point& rPos ) const;
     sal_uInt16          GetPageId( const TabPage& rPage ) const;
     sal_uInt16          GetPageId( const OString& rName ) const;
 
-    void                SetCurPageId( sal_uInt16 nPageId );
+    virtual void        SetCurPageId( sal_uInt16 nPageId );
     sal_uInt16          GetCurPageId() const;
 
-    void                SelectTabPage( sal_uInt16 nPageId );
+    virtual void        SelectTabPage( sal_uInt16 nPageId );
 
     void                SetTabPage( sal_uInt16 nPageId, TabPage* pPage );
     TabPage*            GetTabPage( sal_uInt16 nPageId ) const;
 
     void                SetPageText( sal_uInt16 nPageId, const OUString& rText );
-    OUString            GetPageText( sal_uInt16 nPageId ) const;
+    OUString const &    GetPageText( sal_uInt16 nPageId ) const;
 
     void                SetHelpText( sal_uInt16 nPageId, const OUString& rText );
     const OUString&     GetHelpText( sal_uInt16 nPageId ) const;
@@ -156,10 +155,8 @@ public:
 
     void                SetPageImage( sal_uInt16 nPageId, const Image& rImage );
 
-    void                SetHelpId( const OString& rId )
-                            { Control::SetHelpId( rId ); }
-    const OString&      GetHelpId() const
-                            { return Control::GetHelpId(); }
+    using Control::SetHelpId;
+    using Control::GetHelpId;
 
     void                SetActivatePageHdl( const Link<TabControl*,void>& rLink ) { maActivateHdl = rLink; }
     void                SetDeactivatePageHdl( const Link<TabControl*, bool>& rLink ) { maDeactivateHdl = rLink; }
@@ -181,15 +178,42 @@ public:
     virtual void SetSizePixel(const Size& rNewSize) override;
     virtual void SetPosSizePixel(const Point& rNewPos, const Size& rNewSize) override;
 
-    Size calculateRequisition() const;
+    virtual Size calculateRequisition() const;
     void setAllocation(const Size &rAllocation);
 
-    void markLayoutDirty()
-    {
-        mbLayoutDirty = true;
-    }
+    std::vector<sal_uInt16> GetPageIDs() const;
+
+    virtual FactoryFunction GetUITestFactory() const override;
 
     virtual void queue_resize(StateChangedType eReason = StateChangedType::Layout) override;
+};
+
+class NotebookBar;
+
+class VCL_DLLPUBLIC NotebookbarTabControl : public TabControl,
+                                            public NotebookbarContextControl
+{
+public:
+    NotebookbarTabControl( vcl::Window* pParent );
+
+    void SetContext( vcl::EnumContext::Context eContext ) override;
+    void SetIconClickHdl( Link<NotebookBar*, void> aHdl ) override;
+
+    virtual sal_uInt16  GetPageId( const Point& rPos ) const override;
+    virtual void        SelectTabPage( sal_uInt16 nPageId ) override;
+    virtual void        SetCurPageId( sal_uInt16 nPageId ) override;
+    virtual Size        calculateRequisition() const override;
+    static sal_uInt16   GetHeaderHeight();
+
+protected:
+    virtual bool ImplPlaceTabs( long nWidth ) override;
+    virtual void ImplPaint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
+
+private:
+    bool bLastContextWasSupported;
+    vcl::EnumContext::Context eLastContext;
+    Link<NotebookBar*,void> m_aIconClickHdl;
+    static sal_uInt16 m_nHeaderHeight;
 };
 
 #endif // INCLUDED_VCL_TABCTRL_HXX

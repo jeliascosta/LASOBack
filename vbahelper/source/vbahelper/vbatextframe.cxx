@@ -17,6 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 #include <vbahelper/helperdecl.hxx>
+#include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/drawing/TextFitToSizeType.hpp>
 #include <com/sun/star/text/XText.hpp>
 #include <vbahelper/vbatextframe.hxx>
@@ -24,7 +25,7 @@
 using namespace ::ooo::vba;
 using namespace ::com::sun::star;
 
-VbaTextFrame::VbaTextFrame( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, uno::Reference< drawing::XShape > xShape ) : VbaTextFrame_BASE( xParent, xContext ), m_xShape( xShape )
+VbaTextFrame::VbaTextFrame( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, uno::Reference< drawing::XShape > const & xShape ) : VbaTextFrame_BASE( xParent, xContext ), m_xShape( xShape )
 {
     m_xPropertySet.set( m_xShape, uno::UNO_QUERY_THROW );
 }

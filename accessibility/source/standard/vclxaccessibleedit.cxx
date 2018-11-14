@@ -17,12 +17,12 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/standard/vclxaccessibleedit.hxx>
+#include <standard/vclxaccessibleedit.hxx>
 
 #include <toolkit/awt/vclxwindows.hxx>
 #include <toolkit/helper/convert.hxx>
-#include <accessibility/helper/accresmgr.hxx>
-#include <accessibility/helper/accessiblestrings.hrc>
+#include <helper/accresmgr.hxx>
+#include <helper/accessiblestrings.hrc>
 
 #include <unotools/accessiblestatesethelper.hxx>
 #include <unotools/accessiblerelationsethelper.hxx>
@@ -84,7 +84,7 @@ void VCLXAccessibleEdit::ProcessWindowEvent( const VclWindowEvent& rVclWindowEve
             sal_Int32 nOldCaretPosition = m_nCaretPosition;
             m_nCaretPosition = getCaretPosition();
 
-            vcl::Window* pWindow = GetWindow();
+            VclPtr<vcl::Window> pWindow = GetWindow();
             if (pWindow && pWindow->HasChildPathFocus())
             {
                 if (m_nCaretPosition != nOldCaretPosition)
@@ -99,7 +99,7 @@ void VCLXAccessibleEdit::ProcessWindowEvent( const VclWindowEvent& rVclWindowEve
         break;
         case VCLEVENT_EDIT_SELECTIONCHANGED:
         {
-            vcl::Window* pWindow = GetWindow();
+            VclPtr<vcl::Window> pWindow = GetWindow();
             if (pWindow && pWindow->HasChildPathFocus())
             {
                 NotifyAccessibleEvent( AccessibleEventId::TEXT_SELECTION_CHANGED, Any(), Any() );
@@ -189,8 +189,7 @@ OUString VCLXAccessibleEdit::getImplementationName() throw (RuntimeException, st
 
 Sequence< OUString > VCLXAccessibleEdit::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    Sequence< OUString > aNames { "com.sun.star.awt.AccessibleEdit" };
-    return aNames;
+    return { "com.sun.star.awt.AccessibleEdit" };
 }
 
 
@@ -251,7 +250,7 @@ sal_Bool VCLXAccessibleEdit::doAccessibleAction ( sal_Int32 nIndex ) throw (Inde
         throw IndexOutOfBoundsException();
 
     bool bDoAction = false;
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if ( pWindow )
     {
         pWindow->GrabFocus();

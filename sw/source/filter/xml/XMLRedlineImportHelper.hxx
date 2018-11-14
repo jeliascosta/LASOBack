@@ -36,9 +36,9 @@ namespace com { namespace sun { namespace star {
     namespace frame { class XModel; }
 } } }
 
-typedef ::std::map< OUString, RedlineInfo* > RedlineMapType;
+typedef std::map< OUString, RedlineInfo* > RedlineMapType;
 
-class XMLRedlineImportHelper
+class XMLRedlineImportHelper final
 {
     const OUString sInsertion;
     const OUString sDeletion;
@@ -65,7 +65,7 @@ public:
         // redline mode
         const css::uno::Reference<css::beans::XPropertySet> & rModel,
         const css::uno::Reference<css::beans::XPropertySet> & rImportInfoSet );
-    virtual ~XMLRedlineImportHelper();
+    ~XMLRedlineImportHelper();
 
     // create a redline object
     // (The redline will be inserted into the document after both start
@@ -81,7 +81,7 @@ public:
     // create a text section for the redline, and return an
     // XText/XTextCursor that may be used to write into it.
     css::uno::Reference<css::text::XTextCursor> CreateRedlineTextSection(
-            css::uno::Reference<css::text::XTextCursor> xOldCursor, // needed to get the document
+            css::uno::Reference<css::text::XTextCursor> const & xOldCursor, // needed to get the document
             const OUString& rId);    // ID used to RedlineAdd() call
 
     // Set start or end position for a redline in the text body.

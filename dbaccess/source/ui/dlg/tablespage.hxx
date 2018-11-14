@@ -50,23 +50,23 @@ namespace dbaui
 
     public:
         virtual bool            FillItemSet(SfxItemSet* _rCoreAttrs) override;
-        virtual sfxpg           DeactivatePage(SfxItemSet* _pSet) override;
+        virtual DeactivateRC    DeactivatePage(SfxItemSet* _pSet) override;
         using OGenericAdministrationPage::DeactivatePage;
 
         virtual void            StateChanged( StateChangedType nStateChange ) override;
         virtual void            DataChanged( const DataChangedEvent& rDCEvt ) override;
 
         OTableSubscriptionPage( vcl::Window* pParent, const SfxItemSet& _rCoreAttrs ,OTableSubscriptionDialog* _pTablesDlg);
-        virtual ~OTableSubscriptionPage();
+        virtual ~OTableSubscriptionPage() override;
         virtual void dispose() override;
 
     protected:
         virtual void fillControls(::std::vector< ISaveValueWrapper* >& _rControlList) override;
         virtual void fillWindows(::std::vector< ISaveValueWrapper* >& _rControlList) override;
 
-        DECL_LINK_TYPED( OnTreeEntryCompare, const SvSortData&, sal_Int32 );
-        DECL_LINK_TYPED( OnTreeEntryChecked, void*, void );
-        DECL_LINK_TYPED( OnTreeEntryButtonChecked, SvTreeListBox*, void );
+        DECL_LINK( OnTreeEntryCompare, const SvSortData&, sal_Int32 );
+        DECL_LINK( OnTreeEntryChecked, void*, void );
+        DECL_LINK( OnTreeEntryButtonChecked, SvTreeListBox*, void );
 
     private:
 

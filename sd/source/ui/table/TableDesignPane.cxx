@@ -77,19 +77,15 @@ static const sal_Int32 nCellHeight = 7; // one pixel is shared with the next cel
 static const sal_Int32 nBitmapWidth = (nCellWidth * nPreviewColumns) - (nPreviewColumns - 1);
 static const sal_Int32 nBitmapHeight = (nCellHeight * nPreviewRows) - (nPreviewRows - 1);
 
-static const OUString* getPropertyNames()
+static const OUStringLiteral gPropNames[ CB_COUNT ] =
 {
-    static const OUString gPropNames[ CB_COUNT ] =
-    {
-        OUString("UseFirstRowStyle") ,
-        OUString("UseLastRowStyle") ,
-        OUString("UseBandingRowStyle") ,
-        OUString("UseFirstColumnStyle") ,
-        OUString("UseLastColumnStyle") ,
-        OUString("UseBandingColumnStyle")
-    };
-    return &gPropNames[0];
-}
+    OUStringLiteral("UseFirstRowStyle") ,
+    OUStringLiteral("UseLastRowStyle") ,
+    OUStringLiteral("UseBandingRowStyle") ,
+    OUStringLiteral("UseFirstColumnStyle") ,
+    OUStringLiteral("UseLastColumnStyle") ,
+    OUStringLiteral("UseBandingColumnStyle")
+};
 
 TableDesignWidget::TableDesignWidget( VclBuilderContainer* pParent, ViewShellBase& rBase, bool bModal )
     : mrBase(rBase)
@@ -112,10 +108,9 @@ TableDesignWidget::TableDesignWidget( VclBuilderContainer* pParent, ViewShellBas
     }
     m_pValueSet->SetSelectHdl (LINK(this, TableDesignWidget, implValueSetHdl));
 
-    const OUString* pPropNames = getPropertyNames();
     for (sal_uInt16 i = CB_HEADER_ROW; i <= CB_BANDED_COLUMNS; ++i)
     {
-        pParent->get(m_aCheckBoxes[i], OUStringToOString(pPropNames[i], RTL_TEXTENCODING_UTF8));
+        pParent->get(m_aCheckBoxes[i], OUStringToOString(gPropNames[i], RTL_TEXTENCODING_UTF8));
         m_aCheckBoxes[i]->SetClickHdl( LINK( this, TableDesignWidget, implCheckBoxHdl ) );
     }
 
@@ -161,7 +156,7 @@ static SfxDispatcher* getDispatcher( ViewShellBase& rBase )
         return nullptr;
 }
 
-IMPL_LINK_NOARG_TYPED(TableDesignWidget, implValueSetHdl, ValueSet*, void)
+IMPL_LINK_NOARG(TableDesignWidget, implValueSetHdl, ValueSet*, void)
 {
     mbStyleSelected = true;
     if( !mbModal )
@@ -218,7 +213,7 @@ void TableDesignWidget::ApplyStyle()
     }
 }
 
-IMPL_LINK_NOARG_TYPED(TableDesignWidget, implCheckBoxHdl, Button*, void)
+IMPL_LINK_NOARG(TableDesignWidget, implCheckBoxHdl, Button*, void)
 {
     mbOptionsChanged = true;
 
@@ -284,7 +279,7 @@ void TableDesignWidget::onSelectionChanged()
             {
                 Reference< XShapes > xShapes( aSel, UNO_QUERY );
                 if( xShapes.is() && (xShapes->getCount() == 1) )
-                    aSel <<= xShapes->getByIndex(0);
+                    aSel = xShapes->getByIndex(0);
             }
 
             Reference< XShapeDescriptor > xDesc( aSel, UNO_QUERY );
@@ -317,7 +312,6 @@ void TableValueSet::Resize()
         Image aImage = GetItemImage(GetItemId(0));
         Size aItemSize = aImage.GetSizePixel();
 
-        aItemSize.Width() += 10;
         aItemSize.Height() += 10;
         int nColumnCount = (aValueSetSize.Width() - GetScrollWidth()) / aItemSize.Width();
         if (nColumnCount < 1)
@@ -365,28 +359,20 @@ void TableValueSet::updateSettings()
     }
 }
 
-VCL_BUILDER_DECL_FACTORY(TableValueSet)
-{
-    WinBits nWinStyle = WB_TABSTOP;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-        nWinStyle |= WB_BORDER;
-    rRet = VclPtr<TableValueSet>::Create(pParent, nWinStyle);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(TableValueSet, WB_TABSTOP)
 
 void TableDesignWidget::updateControls()
 {
     static const bool gDefaults[CB_COUNT] = { true, false, true, false, false, false };
 
     const bool bHasTable = mxSelectedTable.is();
-    const OUString* pPropNames = getPropertyNames();
 
     for (sal_uInt16 i = CB_HEADER_ROW; i <= CB_BANDED_COLUMNS; ++i)
     {
         bool bUse = gDefaults[i];
         if( bHasTable ) try
         {
-            mxSelectedTable->getPropertyValue( *pPropNames++ ) >>= bUse;
+            mxSelectedTable->getPropertyValue( gPropNames[i] ) >>= bUse;
         }
         catch( Exception& )
         {
@@ -429,13 +415,7 @@ void TableDesignWidget::updateControls()
 void TableDesignWidget::addListener()
 {
     Link<tools::EventMultiplexerEvent&,void> aLink( LINK(this,TableDesignWidget,EventMultiplexerListener) );
-    mrBase.GetEventMultiplexer()->AddEventListener (
-        aLink,
-        tools::EventMultiplexerEvent::EID_EDIT_VIEW_SELECTION
-        | tools::EventMultiplexerEvent::EID_CURRENT_PAGE
-        | tools::EventMultiplexerEvent::EID_MAIN_VIEW_REMOVED
-        | tools::EventMultiplexerEvent::EID_MAIN_VIEW_ADDED
-        | tools::EventMultiplexerEvent::EID_DISPOSING);
+    mrBase.GetEventMultiplexer()->AddEventListener( aLink );
 }
 
 void TableDesignWidget::removeListener()
@@ -444,25 +424,27 @@ void TableDesignWidget::removeListener()
     mrBase.GetEventMultiplexer()->RemoveEventListener( aLink );
 }
 
-IMPL_LINK_TYPED(TableDesignWidget,EventMultiplexerListener,
+IMPL_LINK(TableDesignWidget,EventMultiplexerListener,
     tools::EventMultiplexerEvent&, rEvent, void)
 {
     switch (rEvent.meEventId)
     {
-        case tools::EventMultiplexerEvent::EID_CURRENT_PAGE:
-        case tools::EventMultiplexerEvent::EID_EDIT_VIEW_SELECTION:
+        case EventMultiplexerEventId::CurrentPageChanged:
+        case EventMultiplexerEventId::EditViewSelection:
             onSelectionChanged();
             break;
 
-        case tools::EventMultiplexerEvent::EID_MAIN_VIEW_REMOVED:
+        case EventMultiplexerEventId::MainViewRemoved:
             mxView.clear();
             onSelectionChanged();
             break;
 
-        case tools::EventMultiplexerEvent::EID_MAIN_VIEW_ADDED:
+        case EventMultiplexerEventId::MainViewAdded:
             mxView.set( mrBase.GetController(), UNO_QUERY );
             onSelectionChanged();
             break;
+
+        default: break;
     }
 }
 
@@ -783,6 +765,7 @@ void TableDesignWidget::FillDesignPreviewControl()
         aSize.Height() += (10 * nRows);
         m_pValueSet->set_width_request(aSize.Width());
         m_pValueSet->set_height_request(aSize.Height());
+        m_pValueSet->Resize();
     }
     catch( Exception& )
     {

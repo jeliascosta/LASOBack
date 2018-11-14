@@ -157,7 +157,6 @@ public:
     // This assumes that a formula cell has already been calculated.
     sal_uLong GetResultValueFormat() const { return nValueFormat;}
 
-    sal_uLong   GetValueFormat() const                  { return nValueFormat; }
     bool    GetLineBreak() const                    { return bLineBreak; }
     bool    IsRepeat() const                        { return bRepeat; }
     bool    IsShrink() const                        { return bShrink; }
@@ -189,8 +188,8 @@ ScDrawStringsVars::ScDrawStringsVars(ScOutputData* pData, bool bPTL) :
     eAttrOrient ( SVX_ORIENTATION_STANDARD ),
     eAttrHorJust( SVX_HOR_JUSTIFY_STANDARD ),
     eAttrVerJust( SVX_VER_JUSTIFY_BOTTOM ),
-    eAttrHorJustMethod( SVX_JUSTIFY_METHOD_AUTO ),
-    eAttrVerJustMethod( SVX_JUSTIFY_METHOD_AUTO ),
+    eAttrHorJustMethod( SvxCellJustifyMethod::Auto ),
+    eAttrVerJustMethod( SvxCellJustifyMethod::Auto ),
     pMargin     ( nullptr ),
     nIndent     ( 0 ),
     bRotated    ( false ),
@@ -498,14 +497,14 @@ bool ScDrawStringsVars::SetText( ScRefCellValue& rCell )
             maLastCell = rCell;          // store cell
 
             Color* pColor;
-            sal_uLong nFormat = GetValueFormat();
+            sal_uLong nFormat = nValueFormat;
             ScCellFormat::GetString( rCell,
                                      nFormat, aString, &pColor,
                                      *pOutput->mpDoc->GetFormatTable(),
                                      pOutput->mpDoc,
                                      pOutput->mbShowNullValues,
                                      pOutput->mbShowFormulas,
-                                     ftCheck, true );
+                                     true );
             if ( nFormat )
             {
                 nRepeatPos = aString.indexOf( 0x1B );
@@ -597,7 +596,7 @@ void ScDrawStringsVars::SetTextToWidthOrHash( ScRefCellValue& rCell, long nWidth
     if (eType == CELLTYPE_FORMULA)
     {
         ScFormulaCell* pFCell = rCell.mpFormula;
-        if (pFCell->GetErrCode() != 0 || pOutput->mbShowFormulas)
+        if (pFCell->GetErrCode() != FormulaError::NONE || pOutput->mbShowFormulas)
         {
             SetHashText();      // If the error string doesn't fit, always use "###". Also for "display formulas" (#i116691#)
             return;
@@ -1313,14 +1312,14 @@ void ScOutputData::GetOutputArea( SCCOL nX, SCSIZE nArrY, long nPosX, long nPosY
         //  even if rThisRowInfo isn't for nCellY (merged cells).
         if ( nRightMissing > 0 && bMarkClipped && nRightX >= nX1 && nRightX <= nX2 && !bBreak && !bCellIsValue )
         {
-            rThisRowInfo.pCellInfo[nRightX+1].nClipMark |= SC_CLIPMARK_RIGHT;
+            rThisRowInfo.pCellInfo[nRightX+1].nClipMark |= ScClipMark::Right;
             bAnyClipped = true;
             long nMarkPixel = (long)( SC_CLIPMARK_SIZE * mnPPTX );
             rParam.maClipRect.Right() -= nMarkPixel * nLayoutSign;
         }
         if ( nLeftMissing > 0 && bMarkClipped && nLeftX >= nX1 && nLeftX <= nX2 && !bBreak && !bCellIsValue )
         {
-            rThisRowInfo.pCellInfo[nLeftX+1].nClipMark |= SC_CLIPMARK_LEFT;
+            rThisRowInfo.pCellInfo[nLeftX+1].nClipMark |= ScClipMark::Left;
             bAnyClipped = true;
             long nMarkPixel = (long)( SC_CLIPMARK_SIZE * mnPPTX );
             rParam.maClipRect.Left() += nMarkPixel * nLayoutSign;
@@ -1537,7 +1536,7 @@ Rectangle ScOutputData::LayoutStrings(bool bPixelToLogic, bool bPaint, const ScA
 
                     if ( nTempX < nX1 &&
                          !IsEmptyCellText( pThisRowInfo, nTempX, nY ) &&
-                         !mpDoc->HasAttrib( nTempX,nY,nTab, nX1,nY,nTab, HASATTR_MERGED | HASATTR_OVERLAPPED ) )
+                         !mpDoc->HasAttrib( nTempX,nY,nTab, nX1,nY,nTab, HasAttrFlags::Merged | HasAttrFlags::Overlapped ) )
                     {
                         nCellX = nTempX;
                         bDoCell = true;
@@ -1556,7 +1555,7 @@ Rectangle ScOutputData::LayoutStrings(bool bPixelToLogic, bool bPaint, const ScA
 
                     if ( nTempX > nX &&
                          !IsEmptyCellText( pThisRowInfo, nTempX, nY ) &&
-                         !mpDoc->HasAttrib( nTempX,nY,nTab, nX,nY,nTab, HASATTR_MERGED | HASATTR_OVERLAPPED ) )
+                         !mpDoc->HasAttrib( nTempX,nY,nTab, nX,nY,nTab, HasAttrFlags::Merged | HasAttrFlags::Overlapped ) )
                     {
                         nCellX = nTempX;
                         bDoCell = true;
@@ -1815,7 +1814,7 @@ Rectangle ScOutputData::LayoutStrings(bool bPixelToLogic, bool bPaint, const ScA
                     {
                         bNeedEdit =
                             aVars.GetHorJust() == SVX_HOR_JUSTIFY_BLOCK &&
-                            aVars.GetHorJustMethod() == SVX_JUSTIFY_METHOD_DISTRIBUTE;
+                            aVars.GetHorJustMethod() == SvxCellJustifyMethod::Distribute;
                     }
                 }
                 if (bNeedEdit)
@@ -1949,7 +1948,7 @@ Rectangle ScOutputData::LayoutStrings(bool bPixelToLogic, bool bPaint, const ScA
                             // no vertical clipping when printing cells with optimal height,
                             // except when font size is from conditional formatting.
                             if ( eType != OUTTYPE_PRINTER ||
-                                    ( mpDoc->GetRowFlags( nCellY, nTab ) & CR_MANUALSIZE ) ||
+                                    ( mpDoc->GetRowFlags( nCellY, nTab ) & CRFlags::ManualSize ) ||
                                     ( aVars.HasCondHeight() ) )
                                 bVClip = true;
                         }
@@ -2394,8 +2393,7 @@ bool ScOutputData::DrawEditParam::readCellContent(
                                  *pDoc->GetFormatTable(),
                                  pDoc,
                                  bShowNullValues,
-                                 bShowFormulas,
-                                 ftCheck );
+                                 bShowFormulas);
 
         mpEngine->SetText(aString);
         if ( pColor && !bSyntaxMode && !( bUseStyleColor && bForceAutoColor ) )
@@ -3031,7 +3029,7 @@ void ScOutputData::DrawEditStandard(DrawEditParam& rParam)
         //  except when font size is from conditional formatting.
         //! Allow clipping when vertically merged?
         if ( eType != OUTTYPE_PRINTER ||
-            ( mpDoc->GetRowFlags( rParam.mnCellY, nTab ) & CR_MANUALSIZE ) ||
+            ( mpDoc->GetRowFlags( rParam.mnCellY, nTab ) & CRFlags::ManualSize ) ||
             ( rParam.mpCondSet && SfxItemState::SET ==
                 rParam.mpCondSet->GetItemState(ATTR_FONT_HEIGHT) ) )
             bClip = true;
@@ -3058,7 +3056,7 @@ void ScOutputData::DrawEditStandard(DrawEditParam& rParam)
             else
                 pClipMarkCell = &rParam.mpThisRowInfo->pCellInfo[rParam.mnX+1];
 
-            pClipMarkCell->nClipMark |= SC_CLIPMARK_RIGHT;      //! also allow left?
+            pClipMarkCell->nClipMark |= ScClipMark::Right;      //! also allow left?
             bAnyClipped = true;
 
             long nMarkPixel = (long)( SC_CLIPMARK_SIZE * mnPPTX );
@@ -3188,7 +3186,7 @@ void ScOutputData::ShowClipMarks( DrawEditParam& rParam, long nEngineHeight, con
         else
             pClipMarkCell = &rParam.mpThisRowInfo->pCellInfo[rParam.mnX+1];
 
-        pClipMarkCell->nClipMark |= SC_CLIPMARK_RIGHT;      //! also allow left?
+        pClipMarkCell->nClipMark |= ScClipMark::Right;      //! also allow left?
         bAnyClipped = true;
 
         const long nMarkPixel = static_cast<long>( SC_CLIPMARK_SIZE * mnPPTX );
@@ -3243,7 +3241,7 @@ bool ScOutputData::Clip( DrawEditParam& rParam, const Size& aCellSize,
         //  except when font size is from conditional formatting.
         //! Allow clipping when vertically merged?
         if ( eType != OUTTYPE_PRINTER ||
-            ( mpDoc->GetRowFlags( rParam.mnCellY, nTab ) & CR_MANUALSIZE ) ||
+            ( mpDoc->GetRowFlags( rParam.mnCellY, nTab ) & CRFlags::ManualSize ) ||
             ( rParam.mpCondSet && SfxItemState::SET ==
                 rParam.mpCondSet->GetItemState(ATTR_FONT_HEIGHT) ) )
             bClip = true;
@@ -4006,7 +4004,7 @@ void ScOutputData::DrawEditStacked(DrawEditParam& rParam)
         //  except when font size is from conditional formatting.
         //! Allow clipping when vertically merged?
         if ( eType != OUTTYPE_PRINTER ||
-            ( mpDoc->GetRowFlags( rParam.mnCellY, nTab ) & CR_MANUALSIZE ) ||
+            ( mpDoc->GetRowFlags( rParam.mnCellY, nTab ) & CRFlags::ManualSize ) ||
             ( rParam.mpCondSet && SfxItemState::SET ==
                 rParam.mpCondSet->GetItemState(ATTR_FONT_HEIGHT) ) )
             bClip = true;
@@ -4033,7 +4031,7 @@ void ScOutputData::DrawEditStacked(DrawEditParam& rParam)
             else
                 pClipMarkCell = &rParam.mpThisRowInfo->pCellInfo[rParam.mnX+1];
 
-            pClipMarkCell->nClipMark |= SC_CLIPMARK_RIGHT;      //! also allow left?
+            pClipMarkCell->nClipMark |= ScClipMark::Right;      //! also allow left?
             bAnyClipped = true;
 
             long nMarkPixel = (long)( SC_CLIPMARK_SIZE * mnPPTX );
@@ -4352,7 +4350,7 @@ void ScOutputData::DrawEditAsianVertical(DrawEditParam& rParam)
         //  except when font size is from conditional formatting.
         //! Allow clipping when vertically merged?
         if ( eType != OUTTYPE_PRINTER ||
-            ( mpDoc->GetRowFlags( rParam.mnCellY, nTab ) & CR_MANUALSIZE ) ||
+            ( mpDoc->GetRowFlags( rParam.mnCellY, nTab ) & CRFlags::ManualSize ) ||
             ( rParam.mpCondSet && SfxItemState::SET ==
                 rParam.mpCondSet->GetItemState(ATTR_FONT_HEIGHT) ) )
             bClip = true;
@@ -4380,7 +4378,7 @@ void ScOutputData::DrawEditAsianVertical(DrawEditParam& rParam)
             else
                 pClipMarkCell = &rParam.mpThisRowInfo->pCellInfo[rParam.mnX+1];
 
-            pClipMarkCell->nClipMark |= SC_CLIPMARK_RIGHT;      //! also allow left?
+            pClipMarkCell->nClipMark |= ScClipMark::Right;      //! also allow left?
             bAnyClipped = true;
 
             long nMarkPixel = (long)( SC_CLIPMARK_SIZE * mnPPTX );
@@ -4530,7 +4528,7 @@ void ScOutputData::DrawEdit(bool bPixelToLogic)
 
                         if ( nTempX > nX &&
                              !IsEmptyCellText( pThisRowInfo, nTempX, nY ) &&
-                             !mpDoc->HasAttrib( nTempX,nY,nTab, nX,nY,nTab, HASATTR_MERGED | HASATTR_OVERLAPPED ) )
+                             !mpDoc->HasAttrib( nTempX,nY,nTab, nX,nY,nTab, HasAttrFlags::Merged | HasAttrFlags::Overlapped ) )
                         {
                             nCellX = nTempX;
                             bDoCell = true;
@@ -4695,7 +4693,7 @@ void ScOutputData::DrawRotated(bool bPixelToLogic)
                 if (nX==nX1) nPosX = nInitPosX;                 // positions before nX1 are calculated individually
 
                 CellInfo* pInfo = &pThisRowInfo->pCellInfo[nX+1];
-                if ( pInfo->nRotateDir != SC_ROTDIR_NONE )
+                if ( pInfo->nRotateDir != ScRotateDir::NONE )
                 {
                     SCROW nY = pThisRowInfo->nRowNo;
 
@@ -4922,8 +4920,7 @@ void ScOutputData::DrawRotated(bool bPixelToLogic)
                                                          *mpDoc->GetFormatTable(),
                                                          mpDoc,
                                                          mbShowNullValues,
-                                                         mbShowFormulas,
-                                                         ftCheck );
+                                                         mbShowFormulas);
 
                                 pEngine->SetText(aString);
                                 if ( pColor && !mbSyntaxMode && !( mbUseStyleColor && mbForceAutoColor ) )
@@ -5029,7 +5026,7 @@ void ScOutputData::DrawRotated(bool bPixelToLogic)
                                 {
                                     nGridWidth = aCellSize.Width() +
                                             std::abs((long) ( aCellSize.Height() * nCos / nSin ));
-                                    bNegative = ( pInfo->nRotateDir == SC_ROTDIR_LEFT );
+                                    bNegative = ( pInfo->nRotateDir == ScRotateDir::Left );
                                     if ( bLayoutRTL )
                                         bNegative = !bNegative;
                                 }

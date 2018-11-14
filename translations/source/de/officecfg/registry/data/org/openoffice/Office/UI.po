@@ -4,7 +4,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
 "POT-Creation-Date: 2016-12-27 21:51+0100\n"
-"PO-Revision-Date: 2017-03-23 05:13+0000\n"
+"PO-Revision-Date: 2017-10-15 05:55+0000\n"
 "Last-Translator: Christian Kühl <kuehl.christian@googlemail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: de\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Accelerator-Marker: ~\n"
 "X-Generator: Pootle 2.8\n"
-"X-POOTLE-MTIME: 1490246010.000000\n"
+"X-POOTLE-MTIME: 1508046902.000000\n"
 
 #: BaseWindowState.xcu
 msgctxt ""
@@ -5801,7 +5801,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "Switch Design View On/Off"
-msgstr "Designmodus ~umschalten"
+msgstr "Entwurfsansicht ein/aus"
 
 #: DbuCommands.xcu
 msgctxt ""
@@ -13550,7 +13550,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "Application"
-msgstr "Applikation"
+msgstr "Anwendung"
 
 #: GenericCategories.xcu
 msgctxt ""
@@ -15701,7 +15701,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "Match Case"
-msgstr "Groß-/Kleinschreibung"
+msgstr "Groß- und Kleinschreibung beachten"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -15764,7 +15764,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "~Extended Tips"
-msgstr "~Aktive Hilfe"
+msgstr "Er~weiterte Tipps"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -16493,7 +16493,7 @@ msgctxt ""
 "ContextLabel\n"
 "value.text"
 msgid "Manage Templates"
-msgstr "Vorlagen verwalten"
+msgstr "Vorlagen verwalten..."
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -16529,7 +16529,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "Open Remote"
-msgstr "Webdatei öffnen"
+msgstr "Datei von Server öffnen"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -16538,7 +16538,7 @@ msgctxt ""
 "ContextLabel\n"
 "value.text"
 msgid "Open Remote ~File..."
-msgstr "Webdatei ~öffnen..."
+msgstr "Datei von Server ~öffnen..."
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -16547,7 +16547,7 @@ msgctxt ""
 "TooltipLabel\n"
 "value.text"
 msgid "Open Remote File"
-msgstr "Webdatei öffnen"
+msgstr "Datei von Server öffnen"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -16556,7 +16556,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "Save Remote"
-msgstr "Webdatei speichern"
+msgstr "Datei auf Server speichern"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -16565,7 +16565,7 @@ msgctxt ""
 "ContextLabel\n"
 "value.text"
 msgid "Sa~ve Remote File..."
-msgstr "Webdatei speichern~..."
+msgstr "Datei auf Server speichern~..."
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -16574,7 +16574,7 @@ msgctxt ""
 "TooltipLabel\n"
 "value.text"
 msgid "Save Remote File"
-msgstr "Webdatei speichern"
+msgstr "Datei auf Server speichern"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -16583,7 +16583,7 @@ msgctxt ""
 "PopupLabel\n"
 "value.text"
 msgid "Save Remote File..."
-msgstr "Webdatei speichern~..."
+msgstr "Datei auf Server speichern..."
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -17710,7 +17710,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "~Hide Details"
-msgstr "Detail ~ausblenden"
+msgstr "Details ~ausblenden"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -17728,7 +17728,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "~Show Details"
-msgstr "Detail ~einblenden"
+msgstr "Details ~einblenden"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -17836,7 +17836,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "Borders (Shift to overwrite)"
-msgstr "Rahmen (Umschalt zum Überschreiben)"
+msgstr "Umrandung (Umschalt zum Überschreiben)"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -18025,7 +18025,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "Border Style"
-msgstr "Rahmenstil"
+msgstr "Umrandungsstil"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -18034,7 +18034,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "Border Color"
-msgstr "Rahmenfarbe"
+msgstr "Umrandungsfarbe"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -18322,7 +18322,7 @@ msgctxt ""
 "ContextLabel\n"
 "value.text"
 msgid "Auto~Format Styles..."
-msgstr "A~utoFormat Vorlagen..."
+msgstr "A~utoFormat..."
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -20275,7 +20275,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "Send Feedback..."
-msgstr "~Fehler melden (Englisch)"
+msgstr "~Rückmeldung geben..."
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -20806,7 +20806,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "Toggle Design Mode"
-msgstr "Designmodus umschalten"
+msgstr "Entwurfsmodus umschalten"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -20815,7 +20815,7 @@ msgctxt ""
 "ContextLabel\n"
 "value.text"
 msgid "Design Mode"
-msgstr "Designmodus ~umschalten"
+msgstr "Entwurfsmodus"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -20824,7 +20824,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "Design Mode On/Off"
-msgstr "Entwurfsmodus an/aus"
+msgstr "Entwurfsmodus ein/aus"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -21238,7 +21238,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "Wizards On/Off"
-msgstr "~Assistenten an/aus"
+msgstr "~Assistenten ein/aus"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -22138,7 +22138,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "~Change Case"
-msgstr "Groß~-/Kleinschreibung"
+msgstr "Groß~-/Kleinschreibung ändern"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -25351,7 +25351,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "~Track Changes"
-msgstr "Änderungen v~erfolgen"
+msgstr "Änd~erungen"
 
 #: WriterCommands.xcu
 msgctxt ""

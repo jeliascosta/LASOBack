@@ -166,14 +166,14 @@ void MyWizardDlg::ActivatePage()
 MyWizardDlg-Prev/Next-Handler
 -----------------------------
 
-IMPL_LINK_TYPED( MyWizardDlg, ImplPrevHdl, PushButton*, pBtn, void )
+IMPL_LINK( MyWizardDlg, ImplPrevHdl, PushButton*, pBtn, void )
 {
     ShowPrevPage();
     if ( !GetCurLevel() )
         pBtn->Disable();
 }
 
-IMPL_LINK_TYPED( MyWizardDlg, ImplNextHdl, PushButton*, pBtn, void )
+IMPL_LINK( MyWizardDlg, ImplNextHdl, PushButton*, pBtn, void )
 {
     ShowNextPage();
     if ( GetCurLevel() < 3 )
@@ -203,8 +203,7 @@ private:
     sal_Int16               mnLeftAlignCount;
     bool                    mbEmptyViewMargin;
 
-    DECL_DLLPRIVATE_LINK_TYPED( ImplHandleWizardLayoutTimerHdl, Idle*, void );
-    bool hasWizardPendingLayout() const;
+    DECL_DLLPRIVATE_LINK( ImplHandleWizardLayoutTimerHdl, Idle*, void );
 
 protected:
     long                LogicalCoordinateToPixel(int iCoordinate);
@@ -229,9 +228,9 @@ private:
     SVT_DLLPRIVATE TabPage*         ImplGetPage( sal_uInt16 nLevel ) const;
 
 public:
-    WizardDialog( vcl::Window* pParent, WinBits nStyle = WB_STDTABDIALOG );
+    WizardDialog( vcl::Window* pParent, WinBits nStyle );
     WizardDialog( vcl::Window* pParent, const OUString& rID, const OUString& rUIXMLDescription );
-    virtual ~WizardDialog();
+    virtual ~WizardDialog() override;
     virtual void dispose() override;
 
     virtual void        Resize() override;

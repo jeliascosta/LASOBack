@@ -1,7 +1,7 @@
 #. extracted from helpcontent2/source/text/smath/00
 msgid ""
 msgstr ""
-"Project-Id-Version: LibreOffice 5.4\n"
+"Project-Id-Version: LibreOffice 5.3\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
 "POT-Creation-Date: 2017-01-06 11:51+0100\n"
 "PO-Revision-Date: 2016-12-25 20:33+0200\n"
@@ -548,7 +548,7 @@ msgctxt ""
 "par_id3153803\n"
 "help.text"
 msgid "<variable id=\"etsmim\">Choose <emph>Tools - Import MathML from Clipboard</emph></variable>"
-msgstr "<variable id=\"etsmim\">Izberite <emph>Orodja – Uvozi MathML z odložišča</emph></variable>"
+msgstr "<variable id=\"etsfim\">Izberite <emph>Orodja – Uvozi MathML z odložišča</emph></variable>"
 
 #: 00000004.xhp
 msgctxt ""

@@ -840,6 +840,125 @@ bool NeonSession::UsesProxy()
     return  !m_aProxyName.isEmpty() ;
 }
 
+void NeonSession::OPTIONS( const OUString & inPath,
+                           DAVOptions & rOptions, // contains the name+values of every header
+                           const DAVRequestEnvironment & rEnv )
+    throw( std::exception )
+{
+    osl::Guard< osl::Mutex > theGuard( m_aMutex );
+
+    SAL_INFO( "ucb.ucp.webdav", "OPTIONS - relative URL <" << inPath << ">" );
+
+    rOptions.init();
+
+    Init( rEnv );
+    int theRetVal;
+
+    ne_request *req = ne_request_create(m_pHttpSession, "OPTIONS", OUStringToOString(
+                                            inPath, RTL_TEXTENCODING_UTF8 ).getStr());
+    {
+        osl::Guard< osl::Mutex > theGlobalGuard( aGlobalNeonMutex );
+        theRetVal = ne_request_dispatch(req);
+    }
+
+    //check if http error is in the 200 class (no error)
+    if (theRetVal == NE_OK && ne_get_status(req)->klass != 2) {
+        theRetVal = NE_ERROR;
+    }
+
+    if ( theRetVal == NE_OK )
+    {
+        void *cursor = nullptr;
+        const char *name, *value;
+        while ( ( cursor = ne_response_header_iterate(
+                      req, cursor, &name, &value ) ) != nullptr )
+        {
+            OUString aHeaderName( OUString::createFromAscii( name ).toAsciiLowerCase() );
+            OUString aHeaderValue( OUString::createFromAscii( value ) );
+
+            // display the single header
+            SAL_INFO( "ucb.ucp.webdav", "OPTIONS - received header: " << aHeaderName << ":" << aHeaderValue );
+
+            if ( aHeaderName == "allow" )
+            {
+                rOptions.setAllowedMethods( aHeaderValue );
+            }
+            else if ( aHeaderName == "dav" )
+            {
+                // check type of dav capability
+                // need to parse the value, token separator: ","
+                // see <http://tools.ietf.org/html/rfc4918#section-10.1>,
+                // <http://tools.ietf.org/html/rfc4918#section-18>,
+                // and <http://tools.ietf.org/html/rfc7230#section-3.2>
+                // we detect the class (1, 2 and 3), other elements (token, URL)
+                // are not used for now
+                // silly parser written using OUString, not very efficient
+                // but quick and esy to write...
+                sal_Int32 nFromIndex = 0;
+                sal_Int32 nNextIndex = 0;
+                while( ( nNextIndex = aHeaderValue.indexOf( ",", nFromIndex ) ) != -1 )
+                { // found a comma
+                    // try to convert from nFromIndex to nNextIndex -1 in a number
+                    // if this is 1 or 2 or 3, use for class setting
+                    sal_Int32 nClass =
+                        aHeaderValue.copy( nFromIndex, nNextIndex - nFromIndex ).toInt32();
+                    switch( nClass )
+                    {
+                        case 1:
+                            rOptions.setClass1();
+                            break;
+                        case 2:
+                            rOptions.setClass2();
+                            break;
+                        case 3:
+                            rOptions.setClass3();
+                            break;
+                        default:
+                            ;
+                    }
+                    // next starting point
+                    nFromIndex = nNextIndex + 1;
+                }
+                // check for last fragment
+                if ( nFromIndex < aHeaderValue.getLength() )
+                {
+                    sal_Int32 nClass = aHeaderValue.copy( nFromIndex ).toInt32();
+                    switch( nClass )
+                    {
+                        case 1:
+                            rOptions.setClass1();
+                            break;
+                        case 2:
+                            rOptions.setClass2();
+                            break;
+                        case 3:
+                            rOptions.setClass3();
+                            break;
+                        default:
+                            ;
+                    }
+                }
+            }
+        }
+        // if applicable, check for lock state:
+        if( rOptions.isClass2() || rOptions.isClass3() )
+        {
+            //dav with lock possible, check for locked state
+            if ( m_aNeonLockStore.findByUri(
+                     makeAbsoluteURL( inPath ) ) != nullptr )
+            {
+                // we own a lock for this URL,
+                // set locked state
+                rOptions.setLocked();
+            }
+        }
+    }
+
+    ne_request_destroy(req);
+
+    HandleError( theRetVal, inPath, rEnv );
+}
+
 void NeonSession::PROPFIND( const OUString & inPath,
                             const Depth inDepth,
                             const std::vector< OUString > & inPropNames,
@@ -1134,6 +1253,31 @@ NeonSession::GET( const OUString & inPath,
     HandleError( theRetVal, inPath, rEnv );
 
     return uno::Reference< io::XInputStream >( xInputStream.get() );
+}
+
+void NeonSession::GET0( const OUString & inPath,
+                  const std::vector< OUString > & inHeaderNames,
+                  DAVResource & ioResource,
+                  const DAVRequestEnvironment & rEnv )
+    throw ( std::exception )
+{
+    osl::Guard< osl::Mutex > theGuard( m_aMutex );
+    SAL_INFO( "ucb.ucp.webdav", "GET - relative URL <" << inPath << ">" );
+
+    Init( rEnv );
+
+    ioResource.uri = inPath;
+    ioResource.properties.clear();
+
+    rtl::Reference< NeonInputStream > xInputStream( new NeonInputStream );
+    NeonRequestContext aCtx( xInputStream, inHeaderNames, ioResource );
+    int theRetVal = GET0( m_pHttpSession,
+                         OUStringToOString(
+                             inPath, RTL_TEXTENCODING_UTF8 ).getStr(),
+                         true,
+                         &aCtx );
+
+    HandleError( theRetVal, inPath, rEnv );
 }
 
 void NeonSession::GET( const OUString & inPath,
@@ -1696,34 +1840,107 @@ void NeonSession::HandleError( int nError,
 
             sal_uInt16 code = makeStatusCode( aText );
 
-            SAL_WARN( "ucb.ucp.webdav", "Neon returned NE_ERROR, http response status code was: '" << aText << "'" );
-            if ( code == SC_LOCKED )
+            SAL_WARN( "ucb.ucp.webdav", "Neon returned NE_ERROR, http response status code was: " << code << " '" << aText << "'" );
+            if ( SC_BAD_REQUEST <= code && code < SC_INTERNAL_SERVER_ERROR )
             {
-                if ( m_aNeonLockStore.findByUri(
-                         makeAbsoluteURL( inPath ) ) == nullptr )
+                // error codes in the range 4xx
+                switch ( code )
                 {
-                    // locked by 3rd party
-                    throw DAVException( DAVException::DAV_LOCKED );
-                }
-                else
-                {
-                    // locked by ourself
-                    throw DAVException( DAVException::DAV_LOCKED_SELF );
+                    case SC_LOCKED:
+                    {
+                        if ( m_aNeonLockStore.findByUri(
+                                 makeAbsoluteURL( inPath ) ) == nullptr )
+                        {
+                            // locked by 3rd party
+                            throw DAVException( DAVException::DAV_LOCKED );
+                        }
+                        else
+                        {
+                            // locked by ourself
+                            throw DAVException( DAVException::DAV_LOCKED_SELF );
+                        }
+                    }
+                    break;
+                    case SC_PRECONDITION_FAILED:
+                    case SC_BAD_REQUEST:
+                    {
+                        // Special handling for 400 and 412 status codes, which may indicate
+                        // that a lock previously obtained by us has been released meanwhile
+                        // by the server. Unfortunately, RFC is not clear at this point,
+                        // thus server implementations behave different...
+                        if ( removeExpiredLocktoken( makeAbsoluteURL( inPath ), rEnv ) )
+                            throw DAVException( DAVException::DAV_LOCK_EXPIRED );
+                    }
+                    break;
+                    case SC_REQUEST_TIMEOUT:
+                    {
+                        throw DAVException( DAVException::DAV_HTTP_TIMEOUT,
+                                            NeonUri::makeConnectionEndPointString(
+                                                m_aHostName, m_nPort ) );
+                    }
+                    break;
+                    case SC_UNAUTHORIZED: // User authentication failed on server
+                    {
+                        throw DAVException( DAVException::DAV_HTTP_AUTH,
+                                            NeonUri::makeConnectionEndPointString(
+                                                m_aHostName, m_nPort ) );
+                    }
+                    break;
+                    case SC_GONE:
+                    case SC_LENGTH_REQUIRED:
+                    case SC_REQUEST_ENTITY_TOO_LARGE:
+                    case SC_REQUEST_URI_TOO_LONG:
+                    case SC_UNSUPPORTED_MEDIA_TYPE:
+                    case SC_REQUESTED_RANGE_NOT_SATISFIABLE:
+                    case SC_EXPECTATION_FAILED:
+                    case SC_UNPROCESSABLE_ENTITY:
+                    case SC_FAILED_DEPENDENCY:
+                    case SC_CONFLICT:
+                    case SC_NOT_ACCEPTABLE:
+                    case SC_PAYMENT_REQUIRED:
+                    case SC_PROXY_AUTHENTICATION_REQUIRED:
+                    default:
+                        // set 400 error, if not one of others
+                        code = SC_BAD_REQUEST;
+                        SAL_FALLTHROUGH;
+                    case SC_FORBIDDEN:
+                    case SC_NOT_FOUND:
+                    case SC_METHOD_NOT_ALLOWED:
+                        throw DAVException( DAVException::DAV_HTTP_ERROR, aText, code );
+                        break;
                 }
             }
-
-            // Special handling for 400 and 412 status codes, which may indicate
-            // that a lock previously obtained by us has been released meanwhile
-            // by the server. Unfortunately, RFC is not clear at this point,
-            // thus server implementations behave different...
-            else if ( code == SC_BAD_REQUEST || code == SC_PRECONDITION_FAILED )
+            else if ( SC_INTERNAL_SERVER_ERROR <= code )
             {
-                if ( removeExpiredLocktoken( makeAbsoluteURL( inPath ), rEnv ) )
-                    throw DAVException( DAVException::DAV_LOCK_EXPIRED );
+                // deal with HTTP response status codes higher then 500
+                // error codes in the range 5xx, server errors
+                // but there exists unofficial code in the range 1000 and up
+                // for example see:
+                // <https://support.cloudflare.com/hc/en-us/sections/200820298-Error-Pages> (retrieved 2016-10-05)
+                switch ( code )
+                {
+                    // the error codes case before the default case are not actively
+                    // managed by LO
+                    case SC_BAD_GATEWAY:
+                    case SC_SERVICE_UNAVAILABLE:
+                    case SC_GATEWAY_TIMEOUT:
+                    case SC_HTTP_VERSION_NOT_SUPPORTED:
+                    case SC_INSUFFICIENT_STORAGE:
+                    default:
+                        // set 500 error, if not one of others
+                        // expand the error code
+                        code = SC_INTERNAL_SERVER_ERROR;
+                        SAL_FALLTHROUGH;
+                    case SC_INTERNAL_SERVER_ERROR:
+                    case SC_NOT_IMPLEMENTED:
+                        throw DAVException( DAVException::DAV_HTTP_ERROR, aText, code );
+                        break;
+                }
             }
-
-            throw DAVException( DAVException::DAV_HTTP_ERROR, aText, code );
+            else
+                throw DAVException( DAVException::DAV_HTTP_ERROR, aText, code );
         }
+        break;
         case NE_LOOKUP:       // Name lookup failed.
             SAL_WARN( "ucb.ucp.webdav", "Name lookup failed" );
             throw DAVException( DAVException::DAV_HTTP_LOOKUP,
@@ -1826,8 +2043,10 @@ void runResponseHeaderHandler( void * userdata,
         {
             // Create & set the PropertyValue
             DAVPropertyValue thePropertyValue;
+            // header names are case insensitive, so are the
+            // corresponding property names.
+            thePropertyValue.Name = aHeaderName.toAsciiLowerCase();
             thePropertyValue.IsCaseSensitive = false;
-            thePropertyValue.Name = aHeaderName;
 
             if ( nPos < aHeader.getLength() )
                 thePropertyValue.Value <<= aHeader.copy( nPos + 1 ).trim();
@@ -1878,6 +2097,42 @@ int NeonSession::GET( ne_session * sess,
 
     if ( dc != nullptr )
         ne_decompress_destroy(dc);
+
+    ne_request_destroy( req );
+    return ret;
+}
+
+int NeonSession::GET0( ne_session * sess,
+                       const char * uri,
+                       bool getheaders,
+                       void * userdata )
+{
+    //struct get_context ctx;
+    ne_request * req = ne_request_create( sess, "GET", uri );
+    int ret;
+
+    {
+        osl::Guard< osl::Mutex > theGlobalGuard( aGlobalNeonMutex );
+        ret = ne_request_dispatch( req );
+    }
+
+    if ( getheaders )
+    {
+        void *cursor = nullptr;
+        const char *name, *value;
+        while ( ( cursor = ne_response_header_iterate(
+                               req, cursor, &name, &value ) ) != nullptr )
+        {
+            char buffer[8192];
+
+            SAL_INFO( "ucb.ucp.webdav", "GET - received header: " << name << ": " << value );
+            ne_snprintf(buffer, sizeof buffer, "%s: %s", name, value);
+            runResponseHeaderHandler(userdata, buffer);
+        }
+    }
+
+    if ( ret == NE_OK && ne_get_status( req )->klass != 2 )
+        ret = NE_ERROR;
 
     ne_request_destroy( req );
     return ret;

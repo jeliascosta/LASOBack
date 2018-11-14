@@ -38,7 +38,6 @@ ResultSetBase::ResultSetBase(
       m_xProvider( xProvider ),
       m_nRow( -1 ),
       m_nWasNull( true ),
-      m_bRowCountFinal( true ),
       m_sProperty( seq ),
       m_pDisposeEventListeners( nullptr ),
       m_pRowCountListeners( nullptr ),
@@ -57,8 +56,7 @@ ResultSetBase::~ResultSetBase()
 // XInterface
 
 void SAL_CALL
-ResultSetBase::acquire(
-    void )
+ResultSetBase::acquire()
     throw()
 {
     OWeakObject::acquire();
@@ -66,8 +64,7 @@ ResultSetBase::acquire(
 
 
 void SAL_CALL
-ResultSetBase::release(
-    void )
+ResultSetBase::release()
     throw()
 {
     OWeakObject::release();
@@ -75,8 +72,7 @@ ResultSetBase::release(
 
 
 uno::Any SAL_CALL
-ResultSetBase::queryInterface(
-    const uno::Type& rType )
+ResultSetBase::queryInterface( const uno::Type& rType )
     throw( uno::RuntimeException, std::exception )
 {
     uno::Any aRet = cppu::queryInterface(
@@ -148,8 +144,7 @@ ResultSetBase::dispose()
 //  XResultSet
 
 sal_Bool SAL_CALL
-ResultSetBase::next(
-    void )
+ResultSetBase::next()
     throw( sdbc::SQLException,
            uno::RuntimeException, std::exception )
 {
@@ -163,8 +158,7 @@ ResultSetBase::next(
 
 
 sal_Bool SAL_CALL
-ResultSetBase::isBeforeFirst(
-    void )
+ResultSetBase::isBeforeFirst()
     throw( sdbc::SQLException,
            uno::RuntimeException, std::exception )
 {
@@ -173,8 +167,7 @@ ResultSetBase::isBeforeFirst(
 
 
 sal_Bool SAL_CALL
-ResultSetBase::isAfterLast(
-    void )
+ResultSetBase::isAfterLast()
     throw( sdbc::SQLException,
            uno::RuntimeException, std::exception )
 {
@@ -183,8 +176,7 @@ ResultSetBase::isAfterLast(
 
 
 sal_Bool SAL_CALL
-ResultSetBase::isFirst(
-    void )
+ResultSetBase::isFirst()
     throw( sdbc::SQLException,
            uno::RuntimeException, std::exception )
 {
@@ -193,8 +185,7 @@ ResultSetBase::isFirst(
 
 
 sal_Bool SAL_CALL
-ResultSetBase::isLast(
-    void  )
+ResultSetBase::isLast()
     throw( sdbc::SQLException,
            uno::RuntimeException, std::exception)
 {
@@ -206,8 +197,7 @@ ResultSetBase::isLast(
 
 
 void SAL_CALL
-ResultSetBase::beforeFirst(
-    void  )
+ResultSetBase::beforeFirst()
     throw( sdbc::SQLException,
            uno::RuntimeException, std::exception)
 {
@@ -216,8 +206,7 @@ ResultSetBase::beforeFirst(
 
 
 void SAL_CALL
-ResultSetBase::afterLast(
-    void  )
+ResultSetBase::afterLast()
     throw( sdbc::SQLException,
            uno::RuntimeException, std::exception )
 {
@@ -226,8 +215,7 @@ ResultSetBase::afterLast(
 
 
 sal_Bool SAL_CALL
-ResultSetBase::first(
-    void  )
+ResultSetBase::first()
     throw( sdbc::SQLException,
            uno::RuntimeException, std::exception)
 {
@@ -237,8 +225,7 @@ ResultSetBase::first(
 
 
 sal_Bool SAL_CALL
-ResultSetBase::last(
-    void  )
+ResultSetBase::last()
     throw( sdbc::SQLException,
            uno::RuntimeException, std::exception )
 {
@@ -248,8 +235,7 @@ ResultSetBase::last(
 
 
 sal_Int32 SAL_CALL
-ResultSetBase::getRow(
-    void )
+ResultSetBase::getRow()
     throw( sdbc::SQLException,
            uno::RuntimeException, std::exception)
 {
@@ -279,8 +265,7 @@ sal_Bool SAL_CALL ResultSetBase::absolute( sal_Int32 row )
 
 
 sal_Bool SAL_CALL
-ResultSetBase::relative(
-    sal_Int32 row )
+ResultSetBase::relative( sal_Int32 row )
     throw( sdbc::SQLException,
            uno::RuntimeException, std::exception)
 {
@@ -299,8 +284,7 @@ ResultSetBase::relative(
 
 
 sal_Bool SAL_CALL
-ResultSetBase::previous(
-    void )
+ResultSetBase::previous()
     throw( sdbc::SQLException,
            uno::RuntimeException, std::exception)
 {
@@ -313,8 +297,7 @@ ResultSetBase::previous(
 
 
 void SAL_CALL
-ResultSetBase::refreshRow(
-    void )
+ResultSetBase::refreshRow()
     throw( sdbc::SQLException,
            uno::RuntimeException, std::exception)
 {
@@ -322,8 +305,7 @@ ResultSetBase::refreshRow(
 
 
 sal_Bool SAL_CALL
-ResultSetBase::rowUpdated(
-    void )
+ResultSetBase::rowUpdated()
     throw( sdbc::SQLException,
            uno::RuntimeException, std::exception )
 {
@@ -331,8 +313,7 @@ ResultSetBase::rowUpdated(
 }
 
 sal_Bool SAL_CALL
-ResultSetBase::rowInserted(
-    void  )
+ResultSetBase::rowInserted()
     throw( sdbc::SQLException,
            uno::RuntimeException, std::exception )
 {
@@ -340,8 +321,7 @@ ResultSetBase::rowInserted(
 }
 
 sal_Bool SAL_CALL
-ResultSetBase::rowDeleted(
-    void  )
+ResultSetBase::rowDeleted()
     throw( sdbc::SQLException,
            uno::RuntimeException, std::exception )
 {
@@ -350,8 +330,7 @@ ResultSetBase::rowDeleted(
 
 
 uno::Reference< uno::XInterface > SAL_CALL
-ResultSetBase::getStatement(
-    void  )
+ResultSetBase::getStatement()
     throw( sdbc::SQLException,
            uno::RuntimeException, std::exception )
 {
@@ -363,8 +342,7 @@ ResultSetBase::getStatement(
 // XCloseable
 
 void SAL_CALL
-ResultSetBase::close(
-    void )
+ResultSetBase::close()
     throw( sdbc::SQLException,
            uno::RuntimeException, std::exception)
 {
@@ -372,8 +350,7 @@ ResultSetBase::close(
 
 
 OUString SAL_CALL
-ResultSetBase::queryContentIdentifierString(
-    void )
+ResultSetBase::queryContentIdentifierString()
     throw( uno::RuntimeException, std::exception )
 {
     if( 0 <= m_nRow && m_nRow < sal::static_int_cast<sal_Int32>(m_aItems.size()) )
@@ -384,12 +361,8 @@ ResultSetBase::queryContentIdentifierString(
 
 
 uno::Reference< ucb::XContentIdentifier > SAL_CALL
-ResultSetBase::queryContentIdentifier(
-    void
-)
-    throw(
-        uno::RuntimeException, std::exception
-    )
+ResultSetBase::queryContentIdentifier()
+    throw( uno::RuntimeException, std::exception )
 {
     if( 0 <= m_nRow && m_nRow < sal::static_int_cast<sal_Int32>(m_aItems.size()) )
     {
@@ -408,8 +381,7 @@ ResultSetBase::queryContentIdentifier(
 
 
 uno::Reference< ucb::XContent > SAL_CALL
-ResultSetBase::queryContent(
-    void )
+ResultSetBase::queryContent()
     throw( uno::RuntimeException, std::exception )
 {
     if( 0 <= m_nRow && m_nRow < sal::static_int_cast<sal_Int32>(m_aItems.size()) )
@@ -529,7 +501,7 @@ uno::Any SAL_CALL ResultSetBase::getPropertyValue(
 {
     if( PropertyName == "IsRowCountFinal" )
     {
-        return uno::Any(m_bRowCountFinal);
+        return uno::Any(true);
     }
     else if ( PropertyName == "RowCount" )
     {
@@ -616,8 +588,7 @@ void SAL_CALL ResultSetBase::removeVetoableChangeListener(
 
 // XResultSetMetaDataSupplier
 uno::Reference< sdbc::XResultSetMetaData > SAL_CALL
-ResultSetBase::getMetaData(
-    void )
+ResultSetBase::getMetaData()
     throw( sdbc::SQLException,
            uno::RuntimeException, std::exception )
 {

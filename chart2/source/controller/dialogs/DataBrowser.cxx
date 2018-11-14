@@ -23,7 +23,6 @@
 #include "DataBrowser.hxx"
 #include "DataBrowserModel.hxx"
 #include "Strings.hrc"
-#include "ContainerHelper.hxx"
 #include "DataSeriesHelper.hxx"
 #include "DiagramHelper.hxx"
 #include "ChartModelHelper.hxx"
@@ -52,25 +51,6 @@
 #include <algorithm>
 #include <functional>
 
-/*  BrowserMode::COLUMNSELECTION :  single cells may be selected rather than only
-                               entire rows
-    BROWSER_(H|V)LINES :       show horizontal or vertical grid-lines
-
-    BROWSER_AUTO_(H|V)SCROLL : scroll automated horizontally or vertically when
-                               cursor is moved beyond the edge of the dialog
-    BrowserMode::HIDESELECT     :   Do not mark the current row with selection color
-                               (usually blue)
-
- */
-#define BROWSER_STANDARD_FLAGS  \
-    BrowserMode::COLUMNSELECTION | \
-    BrowserMode::HLINES | BrowserMode::VLINES | \
-    BrowserMode::AUTO_HSCROLL | BrowserMode::AUTO_VSCROLL | \
-    BrowserMode::HIDESELECT
-
-// BrowserMode::HIDECURSOR would prevent flickering in edit fields, but navigating
-// with shift up/down, and entering non-editable cells would be problematic,
-// e.g.  the first cell, or when being in read-only mode
 
 using namespace ::com::sun::star;
 using ::com::sun::star::uno::Reference;
@@ -79,6 +59,22 @@ using namespace ::svt;
 
 namespace
 {
+/*  BrowserMode::COLUMNSELECTION : single cells may be selected rather than only
+                                   entire rows
+    BrowserMode::(H|V)LINES : show horizontal or vertical grid-lines
+    BrowserMode::AUTO_(H|V)SCROLL : scroll automated horizontally or vertically when
+                                    cursor is moved beyond the edge of the dialog
+    BrowserMode::HIDESELECT : Do not mark the current row with selection color
+                              (usually blue)
+  ! BrowserMode::HIDECURSOR would prevent flickering in edit fields, but navigating
+        with shift up/down, and entering non-editable cells would be problematic,
+        e.g.  the first cell, or when being in read-only mode
+*/
+const BrowserMode BrowserStdFlags = BrowserMode::COLUMNSELECTION |
+                                    BrowserMode::HLINES | BrowserMode::VLINES |
+                                    BrowserMode::AUTO_HSCROLL | BrowserMode::AUTO_VSCROLL |
+                                    BrowserMode::HIDESELECT;
+
 sal_Int32 lcl_getRowInData( long nRow )
 {
     return static_cast< sal_Int32 >( nRow );
@@ -105,7 +101,7 @@ public:
 
     void setStartColumn( sal_Int32 nStartColumn );
     sal_Int32 getStartColumn() const { return m_nStartColumn;}
-    void SetShowWarningBox( bool bShowWarning = true );
+    void SetShowWarningBox( bool bShowWarning );
 
 private:
     sal_Int32 m_nStartColumn;
@@ -185,8 +181,8 @@ private:
     Link<SeriesHeaderEdit*,void> m_aChangeLink;
 
     void notifyChanges();
-    DECL_LINK_TYPED( SeriesNameChanged, Edit&, void );
-    DECL_LINK_TYPED( SeriesNameEdited, Edit&, void );
+    DECL_LINK( SeriesNameChanged, Edit&, void );
+    DECL_LINK( SeriesNameEdited, Edit&, void );
 
     static Image GetChartTypeImage(
         const Reference< chart2::XChartType > & xChartType,
@@ -248,29 +244,29 @@ void SeriesHeader::SetPos( const Point & rPos )
 
     // chart type symbol
     Size aSize( nSymbolHeight, nSymbolHeight );
-    aSize = m_pDevice->LogicToPixel( aSize, MAP_APPFONT );
+    aSize = m_pDevice->LogicToPixel( aSize, MapUnit::MapAppFont );
     m_spSymbol->set_width_request(aSize.Width());
     m_spSymbol->set_height_request(aSize.Height());
 
     // series name edit field
     aSize.setWidth(nSymbolDistance);
-    aSize = m_pDevice->LogicToPixel( aSize, MAP_APPFONT );
+    aSize = m_pDevice->LogicToPixel( aSize, MapUnit::MapAppFont );
     m_spSeriesName->set_margin_left(aSize.Width() + 2);
     aSize.setWidth( m_nWidth - nSymbolHeight - nSymbolDistance );
     sal_Int32 nHeight = 12;
     aSize.setHeight( nHeight );
-    aSize = m_pDevice->LogicToPixel( aSize, MAP_APPFONT );
+    aSize = m_pDevice->LogicToPixel( aSize, MapUnit::MapAppFont );
     m_spSeriesName->set_width_request(aSize.Width());
     m_spSeriesName->set_height_request(aSize.Height());
 
     // color bar
     aSize.setWidth(1);
-    aSize = m_pDevice->LogicToPixel( aSize, MAP_APPFONT );
+    aSize = m_pDevice->LogicToPixel( aSize, MapUnit::MapAppFont );
     m_spColorBar->set_margin_left(aSize.Width() + 2);
     nHeight = 3;
     aSize.setWidth( m_nWidth - 1 );
     aSize.setHeight( nHeight );
-    aSize = m_pDevice->LogicToPixel( aSize, MAP_APPFONT );
+    aSize = m_pDevice->LogicToPixel( aSize, MapUnit::MapAppFont );
     m_spColorBar->set_width_request(aSize.Width());
     m_spColorBar->set_height_request(aSize.Height());
 }
@@ -283,7 +279,7 @@ void SeriesHeader::SetWidth( sal_Int32 nWidth )
 
 void SeriesHeader::SetPixelWidth( sal_Int32 nWidth )
 {
-    SetWidth( m_pDevice->PixelToLogic( Size( nWidth, 0 ), MAP_APPFONT ).getWidth());
+    SetWidth( m_pDevice->PixelToLogic( Size( nWidth, 0 ), MapUnit::MapAppFont ).getWidth());
 }
 
 void SeriesHeader::SetChartType(
@@ -325,12 +321,12 @@ void SeriesHeader::SetEditChangedHdl( const Link<SeriesHeaderEdit*,void> & rLink
     m_aChangeLink = rLink;
 }
 
-IMPL_LINK_NOARG_TYPED(SeriesHeader, SeriesNameChanged, Edit&, void)
+IMPL_LINK_NOARG(SeriesHeader, SeriesNameChanged, Edit&, void)
 {
     notifyChanges();
 }
 
-IMPL_LINK_NOARG_TYPED(SeriesHeader, SeriesNameEdited, Edit&, void)
+IMPL_LINK_NOARG(SeriesHeader, SeriesNameEdited, Edit&, void)
 {
     m_bSeriesNameChangePending = true;
 }
@@ -440,7 +436,7 @@ sal_Int32 lcl_getColumnInDataOrHeader(
 } // anonymous namespace
 
 DataBrowser::DataBrowser( vcl::Window* pParent, WinBits nStyle, bool bLiveUpdate ) :
-    ::svt::EditBrowseBox( pParent, EditBrowseBoxFlags::SMART_TAB_TRAVEL | EditBrowseBoxFlags::HANDLE_COLUMN_TEXT, nStyle, BROWSER_STANDARD_FLAGS ),
+    ::svt::EditBrowseBox( pParent, EditBrowseBoxFlags::SMART_TAB_TRAVEL | EditBrowseBoxFlags::HANDLE_COLUMN_TEXT, nStyle, BrowserStdFlags ),
     m_nSeekRow( 0 ),
     m_bIsReadOnly( false ),
     m_bIsDirty( false ),
@@ -559,7 +555,7 @@ void DataBrowser::RenewTable()
     OUString aDefaultSeriesName(SCH_RESSTR(STR_COLUMN_LABEL));
     replaceParamterInString( aDefaultSeriesName, "%COLUMNNUMBER", OUString::number( 24 ) );
     sal_Int32 nColumnWidth = GetDataWindow().GetTextWidth( aDefaultSeriesName )
-        + GetDataWindow().LogicToPixel( Point( 4 + impl::SeriesHeader::GetRelativeAppFontXPosForNameField(), 0 ), MAP_APPFONT ).X();
+        + GetDataWindow().LogicToPixel( Point( 4 + impl::SeriesHeader::GetRelativeAppFontXPosForNameField(), 0 ), MapUnit::MapAppFont ).X();
     sal_Int32 nColumnCount = m_apDataBrowserModel->getColumnCount();
     // nRowCount is a member of a base class
     sal_Int32 nRowCountLocal = m_apDataBrowserModel->getMaxRowCount();
@@ -621,18 +617,13 @@ OUString DataBrowser::GetColString( sal_Int32 nColumnId ) const
     return OUString();
 }
 
-OUString DataBrowser::GetRowString( sal_Int32 nRow )
-{
-    return OUString::number(nRow + 1);
-}
-
 OUString DataBrowser::GetCellText( long nRow, sal_uInt16 nColumnId ) const
 {
     OUString aResult;
 
     if( nColumnId == 0 )
     {
-        aResult = GetRowString( static_cast< sal_Int32 >( nRow ));
+        aResult = OUString::number(static_cast< sal_Int32 >( nRow ) + 1);
     }
     else if( nRow >= 0 && m_apDataBrowserModel.get())
     {
@@ -1036,10 +1027,10 @@ bool DataBrowser::IsTabAllowed( bool bForward ) const
     {
         m_aNumberEditField->UseInputStringForFormatting();
         m_aNumberEditField->SetFormatKey( GetNumberFormatKey( nRow, nCol ));
-        return m_rNumberEditController;
+        return m_rNumberEditController.get();
     }
 
-    return m_rTextEditController;
+    return m_rTextEditController.get();
 }
 
 void DataBrowser::InitController(
@@ -1175,11 +1166,6 @@ bool DataBrowser::EndEditing()
         return ShowQueryBox();
 }
 
-sal_Int16 DataBrowser::GetFirstVisibleColumNumber() const
-{
-    return GetFirstVisibleColNumber();
-}
-
 void DataBrowser::ColumnResized( sal_uInt16 nColId )
 {
     bool bLastUpdateMode = GetUpdateMode();
@@ -1254,7 +1240,7 @@ void DataBrowser::ImplAdjustHeaderControls()
     pColorWin->set_margin_left(nCurrentPos);
 
     tSeriesHeaderContainer::iterator aIt( m_aSeriesHeaders.begin());
-    sal_uInt16 i = this->GetFirstVisibleColumNumber();
+    sal_uInt16 i = GetFirstVisibleColNumber();
     while( (aIt != m_aSeriesHeaders.end()) && ((*aIt)->GetStartColumn() < i) )
     {
         (*aIt)->Hide();
@@ -1289,7 +1275,7 @@ void DataBrowser::ImplAdjustHeaderControls()
     }
 }
 
-IMPL_LINK_TYPED( DataBrowser, SeriesHeaderGotFocus, Control&, rControl, void )
+IMPL_LINK( DataBrowser, SeriesHeaderGotFocus, Control&, rControl, void )
 {
     impl::SeriesHeaderEdit* pEdit = static_cast<impl::SeriesHeaderEdit*>(&rControl);
     pEdit->SetShowWarningBox( !m_bDataValid );
@@ -1304,7 +1290,7 @@ IMPL_LINK_TYPED( DataBrowser, SeriesHeaderGotFocus, Control&, rControl, void )
     }
 }
 
-IMPL_LINK_TYPED( DataBrowser, SeriesHeaderChanged, impl::SeriesHeaderEdit*, pEdit, void )
+IMPL_LINK( DataBrowser, SeriesHeaderChanged, impl::SeriesHeaderEdit*, pEdit, void )
 {
     if( pEdit )
     {

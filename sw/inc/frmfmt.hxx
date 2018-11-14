@@ -34,6 +34,7 @@ class SwRect;
 class SwContact;
 class SdrObject;
 namespace sw { class DocumentLayoutManager; }
+class SwFrameFormats;
 
 /// Style of a layout element.
 class SW_DLLPUBLIC SwFrameFormat: public SwFormat
@@ -41,11 +42,26 @@ class SW_DLLPUBLIC SwFrameFormat: public SwFormat
     friend class SwDoc;
     friend class SwPageDesc;    ///< Is allowed to call protected CTor.
     friend class ::sw::DocumentLayoutManager; ///< Is allowed to call protected CTor.
+    friend class SwFrameFormats;     ///< Is allowed to update the list backref.
+    friend class SwTextBoxHelper;
+    friend class SwUndoFlyBase; ///< calls SetOtherTextBoxFormat
 
     css::uno::WeakReference<css::uno::XInterface> m_wXObject;
 
     //UUUU DrawingLayer FillAttributes in a preprocessed form for primitive usage
     drawinglayer::attribute::SdrAllFillAttributesHelperPtr  maFillAttributes;
+
+    // The assigned SwFrmFmt list.
+    SwFrameFormats *m_ffList;
+
+    SwFrameFormat *m_pOtherTextBoxFormat;
+
+    struct change_name
+    {
+        change_name(const OUString &rName) : mName(rName) {}
+        void operator()(SwFormat *pFormat) { pFormat->m_aFormatName = mName; }
+        const OUString &mName;
+    };
 
 protected:
     SwFrameFormat(
@@ -64,8 +80,11 @@ protected:
 
     virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem* pNewValue ) override;
 
+    SwFrameFormat* GetOtherTextBoxFormat() const { return m_pOtherTextBoxFormat; }
+    void SetOtherTextBoxFormat( SwFrameFormat *pFormat );
+
 public:
-    virtual ~SwFrameFormat();
+    virtual ~SwFrameFormat() override;
 
     /// Destroys all Frames in aDepend (Frames are identified via dynamic_cast).
     virtual void DelFrames();
@@ -112,8 +131,7 @@ public:
     {
         HORI_L2R,
         HORI_R2L,
-        VERT_R2L,
-        VERT_L2R    ///< Not supported yet.
+        VERT_R2L
     };
 
     virtual SwFrameFormat::tLayoutDir GetLayoutDir() const;
@@ -137,6 +155,8 @@ public:
     virtual bool supportsFullDrawingLayerFillAttributeSet() const override;
 
     void dumpAsXml(struct _xmlTextWriter* pWriter) const;
+
+    virtual void SetName( const OUString& rNewName, bool bBroadcast=false ) SAL_OVERRIDE;
 };
 
 // The FlyFrame-Format
@@ -163,7 +183,7 @@ protected:
     {}
 
 public:
-    virtual ~SwFlyFrameFormat();
+    virtual ~SwFlyFrameFormat() override;
 
     /// Creates the views.
     virtual void MakeFrames() override;
@@ -244,7 +264,7 @@ protected:
     {}
 
 public:
-    virtual ~SwDrawFrameFormat();
+    virtual ~SwDrawFrameFormat() override;
 
     /** DrawObjects are removed from the arrays at the layout.
      The DrawObjects are marked as deleted. */

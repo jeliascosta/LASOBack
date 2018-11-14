@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/standard/vclxaccessiblemenubar.hxx>
+#include <standard/vclxaccessiblemenubar.hxx>
 
 #include <com/sun/star/accessibility/AccessibleRole.hpp>
 #include <vcl/svapp.hxx>
@@ -69,7 +69,7 @@ bool VCLXAccessibleMenuBar::IsFocused()
 }
 
 
-IMPL_LINK_TYPED( VCLXAccessibleMenuBar, WindowEventListener, VclWindowEvent&, rEvent, void )
+IMPL_LINK( VCLXAccessibleMenuBar, WindowEventListener, VclWindowEvent&, rEvent, void )
 {
     OSL_ENSURE( rEvent.GetWindow(), "VCLXAccessibleMenuBar::WindowEventListener: no window!" );
     if ( !rEvent.GetWindow()->IsAccessibilityEventsSuppressed() || ( rEvent.GetId() == VCLEVENT_OBJECT_DYING ) )
@@ -132,8 +132,7 @@ OUString VCLXAccessibleMenuBar::getImplementationName() throw (RuntimeException,
 
 Sequence< OUString > VCLXAccessibleMenuBar::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    Sequence< OUString > aNames { "com.sun.star.awt.AccessibleMenuBar" };
-    return aNames;
+    return { "com.sun.star.awt.AccessibleMenuBar" };
 }
 
 

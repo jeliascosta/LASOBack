@@ -18,6 +18,7 @@
  */
 
 #include "XMLRedlineExport.hxx"
+#include <o3tl/any.hxx>
 #include <tools/debug.hxx>
 #include <rtl/ustring.hxx>
 #include <rtl/ustrbuf.hxx>
@@ -213,8 +214,8 @@ void XMLRedlineExport::ExportChangesListElements()
         Reference<XPropertySet> aDocPropertySet( rExport.GetModel(),
                                                  uno::UNO_QUERY );
         // redlining enabled?
-        bool bEnabled = *static_cast<sal_Bool const *>(aDocPropertySet->getPropertyValue(
-                                                sRecordChanges ).getValue());
+        bool bEnabled = *o3tl::doAccess<bool>(aDocPropertySet->getPropertyValue(
+                                                sRecordChanges ));
 
         // only export if we have redlines or attributes
         if ( aEnumAccess->hasElements() || bEnabled )
@@ -248,7 +249,7 @@ void XMLRedlineExport::ExportChangesListElements()
                     // export only if not in header or footer
                     // (those must be exported with their XText)
                     aAny = xPropSet->getPropertyValue(sIsInHeaderFooter);
-                    if (! *static_cast<sal_Bool const *>(aAny.getValue()))
+                    if (! *o3tl::doAccess<bool>(aAny))
                     {
                         // and finally, export change
                         ExportChangedRegion(xPropSet);
@@ -272,8 +273,8 @@ void XMLRedlineExport::ExportChangeAutoStyle(
         Any aIsStart = rPropSet->getPropertyValue(sIsStart);
         Any aIsCollapsed = rPropSet->getPropertyValue(sIsCollapsed);
 
-        if ( *static_cast<sal_Bool const *>(aIsStart.getValue()) ||
-             *static_cast<sal_Bool const *>(aIsCollapsed.getValue()) )
+        if ( *o3tl::doAccess<bool>(aIsStart) ||
+             *o3tl::doAccess<bool>(aIsCollapsed) )
             pCurrentChangesList->push_back(rPropSet);
     }
 
@@ -315,7 +316,7 @@ void XMLRedlineExport::ExportChangesListAutoStyles()
                     // export only if not in header or footer
                     // (those must be exported with their XText)
                     aAny = xPropSet->getPropertyValue(sIsInHeaderFooter);
-                    if (! *static_cast<sal_Bool const *>(aAny.getValue()))
+                    if (! *o3tl::doAccess<bool>(aAny))
                     {
                         ExportChangeAutoStyle(xPropSet);
                     }
@@ -331,7 +332,7 @@ void XMLRedlineExport::ExportChangeInline(
     // determine element name (depending on collapsed, start/end)
     enum XMLTokenEnum eElement = XML_TOKEN_INVALID;
     Any aAny = rPropSet->getPropertyValue(sIsCollapsed);
-    bool bCollapsed = *static_cast<sal_Bool const *>(aAny.getValue());
+    bool bCollapsed = *o3tl::doAccess<bool>(aAny);
     if (bCollapsed)
     {
         eElement = XML_CHANGE;
@@ -339,7 +340,7 @@ void XMLRedlineExport::ExportChangeInline(
     else
     {
         aAny = rPropSet->getPropertyValue(sIsStart);
-        const bool bStart = *static_cast<sal_Bool const *>(aAny.getValue());
+        const bool bStart = *o3tl::doAccess<bool>(aAny);
         eElement = bStart ? XML_CHANGE_START : XML_CHANGE_END;
     }
 
@@ -364,7 +365,7 @@ void XMLRedlineExport::ExportChangedRegion(
 
     // merge-last-paragraph
     Any aAny = rPropSet->getPropertyValue(sMergeLastPara);
-    if( ! *static_cast<sal_Bool const *>(aAny.getValue()) )
+    if( ! *o3tl::doAccess<bool>(aAny) )
         rExport.AddAttribute(XML_NAMESPACE_TEXT, XML_MERGE_LAST_PARAGRAPH,
                              XML_FALSE);
 
@@ -420,7 +421,7 @@ void XMLRedlineExport::ExportChangedRegion(
 }
 
 
-const OUString XMLRedlineExport::ConvertTypeName(
+OUString const & XMLRedlineExport::ConvertTypeName(
     const OUString& sApiName)
 {
     if (sApiName == sDelete)
@@ -581,17 +582,17 @@ void XMLRedlineExport::ExportStartOrEndRedline(
         }
         else if (sIsCollapsed.equals(pValues[i].Name))
         {
-            bIsCollapsed = *static_cast<sal_Bool const *>(pValues[i].Value.getValue());
+            bIsCollapsed = *o3tl::doAccess<bool>(pValues[i].Value);
         }
         else if (sIsStart.equals(pValues[i].Name))
         {
-            bIsStart = *static_cast<sal_Bool const *>(pValues[i].Value.getValue());
+            bIsStart = *o3tl::doAccess<bool>(pValues[i].Value);
         }
     }
 
     if( bIdOK )
     {
-        DBG_ASSERT( !sId.isEmpty(), "Redlines must have IDs" );
+        SAL_WARN_IF( sId.isEmpty(), "xmloff", "Redlines must have IDs" );
 
         // TODO: use GetRedlineID or eliminate that function
         OUStringBuffer sBuffer(sChangePrefix);

@@ -73,7 +73,7 @@ XclDebugObjCounter::~XclDebugObjCounter()
 #endif
 
 XclRootData::XclRootData( XclBiff eBiff, SfxMedium& rMedium,
-        tools::SvRef<SotStorage> xRootStrg, ScDocument& rDoc, rtl_TextEncoding eTextEnc, bool bExport ) :
+        tools::SvRef<SotStorage> const & xRootStrg, ScDocument& rDoc, rtl_TextEncoding eTextEnc, bool bExport ) :
     meBiff( eBiff ),
     meOutput( EXC_OUTPUT_BINARY ),
     mrMedium( rMedium ),
@@ -242,7 +242,7 @@ bool XclRoot::HasVbaStorage() const
     return xRootStrg.Is() && xRootStrg->IsContained( EXC_STORAGE_VBA_PROJECT );
 }
 
-tools::SvRef<SotStorage> XclRoot::OpenStorage( tools::SvRef<SotStorage> xStrg, const OUString& rStrgName ) const
+tools::SvRef<SotStorage> XclRoot::OpenStorage( tools::SvRef<SotStorage> const & xStrg, const OUString& rStrgName ) const
 {
     return mrData.mbExport ?
         ScfTools::OpenStorageWrite( xStrg, rStrgName ) :
@@ -254,7 +254,7 @@ tools::SvRef<SotStorage> XclRoot::OpenStorage( const OUString& rStrgName ) const
     return OpenStorage( GetRootStorage(), rStrgName );
 }
 
-tools::SvRef<SotStorageStream> XclRoot::OpenStream( tools::SvRef<SotStorage> xStrg, const OUString& rStrmName ) const
+tools::SvRef<SotStorageStream> XclRoot::OpenStream( tools::SvRef<SotStorage> const & xStrg, const OUString& rStrmName ) const
 {
     return mrData.mbExport ?
         ScfTools::OpenStorageStreamWrite( xStrg, rStrmName ) :
@@ -348,7 +348,7 @@ ScEditEngineDefaulter& XclRoot::GetEditEngine() const
     {
         mrData.mxEditEngine.reset( new ScEditEngineDefaulter( GetDoc().GetEnginePool() ) );
         ScEditEngineDefaulter& rEE = *mrData.mxEditEngine;
-        rEE.SetRefMapMode( MAP_100TH_MM );
+        rEE.SetRefMapMode( MapUnit::Map100thMM );
         rEE.SetEditTextObjectPool( GetDoc().GetEditPool() );
         rEE.SetUpdateMode( false );
         rEE.EnableUndo( false );
@@ -363,7 +363,7 @@ ScHeaderEditEngine& XclRoot::GetHFEditEngine() const
     {
         mrData.mxHFEditEngine.reset( new ScHeaderEditEngine( EditEngine::CreatePool() ) );
         ScHeaderEditEngine& rEE = *mrData.mxHFEditEngine;
-        rEE.SetRefMapMode( MAP_TWIP );  // headers/footers use twips as default metric
+        rEE.SetRefMapMode( MapUnit::MapTwip );  // headers/footers use twips as default metric
         rEE.SetUpdateMode( false );
         rEE.EnableUndo( false );
         rEE.SetControlWord( rEE.GetControlWord() & ~EEControlBits::ALLOWBIGOBJS );
@@ -373,9 +373,12 @@ ScHeaderEditEngine& XclRoot::GetHFEditEngine() const
         SfxItemSet aItemSet( *GetDoc().GetPool(), ATTR_PATTERN_START, ATTR_PATTERN_END );
         ScPatternAttr::FillToEditItemSet( *pEditSet, aItemSet );
         // FillToEditItemSet() adjusts font height to 1/100th mm, we need twips
-        pEditSet->Put( aItemSet.Get( ATTR_FONT_HEIGHT ), EE_CHAR_FONTHEIGHT );
-        pEditSet->Put( aItemSet.Get( ATTR_CJK_FONT_HEIGHT ), EE_CHAR_FONTHEIGHT_CJK );
-        pEditSet->Put( aItemSet.Get( ATTR_CTL_FONT_HEIGHT ), EE_CHAR_FONTHEIGHT_CTL );
+        std::unique_ptr<SfxPoolItem> pNewItem( aItemSet.Get( ATTR_FONT_HEIGHT ).CloneSetWhich(EE_CHAR_FONTHEIGHT));
+        pEditSet->Put( *pNewItem );
+        pNewItem.reset( aItemSet.Get( ATTR_CJK_FONT_HEIGHT ).CloneSetWhich(EE_CHAR_FONTHEIGHT_CJK));
+        pEditSet->Put( *pNewItem );
+        pNewItem.reset( aItemSet.Get( ATTR_CTL_FONT_HEIGHT ).CloneSetWhich(EE_CHAR_FONTHEIGHT_CTL));
+        pEditSet->Put( *pNewItem );
         rEE.SetDefaults( pEditSet );    // takes ownership
    }
     return *mrData.mxHFEditEngine;
@@ -387,7 +390,7 @@ EditEngine& XclRoot::GetDrawEditEngine() const
     {
         mrData.mxDrawEditEng.reset( new EditEngine( &GetDoc().GetDrawLayer()->GetItemPool() ) );
         EditEngine& rEE = *mrData.mxDrawEditEng;
-        rEE.SetRefMapMode( MAP_100TH_MM );
+        rEE.SetRefMapMode( MapUnit::Map100thMM );
         rEE.SetUpdateMode( false );
         rEE.EnableUndo( false );
         rEE.SetControlWord( rEE.GetControlWord() & ~EEControlBits::ALLOWBIGOBJS );

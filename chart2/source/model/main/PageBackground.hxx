@@ -48,8 +48,8 @@ class PageBackground :
     public ::property::OPropertySet
 {
 public:
-    explicit PageBackground( const css::uno::Reference< css::uno::XComponentContext > & xContext );
-    virtual ~PageBackground();
+    explicit PageBackground();
+    virtual ~PageBackground() override;
 
     /// XServiceInfo declarations
     virtual OUString SAL_CALL getImplementationName()
@@ -58,9 +58,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     /// merge XInterface implementations
      DECLARE_XINTERFACE()
@@ -106,11 +103,7 @@ protected:
     virtual void firePropertyChangeEvent() override;
     using OPropertySet::disposing;
 
-    void fireModifyEvent();
-
 private:
-    css::uno::Reference< css::uno::XComponentContext > m_xContext;
-
     css::uno::Reference< css::util::XModifyListener > m_xModifyEventForwarder;
 };
 

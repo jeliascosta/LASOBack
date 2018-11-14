@@ -72,12 +72,11 @@ private:
     bool m_bRawStream;
 
     /// Check that m_xStream implements io::XSeekable and return it
-    css::uno::Reference< css::io::XInputStream > GetOwnSeekStream();
+    css::uno::Reference< css::io::XInputStream > const & GetOwnSeekStream();
     css::uno::Reference< css::io::XInputStream > SAL_CALL getRawData()
         throw(css::uno::RuntimeException);
 
 public:
-    bool IsEncrypted () const    { return m_bIsEncrypted;}
     bool IsPackageMember () const { return m_nStreamMode == PACKAGE_STREAM_PACKAGEMEMBER;}
 
     bool IsFromManifest() const { return m_bFromManifest; }
@@ -118,13 +117,11 @@ public:
     { m_xBaseEncryptionData->m_nIterationCount = nNewCount;}
     void setSize (const sal_Int64 nNewSize);
 
-    void CloseOwnStreamIfAny();
-
     ZipPackageStream( ZipPackage & rNewPackage,
                       const css::uno::Reference < css::uno::XComponentContext >& xContext,
                       sal_Int32 nFormat,
                       bool bAllowRemoveOnInsert );
-    virtual ~ZipPackageStream();
+    virtual ~ZipPackageStream() override;
 
     css::uno::Reference< css::io::XInputStream > GetRawEncrStreamNoHeaderCopy();
     css::uno::Reference< css::io::XInputStream > TryToGetRawFromDataStream(bool bAddHeaderForEncr );

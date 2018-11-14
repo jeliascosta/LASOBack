@@ -64,9 +64,9 @@ namespace connectivity
             OLEString& operator=(const OUString& _rSrc);
             OLEString& operator=(const BSTR& _rSrc);
             OLEString& operator=(const OLEString& _rSrc);
-            operator OUString() const;
-            operator BSTR() const;
-            BSTR* operator &();
+            OUString asOUString() const;
+            BSTR asBSTR() const;
+            BSTR* getAddress();
             sal_Int32 length() const;
         };
 
@@ -85,13 +85,13 @@ namespace connectivity
 
             OLEVariant(const OUString& us) ;
             ~OLEVariant()                   ;
-            OLEVariant(const ::com::sun::star::util::Date& x );
-            OLEVariant(const ::com::sun::star::util::Time& x );
-            OLEVariant(const ::com::sun::star::util::DateTime& x );
-            OLEVariant(const float &x);
+            OLEVariant(const css::util::Date& x );
+            OLEVariant(const css::util::Time& x );
+            OLEVariant(const css::util::DateTime& x );
+            OLEVariant(float x);
             OLEVariant(const double &x);
             OLEVariant(IDispatch* pDispInterface);
-            OLEVariant(const ::com::sun::star::uno::Sequence< sal_Int8 >& x);
+            OLEVariant(const css::uno::Sequence< sal_Int8 >& x);
             OLEVariant& operator=(const OLEVariant& varSrc);
             // Assign a const VARIANT& (::VariantCopy handles everything)
 
@@ -107,7 +107,7 @@ namespace connectivity
             void setDate(DATE d)                    ;
             void setChar(unsigned char a)           ;
             void setCurrency(double aCur)           ;
-            void setBool(sal_Bool b)                ;
+            void setBool(bool b)                    ;
             void setString(const OUString& us) ;
             void setNoArg()                         ;
 
@@ -117,29 +117,14 @@ namespace connectivity
 
             void setUI1SAFEARRAYPtr(SAFEARRAY* pSafeAr);
             void setArray(SAFEARRAY* pSafeArray, VARTYPE vtType);
-            sal_Bool isNull() const  ;
-            sal_Bool isEmpty() const ;
+            bool isNull() const  ;
+            bool isEmpty() const ;
 
             VARTYPE getType() const ;
             void ChangeType(VARTYPE vartype, const OLEVariant* pSrc);
 
-
-            operator OUString() const;
-
-            operator bool()         const { return getBool() == 1; }
-            operator sal_Bool()     const { return getBool();   }
-            operator sal_Int8()     const { return getInt8();   }
-            operator sal_Int16()    const { return getInt16();  }
-            operator sal_Int32()    const { return getInt32();  }
-            operator float()        const { return getFloat();  }
-            operator double()       const { return getDouble(); }
-
-            operator ::com::sun::star::uno::Sequence< sal_Int8 >() const;
-            operator ::com::sun::star::util::Date() const ;
-            operator ::com::sun::star::util::Time() const ;
-            operator ::com::sun::star::util::DateTime()const ;
             OUString        getString()     const;
-            sal_Bool        getBool()       const;
+            bool            getBool()       const;
             IUnknown*       getIUnknown()   const;
             IDispatch*      getIDispatch()  const;
             sal_uInt8       getByte()       const;
@@ -149,12 +134,16 @@ namespace connectivity
             sal_uInt32      getUInt32()     const;
             float           getFloat()      const;
             double          getDouble()     const;
-            double          getDate()       const;
+            double          getDateAsDouble() const;
             CY              getCurrency()   const;
+            css::util::Date getDate()       const;
+            css::util::Time getTime()       const;
+            css::util::DateTime getDateTime() const;
+            css::uno::Sequence<sal_Int8> getByteSequence() const;
             SAFEARRAY*      getUI1SAFEARRAYPtr() const;
-            ::com::sun::star::uno::Any makeAny() const;
+            css::uno::Any makeAny() const;
 
-            static VARIANT_BOOL VariantBool(sal_Bool bEinBoolean);
+            static VARIANT_BOOL VariantBool(bool bEinBoolean);
 
         private:
             void CHS();

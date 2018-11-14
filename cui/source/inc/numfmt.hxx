@@ -53,7 +53,7 @@ protected:
     virtual void    DataChanged( const DataChangedEvent& rDCEvt ) override;
 
 public:
-    SvxNumberPreview(vcl::Window* pParent, WinBits nStyle = WB_BORDER);
+    SvxNumberPreview(vcl::Window* pParent);
 
     void            NotifyChange( const OUString& rPrevStr, const Color* pColor = nullptr );
 };
@@ -66,7 +66,7 @@ class SvxNumberFormatTabPage : public SfxTabPage
     static const sal_uInt16 pRanges[];
 
 public:
-    virtual ~SvxNumberFormatTabPage();
+    virtual ~SvxNumberFormatTabPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>      Create( vcl::Window* pParent,
@@ -76,13 +76,8 @@ public:
 
     virtual bool            FillItemSet( SfxItemSet* rSet ) override;
     virtual void            Reset( const SfxItemSet* rSet ) override;
-    virtual sfxpg           DeactivatePage  ( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC    DeactivatePage  ( SfxItemSet* pSet ) override;
 
-    void                    SetInfoItem( const SvxNumberInfoItem& rItem );
-    void                    SetNumberFormatList( const SvxNumberInfoItem& rItem )
-                                { SetInfoItem( rItem ); }
-
-    void                    SetOkHdl( const Link<SfxPoolItem*,void>& rOkHandler );
     void                    HideLanguage(bool bFlag=true);
     virtual bool            PreNotify( NotifyEvent& rNEvt ) override;
     virtual void            PageCreated(const SfxAllItemSet& aSet) override;
@@ -101,6 +96,8 @@ private:
     VclPtr<FixedText>              m_pFtOptions;
     VclPtr<FixedText>              m_pFtDecimals;
     VclPtr<NumericField>           m_pEdDecimals;
+    VclPtr<FixedText>              m_pFtDenominator;
+    VclPtr<NumericField>           m_pEdDenominator;
     VclPtr<CheckBox>               m_pBtnNegRed;
     VclPtr<FixedText>              m_pFtLeadZeroes;
     VclPtr<NumericField>           m_pEdLeadZeroes;
@@ -137,6 +134,7 @@ private:
     void    UpdateOptions_Impl( bool bCheckCatChange );
     void    UpdateFormatListBox_Impl( bool bCat, bool bUpdateEdit );
     void    UpdateThousandEngineeringCheckBox();
+    void    UpdateDecimalsDenominatorEditBox();
     void    Obstructing();
     void    EnableBySourceFormat_Impl();
     void    SetCategory( sal_uInt16 nPos );
@@ -146,17 +144,17 @@ private:
     void    AddAutomaticLanguage_Impl(LanguageType eAutoLang, bool bSelect);
     bool    Click_Impl(PushButton* pIB);
     // Handler
-    DECL_LINK_TYPED( LostFocusHdl_Impl, Control&, void );
-    DECL_LINK_TYPED( DoubleClickHdl_Impl, SvTreeListBox*, bool );
-    DECL_LINK_TYPED( SelFormatListBoxHdl_Impl, ListBox&, void );
-    DECL_LINK_TYPED( SelFormatTreeListBoxHdl_Impl, SvTreeListBox*, void );
-    DECL_LINK_TYPED( SelFormatClickHdl_Impl, Button*, void );
+    DECL_LINK( LostFocusHdl_Impl, Control&, void );
+    DECL_LINK( DoubleClickHdl_Impl, SvTreeListBox*, bool );
+    DECL_LINK( SelFormatListBoxHdl_Impl, ListBox&, void );
+    DECL_LINK( SelFormatTreeListBoxHdl_Impl, SvTreeListBox*, void );
+    DECL_LINK( SelFormatClickHdl_Impl, Button*, void );
     void SelFormatHdl_Impl(void*);
-    DECL_LINK_TYPED( ClickHdl_Impl, Button*, void );
-    DECL_LINK_TYPED( EditModifyHdl_Impl, Edit&, void );
-    DECL_LINK_TYPED( OptEditHdl_Impl, Edit&, void );
-    DECL_LINK_TYPED( OptClickHdl_Impl, Button*, void );
-    DECL_LINK_TYPED( TimeHdl_Impl, Timer *, void);
+    DECL_LINK( ClickHdl_Impl, Button*, void );
+    DECL_LINK( EditModifyHdl_Impl, Edit&, void );
+    DECL_LINK( OptEditHdl_Impl, Edit&, void );
+    DECL_LINK( OptClickHdl_Impl, Button*, void );
+    DECL_LINK( TimeHdl_Impl, Timer *, void);
     void EditHdl_Impl(Edit*);
     void OptHdl_Impl(void*);
 };

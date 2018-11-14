@@ -45,10 +45,7 @@ class SfxStyleSheet;
 class SdDrawDocument;
 class SdrTextObj;
 class SdPageLink;
-class StarBASIC;
 class SfxItemSet;
-struct StyleRequestData;
-class SdPage;
 class Paragraph;
 class Outliner;
 class SdStyleSheet;
@@ -154,8 +151,8 @@ protected:
 
 public:
 
-    SdPage(SdDrawDocument& rNewDoc, bool bMasterPage=false);
-    virtual ~SdPage();
+    SdPage(SdDrawDocument& rNewDoc, bool bMasterPage);
+    virtual ~SdPage() override;
     virtual SdrPage* Clone() const override;
     virtual SdrPage* Clone(SdrModel* pNewModel) const override;
 
@@ -295,13 +292,13 @@ public:
     void getAlienAttributes( css::uno::Any& rAttributes );
 
     /** @return the main animation node */
-    css::uno::Reference< css::animations::XAnimationNode > getAnimationNode() throw (css::uno::RuntimeException);
+    css::uno::Reference< css::animations::XAnimationNode > const & getAnimationNode() throw (css::uno::RuntimeException);
 
     /** sets the main animation node */
     void setAnimationNode( css::uno::Reference< css::animations::XAnimationNode >& xNode ) throw (css::uno::RuntimeException);
 
     /// @return a helper class to manipulate effects inside the main sequence
-    std::shared_ptr< sd::MainSequence > getMainSequence();
+    std::shared_ptr< sd::MainSequence > const & getMainSequence();
 
     /** quick check if this slide has an animation node.
         This can be used to have a cost free check if there are no animations ad this slide.
@@ -369,7 +366,7 @@ public:
     bool IsPrecious() const { return mbIsPrecious; }
 
     void createAnnotation( css::uno::Reference< css::office::XAnnotation >& xAnnotation );
-    void addAnnotation( const css::uno::Reference< css::office::XAnnotation >& xAnnotation, int nIndex = -1 );
+    void addAnnotation( const css::uno::Reference< css::office::XAnnotation >& xAnnotation, int nIndex );
     void removeAnnotation( const css::uno::Reference< css::office::XAnnotation >& xAnnotation );
     const sd::AnnotationVector& getAnnotations() const { return maAnnotations; }
     OString stringify() const;

@@ -54,6 +54,7 @@
 #include <rootfrm.hxx>
 #include <editeng/lrspitem.hxx>
 #include <editeng/ulspitem.hxx>
+#include <o3tl/any.hxx>
 #include <svx/shapepropertynotifier.hxx>
 #include <crstate.hxx>
 #include <comphelper/extract.hxx>
@@ -84,6 +85,9 @@ class SwShapeDescriptor_Impl
     SwFormatWrapInfluenceOnObjPos* pWrapInfluenceOnObjPos;
     // #i28749#
     sal_Int16 mnPositionLayoutDir;
+
+    SwShapeDescriptor_Impl(const SwShapeDescriptor_Impl&) = delete;
+    SwShapeDescriptor_Impl& operator=(const SwShapeDescriptor_Impl&) = delete;
 
 public:
     bool    bInitializedPropertyNotifier;
@@ -293,18 +297,11 @@ uno::Reference< uno::XInterface >   SwFmDrawPage::GetInterface( SdrObject* pObj 
     return xShape;
 }
 
-SdrObject* SwFmDrawPage::CreateSdrObject_( const uno::Reference< drawing::XShape > & xShape )
-    throw (uno::RuntimeException, std::exception)
-{
-    //FIXME: just a redirect call - can this method be deleted?
-    return SvxFmDrawPage::CreateSdrObject_( xShape );
-}
-
 uno::Reference< drawing::XShape > SwFmDrawPage::CreateShape( SdrObject *pObj ) const
     throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< drawing::XShape >  xRet;
-    if(dynamic_cast<const SwVirtFlyDrawObj*>( pObj) !=  nullptr || pObj->GetObjInventor() == SWGInventor)
+    if(dynamic_cast<const SwVirtFlyDrawObj*>( pObj) !=  nullptr || pObj->GetObjInventor() == SdrInventor::Swg)
     {
         SwFlyDrawContact* pFlyContact = static_cast<SwFlyDrawContact*>(pObj->GetUserCall());
         if(pFlyContact)
@@ -376,10 +373,10 @@ namespace
         : public SwSimpleEnumeration_Base
     {
         private:
-            typedef ::std::list< css::uno::Any > shapescontainer_t;
+            typedef std::list< css::uno::Any > shapescontainer_t;
             shapescontainer_t m_aShapes;
         protected:
-            virtual ~SwXShapesEnumeration() {};
+            virtual ~SwXShapesEnumeration() override {};
         public:
             explicit SwXShapesEnumeration(SwXDrawPage* const pDrawPage);
 
@@ -398,12 +395,11 @@ SwXShapesEnumeration::SwXShapesEnumeration(SwXDrawPage* const pDrawPage)
     : m_aShapes()
 {
     SolarMutexGuard aGuard;
-    ::std::insert_iterator<shapescontainer_t> pInserter = ::std::insert_iterator<shapescontainer_t>(m_aShapes, m_aShapes.begin());
+    std::insert_iterator<shapescontainer_t> pInserter = std::insert_iterator<shapescontainer_t>(m_aShapes, m_aShapes.begin());
     sal_Int32 nCount = pDrawPage->getCount();
-    std::set<const SwFrameFormat*> aTextBoxes = SwTextBoxHelper::findTextBoxes(pDrawPage->GetDoc());
     for(sal_Int32 nIdx = 0; nIdx < nCount; nIdx++)
     {
-        uno::Reference<drawing::XShape> xShape(pDrawPage->getByIndex(nIdx, &aTextBoxes), uno::UNO_QUERY);
+        uno::Reference<drawing::XShape> xShape(pDrawPage->getByIndex(nIdx), uno::UNO_QUERY);
         *pInserter++ = uno::makeAny(xShape);
     }
 }
@@ -525,14 +521,8 @@ sal_Int32 SwXDrawPage::getCount() throw( uno::RuntimeException, std::exception )
         return 0;
     else
     {
-        static_cast<SwXDrawPage*>(this)->GetSvxPage();
-
-        std::set<const SwFrameFormat*> aTextBoxes = SwTextBoxHelper::findTextBoxes(pDoc);
-
-        if (aTextBoxes.empty())
-            return pDrawPage->getCount();
-        else
-            return SwTextBoxHelper::getCount(pDrawPage->GetSdrPage(), aTextBoxes);
+        GetSvxPage();
+        return SwTextBoxHelper::getCount(pDrawPage->GetSdrPage());
     }
 }
 
@@ -540,30 +530,14 @@ uno::Any SwXDrawPage::getByIndex(sal_Int32 nIndex)
         throw( lang::IndexOutOfBoundsException, lang::WrappedTargetException,
                uno::RuntimeException, std::exception )
 {
-    return getByIndex(nIndex, nullptr);
-}
-
-uno::Any SwXDrawPage::getByIndex(sal_Int32 nIndex, std::set<const SwFrameFormat*>* pTextBoxes)
-    throw(lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
-{
     SolarMutexGuard aGuard;
     if(!pDoc)
         throw uno::RuntimeException();
     if(!pDoc->getIDocumentDrawModelAccess().GetDrawModel())
         throw lang::IndexOutOfBoundsException();
 
-    static_cast<SwXDrawPage*>(this)->GetSvxPage();
-    std::set<const SwFrameFormat*> aTextBoxes;
-    if (!pTextBoxes)
-    {
-        // We got no set, so let's generate one.
-        aTextBoxes = SwTextBoxHelper::findTextBoxes(pDoc);
-        pTextBoxes = &aTextBoxes;
-    }
-    if (pTextBoxes->empty())
-        return pDrawPage->getByIndex( nIndex );
-    else
-        return SwTextBoxHelper::getByIndex(pDrawPage->GetSdrPage(), nIndex, *pTextBoxes);
+    GetSvxPage();
+    return SwTextBoxHelper::getByIndex(pDrawPage->GetSdrPage(), nIndex);
 }
 
 uno::Type  SwXDrawPage::getElementType() throw( uno::RuntimeException, std::exception )
@@ -579,7 +553,7 @@ sal_Bool SwXDrawPage::hasElements() throw( uno::RuntimeException, std::exception
     if(!pDoc->getIDocumentDrawModelAccess().GetDrawModel())
         return false;
     else
-        return static_cast<SwXDrawPage*>(this)->GetSvxPage()->hasElements();
+        return GetSvxPage()->hasElements();
 }
 
 void SwXDrawPage::add(const uno::Reference< drawing::XShape > & xShape)
@@ -693,7 +667,7 @@ void SwXDrawPage::add(const uno::Reference< drawing::XShape > & xShape)
     SdrObject* pObj = pSvxShape->GetSdrObject();
     // #108784# - set layer of new drawing object to corresponding
     // invisible layer.
-    if(FmFormInventor != pObj->GetObjInventor())
+    if(SdrInventor::FmForm != pObj->GetObjInventor())
         pObj->SetLayer( bOpaque ? pDoc->getIDocumentDrawModelAccess().GetInvisibleHeavenId() : pDoc->getIDocumentDrawModelAccess().GetInvisibleHellId() );
     else
         pObj->SetLayer(pDoc->getIDocumentDrawModelAccess().GetInvisibleControlsId());
@@ -854,8 +828,7 @@ SwFmDrawPage*   SwXDrawPage::GetSvxPage()
             pDrawPage = new SwFmDrawPage(pPage);
             uno::Reference< drawing::XDrawPage >  xPage = pDrawPage;
             uno::Any aAgg = xPage->queryInterface(cppu::UnoType<uno::XAggregation>::get());
-            if(aAgg.getValueType() == cppu::UnoType<uno::XAggregation>::get())
-                xPageAgg = *static_cast<uno::Reference< uno::XAggregation > const *>(aAgg.getValue());
+            aAgg >>= xPageAgg;
         }
         if( xPageAgg.is() )
             xPageAgg->setDelegator( static_cast<cppu::OWeakObject*>(this) );
@@ -870,12 +843,6 @@ void SwXDrawPage::InvalidateSwDoc()
 {
     pDoc = nullptr;
 }
-
-SwDoc* SwXDrawPage::GetDoc()
-{
-    return pDoc;
-}
-
 
 namespace
 {
@@ -901,12 +868,11 @@ sal_Int64 SAL_CALL SwXShape::getSomething( const uno::Sequence< sal_Int8 >& rId 
     {
         const uno::Type& rTunnelType = cppu::UnoType<lang::XUnoTunnel>::get();
         uno::Any aAgg = xShapeAgg->queryAggregation( rTunnelType );
-        if(aAgg.getValueType() == rTunnelType)
+        if(auto xAggTunnel = o3tl::tryAccess<uno::Reference<lang::XUnoTunnel>>(
+               aAgg))
         {
-            uno::Reference<lang::XUnoTunnel> xAggTunnel =
-                    *static_cast<uno::Reference<lang::XUnoTunnel> const *>(aAgg.getValue());
-            if(xAggTunnel.is())
-                return xAggTunnel->getSomething(rId);
+            if(xAggTunnel->is())
+                return (*xAggTunnel)->getSomething(rId);
         }
     }
     return 0;
@@ -915,8 +881,8 @@ namespace
 {
     void lcl_addShapePropertyEventFactories( SdrObject& _rObj, SwXShape& _rShape )
     {
-        svx::PPropertyValueProvider pProvider( new svx::PropertyValueProvider( _rShape, "AnchorType" ) );
-        _rObj.getShapePropertyChangeNotifier().registerProvider( svx::eTextShapeAnchorType, pProvider );
+        std::shared_ptr<svx::IPropertyValueProvider> pProvider( new svx::PropertyValueProvider( _rShape, "AnchorType" ) );
+        _rObj.getShapePropertyChangeNotifier().registerProvider( svx::ShapeProperty::TextDocAnchor, pProvider );
     }
 }
 
@@ -932,8 +898,7 @@ SwXShape::SwXShape(uno::Reference< uno::XInterface > & xShape) :
         //aAgg contains a reference of the SvxShape!
         {
             uno::Any aAgg = xShape->queryInterface(rAggType);
-            if(aAgg.getValueType() == rAggType)
-                xShapeAgg = *static_cast<uno::Reference< uno::XAggregation > const *>(aAgg.getValue());
+            aAgg >>= xShapeAgg;
             // #i31698#
             if ( xShapeAgg.is() )
             {
@@ -969,7 +934,7 @@ SwXShape::SwXShape(uno::Reference< uno::XInterface > & xShape) :
 
 void SwXShape::AddExistingShapeToFormat( SdrObject& _rObj )
 {
-    SdrObjListIter aIter( _rObj, IM_DEEPNOGROUPS );
+    SdrObjListIter aIter( _rObj, SdrIterMode::DeepNoGroups );
     while ( aIter.IsMore() )
     {
         SdrObject* pCurrent = aIter.Next();
@@ -1071,11 +1036,10 @@ uno::Reference< beans::XPropertySetInfo >  SwXShape::getPropertySetInfo() throw(
     {
         const uno::Type& rPropSetType = cppu::UnoType<beans::XPropertySet>::get();
         uno::Any aPSet = xShapeAgg->queryAggregation( rPropSetType );
-        if(aPSet.getValueType() == rPropSetType && aPSet.getValue())
+        if(auto xPrSet = o3tl::tryAccess<uno::Reference<beans::XPropertySet>>(
+               aPSet))
         {
-            uno::Reference< beans::XPropertySet >  xPrSet =
-                    *static_cast<uno::Reference< beans::XPropertySet > const *>(aPSet.getValue());
-            uno::Reference< beans::XPropertySetInfo >  xInfo = xPrSet->getPropertySetInfo();
+            uno::Reference< beans::XPropertySetInfo >  xInfo = (*xPrSet)->getPropertySetInfo();
             // Expand PropertySetInfo!
             const uno::Sequence<beans::Property> aPropSeq = xInfo->getProperties();
             aRet = new SfxExtItemPropertySetInfo( m_pPropertyMapEntries, aPropSeq );
@@ -1145,9 +1109,9 @@ void SwXShape::setPropertyValue(const OUString& rPropertyName, const uno::Any& a
                         // set layer of new drawing
                         // object to corresponding invisible layer.
                         bool bIsVisible = pDoc->getIDocumentDrawModelAccess().IsVisibleLayerId( pObj->GetLayer() );
-                        if(FmFormInventor != pObj->GetObjInventor())
+                        if(SdrInventor::FmForm != pObj->GetObjInventor())
                         {
-                            pObj->SetLayer( *static_cast<sal_Bool const *>(aValue.getValue())
+                            pObj->SetLayer( *o3tl::doAccess<bool>(aValue)
                                             ? ( bIsVisible ? pDoc->getIDocumentDrawModelAccess().GetHeavenId() : pDoc->getIDocumentDrawModelAccess().GetInvisibleHeavenId() )
                                             : ( bIsVisible ? pDoc->getIDocumentDrawModelAccess().GetHellId() : pDoc->getIDocumentDrawModelAccess().GetInvisibleHellId() ));
                         }
@@ -1344,7 +1308,7 @@ void SwXShape::setPropertyValue(const OUString& rPropertyName, const uno::Any& a
                             else
                             {
                                 //without access to the layout the last node of the body will be used as anchor position
-                                aPam.Move( fnMoveBackward, fnGoDoc );
+                                aPam.Move( fnMoveBackward, GoInDoc );
                             }
                             //anchor position has to be inserted after the text attribute has been inserted
                             aNewAnchor.SetAnchor( aPam.GetPoint() );
@@ -1365,7 +1329,7 @@ void SwXShape::setPropertyValue(const OUString& rPropertyName, const uno::Any& a
                             else
                             {
                                 //without access to the layout the last node of the body will be used as anchor position
-                                aPam.Move( fnMoveBackward, fnGoDoc );
+                                aPam.Move( fnMoveBackward, GoInDoc );
                             }
                             //the RES_TXTATR_FLYCNT needs to be added now
                             SwTextNode *pNd = aPam.GetNode().GetTextNode();
@@ -1413,18 +1377,15 @@ void SwXShape::setPropertyValue(const OUString& rPropertyName, const uno::Any& a
                         pItem = pImpl->GetSurround(true);
                     break;
                     case  FN_TEXT_RANGE:
-                    {
-                        const uno::Type rTextRangeType =
-                            cppu::UnoType<text::XTextRange>::get();
-                        if(aValue.getValueType() == rTextRangeType)
+                        if(auto tr = o3tl::tryAccess<
+                               uno::Reference<text::XTextRange>>(aValue))
                         {
                             uno::Reference< text::XTextRange > & rRange = pImpl->GetTextRange();
-                            rRange = *static_cast<uno::Reference< text::XTextRange > const *>(aValue.getValue());
+                            rRange = *tr;
                         }
-                    }
                     break;
                     case RES_OPAQUE :
-                        pImpl->SetOpaque(*static_cast<sal_Bool const *>(aValue.getValue()));
+                        pImpl->SetOpaque(*o3tl::doAccess<bool>(aValue));
                     break;
                     // #i26791#
                     case RES_FOLLOW_TEXT_FLOW:
@@ -1448,18 +1409,18 @@ void SwXShape::setPropertyValue(const OUString& rPropertyName, const uno::Any& a
                     break;
                 }
                 if(pItem)
-                    static_cast<SfxPoolItem*>(pItem)->PutValue(aValue, pEntry->nMemberId);
+                    pItem->PutValue(aValue, pEntry->nMemberId);
             }
         }
         else
         {
-            uno::Reference< beans::XPropertySet >  xPrSet;
             const uno::Type& rPSetType =
                 cppu::UnoType<beans::XPropertySet>::get();
             uno::Any aPSet = xShapeAgg->queryAggregation(rPSetType);
-            if(aPSet.getValueType() != rPSetType || !aPSet.getValue())
+            auto xPrSet = o3tl::tryAccess<uno::Reference<beans::XPropertySet>>(
+                aPSet);
+            if(!xPrSet)
                 throw uno::RuntimeException();
-            xPrSet = *static_cast<uno::Reference< beans::XPropertySet > const *>(aPSet.getValue());
             // #i31698# - setting the caption point of a
             // caption object doesn't have to change the object position.
             // Thus, keep the position, before the caption point is set and
@@ -1472,10 +1433,10 @@ void SwXShape::setPropertyValue(const OUString& rPropertyName, const uno::Any& a
             if( pFormat && pFormat->GetDoc()->getIDocumentLayoutAccess().GetCurrentViewShell() )
             {
                 UnoActionContext aCtx(pFormat->GetDoc());
-                xPrSet->setPropertyValue(rPropertyName, aValue);
+                (*xPrSet)->setPropertyValue(rPropertyName, aValue);
             }
             else
-                xPrSet->setPropertyValue(rPropertyName, aValue);
+                (*xPrSet)->setPropertyValue(rPropertyName, aValue);
 
             if (pFormat)
             {
@@ -1529,7 +1490,7 @@ uno::Any SwXShape::getPropertyValue(const OUString& rPropertyName)
                         Point aPt = pObj->GetAnchorPos();
                         awt::Point aPoint( convertTwipToMm100( aPt.X() ),
                                            convertTwipToMm100( aPt.Y() ) );
-                        aRet.setValue(&aPoint, cppu::UnoType<awt::Point>::get());
+                        aRet <<= aPoint;
                     }
                 }
                 // #i26791# - special handling for FN_TEXT_RANGE
@@ -1552,7 +1513,7 @@ uno::Any SwXShape::getPropertyValue(const OUString& rPropertyName)
                                                     *pFormat->GetDoc(),
                                                     *aAnchor.GetContentAnchor(),
                                                     nullptr );
-                            aRet.setValue(&xTextRange, cppu::UnoType<text::XTextRange>::get());
+                            aRet <<= xTextRange;
                         }
                         else
                         {
@@ -1564,7 +1525,7 @@ uno::Any SwXShape::getPropertyValue(const OUString& rPropertyName)
                 }
                 else if (pEntry->nWID == FN_TEXT_BOX)
                 {
-                    bool bValue = SwTextBoxHelper::findTextBox(pFormat);
+                    bool bValue = SwTextBoxHelper::isTextBox(pFormat, RES_DRAWFRMFMT);
                     aRet <<= bValue;
                 }
                 else if (pEntry->nWID == RES_CHAIN)
@@ -1664,15 +1625,14 @@ uno::Any SwXShape::getPropertyValue(const OUString& rPropertyName)
                         pItem = pImpl->GetSurround();
                     break;
                     case FN_TEXT_RANGE :
-                        aRet.setValue(&pImpl->GetTextRange(), cppu::UnoType<text::XTextRange>::get());
+                        aRet <<= pImpl->GetTextRange();
                     break;
                     case RES_OPAQUE :
                         aRet <<= pImpl->GetOpaque();
                     break;
                     case FN_ANCHOR_POSITION :
                     {
-                        awt::Point aPoint;
-                        aRet.setValue(&aPoint, cppu::UnoType<awt::Point>::get());
+                        aRet <<= awt::Point();
                     }
                     break;
                     // #i26791#
@@ -1770,8 +1730,7 @@ uno::Any SwXShape::getPropertyValue(const OUString& rPropertyName)
                                 bConvert = false;
                         if (bConvert)
                         {
-                            std::set<const SwFrameFormat*> aTextBoxes = SwTextBoxHelper::findTextBoxes(pFormat->GetDoc());
-                            aRet <<= SwTextBoxHelper::getOrdNum(pObj, aTextBoxes);
+                            aRet <<= SwTextBoxHelper::getOrdNum(pObj);
                         }
                     }
                 }
@@ -1787,16 +1746,15 @@ uno::Any SwXShape::_getPropAtAggrObj( const OUString& _rPropertyName )
 {
     uno::Any aRet;
 
-    uno::Reference< beans::XPropertySet >  xPrSet;
     const uno::Type& rPSetType =
                 cppu::UnoType<beans::XPropertySet>::get();
     uno::Any aPSet = xShapeAgg->queryAggregation(rPSetType);
-    if ( aPSet.getValueType() != rPSetType || !aPSet.getValue() )
+    auto xPrSet = o3tl::tryAccess<uno::Reference<beans::XPropertySet>>(aPSet);
+    if ( !xPrSet )
     {
         throw uno::RuntimeException();
     }
-    xPrSet = *static_cast<uno::Reference< beans::XPropertySet > const *>(aPSet.getValue());
-    aRet = xPrSet->getPropertyValue( _rPropertyName );
+    aRet = (*xPrSet)->getPropertyValue( _rPropertyName );
 
     return aRet;
 }
@@ -1826,7 +1784,7 @@ uno::Sequence< beans::PropertyState > SwXShape::getPropertyStates(
         if(pObject)
         {
             bGroupMember = pObject->GetUpGroup() != nullptr;
-            bFormControl = pObject->GetObjInventor() == FmFormInventor;
+            bFormControl = pObject->GetObjInventor() == SdrInventor::FmForm;
         }
         const OUString* pNames = aPropertyNames.getConstArray();
         beans::PropertyState* pRet = aRet.getArray();
@@ -1852,7 +1810,7 @@ uno::Sequence< beans::PropertyState > SwXShape::getPropertyStates(
                 else if (pEntry->nWID == FN_TEXT_BOX)
                 {
                     // The TextBox property is set, if we can find a textbox for this shape.
-                    if (pFormat && SwTextBoxHelper::findTextBox(pFormat))
+                    if (pFormat && SwTextBoxHelper::isTextBox(pFormat, RES_DRAWFRMFMT))
                         pRet[nProperty] = beans::PropertyState_DIRECT_VALUE;
                     else
                         pRet[nProperty] = beans::PropertyState_DEFAULT_VALUE;
@@ -1911,9 +1869,11 @@ uno::Sequence< beans::PropertyState > SwXShape::getPropertyStates(
                 {
                     const uno::Type& rPStateType = cppu::UnoType<XPropertyState>::get();
                     uno::Any aPState = xShapeAgg->queryAggregation(rPStateType);
-                    if(aPState.getValueType() != rPStateType || !aPState.getValue())
+                    auto ps = o3tl::tryAccess<uno::Reference<XPropertyState>>(
+                        aPState);
+                    if(!ps)
                         throw uno::RuntimeException();
-                    xShapePrState = *static_cast<uno::Reference< XPropertyState > const *>(aPState.getValue());
+                    xShapePrState = *ps;
                 }
                 pRet[nProperty] = xShapePrState->getPropertyState(pNames[nProperty]);
             }
@@ -1976,10 +1936,11 @@ void SwXShape::setPropertyToDefault( const OUString& rPropertyName )
         {
             const uno::Type& rPStateType = cppu::UnoType<XPropertyState>::get();
             uno::Any aPState = xShapeAgg->queryAggregation(rPStateType);
-            if(aPState.getValueType() != rPStateType || !aPState.getValue())
+            auto xShapePrState = o3tl::tryAccess<uno::Reference<XPropertyState>>(
+                aPState);
+            if(!xShapePrState)
                 throw uno::RuntimeException();
-            uno::Reference< XPropertyState > xShapePrState = *static_cast<uno::Reference< XPropertyState > const *>(aPState.getValue());
-            xShapePrState->setPropertyToDefault( rPropertyName );
+            (*xShapePrState)->setPropertyToDefault( rPropertyName );
         }
     }
     else
@@ -2011,10 +1972,11 @@ uno::Any SwXShape::getPropertyDefault( const OUString& rPropertyName )
         {
             const uno::Type& rPStateType = cppu::UnoType<XPropertyState>::get();
             uno::Any aPState = xShapeAgg->queryAggregation(rPStateType);
-            if(aPState.getValueType() != rPStateType || !aPState.getValue())
+            auto xShapePrState = o3tl::tryAccess<uno::Reference<XPropertyState>>(
+                aPState);
+            if(!xShapePrState)
                 throw uno::RuntimeException();
-            uno::Reference< XPropertyState > xShapePrState = *static_cast<uno::Reference< XPropertyState > const *>(aPState.getValue());
-            xShapePrState->getPropertyDefault( rPropertyName );
+            (*xShapePrState)->getPropertyDefault( rPropertyName );
         }
     }
     else
@@ -2245,13 +2207,8 @@ sal_Bool SwXShape::supportsService(const OUString& rServiceName) throw( uno::Run
 uno::Sequence< OUString > SwXShape::getSupportedServiceNames() throw( uno::RuntimeException, std::exception )
 {
     uno::Sequence< OUString > aSeq;
-    if (xShapeAgg.is())
-    {
-        uno::Reference< lang::XUnoTunnel > xShapeTunnel(xShapeAgg, uno::UNO_QUERY);
-        SvxShape* pSvxShape = GetSvxShape();
-        if(pSvxShape)
-            aSeq = pSvxShape->getSupportedServiceNames();
-    }
+    if (SvxShape* pSvxShape = GetSvxShape())
+        aSeq = pSvxShape->getSupportedServiceNames();
     aSeq.realloc(aSeq.getLength() + 1);
     aSeq.getArray()[aSeq.getLength() - 1] = "com.sun.star.drawing.Shape";
     return aSeq;
@@ -2845,7 +2802,7 @@ void SwXGroupShape::add( const uno::Reference< XShape >& xShape ) throw (uno::Ru
                     SwDoc* pDoc = pFormat->GetDoc();
                     // set layer of new drawing
                     // object to corresponding invisible layer.
-                    if( FmFormInventor != pObj->GetObjInventor())
+                    if( SdrInventor::FmForm != pObj->GetObjInventor())
                     {
                         pObj->SetLayer( pSwShape->pImpl->GetOpaque()
                                         ? pDoc->getIDocumentDrawModelAccess().GetInvisibleHeavenId()

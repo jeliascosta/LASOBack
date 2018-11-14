@@ -28,6 +28,7 @@
 #include <svx/svdpagv.hxx>
 #include <svx/svxids.hrc>
 #include <editeng/colritem.hxx>
+#include <editeng/eeitem.hxx>
 #include <svx/xtable.hxx>
 #include <svx/svdview.hxx>
 #include <svx/dialogs.hrc>
@@ -635,7 +636,7 @@ void E3dView::ImpIsConvertTo3DPossible(SdrObject* pObj, bool& rAny3D,
         {
             if(pObj->IsGroupObject())
             {
-                SdrObjListIter aIter(*pObj, IM_DEEPNOGROUPS);
+                SdrObjListIter aIter(*pObj, SdrIterMode::DeepNoGroups);
                 while(aIter.IsMore())
                 {
                     SdrObject* pNewObj = aIter.Next();
@@ -646,8 +647,6 @@ void E3dView::ImpIsConvertTo3DPossible(SdrObject* pObj, bool& rAny3D,
         }
     }
 }
-
-#include <editeng/eeitem.hxx>
 
 void E3dView::ImpChangeSomeAttributesFor3DConversion(SdrObject* pObj)
 {
@@ -771,7 +770,7 @@ void E3dView::ImpCreate3DObject(E3dScene* pScene, SdrObject* pObj, bool bExtrude
         // change text color attribute for not so dark colors
         if(pObj->IsGroupObject())
         {
-            SdrObjListIter aIter(*pObj, IM_DEEPWITHGROUPS);
+            SdrObjListIter aIter(*pObj, SdrIterMode::DeepWithGroups);
             while(aIter.IsMore())
             {
                 SdrObject* pGroupMember = aIter.Next();
@@ -789,7 +788,7 @@ void E3dView::ImpCreate3DObject(E3dScene* pScene, SdrObject* pObj, bool bExtrude
             // change text color attribute for not so dark colors
             if(pNewObj1->IsGroupObject())
             {
-                SdrObjListIter aIter(*pNewObj1, IM_DEEPWITHGROUPS);
+                SdrObjListIter aIter(*pNewObj1, SdrIterMode::DeepWithGroups);
                 while(aIter.IsMore())
                 {
                     SdrObject* pGroupMember = aIter.Next();
@@ -807,7 +806,7 @@ void E3dView::ImpCreate3DObject(E3dScene* pScene, SdrObject* pObj, bool bExtrude
                 // add all to flat scene
                 if(pNewObj2->IsGroupObject())
                 {
-                    SdrObjListIter aIter(*pNewObj2, IM_DEEPWITHGROUPS);
+                    SdrObjListIter aIter(*pNewObj2, SdrIterMode::DeepWithGroups);
                     while(aIter.IsMore())
                     {
                         SdrObject* pGroupMember = aIter.Next();
@@ -1045,7 +1044,7 @@ void E3dView::DoDepthArrange(E3dScene* pScene, double fDepth)
     if(pScene && pScene->GetSubList() && pScene->GetSubList()->GetObjCount() > 1)
     {
         SdrObjList* pSubList = pScene->GetSubList();
-        SdrObjListIter aIter(*pSubList, IM_FLAT);
+        SdrObjListIter aIter(*pSubList, SdrIterMode::Flat);
         E3dDepthLayer* pBaseLayer = nullptr;
         E3dDepthLayer* pLayer = nullptr;
         sal_Int32 nNumLayers = 0;
@@ -1208,7 +1207,7 @@ bool E3dView::BegDragObj(const Point& rPnt, OutputDevice* pOut,
 
         if(bOwnActionNecessary && GetMarkedObjectCount() > 0)
         {
-            E3dDragConstraint eConstraint = E3DDRAG_CONSTR_XYZ;
+            E3dDragConstraint eConstraint = E3dDragConstraint::XYZ;
             bool bThereAreRootScenes = false;
             bool bThereAre3DObjects = false;
             const size_t nCnt = GetMarkedObjectCount();
@@ -1225,34 +1224,34 @@ bool E3dView::BegDragObj(const Point& rPnt, OutputDevice* pOut,
             }
             if( bThereAre3DObjects )
             {
-                meDragHdl = ( pHdl == nullptr ? HDL_MOVE : pHdl->GetKind() );
+                meDragHdl = ( pHdl == nullptr ? SdrHdlKind::Move : pHdl->GetKind() );
                 switch ( meDragMode )
                 {
-                    case SDRDRAG_ROTATE:
-                    case SDRDRAG_SHEAR:
+                    case SdrDragMode::Rotate:
+                    case SdrDragMode::Shear:
                     {
                         switch ( meDragHdl )
                         {
-                            case HDL_LEFT:
-                            case HDL_RIGHT:
+                            case SdrHdlKind::Left:
+                            case SdrHdlKind::Right:
                             {
-                                eConstraint = E3DDRAG_CONSTR_X;
+                                eConstraint = E3dDragConstraint::X;
                             }
                             break;
 
-                            case HDL_UPPER:
-                            case HDL_LOWER:
+                            case SdrHdlKind::Upper:
+                            case SdrHdlKind::Lower:
                             {
-                                eConstraint = E3DDRAG_CONSTR_Y;
+                                eConstraint = E3dDragConstraint::Y;
                             }
                             break;
 
-                            case HDL_UPLFT:
-                            case HDL_UPRGT:
-                            case HDL_LWLFT:
-                            case HDL_LWRGT:
+                            case SdrHdlKind::UpperLeft:
+                            case SdrHdlKind::UpperRight:
+                            case SdrHdlKind::LowerLeft:
+                            case SdrHdlKind::LowerRight:
                             {
-                                eConstraint = E3DDRAG_CONSTR_Z;
+                                eConstraint = E3dDragConstraint::Z;
                             }
                             break;
                             default: break;
@@ -1264,7 +1263,7 @@ bool E3dView::BegDragObj(const Point& rPnt, OutputDevice* pOut,
                     }
                     break;
 
-                    case SDRDRAG_MOVE:
+                    case SdrDragMode::Move:
                     {
                         if(!bThereAreRootScenes)
                         {
@@ -1274,11 +1273,11 @@ bool E3dView::BegDragObj(const Point& rPnt, OutputDevice* pOut,
                     break;
 
                     // later on
-                    case SDRDRAG_MIRROR:
-                    case SDRDRAG_CROOK:
-                    case SDRDRAG_DISTORT:
-                    case SDRDRAG_TRANSPARENCE:
-                    case SDRDRAG_GRADIENT:
+                    case SdrDragMode::Mirror:
+                    case SdrDragMode::Crook:
+                    case SdrDragMode::Distort:
+                    case SdrDragMode::Transparence:
+                    case SdrDragMode::Gradient:
                     default:
                     {
                     }
@@ -1410,7 +1409,7 @@ void E3dView::Start3DCreation()
         maRef2.Y() = nY2;
 
         // Turn on marks
-        SetMarkHandles();
+        SetMarkHandles(nullptr);
 
         //HMHif (bVis) ShowMarkHdl();
         if (AreObjectsMarked()) MarkListHasChanged();
@@ -1418,7 +1417,7 @@ void E3dView::Start3DCreation()
         // Show mirror polygon IMMEDIATELY
         const SdrHdlList &aHdlList = GetHdlList();
         mpMirrorOverlay = new Impl3DMirrorConstructOverlay(*this);
-        mpMirrorOverlay->SetMirrorAxis(aHdlList.GetHdl(HDL_REF1)->GetPos(), aHdlList.GetHdl(HDL_REF2)->GetPos());
+        mpMirrorOverlay->SetMirrorAxis(aHdlList.GetHdl(SdrHdlKind::Ref1)->GetPos(), aHdlList.GetHdl(SdrHdlKind::Ref2)->GetPos());
     }
 }
 
@@ -1435,9 +1434,9 @@ void E3dView::MovAction(const Point& rPnt)
             SdrHdlKind eHdlKind = pHdl->GetKind();
 
             // reacts only due to a mirror axis
-            if ((eHdlKind == HDL_REF1) ||
-                (eHdlKind == HDL_REF2) ||
-                (eHdlKind == HDL_MIRX))
+            if ((eHdlKind == SdrHdlKind::Ref1) ||
+                (eHdlKind == SdrHdlKind::Ref2) ||
+                (eHdlKind == SdrHdlKind::MirrorAxis))
             {
                 const SdrHdlList &aHdlList = GetHdlList ();
 
@@ -1445,8 +1444,8 @@ void E3dView::MovAction(const Point& rPnt)
                 // it anew
                 SdrView::MovAction (rPnt);
                 mpMirrorOverlay->SetMirrorAxis(
-                    aHdlList.GetHdl (HDL_REF1)->GetPos(),
-                    aHdlList.GetHdl (HDL_REF2)->GetPos());
+                    aHdlList.GetHdl (SdrHdlKind::Ref1)->GetPos(),
+                    aHdlList.GetHdl (SdrHdlKind::Ref2)->GetPos());
             }
         }
         else
@@ -1491,8 +1490,8 @@ void E3dView::End3DCreation(bool bUseDefaultValuesForMirrorAxes)
             // Determine from the handle positions and the displacement of
             // the points
             const SdrHdlList &aHdlList = GetHdlList();
-            Point aMirrorRef1 = aHdlList.GetHdl(HDL_REF1)->GetPos();
-            Point aMirrorRef2 = aHdlList.GetHdl(HDL_REF2)->GetPos();
+            Point aMirrorRef1 = aHdlList.GetHdl(SdrHdlKind::Ref1)->GetPos();
+            Point aMirrorRef2 = aHdlList.GetHdl(SdrHdlKind::Ref2)->GetPos();
 
             basegfx::B2DPoint aPnt1(aMirrorRef1.X(), -aMirrorRef1.Y());
             basegfx::B2DPoint aPnt2(aMirrorRef2.X(), -aMirrorRef2.Y());
@@ -1517,7 +1516,7 @@ void E3dView::ResetCreationActive ()
 
 void E3dView::InitView ()
 {
-    eDragConstraint          = E3DDRAG_CONSTR_XYZ;
+    eDragConstraint          = E3dDragConstraint::XYZ;
     fDefaultScaleX           =
     fDefaultScaleY           =
     fDefaultScaleZ           = 1.0;
@@ -1531,7 +1530,6 @@ void E3dView::InitView ()
     nVDefaultSegments        = 12;
     aDefaultLightColor       = RGB_Color(COL_WHITE);
     aDefaultAmbientColor     = RGB_Color(COL_BLACK);
-    bDoubleSided             = false;
     mpMirrorOverlay          = nullptr;
 }
 
@@ -1587,7 +1585,7 @@ void E3dView::BreakSingle3DObj(E3dObject* pObj)
     if(dynamic_cast< const E3dScene* >(pObj) !=  nullptr)
     {
         SdrObjList* pSubList = pObj->GetSubList();
-        SdrObjListIter aIter(*pSubList, IM_FLAT);
+        SdrObjListIter aIter(*pSubList, SdrIterMode::Flat);
 
         while(aIter.IsMore())
         {

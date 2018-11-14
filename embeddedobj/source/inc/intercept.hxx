@@ -38,7 +38,7 @@ class Interceptor : public ::cppu::WeakImplHelper< css::frame::XDispatchProvider
 public:
 
     Interceptor( DocumentHolder* pDocHolder );
-    virtual ~Interceptor();
+    virtual ~Interceptor() override;
 
     void DisconnectDocHolder();
 
@@ -140,7 +140,6 @@ private:
 
     static css::uno::Sequence< OUString > m_aInterceptedURL;
 
-    comphelper::OInterfaceContainerHelper2*    m_pDisposeEventListeners;
     StatusChangeListenerContainer*    m_pStatCL;
 };
 

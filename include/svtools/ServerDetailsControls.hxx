@@ -37,7 +37,6 @@ class DetailsContainer
         VclPtr<FixedText>      m_pFTPort;
         VclPtr<Edit>           m_pEDRoot;
         VclPtr<FixedText>      m_pFTRoot;
-        bool                   m_bIsActive;
 
     public:
         DetailsContainer( VclBuilderContainer* pBuilder );
@@ -62,7 +61,7 @@ class DetailsContainer
 
     protected:
         void notifyChange( );
-        DECL_LINK_TYPED ( ValueChangeHdl, Edit&, void );
+        DECL_LINK ( ValueChangeHdl, Edit&, void );
 };
 
 class HostDetailsContainer : public DetailsContainer
@@ -74,7 +73,7 @@ class HostDetailsContainer : public DetailsContainer
 
     public:
         HostDetailsContainer( VclBuilderContainer* pBuilder, sal_uInt16 nPort, const OUString& sScheme );
-        virtual ~HostDetailsContainer( ) { };
+        virtual ~HostDetailsContainer( ) override { };
 
         virtual void show( bool bShow = true ) override;
         virtual INetURLObject getUrl( ) override;
@@ -96,7 +95,7 @@ class DavDetailsContainer : public HostDetailsContainer
 
     public:
         DavDetailsContainer( VclBuilderContainer* pBuilder );
-        virtual ~DavDetailsContainer( ) { };
+        virtual ~DavDetailsContainer( ) override { };
 
         virtual void show( bool bShow = true ) override;
     virtual bool enableUserCredentials( ) override { return false; };
@@ -105,7 +104,7 @@ class DavDetailsContainer : public HostDetailsContainer
         virtual bool verifyScheme( const OUString& rScheme ) override;
 
     private:
-        DECL_LINK_TYPED( ToggledDavsHdl, CheckBox&, void );
+        DECL_LINK( ToggledDavsHdl, CheckBox&, void );
 };
 
 class SmbDetailsContainer : public DetailsContainer
@@ -116,7 +115,7 @@ class SmbDetailsContainer : public DetailsContainer
 
     public:
         SmbDetailsContainer( VclBuilderContainer* pBuilder );
-        virtual ~SmbDetailsContainer( ) { };
+        virtual ~SmbDetailsContainer( ) override { };
 
         virtual INetURLObject getUrl( ) override;
         virtual bool setUrl( const INetURLObject& rUrl ) override;
@@ -141,7 +140,7 @@ class CmisDetailsContainer : public DetailsContainer
 
     public:
         CmisDetailsContainer(VclBuilderContainer* pBuilder, Dialog* pParentDialog, OUString const & sBinding);
-        virtual ~CmisDetailsContainer( ) { };
+        virtual ~CmisDetailsContainer( ) override { };
 
         virtual void show( bool bShow = true ) override;
         virtual INetURLObject getUrl( ) override;
@@ -151,8 +150,8 @@ class CmisDetailsContainer : public DetailsContainer
 
     private:
         void selectRepository( );
-        DECL_LINK_TYPED ( RefreshReposHdl, Button*, void );
-        DECL_LINK_TYPED ( SelectRepoHdl, ListBox&, void );
+        DECL_LINK ( RefreshReposHdl, Button*, void );
+        DECL_LINK ( SelectRepoHdl, ListBox&, void );
 };
 
 #endif

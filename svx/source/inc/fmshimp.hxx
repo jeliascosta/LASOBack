@@ -135,7 +135,7 @@ class FmXFormShell_Base_Disambiguation : public FmXFormShell_BD_BASE
     using css::beans::XPropertyChangeListener::disposing;
 protected:
     FmXFormShell_Base_Disambiguation( ::osl::Mutex& _rMutex );
-    virtual void SAL_CALL disposing() override;
+    using WeakComponentImplHelperBase::disposing;
 };
 
 
@@ -265,7 +265,7 @@ public:
     SAL_DLLPRIVATE FmXFormShell(FmFormShell& _rShell, SfxViewFrame* _pViewFrame);
 
 protected:
-    SAL_DLLPRIVATE virtual ~FmXFormShell();
+    SAL_DLLPRIVATE virtual ~FmXFormShell() override;
 
 // EventListener
     SAL_DLLPRIVATE virtual void SAL_CALL disposing(const css::lang::EventObject& Source) throw( css::uno::RuntimeException, std::exception ) override;
@@ -319,13 +319,9 @@ public:
     SAL_DLLPRIVATE void        SetY2KState(sal_uInt16 n);
 
 protected:
-    // activation handling
-    SAL_DLLPRIVATE inline  bool    hasEverBeenActivated( ) const { return !m_bFirstActivation; }
-    SAL_DLLPRIVATE inline  void        setHasBeenActivated( ) { m_bFirstActivation = false; }
-
     // form handling
     /// load or unload the forms on a page
-    SAL_DLLPRIVATE         void        loadForms( FmFormPage* _pPage, const LoadFormsFlags _nBehaviour = LoadFormsFlags::Load | LoadFormsFlags::Sync );
+    SAL_DLLPRIVATE         void        loadForms( FmFormPage* _pPage, const LoadFormsFlags _nBehaviour );
     SAL_DLLPRIVATE         void        smartControlReset( const css::uno::Reference< css::container::XIndexAccess >& _rxModels );
 
 
@@ -420,7 +416,7 @@ public:
     SAL_DLLPRIVATE void startFiltering();
     SAL_DLLPRIVATE void stopFiltering(bool bSave);
 
-    SAL_DLLPRIVATE static PopupMenu* GetConversionMenu();
+    SAL_DLLPRIVATE static VclPtr<PopupMenu> GetConversionMenu();
         // ein Menue, das alle ControlConversion-Eintraege enthaelt
 
     /// checks whether a given control conversion slot can be applied to the current selection
@@ -438,7 +434,7 @@ public:
 
     SAL_DLLPRIVATE void    ExecuteTextAttribute( SfxRequest& _rReq );
     SAL_DLLPRIVATE void    GetTextAttributeState( SfxItemSet& _rSet );
-    SAL_DLLPRIVATE bool    IsActiveControl( bool _bCountRichTextOnly = false ) const;
+    SAL_DLLPRIVATE bool    IsActiveControl( bool _bCountRichTextOnly ) const;
     SAL_DLLPRIVATE void    ForgetActiveControl();
     SAL_DLLPRIVATE void    SetControlActivationHandler( const Link<LinkParamNone*,void>& _rHdl );
 
@@ -465,12 +461,12 @@ public:
     SAL_DLLPRIVATE bool    HasControlFocus() const;
 
 private:
-    DECL_DLLPRIVATE_LINK_TYPED(OnFoundData, FmFoundRecordInformation&, void);
-    DECL_DLLPRIVATE_LINK_TYPED(OnCanceledNotFound, FmFoundRecordInformation&, void);
-    DECL_DLLPRIVATE_LINK_TYPED(OnSearchContextRequest, FmSearchContext&, sal_uInt32);
-    DECL_DLLPRIVATE_LINK_TYPED(OnTimeOut, Timer*, void);
-    DECL_DLLPRIVATE_LINK_TYPED(OnFirstTimeActivation, void*, void);
-    DECL_DLLPRIVATE_LINK_TYPED(OnFormsCreated, FmFormPageImpl&, void);
+    DECL_DLLPRIVATE_LINK(OnFoundData, FmFoundRecordInformation&, void);
+    DECL_DLLPRIVATE_LINK(OnCanceledNotFound, FmFoundRecordInformation&, void);
+    DECL_DLLPRIVATE_LINK(OnSearchContextRequest, FmSearchContext&, sal_uInt32);
+    DECL_DLLPRIVATE_LINK(OnTimeOut, Timer*, void);
+    DECL_DLLPRIVATE_LINK(OnFirstTimeActivation, void*, void);
+    DECL_DLLPRIVATE_LINK(OnFormsCreated, FmFormPageImpl&, void);
 
     SAL_DLLPRIVATE void LoopGrids(LoopGridsSync nSync, LoopGridsFlags nWhat = LoopGridsFlags::NONE);
 
@@ -481,7 +477,7 @@ private:
     // (asynchron) invalidiert
     SAL_DLLPRIVATE void    LockSlotInvalidation(bool bLock);
 
-    DECL_DLLPRIVATE_LINK_TYPED(OnInvalidateSlots, void*, void);
+    DECL_DLLPRIVATE_LINK(OnInvalidateSlots, void*, void);
 
     SAL_DLLPRIVATE void    CloseExternalFormViewer();
         // closes the task-local beamer displaying a grid view for a form
@@ -528,10 +524,10 @@ public:
 
     /** determines whether the current form slot is currently enabled
     */
-    SAL_DLLPRIVATE bool    IsFormSlotEnabled( sal_Int32 _nSlot, css::form::runtime::FeatureState* _pCompleteState = nullptr );
+    SAL_DLLPRIVATE bool    IsFormSlotEnabled( sal_Int32 _nSlot, css::form::runtime::FeatureState* _pCompleteState );
 
 protected:
-    DECL_DLLPRIVATE_LINK_TYPED( OnLoadForms, void*, void );
+    DECL_DLLPRIVATE_LINK( OnLoadForms, void*, void );
 };
 
 
@@ -561,7 +557,7 @@ public:
     const OUString& getCurrentValue() const { return m_sCurrentValue; }
 
 public:
-    SearchableControlIterator(css::uno::Reference< css::uno::XInterface> xStartingPoint);
+    SearchableControlIterator(css::uno::Reference< css::uno::XInterface> const & xStartingPoint);
 
     virtual bool ShouldHandleElement(const css::uno::Reference< css::uno::XInterface>& rElement) override;
     virtual bool ShouldStepInto(const css::uno::Reference< css::uno::XInterface>& xContainer) const override;

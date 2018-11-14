@@ -227,7 +227,7 @@ void GetSelectableFromAny(uno::Reference<uno::XInterface> const& xIfc,
             {
                 SwPosition const aPos(*pBox->GetSttNd());
                 SwPaM aPam(aPos);
-                aPam.Move(fnMoveForward, fnGoNode);
+                aPam.Move(fnMoveForward, GoInNode);
                 o_rpPaM = lcl_createPamCopy(aPam);
             }
         }
@@ -378,7 +378,7 @@ bool getCursorPropertyValue(const SfxItemPropertySimpleEntry& rEntry
                 if( pAny )
                 {
                     OUString sVal;
-                    SwStyleNameMapper::FillProgName(pFormat->GetName(), sVal, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL, true );
+                    SwStyleNameMapper::FillProgName(pFormat->GetName(), sVal, SwGetPoolIdFromName::TxtColl, true );
                     *pAny <<= sVal;
                 }
             }
@@ -466,7 +466,7 @@ bool getCursorPropertyValue(const SfxItemPropertySimpleEntry& rEntry
             break;
         case FN_UNO_DOCUMENT_INDEX_MARK:
         {
-            ::std::vector<SwTextAttr *> marks;
+            std::vector<SwTextAttr *> marks;
             if (rPam.GetNode().IsTextNode())
             {
                 marks = rPam.GetNode().GetTextNode()->GetTextAttrsAt(
@@ -544,13 +544,13 @@ bool getCursorPropertyValue(const SfxItemPropertySimpleEntry& rEntry
                     if(FN_UNO_TEXT_TABLE == rEntry.nWID)
                     {
                         uno::Reference< XTextTable >  xTable = SwXTextTables::GetObject(*pTableFormat);
-                        pAny->setValue(&xTable, cppu::UnoType<XTextTable>::get());
+                        *pAny <<= xTable;
                     }
                     else
                     {
                         SwTableBox* pBox = pSttNode->GetTableBox();
                         uno::Reference< XCell >  xCell = SwXCell::CreateXCell(pTableFormat, pBox);
-                        pAny->setValue(&xCell, cppu::UnoType<XCell>::get());
+                        *pAny <<= xCell;
                     }
                 }
             }
@@ -585,7 +585,7 @@ bool getCursorPropertyValue(const SfxItemPropertySimpleEntry& rEntry
                 if( pAny )
                 {
                     uno::Reference< XTextSection >  xSect = SwXTextSections::GetObject( *pSect->GetFormat() );
-                    pAny->setValue(&xSect, cppu::UnoType<XTextSection>::get());
+                    *pAny <<= xSect;
                 }
             }
             else
@@ -620,7 +620,7 @@ bool getCursorPropertyValue(const SfxItemPropertySimpleEntry& rEntry
         break;
         case FN_UNO_REFERENCE_MARK:
         {
-            ::std::vector<SwTextAttr *> marks;
+            std::vector<SwTextAttr *> marks;
             if (rPam.GetNode().IsTextNode())
             {
                 marks = (
@@ -635,7 +635,7 @@ bool getCursorPropertyValue(const SfxItemPropertySimpleEntry& rEntry
                     uno::Reference<XTextContent> const xRef =
                         SwXReferenceMark::CreateXReferenceMark(*rPam.GetDoc(),
                                 const_cast<SwFormatRefMark*>(&rRef));
-                    pAny->setValue(&xRef, cppu::UnoType<XTextContent>::get());
+                    *pAny <<= xRef;
                 }
             }
             else
@@ -705,7 +705,7 @@ bool getCursorPropertyValue(const SfxItemPropertySimpleEntry& rEntry
                             OSL_ENSURE(pAttr->GetCharFormat().GetCharFormat(), "no character format set");
                             aCharStyles.getArray()[aCharStyles.getLength() - 1] =
                                         SwStyleNameMapper::GetProgName(
-                                            pAttr->GetCharFormat().GetCharFormat()->GetName(), nsSwGetPoolIdFromName::GET_POOLID_CHRFMT);
+                                            pAttr->GetCharFormat().GetCharFormat()->GetName(), SwGetPoolIdFromName::ChrFmt);
                         }
                     }
 
@@ -885,7 +885,7 @@ void  getNumberingProperty(SwPaM& rPam, PropertyState& eState, Any * pAny )
     {
         uno::Reference< XIndexReplace >  xNum = new SwXNumberingRules(*pNumRule);
         if ( pAny )
-            pAny->setValue(&xNum, cppu::UnoType<XIndexReplace>::get());
+            *pAny <<= xNum;
         eState = PropertyState_DIRECT_VALUE;
     }
     else
@@ -903,7 +903,7 @@ void GetCurPageStyle(SwPaM& rPaM, OUString &rString)
         if(pPage)
         {
             SwStyleNameMapper::FillProgName(pPage->GetPageDesc()->GetName(),
-                rString, nsSwGetPoolIdFromName::GET_POOLID_PAGEDESC, true);
+                rString, SwGetPoolIdFromName::PageDesc, true);
         }
     }
 }
@@ -1172,39 +1172,28 @@ void makeRedline( SwPaM& rPaM,
 
     //todo: what about REDLINE_FMTCOLL?
     comphelper::SequenceAsHashMap aPropMap( rRedlineProperties );
-    uno::Any aAuthorValue;
-    aAuthorValue = aPropMap.getUnpackedValueOrDefault("RedlineAuthor", aAuthorValue);
     sal_uInt16 nAuthor = 0;
     OUString sAuthor;
-    if( aAuthorValue >>= sAuthor )
+    if( aPropMap.getValue("RedlineAuthor") >>= sAuthor )
         nAuthor = pRedlineAccess->InsertRedlineAuthor(sAuthor);
 
     OUString sComment;
-    uno::Any aCommentValue;
-    aCommentValue = aPropMap.getUnpackedValueOrDefault("RedlineComment", aCommentValue);
-
     SwRedlineData aRedlineData( eType, nAuthor );
-    if( aCommentValue >>= sComment )
+    if( aPropMap.getValue("RedlineComment") >>= sComment )
         aRedlineData.SetComment( sComment );
 
     ::util::DateTime aStamp;
-    uno::Any aDateTimeValue;
-    aDateTimeValue = aPropMap.getUnpackedValueOrDefault("RedlineDateTime", aDateTimeValue);
-    if( aDateTimeValue >>= aStamp )
+    if( aPropMap.getValue("RedlineDateTime") >>= aStamp )
     {
-       aRedlineData.SetTimeStamp(
-        DateTime( Date( aStamp.Day, aStamp.Month, aStamp.Year ), tools::Time( aStamp.Hours, aStamp.Minutes, aStamp.Seconds ) ) );
+        aRedlineData.SetTimeStamp( DateTime( aStamp));
     }
 
     SwRedlineExtraData_FormattingChanges* pRedlineExtraData = nullptr;
 
     // Read the 'Redline Revert Properties' from the parameters
     uno::Sequence< beans::PropertyValue > aRevertProperties;
-    uno::Any aRevertPropertiesValue;
-    aRevertPropertiesValue = aPropMap.getUnpackedValueOrDefault("RedlineRevertProperties", aRevertPropertiesValue);
-
     // Check if the value exists
-    if ( aRevertPropertiesValue >>= aRevertProperties )
+    if ( aPropMap.getValue("RedlineRevertProperties") >>= aRevertProperties )
     {
         int nMap = 0;
         // Make sure that paragraph format gets its own map, otherwise e.g. fill attributes are not preserved.
@@ -1266,12 +1255,12 @@ void makeRedline( SwPaM& rPaM,
     }
 
     SwRangeRedline* pRedline = new SwRangeRedline( aRedlineData, rPaM );
-    RedlineMode_t nPrevMode = pRedlineAccess->GetRedlineMode( );
+    RedlineFlags nPrevMode = pRedlineAccess->GetRedlineFlags( );
     pRedline->SetExtraData( pRedlineExtraData );
 
-    pRedlineAccess->SetRedlineMode_intern(nsRedlineMode_t::REDLINE_ON);
+    pRedlineAccess->SetRedlineFlags_intern(RedlineFlags::On);
     bool bRet = pRedlineAccess->AppendRedline( pRedline, false );
-    pRedlineAccess->SetRedlineMode_intern( nPrevMode );
+    pRedlineAccess->SetRedlineFlags_intern( nPrevMode );
     if( !bRet )
         throw lang::IllegalArgumentException();
 }
@@ -1298,37 +1287,30 @@ void makeTableRowRedline( SwTableLine& rTableLine,
     }
 
     comphelper::SequenceAsHashMap aPropMap( rRedlineProperties );
-    uno::Any aAuthorValue;
-    aAuthorValue = aPropMap.getUnpackedValueOrDefault("RedlineAuthor", aAuthorValue);
     sal_uInt16 nAuthor = 0;
     OUString sAuthor;
-    if( aAuthorValue >>= sAuthor )
+    if( aPropMap.getValue("RedlineAuthor") >>= sAuthor )
         nAuthor = pRedlineAccess->InsertRedlineAuthor(sAuthor);
 
     OUString sComment;
-    uno::Any aCommentValue;
-    aCommentValue = aPropMap.getUnpackedValueOrDefault("RedlineComment", aCommentValue);
-
     SwRedlineData aRedlineData( eType, nAuthor );
-    if( aCommentValue >>= sComment )
+    if( aPropMap.getValue("RedlineComment") >>= sComment )
         aRedlineData.SetComment( sComment );
 
     ::util::DateTime aStamp;
-    uno::Any aDateTimeValue;
-    aDateTimeValue = aPropMap.getUnpackedValueOrDefault("RedlineDateTime", aDateTimeValue);
-    if( aDateTimeValue >>= aStamp )
+    if( aPropMap.getValue("RedlineDateTime") >>= aStamp )
     {
        aRedlineData.SetTimeStamp(
         DateTime( Date( aStamp.Day, aStamp.Month, aStamp.Year ), tools::Time( aStamp.Hours, aStamp.Minutes, aStamp.Seconds ) ) );
     }
 
     SwTableRowRedline* pRedline = new SwTableRowRedline( aRedlineData, rTableLine );
-    RedlineMode_t nPrevMode = pRedlineAccess->GetRedlineMode( );
+    RedlineFlags nPrevMode = pRedlineAccess->GetRedlineFlags( );
     pRedline->SetExtraData( nullptr );
 
-    pRedlineAccess->SetRedlineMode_intern(nsRedlineMode_t::REDLINE_ON);
+    pRedlineAccess->SetRedlineFlags_intern(RedlineFlags::On);
     bool bRet = pRedlineAccess->AppendTableRowRedline( pRedline, false );
-    pRedlineAccess->SetRedlineMode_intern( nPrevMode );
+    pRedlineAccess->SetRedlineFlags_intern( nPrevMode );
     if( !bRet )
         throw lang::IllegalArgumentException();
 }
@@ -1355,37 +1337,30 @@ void makeTableCellRedline( SwTableBox& rTableBox,
     }
 
     comphelper::SequenceAsHashMap aPropMap( rRedlineProperties );
-    uno::Any aAuthorValue;
-    aAuthorValue = aPropMap.getUnpackedValueOrDefault("RedlineAuthor", aAuthorValue);
     sal_uInt16 nAuthor = 0;
     OUString sAuthor;
-    if( aAuthorValue >>= sAuthor )
+    if( aPropMap.getValue("RedlineAuthor") >>= sAuthor )
         nAuthor = pRedlineAccess->InsertRedlineAuthor(sAuthor);
 
     OUString sComment;
-    uno::Any aCommentValue;
-    aCommentValue = aPropMap.getUnpackedValueOrDefault("RedlineComment", aCommentValue);
-
     SwRedlineData aRedlineData( eType, nAuthor );
-    if( aCommentValue >>= sComment )
+    if( aPropMap.getValue("RedlineComment") >>= sComment )
         aRedlineData.SetComment( sComment );
 
     ::util::DateTime aStamp;
-    uno::Any aDateTimeValue;
-    aDateTimeValue = aPropMap.getUnpackedValueOrDefault("RedlineDateTime", aDateTimeValue);
-    if( aDateTimeValue >>= aStamp )
+    if( aPropMap.getValue("RedlineDateTime") >>= aStamp )
     {
        aRedlineData.SetTimeStamp(
         DateTime( Date( aStamp.Day, aStamp.Month, aStamp.Year ), tools::Time( aStamp.Hours, aStamp.Minutes, aStamp.Seconds ) ) );
     }
 
     SwTableCellRedline* pRedline = new SwTableCellRedline( aRedlineData, rTableBox );
-    RedlineMode_t nPrevMode = pRedlineAccess->GetRedlineMode( );
+    RedlineFlags nPrevMode = pRedlineAccess->GetRedlineFlags( );
     pRedline->SetExtraData( nullptr );
 
-    pRedlineAccess->SetRedlineMode_intern(nsRedlineMode_t::REDLINE_ON);
+    pRedlineAccess->SetRedlineFlags_intern(RedlineFlags::On);
     bool bRet = pRedlineAccess->AppendTableCellRedline( pRedline, false );
-    pRedlineAccess->SetRedlineMode_intern( nPrevMode );
+    pRedlineAccess->SetRedlineFlags_intern( nPrevMode );
     if( !bRet )
         throw lang::IllegalArgumentException();
 }

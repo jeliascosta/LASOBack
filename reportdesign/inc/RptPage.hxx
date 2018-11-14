@@ -47,7 +47,7 @@ class REPORTDESIGN_DLLPUBLIC OReportPage : public SdrPage
     // (BegDragObj)
     void removeTempObject(SdrObject *_pToRemoveObj);
 
-    virtual ~OReportPage();
+    virtual ~OReportPage() override;
 
 protected:
     virtual css::uno::Reference< css::uno::XInterface > createUnoPage() override;
@@ -60,7 +60,7 @@ public:
     virtual SdrPage* Clone() const override;
     virtual SdrPage* Clone( SdrModel* pNewModel ) const override;
 
-    virtual void NbcInsertObject(SdrObject* pObj, size_t nPos, const SdrInsertReason* pReason) override;
+    virtual void NbcInsertObject(SdrObject* pObj, size_t nPos=SAL_MAX_SIZE, const SdrInsertReason* pReason=nullptr) override;
     virtual SdrObject* RemoveObject(size_t nObjNum) override;
 
     /** returns the index inside the object list which belongs to the report component.

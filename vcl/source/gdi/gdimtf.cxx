@@ -52,7 +52,7 @@
 
 using namespace com::sun::star;
 
-#define GAMMA( _def_cVal, _def_InvGamma )   ((sal_uInt8)MinMax(FRound(pow( _def_cVal/255.0,_def_InvGamma)*255.0),0L,255L))
+#define GAMMA( _def_cVal, _def_InvGamma )   ((sal_uInt8)MinMax(FRound(pow( _def_cVal/255.0,_def_InvGamma)*255.0),0,255))
 
 struct ImplColAdjustParam
 {
@@ -344,7 +344,7 @@ void GDIMetaFile::Play( OutputDevice* pOut, size_t nPos )
         // recent add-ons. Newer metafiles must of course explicitly set
         // those states.
         pOut->Push( PushFlags::TEXTLAYOUTMODE|PushFlags::TEXTLANGUAGE );
-        pOut->SetLayoutMode( TEXT_LAYOUT_DEFAULT );
+        pOut->SetLayoutMode( ComplexTextLayoutFlags::Default );
         pOut->SetDigitLanguage( 0 );
 
         OSL_TRACE("GDIMetaFile::Play on device of size: %ld x %ld", pOut->GetOutputSizePixel().Width(), pOut->GetOutputSizePixel().Height());
@@ -355,15 +355,7 @@ void GDIMetaFile::Play( OutputDevice* pOut, size_t nPos )
             {
                 if( pAction )
                 {
-                    if( pAction->GetType() == MetaActionType::COMMENT &&
-                        static_cast<MetaCommentAction*>(pAction)->GetComment() == "DELEGATE_PLUGGABLE_RENDERER" )
-                    {
-                        ImplDelegate2PluggableRenderer(static_cast<MetaCommentAction*>(pAction), pOut);
-                    }
-                    else
-                    {
-                        pAction->Execute( pOut );
-                    }
+                    pAction->Execute( pOut );
 
                     // flush output from time to time
                     if( i++ > nSyncCount )
@@ -427,7 +419,7 @@ bool GDIMetaFile::ImplPlayWithRenderer( OutputDevice* pOut, const Point& rPos, S
                 BitmapEx aBitmapEx;
                 if( aBitmapEx.Create( xBitmapCanvas, aSize ) )
                 {
-                    if ( pOut->GetMapMode() == MAP_PIXEL )
+                    if ( pOut->GetMapMode() == MapUnit::MapPixel )
                         pOut->DrawBitmapEx( rPos, aBitmapEx );
                     else
                         pOut->DrawBitmapEx( rPos, rLogicDestSize, aBitmapEx );
@@ -448,77 +440,6 @@ bool GDIMetaFile::ImplPlayWithRenderer( OutputDevice* pOut, const Point& rPos, S
     }
 
     return false;
-}
-
-void GDIMetaFile::ImplDelegate2PluggableRenderer( const MetaCommentAction* pAct, OutputDevice* pOut )
-{
-    OSL_ASSERT( pAct->GetComment() == "DELEGATE_PLUGGABLE_RENDERER" );
-
-    // read payload - string of service name, followed by raw render input
-    const sal_uInt8* pData = pAct->GetData();
-    const sal_uInt8* const pEndData = pData + pAct->GetDataSize();
-    if( !pData )
-        return;
-
-    OUStringBuffer aBuffer;
-    while( pData<pEndData && *pData )
-        aBuffer.append(static_cast<sal_Unicode>(*pData++));
-    const OUString aRendererServiceName=aBuffer.makeStringAndClear();
-    ++pData;
-
-    while( pData<pEndData && *pData )
-        aBuffer.append(static_cast<sal_Unicode>(*pData++));
-    const OUString aGraphicServiceName=aBuffer.makeStringAndClear();
-    ++pData;
-
-    uno::Reference< lang::XMultiServiceFactory > xFactory = comphelper::getProcessServiceFactory();
-    if( pData<pEndData )
-    {
-        try
-        {
-            // instantiate render service
-            uno::Sequence<uno::Any> aRendererArgs(1);
-            aRendererArgs[0] = makeAny(uno::Reference<awt::XGraphics>(pOut->CreateUnoGraphics()));
-            uno::Reference<graphic::XGraphicRenderer> xRenderer(
-                xFactory->createInstanceWithArguments(
-                    aRendererServiceName,
-                    aRendererArgs),
-                uno::UNO_QUERY );
-
-            // instantiate graphic service
-            uno::Reference<graphic::XGraphic> xGraphic(
-                xFactory->createInstance(
-                    aGraphicServiceName),
-                uno::UNO_QUERY );
-
-            uno::Reference<lang::XInitialization> xInit(
-                xGraphic, uno::UNO_QUERY);
-
-            if(xGraphic.is() && xRenderer.is() && xInit.is())
-            {
-                // delay initialization of XGraphic, to only expose
-                // XGraphic-generating services to arbitrary binary data
-                uno::Sequence< sal_Int8 > aSeq(
-                    reinterpret_cast<sal_Int8 const *>(pData), pEndData-pData );
-                uno::Sequence<uno::Any> aGraphicsArgs(1);
-                aGraphicsArgs[0] = makeAny(aSeq);
-                xInit->initialize(aGraphicsArgs);
-
-                xRenderer->render(xGraphic);
-            }
-        }
-        catch (const uno::RuntimeException&)
-        {
-            // runtime errors are fatal
-            throw;
-        }
-        catch (const uno::Exception& e)
-        {
-            // ignore errors, no way of reporting them here
-            SAL_WARN("vcl", "GDIMetaFile::ImplDelegate2PluggableRenderer:"
-                    " exception: " << e.Message);
-        }
-    }
 }
 
 void GDIMetaFile::Play( OutputDevice* pOut, const Point& rPos,
@@ -576,7 +497,7 @@ void GDIMetaFile::Play( OutputDevice* pOut, const Point& rPos,
         // This is necessary, since old metafiles don't even know of these
         // recent add-ons. Newer metafiles must of course explicitly set
         // those states.
-        pOut->SetLayoutMode( TEXT_LAYOUT_DEFAULT );
+        pOut->SetLayoutMode( ComplexTextLayoutFlags::Default );
         pOut->SetDigitLanguage( 0 );
 
         Play( pOut );
@@ -785,7 +706,7 @@ void GDIMetaFile::Move( long nX, long nY, long nDPIX, long nDPIY )
             ( MetaActionType::POP == nType ) )
         {
             pModAct->Execute( aMapVDev.get() );
-            if( aMapVDev->GetMapMode().GetMapUnit() == MAP_PIXEL )
+            if( aMapVDev->GetMapMode().GetMapUnit() == MapUnit::MapPixel )
             {
                 aOffset = aMapVDev->LogicToPixel( aBaseOffset, GetPrefMapMode() );
                 MapMode aMap( aMapVDev->GetMapMode() );
@@ -915,8 +836,8 @@ void GDIMetaFile::ImplAddGradientEx( GDIMetaFile&         rMtf,
 
 void GDIMetaFile::Rotate( long nAngle10 )
 {
-    nAngle10 %= 3600L;
-    nAngle10 = ( nAngle10 < 0L ) ? ( 3599L + nAngle10 ) : nAngle10;
+    nAngle10 %= 3600;
+    nAngle10 = ( nAngle10 < 0 ) ? ( 3599 + nAngle10 ) : nAngle10;
 
     if( nAngle10 )
     {
@@ -1848,7 +1769,7 @@ Color GDIMetaFile::ImplColConvertFnc( const Color& rColor, const void* pColParam
 {
     sal_uInt8 cLum = rColor.GetLuminance();
 
-    if( MTF_CONVERSION_1BIT_THRESHOLD == static_cast<const ImplColConvertParam*>(pColParam)->eConversion )
+    if( MtfConversion::N1BitThreshold == static_cast<const ImplColConvertParam*>(pColParam)->eConversion )
         cLum = ( cLum < 128 ) ? 0 : 255;
 
     return Color( rColor.GetTransparency(), cLum, cLum, cLum );
@@ -2200,15 +2121,15 @@ void GDIMetaFile::Adjust( short nLuminancePercent, short nContrastPercent,
 
         // calculate slope
         if( nContrastPercent >= 0 )
-            fM = 128.0 / ( 128.0 - 1.27 * MinMax( nContrastPercent, 0L, 100L ) );
+            fM = 128.0 / ( 128.0 - 1.27 * MinMax( nContrastPercent, 0, 100 ) );
         else
-            fM = ( 128.0 + 1.27 * MinMax( nContrastPercent, -100L, 0L ) ) / 128.0;
+            fM = ( 128.0 + 1.27 * MinMax( nContrastPercent, -100, 0 ) ) / 128.0;
 
         if(!msoBrightness)
             // total offset = luminance offset + contrast offset
-            fOff = MinMax( nLuminancePercent, -100L, 100L ) * 2.55 + 128.0 - fM * 128.0;
+            fOff = MinMax( nLuminancePercent, -100, 100 ) * 2.55 + 128.0 - fM * 128.0;
         else
-            fOff = MinMax( nLuminancePercent, -100L, 100L ) * 2.55;
+            fOff = MinMax( nLuminancePercent, -100, 100 ) * 2.55;
 
         // channel offset = channel offset  + total offset
         fROff = nChannelRPercent * 2.55 + fOff;
@@ -2220,19 +2141,19 @@ void GDIMetaFile::Adjust( short nLuminancePercent, short nContrastPercent,
         const bool bGamma = ( fGamma != 1.0 );
 
         // create mapping table
-        for( long nX = 0L; nX < 256L; nX++ )
+        for( long nX = 0; nX < 256; nX++ )
         {
             if(!msoBrightness)
             {
-                aColParam.pMapR[ nX ] = (sal_uInt8) MinMax( FRound( nX * fM + fROff ), 0L, 255L );
-                aColParam.pMapG[ nX ] = (sal_uInt8) MinMax( FRound( nX * fM + fGOff ), 0L, 255L );
-                aColParam.pMapB[ nX ] = (sal_uInt8) MinMax( FRound( nX * fM + fBOff ), 0L, 255L );
+                aColParam.pMapR[ nX ] = (sal_uInt8) MinMax( FRound( nX * fM + fROff ), 0, 255 );
+                aColParam.pMapG[ nX ] = (sal_uInt8) MinMax( FRound( nX * fM + fGOff ), 0, 255 );
+                aColParam.pMapB[ nX ] = (sal_uInt8) MinMax( FRound( nX * fM + fBOff ), 0, 255 );
             }
             else
             {
-                aColParam.pMapR[ nX ] = (sal_uInt8) MinMax( FRound( (nX+fROff/2-128) * fM + 128 + fROff/2 ), 0L, 255L );
-                aColParam.pMapG[ nX ] = (sal_uInt8) MinMax( FRound( (nX+fGOff/2-128) * fM + 128 + fGOff/2 ), 0L, 255L );
-                aColParam.pMapB[ nX ] = (sal_uInt8) MinMax( FRound( (nX+fBOff/2-128) * fM + 128 + fBOff/2 ), 0L, 255L );
+                aColParam.pMapR[ nX ] = (sal_uInt8) MinMax( FRound( (nX+fROff/2-128) * fM + 128 + fROff/2 ), 0, 255 );
+                aColParam.pMapG[ nX ] = (sal_uInt8) MinMax( FRound( (nX+fGOff/2-128) * fM + 128 + fGOff/2 ), 0, 255 );
+                aColParam.pMapB[ nX ] = (sal_uInt8) MinMax( FRound( (nX+fBOff/2-128) * fM + 128 + fBOff/2 ), 0, 255 );
             }
             if( bGamma )
             {
@@ -2269,13 +2190,13 @@ void GDIMetaFile::Adjust( short nLuminancePercent, short nContrastPercent,
 void GDIMetaFile::Convert( MtfConversion eConversion )
 {
     // nothing to do? => return quickly
-    if( eConversion != MTF_CONVERSION_NONE )
+    if( eConversion != MtfConversion::NONE )
     {
         ImplColConvertParam aColParam;
         ImplBmpConvertParam aBmpParam;
 
         aColParam.eConversion = eConversion;
-        aBmpParam.eConversion = ( MTF_CONVERSION_1BIT_THRESHOLD == eConversion ) ? BMP_CONVERSION_1BIT_THRESHOLD : BMP_CONVERSION_8BIT_GREYS;
+        aBmpParam.eConversion = ( MtfConversion::N1BitThreshold == eConversion ) ? BMP_CONVERSION_1BIT_THRESHOLD : BMP_CONVERSION_8BIT_GREYS;
 
         ImplExchangeColors( ImplColConvertFnc, &aColParam, ImplBmpConvertFnc, &aBmpParam );
     }
@@ -2758,7 +2679,7 @@ SvStream& ReadGDIMetaFile( SvStream& rIStm, GDIMetaFile& rGDIMetaFile )
 
         aId[ 0 ] = 0;
         aId[ 6 ] = 0;
-        rIStm.Read( aId, 6 );
+        rIStm.ReadBytes( aId, 6 );
 
         if ( !strcmp( aId, "VCLMTF" ) )
         {
@@ -2861,7 +2782,7 @@ SvStream& GDIMetaFile::Write( SvStream& rOStm )
     SvStreamEndian   nOldFormat = rOStm.GetEndian();
 
     rOStm.SetEndian( SvStreamEndian::LITTLE );
-    rOStm.Write( "VCLMTF", 6 );
+    rOStm.WriteBytes( "VCLMTF", 6 );
 
     pCompat = new VersionCompat( rOStm, StreamMode::WRITE, 1 );
 

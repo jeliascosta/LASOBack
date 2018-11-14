@@ -17,6 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <comphelper/lok.hxx>
 #include <vcl/wrkwin.hxx>
 #include <vcl/dialog.hxx>
 #include <vcl/msgbox.hxx>
@@ -710,9 +711,9 @@ void EditEngine::InsertFeature(const EditSelection& rEditSelection, const SfxPoo
     pImpEditEngine->ImpInsertFeature(rEditSelection, rItem);
 }
 
-EditSelection EditEngine::MoveParagraphs(const Range& rParagraphs, sal_Int32 nNewPos, EditView* pCurView)
+EditSelection EditEngine::MoveParagraphs(const Range& rParagraphs, sal_Int32 nNewPos)
 {
-    return pImpEditEngine->MoveParagraphs(rParagraphs, nNewPos, pCurView);
+    return pImpEditEngine->MoveParagraphs(rParagraphs, nNewPos, nullptr);
 }
 
 void EditEngine::RemoveCharAttribs(sal_Int32 nPara, sal_uInt16 nWhich, bool bRemoveFeatures)
@@ -792,7 +793,7 @@ EditSelection EditEngine::InsertText(const EditTextObject& rTextObject, const Ed
 }
 
 EditSelection EditEngine::InsertText(
-    uno::Reference<datatransfer::XTransferable >& rxDataObj,
+    uno::Reference<datatransfer::XTransferable > const & rxDataObj,
     const OUString& rBaseURL, const EditPaM& rPaM, bool bUseSpecial)
 {
     return pImpEditEngine->InsertText(rxDataObj, rBaseURL, rPaM, bUseSpecial);
@@ -859,6 +860,11 @@ EditDoc& EditEngine::GetEditDoc()
 const EditDoc& EditEngine::GetEditDoc() const
 {
     return pImpEditEngine->GetEditDoc();
+}
+
+void EditEngine::dumpAsXmlEditDoc(struct _xmlTextWriter* pWriter) const
+{
+    pImpEditEngine->GetEditDoc().dumpAsXml(pWriter);
 }
 
 ParaPortionList& EditEngine::GetParaPortions()
@@ -1293,7 +1299,7 @@ bool EditEngine::PostKeyEvent( const KeyEvent& rKeyEvent, EditView* pEditView, v
                                     pImpEditEngine->xLocaleDataWrapper.changeLocale( aLanguageTag);
 
                                 if (!pImpEditEngine->xTransliterationWrapper.isInitialized())
-                                    pImpEditEngine->xTransliterationWrapper.init( SvtSysLocale().GetLocaleData().getComponentContext(), eLang, i18n::TransliterationModules_IGNORE_CASE);
+                                    pImpEditEngine->xTransliterationWrapper.init( SvtSysLocale().GetLocaleData().getComponentContext(), eLang);
                                 else
                                     pImpEditEngine->xTransliterationWrapper.changeLocale( eLang);
 
@@ -1349,6 +1355,10 @@ bool EditEngine::PostKeyEvent( const KeyEvent& rKeyEvent, EditView* pEditView, v
     }
 
     pEditView->pImpEditView->SetEditSelection( aCurSel );
+    if (comphelper::LibreOfficeKit::isActive())
+    {
+        pEditView->pImpEditView->DrawSelection();
+    }
     pImpEditEngine->UpdateSelections();
 
     if ( ( !IsVertical() && ( nCode != KEY_UP ) && ( nCode != KEY_DOWN ) ) ||
@@ -1432,7 +1442,7 @@ void EditEngine::SetUpdateMode( bool bUpdate )
 {
     pImpEditEngine->SetUpdateMode( bUpdate );
     if ( pImpEditEngine->pActiveView )
-        pImpEditEngine->pActiveView->ShowCursor( false, false );
+        pImpEditEngine->pActiveView->ShowCursor( false, false, /*bActivate=*/true );
 }
 
 bool EditEngine::GetUpdateMode() const
@@ -2097,7 +2107,7 @@ void EditEngine::SetWordDelimiters( const OUString& rDelimiters )
 {
     pImpEditEngine->aWordDelimiters = rDelimiters;
     if (pImpEditEngine->aWordDelimiters.indexOf(CH_FEATURE) == -1)
-        pImpEditEngine->aWordDelimiters += OUStringLiteral1<CH_FEATURE>();
+        pImpEditEngine->aWordDelimiters += OUStringLiteral1(CH_FEATURE);
 }
 
 const OUString& EditEngine::GetWordDelimiters() const
@@ -2110,7 +2120,7 @@ void EditEngine::EraseVirtualDevice()
     pImpEditEngine->EraseVirtualDevice();
 }
 
-void EditEngine::SetSpeller( Reference< XSpellChecker1 >  &xSpeller )
+void EditEngine::SetSpeller( Reference< XSpellChecker1 > const &xSpeller )
 {
     pImpEditEngine->SetSpeller( xSpeller );
 }

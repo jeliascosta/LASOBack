@@ -30,6 +30,8 @@
 #include <com/sun/star/style/XStyle.hpp>
 #include <com/sun/star/io/XOutputStream.hpp>
 
+#include <o3tl/any.hxx>
+#include <o3tl/make_unique.hxx>
 #include <rtl/ustrbuf.hxx>
 #include <osl/diagnose.h>
 
@@ -77,7 +79,7 @@ public:
              const OUString& rLName,
               const Reference< xml::sax::XAttributeList >& xAttrList,
             SvxXMLListLevelStyleContext_Impl& rLLevel   );
-    virtual ~SvxXMLListLevelStyleAttrContext_Impl();
+    virtual ~SvxXMLListLevelStyleAttrContext_Impl() override;
 
     virtual SvXMLImportContext *CreateChildContext(
             sal_uInt16 nPrefix, const OUString& rLocalName,
@@ -95,7 +97,7 @@ public:
             const OUString& rLName,
             const Reference< xml::sax::XAttributeList >& xAttrList,
             SvxXMLListLevelStyleContext_Impl& rLLevel   );
-    virtual ~SvxXMLListLevelStyleLabelAlignmentAttrContext_Impl();
+    virtual ~SvxXMLListLevelStyleLabelAlignmentAttrContext_Impl() override;
 };
 
 enum SvxXMLTextListLevelStyleAttrTokens
@@ -216,7 +218,7 @@ public:
             SvXMLImport& rImport, sal_uInt16 nPrfx,
             const OUString& rLName,
             const Reference< xml::sax::XAttributeList > & xAttrList );
-    virtual ~SvxXMLListLevelStyleContext_Impl();
+    virtual ~SvxXMLListLevelStyleContext_Impl() override;
 
     virtual SvXMLImportContext *CreateChildContext(
             sal_uInt16 nPrefix, const OUString& rLocalName,
@@ -581,7 +583,7 @@ Sequence<beans::PropertyValue> SvxXMLListLevelStyleContext_Impl::GetProperties()
             pProps[nPos++].Value <<= m_nColor;
         }
 
-        DBG_ASSERT( nPos == nCount, "array under/overflow" );
+        SAL_WARN_IF( nPos != nCount, "xmloff", "array under/overflow" );
     }
 
     return aPropSeq;
@@ -1025,28 +1027,13 @@ SvxXMLListStyleContext::SvxXMLListStyleContext( SvXMLImport& rImport,
 ,   sIsPhysical( "IsPhysical"  )
 ,   sNumberingRules( "NumberingRules"  )
 ,   sIsContinuousNumbering( "IsContinuousNumbering"  )
-,   pLevelStyles( nullptr )
 ,   nLevels( 0 )
 ,   bConsecutive( false )
 ,   bOutline( bOutl )
 {
 }
 
-SvxXMLListStyleContext::~SvxXMLListStyleContext()
-{
-    if( pLevelStyles )
-    {
-        while( !pLevelStyles->empty() )
-        {
-            SvxXMLListLevelStyleContext_Impl *pStyle = pLevelStyles->back();
-            pLevelStyles->pop_back();
-            pStyle->ReleaseRef();
-        }
-    }
-
-    delete pLevelStyles;
-}
-
+SvxXMLListStyleContext::~SvxXMLListStyleContext() {}
 
 SvXMLImportContext *SvxXMLListStyleContext::CreateChildContext(
         sal_uInt16 nPrefix,
@@ -1062,15 +1049,14 @@ SvXMLImportContext *SvxXMLListStyleContext::CreateChildContext(
                 IsXMLToken( rLocalName, XML_LIST_LEVEL_STYLE_BULLET ) ||
                  IsXMLToken( rLocalName, XML_LIST_LEVEL_STYLE_IMAGE )    ) ) )
     {
-        SvxXMLListLevelStyleContext_Impl *pLevelStyle =
+        rtl::Reference<SvxXMLListLevelStyleContext_Impl> xLevelStyle{
             new SvxXMLListLevelStyleContext_Impl( GetImport(), nPrefix,
-                                                  rLocalName, xAttrList );
+                                                  rLocalName, xAttrList )};
         if( !pLevelStyles )
-            pLevelStyles = new SvxXMLListStyle_Impl;
-        pLevelStyles->push_back( pLevelStyle );
-        pLevelStyle->AddFirstRef();
+            pLevelStyles = o3tl::make_unique<SvxXMLListStyle_Impl>();
+        pLevelStyles->push_back( xLevelStyle );
 
-        pContext = pLevelStyle;
+        pContext = xLevelStyle.get();
     }
     else
     {
@@ -1092,7 +1078,7 @@ void SvxXMLListStyleContext::FillUnoNumRule(
             for( sal_uInt16 i=0; i < nCount; i++ )
             {
                 SvxXMLListLevelStyleContext_Impl *pLevelStyle =
-                    (*pLevelStyles)[i];
+                    (*pLevelStyles)[i].get();
                 sal_Int32 nLevel = pLevelStyle->GetLevel();
                 if( nLevel >= 0 && nLevel < l_nLevels )
                 {
@@ -1161,7 +1147,7 @@ void SvxXMLListStyleContext::CreateAndInsertLate( bool bOverwrite )
         {
             Reference< XMultiServiceFactory > xFactory( GetImport().GetModel(),
                                                         UNO_QUERY );
-            DBG_ASSERT( xFactory.is(), "no factory" );
+            SAL_WARN_IF( !xFactory.is(), "xmloff", "no factory" );
             if( !xFactory.is() )
                 return;
 
@@ -1183,7 +1169,7 @@ void SvxXMLListStyleContext::CreateAndInsertLate( bool bOverwrite )
         if( !bNew && xPropSetInfo->hasPropertyByName( sIsPhysical ) )
         {
             Any aAny = xPropSet->getPropertyValue( sIsPhysical );
-            bNew = !*static_cast<sal_Bool const *>(aAny.getValue());
+            bNew = !*o3tl::doAccess<bool>(aAny);
         }
 
         if ( xPropSetInfo->hasPropertyByName( "Hidden" ) )
@@ -1212,8 +1198,8 @@ void SvxXMLListStyleContext::CreateAndInsertLate( bool bOverwrite )
 
 void SvxXMLListStyleContext::CreateAndInsertAuto() const
 {
-    DBG_ASSERT( !bOutline, "Outlines cannot be inserted here" );
-    DBG_ASSERT( !xNumRules.is(), "Numbering Rule is existing already" );
+    SAL_WARN_IF( bOutline, "xmloff", "Outlines cannot be inserted here" );
+    SAL_WARN_IF( xNumRules.is(), "xmloff", "Numbering Rule is existing already" );
 
     const OUString& rName = GetName();
     if( bOutline || xNumRules.is() || rName.isEmpty() )
@@ -1235,7 +1221,7 @@ Reference < XIndexReplace > SvxXMLListStyleContext::CreateNumRule(
     Reference<XIndexReplace> xNumRule;
 
     Reference< XMultiServiceFactory > xFactory( rModel, UNO_QUERY );
-    DBG_ASSERT( xFactory.is(), "no factory" );
+    SAL_WARN_IF( !xFactory.is(), "xmloff", "no factory" );
     if( !xFactory.is() )
         return xNumRule;
 
@@ -1244,7 +1230,7 @@ Reference < XIndexReplace > SvxXMLListStyleContext::CreateNumRule(
         return xNumRule;
 
     xNumRule.set( xIfc, UNO_QUERY );
-    DBG_ASSERT( xNumRule.is(), "go no numbering rule" );
+    SAL_WARN_IF( !xNumRule.is(), "xmloff", "go no numbering rule" );
 
     return xNumRule;
 }

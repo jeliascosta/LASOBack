@@ -34,6 +34,7 @@
 #include <ooo/vba/excel/XHPageBreaks.hpp>
 #include <ooo/vba/excel/XVPageBreaks.hpp>
 #include <com/sun/star/container/XNamed.hpp>
+#include <rtl/ref.hxx>
 
 #include <vbahelper/vbahelperinterface.hxx>
 #include "address.hxx"
@@ -69,7 +70,7 @@ public:
         const css::uno::Reference< css::frame::XModel >& xModel )throw (css::uno::RuntimeException)  ;
     ScVbaWorksheet( css::uno::Sequence< css::uno::Any > const& aArgs, css::uno::Reference< css::uno::XComponentContext >const& xContext ) throw ( css::lang::IllegalArgumentException, css::uno::RuntimeException );
 
-    virtual ~ScVbaWorksheet();
+    virtual ~ScVbaWorksheet() override;
 
     const css::uno::Reference< css::frame::XModel >& getModel()
     { return mxModel; }
@@ -77,7 +78,7 @@ public:
     { return mxSheet; }
     static const css::uno::Sequence<sal_Int8>& getUnoTunnelId();
     css::uno::Reference< ov::excel::XWorksheet > createSheetCopyInNewDoc( const OUString& );
-    css::uno::Reference< ov::excel::XWorksheet > createSheetCopy(css::uno::Reference< ov::excel::XWorksheet> xSheet, bool bAfter);
+    css::uno::Reference< ov::excel::XWorksheet > createSheetCopy(css::uno::Reference< ov::excel::XWorksheet> const & xSheet, bool bAfter);
 
     // Attributes
     virtual OUString SAL_CALL getName() throw (css::uno::RuntimeException, std::exception) override;

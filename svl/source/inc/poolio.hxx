@@ -58,8 +58,6 @@ struct SfxPoolVersion_Impl
                     {}
 };
 
-typedef std::vector<SfxPoolItem*> SfxPoolItemArrayBase_Impl;
-
 typedef std::shared_ptr< SfxPoolVersion_Impl > SfxPoolVersion_ImplPtr;
 
 /**
@@ -68,11 +66,12 @@ typedef std::shared_ptr< SfxPoolVersion_Impl > SfxPoolVersion_ImplPtr;
  * often search linearly to ensure uniqueness. If they are
  * non-poolable we maintain an (often large) list of pointers.
  */
-struct SfxPoolItemArray_Impl: public SfxPoolItemArrayBase_Impl
+struct SfxPoolItemArray_Impl
 {
     typedef std::vector<sal_uInt32> FreeList;
     typedef std::unordered_map<SfxPoolItem*,sal_uInt32> PoolItemPtrToIndexMap;
-
+private:
+    std::vector<SfxPoolItem*> maPoolItemVector;
 public:
     /// Track list of indices into our array that contain an empty slot
     FreeList maFree;
@@ -80,6 +79,14 @@ public:
     PoolItemPtrToIndexMap     maPtrToIndex;
 
     SfxPoolItemArray_Impl () {}
+    SfxPoolItem*& operator[](size_t n) {return maPoolItemVector[n];}
+    std::vector<SfxPoolItem*>::iterator begin() {return maPoolItemVector.begin();}
+    std::vector<SfxPoolItem*>::iterator end() {return maPoolItemVector.end();}
+    /// clear array of PoolItem variants after all PoolItems are deleted
+    /// or all ref counts are decreased
+    void clear();
+    size_t size() const {return maPoolItemVector.size();}
+    void push_back(SfxPoolItem* pItem) {maPoolItemVector.push_back(pItem);}
 
     /// re-build the list of free slots and hash from clean
     void SVL_DLLPUBLIC ReHash();
@@ -91,7 +98,7 @@ struct SfxItemPool_Impl
     std::vector<SfxPoolItemArray_Impl*> maPoolItems;
     std::vector<SfxItemPoolUser*>   maSfxItemPoolUsers; /// ObjectUser section
     OUString                        aName;
-    SfxPoolItem**                   ppPoolDefaults;
+    std::vector<SfxPoolItem*>       maPoolDefaults;
     SfxPoolItem**                   ppStaticDefaults;
     SfxItemPool*                    mpMaster;
     SfxItemPool*                    mpSecondary;
@@ -106,15 +113,15 @@ struct SfxItemPool_Impl
     sal_uInt16                      nVerStart, nVerEnd; // WhichRange in versions
     sal_uInt16                      nStoringStart, nStoringEnd; // Range to be saved
     sal_uInt8                       nMajorVer, nMinorVer; // The Pool itself
-    SfxMapUnit                      eDefMetric;
+    MapUnit                         eDefMetric;
     bool                            bInSetItem;
     bool                            bStreaming; // in Load() or Store()
     bool                            mbPersistentRefCounts;
 
     SfxItemPool_Impl( SfxItemPool* pMaster, const OUString& rName, sal_uInt16 nStart, sal_uInt16 nEnd )
-        : maPoolItems(nEnd - nStart + 1, static_cast<SfxPoolItemArray_Impl*>(nullptr))
+        : maPoolItems(nEnd - nStart + 1)
         , aName(rName)
-        , ppPoolDefaults(new SfxPoolItem* [nEnd - nStart + 1])
+        , maPoolDefaults(nEnd - nStart + 1)
         , ppStaticDefaults(nullptr)
         , mpMaster(pMaster)
         , mpSecondary(nullptr)
@@ -131,13 +138,12 @@ struct SfxItemPool_Impl
         , nStoringEnd(0)
         , nMajorVer(0)
         , nMinorVer(0)
-        , eDefMetric(SFX_MAPUNIT_CM)
+        , eDefMetric(MapUnit::MapCM)
         , bInSetItem(false)
         , bStreaming(false)
         , mbPersistentRefCounts(false)
     {
         DBG_ASSERT(mnStart, "Start-Which-Id must be greater 0" );
-        memset( ppPoolDefaults, 0, sizeof( SfxPoolItem* ) * (nEnd - nStart + 1));
     }
 
     ~SfxItemPool_Impl()
@@ -147,15 +153,13 @@ struct SfxItemPool_Impl
 
     void DeleteItems()
     {
-        std::vector<SfxPoolItemArray_Impl*>::iterator itr = maPoolItems.begin(), itrEnd = maPoolItems.end();
-        for (; itr != itrEnd; ++itr)
-            delete *itr;
+        for (auto pPoolItemArray : maPoolItems)
+            delete pPoolItemArray;
         maPoolItems.clear();
+        maPoolDefaults.clear();
 
         delete[] mpPoolRanges;
         mpPoolRanges = nullptr;
-        delete[] ppPoolDefaults;
-        ppPoolDefaults = nullptr;
     }
 
     void readTheItems(SvStream & rStream, sal_uInt32 nCount, sal_uInt16 nVersion,
@@ -163,7 +167,7 @@ struct SfxItemPool_Impl
 
     // unit testing
     friend class PoolItemTest;
-    static SfxItemPool_Impl *GetImpl(SfxItemPool *pPool) { return pPool->pImp; }
+    static SfxItemPool_Impl *GetImpl(SfxItemPool *pPool) { return pPool->pImpl.get(); }
 };
 
 

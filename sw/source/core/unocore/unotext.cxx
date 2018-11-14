@@ -109,7 +109,7 @@ public:
 
     void ConvertCell(
             const uno::Sequence< uno::Reference< text::XTextRange > > & rCell,
-            ::std::vector<SwNodeRange> & rRowNodes,
+            std::vector<SwNodeRange> & rRowNodes,
             SwNodeRange *const pLastCell,
             bool & rbExcept);
 
@@ -589,7 +589,7 @@ throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception)
         ::sw::UnoTunnelGetImplementation<SwXMeta>(xContentTunnel);
     SwXTextField* pTextField =
         ::sw::UnoTunnelGetImplementation<SwXTextField>(xContentTunnel);
-    if (pTextField && pTextField->GetServiceId() != SW_SERVICE_FIELDTYPE_ANNOTATION)
+    if (pTextField && pTextField->GetServiceId() != SwServiceType::FieldTypeAnnotation)
         pTextField = nullptr;
 
     const bool bAttribute = pBookmark || pDocumentIndexMark
@@ -1275,7 +1275,7 @@ SwXText::Impl::finishOrAppendParagraph(
     m_pDoc->GetIDocumentUndoRedo().StartUndo(UNDO_START , nullptr);
     // find end node, go backward - don't skip tables because the new
     // paragraph has to be the last node
-    //aPam.Move( fnMoveBackward, fnGoNode );
+    //aPam.Move( fnMoveBackward, GoInNode );
     SwPosition aInsertPosition(
             SwNodeIndex( *pStartNode->EndOfSectionNode(), -1 ) );
     SwPaM aPam(aInsertPosition);
@@ -1293,7 +1293,7 @@ SwXText::Impl::finishOrAppendParagraph(
     m_pDoc->ResetAttrs(aPam);
     // in case of finishParagraph the PaM needs to be moved to the
     // previous paragraph
-    aPam.Move( fnMoveBackward, fnGoNode );
+    aPam.Move( fnMoveBackward, GoInNode );
 
     try
     {
@@ -1617,9 +1617,9 @@ SwXText::convertToTextFrame(
                 SwCursor aDelete(*aStartPam.GetPoint(), nullptr);
                 *aStartPam.GetPoint() = // park it because node is deleted
                     SwPosition(GetDoc()->GetNodes().GetEndOfContent());
-                aDelete.MovePara(fnParaCurr, fnParaStart);
+                aDelete.MovePara(GoCurrPara, fnParaStart);
                 aDelete.SetMark();
-                aDelete.MovePara(fnParaCurr, fnParaEnd);
+                aDelete.MovePara(GoCurrPara, fnParaEnd);
                 GetDoc()->getIDocumentContentOperations().DelFullPara(aDelete);
             }
             if (bParaAfterInserted)
@@ -1627,9 +1627,9 @@ SwXText::convertToTextFrame(
                 SwCursor aDelete(*pEndPam->GetPoint(), nullptr);
                 *pEndPam->GetPoint() = // park it because node is deleted
                     SwPosition(GetDoc()->GetNodes().GetEndOfContent());
-                aDelete.MovePara(fnParaCurr, fnParaStart);
+                aDelete.MovePara(GoCurrPara, fnParaStart);
                 aDelete.SetMark();
-                aDelete.MovePara(fnParaCurr, fnParaEnd);
+                aDelete.MovePara(GoCurrPara, fnParaEnd);
                 GetDoc()->getIDocumentContentOperations().DelFullPara(aDelete);
             }
             throw lang::IllegalArgumentException();
@@ -1700,7 +1700,7 @@ SwXText::convertToTextFrame(
             {   // has to be in a block to remove the SwIndexes before
                 // DelFullPara is called
                 SwPaM aMovePam( aStartPam.GetNode() );
-                if (aMovePam.Move( fnMoveForward, fnGoContent ))
+                if (aMovePam.Move( fnMoveForward, GoInContent ))
                 {
                     // move the anchor to the next paragraph
                     SwFormatAnchor aNewAnchor(rNewFrame.GetFrameFormat()->GetAnchor());
@@ -1735,7 +1735,7 @@ SwXText::convertToTextFrame(
         sMessage = rRuntime.Message;
         bRuntimeException = true;
     }
-    xRet = &rNewFrame;
+    xRet = xNewFrame;
     if (bParaBeforeInserted || bParaAfterInserted)
     {
         const uno::Reference<text::XTextCursor> xFrameTextCursor =
@@ -1810,7 +1810,7 @@ static bool lcl_SimilarPosition( const sal_Int32 nPos1, const sal_Int32 nPos2 )
 
 void SwXText::Impl::ConvertCell(
     const uno::Sequence< uno::Reference< text::XTextRange > > & rCell,
-    ::std::vector<SwNodeRange> & rRowNodes,
+    std::vector<SwNodeRange> & rRowNodes,
     SwNodeRange *const pLastCell,
     bool & rbExcept)
 {
@@ -1958,10 +1958,10 @@ void SwXText::Impl::ConvertCell(
         // aStartCellPam has to point to the start of the new (previous) node
         // aEndCellPam has to point to the end of the new (previous) node
         aStartCellPam.DeleteMark();
-        aStartCellPam.Move(fnMoveBackward, fnGoNode);
+        aStartCellPam.Move(fnMoveBackward, GoInNode);
         aStartCellPam.GetPoint()->nContent = 0;
         aEndCellPam.DeleteMark();
-        aEndCellPam.Move(fnMoveBackward, fnGoNode);
+        aEndCellPam.Move(fnMoveBackward, GoInNode);
         aEndCellPam.GetPoint()->nContent =
             aEndCellPam.GetNode().GetTextNode()->Len();
     }
@@ -2042,7 +2042,7 @@ lcl_ApplyCellProperties(
     TableColumnSeparators const& rRowSeparators,
     const uno::Sequence< beans::PropertyValue >& rCellProperties,
     const uno::Reference< uno::XInterface >& xCell,
-    ::std::vector<VerticallyMergedCell> & rMergedCells)
+    std::vector<VerticallyMergedCell> & rMergedCells)
 {
     const sal_Int32 nCellProperties = rCellProperties.getLength();
     const uno::Reference< beans::XPropertySet > xCellPS(xCell, uno::UNO_QUERY);
@@ -2158,7 +2158,7 @@ lcl_ApplyCellProperties(
 }
 
 static void
-lcl_MergeCells(::std::vector<VerticallyMergedCell> & rMergedCells)
+lcl_MergeCells(std::vector<VerticallyMergedCell> & rMergedCells)
 {
     if (rMergedCells.size())
     {
@@ -2211,7 +2211,7 @@ throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception)
     }
 
     IDocumentRedlineAccess & rIDRA(m_pImpl->m_pDoc->getIDocumentRedlineAccess());
-    if (!IDocumentRedlineAccess::IsShowChanges(rIDRA.GetRedlineMode()))
+    if (!IDocumentRedlineAccess::IsShowChanges(rIDRA.GetRedlineFlags()))
     {
         throw uno::RuntimeException(
             "cannot convertToTable if tracked changes are hidden!");
@@ -2464,7 +2464,7 @@ SwXTextCursor * SwXBodyText::CreateTextCursor(const bool bIgnoreTables)
 
     // the cursor has to skip tables contained in this text
     SwPaM aPam(GetDoc()->GetNodes().GetEndOfContent());
-    aPam.Move( fnMoveBackward, fnGoDoc );
+    aPam.Move( fnMoveBackward, GoInDoc );
     if (!bIgnoreTables)
     {
         SwTableNode * pTableNode = aPam.GetNode().FindTableNode();
@@ -2561,7 +2561,7 @@ throw (uno::RuntimeException, std::exception)
     SwNode& rNode = GetDoc()->GetNodes().GetEndOfContent();
     SwPosition aPos(rNode);
     auto pUnoCursor(GetDoc()->CreateUnoCursor(aPos));
-    pUnoCursor->Move(fnMoveBackward, fnGoDoc);
+    pUnoCursor->Move(fnMoveBackward, GoInDoc);
     return SwXParagraphEnumeration::Create(this, pUnoCursor, CURSOR_BODY);
 }
 
@@ -2742,7 +2742,7 @@ SwXHeadFootText::createTextCursor() throw (uno::RuntimeException, std::exception
     SwXTextCursor *const pXCursor = new SwXTextCursor(*GetDoc(), this,
             (m_pImpl->m_bIsHeader) ? CURSOR_HEADER : CURSOR_FOOTER, aPos);
     auto& rUnoCursor(pXCursor->GetCursor());
-    rUnoCursor.Move(fnMoveForward, fnGoNode);
+    rUnoCursor.Move(fnMoveForward, GoInNode);
 
     // save current start node to be able to check if there is content
     // after the table - otherwise the cursor would be in the body text!
@@ -2795,7 +2795,7 @@ throw (uno::RuntimeException, std::exception)
     SwNode& rNode = rHeadFootFormat.GetContent().GetContentIdx()->GetNode();
     SwPosition aPos(rNode);
     SwPaM aHFPam(aPos);
-    aHFPam.Move(fnMoveForward, fnGoNode);
+    aHFPam.Move(fnMoveForward, GoInNode);
     SwStartNode *const pOwnStartNode = aHFPam.GetNode().FindSttNodeByType(
             (m_pImpl->m_bIsHeader) ? SwHeaderStartNode : SwFooterStartNode);
     SwStartNode *const p1 = aPam.GetNode().FindSttNodeByType(
@@ -2823,7 +2823,7 @@ throw (uno::RuntimeException, std::exception)
     const SwNode& rNode = rFlyContent.GetContentIdx()->GetNode();
     SwPosition aPos(rNode);
     auto pUnoCursor(GetDoc()->CreateUnoCursor(aPos));
-    pUnoCursor->Move(fnMoveForward, fnGoNode);
+    pUnoCursor->Move(fnMoveForward, GoInNode);
     return SwXParagraphEnumeration::Create(this, pUnoCursor, (m_pImpl->m_bIsHeader) ? CURSOR_HEADER : CURSOR_FOOTER);
 }
 

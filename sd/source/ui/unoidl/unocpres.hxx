@@ -29,6 +29,12 @@
 
 #include <cppuhelper/implbase.hxx>
 #include <comphelper/servicehelper.hxx>
+#include <com/sun/star/container/XNameContainer.hpp>
+#include <com/sun/star/lang/XSingleServiceFactory.hpp>
+
+#include "unomodel.hxx"
+#include "drawdoc.hxx"
+
 
 class SdXImpressDocument;
 class SdCustomShow;
@@ -50,8 +56,8 @@ private:
 
 public:
     SdXCustomPresentation() throw();
-    SdXCustomPresentation( SdCustomShow* mpSdCustomShow, SdXImpressDocument* pMyModel) throw();
-    virtual ~SdXCustomPresentation() throw();
+    explicit SdXCustomPresentation( SdCustomShow* mpSdCustomShow ) throw();
+    virtual ~SdXCustomPresentation() throw() override;
 
     // internal
     SdCustomShow* GetSdCustomShow() const throw() { return mpSdCustomShow; }
@@ -91,12 +97,6 @@ public:
     virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw(css::uno::RuntimeException, std::exception) override;
 };
 
-#include <com/sun/star/container/XNameContainer.hpp>
-#include <com/sun/star/lang/XSingleServiceFactory.hpp>
-
-#include "unomodel.hxx"
-#include "drawdoc.hxx"
-
 class List;
 
 class SdXCustomPresentationAccess : public ::cppu::WeakImplHelper< css::container::XNameContainer,
@@ -112,7 +112,7 @@ private:
 
 public:
     explicit SdXCustomPresentationAccess(SdXImpressDocument& rMyModel) throw();
-    virtual ~SdXCustomPresentationAccess() throw();
+    virtual ~SdXCustomPresentationAccess() throw() override;
 
     // XServiceInfo
     virtual OUString SAL_CALL getImplementationName() throw(css::uno::RuntimeException, std::exception) override;

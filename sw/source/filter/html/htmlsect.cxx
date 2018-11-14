@@ -52,11 +52,6 @@
 #include "swcss1.hxx"
 #include "swhtml.hxx"
 
-#define CONTEXT_FLAGS_MULTICOL (HTML_CNTXT_STRIP_PARA |  \
-                                HTML_CNTXT_KEEP_NUMRULE | \
-                                HTML_CNTXT_KEEP_ATTRS)
-#define CONTEXT_FLAGS_HDRFTR (CONTEXT_FLAGS_MULTICOL)
-#define CONTEXT_FLAGS_FTN (CONTEXT_FLAGS_MULTICOL)
 
 using namespace ::com::sun::star;
 
@@ -128,10 +123,10 @@ void SwHTMLParser::NewDivision( int nToken )
                                           aItemSet, aPropInfo, &aLang, &aDir );
         if( bStyleParsed )
         {
-            if ( aPropInfo.nColumnCount >= 2 )
+            if ( aPropInfo.m_nColumnCount >= 2 )
             {
                 delete pCntxt;
-                NewMultiCol( aPropInfo.nColumnCount );
+                NewMultiCol( aPropInfo.m_nColumnCount );
                 return;
             }
             bPositioned = HTML_DIVISION_ON == nToken && !aClass.isEmpty() &&
@@ -149,7 +144,7 @@ void SwHTMLParser::NewDivision( int nToken )
 
         SwFrameFormat *pHdFtFormat;
         bool bNew = false;
-        sal_uInt16 nFlags = CONTEXT_FLAGS_HDRFTR;
+        HtmlContextFlags nFlags = HtmlContextFlags::MultiColMask;
         if( bHeader )
         {
             pHdFtFormat = const_cast<SwFrameFormat*>(rPageFormat.GetHeader().GetHeaderFormat());
@@ -160,7 +155,7 @@ void SwHTMLParser::NewDivision( int nToken )
                 pHdFtFormat = const_cast<SwFrameFormat*>(rPageFormat.GetHeader().GetHeaderFormat());
                 bNew = true;
             }
-            nFlags |= HTML_CNTXT_HEADER_DIST;
+            nFlags |= HtmlContextFlags::HeaderDist;
         }
         else
         {
@@ -172,7 +167,7 @@ void SwHTMLParser::NewDivision( int nToken )
                 pHdFtFormat = const_cast<SwFrameFormat*>(rPageFormat.GetFooter().GetFooterFormat());
                 bNew = true;
             }
-            nFlags |= HTML_CNTXT_FOOTER_DIST;
+            nFlags |= HtmlContextFlags::FooterDist;
         }
 
         const SwFormatContent& rFlyContent = pHdFtFormat->GetContent();
@@ -233,9 +228,9 @@ void SwHTMLParser::NewDivision( int nToken )
                     m_pDoc->GetNodes()[pStartNdIdx->GetIndex()+1]->GetContentNode();
                 SwNodeIndex aTmpSwNodeIndex = SwNodeIndex(*pCNd);
                 SwPosition aNewPos( aTmpSwNodeIndex, SwIndex( pCNd, 0 ) );
-                SaveDocContext( pCntxt, CONTEXT_FLAGS_FTN, &aNewPos );
+                SaveDocContext( pCntxt, HtmlContextFlags::MultiColMask, &aNewPos );
                 aId.clear();
-                aPropInfo.aId.clear();
+                aPropInfo.m_aId.clear();
             }
         }
     }
@@ -287,17 +282,17 @@ void SwHTMLParser::NewDivision( int nToken )
             }
             else
             {
-                aURL = URIHelper::SmartRel2Abs(INetURLObject( m_sBaseURL ), aHRef.copy( 0, nPos ), Link<OUString *, bool>(), false );
-                aURL += OUString(sfx2::cTokenSeparator);
+                aURL = URIHelper::SmartRel2Abs(INetURLObject( m_sBaseURL ), aHRef.copy( 0, nPos ), Link<OUString *, bool>(), false )
+                    + OUStringLiteral1(sfx2::cTokenSeparator);
                 if( nPos2 == -1 )
                 {
                     aURL += aHRef.copy( nPos+1 );
                 }
                 else
                 {
-                    aURL += aHRef.copy( nPos+1, nPos2 - (nPos+1) );
-                    aURL += OUString(sfx2::cTokenSeparator);
-                    aURL += rtl::Uri::decode( aHRef.copy( nPos2+1 ),
+                    aURL += aHRef.copy( nPos+1, nPos2 - (nPos+1) )
+                        + OUStringLiteral1(sfx2::cTokenSeparator)
+                        + rtl::Uri::decode( aHRef.copy( nPos2+1 ),
                                               rtl_UriDecodeWithCharset,
                                               RTL_TEXTENCODING_ISO_8859_1 );
                 }
@@ -364,8 +359,8 @@ void SwHTMLParser::NewDivision( int nToken )
         pCntxt->SetSpansSection( true );
 
         // keine text::Bookmarks mit dem gleichen Namen wie Bereiche einfuegen
-        if( !aPropInfo.aId.isEmpty() && aPropInfo.aId==aName )
-            aPropInfo.aId.clear();
+        if( !aPropInfo.m_aId.isEmpty() && aPropInfo.m_aId==aName )
+            aPropInfo.m_aId.clear();
     }
     else
     {
@@ -608,7 +603,7 @@ void SwHTMLParser::NewMultiCol( sal_uInt16 columnsFromCss )
     {
         nTwipWidth = Application::GetDefaultDevice()
                              ->PixelToLogic( Size(nWidth, 0),
-                                             MapMode(MAP_TWIP) ).Width();
+                                             MapMode(MapUnit::MapTwip) ).Width();
     }
 
     if( !nPrcWidth && nTwipWidth < MINFLY )
@@ -636,7 +631,7 @@ void SwHTMLParser::NewMultiCol( sal_uInt16 columnsFromCss )
         // it will be cleared here. That for, it won't be set at the section,
         // too.
         SetFrameFormatAttrs( aItemSet, aPropInfo,
-                        HTML_FF_BOX|HTML_FF_BACKGROUND|HTML_FF_PADDING|HTML_FF_DIRECTION,
+                        HtmlFrameFormatFlags::Box|HtmlFrameFormatFlags::Background|HtmlFrameFormatFlags::Padding|HtmlFrameFormatFlags::Direction,
                         aFrameItemSet );
 
         // Insert fly frame. If the are columns, the fly frame's name is not
@@ -645,10 +640,10 @@ void SwHTMLParser::NewMultiCol( sal_uInt16 columnsFromCss )
         if( nCols < 2 )
         {
             aFlyName = aId;
-            aPropInfo.aId.clear();
+            aPropInfo.m_aId.clear();
         }
 
-        InsertFlyFrame( aFrameItemSet, pCntxt, aFlyName, CONTEXT_FLAGS_ABSPOS );
+        InsertFlyFrame(aFrameItemSet, pCntxt, aFlyName);
 
         pCntxt->SetPopStack( true );
         bPositioned = true;
@@ -699,7 +694,7 @@ void SwHTMLParser::NewMultiCol( sal_uInt16 columnsFromCss )
         {
             nGutter = (sal_uInt16)Application::GetDefaultDevice()
                              ->PixelToLogic( Size(nGutter, 0),
-                                             MapMode(MAP_TWIP) ).Width();
+                                             MapMode(MapUnit::MapTwip) ).Width();
         }
 
         SwFormatCol aFormatCol;
@@ -751,8 +746,8 @@ void SwHTMLParser::NewMultiCol( sal_uInt16 columnsFromCss )
         pCntxt->SetSpansSection( true );
 
         // Insert a bookmark if its name differs from the section's name only.
-        if( !aPropInfo.aId.isEmpty() && aPropInfo.aId==aName )
-            aPropInfo.aId.clear();
+        if( !aPropInfo.m_aId.isEmpty() && aPropInfo.m_aId==aName )
+            aPropInfo.m_aId.clear();
     }
 
     // Additional attributes must be set as hard ones.
@@ -764,8 +759,7 @@ void SwHTMLParser::NewMultiCol( sal_uInt16 columnsFromCss )
 
 void SwHTMLParser::InsertFlyFrame( const SfxItemSet& rItemSet,
                                    HTMLAttrContext *pCntxt,
-                                   const OUString& rName,
-                                   sal_uInt16 nFlags )
+                                   const OUString& rName )
 {
     RndStdIds eAnchorId =
         static_cast<const SwFormatAnchor&>(rItemSet.Get( RES_ANCHOR )).GetAnchorId();
@@ -785,6 +779,7 @@ void SwHTMLParser::InsertFlyFrame( const SfxItemSet& rItemSet,
                             ->GetContentNode();
 
     SwPosition aNewPos( SwNodeIndex( rFlyCntIdx, 1 ), SwIndex( pCNd, 0 ) );
+    const HtmlContextFlags nFlags = (HtmlContextFlags::ProtectStack|HtmlContextFlags::StripPara);
     SaveDocContext( pCntxt, nFlags, &aNewPos );
 }
 
@@ -814,9 +809,9 @@ void SwHTMLParser::MovePageDescAttrs( SwNode *pSrcNd,
         {
             switch( static_cast<const SvxFormatBreakItem *>(pItem)->GetBreak() )
             {
-            case SVX_BREAK_PAGE_BEFORE:
-            case SVX_BREAK_PAGE_AFTER:
-            case SVX_BREAK_PAGE_BOTH:
+            case SvxBreak::PageBefore:
+            case SvxBreak::PageAfter:
+            case SvxBreak::PageBoth:
                 if( bFormatBreak )
                     pDestContentNd->SetAttr( *pItem );
                 pSrcContentNd->ResetAttr( RES_BREAK );

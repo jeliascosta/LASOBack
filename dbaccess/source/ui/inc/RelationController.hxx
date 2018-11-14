@@ -48,7 +48,7 @@ namespace dbaui
     public:
         ORelationController(const css::uno::Reference< css::uno::XComponentContext >& _rM);
 
-        virtual ~ORelationController();
+        virtual ~ORelationController() override;
 
         void mergeData(const TTableConnectionData& _aConnectionData);
 
@@ -73,7 +73,7 @@ namespace dbaui
         virtual void reset() override;
         virtual void impl_initialize() override;
         virtual OUString getPrivateTitle( ) const override;
-        DECL_LINK_TYPED( OnThreadFinished, void*, void );
+        DECL_LINK( OnThreadFinished, void*, void );
     };
 }
 #endif // INCLUDED_DBACCESS_SOURCE_UI_INC_RELATIONCONTROLLER_HXX

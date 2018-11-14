@@ -320,7 +320,7 @@ class IMPL_SfxBaseController_ListenerHelper : public ::cppu::WeakImplHelper< fra
 {
 public:
     explicit IMPL_SfxBaseController_ListenerHelper(  SfxBaseController*  pController ) ;
-    virtual ~IMPL_SfxBaseController_ListenerHelper() ;
+    virtual ~IMPL_SfxBaseController_ListenerHelper() override ;
     virtual void SAL_CALL frameAction( const frame::FrameActionEvent& aEvent ) throw (RuntimeException, std::exception) override ;
     virtual void SAL_CALL disposing( const lang::EventObject& aEvent ) throw (RuntimeException, std::exception) override ;
 
@@ -334,7 +334,7 @@ class IMPL_SfxBaseController_CloseListenerHelper : public ::cppu::WeakImplHelper
 {
 public:
     explicit IMPL_SfxBaseController_CloseListenerHelper( SfxBaseController*  pController ) ;
-    virtual ~IMPL_SfxBaseController_CloseListenerHelper() ;
+    virtual ~IMPL_SfxBaseController_CloseListenerHelper() override ;
     virtual void SAL_CALL queryClosing( const lang::EventObject& aEvent, sal_Bool bDeliverOwnership )
         throw (RuntimeException, util::CloseVetoException, std::exception) override ;
     virtual void SAL_CALL notifyClosing( const lang::EventObject& aEvent ) throw (RuntimeException, std::exception) override ;
@@ -996,7 +996,7 @@ void SAL_CALL SfxBaseController::dispose() throw( RuntimeException, std::excepti
         if ( pFrame && pFrame->GetViewShell() == m_pData->m_pViewShell )
             pFrame->GetFrame().SetIsClosing_Impl();
         m_pData->m_pViewShell->DiscardClients_Impl();
-        m_pData->m_pViewShell->pImp->m_bControllerSet = false;
+        m_pData->m_pViewShell->pImpl->m_bControllerSet = false;
 
         if ( pFrame )
         {
@@ -1145,7 +1145,7 @@ throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
-    std::list< sal_Int16 > aGroupList;
+    std::vector< sal_Int16 > aGroupList;
     SfxViewFrame* pViewFrame( m_pData->m_pViewShell->GetFrame() );
     SfxSlotPool*  pPool = &SfxSlotPool::GetSlotPool( pViewFrame );
 
@@ -1169,9 +1169,7 @@ throw (RuntimeException, std::exception)
         }
     }
 
-    uno::Sequence< sal_Int16 > aSeq =
-        comphelper::containerToSequence< sal_Int16 >( aGroupList );
-    return aSeq;
+    return comphelper::containerToSequence( aGroupList );
 }
 
 uno::Sequence< frame::DispatchInformation > SAL_CALL SfxBaseController::getConfigurableDispatchInformation( sal_Int16 nCmdGroup )
@@ -1216,10 +1214,7 @@ throw (RuntimeException, std::exception)
         }
     }
 
-    uno::Sequence< frame::DispatchInformation > aSeq =
-        comphelper::containerToSequence< frame::DispatchInformation, std::list< frame::DispatchInformation > >( aCmdList );
-
-    return aSeq;
+    return comphelper::containerToSequence( aCmdList );
 }
 
 bool SfxBaseController::HandleEvent_Impl( NotifyEvent& rEvent )
@@ -1469,9 +1464,11 @@ void SfxBaseController::ShowInfoBars( )
                     SfxInfoBarWindow* pInfoBar = pViewFrame->AppendInfoBar( "checkout", SfxResId( STR_NONCHECKEDOUT_DOCUMENT ) );
                     if (pInfoBar)
                     {
-                        VclPtrInstance<PushButton> pBtn( &pViewFrame->GetWindow(), SfxResId( BT_CHECKOUT ) );
-                        pBtn->SetClickHdl( LINK( this, SfxBaseController, CheckOutHandler ) );
-                        pInfoBar->addButton(pBtn);
+                        VclPtrInstance<PushButton> xBtn(&pViewFrame->GetWindow());
+                        xBtn->SetText(SfxResId(STR_CHECKOUT));
+                        xBtn->SetSizePixel(xBtn->GetOptimalSize());
+                        xBtn->SetClickHdl(LINK(this, SfxBaseController, CheckOutHandler));
+                        pInfoBar->addButton(xBtn);
                     }
                 }
             }
@@ -1479,7 +1476,7 @@ void SfxBaseController::ShowInfoBars( )
     }
 }
 
-IMPL_LINK_NOARG_TYPED ( SfxBaseController, CheckOutHandler, Button*, void )
+IMPL_LINK_NOARG ( SfxBaseController, CheckOutHandler, Button*, void )
 {
     if ( m_pData->m_pViewShell )
         m_pData->m_pViewShell->GetObjectShell()->CheckOut( );

@@ -24,6 +24,7 @@
 
 #include "opcodes.hxx"
 #include "token.hxx"
+#include <vector>
 
 class SbiExprNode;
 class SbiExpression;
@@ -34,7 +35,6 @@ class SbiSymDef;
 class SbiProcDef;
 
 
-#include <vector>
 typedef ::std::unique_ptr<SbiExprList> SbiExprListPtr;
 typedef ::std::vector<SbiExprListPtr> SbiExprListVector;
 
@@ -49,7 +49,6 @@ struct KeywordSymbolInfo
 {
     OUString m_aKeywordSymbol;
     SbxDataType     m_eSbxDataType;
-    SbiToken        m_eTok;
 };
 
 enum SbiExprType {                  // expression types:
@@ -87,7 +86,7 @@ enum RecursiveMode
     PREVENT_CALL
 };
 
-class SbiExprNode {                  // operators (and operands)
+class SbiExprNode final {           // operators (and operands)
     friend class SbiExpression;
     friend class SbiConstExpression;
     union {
@@ -109,10 +108,6 @@ class SbiExprNode {                  // operators (and operands)
     void  CollectBits();            // converting numbers to strings
     bool  IsOperand()
         { return eNodeType != SbxNODE && eNodeType != SbxTYPEOF && eNodeType != SbxNEW; }
-    bool  IsTypeOf()
-        { return eNodeType == SbxTYPEOF; }
-    bool  IsNew()
-        { return eNodeType == SbxNEW; }
     bool  IsNumber();
     bool  IsLvalue();               // true, if usable as Lvalue
     void  GenElement( SbiCodeGen&, SbiOpcode );
@@ -125,19 +120,14 @@ public:
     SbiExprNode( SbiExprNode*, SbiToken, SbiExprNode* );
     SbiExprNode( SbiExprNode*, sal_uInt16 );    // #120061 TypeOf
     SbiExprNode( sal_uInt16 );                  // new <type>
-    virtual ~SbiExprNode();
+    ~SbiExprNode();
 
     bool IsValid()                  { return !bError; }
     bool IsConstant()               // true: constant operand
         { return eNodeType == SbxSTRVAL || eNodeType == SbxNUMVAL; }
     void ConvertToIntConstIfPossible();
     bool IsVariable();
-    bool  IsUnary()
-        { return pLeft && !pRight; }
-    bool  IsBinary()
-        { return pLeft && pRight; }
 
-    SbiExprNode* GetWithParent()            { return pWithParent; }
     void SetWithParent( SbiExprNode* p )    { pWithParent = p; }
 
     SbxDataType GetType()           { return eType; }

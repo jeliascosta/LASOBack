@@ -19,11 +19,11 @@ class TemplateSearchView : public ThumbnailView
 {
 public:
 
-    TemplateSearchView ( vcl::Window* pParent, WinBits nWinStyle = WB_TABSTOP | WB_VSCROLL);
+    TemplateSearchView ( vcl::Window* pParent);
 
     void setOpenTemplateHdl (const Link<ThumbnailViewItem*, void> &rLink);
 
-    DECL_LINK_TYPED(ContextMenuSelectHdl, Menu*, bool);
+    DECL_LINK(ContextMenuSelectHdl, Menu*, bool);
 
     void setCreateContextMenuHdl(const Link<ThumbnailViewItem*,void> &rLink);
 

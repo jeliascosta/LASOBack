@@ -55,23 +55,6 @@ SfxPoolItem* SvxChartStyleItem::Create(SvStream& rIn, sal_uInt16 /*nVer*/) const
     return new SvxChartStyleItem(rIn, Which());
 }
 
-SvxChartDataDescrItem::SvxChartDataDescrItem(SvStream& rIn, sal_uInt16 nId) :
-    SfxEnumItem(nId, rIn)
-{
-}
-
-
-SfxPoolItem* SvxChartDataDescrItem::Clone(SfxItemPool* /*pPool*/) const
-{
-    return new SvxChartDataDescrItem(*this);
-}
-
-
-SfxPoolItem* SvxChartDataDescrItem::Create(SvStream& rIn, sal_uInt16 /*nVer*/) const
-{
-    return new SvxChartDataDescrItem(rIn, Which());
-}
-
 SvxChartTextOrderItem::SvxChartTextOrderItem(SvxChartTextOrder eOrder,
                                              sal_uInt16 nId) :
     SfxEnumItem(nId, (sal_uInt16)eOrder)
@@ -105,13 +88,13 @@ bool SvxChartTextOrderItem::QueryValue( css::uno::Any& rVal, sal_uInt8 /*nMember
 
     switch( eOrder )
     {
-        case CHTXTORDER_SIDEBYSIDE:
+        case SvxChartTextOrder::SideBySide:
             eAO = css::chart::ChartAxisArrangeOrderType_SIDE_BY_SIDE; break;
-        case CHTXTORDER_UPDOWN:
+        case SvxChartTextOrder::UpDown:
             eAO = css::chart::ChartAxisArrangeOrderType_STAGGER_ODD; break;
-        case CHTXTORDER_DOWNUP:
+        case SvxChartTextOrder::DownUp:
             eAO = css::chart::ChartAxisArrangeOrderType_STAGGER_EVEN; break;
-        case CHTXTORDER_AUTO:
+        case SvxChartTextOrder::Auto:
             eAO = css::chart::ChartAxisArrangeOrderType_AUTO; break;
     }
 
@@ -139,13 +122,13 @@ bool SvxChartTextOrderItem::PutValue( const css::uno::Any& rVal, sal_uInt8 /*nMe
     switch( eAO )
     {
         case css::chart::ChartAxisArrangeOrderType_SIDE_BY_SIDE:
-            eOrder = CHTXTORDER_SIDEBYSIDE; break;
+            eOrder = SvxChartTextOrder::SideBySide; break;
         case css::chart::ChartAxisArrangeOrderType_STAGGER_ODD:
-            eOrder = CHTXTORDER_UPDOWN; break;
+            eOrder = SvxChartTextOrder::UpDown; break;
         case css::chart::ChartAxisArrangeOrderType_STAGGER_EVEN:
-            eOrder = CHTXTORDER_DOWNUP; break;
+            eOrder = SvxChartTextOrder::DownUp; break;
         case css::chart::ChartAxisArrangeOrderType_AUTO:
-            eOrder = CHTXTORDER_AUTO; break;
+            eOrder = SvxChartTextOrder::Auto; break;
         default:
             return false;
     }
@@ -186,15 +169,9 @@ SvxDoubleItem::SvxDoubleItem(const SvxDoubleItem& rItem) :
 }
 
 
-OUString SvxDoubleItem::GetValueText() const
-{
-    return rtl::math::doubleToUString( fVal, rtl_math_StringFormat_E, 4, '.' );
-}
-
-
 bool SvxDoubleItem::GetPresentation
-            ( SfxItemPresentation /*ePresentation*/, SfxMapUnit /*eCoreMetric*/,
-              SfxMapUnit /*ePresentationMetric*/, OUString& rText,
+            ( SfxItemPresentation /*ePresentation*/, MapUnit /*eCoreMetric*/,
+              MapUnit /*ePresentationMetric*/, OUString& rText,
               const IntlWrapper * pIntlWrapper) const
 {
     DBG_ASSERT( pIntlWrapper, "SvxDoubleItem::GetPresentation: no IntlWrapper" );
@@ -204,7 +181,7 @@ bool SvxDoubleItem::GetPresentation
             pIntlWrapper->getLocaleData()->getNumDecimalSep()[0], true );
     }
     else
-        rText = GetValueText();
+        rText = rtl::math::doubleToUString( fVal, rtl_math_StringFormat_E, 4, '.' );
     return true;
 }
 

@@ -9,6 +9,8 @@
 
 $(eval $(call gb_Module_Module,extras))
 
+#ADD LIBRAS "Package_lasofiles \" END LIBRAS
+
 $(eval $(call gb_Module_add_targets,extras,\
 	CustomTarget_autocorr \
 	CustomTarget_autotextuser \
@@ -32,7 +34,6 @@ $(eval $(call gb_Module_add_targets,extras,\
 	$(if $(filter WNT,$(OS)),Package_newfiles) \
 	Package_lasofiles \
 	Package_palettes \
-	Package_tpllayoutimpr \
 	Package_tplofficorr \
 	Package_tploffimisc \
 	Package_tplpresnt \

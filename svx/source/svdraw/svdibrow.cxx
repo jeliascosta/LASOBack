@@ -166,11 +166,11 @@ class ImpItemEdit: public Edit
     VclPtr<SdrItemBrowserControl>     pBrowse;
 
 public:
-    ImpItemEdit(vcl::Window* pParent, SdrItemBrowserControl* pBrowse_, WinBits nBits=0)
+    ImpItemEdit(vcl::Window* pParent, SdrItemBrowserControl* pBrowse_, WinBits nBits)
     :   Edit(pParent, nBits),
         pBrowse(pBrowse_)
     {}
-    virtual ~ImpItemEdit() { disposeOnce(); }
+    virtual ~ImpItemEdit() override { disposeOnce(); }
     virtual void dispose() override { pBrowse.clear(); Edit::dispose(); }
     virtual void KeyInput(const KeyEvent& rEvt) override;
 };
@@ -205,8 +205,8 @@ void ImpItemEdit::KeyInput(const KeyEvent& rKEvt)
 
 #define MYBROWSEMODE (BrowserMode::THUMBDRAGGING|BrowserMode::KEEPHIGHLIGHT|BrowserMode::NO_HSCROLL|BrowserMode::HIDECURSOR)
 
-SdrItemBrowserControl::SdrItemBrowserControl(vcl::Window* pParent, WinBits nBits):
-    BrowseBox(pParent,nBits,MYBROWSEMODE),
+SdrItemBrowserControl::SdrItemBrowserControl(vcl::Window* pParent):
+    BrowseBox(pParent, WB_3DLOOK | WB_BORDER | WB_TABSTOP, MYBROWSEMODE),
     aList()
 {
     ImpCtor();
@@ -731,13 +731,13 @@ bool IsItemIneffective(sal_uInt16 nWhich, const SfxItemSet* pSet, sal_uInt16& rI
             rIndent=1;
             if (ImpGetItem(*pSet,XATTR_FORMTXTSTYLE,pItem)) {
                 XFormTextStyle eStyle=static_cast<const XFormTextStyleItem*>(pItem)->GetValue();
-                if (eStyle==XFT_NONE) return true;
+                if (eStyle==XFormTextStyle::NONE) return true;
             }
             if ((nWhich>=XATTR_FORMTXTSHDWCOLOR && nWhich<=XATTR_FORMTXTSHDWYVAL) || nWhich>=XATTR_FORMTXTSHDWTRANSP) {
                 rIndent=2;
                 if (ImpGetItem(*pSet,XATTR_FORMTXTSHADOW,pItem)) {
                     XFormTextShadow eShadow=static_cast<const XFormTextShadowItem*>(pItem)->GetValue();
-                    if (eShadow==XFTSHADOW_NONE) return true;
+                    if (eShadow==XFormTextShadow::NONE) return true;
                 }
             }
         } break;
@@ -799,7 +799,7 @@ bool IsItemIneffective(sal_uInt16 nWhich, const SfxItemSet* pSet, sal_uInt16& rI
         case SDRATTR_TEXT_HORZADJUST: {
             if (ImpGetItem(*pSet,SDRATTR_TEXT_FITTOSIZE,pItem)) {
                 SdrFitToSizeType eFit=static_cast<const SdrTextFitToSizeTypeItem*>(pItem)->GetValue();
-                if (eFit!=SDRTEXTFIT_NONE) return true;
+                if (eFit!=SdrFitToSizeType::NONE) return true;
             }
         } break;
 
@@ -824,11 +824,11 @@ bool IsItemIneffective(sal_uInt16 nWhich, const SfxItemSet* pSet, sal_uInt16& rI
         case SDRATTR_EDGELINE3DELTA: {
             if (ImpGetItem(*pSet,SDRATTR_EDGEKIND,pItem)) {
                 SdrEdgeKind eKind=static_cast<const SdrEdgeKindItem*>(pItem)->GetValue();
-                if (eKind==SDREDGE_THREELINES) {
+                if (eKind==SdrEdgeKind::ThreeLines) {
                     if (nWhich>SDRATTR_EDGELINE2DELTA) return true;
                     else return false;
                 }
-                if (eKind!=SDREDGE_ORTHOLINES && eKind!=SDREDGE_BEZIER) return true;
+                if (eKind!=SdrEdgeKind::OrthoLines && eKind!=SdrEdgeKind::Bezier) return true;
             }
             if (ImpGetItem(*pSet,SDRATTR_EDGELINEDELTAANZ,pItem)) {
                 sal_uInt16 nCount=static_cast<const SdrEdgeLineDeltaCountItem*>(pItem)->GetValue();
@@ -1003,9 +1003,9 @@ void SdrItemBrowserControl::SetAttributes(const SfxItemSet* pSet, const SfxItemS
                         } // switch
                         if (aEntry.bIsNum) aEntry.bCanNum = true;
 
-                        rItem.GetPresentation(SFX_ITEM_PRESENTATION_NAMELESS,
+                        rItem.GetPresentation(SfxItemPresentation::Nameless,
                                               pPool->GetMetric(nWhich),
-                                              SFX_MAPUNIT_MM, aEntry.aValue);
+                                              MapUnit::MapMM, aEntry.aValue);
                         if (aEntry.bCanNum)
                         {
                             aEntry.aValue = OUString::number(aEntry.nVal) + ": " + aEntry.aValue;
@@ -1037,49 +1037,41 @@ void SdrItemBrowserControl::SetAttributes(const SfxItemSet* pSet, const SfxItemS
     SetMode(MYBROWSEMODE);
 }
 
-// - SdrItemBrowserWindow -
-
-SdrItemBrowserWindow::SdrItemBrowserWindow(vcl::Window* pParent, WinBits nBits):
-    FloatingWindow(pParent,nBits),
-    aBrowse(VclPtr<SdrItemBrowserControl>::Create(this))
+SdrItemBrowser::SdrItemBrowser(SdrView& rView):
+    FloatingWindow(ImpGetViewWin(rView), WB_STDDOCKWIN|WB_3DLOOK|WB_CLOSEABLE|WB_SIZEMOVE),
+    aBrowse(VclPtr<SdrItemBrowserControl>::Create(this)),
+    aIdle("svx svdraw SdrItemBrowser"),
+    pView(&rView),
+    bDirty(false)
 {
     SetOutputSizePixel(aBrowse->GetSizePixel());
     SetText("Joe's ItemBrowser");
     aBrowse->Show();
+    aIdle.SetIdleHdl(LINK(this,SdrItemBrowser,IdleHdl));
+    GetBrowserControl()->SetEntryChangedHdl(LINK(this,SdrItemBrowser,ChangedHdl));
+    GetBrowserControl()->SetSetDirtyHdl(LINK(this,SdrItemBrowser,SetDirtyHdl));
+    SetDirty();
 }
 
-SdrItemBrowserWindow::~SdrItemBrowserWindow()
+SdrItemBrowser::~SdrItemBrowser()
 {
     disposeOnce();
 }
 
-void SdrItemBrowserWindow::dispose()
+void SdrItemBrowser::dispose()
 {
     aBrowse.disposeAndClear();
     FloatingWindow::dispose();
 }
 
-void SdrItemBrowserWindow::Resize()
+void SdrItemBrowser::Resize()
 {
     aBrowse->SetSizePixel(GetOutputSizePixel());
 }
 
-void SdrItemBrowserWindow::GetFocus()
+void SdrItemBrowser::GetFocus()
 {
     aBrowse->GrabFocus();
-}
-
-
-SdrItemBrowser::SdrItemBrowser(SdrView& rView):
-    SdrItemBrowserWindow(ImpGetViewWin(rView)),
-    aIdle("svx svdraw SdrItemBrowser"),
-    pView(&rView),
-    bDirty(false)
-{
-    aIdle.SetIdleHdl(LINK(this,SdrItemBrowser,IdleHdl));
-    GetBrowserControl()->SetEntryChangedHdl(LINK(this,SdrItemBrowser,ChangedHdl));
-    GetBrowserControl()->SetSetDirtyHdl(LINK(this,SdrItemBrowser,SetDirtyHdl));
-    SetDirty();
 }
 
 vcl::Window* SdrItemBrowser::ImpGetViewWin(SdrView& rView)
@@ -1131,16 +1123,16 @@ void SdrItemBrowser::Undirty()
     }
     else
     {
-        SetAttributes(&aSet);
+        SetAttributes(&aSet, nullptr);
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SdrItemBrowser, IdleHdl, Idle *, void)
+IMPL_LINK_NOARG(SdrItemBrowser, IdleHdl, Idle *, void)
 {
     Undirty();
 }
 
-IMPL_LINK_TYPED(SdrItemBrowser, ChangedHdl, SdrItemBrowserControl&, rBrowse, void)
+IMPL_LINK(SdrItemBrowser, ChangedHdl, SdrItemBrowserControl&, rBrowse, void)
 {
     const ImpItemListRow* pEntry = rBrowse.GetAktChangeEntry();
     if (pEntry!=nullptr)
@@ -1254,7 +1246,7 @@ IMPL_LINK_TYPED(SdrItemBrowser, ChangedHdl, SdrItemBrowserControl&, rBrowse, voi
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SdrItemBrowser, SetDirtyHdl, SdrItemBrowserControl&, void)
+IMPL_LINK_NOARG(SdrItemBrowser, SetDirtyHdl, SdrItemBrowserControl&, void)
 {
     SetDirty();
 }

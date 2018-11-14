@@ -80,7 +80,6 @@ public:
     long                mnMaxSize;
 };
 
-typedef std::vector< ImplSplitItem* > ImplSplitItems;
 
 class ImplSplitSet
 {
@@ -89,7 +88,7 @@ public:
     ~ImplSplitSet();
     void dispose();
 
-    ImplSplitItems      mpItems;
+    std::vector< ImplSplitItem* >      mpItems;
     Wallpaper*          mpWallpaper;
     Bitmap*             mpBitmap;
     long                mnLastSize;
@@ -238,57 +237,47 @@ void SplitWindow::ImplDrawBorder(vcl::RenderContext& rRenderContext)
     long nDX = mnDX;
     long nDY = mnDY;
 
-    if (mbNoAlign)
+    switch (meAlign)
     {
-        DecorationView aDecoView(&rRenderContext);
-        Point aTmpPoint;
-        Rectangle aRect(aTmpPoint, Size(nDX, nDY));
-        aDecoView.DrawFrame(aRect, DrawFrameStyle::DoubleIn);
-    }
-    else
-    {
-        switch (meAlign)
-        {
-        case WindowAlign::Bottom:
-            rRenderContext.SetLineColor(rStyleSettings.GetShadowColor());
-            rRenderContext.DrawLine(Point(0, 0), Point(nDX - 1, 0));
-            rRenderContext.DrawLine(Point(0, nDY - 2), Point(nDX - 1, nDY - 2));
+    case WindowAlign::Bottom:
+        rRenderContext.SetLineColor(rStyleSettings.GetShadowColor());
+        rRenderContext.DrawLine(Point(0, 0), Point(nDX - 1, 0));
+        rRenderContext.DrawLine(Point(0, nDY - 2), Point(nDX - 1, nDY - 2));
 
-            rRenderContext.SetLineColor(rStyleSettings.GetLightColor());
-            rRenderContext.DrawLine(Point(0, 1), Point(nDX - 1, 1));
-            rRenderContext.DrawLine(Point(0, nDY - 1), Point(nDX - 1, nDY - 1));
-            break;
-        case WindowAlign::Top:
-            rRenderContext.SetLineColor(rStyleSettings.GetShadowColor());
-            rRenderContext.DrawLine(Point(0, nDY - 2), Point(nDX - 1, nDY - 2));
-            rRenderContext.DrawLine(Point(0, 0), Point(nDX - 1, 0));
+        rRenderContext.SetLineColor(rStyleSettings.GetLightColor());
+        rRenderContext.DrawLine(Point(0, 1), Point(nDX - 1, 1));
+        rRenderContext.DrawLine(Point(0, nDY - 1), Point(nDX - 1, nDY - 1));
+        break;
+    case WindowAlign::Top:
+        rRenderContext.SetLineColor(rStyleSettings.GetShadowColor());
+        rRenderContext.DrawLine(Point(0, nDY - 2), Point(nDX - 1, nDY - 2));
+        rRenderContext.DrawLine(Point(0, 0), Point(nDX - 1, 0));
 
-            rRenderContext.SetLineColor(rStyleSettings.GetLightColor());
-            rRenderContext.DrawLine(Point(0, nDY - 1), Point(nDX - 1, nDY - 1));
-            rRenderContext.DrawLine(Point(0, 1), Point(nDX - 1, 1));
-            break;
-        case WindowAlign::Left:
-            rRenderContext.SetLineColor(rStyleSettings.GetShadowColor());
-            rRenderContext.DrawLine(Point(nDX - 2, 0), Point(nDX - 2, nDY - 2));
-            rRenderContext.DrawLine(Point(0, 0), Point(nDX - 1, 0));
-            rRenderContext.DrawLine(Point(0, nDY - 2), Point(nDX - 2, nDY - 2));
+        rRenderContext.SetLineColor(rStyleSettings.GetLightColor());
+        rRenderContext.DrawLine(Point(0, nDY - 1), Point(nDX - 1, nDY - 1));
+        rRenderContext.DrawLine(Point(0, 1), Point(nDX - 1, 1));
+        break;
+    case WindowAlign::Left:
+        rRenderContext.SetLineColor(rStyleSettings.GetShadowColor());
+        rRenderContext.DrawLine(Point(nDX - 2, 0), Point(nDX - 2, nDY - 2));
+        rRenderContext.DrawLine(Point(0, 0), Point(nDX - 1, 0));
+        rRenderContext.DrawLine(Point(0, nDY - 2), Point(nDX - 2, nDY - 2));
 
-            rRenderContext.SetLineColor(rStyleSettings.GetLightColor());
-            rRenderContext.DrawLine(Point(nDX - 1, 0), Point(nDX - 1, nDY - 1));
-            rRenderContext.DrawLine(Point(0, 1), Point(nDX - 3, 1));
-            rRenderContext.DrawLine(Point(0, nDY - 1), Point(nDX - 2, nDY - 1));
-            break;
-        default:
-            rRenderContext.SetLineColor(rStyleSettings.GetShadowColor());
-            rRenderContext.DrawLine(Point(0, 0), Point( 0, nDY - 2));
-            rRenderContext.DrawLine(Point(0, 0), Point( nDX - 1, 0));
-            rRenderContext.DrawLine(Point(0, nDY - 2), Point(nDX - 1, nDY - 2));
+        rRenderContext.SetLineColor(rStyleSettings.GetLightColor());
+        rRenderContext.DrawLine(Point(nDX - 1, 0), Point(nDX - 1, nDY - 1));
+        rRenderContext.DrawLine(Point(0, 1), Point(nDX - 3, 1));
+        rRenderContext.DrawLine(Point(0, nDY - 1), Point(nDX - 2, nDY - 1));
+        break;
+    default:
+        rRenderContext.SetLineColor(rStyleSettings.GetShadowColor());
+        rRenderContext.DrawLine(Point(0, 0), Point( 0, nDY - 2));
+        rRenderContext.DrawLine(Point(0, 0), Point( nDX - 1, 0));
+        rRenderContext.DrawLine(Point(0, nDY - 2), Point(nDX - 1, nDY - 2));
 
-            rRenderContext.SetLineColor( rStyleSettings.GetLightColor());
-            rRenderContext.DrawLine(Point(1, 1), Point(1, nDY - 3));
-            rRenderContext.DrawLine(Point(1, 1), Point(nDX - 1, 1));
-            rRenderContext.DrawLine(Point(0, nDY - 1), Point(nDX - 1, nDY - 1));
-        }
+        rRenderContext.SetLineColor( rStyleSettings.GetLightColor());
+        rRenderContext.DrawLine(Point(1, 1), Point(1, nDY - 3));
+        rRenderContext.DrawLine(Point(1, 1), Point(nDX - 1, 1));
+        rRenderContext.DrawLine(Point(0, nDY - 1), Point(nDX - 1, nDY - 1));
     }
 }
 
@@ -341,7 +330,7 @@ static ImplSplitSet* ImplFindSet( ImplSplitSet* pSet, sal_uInt16 nId )
 
     sal_uInt16          i;
     size_t              nItems = pSet->mpItems.size();
-    ImplSplitItems&     rItems = pSet->mpItems;
+    std::vector< ImplSplitItem* >&     rItems = pSet->mpItems;
 
     for ( i = 0; i < nItems; i++ )
     {
@@ -366,7 +355,7 @@ static ImplSplitSet* ImplFindItem( ImplSplitSet* pSet, sal_uInt16 nId, sal_uInt1
 {
     sal_uInt16          i;
     size_t              nItems = pSet->mpItems.size();
-    ImplSplitItems&     rItems = pSet->mpItems;
+    std::vector< ImplSplitItem* >&     rItems = pSet->mpItems;
 
     for ( i = 0; i < nItems; i++ )
     {
@@ -394,7 +383,7 @@ static sal_uInt16 ImplFindItem( ImplSplitSet* pSet, vcl::Window* pWindow )
 {
     sal_uInt16          i;
     size_t              nItems = pSet->mpItems.size();
-    ImplSplitItems&     rItems = pSet->mpItems;
+    std::vector< ImplSplitItem* >&     rItems = pSet->mpItems;
 
     for ( i = 0; i < nItems; i++ )
     {
@@ -419,7 +408,7 @@ static sal_uInt16 ImplFindItem( ImplSplitSet* pSet, const Point& rPos,
 {
     sal_uInt16          i;
     size_t              nItems = pSet->mpItems.size();
-    ImplSplitItems&     rItems = pSet->mpItems;
+    std::vector< ImplSplitItem* >&     rItems = pSet->mpItems;
 
     for ( i = 0; i < nItems; i++ )
     {
@@ -477,7 +466,7 @@ static void ImplCalcSet( ImplSplitSet* pSet,
     long                nCalcSize;
     long                nPos;
     long                nMaxPos;
-    ImplSplitItems&     rItems = pSet->mpItems;
+    std::vector< ImplSplitItem* >&     rItems = pSet->mpItems;
     bool                bEmpty;
 
     // get number of visible items
@@ -567,7 +556,6 @@ static void ImplCalcSet( ImplSplitSet* pSet,
         {
             nAbsItems       = 0;
             long nSizeWinSize    = 0;
-            long nNewSizeWinSize = 0;
 
             // first resize absolute items relative
             for ( i = 0; i < nItems; i++ )
@@ -584,6 +572,8 @@ static void ImplCalcSet( ImplSplitSet* pSet,
             // do not compensate rounding errors here
             if ( (nAbsItems < (sal_uInt16)(std::abs( nSizeDelta ))) && nSizeWinSize )
             {
+                long nNewSizeWinSize = 0;
+
                 for ( i = 0; i < nItems; i++ )
                 {
                     if ( !(rItems[i]->mnBits & SplitWindowItemFlags::Invisible) )
@@ -595,6 +585,7 @@ static void ImplCalcSet( ImplSplitSet* pSet,
                         }
                     }
                 }
+
                 nSizeDelta -= nNewSizeWinSize-nSizeWinSize;
             }
 
@@ -825,7 +816,7 @@ void SplitWindow::ImplCalcSet2( SplitWindow* pWindow, ImplSplitSet* pSet, bool b
 {
     sal_uInt16          i;
     size_t              nItems = pSet->mpItems.size();
-    ImplSplitItems&     rItems = pSet->mpItems;
+    std::vector< ImplSplitItem* >&     rItems = pSet->mpItems;
 
     if ( pWindow->IsReallyVisible() && pWindow->IsUpdateMode() && pWindow->mbInvalidate )
     {
@@ -921,7 +912,7 @@ void SplitWindow::ImplCalcSet2( SplitWindow* pWindow, ImplSplitSet* pSet, bool b
     }
 }
 
-static void ImplCalcLogSize( ImplSplitItems rItems, size_t nItems )
+static void ImplCalcLogSize( std::vector< ImplSplitItem* > rItems, size_t nItems )
 {
     // update original sizes
     size_t  i;
@@ -990,7 +981,7 @@ void SplitWindow::ImplDrawBack(vcl::RenderContext& rRenderContext, ImplSplitSet*
 {
     sal_uInt16      i;
     size_t          nItems = pSet->mpItems.size();
-    ImplSplitItems& rItems = pSet->mpItems;
+    std::vector< ImplSplitItem* >& rItems = pSet->mpItems;
 
     // also draw background for mainset
     if (pSet->mnId == 0)
@@ -1037,7 +1028,7 @@ static void ImplDrawSplit(vcl::RenderContext& rRenderContext, ImplSplitSet* pSet
     long       nPos;
     long       nTop;
     long       nBottom;
-    ImplSplitItems& rItems = pSet->mpItems;
+    std::vector< ImplSplitItem* >& rItems = pSet->mpItems;
     const StyleSettings& rStyleSettings = rRenderContext.GetSettings().GetStyleSettings();
 
     for (i = 0; i < nItems-1; i++)
@@ -1138,7 +1129,7 @@ sal_uInt16 SplitWindow::ImplTestSplit( ImplSplitSet* pSet, const Point& rPos,
     long            nPos;
     long            nTop;
     long            nBottom;
-    ImplSplitItems& rItems = pSet->mpItems;
+    std::vector< ImplSplitItem* >& rItems = pSet->mpItems;
 
     if ( bRows )
     {
@@ -1338,7 +1329,6 @@ void SplitWindow::ImplInit( vcl::Window* pParent, WinBits nStyle )
     mbFadeInPressed         = false;
     mbFadeOutPressed        = false;
     mbFadeNoButtonMode      = false;
-    mbNoAlign               = false;
 
     if ( nStyle & WB_NOSPLITDRAW )
     {
@@ -1348,7 +1338,7 @@ void SplitWindow::ImplInit( vcl::Window* pParent, WinBits nStyle )
 
     if ( nStyle & WB_BORDER )
     {
-        ImplCalcBorder( meAlign, mbNoAlign, mnLeftBorder, mnTopBorder,
+        ImplCalcBorder( meAlign, false/*bNoAlign*/, mnLeftBorder, mnTopBorder,
                         mnRightBorder, mnBottomBorder );
     }
     else
@@ -2175,7 +2165,7 @@ void SplitWindow::ImplStartSplit( const MouseEvent& rMEvt )
         }
         else
         {
-            ImplSplitItems&  rItems = mpSplitSet->mpItems;
+            std::vector< ImplSplitItem* >&  rItems = mpSplitSet->mpItems;
             sal_uInt16       nItems = mpSplitSet->mpItems.size();
             mpLastSizes = new long[nItems*2];
             for ( sal_uInt16 i = 0; i < nItems; i++ )
@@ -2416,7 +2406,7 @@ void SplitWindow::Tracking( const TrackingEvent& rTEvt )
             {
                 if ( rTEvt.IsTrackingCanceled() )
                 {
-                    ImplSplitItems& rItems = mpSplitSet->mpItems;
+                    std::vector< ImplSplitItem* >& rItems = mpSplitSet->mpItems;
                     size_t          nItems = rItems.size();
                     for ( size_t i = 0; i < nItems; i++ )
                     {
@@ -2540,11 +2530,6 @@ void SplitWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
     }
 }
 
-void SplitWindow::Move()
-{
-    DockingWindow::Move();
-}
-
 void SplitWindow::Resize()
 {
     Size aSize = GetOutputSizePixel();
@@ -2651,7 +2636,7 @@ void SplitWindow::InsertItem( sal_uInt16 nId, vcl::Window* pWindow, long nSize,
 {
 #ifdef DBG_UTIL
     sal_uInt16 nDbgDummy;
-    DBG_ASSERT( !ImplFindItem( mpMainSet, nId, nDbgDummy ), "SplitWindow::InsertItem() - Id already exists" );
+    SAL_WARN_IF( ImplFindItem( mpMainSet, nId, nDbgDummy ), "vcl", "SplitWindow::InsertItem() - Id already exists" );
 #endif
 
     // Size has to be at least 1.
@@ -2660,7 +2645,7 @@ void SplitWindow::InsertItem( sal_uInt16 nId, vcl::Window* pWindow, long nSize,
 
     ImplSplitSet* pSet       = ImplFindSet( mpMainSet, nIntoSetId );
 #ifdef DBG_UTIL
-    DBG_ASSERT( pSet, "SplitWindow::InsertItem() - Set not exists" );
+    SAL_WARN_IF( !pSet, "vcl", "SplitWindow::InsertItem() - Set not exists" );
 #endif
     if(!pSet)
     {
@@ -2717,7 +2702,7 @@ void SplitWindow::RemoveItem( sal_uInt16 nId )
 {
 #ifdef DBG_UTIL
     sal_uInt16 nDbgDummy;
-    DBG_ASSERT( ImplFindItem( mpMainSet, nId, nDbgDummy ), "SplitWindow::RemoveItem() - Id not found" );
+    SAL_WARN_IF( !ImplFindItem( mpMainSet, nId, nDbgDummy ), "vcl", "SplitWindow::RemoveItem() - Id not found" );
 #endif
 
     // search set
@@ -2782,7 +2767,7 @@ void SplitWindow::SplitItem( sal_uInt16 nId, long nNewSize,
         return;
 
     size_t           nItems = pSet->mpItems.size();
-    ImplSplitItems&  rItems = pSet->mpItems;
+    std::vector< ImplSplitItem* >&  rItems = pSet->mpItems;
 
     // When there is an explicit minimum or maximum size then move nNewSize
     // into that range (when it is not yet already in it.)
@@ -3048,7 +3033,7 @@ long SplitWindow::GetItemSize( sal_uInt16 nId, SplitWindowItemFlags nBits ) cons
             SplitWindowItemFlags nTempBits;
             sal_uInt16              i;
             nItems = pSet->mpItems.size();
-            ImplSplitItems& rItems = pSet->mpItems;
+            std::vector< ImplSplitItem* >& rItems = pSet->mpItems;
             for ( i = 0; i < nItems; i++ )
             {
                 if ( i == nPos )
@@ -3167,37 +3152,29 @@ sal_uInt16 SplitWindow::GetItemCount( sal_uInt16 nSetId ) const
 
 void SplitWindow::ImplNewAlign()
 {
-    if ( mbNoAlign )
+    switch ( meAlign )
     {
+    case WindowAlign::Top:
+        mbHorz        = true;
+        mbBottomRight = false;
+        break;
+    case WindowAlign::Bottom:
+        mbHorz        = true;
+        mbBottomRight = true;
+        break;
+    case WindowAlign::Left:
         mbHorz        = false;
         mbBottomRight = false;
-    }
-    else
-    {
-        switch ( meAlign )
-        {
-        case WindowAlign::Top:
-            mbHorz        = true;
-            mbBottomRight = false;
-            break;
-        case WindowAlign::Bottom:
-            mbHorz        = true;
-            mbBottomRight = true;
-            break;
-        case WindowAlign::Left:
-            mbHorz        = false;
-            mbBottomRight = false;
-            break;
-        case WindowAlign::Right:
-            mbHorz        = false;
-            mbBottomRight = true;
-            break;
-        }
+        break;
+    case WindowAlign::Right:
+        mbHorz        = false;
+        mbBottomRight = true;
+        break;
     }
 
     if ( mnWinStyle & WB_BORDER )
     {
-        ImplCalcBorder( meAlign, mbNoAlign, mnLeftBorder, mnTopBorder,
+        ImplCalcBorder( meAlign, false/*bNoAlign*/, mnLeftBorder, mnTopBorder,
                         mnRightBorder, mnBottomBorder );
     }
 

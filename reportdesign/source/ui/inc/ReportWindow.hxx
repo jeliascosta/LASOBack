@@ -65,7 +65,7 @@ namespace rptui
         virtual void    _propertyChanged(const css::beans::PropertyChangeEvent& _rEvent) throw( css::uno::RuntimeException) override;
     public:
         OReportWindow(OScrollWindowHelper* _pParent,ODesignView* _pView);
-        virtual ~OReportWindow();
+        virtual ~OReportWindow() override;
         virtual void dispose() override;
 
         // Window overrides
@@ -75,7 +75,7 @@ namespace rptui
         inline OScrollWindowHelper* getScrollWindow() const { return m_pParent; }
 
         void            SetMode( DlgEdMode m_eMode );
-        void            SetInsertObj( sal_uInt16 eObj,const OUString& _sShapeType = OUString());
+        void            SetInsertObj( sal_uInt16 eObj, const OUString& _sShapeType);
         OUString        GetInsertObjString() const;
         void            setGridSnap(bool bOn);
         void            setDragStripes(bool bOn);
@@ -121,7 +121,7 @@ namespace rptui
         */
         void            addSection(const css::uno::Reference< css::report::XSection >& _xSection
                                     ,const OUString& _sColorEntry
-                                    ,sal_uInt16 _nPosition = USHRT_MAX);
+                                    ,sal_uInt16 _nPosition);
 
         sal_uInt16          getSectionCount() const;
 
@@ -154,10 +154,8 @@ namespace rptui
         void            notifySizeChanged();
 
         /** unmark all objects on the views without the given one.
-        *
-        * @param _pSectionView The view where the objects should not be unmarked.
         */
-        void            unmarkAllObjects(OSectionView* _pSectionView);
+        void            unmarkAllObjects();
 
         /** triggers the property browser with the report component or section
             @param  _xReportComponent

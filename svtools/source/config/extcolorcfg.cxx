@@ -31,7 +31,7 @@
 #include <unotools/configpaths.hxx>
 #include <com/sun/star/uno/Sequence.h>
 #include <svl/poolitem.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <osl/mutex.hxx>
 
 #include <vcl/svapp.hxx>
@@ -68,7 +68,6 @@ class ExtendedColorConfig_Impl : public utl::ConfigItem, public SfxBroadcaster
     TDisplayNames       m_aComponentDisplayNames;
     ::std::vector<TComponents::iterator> m_aConfigValuesPos;
 
-    bool            m_bEditMode;
     OUString        m_sLoadedScheme;
     bool            m_bIsBroadcastEnabled;
     static bool     m_bLockBroadcast;
@@ -81,7 +80,7 @@ class ExtendedColorConfig_Impl : public utl::ConfigItem, public SfxBroadcaster
 
 public:
     explicit ExtendedColorConfig_Impl();
-    virtual ~ExtendedColorConfig_Impl();
+    virtual ~ExtendedColorConfig_Impl() override;
 
     void                            Load(const OUString& rScheme);
     void                            CommitCurrentSchemeName();
@@ -120,18 +119,17 @@ public:
 
     void                            AddScheme(const OUString& rNode);
     void                            RemoveScheme(const OUString& rNode);
-    void                            SetModified(){ConfigItem::SetModified();}
-    void                            ClearModified(){ConfigItem::ClearModified();}
+    using ConfigItem::SetModified;
+    using ConfigItem::ClearModified;
     void                            SettingsChanged();
 
     static void                     DisableBroadcast();
     static void                     EnableBroadcast();
-    static bool                     IsEnableBroadcast();
 
     static void                     LockBroadcast();
     static void                     UnlockBroadcast();
 
-    DECL_LINK_TYPED( DataChangedEventListener, VclSimpleEvent&, void );
+    DECL_LINK( DataChangedEventListener, VclSimpleEvent&, void );
 };
 
 uno::Sequence< OUString> ExtendedColorConfig_Impl::GetPropertyNames(const OUString& rScheme)
@@ -197,15 +195,11 @@ bool ExtendedColorConfig_Impl::m_bLockBroadcast = false;
 bool ExtendedColorConfig_Impl::m_bBroadcastWhenUnlocked = false;
 ExtendedColorConfig_Impl::ExtendedColorConfig_Impl() :
     ConfigItem(OUString("Office.ExtendedColorScheme")),
-    m_bEditMode(false),
     m_bIsBroadcastEnabled(true)
 {
-    if(!m_bEditMode)
-    {
-        //try to register on the root node - if possible
-        uno::Sequence < OUString > aNames(1);
-        EnableNotification( aNames );
-    }
+    //try to register on the root node - if possible
+    uno::Sequence < OUString > aNames(1);
+    EnableNotification( aNames );
     Load(OUString());
 
     ::Application::AddEventListener( LINK(this, ExtendedColorConfig_Impl, DataChangedEventListener) );
@@ -227,11 +221,6 @@ void ExtendedColorConfig_Impl::EnableBroadcast()
 {
     if ( ExtendedColorConfig::m_pImpl )
         ExtendedColorConfig::m_pImpl->m_bIsBroadcastEnabled = true;
-}
-
-bool ExtendedColorConfig_Impl::IsEnableBroadcast()
-{
-    return ExtendedColorConfig::m_pImpl && ExtendedColorConfig::m_pImpl->m_bIsBroadcastEnabled;
 }
 
 void lcl_addString(uno::Sequence < OUString >& _rSeq,const OUString& _sAdd)
@@ -258,8 +247,8 @@ void ExtendedColorConfig_Impl::Load(const OUString& rScheme)
     for(sal_Int32 i = 0;pIter != pEnd;++pIter,++i)
     {
         uno::Sequence < OUString > aComponentDisplayNames(1);
-        aComponentDisplayNames[0] = *pIter;
-        aComponentDisplayNames[0] += sDisplayName;
+        aComponentDisplayNames[0] = *pIter
+                                  + sDisplayName;
         uno::Sequence< uno::Any > aComponentDisplayNamesValue = GetProperties( aComponentDisplayNames );
         OUString sComponentDisplayName;
         if ( aComponentDisplayNamesValue.getLength() && (aComponentDisplayNamesValue[0] >>= sComponentDisplayName) )
@@ -300,8 +289,8 @@ void ExtendedColorConfig_Impl::Load(const OUString& rScheme)
     } // if(!sScheme.getLength())
 
     m_sLoadedScheme = sScheme;
-    OUString sBase("ExtendedColorScheme/ColorSchemes/");
-    sBase += sScheme;
+    OUString sBase = "ExtendedColorScheme/ColorSchemes/"
+                   + sScheme;
 
     bool bFound = ExistsScheme(sScheme);
     if ( bFound )
@@ -340,8 +329,8 @@ void ExtendedColorConfig_Impl::FillComponentColors(uno::Sequence < OUString >& _
         OUString sComponentName = pIter->copy(pIter->lastIndexOf('/')+1);
         if ( m_aConfigValues.find(sComponentName) == m_aConfigValues.end() )
         {
-            OUString sEntry = *pIter;
-            sEntry += sColorEntries;
+            OUString sEntry = *pIter
+                            + sColorEntries;
 
             uno::Sequence < OUString > aColorNames = GetPropertyNames(sEntry);
             uno::Sequence < OUString > aDefaultColorNames = aColorNames;
@@ -407,7 +396,7 @@ void    ExtendedColorConfig_Impl::Notify( const uno::Sequence<OUString>& /*rProp
         m_bBroadcastWhenUnlocked = true;
     }
     else
-        Broadcast(SfxSimpleHint(SFX_HINT_COLORS_CHANGED));
+        Broadcast(SfxHint(SFX_HINT_COLORS_CHANGED));
 }
 
 void ExtendedColorConfig_Impl::ImplCommit()
@@ -416,25 +405,22 @@ void ExtendedColorConfig_Impl::ImplCommit()
         return;
     const OUString sColorEntries("Entries");
     const OUString sColor("/Color");
-    OUString sBase("ExtendedColorScheme/ColorSchemes/");
+    OUString sBase = "ExtendedColorScheme/ColorSchemes/"
+                   + m_sLoadedScheme;
     const OUString s_sSep("/");
-    sBase += m_sLoadedScheme;
 
     TComponents::iterator aIter = m_aConfigValues.begin();
     TComponents::iterator aEnd = m_aConfigValues.end();
     for( ;aIter != aEnd;++aIter )
     {
-        OUString sEntry = aIter->first;
-        sEntry += sColorEntries;
-
         if ( ConfigItem::AddNode(sBase, aIter->first) )
         {
-            OUString sNode = sBase;
-            sNode += s_sSep;
-            sNode += aIter->first;
+            OUString sNode = sBase
+                           + s_sSep
+                           + aIter->first
             //ConfigItem::AddNode(sNode, sColorEntries);
-            sNode += s_sSep;
-            sNode += sColorEntries;
+                           + s_sSep
+                           + sColorEntries;
 
             uno::Sequence < beans::PropertyValue > aPropValues(aIter->second.first.size());
             beans::PropertyValue* pPropValues = aPropValues.getArray();
@@ -509,7 +495,7 @@ void ExtendedColorConfig_Impl::SettingsChanged()
 {
     SolarMutexGuard aVclGuard;
 
-    Broadcast( SfxSimpleHint( SFX_HINT_COLORS_CHANGED ) );
+    Broadcast( SfxHint( SFX_HINT_COLORS_CHANGED ) );
 }
 
 void ExtendedColorConfig_Impl::LockBroadcast()
@@ -524,17 +510,17 @@ void ExtendedColorConfig_Impl::UnlockBroadcast()
         m_bBroadcastWhenUnlocked = ExtendedColorConfig::m_pImpl != nullptr;
         if ( m_bBroadcastWhenUnlocked )
         {
-            if ( ExtendedColorConfig_Impl::IsEnableBroadcast() )
+            if ( ExtendedColorConfig::m_pImpl && ExtendedColorConfig::m_pImpl->m_bIsBroadcastEnabled )
             {
                 m_bBroadcastWhenUnlocked = false;
-                ExtendedColorConfig::m_pImpl->Broadcast(SfxSimpleHint(SFX_HINT_COLORS_CHANGED));
+                ExtendedColorConfig::m_pImpl->Broadcast(SfxHint(SFX_HINT_COLORS_CHANGED));
             }
         }
     }
     m_bLockBroadcast = false;
 }
 
-IMPL_LINK_TYPED( ExtendedColorConfig_Impl, DataChangedEventListener, VclSimpleEvent&, rEvent, void )
+IMPL_LINK( ExtendedColorConfig_Impl, DataChangedEventListener, VclSimpleEvent&, rEvent, void )
 {
     if ( rEvent.GetId() == VCLEVENT_APPLICATION_DATACHANGED )
     {

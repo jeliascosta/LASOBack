@@ -71,8 +71,6 @@ public:
     SwHTMLTableLayoutConstraints *InsertNext( SwHTMLTableLayoutConstraints *pNxt );
     SwHTMLTableLayoutConstraints* GetNext() const { return pNext; }
 
-    sal_uInt16 GetRow() const { return nRow; }
-
     sal_uInt16 GetColSpan() const { return nColSpan; }
     sal_uInt16 GetColumn() const { return nCol; }
 };
@@ -143,7 +141,7 @@ SwHTMLTableLayoutConstraints *SwHTMLTableLayoutConstraints::InsertNext(
     SwHTMLTableLayoutConstraints *pConstr = this;
     while( pConstr )
     {
-        if( pConstr->GetRow() > pNxt->GetRow() ||
+        if( pConstr->nRow > pNxt->nRow ||
             pConstr->GetColumn() > pNxt->GetColumn() )
             break;
         pPrev = pConstr;
@@ -473,7 +471,7 @@ void SwHTMLTableLayout::AutoLayoutPass1()
 {
     m_nPass1Done++;
 
-    ClearPass1Info();
+    m_nMin = m_nMax = 0; // clear pass1 info
 
     bool bFixRelWidths = false;
     sal_uInt16 i;
@@ -1741,7 +1739,7 @@ void SwHTMLTableLayout::Resize_( sal_uInt16 nAbsAvail, bool bRecalc )
         pRoot->EndAllAction( true );    //True per VirDev (browsing is calmer)
 }
 
-IMPL_LINK_NOARG_TYPED( SwHTMLTableLayout, DelayedResize_Impl, Timer*, void )
+IMPL_LINK_NOARG( SwHTMLTableLayout, DelayedResize_Impl, Timer*, void )
 {
     m_aResizeTimer.Stop();
     Resize_( m_nDelayedResizeAbsAvail, m_bDelayedResizeRecalc );

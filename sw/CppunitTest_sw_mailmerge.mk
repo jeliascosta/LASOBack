@@ -31,10 +31,7 @@ $(eval $(call gb_CppunitTest_use_externals,sw_mailmerge, \
     libxml2 \
 ))
 
-$(eval $(call gb_CppunitTest_use_api,sw_mailmerge,\
-    offapi \
-    udkapi \
-))
+$(eval $(call gb_CppunitTest_use_sdk_api,sw_mailmerge))
 
 $(eval $(call gb_CppunitTest_use_components,sw_mailmerge, \
     basic/util/sb \
@@ -58,6 +55,7 @@ $(eval $(call gb_CppunitTest_use_components,sw_mailmerge, \
     package/util/package2 \
     sax/source/expatwrap/expwrap \
     sc/util/sc \
+    sc/util/scfilt \
     sfx2/util/sfx \
     sot/util/sot \
     svl/source/fsstor/fsstorage \
@@ -81,7 +79,7 @@ $(eval $(call gb_CppunitTest_use_components,sw_mailmerge, \
     xmloff/util/xo \
 ))
 
-$(eval $(call gb_CppunitTest_use_configuration,sw_mailmerge))
+$(eval $(call gb_CppunitTest_use_instdir_configuration,sw_mailmerge))
 $(eval $(call gb_CppunitTest_use_ure,sw_mailmerge))
 $(eval $(call gb_CppunitTest_use_vcl,sw_mailmerge))
 
@@ -91,6 +89,10 @@ $(eval $(call gb_CppunitTest_set_include,sw_mailmerge,\
     -I$(SRCDIR)/sw/qa/extras/inc \
     -I$(SRCDIR)/sw/source/uibase/inc \
     $$(INCLUDE) \
+))
+
+$(eval $(call gb_CppunitTest_use_uiconfigs,sw_mailmerge,\
+	modules/swriter \
 ))
 
 # vim: set noet sw=4 ts=4:

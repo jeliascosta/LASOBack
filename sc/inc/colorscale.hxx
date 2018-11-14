@@ -74,8 +74,6 @@ public:
 
     ScColorScaleEntryType GetType() const { return meType;}
     void SetType( ScColorScaleEntryType eType );
-
-    bool NeedsRepaint() const;
 };
 
 namespace databar
@@ -213,7 +211,7 @@ class SC_DLLPUBLIC ScColorFormat : public ScFormatEntry
 {
 public:
     ScColorFormat(ScDocument* pDoc);
-    virtual ~ScColorFormat();
+    virtual ~ScColorFormat() override;
 
     const ScRangeList& GetRange() const;
 
@@ -254,8 +252,8 @@ private:
 public:
     ScColorScaleFormat(ScDocument* pDoc);
     ScColorScaleFormat(ScDocument* pDoc, const ScColorScaleFormat& rFormat);
-    virtual ~ScColorScaleFormat();
-    virtual ScColorFormat* Clone(ScDocument* pDoc = nullptr) const override;
+    virtual ~ScColorScaleFormat() override;
+    virtual ScColorFormat* Clone(ScDocument* pDoc) const override;
 
     Color* GetColor(const ScAddress& rAddr) const;
     void AddEntry(ScColorScaleEntry* pEntry);
@@ -288,7 +286,7 @@ class SC_DLLPUBLIC ScDataBarFormat : public ScColorFormat
 public:
     ScDataBarFormat(ScDocument* pDoc);
     ScDataBarFormat(ScDocument* pDoc, const ScDataBarFormat& rFormat);
-    virtual ScColorFormat* Clone(ScDocument* pDoc = nullptr) const override;
+    virtual ScColorFormat* Clone(ScDocument* pDoc) const override;
 
     ScDataBarInfo* GetDataBarInfo(const ScAddress& rAddr) const;
 
@@ -348,7 +346,7 @@ public:
     ScIconSetFormat(ScDocument* pDoc);
     ScIconSetFormat(ScDocument* pDoc, const ScIconSetFormat& rFormat);
 
-    virtual ScColorFormat* Clone(ScDocument* pDoc = nullptr) const override;
+    virtual ScColorFormat* Clone(ScDocument* pDoc) const override;
 
     ScIconSetInfo* GetIconSetInfo(const ScAddress& rAddr) const;
 
@@ -363,7 +361,7 @@ public:
 
     virtual condformat::ScFormatEntryType GetType() const override;
 
-    static ScIconSetMap* getIconSetMap();
+    static const ScIconSetMap g_IconSetMap[];
     static BitmapEx& getBitmap(sc::IconSetBitmapMap& rBitmapMap, ScIconSetType eType, sal_Int32 nIndex);
 
     typedef ScIconSetFormatData::Entries_t::iterator iterator;

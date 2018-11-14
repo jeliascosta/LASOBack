@@ -120,10 +120,10 @@ public:
     , m_bResizeNoScale( false )
     {}
 
-    virtual ~SfxInPlaceClient_Impl();
+    virtual ~SfxInPlaceClient_Impl() override;
 
     void SizeHasChanged();
-    DECL_LINK_TYPED(TimerHdl, Timer *, void);
+    DECL_LINK(TimerHdl, Timer *, void);
     uno::Reference < frame::XFrame > GetFrame() const;
 
     // XEmbeddedClient
@@ -591,7 +591,7 @@ void SfxInPlaceClient_Impl::SizeHasChanged()
 }
 
 
-IMPL_LINK_NOARG_TYPED(SfxInPlaceClient_Impl, TimerHdl, Timer *, void)
+IMPL_LINK_NOARG(SfxInPlaceClient_Impl, TimerHdl, Timer *, void)
 {
     if ( m_pClient && m_xObject.is() )
     {
@@ -894,7 +894,8 @@ ErrCode SfxInPlaceClient::DoVerb( long nVerb )
                                             "SaveAs",
                                             aDispatchArgs,
                                             false,
-                                            "" );
+                                            "",
+                                            SignatureState::NOSIGNATURES );
                 }
                 catch( const task::ErrorCodeIOException& aErrorEx )
                 {
@@ -928,7 +929,7 @@ ErrCode SfxInPlaceClient::DoVerb( long nVerb )
             if ( !nError )
             {
 
-                m_pViewSh->GetViewFrame()->GetTopFrame().LockResize_Impl(true);
+                m_pViewSh->GetViewFrame()->GetFrame().LockResize_Impl(true);
                 try
                 {
                     m_pImp->m_xObject->setClientSite( m_pImp->m_xClient );
@@ -937,7 +938,7 @@ ErrCode SfxInPlaceClient::DoVerb( long nVerb )
                 }
                 catch ( embed::UnreachableStateException& )
                 {
-                    if ( nVerb == 0 || nVerb == embed::EmbedVerbs::MS_OLEVERB_OPEN )
+                    if (nVerb == embed::EmbedVerbs::MS_OLEVERB_PRIMARY || nVerb == embed::EmbedVerbs::MS_OLEVERB_OPEN || nVerb == embed::EmbedVerbs::MS_OLEVERB_SHOW)
                     {
                         // a workaround for the default verb, usually makes sense for alien objects
                         try
@@ -981,8 +982,8 @@ ErrCode SfxInPlaceClient::DoVerb( long nVerb )
                 }
 
                 SfxViewFrame* pFrame = m_pViewSh->GetViewFrame();
-                pFrame->GetTopFrame().LockResize_Impl(false);
-                pFrame->GetTopFrame().Resize();
+                pFrame->GetFrame().LockResize_Impl(false);
+                pFrame->GetFrame().Resize();
             }
         }
     }
@@ -1035,12 +1036,12 @@ void SfxInPlaceClient::DeactivateObject()
                 uno::Reference< frame::XController > xController = xModel->getCurrentController();
                 if ( xController.is() )
                 {
-                    vcl::Window* pWindow = VCLUnoHelper::GetWindow( xController->getFrame()->getContainerWindow() );
+                    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xController->getFrame()->getContainerWindow() );
                     bHasFocus = pWindow->HasChildPathFocus( true );
                 }
             }
 
-            m_pViewSh->GetViewFrame()->GetTopFrame().LockResize_Impl(true);
+            m_pViewSh->GetViewFrame()->GetFrame().LockResize_Impl(true);
 
             if ( (m_pImp->m_xObject->getStatus( m_pImp->m_nAspect ) & embed::EmbedMisc::MS_EMBED_ACTIVATEWHENVISIBLE) ||
                  svt::EmbeddedObjectRef::IsGLChart(m_pImp->m_xObject) )
@@ -1061,8 +1062,8 @@ void SfxInPlaceClient::DeactivateObject()
 
             SfxViewFrame* pFrame = m_pViewSh->GetViewFrame();
             SfxViewFrame::SetViewFrame( pFrame );
-            pFrame->GetTopFrame().LockResize_Impl(false);
-            pFrame->GetTopFrame().Resize();
+            pFrame->GetFrame().LockResize_Impl(false);
+            pFrame->GetFrame().Resize();
         }
         catch (css::uno::Exception& )
         {}

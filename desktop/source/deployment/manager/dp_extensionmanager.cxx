@@ -40,9 +40,11 @@
 #include <com/sun/star/uno/XComponentContext.hpp>
 #include <com/sun/star/io/XInputStream.hpp>
 #include <com/sun/star/util/XModifyBroadcaster.hpp>
+#include <comphelper/processfactory.hxx>
 #include <comphelper/sequence.hxx>
 #include <xmlscript/xml_helper.hxx>
 #include <osl/diagnose.h>
+#include <vcl/svapp.hxx>
 #include "dp_interact.h"
 #include "dp_resource.h"
 #include "dp_ucb.h"
@@ -157,11 +159,10 @@ ExtensionRemoveGuard::~ExtensionRemoveGuard()
 
 namespace dp_manager {
 
-
 //ToDo: bundled extension
 ExtensionManager::ExtensionManager( Reference< uno::XComponentContext > const& xContext) :
-    ::cppu::WeakComponentImplHelper< css::deployment::XExtensionManager >(getMutex()),
-    m_xContext( xContext )
+    ::cppu::WeakComponentImplHelper< css::deployment::XExtensionManager >(getMutex())
+    , m_xContext(xContext)
 {
     m_xPackageManagerFactory = css::deployment::thePackageManagerFactory::get(m_xContext);
     OSL_ASSERT(m_xPackageManagerFactory.is());
@@ -170,7 +171,6 @@ ExtensionManager::ExtensionManager( Reference< uno::XComponentContext > const& x
     m_repositoryNames.push_back("shared");
     m_repositoryNames.push_back("bundled");
 }
-
 
 ExtensionManager::~ExtensionManager()
 {
@@ -332,10 +332,7 @@ ExtensionManager::getExtensionsWithSameIdentifier(
                 "Could not find extension: " + identifier + ", " + fileName,
                 static_cast<cppu::OWeakObject*>(this), -1);
 
-        return comphelper::containerToSequence<
-            Reference<css::deployment::XPackage>,
-            ::std::list<Reference<css::deployment::XPackage> >
-            > (listExtensions);
+        return comphelper::containerToSequence(listExtensions);
     }
     catch ( const css::deployment::DeploymentException & )
     {
@@ -369,10 +366,7 @@ bool ExtensionManager::isUserDisabled(
     }
     OSL_ASSERT(listExtensions.size() == 3);
 
-    return isUserDisabled( ::comphelper::containerToSequence<
-                           Reference<css::deployment::XPackage>,
-                           ::std::list<Reference<css::deployment::XPackage> >
-                           > (listExtensions));
+    return isUserDisabled( ::comphelper::containerToSequence(listExtensions) );
 }
 
 bool ExtensionManager::isUserDisabled(
@@ -425,10 +419,7 @@ void ExtensionManager::activateExtension(
     OSL_ASSERT(listExtensions.size() == 3);
 
     activateExtension(
-        ::comphelper::containerToSequence<
-        Reference<css::deployment::XPackage>,
-        ::std::list<Reference<css::deployment::XPackage> >
-        > (listExtensions),
+        ::comphelper::containerToSequence(listExtensions),
         bUserDisabled, bStartup, xAbortChannel, xCmdEnv);
 
     fireModified();

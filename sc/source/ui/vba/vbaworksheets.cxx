@@ -36,6 +36,7 @@
 #include <com/sun/star/container/XNamed.hpp>
 #include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
+#include <com/sun/star/script/XTypeConverter.hpp>
 
 #include <ooo/vba/excel/XApplication.hpp>
 #include "tabvwsh.hxx"
@@ -461,12 +462,6 @@ ScVbaWorksheets::Item(const uno::Any& Index, const uno::Any& Index2)
     return  ScVbaWorksheets_BASE::Item( Index, Index2 );
 }
 
-uno::Any
-ScVbaWorksheets::getItemByStringIndex( const OUString& sIndex ) throw (uno::RuntimeException)
-{
-    return ScVbaWorksheets_BASE::getItemByStringIndex( sIndex );
-}
-
 OUString
 ScVbaWorksheets::getServiceImplName()
 {
@@ -540,7 +535,7 @@ void ScVbaWorksheets::PrintPreview( const css::uno::Any& /*EnableChanges*/ ) thr
                 ScMarkData::MarkedTabsType aOldTabs = pPrvView->GetSelectedTabs();
                 pPrvView->SetSelectedTabs( aMarkData );
                 // force update
-                pPrvView->DataChanged();
+                pPrvView->DataChanged(false);
                 // set sensible first page
                 long nPage = pPrvView->GetFirstPage( 1 );
                 pPrvView->SetPageNo( nPage );

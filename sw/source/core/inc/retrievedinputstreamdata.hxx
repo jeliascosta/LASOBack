@@ -65,16 +65,16 @@ class SwRetrievedInputStreamDataManager
 
         static SwRetrievedInputStreamDataManager& GetManager();
 
-        tDataKey ReserveData( std::weak_ptr< SwAsyncRetrieveInputStreamThreadConsumer > pThreadConsumer );
+        tDataKey ReserveData( std::weak_ptr< SwAsyncRetrieveInputStreamThreadConsumer > const & pThreadConsumer );
 
         void PushData( const tDataKey nDataKey,
-                       css::uno::Reference<css::io::XInputStream> xInputStream,
+                       css::uno::Reference<css::io::XInputStream> const & xInputStream,
                        const bool bIsStreamReadOnly );
 
         bool PopData( const tDataKey nDataKey,
                       tData& rData );
 
-        DECL_LINK_TYPED( LinkedInputStreamReady, void*, void );
+        DECL_LINK( LinkedInputStreamReady, void*, void );
 
     private:
 

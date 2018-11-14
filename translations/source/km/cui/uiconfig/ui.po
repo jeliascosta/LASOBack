@@ -3,8 +3,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LibO 40l10n\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2016-12-01 12:11+0100\n"
-"PO-Revision-Date: 2016-10-18 14:08+0000\n"
+"POT-Creation-Date: 2017-06-01 14:03+0200\n"
+"PO-Revision-Date: 2016-12-03 03:52+0000\n"
 "Last-Translator: Anonymous Pootle User\n"
 "Language-Team: none\n"
 "Language: km\n"
@@ -12,9 +12,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: LibreOffice\n"
 "X-Accelerator-Marker: ~\n"
-"X-POOTLE-MTIME: 1476799681.000000\n"
+"X-Generator: LibreOffice\n"
+"X-POOTLE-MTIME: 1480737120.000000\n"
 
 #: aboutconfigdialog.ui
 msgctxt ""
@@ -179,14 +179,13 @@ msgid "%PRODUCTNAME is a modern, easy-to-use, open source productivity suite for
 msgstr "%PRODUCTNAME ទំនើប ងាយស្រួល​ប្រើ ឈុត​កម្មវិធី​ការិយាល័យ​ឥត​គិត​ថ្លៃ​សម្រាប់​ កម្មវិធី​វាយ​អត្ថបទ សៀវភៅ​បញ្ជី បទ​បង្ហាញ និង​ផ្សេងៗ​ទៀត។"
 
 #: aboutdialog.ui
-#, fuzzy
 msgctxt ""
 "aboutdialog.ui\n"
 "copyright\n"
 "label\n"
 "string.text"
-msgid "Copyright © 2000–2016 LibreOffice contributors."
-msgstr "រក្សាសិទ្ធិ​ឆ្នាំ ២០០០-២០១៤ ដោយ​អ្នក​ចែកចាយ LibreOffice ។"
+msgid "Copyright © 2000–2017 LibreOffice contributors."
+msgstr ""
 
 #: aboutdialog.ui
 msgctxt ""
@@ -12330,13 +12329,14 @@ msgid "_Company:"
 msgstr "ក្រុមហ៊ុន​ "
 
 #: optuserpage.ui
+#, fuzzy
 msgctxt ""
 "optuserpage.ui\n"
 "nameft\n"
 "label\n"
 "string.text"
-msgid "Name/initials:"
-msgstr ""
+msgid "First/last _name/initials:"
+msgstr "នាម​ខ្លួន/នាម​ត្រកូល/អាទិសង្កេត "
 
 #: optuserpage.ui
 #, fuzzy
@@ -12409,11 +12409,20 @@ msgstr "ទូរសា/អ៊ីមែល"
 #: optuserpage.ui
 msgctxt ""
 "optuserpage.ui\n"
+"firstname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "First name"
+msgstr "នាមខ្លួន"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
 "lastname-atkobject\n"
 "AtkObject::accessible-name\n"
 "string.text"
-msgid "Name"
-msgstr ""
+msgid "Last name"
+msgstr "នាមត្រកូល"
 
 #: optuserpage.ui
 msgctxt ""
@@ -12513,6 +12522,89 @@ msgctxt ""
 "string.text"
 msgid "Use data for document properties"
 msgstr "ប្រើ​ទិន្នន័យ​សម្រាប់​លក្ខណ​សម្បត្តិ​ឯកសារ"
+
+#: optuserpage.ui
+#, fuzzy
+msgctxt ""
+"optuserpage.ui\n"
+"rusnameft\n"
+"label\n"
+"string.text"
+msgid "Last name/first _name/father’s name/initials:"
+msgstr "នាម​ត្រកូល​/នាម​ខ្លួន​/ឈ្មោះ​ឪពុក​/អាទិសង្កេត"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"ruslastname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Last name"
+msgstr "នាមត្រកូល"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"rusfathersname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Father's name"
+msgstr "ឈ្មោះ​ឪពុក"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"russhortname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Initials"
+msgstr "អាទិ​សង្កេត"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"rusfirstname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "First name"
+msgstr "នាមខ្លួន"
+
+#: optuserpage.ui
+#, fuzzy
+msgctxt ""
+"optuserpage.ui\n"
+"eastnameft\n"
+"label\n"
+"string.text"
+msgid "Last/first _name/initials:"
+msgstr "នាម​ត្រកូល​/នាម​ខ្លួន /អាទិសង្កេត"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"eastlastname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Last name"
+msgstr "នាមត្រកូល"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"eastfirstname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "First name"
+msgstr "នាមខ្លួន"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"eastshortname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Initials"
+msgstr "អាទិ​សង្កេត"
 
 #: optuserpage.ui
 #, fuzzy
@@ -12675,33 +12767,6 @@ msgstr "រូបតំណាង​ក្នុង​ម៉ឺនុយ"
 #: optviewpage.ui
 msgctxt ""
 "optviewpage.ui\n"
-"menuicons\n"
-"0\n"
-"stringlist.text"
-msgid "Automatic"
-msgstr "ស្វ័យប្រវត្តិ​"
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
-"menuicons\n"
-"1\n"
-"stringlist.text"
-msgid "Hide"
-msgstr "លាក់​"
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
-"menuicons\n"
-"2\n"
-"stringlist.text"
-msgid "Show"
-msgstr "បង្ហាញ "
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
 "contextmenushortcuts\n"
 "0\n"
 "stringlist.text"
@@ -12734,6 +12799,33 @@ msgctxt ""
 "string.text"
 msgid "Shortcuts in context menus:"
 msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"menuicons\n"
+"0\n"
+"stringlist.text"
+msgid "Automatic"
+msgstr "ស្វ័យប្រវត្តិ​"
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"menuicons\n"
+"1\n"
+"stringlist.text"
+msgid "Hide"
+msgstr "លាក់​"
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"menuicons\n"
+"2\n"
+"stringlist.text"
+msgid "Show"
+msgstr "បង្ហាញ "
 
 #: optviewpage.ui
 msgctxt ""
@@ -12920,16 +13012,6 @@ msgid "Screen font antialiasin_g"
 msgstr "ភាព​រឆេតរឆូត​របស់​ពុម្ព​អក្សរ​នៅ​លើ​អេក្រង់"
 
 #: optviewpage.ui
-#, fuzzy
-msgctxt ""
-"optviewpage.ui\n"
-"aafrom\n"
-"label\n"
-"string.text"
-msgid "fro_m:"
-msgstr "មកពី"
-
-#: optviewpage.ui
 msgctxt ""
 "optviewpage.ui\n"
 "label9\n"
@@ -13000,6 +13082,16 @@ msgctxt ""
 "stringlist.text"
 msgid "Large"
 msgstr ""
+
+#: optviewpage.ui
+#, fuzzy
+msgctxt ""
+"optviewpage.ui\n"
+"aafrom\n"
+"label\n"
+"string.text"
+msgid "fro_m:"
+msgstr "មកពី"
 
 #: optviewpage.ui
 msgctxt ""

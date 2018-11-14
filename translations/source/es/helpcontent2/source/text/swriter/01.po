@@ -4,7 +4,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
 "POT-Creation-Date: 2016-12-27 21:50+0100\n"
-"PO-Revision-Date: 2017-03-29 11:18+0000\n"
+"PO-Revision-Date: 2017-10-20 10:37+0000\n"
 "Last-Translator: Adolfo Jayme Barrientos <fito@libreoffice.org>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: es\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Accelerator-Marker: ~\n"
 "X-Generator: Pootle 2.8\n"
-"X-POOTLE-MTIME: 1490786316.000000\n"
+"X-POOTLE-MTIME: 1508495869.000000\n"
 
 #: 01120000.xhp
 msgctxt ""
@@ -1127,7 +1127,7 @@ msgctxt ""
 "24\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/navigatorpanel/anchor\">Jumps between the footnote text and the footnote anchor.</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\"modules/swriter/ui/navigatorpanel/anchor\">Alterna entre el texto y el ancla de la nota al pie.</ahelp>"
 
 #: 02110000.xhp
 msgctxt ""
@@ -1162,7 +1162,7 @@ msgctxt ""
 "35\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/navigatorpanel/dragmode\">Sets the drag and drop options for inserting items from the Navigator into a document, for example, as a hyperlink. Click this icon, and then choose the option that you want to use.</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\"modules/swriter/ui/navigatorpanel/dragmode\">Configura las opciones de arrastrar y colocar para insertar elementos desde el Navegador al documento, por ejemplo, como hiperenlace. Pulse en este icono y seleccione la opción que desee utilizar.</ahelp>"
 
 #: 02110000.xhp
 msgctxt ""
@@ -1251,7 +1251,7 @@ msgctxt ""
 "46\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/navigatorpanel/headings\">Click this icon, and then choose the number of heading outline levels that you want to view in the Navigator window.</ahelp> You can also access this command by right-clicking a heading in the Navigator window."
-msgstr ""
+msgstr "<ahelp hid=\"modules/swriter/ui/navigatorpanel/headings\">Pulse en este icono y elija el número de niveles de esquema de títulos que desee ver en la ventana del Navegador.</ahelp> Puede también acceder a esta orden pulsando con el botón secundario del ratón sobre un título de la ventana del Navegador."
 
 #: 02110000.xhp
 msgctxt ""
@@ -1435,7 +1435,7 @@ msgctxt ""
 "61\n"
 "help.text"
 msgid "Open Documents"
-msgstr "Abrir documentos"
+msgstr "Documentos abiertos"
 
 #: 02110000.xhp
 msgctxt ""
@@ -2550,7 +2550,7 @@ msgctxt ""
 "par_id3153668\n"
 "help.text"
 msgid "To change the view between field names and field contents in your document, choose <emph>View - Field Names</emph>."
-msgstr ""
+msgstr "Vaya a <emph>Ver ▸ Campos</emph> para intercambiar entre la vista de nombres de campos y la de contenido de campos."
 
 #: 02140000.xhp
 msgctxt ""
@@ -3592,7 +3592,7 @@ msgctxt ""
 "par_id3147513\n"
 "help.text"
 msgid "<ahelp hid=\".\">Shows or hides shadings around fields in your document like non-breaking spaces, soft hyphens, indexes, and footnotes.</ahelp>"
-msgstr "<ahelp hid=\".\">Muestra u oculta las marcas —sombreadas— de los campos del documento, incluidos los espacios duros, los guiones opcionales, los índices y las notas al pie.</ahelp>"
+msgstr "<ahelp hid=\".\">Muestra u oculta las marcas —sombreadas— de los campos del documento, incluidos los espacios indivisibles, los guiones discrecionales, los índices y las notas al pie.</ahelp>"
 
 #: 03080000.xhp
 msgctxt ""
@@ -4130,7 +4130,7 @@ msgctxt ""
 "35\n"
 "help.text"
 msgid "For example, to insert a section named \"Section1\" from a $[officename] text document abc.odt as a DDE link, use the command: \"soffice x:\\abc.odt Section1\". To insert the contents of the first cell from a MS Excel spreadsheet file called \"abc.xls\", use the command: \"excel x:\\[abc.xls]Sheet1 z1s1\". You can also copy the elements that you want to insert as a DDE link, and then <emph>Edit - Paste Special</emph>. You can then view the DDE command for the link, by selecting the contents and choosing <emph>Edit - Fields</emph>."
-msgstr ""
+msgstr "Por ejemplo, para insertar una sección llamada «Sección1» desde un documento de texto abc.odt de $[officename] como un enlace DDE, use la orden: «soffice x:\\abc.odt Sección1». Para insertar el contenido de la primera celda desde una hoja de cálculo de MS Excel llamada «abc.xls», use la orden: «excel x:\\[abc.xls]Hoja1 z1s1». Puede copiar también los elementos que desee insertar como enlace DDE y, a continuación, <emph>Editar ▸ Pegado especial</emph>. Puede ver la orden DDE del vínculo si selecciona el contenido y pulsa en <emph>Editar ▸ Campos</emph>."
 
 #: 04020100.xhp
 msgctxt ""
@@ -4837,7 +4837,7 @@ msgctxt ""
 "par_idN10744\n"
 "help.text"
 msgid "AutoCaption"
-msgstr "Autotítulo"
+msgstr "Leyenda automática"
 
 #: 04060000.xhp
 msgctxt ""
@@ -4889,7 +4889,7 @@ msgctxt ""
 "4\n"
 "help.text"
 msgid "When you add chapter numbers to caption labels, the caption numbering is reset when a chapter heading is encountered. For example, if the last figure in chapter 1 is \"Figure 1.12\", the first figure in the next chapter would be \"Figure 2.1\"."
-msgstr "Cuando añada números de capítulos a las leyendas, la numeración de estas se restablecerá cuando se encuentre el encabezamiento de un capítulo. Por ejemplo, si la última figura del capítulo 1 es «Figura 1.12», la primera figura del siguiente capítulo será «Figura 2.1»."
+msgstr "Cuando añada números de capítulos a las leyendas, la numeración de estas se restablecerá cuando se encuentre el título de un capítulo. Por ejemplo, si la última figura del capítulo 1 es «Figura 1.12», la primera figura del siguiente capítulo será «Figura 2.1»."
 
 #: 04060100.xhp
 msgctxt ""
@@ -8998,7 +8998,7 @@ msgctxt ""
 "35\n"
 "help.text"
 msgid "Modification date"
-msgstr "Modificación de fecha"
+msgstr "Fecha de modificación"
 
 #: 04090007.xhp
 msgctxt ""
@@ -9715,7 +9715,7 @@ msgctxt ""
 "125\n"
 "help.text"
 msgid "E-mail address"
-msgstr "E-mail"
+msgstr "Dirección de correo electrónico"
 
 #: 04090200.xhp
 msgctxt ""
@@ -9994,7 +9994,7 @@ msgctxt ""
 "59\n"
 "help.text"
 msgid "Examples of Conditions in Fields"
-msgstr "Ejemplos de condiciones para los comandos de campo"
+msgstr "Ejemplos de condiciones en campos"
 
 #: 04090200.xhp
 msgctxt ""
@@ -10029,7 +10029,7 @@ msgctxt ""
 "62\n"
 "help.text"
 msgid "In the <emph>Type</emph> list, click \"Conditional text\"."
-msgstr "En la lista <emph>Tipo de campo</emph>, pulse \"Texto condicional\"."
+msgstr "En la lista <emph>Tipo</emph>, pulse en «Texto condicional»."
 
 #: 04090200.xhp
 msgctxt ""
@@ -10038,7 +10038,7 @@ msgctxt ""
 "63\n"
 "help.text"
 msgid "In the <emph>Condition </emph>box, type \"page == 1\"."
-msgstr "En el cuadro <emph>Condición</emph>, escriba \"page == 1\"."
+msgstr "En el cuadro <emph>Condición</emph>, escriba «page == 1»."
 
 #: 04090200.xhp
 msgctxt ""
@@ -10047,7 +10047,7 @@ msgctxt ""
 "64\n"
 "help.text"
 msgid "In the <emph>Then</emph> box, type \"There is only one page\"."
-msgstr "En el cuadro <emph>Entonces</emph>, escriba \"Sólo hay una página\"."
+msgstr "En el cuadro <emph>Entonces</emph>, escriba «Solo hay una página»."
 
 #: 04090200.xhp
 msgctxt ""
@@ -10056,7 +10056,7 @@ msgctxt ""
 "65\n"
 "help.text"
 msgid "In the <emph>Or </emph>box, type \"There are several pages\"."
-msgstr "En el cuadro <emph>Si no</emph>, escriba \"Hay varias páginas\"."
+msgstr "En el cuadro <emph>Si no</emph>, escriba «Hay varias páginas»."
 
 #: 04090200.xhp
 msgctxt ""
@@ -10065,7 +10065,7 @@ msgctxt ""
 "137\n"
 "help.text"
 msgid "Click <emph>Insert</emph>, and then click <emph>Close</emph>."
-msgstr "Pulse <emph>Insertar</emph> y a continuación <emph>Cerrar</emph>."
+msgstr "Pulse en <emph>Insertar</emph> y, a continuación, en <emph>Cerrar</emph>."
 
 #: 04090200.xhp
 msgctxt ""
@@ -10074,7 +10074,7 @@ msgctxt ""
 "67\n"
 "help.text"
 msgid "To display conditional text based on a user-defined Variable"
-msgstr "Para mostrar texto condicional basado en una variable definida por el usuario."
+msgstr "Para mostrar texto condicional basado en una variable definida por el usuario"
 
 #: 04090200.xhp
 msgctxt ""
@@ -10091,7 +10091,7 @@ msgctxt ""
 "68\n"
 "help.text"
 msgid "In the <emph>Type </emph>list, click \"Set Variable\"."
-msgstr "En la lista <emph>Tipo de campo</emph>, pulse \"Establecer variable\"."
+msgstr "En la lista <emph>Tipo</emph>, pulse en «Establecer variable»."
 
 #: 04090200.xhp
 msgctxt ""
@@ -10100,7 +10100,7 @@ msgctxt ""
 "139\n"
 "help.text"
 msgid "In the<emph> Name</emph> box, type \"Profit\"."
-msgstr "En el cuadro <emph>Nombre</emph>, escriba \"Beneficio\"."
+msgstr "En el cuadro <emph>Nombre</emph>, escriba «Beneficio»."
 
 #: 04090200.xhp
 msgctxt ""
@@ -10109,7 +10109,7 @@ msgctxt ""
 "140\n"
 "help.text"
 msgid "In the<emph> Value</emph> box, type \"5000\"."
-msgstr "En el cuadro <emph>Valor</emph>, escriba \"5000\"."
+msgstr "En el cuadro <emph>Valor</emph>, escriba «5000»."
 
 #: 04090200.xhp
 msgctxt ""
@@ -10118,7 +10118,7 @@ msgctxt ""
 "141\n"
 "help.text"
 msgid "Click <emph>Insert</emph>."
-msgstr "Pulse <emph>Insertar</emph>."
+msgstr "Pulse en <emph>Insertar</emph>."
 
 #: 04090200.xhp
 msgctxt ""
@@ -10127,7 +10127,7 @@ msgctxt ""
 "70\n"
 "help.text"
 msgid "Click the <emph>Functions</emph> tab, and click \"Conditional text\" in the <emph>Type</emph> list."
-msgstr "Pulse la pestaña <emph>Funciones</emph> y a continuación \"Texto condicional\" en la lista <emph>Tipo de campo</emph>."
+msgstr "Pulse en la pestaña <emph>Funciones</emph> y, a continuación, en «Texto condicional» en la lista <emph>Tipo</emph>."
 
 #: 04090200.xhp
 msgctxt ""
@@ -10136,7 +10136,7 @@ msgctxt ""
 "142\n"
 "help.text"
 msgid "In the <emph>Condition</emph> box, type \"Profit < 5000\"."
-msgstr "En el cuadro <emph>Condición</emph>, escriba \"Beneficio < 5000\"."
+msgstr "En el cuadro <emph>Condición</emph>, escriba «Beneficio < 5000»."
 
 #: 04090200.xhp
 msgctxt ""
@@ -10145,7 +10145,7 @@ msgctxt ""
 "71\n"
 "help.text"
 msgid "In the <emph>Then</emph> box, type \"Target is not met\"."
-msgstr "En el cuadro <emph>Entonces</emph>, escriba \"No se cumple el objetivo\"."
+msgstr "En el cuadro <emph>Entonces</emph>, escriba «No se cumple el objetivo»."
 
 #: 04090200.xhp
 msgctxt ""
@@ -10154,7 +10154,7 @@ msgctxt ""
 "72\n"
 "help.text"
 msgid "In the <emph>Or </emph>box, type \"Target is met\"."
-msgstr "En el cuadro <emph>Si no</emph>, escriba \"Se cumple el objetivo\"."
+msgstr "En el cuadro <emph>Si no</emph>, escriba «Se cumple el objetivo»."
 
 #: 04090200.xhp
 msgctxt ""
@@ -10163,7 +10163,7 @@ msgctxt ""
 "143\n"
 "help.text"
 msgid "Click <emph>Insert</emph>."
-msgstr "Pulse <emph>Insertar</emph>."
+msgstr "Pulse en <emph>Insertar</emph>."
 
 #: 04090200.xhp
 msgctxt ""
@@ -10172,7 +10172,7 @@ msgctxt ""
 "73\n"
 "help.text"
 msgid "To edit the contents of the \"Profit\" variable, double-click the variable field."
-msgstr "Para editar el contenido en la variable \"Beneficio\" pulse dos veces en el campo de la variable."
+msgstr "Para editar el contenido de la variable «Beneficio», pulse dos veces en el campo de la variable."
 
 #: 04090200.xhp
 msgctxt ""
@@ -10190,7 +10190,7 @@ msgctxt ""
 "144\n"
 "help.text"
 msgid "The first part of this example inserts a space between the \"First Name\" and \"Last Name\" fields in a document, and the second part inserts text based on the contents of a field. This example requires that an address data source is registered with $[officename]."
-msgstr "En la primera parte de este ejemplo se inserta un espacio entre el campo \"Nombre\" y \"Apellido\" en un documento, mientras que en la segunda parte se inserta texto según el contenido de un campo. Este ejemplo requiere que se registre un origen de datos de direcciones con $[officename]."
+msgstr "En la primera parte de este ejemplo se inserta un espacio entre los campos «Nombres» y «Apellidos» de un documento, mientras que en la segunda parte se inserta texto según el contenido de un campo. Este ejemplo requiere que se registre un origen de datos de direcciones con $[officename]."
 
 #: 04090200.xhp
 msgctxt ""
@@ -10339,7 +10339,7 @@ msgctxt ""
 "par_idN105AC\n"
 "help.text"
 msgid "Opens a menu to insert an index or bibliography entry, as well as inserting a table of contents, index, and or bibliography."
-msgstr ""
+msgstr "Abre un menú donde insertar entradas de índice o bibliográficas, así como sumarios, índices y bibliografías."
 
 #: 04120000.xhp
 msgctxt ""
@@ -10416,7 +10416,7 @@ msgctxt ""
 "3\n"
 "help.text"
 msgid "Selection"
-msgstr "Marca"
+msgstr "Selección"
 
 #: 04120100.xhp
 msgctxt ""
@@ -10604,7 +10604,7 @@ msgctxt ""
 "33\n"
 "help.text"
 msgid "Whole words only"
-msgstr "Sólo palabras enteras"
+msgstr "Solo palabras completas"
 
 #: 04120100.xhp
 msgctxt ""
@@ -10649,7 +10649,7 @@ msgctxt ""
 "28\n"
 "help.text"
 msgid "New user-defined index"
-msgstr "Nuevo índice definido por el usuario"
+msgstr "Índice de usuario nuevo"
 
 #: 04120100.xhp
 msgctxt ""
@@ -12138,7 +12138,7 @@ msgctxt ""
 "tit\n"
 "help.text"
 msgid "Entries (table of contents)"
-msgstr "Entradas (índice de contenido)"
+msgstr "Entradas (sumario)"
 
 #: 04120221.xhp
 msgctxt ""
@@ -12156,7 +12156,7 @@ msgctxt ""
 "2\n"
 "help.text"
 msgid "<variable id=\"eintraege\">Specify the format of the entries in the table of contents.</variable>"
-msgstr "<variable id=\"eintraege\">Especificar el formato de los elementos del índice de contenido. </variable>"
+msgstr "<variable id=\"eintraege\">Especifique el formato de los elementos del sumario.</variable>"
 
 #: 04120221.xhp
 msgctxt ""
@@ -12192,7 +12192,7 @@ msgctxt ""
 "7\n"
 "help.text"
 msgid "The <emph>Structure </emph>line defines how the entries in the index are composed. To change the appearance of an entry you can enter codes or text in the empty boxes on this line. You can also click in an empty box or on a code, and then click a code button."
-msgstr "La línea <emph>Estructura</emph> define cómo se componen las entradaes en el índice. Para cambiar la apariencia de la entrada puede proporcionar códigos o textos en los cuadros vacíos de esta línea. También puede pulsar en un cuadro vacío o en un código y, a continuación, pulsar en un botón de código."
+msgstr "La línea <emph>Estructura</emph> define cómo se componen las entradas del índice. Para cambiar la apariencia de la entrada, es posible proporcionar códigos o textos en los cuadros vacíos de esta línea. También puede pulsar en un cuadro vacío o en un código y, a continuación, pulsar en un botón de código."
 
 #: 04120221.xhp
 msgctxt ""
@@ -12318,7 +12318,7 @@ msgctxt ""
 "20\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/tocentriespage/hyperlink\">Creates a hyperlink for the part of the entry that you enclose by the opening (LS) and the closing (LE) hyperlink tags. On the <emph>Structure </emph>line, click in the empty box in front of the part that you want to create a hyperlink for, and then click this button. Click in the empty box after the part that you want to hyperlink, and then click this button again. All hyperlinks must be unique. Available only for a table of contents.</ahelp>"
-msgstr "<ahelp hid=\"modules/swriter/ui/tocentriespage/hyperlink\">Crea un hiperenlace para la parte de la entrada que el usuario delimite entre las etiquetas de apertura (LS) y cierre (LE) del hiperenlace. En la línea <emph>Estructura</emph>, pulse en el cuadro vacío que se ubique después de la ubicación donde se desee crear el hiperenlace y, a continuación, pulse en este botón. Repita este proceso para cada hiperenlace. Todos los hiperenlaces deben ser únicos. Disponible únicamente para las tablas de contenido.</ahelp>"
+msgstr "<ahelp hid=\"modules/swriter/ui/tocentriespage/hyperlink\">Crea un hiperenlace para la parte de la entrada que el usuario delimite entre las etiquetas de apertura (LS) y cierre (LE) del hiperenlace. En la línea <emph>Estructura</emph>, pulse en el cuadro vacío que se ubique después de la ubicación donde se desee crear el hiperenlace y, a continuación, pulse en este botón. Repita este proceso para cada hiperenlace. Todos los hiperenlaces deben ser únicos. Disponible únicamente para los sumarios.</ahelp>"
 
 #: 04120221.xhp
 msgctxt ""
@@ -12335,7 +12335,7 @@ msgctxt ""
 "par_id3155137\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/tocentriespage/all\">Applies the current settings to all levels without closing the dialog.</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\"modules/swriter/ui/tocentriespage/all\">Aplica la configuración actual a todos los niveles, sin cerrar el cuadro de diálogo.</ahelp>"
 
 #: 04120221.xhp
 msgctxt ""
@@ -12442,7 +12442,7 @@ msgctxt ""
 "par_id6499221\n"
 "help.text"
 msgid "<ahelp hid=\".\">Only visible when you click the E# button in the Structure line. Select to show the chapter number with or without separator.</ahelp>"
-msgstr "<ahelp hid=\".\">Solamente visible cuando usted hace clic en el botón E# en la línea Estructura. Seleccione para mostrar el número del capítulo con o sin separador.</ahelp>"
+msgstr "<ahelp hid=\".\">Es visible únicamente cuando pulsa en el botón E# de la línea Estructura. Seleccione para mostrar el número del capítulo con o sin separador.</ahelp>"
 
 #: 04120221.xhp
 msgctxt ""
@@ -13109,7 +13109,7 @@ msgctxt ""
 "par_id3149292\n"
 "help.text"
 msgid "Choose <emph>Insert - Table of Contents and Index - Table of Contents, Index or Bibliography - Type</emph>."
-msgstr ""
+msgstr "Vaya a <emph>Insertar ▸ Sumario e índice ▸ Sumario, índice o bibliografía ▸ Tipo</emph>."
 
 #: 04120250.xhp
 msgctxt ""
@@ -13922,7 +13922,7 @@ msgctxt ""
 "par_id3155912\n"
 "help.text"
 msgid "<link href=\"text/swriter/01/05090300.xhp\" name=\"Table - Properties - Text Flow\">Table - Properties - Text Flow</link>"
-msgstr ""
+msgstr "<link href=\"text/swriter/01/05090300.xhp\" name=\"Tabla - Propiedades - Flujo del texto\">Tabla ▸ Propiedades ▸ Flujo del texto</link>"
 
 #: 04150000.xhp
 msgctxt ""
@@ -14517,7 +14517,7 @@ msgctxt ""
 "4\n"
 "help.text"
 msgid "Specify the <link href=\"text/swriter/guide/using_hyphen.xhp\" name=\"hyphenation\">hyphenation</link> options for text documents."
-msgstr "Especificar las opciones de <link href=\"text/swriter/guide/using_hyphen.xhp\" name=\"hyphenation\">separación silábica</link> en los documentos de texto."
+msgstr "Especifique las opciones de <link href=\"text/swriter/guide/using_hyphen.xhp\" name=\"división de palabras\">división de palabras</link> de los documentos de texto."
 
 #: 05030200.xhp
 msgctxt ""
@@ -14544,7 +14544,7 @@ msgctxt ""
 "7\n"
 "help.text"
 msgid "Characters at line end"
-msgstr "Caracteres al final de la línea"
+msgstr "Caracteres a final de renglón"
 
 #: 05030200.xhp
 msgctxt ""
@@ -14553,7 +14553,7 @@ msgctxt ""
 "8\n"
 "help.text"
 msgid "<ahelp hid=\"cui/ui/textflowpage/spinLineEnd\">Enter the minimum number of characters to leave at the end of the line before a hyphen is inserted.</ahelp>"
-msgstr "<ahelp hid=\"cui/ui/textflowpage/spinLineEnd\">Escriba el número mínimo de caracteres que se deben dejar al final de la línea antes de insertar un guión.</ahelp>"
+msgstr "<ahelp hid=\"cui/ui/textflowpage/spinLineEnd\">Escriba el número mínimo de caracteres que se deben dejar al final del renglón antes de insertar un guion.</ahelp>"
 
 #: 05030200.xhp
 msgctxt ""
@@ -14562,7 +14562,7 @@ msgctxt ""
 "9\n"
 "help.text"
 msgid "Characters at line begin"
-msgstr "Caracteres al comienzo de la línea"
+msgstr "Caracteres a comienzo de renglón"
 
 #: 05030200.xhp
 msgctxt ""
@@ -14589,7 +14589,7 @@ msgctxt ""
 "12\n"
 "help.text"
 msgid "<ahelp hid=\"cui/ui/textflowpage/spinMaxNum\">Enter the maximum number of consecutive lines that can be hyphenated.</ahelp>"
-msgstr "<ahelp hid=\"cui/ui/textflowpage/spinMaxNum\">Escriba el número máximo de líneas consecutivas en las que se puede efectuar separación silábica.</ahelp>"
+msgstr "<ahelp hid=\"cui/ui/textflowpage/spinMaxNum\">Escriba el número máximo de líneas consecutivas en las que se puede efectuar división de palabras.</ahelp>"
 
 #: 05030200.xhp
 msgctxt ""
@@ -15008,7 +15008,7 @@ msgctxt ""
 "hd_id3151173\n"
 "help.text"
 msgid "<link href=\"text/swriter/01/05030800.xhp\" name=\"Numbering\">Outline & Numbering</link>"
-msgstr ""
+msgstr "<link href=\"text/swriter/01/05030800.xhp\" name=\"Numeración\">Esquema y numeración</link>"
 
 #: 05030800.xhp
 msgctxt ""
@@ -15096,7 +15096,7 @@ msgctxt ""
 "par_id3149106\n"
 "help.text"
 msgid "This section only appears when you edit the properties of the current paragraph by choosing <emph>Format - Paragraph</emph>."
-msgstr ""
+msgstr "Esta sección aparece únicamente al editar las propiedades del párrafo actual mediante <emph>Formato ▸ Párrafo</emph>."
 
 #: 05030800.xhp
 msgctxt ""
@@ -15104,7 +15104,7 @@ msgctxt ""
 "hd_id3151250\n"
 "help.text"
 msgid "Restart at this paragraph"
-msgstr ""
+msgstr "Reiniciar en este párrafo"
 
 #: 05030800.xhp
 msgctxt ""
@@ -15112,7 +15112,7 @@ msgctxt ""
 "par_id3154831\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/numparapage/checkCB_NEW_START\">Restarts the numbering at the current paragraph.</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\"modules/swriter/ui/numparapage/checkCB_NEW_START\">Reinicia la numeración a partir del párrafo actual.</ahelp>"
 
 #: 05030800.xhp
 msgctxt ""
@@ -15152,7 +15152,7 @@ msgctxt ""
 "hd_id3147581\n"
 "help.text"
 msgid "Line numbering"
-msgstr ""
+msgstr "Numeración de renglones"
 
 #: 05030800.xhp
 msgctxt ""
@@ -15160,7 +15160,7 @@ msgctxt ""
 "par_id3152771\n"
 "help.text"
 msgid "Specify the <link href=\"text/swriter/01/06180000.xhp\" name=\"Line numbering\">Line numbering</link> options. To add line numbers to your document, choose <emph>Tools - Line Numbering</emph>."
-msgstr ""
+msgstr "Especifique las opciones <link href=\"text/swriter/01/06180000.xhp\" name=\"Numeración de renglones\">Numeración de renglones</link>. Para añadir números a los renglones del documento, vaya a <emph>Herramientas ▸ Numeración de renglones</emph>."
 
 #: 05030800.xhp
 msgctxt ""
@@ -15168,7 +15168,7 @@ msgctxt ""
 "hd_id3153345\n"
 "help.text"
 msgid "Include this paragraph in line numbering"
-msgstr ""
+msgstr "Contar los renglones de este párrafo"
 
 #: 05030800.xhp
 msgctxt ""
@@ -15176,7 +15176,7 @@ msgctxt ""
 "par_id3156267\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/numparapage/checkCB_COUNT_PARA\">Includes the current paragraph in the line numbering.</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\"modules/swriter/ui/numparapage/checkCB_COUNT_PARA\">Incluye el párrafo actual en la numeración de renglones.</ahelp>"
 
 #: 05030800.xhp
 msgctxt ""
@@ -15684,7 +15684,7 @@ msgctxt ""
 "par_id3151168\n"
 "help.text"
 msgid "Set the height of the footnote area."
-msgstr ""
+msgstr "Permite definir la altura del área de notas al pie."
 
 #: 05040600.xhp
 msgctxt ""
@@ -15692,7 +15692,7 @@ msgctxt ""
 "hd_id3145412\n"
 "help.text"
 msgid "Not larger than page area"
-msgstr ""
+msgstr "No mayor que el área de la página"
 
 #: 05040600.xhp
 msgctxt ""
@@ -15700,7 +15700,7 @@ msgctxt ""
 "par_id3147514\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/footnoteareapage/maxheightpage\">Automatically adjusts the height of the footnote area depending on the number of footnotes.</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\"modules/swriter/ui/footnoteareapage/maxheightpage\">Ajusta automáticamente la altura del área de notas al pie en función de la cantidad de notas al pie.</ahelp>"
 
 #: 05040600.xhp
 msgctxt ""
@@ -15716,7 +15716,7 @@ msgctxt ""
 "par_id3149807\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/footnoteareapage/maxheight\">Sets a maximum height for the footnote area. Enable this option, then enter the height.</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\"modules/swriter/ui/footnoteareapage/maxheight\">Establece una altura máxima para el área de notas al pie. Active esta opción y después introduzca la altura.</ahelp>"
 
 #: 05040600.xhp
 msgctxt ""
@@ -15724,7 +15724,7 @@ msgctxt ""
 "par_id3154568\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/footnoteareapage/maxheightsb\">Enter the maximum height for the footnote area.</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\"modules/swriter/ui/footnoteareapage/maxheightsb\">Fije la altura máxima del área de notas al pie.</ahelp>"
 
 #: 05040600.xhp
 msgctxt ""
@@ -15732,7 +15732,7 @@ msgctxt ""
 "hd_id3151318\n"
 "help.text"
 msgid "Space to text"
-msgstr ""
+msgstr "Espaciado al texto"
 
 #: 05040600.xhp
 msgctxt ""
@@ -15740,7 +15740,7 @@ msgctxt ""
 "par_id3153665\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/footnoteareapage/spacetotext\">Enter the amount of space to leave between the bottom page margin and the first line of text in the footnote area.</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\"modules/swriter/ui/footnoteareapage/spacetotext\">Escriba la cantidad de espacio que se debe dejar entre el margen inferior de la página y el primer renglón de texto en el área de notas al pie.</ahelp>"
 
 #: 05040600.xhp
 msgctxt ""
@@ -15772,7 +15772,7 @@ msgctxt ""
 "par_id3155184\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/footnoteareapage/position\">Select the horizontal alignment for the line that separates the main text from the footnote area.</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\"modules/swriter/ui/footnoteareapage/position\">Seleccione la alineación horizontal de la línea que separa el texto principal del área de notas al pie.</ahelp>"
 
 #: 05040600.xhp
 msgctxt ""
@@ -15812,7 +15812,7 @@ msgctxt ""
 "hd_id3151255\n"
 "help.text"
 msgid "Color"
-msgstr ""
+msgstr "Color"
 
 #: 05040600.xhp
 msgctxt ""
@@ -15820,7 +15820,7 @@ msgctxt ""
 "par_id3149107\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/footnoteareapage/color\">Select the color of the separator line.</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\"modules/swriter/ui/footnoteareapage/color\">Seleccione el color de la línea de separación.</ahelp>"
 
 #: 05040600.xhp
 msgctxt ""
@@ -15828,7 +15828,7 @@ msgctxt ""
 "hd_id3143284\n"
 "help.text"
 msgid "Length"
-msgstr ""
+msgstr "Longitud"
 
 #: 05040600.xhp
 msgctxt ""
@@ -15836,7 +15836,7 @@ msgctxt ""
 "par_id3154827\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/footnoteareapage/length\">Enter the length of the separator line as a percentage of the page width area.</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\"modules/swriter/ui/footnoteareapage/length\">Especifique la longitud de la línea de separación como un porcentaje de la anchura de la página.</ahelp>"
 
 #: 05040600.xhp
 msgctxt ""
@@ -15844,7 +15844,7 @@ msgctxt ""
 "hd_id3149828\n"
 "help.text"
 msgid "Spacing to footnote contents"
-msgstr ""
+msgstr "Espaciado al contenido de nota al pie"
 
 #: 05040600.xhp
 msgctxt ""
@@ -15852,7 +15852,7 @@ msgctxt ""
 "par_id3148970\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/footnoteareapage/spacingtocontents\">Enter the amount of space to leave between the separator line and the first line of the footnote area.</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\"modules/swriter/ui/footnoteareapage/spacingtocontents\">Fije la cantidad de espacio que se debe dejar entre el margen inferior de la página y el primer renglón de texto en el área de notas al pie.</ahelp>"
 
 #: 05040600.xhp
 msgctxt ""
@@ -16280,7 +16280,7 @@ msgctxt ""
 "6\n"
 "help.text"
 msgid "Max. Ruby text size"
-msgstr "Tamaño del texto Ruby"
+msgstr "Tamaño máximo del texto ágata"
 
 #: 05040800.xhp
 msgctxt ""
@@ -16289,7 +16289,7 @@ msgctxt ""
 "5\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/textgridpage/spinMF_RUBYSIZE\">Enter the font size for the Ruby text.</ahelp>"
-msgstr "<ahelp hid=\"modules/swriter/ui/textgridpage/spinMF_RUBYSIZE\">Escriba el tamaño del tipo de letra para el texto Ruby.</ahelp>"
+msgstr "<ahelp hid=\"modules/swriter/ui/textgridpage/spinMF_RUBYSIZE\">Escriba el tamaño del tipo de letra del texto ágata.</ahelp>"
 
 #: 05040800.xhp
 msgctxt ""
@@ -16298,7 +16298,7 @@ msgctxt ""
 "4\n"
 "help.text"
 msgid "Ruby text below/left from base text"
-msgstr "Texto Ruby abajo/a la izquierda del texto base"
+msgstr "Texto ágata debajo/a la izquierda del texto de base"
 
 #: 05040800.xhp
 msgctxt ""
@@ -16307,7 +16307,7 @@ msgctxt ""
 "3\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/textgridpage/checkCB_RUBYBELOW\">Displays Ruby text to the left of or below the base text.</ahelp>"
-msgstr "<ahelp hid=\"modules/swriter/ui/textgridpage/checkCB_RUBYBELOW\">Muestra texto Ruby bajo el texto de base o a su izquierda.</ahelp>"
+msgstr "<ahelp hid=\"modules/swriter/ui/textgridpage/checkCB_RUBYBELOW\">Muestra el texto ágata debajo del texto de base o a su izquierda.</ahelp>"
 
 #: 05040800.xhp
 msgctxt ""
@@ -18323,7 +18323,7 @@ msgctxt ""
 "44\n"
 "help.text"
 msgid "Trigger Hyperlink"
-msgstr "Ejecutar hiperenlace"
+msgstr "Activar hiperenlace"
 
 #: 05060700.xhp
 msgctxt ""
@@ -18933,7 +18933,7 @@ msgctxt ""
 "13\n"
 "help.text"
 msgid "Server-side image map"
-msgstr "Image map del sitio del servidor"
+msgstr "Mapa de imagen del lado servidor"
 
 #: 05060800.xhp
 msgctxt ""
@@ -20378,7 +20378,7 @@ msgctxt ""
 "3\n"
 "help.text"
 msgid "To remove the protection from several tables at once, select the tables, and then press <switchinline select=\"sys\"><caseinline select=\"MAC\">Command </caseinline><defaultinline>Ctrl</defaultinline></switchinline>+Shift+T. To remove the protection from all of the tables in a document, click anywhere in the document, and then press <switchinline select=\"sys\"><caseinline select=\"MAC\">Command </caseinline><defaultinline>Ctrl</defaultinline></switchinline>+Shift+T."
-msgstr "Para suprimir la protección de varias tablas a la vez selecciónelas y a continuación pulse <switchinline select=\"sys\"><caseinline select=\"MAC\">Comando </caseinline><defaultinline>Ctrl</defaultinline></switchinline>+Mayús.+T. Para suprimir la protección de todas las tablas de un documento, haga clic en cualquier lugar del documento y, a continuación, pulse <switchinline select=\"sys\"><caseinline select=\"MAC\">Comando </caseinline><defaultinline>Ctrl</defaultinline></switchinline>+Mayús.+T."
+msgstr "Para quitar la protección de varias tablas a la vez, selecciónelas y, a continuación, oprima <switchinline select=\"sys\"><caseinline select=\"MAC\">⌘⇧T</caseinline><defaultinline>Ctrl + Mayús + T</defaultinline></switchinline>. Para quitar la protección de todas las tablas de un documento, pulse en cualquier lugar del documento y, a continuación, oprima <switchinline select=\"sys\"><caseinline select=\"MAC\">⌘⇧T</caseinline><defaultinline>Ctrl + Mayús T</defaultinline></switchinline>."
 
 #: 05100400.xhp
 msgctxt ""
@@ -23081,7 +23081,7 @@ msgctxt ""
 "2\n"
 "help.text"
 msgid "<variable id=\"silben\"><ahelp hid=\".\">Inserts hyphens in words that are too long to fit at the end of a line.</ahelp> $[officename] searches the document and suggests hyphenation that you can accept or reject. If text is selected, the Hyphenation dialog works on the selected text only. If no text is selected, the Hyphenation dialog works on the whole document.</variable>"
-msgstr "<variable id=\"silben\"><ahelp hid=\".\">Inserta guiones en las palabras demasiado largas que están al final de una línea.</ahelp> $[officename] busca en el documento y propone separaciones silábicas que puede aceptar o rechazar. Si se selecciona algún texto, el diálogo de separación silábica se aplica sólo al texto seleccionado. Si no hay texto seleccionado, se aplica a todo el documento.</variable>"
+msgstr "<variable id=\"silben\"><ahelp hid=\".\">Inserta guiones en las palabras demasiado largas para caber al final de un renglón.</ahelp> $[officename] busca en el documento y propone divisiones que puede aceptar o rechazar. Si se selecciona algún texto, el cuadro de diálogo de división de palabras se aplica solo al texto seleccionado. Si no hay texto seleccionado, se aplica a todo el documento.</variable>"
 
 #: 06030000.xhp
 msgctxt ""
@@ -23090,7 +23090,7 @@ msgctxt ""
 "3\n"
 "help.text"
 msgid "To automatically hyphenate the current or selected paragraphs, choose <emph>Format - Paragraph</emph>, and then click the <link href=\"text/swriter/01/05030200.xhp\" name=\"Text Flow\">Text Flow</link> tab. You can also apply automatic hyphenation to a paragraph style. In text where automatic hyphenation is enabled, the Hyphenation dialog will not find any word to hyphenate."
-msgstr "Para separar en sílabas el párrafo actual, o los párrafos seleccionados, elija <emph>Formato - Párrafo</emph>y haga clic en la pestaña <link href=\"text/swriter/01/05030200.xhp\" name=\"Flujo del texto\">Flujo del texto</link>. También puede aplicar la separación silábica automática a un estilo de párrafo. En el texto donde la separación silábica esté activada, el diálogo de separación silábica no encontrará ninguna palabra para separar."
+msgstr "Para dividir las palabras del párrafo actual, o los párrafos seleccionados, vaya a <emph>Formato ▸ Párrafo</emph> y pulse en la pestaña <link href=\"text/swriter/01/05030200.xhp\" name=\"Flujo de texto\">Flujo de texto</link>. También puede aplicar la división de palabras automática a un estilo de párrafo. En textos en los que la división de palabras esté activada, el cuadro de diálogo de división de palabras no encontrará ninguna palabra para dividir."
 
 #: 06030000.xhp
 msgctxt ""
@@ -23108,7 +23108,7 @@ msgctxt ""
 "36\n"
 "help.text"
 msgid "To accept the hyphenation of the displayed word, click <emph>Hyphenate</emph>."
-msgstr "Para aceptar la separación silábica de la palabra mostrada, haga clic en <emph>Separar</emph>."
+msgstr "Para aceptar la división de la palabra mostrada, pulse en <emph>Dividir</emph>."
 
 #: 06030000.xhp
 msgctxt ""
@@ -23117,7 +23117,7 @@ msgctxt ""
 "37\n"
 "help.text"
 msgid "To change the hyphenation of the displayed word, click the left or right arrow below the word, and then click <emph>Hyphenate</emph>. The left and right buttons are enabled for words with multiple hyphenation points."
-msgstr "Para cambiar la separación silábica de la palabra mostrada, haga clic en las flechas izquierda o derecha debajo de la palabra y haga ciic en <emph>Separar</emph>. Los botones de flecha izquierda y derecha se activan en caso de palabras con varios sitios de separación."
+msgstr "Para cambiar la división de la palabra mostrada, utilice las flechas izquierda o derecha debajo de la palabra y pulse en <emph>Dividir</emph>. Los botones de flecha izquierda y derecha se activan en caso de palabras con varios sitios de división."
 
 #: 06030000.xhp
 msgctxt ""
@@ -23189,7 +23189,7 @@ msgctxt ""
 "33\n"
 "help.text"
 msgid "To hide soft hyphens, choose <switchinline select=\"sys\"><caseinline select=\"MAC\"><emph>%PRODUCTNAME - Preferences</emph></caseinline><defaultinline><emph>Tools - Options</emph></defaultinline></switchinline><emph> - </emph><link href=\"text/shared/optionen/01040600.xhp\" name=\"Text Document - Formatting Aids\"><emph>%PRODUCTNAME Writer - Formatting Aids</emph></link>, and then clear the <emph>Custom hyphens</emph> check box."
-msgstr "Para ocultar los guiones opcionales, vaya a <switchinline select=\"sys\"><caseinline select=\"MAC\"><emph>%PRODUCTNAME ▸ Preferencias</emph></caseinline><defaultinline><emph>Herramientas ▸ Opciones</emph></defaultinline></switchinline><emph> ▸ </emph><link href=\"text/shared/optionen/01040600.xhp\" name=\"Text Document - Formatting Aids\"><emph>%PRODUCTNAME Writer ▸ Ayudas de formato</emph></link> y desmarque la casilla <emph>Guiones personalizados</emph>."
+msgstr "Para ocultar los guiones discrecionales, vaya a <switchinline select=\"sys\"><caseinline select=\"MAC\"><emph>%PRODUCTNAME ▸ Preferencias</emph></caseinline><defaultinline><emph>Herramientas ▸ Opciones</emph></defaultinline></switchinline><emph> ▸ </emph><link href=\"text/shared/optionen/01040600.xhp\" name=\"Text Document - Formatting Aids\"><emph>%PRODUCTNAME Writer ▸ Ayudas de formato</emph></link> y desmarque la casilla <emph>Guiones personalizados</emph>."
 
 #: 06030000.xhp
 msgctxt ""
@@ -23234,7 +23234,7 @@ msgctxt ""
 "24\n"
 "help.text"
 msgid "<ahelp hid=\"cui/ui/hyphenate/right\">Set the position of the hyphen. This option is only available if more than one hyphenation suggestion is displayed.</ahelp>"
-msgstr "<ahelp hid=\"cui/ui/hyphenate/right\">Establecer la posición del guion. Esta opción solo está disponible si hay más de una sugerencia de separación silábica en pantalla.</ahelp>"
+msgstr "<ahelp hid=\"cui/ui/hyphenate/right\">Define la posición del guion. Esta opción está disponible solo si hay más de una sugerencia de división en pantalla.</ahelp>"
 
 #: 06030000.xhp
 msgctxt ""
@@ -23252,7 +23252,7 @@ msgctxt ""
 "26\n"
 "help.text"
 msgid "<ahelp hid=\"cui/ui/hyphenate/continue\">Ignores the hyphenation suggestion and finds the next word to hyphenate.</ahelp>"
-msgstr "<ahelp hid=\"cui/ui/hyphenate/continue\">Ignora la sugerencia de separación silábica y encuentra la siguiente palabra a separar.</ahelp>"
+msgstr "<ahelp hid=\"cui/ui/hyphenate/continue\">Ignora la sugerencia de división y encuentra la siguiente palabra pendiente de separar.</ahelp>"
 
 #: 06030000.xhp
 msgctxt ""
@@ -24349,7 +24349,7 @@ msgctxt ""
 "56\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/footnotepage/charstylelb\">Select the character style that you want to use for the footnote numbers in the footnote area.</ahelp>"
-msgstr "<ahelp hid=\"modules/swriter/ui/footnotepage/charstylelb\">Seleccione el estilo de caracter que quiere usar para los números en el área del pie de página.</ahelp>"
+msgstr "<ahelp hid=\"modules/swriter/ui/footnotepage/charstylelb\">Seleccione el estilo de caracter que quiera utilizar para los números del área de notas al pie.</ahelp>"
 
 #: 06080100.xhp
 msgctxt ""
@@ -25176,7 +25176,7 @@ msgctxt ""
 "par_idN10895\n"
 "help.text"
 msgid "For Asian languages, select <emph>Match case </emph>to apply multi-level collation. In the multi-level collation, the primitive forms of the entries are first compared with the cases of the forms and diacritics ignored. If the forms are the same, the diacritics of the forms are compared. If the forms are still the same, the cases, character widths, and Japanese Kana differences of the forms are compared."
-msgstr "Para idiomas Asiáticas, seleccione <emph>Coincidir mayúsculas y minúsculas </emph>para aplicar colación de multi-nivel.En la intercalación de multi-niveles, primero comparar las formas primitivas de las entradas con la forma ignorando el mayu/minus y los diacríticas. Si las formas son igual, los diacríticas están comparada. Si las formas todavía están igual, el mayu/minus, anchos de caracteres, y las diferencias de Kana Japones están comparados."
+msgstr "En el caso de los idiomas asiáticos, seleccione <emph>Distinguir mayúsculas y minúsculas</emph> para aplicar un cotejo multinivel. En el cotejo multinivel, primero se comparan las formas primitivas de las entradas haciendo caso omiso del uso de mayúsculas y de los diacríticos. Si las formas son iguales, se comparan los diacríticos de las formas. Si las formas siguen siendo iguales, se comparan las diferencias en el uso de mayúsculas, la anchura de los caracteres y las diferencias en el kana japonés."
 
 #: 06110000.xhp
 msgctxt ""
@@ -25357,7 +25357,7 @@ msgctxt ""
 "2\n"
 "help.text"
 msgid "<variable id=\"zeinum\">Adds or removes and formats line numbers in the current document. To exclude a paragraph from line numbering, click in the paragraph, choose <emph>Format - Paragraph</emph>, click the <emph>Numbering </emph>tab, and then clear the <emph>Include this paragraph in line numbering</emph> check box.</variable> You can also exclude a paragraph style from line numbering."
-msgstr "<variable id=\"zeinum\">Añade o borra y formatea los números de las líneas en el documento actual. Para excluir un párrafo de la numeración de líneas, pulse sobre el párrafo, seleccione <emph>Formato - Párrafo</emph>, después la pestaña <emph>Numeración</emph> y, a continuación, deje en blanco la casilla de verificación <emph>Contar las líneas de este párrafo</emph>.</variable> También puede excluir un estilo de párrafo desde la numeración de líneas."
+msgstr "<variable id=\"zeinum\">Añade o quita y formatea los números de los renglones del documento actual. Para excluir un párrafo de la numeración de renglones, pulse sobre el párrafo, seleccione <emph>Formato ▸ Párrafo</emph>, después la pestaña <emph>Numeración</emph> y, a continuación, desmarque la casilla <emph>Contar los renglones de este párrafo</emph>.</variable> También puede excluir un estilo de párrafo desde Numeración de renglones."
 
 #: 06180000.xhp
 msgctxt ""
@@ -25437,7 +25437,7 @@ msgctxt ""
 "12\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/linenumbering/formatdropdown\">Select the numbering style that you want to use.</ahelp>"
-msgstr "<ahelp hid=\"modules/swriter/ui/linenumbering/formatdropdown\">Seleccione el estilo de numeración que quiere usar.</ahelp>"
+msgstr "<ahelp hid=\"modules/swriter/ui/linenumbering/formatdropdown\">Seleccione el estilo de numeración que desee utilizar.</ahelp>"
 
 #: 06180000.xhp
 msgctxt ""
@@ -25491,7 +25491,7 @@ msgctxt ""
 "18\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/linenumbering/intervalspin\">Enter the counting interval for the line numbers.</ahelp>"
-msgstr "<ahelp hid=\"modules/swriter/ui/linenumbering/intervalspin\">Introduzca el intervalo de conteo para los números de línea.</ahelp>"
+msgstr "<ahelp hid=\"modules/swriter/ui/linenumbering/intervalspin\">Proporcione el intervalo de conteo de los números de renglones.</ahelp>"
 
 #: 06180000.xhp
 msgctxt ""
@@ -25509,7 +25509,7 @@ msgctxt ""
 "20\n"
 "help.text"
 msgid "You can enter a separator character to display between line numbers if the counting interval is more than one."
-msgstr "Puede escribir un carácter de separación para que aparezca entre los números de las líneas si el intervalo de conteo es mayor de uno."
+msgstr "Es posible añadir un carácter de separación para que aparezca entre los números de los renglones si el intervalo de conteo es mayor que uno."
 
 #: 06180000.xhp
 msgctxt ""
@@ -25545,7 +25545,7 @@ msgctxt ""
 "25\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/linenumbering/linesspin\">Enter the number of lines to leave between the separators.</ahelp>"
-msgstr "<ahelp hid=\"modules/swriter/ui/linenumbering/linesspin\">Introduzca el número de líneas que dejar entre los separadores.</ahelp>"
+msgstr "<ahelp hid=\"modules/swriter/ui/linenumbering/linesspin\">Digite el número de renglones que se han de dejar entre los separadores.</ahelp>"
 
 #: 06180000.xhp
 msgctxt ""
@@ -25554,7 +25554,7 @@ msgctxt ""
 "26\n"
 "help.text"
 msgid "Separators are only displayed in lines that are not numbered."
-msgstr "Los separadores sólo aparecen en las líneas que no se numeran."
+msgstr "Los separadores aparecen únicamente en los renglones no numerados."
 
 #: 06180000.xhp
 msgctxt ""
@@ -25590,7 +25590,7 @@ msgctxt ""
 "30\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/linenumbering/blanklines\">Includes empty paragraphs in the line count.</ahelp>"
-msgstr "<ahelp hid=\"modules/swriter/ui/linenumbering/blanklines\">Incluye párrafos vacíos en el conteo de líneas.</ahelp>"
+msgstr "<ahelp hid=\"modules/swriter/ui/linenumbering/blanklines\">Incluye párrafos vacíos en el conteo de los renglones.</ahelp>"
 
 #: 06180000.xhp
 msgctxt ""
@@ -26108,7 +26108,7 @@ msgctxt ""
 "par_idN10561\n"
 "help.text"
 msgid "The Mail Merge wizard opens to this page if you start the wizard in a text document that already contains address database fields. If the wizard opens directly to this page, the <emph>Select address list</emph> button is called <emph>Select different address list</emph>."
-msgstr "El Asistente para combinar correspondencia se abre por esta página si se inicia en un documento de texto que ya contenga campos de base de datos de direcciones. Si el asistente se abre directamente en esta página, el botón <emph>Seleccionar lista de direcciones</emph> se denomina <emph>Seleccionar lista de direcciones distinta</emph>."
+msgstr "El Asistente para combinar correspondencia se abre por esta página si se inicia en un documento de texto que ya contenga campos de base de datos de direcciones. Si el asistente se abre directamente en esta página, el botón <emph>Elegir lista de direcciones</emph> se denomina <emph>Elegir otra lista de direcciones</emph>."
 
 #: mailmerge03.xhp
 msgctxt ""
@@ -26124,7 +26124,7 @@ msgctxt ""
 "par_idN10568\n"
 "help.text"
 msgid "Select address list"
-msgstr "Seleccionar lista de direcciones"
+msgstr "Elegir lista de direcciones"
 
 #: mailmerge03.xhp
 msgctxt ""
@@ -26132,7 +26132,7 @@ msgctxt ""
 "par_idN1056C\n"
 "help.text"
 msgid "<ahelp hid=\".\">Opens the <link href=\"text/swriter/01/mm_seladdlis.xhp\">Select Address List</link> dialog, where you can choose a data source for the addresses, add new addresses, or type in a new address list.</ahelp>"
-msgstr "<ahelp hid=\".\">Abre el diálogo <link href=\"text/swriter/01/mm_seladdlis.xhp\">Seleccionar lista de direcciones</link>, en el que se puede elegir un origen de datos para las direcciones, agregar direcciones o escribir en una lista de direcciones nueva.</ahelp>"
+msgstr "<ahelp hid=\".\">Abre el cuadro de diálogo <link href=\"text/swriter/01/mm_seladdlis.xhp\">Elegir lista de direcciones</link>, en el que se puede seleccionar un origen de datos para las direcciones, añadir direcciones o crear una lista de direcciones nueva.</ahelp>"
 
 #: mailmerge03.xhp
 msgctxt ""
@@ -26172,7 +26172,7 @@ msgctxt ""
 "hd_id9355754\n"
 "help.text"
 msgid "Suppress lines with just empty fields"
-msgstr "Suprimir líneas con campos vacíos"
+msgstr "Quitar filas con campos vacíos"
 
 #: mailmerge03.xhp
 msgctxt ""
@@ -26204,7 +26204,7 @@ msgctxt ""
 "par_idN1059C\n"
 "help.text"
 msgid "Match fields"
-msgstr "Asignar campos"
+msgstr "Correspondencia de campos"
 
 #: mailmerge03.xhp
 msgctxt ""
@@ -26212,7 +26212,7 @@ msgctxt ""
 "par_idN105A0\n"
 "help.text"
 msgid "<ahelp hid=\".\">Opens the <link href=\"text/swriter/01/mm_matfie.xhp\">Match Fields</link> dialog.</ahelp>"
-msgstr "<ahelp hid=\".\">Abre el diálogo <link href=\"text/swriter/01/mm_matfie.xhp\">Asignar campos</link>.</ahelp>"
+msgstr "<ahelp hid=\".\">Abre el cuadro de diálogo <link href=\"text/swriter/01/mm_matfie.xhp\">Correspondencia de campos</link>.</ahelp>"
 
 #: mailmerge03.xhp
 msgctxt ""
@@ -26428,7 +26428,7 @@ msgctxt ""
 "par_idN105B8\n"
 "help.text"
 msgid "Match fields"
-msgstr "Asignar campos"
+msgstr "Correspondencia de campos"
 
 #: mailmerge04.xhp
 msgctxt ""
@@ -26436,7 +26436,7 @@ msgctxt ""
 "par_idN105BC\n"
 "help.text"
 msgid "<ahelp hid=\".\">Opens the <link href=\"text/swriter/01/mm_matfie.xhp\">Match Fields</link> dialog.</ahelp>"
-msgstr "<ahelp hid=\".\">Abre el diálogo <link href=\"text/swriter/01/mm_matfie.xhp\">Asignar campos</link>.</ahelp>"
+msgstr "<ahelp hid=\".\">Abre el cuadro de diálogo <link href=\"text/swriter/01/mm_matfie.xhp\">Correspondencia de campos</link>.</ahelp>"
 
 #: mailmerge04.xhp
 msgctxt ""
@@ -27908,7 +27908,7 @@ msgctxt ""
 "tit\n"
 "help.text"
 msgid "Match Fields"
-msgstr "Asignar campos"
+msgstr "Correspondencia de campos"
 
 #: mm_matfie.xhp
 msgctxt ""
@@ -27916,7 +27916,7 @@ msgctxt ""
 "par_idN10539\n"
 "help.text"
 msgid "Match Fields"
-msgstr "Asignar campos"
+msgstr "Correspondencia de campos"
 
 #: mm_matfie.xhp
 msgctxt ""
@@ -27924,7 +27924,7 @@ msgctxt ""
 "par_idN1053D\n"
 "help.text"
 msgid "Matches the logical field names of the layout dialog to the field names in your database when you create new <link href=\"text/swriter/01/mailmerge03.xhp\">address blocks</link> or <link href=\"text/swriter/01/mailmerge04.xhp\">salutations</link>."
-msgstr "Asigna los nombres de campo lógico de diseño a los nombres de campo de la base de datos cuando se crean <link href=\"text/swriter/01/mailmerge03.xhp\">bloques de direcciones</link> o <link href=\"text/swriter/01/mailmerge04.xhp\">saludos</link>."
+msgstr "Relaciona los nombes de campos lógicos del cuadro de diálogo de disposición con los nombres de campos de la base de datos cuando se crean <link href=\"text/swriter/01/mailmerge03.xhp\">bloques de dirección</link> o <link href=\"text/swriter/01/mailmerge04.xhp\">saludos</link> nuevos."
 
 #: mm_matfie.xhp
 msgctxt ""
@@ -27956,7 +27956,7 @@ msgctxt ""
 "par_idN10559\n"
 "help.text"
 msgid "<ahelp hid=\".\">Displays a preview of the values of the first data record.</ahelp>"
-msgstr "<ahelp hid=\".\">Muestra una vista previa de los valores del primer registro de datos.</ahelp>"
+msgstr "<ahelp hid=\".\">Muestra una previsualización de los valores del primer registro de datos.</ahelp>"
 
 #: mm_newaddblo.xhp
 msgctxt ""
@@ -28348,7 +28348,7 @@ msgctxt ""
 "tit\n"
 "help.text"
 msgid "Select Address List"
-msgstr "Seleccionar lista de direcciones"
+msgstr "Elegir lista de direcciones"
 
 #: mm_seladdlis.xhp
 msgctxt ""
@@ -28356,7 +28356,7 @@ msgctxt ""
 "par_idN10542\n"
 "help.text"
 msgid "Select Address List"
-msgstr "Seleccionar lista de direcciones"
+msgstr "Elegir lista de direcciones"
 
 #: mm_seladdlis.xhp
 msgctxt ""
@@ -28644,7 +28644,7 @@ msgctxt ""
 "par_id300920161448355764\n"
 "help.text"
 msgid "Note: By default, %PRODUCTNAME select the <emph>First page</emph> page style."
-msgstr ""
+msgstr "Nota: de manera predeterminada, %PRODUCTNAME selecciona el estilo <emph>Primera página</emph>."
 
 #: title_page.xhp
 msgctxt ""
@@ -28796,7 +28796,7 @@ msgctxt ""
 "par_id300920161443337801\n"
 "help.text"
 msgid "Double click on the page style to apply."
-msgstr ""
+msgstr "Pulse dos veces en el estilo de página que quiera aplicar."
 
 #: title_page.xhp
 msgctxt ""

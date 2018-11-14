@@ -122,7 +122,7 @@ void DrawViewShell::GetCtrlState(SfxItemSet &rSet)
                 bool bFound = false;
 
                 SdrObject* pMarkedObj = mpDrawView->GetMarkedObjectList().GetMark(0)->GetMarkedSdrObj();
-                if( pMarkedObj && (FmFormInventor == pMarkedObj->GetObjInventor()) )
+                if( pMarkedObj && (SdrInventor::FmForm == pMarkedObj->GetObjInventor()) )
                 {
                     SdrUnoObj* pUnoCtrl = dynamic_cast< SdrUnoObj* >( pMarkedObj );
 
@@ -618,7 +618,7 @@ void DrawViewShell::GetAttrState( SfxItemSet& rSet )
                             rSet.Put(SfxUInt16Item(FN_NUM_NUM_RULE_INDEX,(sal_uInt16)0xFFFF));
                             if ( bBullets )
                             {
-                                NBOTypeMgrBase* pBullets = NBOutlineTypeMgrFact::CreateInstance(eNBOType::BULLETS);
+                                NBOTypeMgrBase* pBullets = NBOutlineTypeMgrFact::CreateInstance(NBOType::Bullets);
                                 if ( pBullets )
                                 {
                                     sal_uInt16 nBulIndex = pBullets->GetNBOIndexForNumRule(*pNumRule,nActNumLvl);
@@ -626,7 +626,7 @@ void DrawViewShell::GetAttrState( SfxItemSet& rSet )
                                 }
                             }else
                             {
-                                NBOTypeMgrBase* pNumbering = NBOutlineTypeMgrFact::CreateInstance(eNBOType::NUMBERING);
+                                NBOTypeMgrBase* pNumbering = NBOutlineTypeMgrFact::CreateInstance(NBOType::Numbering);
                                 if ( pNumbering )
                                 {
                                     sal_uInt16 nBulIndex = pNumbering->GetNBOIndexForNumRule(*pNumRule,nActNumLvl);
@@ -647,7 +647,7 @@ void DrawViewShell::GetAttrState( SfxItemSet& rSet )
                 for (size_t nIndex = 0; nIndex < nMarkCount; ++nIndex)
                 {
                     SdrTextObj* pTextObj = dynamic_cast< SdrTextObj* >(rMarkList.GetMark(nIndex)->GetMarkedSdrObj());
-                    if (pTextObj && pTextObj->GetObjInventor() == SdrInventor)
+                    if (pTextObj && pTextObj->GetObjInventor() == SdrInventor::Default)
                     {
                         if (pTextObj->GetObjIdentifier() != OBJ_OLE2)
                         {
@@ -724,11 +724,11 @@ void DrawViewShell::GetAttrState( SfxItemSet& rSet )
 
         SvxEscapement eEsc = (SvxEscapement) static_cast<const SvxEscapementItem&>(
                         pSet->Get( EE_CHAR_ESCAPEMENT ) ).GetEnumValue();
-        if( eEsc == SVX_ESCAPEMENT_SUPERSCRIPT )
+        if( eEsc == SvxEscapement::Superscript )
         {
             rSet.Put( SfxBoolItem( SID_SET_SUPER_SCRIPT, true ) );
         }
-        else if( eEsc == SVX_ESCAPEMENT_SUBSCRIPT )
+        else if( eEsc == SvxEscapement::Subscript )
         {
             rSet.Put( SfxBoolItem( SID_SET_SUB_SCRIPT, true ) );
         }

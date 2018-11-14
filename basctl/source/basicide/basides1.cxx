@@ -311,7 +311,7 @@ void Shell::ExecuteGlobal( SfxRequest& rReq )
                             pModule = pBasic->FindModule( aModName );
                     }
                     else
-                        pModule = pBasic->GetModules().front();
+                        pModule = pBasic->GetModules().front().get();
                 }
                 DBG_ASSERT( pModule, "Kein Modul!" );
                 if ( pModule && !pModule->GetMethods()->Find( rInfo.GetMethod(), SbxClassType::Method ) )
@@ -320,7 +320,7 @@ void Shell::ExecuteGlobal( SfxRequest& rReq )
             SfxViewFrame* pViewFrame = GetViewFrame();
             if ( pViewFrame )
                 pViewFrame->ToTop();
-            ModulWindow* pWin = FindBasWin( aDocument, aLibName, rInfo.GetModule(), true );
+            VclPtr<ModulWindow> pWin = FindBasWin( aDocument, aLibName, rInfo.GetModule(), true );
             DBG_ASSERT( pWin, "Edit/Create Macro: Fenster wurde nicht erzeugt/gefunden!" );
             SetCurWindow( pWin, true );
             pWin->EditMacro( rInfo.GetMethod() );
@@ -344,13 +344,13 @@ void Shell::ExecuteGlobal( SfxRequest& rReq )
             const SfxStringItem &rModName = static_cast<const SfxStringItem&>(rReq.GetArgs()->Get(SID_BASICIDE_ARG_MODULENAME ));
             if ( aWindowTable.find( rTabId.GetValue() ) !=  aWindowTable.end() )
             {
-                BaseWindow* pWin = aWindowTable[ rTabId.GetValue() ];
+                VclPtr<BaseWindow> pWin = aWindowTable[ rTabId.GetValue() ];
                 const OUString& aNewName( rModName.GetValue() );
                 OUString aOldName( pWin->GetName() );
                 if ( aNewName != aOldName )
                 {
                     bool bRenameOk = false;
-                    if (ModulWindow* pModWin = dynamic_cast<ModulWindow*>(pWin))
+                    if (ModulWindow* pModWin = dynamic_cast<ModulWindow*>(pWin.get()))
                     {
                         OUString aLibName = pModWin->GetLibName();
                         ScriptDocument aDocument( pWin->GetDocument() );
@@ -365,7 +365,7 @@ void Shell::ExecuteGlobal( SfxRequest& rReq )
                         }
 
                     }
-                    else if (DialogWindow* pDlgWin = dynamic_cast<DialogWindow*>(pWin))
+                    else if (DialogWindow* pDlgWin = dynamic_cast<DialogWindow*>(pWin.get()))
                     {
                         bRenameOk = pDlgWin->RenameDialog( aNewName );
                     }
@@ -396,7 +396,7 @@ void Shell::ExecuteGlobal( SfxRequest& rReq )
             BasicManager* pBasMgr = const_cast<BasicManager*>(rInfo.GetBasicManager());
             DBG_ASSERT( pBasMgr, "Store source: Kein BasMgr?" );
             ScriptDocument aDocument( ScriptDocument::getDocumentForBasicManager( pBasMgr ) );
-            ModulWindow* pWin = FindBasWin( aDocument, rInfo.GetLib(), rInfo.GetModule(), false, true );
+            VclPtr<ModulWindow> pWin = FindBasWin( aDocument, rInfo.GetLib(), rInfo.GetModule(), false, true );
             if ( pWin )
             {
                 if ( rReq.GetSlot() == SID_BASICIDE_STOREMODULESOURCE )
@@ -522,7 +522,7 @@ void Shell::ExecuteGlobal( SfxRequest& rReq )
             DBG_ASSERT( rReq.GetArgs(), "arguments expected" );
             const SbxItem& rSbxItem = static_cast<const SbxItem&>(rReq.GetArgs()->Get(SID_BASICIDE_ARG_SBX ));
             const ScriptDocument& aDocument( rSbxItem.GetDocument() );
-            BaseWindow* pWin = FindWindow( aDocument, rSbxItem.GetLibName(), rSbxItem.GetName(), rSbxItem.GetType(), true );
+            VclPtr<BaseWindow> pWin = FindWindow( aDocument, rSbxItem.GetLibName(), rSbxItem.GetName(), rSbxItem.GetType(), true );
             if ( pWin )
                 RemoveWindow( pWin, true );
         }
@@ -817,12 +817,6 @@ void Shell::GetState(SfxItemSet &rSet)
                     rSet.DisableItem( nWh );
             }
             break;
-            case SID_SHOW_FORMS:
-            case SID_SHOW_HIDDEN:
-            {
-                rSet.DisableItem( nWh );
-            }
-            break;
             case SID_SEARCH_OPTIONS:
             {
                 SearchOptionFlags nOptions = SearchOptionFlags::NONE;
@@ -922,9 +916,7 @@ void Shell::GetState(SfxItemSet &rSet)
                             else
                                 aLocale = pCurMgr->getStringResourceManager()->getDefaultLocale();
 
-                            aLangStr += aLocale.Language;
-                            aLangStr += aLocale.Country;
-                            aLangStr += aLocale.Variant;
+                            aLangStr += aLocale.Language + aLocale.Country + aLocale.Variant;
                         }
                         aItemStr = aLangStr;
                     }
@@ -960,11 +952,12 @@ void Shell::GetState(SfxItemSet &rSet)
         pCurWin->GetState( rSet );
 }
 
-bool Shell::HasUIFeature( sal_uInt32 nFeature )
+bool Shell::HasUIFeature(SfxShellFeature nFeature) const
 {
+    assert((nFeature & ~SfxShellFeature::BasicMask) == SfxShellFeature::NONE);
     bool bResult = false;
 
-    if ( (nFeature & BASICIDE_UI_FEATURE_SHOW_BROWSER) == BASICIDE_UI_FEATURE_SHOW_BROWSER )
+    if (nFeature & SfxShellFeature::BasicShowBrowser)
     {
         // fade out (in) property browser in module (dialog) windows
         if (dynamic_cast<DialogWindow*>(pCurWin.get()) && !pCurWin->IsReadOnly())
@@ -1089,7 +1082,7 @@ void Shell::ManageToolbars()
 
 VclPtr<BaseWindow> Shell::FindApplicationWindow()
 {
-    return FindWindow( ScriptDocument::getApplicationScriptDocument() );
+    return FindWindow( ScriptDocument::getApplicationScriptDocument(), "", "", TYPE_UNKNOWN );
 }
 
 VclPtr<BaseWindow> Shell::FindWindow(
@@ -1110,7 +1103,7 @@ VclPtr<BaseWindow> Shell::FindWindow(
 bool Shell::CallBasicErrorHdl( StarBASIC* pBasic )
 {
     bool bRet = false;
-    ModulWindow* pModWin = ShowActiveModuleWindow( pBasic );
+    VclPtr<ModulWindow> pModWin = ShowActiveModuleWindow( pBasic );
     if ( pModWin )
         bRet = pModWin->BasicErrorHdl( pBasic );
     return bRet;
@@ -1119,7 +1112,7 @@ bool Shell::CallBasicErrorHdl( StarBASIC* pBasic )
 long Shell::CallBasicBreakHdl( StarBASIC* pBasic )
 {
     long nRet = 0;
-    ModulWindow* pModWin = ShowActiveModuleWindow( pBasic );
+    VclPtr<ModulWindow> pModWin = ShowActiveModuleWindow( pBasic );
     if ( pModWin )
     {
         bool bAppWindowDisabled, bDispatcherLocked;
@@ -1172,7 +1165,7 @@ VclPtr<ModulWindow> Shell::ShowActiveModuleWindow( StarBASIC* pBasic )
             }
         }
         else
-            DBG_ASSERT(false, "No BASIC!");
+            SAL_WARN( "basctl.basicide", "No BASIC!");
         if (BasicManager* pBasicMgr = FindBasicManager(pBasic))
             StartListening( *pBasicMgr, true /* log on only once */ );
         return pWin;

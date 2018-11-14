@@ -3,39 +3,40 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2014-11-18 11:23+0100\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"POT-Creation-Date: 2016-11-09 14:10+0100\n"
+"PO-Revision-Date: 2017-08-09 08:15+0000\n"
+"Last-Translator: Андрей Абухба <aabuchba@mail.ru>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: ab\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: LibreOffice\n"
 "X-Accelerator-Marker: ~\n"
+"X-Generator: Pootle 2.8\n"
+"X-POOTLE-MTIME: 1502266510.000000\n"
 
 #: svdstr.src
 msgctxt ""
 "svdstr.src\n"
 "STR_ObjNameSingulNONE\n"
 "string.text"
-msgid "draw object"
-msgstr ""
+msgid "Drawing object"
+msgstr "Асахьа"
 
 #: svdstr.src
 msgctxt ""
 "svdstr.src\n"
 "STR_ObjNamePluralNONE\n"
 "string.text"
-msgid "draw objects"
-msgstr ""
+msgid "Drawing objects"
+msgstr "Асахьақәа"
 
 #: svdstr.src
 msgctxt ""
 "svdstr.src\n"
 "STR_ObjNameSingulGRUP\n"
 "string.text"
-msgid "group object"
+msgid "Group object"
 msgstr ""
 
 #: svdstr.src
@@ -43,7 +44,7 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNamePluralGRUP\n"
 "string.text"
-msgid "group objects"
+msgid "Group objects"
 msgstr ""
 
 #: svdstr.src
@@ -51,7 +52,7 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNameSingulGRUPEMPTY\n"
 "string.text"
-msgid "blank group object"
+msgid "Blank group object"
 msgstr ""
 
 #: svdstr.src
@@ -68,15 +69,15 @@ msgctxt ""
 "STR_ObjNameSingulLINE\n"
 "string.text"
 msgid "Line"
-msgstr ""
+msgstr "Ацәаӷәа"
 
 #: svdstr.src
 msgctxt ""
 "svdstr.src\n"
 "STR_ObjNameSingulLINE_Hori\n"
 "string.text"
-msgid "horizontal line"
-msgstr ""
+msgid "Horizontal line"
+msgstr "Агоризонталтә ҵәаӷәа"
 
 #: svdstr.src
 msgctxt ""
@@ -84,15 +85,15 @@ msgctxt ""
 "STR_ObjNameSingulLINE_Vert\n"
 "string.text"
 msgid "Vertical line"
-msgstr ""
+msgstr "Авертикалтә ҵәаӷәа"
 
 #: svdstr.src
 msgctxt ""
 "svdstr.src\n"
 "STR_ObjNameSingulLINE_Diag\n"
 "string.text"
-msgid "diagonal line"
-msgstr ""
+msgid "Diagonal line"
+msgstr "Адиагоналтә ҵәаӷәа"
 
 #: svdstr.src
 msgctxt ""
@@ -100,7 +101,7 @@ msgctxt ""
 "STR_ObjNamePluralLINE\n"
 "string.text"
 msgid "Lines"
-msgstr ""
+msgstr "Ацәаӷәақәа"
 
 #: svdstr.src
 msgctxt ""
@@ -108,7 +109,7 @@ msgctxt ""
 "STR_ObjNameSingulRECT\n"
 "string.text"
 msgid "Rectangle"
-msgstr ""
+msgstr "Акәакьҭаиаша"
 
 #: svdstr.src
 msgctxt ""
@@ -116,7 +117,7 @@ msgctxt ""
 "STR_ObjNamePluralRECT\n"
 "string.text"
 msgid "Rectangles"
-msgstr ""
+msgstr "Акәакьҭаиашақәа"
 
 #: svdstr.src
 msgctxt ""
@@ -124,7 +125,7 @@ msgctxt ""
 "STR_ObjNameSingulQUAD\n"
 "string.text"
 msgid "Square"
-msgstr ""
+msgstr "Аквадрат"
 
 #: svdstr.src
 msgctxt ""
@@ -132,7 +133,7 @@ msgctxt ""
 "STR_ObjNamePluralQUAD\n"
 "string.text"
 msgid "Squares"
-msgstr ""
+msgstr "Аквадратқәа"
 
 #: svdstr.src
 msgctxt ""
@@ -140,7 +141,7 @@ msgctxt ""
 "STR_ObjNameSingulPARAL\n"
 "string.text"
 msgid "Parallelogram"
-msgstr ""
+msgstr "Апараллелограмм"
 
 #: svdstr.src
 msgctxt ""
@@ -148,7 +149,7 @@ msgctxt ""
 "STR_ObjNamePluralPARAL\n"
 "string.text"
 msgid "Parallelograms"
-msgstr ""
+msgstr "Апараллелограммқәа"
 
 #: svdstr.src
 msgctxt ""
@@ -156,7 +157,7 @@ msgctxt ""
 "STR_ObjNameSingulRAUTE\n"
 "string.text"
 msgid "Rhombus"
-msgstr ""
+msgstr "Аромб"
 
 #: svdstr.src
 msgctxt ""
@@ -164,7 +165,7 @@ msgctxt ""
 "STR_ObjNamePluralRAUTE\n"
 "string.text"
 msgid "Rhombuses"
-msgstr ""
+msgstr "Аромбқәа"
 
 #: svdstr.src
 msgctxt ""
@@ -236,7 +237,7 @@ msgctxt ""
 "STR_ObjNameSingulCIRC\n"
 "string.text"
 msgid "Circle"
-msgstr ""
+msgstr "Агьежь"
 
 #: svdstr.src
 msgctxt ""
@@ -244,7 +245,7 @@ msgctxt ""
 "STR_ObjNamePluralCIRC\n"
 "string.text"
 msgid "Circles"
-msgstr ""
+msgstr "Агьежьқа"
 
 #: svdstr.src
 msgctxt ""
@@ -252,7 +253,7 @@ msgctxt ""
 "STR_ObjNameSingulSECT\n"
 "string.text"
 msgid "Circle sector"
-msgstr ""
+msgstr "Агьежь асектор"
 
 #: svdstr.src
 msgctxt ""
@@ -260,7 +261,7 @@ msgctxt ""
 "STR_ObjNamePluralSECT\n"
 "string.text"
 msgid "Circle sectors"
-msgstr ""
+msgstr "Агьежь асекторқәа"
 
 #: svdstr.src
 msgctxt ""
@@ -284,7 +285,7 @@ msgctxt ""
 "STR_ObjNameSingulCCUT\n"
 "string.text"
 msgid "Circle segment"
-msgstr ""
+msgstr "Агьежь асегмент"
 
 #: svdstr.src
 msgctxt ""
@@ -292,7 +293,7 @@ msgctxt ""
 "STR_ObjNamePluralCCUT\n"
 "string.text"
 msgid "Circle segments"
-msgstr ""
+msgstr "Агьежь асегментқәа"
 
 #: svdstr.src
 msgctxt ""
@@ -300,7 +301,7 @@ msgctxt ""
 "STR_ObjNameSingulCIRCE\n"
 "string.text"
 msgid "Ellipse"
-msgstr ""
+msgstr "Аеллипс"
 
 #: svdstr.src
 msgctxt ""
@@ -308,7 +309,7 @@ msgctxt ""
 "STR_ObjNamePluralCIRCE\n"
 "string.text"
 msgid "Ellipses"
-msgstr ""
+msgstr "Аеллипсқәа"
 
 #: svdstr.src
 msgctxt ""
@@ -316,7 +317,7 @@ msgctxt ""
 "STR_ObjNameSingulSECTE\n"
 "string.text"
 msgid "Ellipse Pie"
-msgstr ""
+msgstr "Аеллипс асектор"
 
 #: svdstr.src
 msgctxt ""
@@ -324,7 +325,7 @@ msgctxt ""
 "STR_ObjNamePluralSECTE\n"
 "string.text"
 msgid "Ellipse Pies"
-msgstr ""
+msgstr "Аеллипс асекторқәа"
 
 #: svdstr.src
 msgctxt ""
@@ -348,7 +349,7 @@ msgctxt ""
 "STR_ObjNameSingulCCUTE\n"
 "string.text"
 msgid "Ellipse Segment"
-msgstr ""
+msgstr "Аеллипс асегмент"
 
 #: svdstr.src
 msgctxt ""
@@ -356,7 +357,7 @@ msgctxt ""
 "STR_ObjNamePluralCCUTE\n"
 "string.text"
 msgid "Ellipse Segments"
-msgstr ""
+msgstr "Аеллипс асегментқәа"
 
 #: svdstr.src
 msgctxt ""
@@ -369,7 +370,7 @@ msgstr ""
 #: svdstr.src
 msgctxt ""
 "svdstr.src\n"
-"STR_ObjNameSingulPOLY_PntAnz\n"
+"STR_ObjNameSingulPOLY_PointCount\n"
 "string.text"
 msgid "Polygon %2 corners"
 msgstr ""
@@ -388,12 +389,12 @@ msgctxt ""
 "STR_ObjNameSingulPLIN\n"
 "string.text"
 msgid "Polyline"
-msgstr ""
+msgstr "Иҧыҵәҵәоу"
 
 #: svdstr.src
 msgctxt ""
 "svdstr.src\n"
-"STR_ObjNameSingulPLIN_PntAnz\n"
+"STR_ObjNameSingulPLIN_PointCount\n"
 "string.text"
 msgid "Polyline with %2 corners"
 msgstr ""
@@ -404,7 +405,7 @@ msgctxt ""
 "STR_ObjNamePluralPLIN\n"
 "string.text"
 msgid "Polylines"
-msgstr ""
+msgstr "Иҧыҵәҵәоу"
 
 #: svdstr.src
 msgctxt ""
@@ -412,7 +413,7 @@ msgctxt ""
 "STR_ObjNameSingulPATHLINE\n"
 "string.text"
 msgid "Bézier curve"
-msgstr ""
+msgstr "Безье ирхәа"
 
 #: svdstr.src
 msgctxt ""
@@ -420,7 +421,7 @@ msgctxt ""
 "STR_ObjNamePluralPATHLINE\n"
 "string.text"
 msgid "Bézier curves"
-msgstr ""
+msgstr "Безье ирхәақәа"
 
 #: svdstr.src
 msgctxt ""
@@ -428,7 +429,7 @@ msgctxt ""
 "STR_ObjNameSingulPATHFILL\n"
 "string.text"
 msgid "Bézier curve"
-msgstr ""
+msgstr "Безье Ирхәа"
 
 #: svdstr.src
 msgctxt ""
@@ -436,7 +437,7 @@ msgctxt ""
 "STR_ObjNamePluralPATHFILL\n"
 "string.text"
 msgid "Bézier curves"
-msgstr ""
+msgstr "Безье Ирхәақәа"
 
 #: svdstr.src
 msgctxt ""
@@ -492,7 +493,7 @@ msgctxt ""
 "STR_ObjNameSingulCOMBFILL\n"
 "string.text"
 msgid "Curve"
-msgstr ""
+msgstr "Архәа"
 
 #: svdstr.src
 msgctxt ""
@@ -500,7 +501,7 @@ msgctxt ""
 "STR_ObjNamePluralCOMBFILL\n"
 "string.text"
 msgid "Curve objects"
-msgstr ""
+msgstr "Архәақәа"
 
 #: svdstr.src
 msgctxt ""
@@ -635,23 +636,23 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNameSingulGRAF\n"
 "string.text"
-msgid "graphic"
-msgstr ""
+msgid "Image"
+msgstr "Асахьа"
 
 #: svdstr.src
 msgctxt ""
 "svdstr.src\n"
 "STR_ObjNamePluralGRAF\n"
 "string.text"
-msgid "graphics"
-msgstr ""
+msgid "Images"
+msgstr "Асахьақәа"
 
 #: svdstr.src
 msgctxt ""
 "svdstr.src\n"
 "STR_ObjNameSingulGRAFLNK\n"
 "string.text"
-msgid "Linked graphic"
+msgid "Linked image"
 msgstr ""
 
 #: svdstr.src
@@ -659,7 +660,7 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNamePluralGRAFLNK\n"
 "string.text"
-msgid "Linked graphics"
+msgid "Linked images"
 msgstr ""
 
 #: svdstr.src
@@ -667,7 +668,7 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNameSingulGRAFNONE\n"
 "string.text"
-msgid "Blank graphic object"
+msgid "Blank image object"
 msgstr ""
 
 #: svdstr.src
@@ -675,7 +676,7 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNamePluralGRAFNONE\n"
 "string.text"
-msgid "Blank graphic objects"
+msgid "Blank image objects"
 msgstr ""
 
 #: svdstr.src
@@ -683,7 +684,7 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNameSingulGRAFNONELNK\n"
 "string.text"
-msgid "Blank linked graphic"
+msgid "Blank linked image"
 msgstr ""
 
 #: svdstr.src
@@ -691,7 +692,7 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNamePluralGRAFNONELNK\n"
 "string.text"
-msgid "Blank linked graphics"
+msgid "Blank linked images"
 msgstr ""
 
 #: svdstr.src
@@ -700,7 +701,7 @@ msgctxt ""
 "STR_ObjNameSingulGRAFMTF\n"
 "string.text"
 msgid "Metafile"
-msgstr ""
+msgstr "Аметафаил"
 
 #: svdstr.src
 msgctxt ""
@@ -708,7 +709,7 @@ msgctxt ""
 "STR_ObjNamePluralGRAFMTF\n"
 "string.text"
 msgid "Metafiles"
-msgstr ""
+msgstr "Аметафаилқәа"
 
 #: svdstr.src
 msgctxt ""
@@ -731,15 +732,15 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNameSingulGRAFBMP\n"
 "string.text"
-msgid "Bitmap"
-msgstr ""
+msgid "Image"
+msgstr "Асахьа"
 
 #: svdstr.src
 msgctxt ""
 "svdstr.src\n"
 "STR_ObjNameSingulGRAFBMPTRANS\n"
 "string.text"
-msgid "Bitmap with transparency"
+msgid "Image with transparency"
 msgstr ""
 
 #: svdstr.src
@@ -747,7 +748,7 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNameSingulGRAFBMPLNK\n"
 "string.text"
-msgid "Linked Bitmap"
+msgid "Linked Image"
 msgstr ""
 
 #: svdstr.src
@@ -755,7 +756,7 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNameSingulGRAFBMPTRANSLNK\n"
 "string.text"
-msgid "Linked bitmap with transparency"
+msgid "Linked image with transparency"
 msgstr ""
 
 #: svdstr.src
@@ -763,7 +764,7 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNamePluralGRAFBMP\n"
 "string.text"
-msgid "Bitmaps"
+msgid "Images"
 msgstr ""
 
 #: svdstr.src
@@ -771,7 +772,7 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNamePluralGRAFBMPTRANS\n"
 "string.text"
-msgid "Bitmaps with transparency"
+msgid "Images with transparency"
 msgstr ""
 
 #: svdstr.src
@@ -779,7 +780,7 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNamePluralGRAFBMPLNK\n"
 "string.text"
-msgid "Linked bitmaps"
+msgid "Linked images"
 msgstr ""
 
 #: svdstr.src
@@ -787,7 +788,7 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNamePluralGRAFBMPTRANSLNK\n"
 "string.text"
-msgid "Linked bitmaps with transparency"
+msgid "Linked images with transparency"
 msgstr ""
 
 #: svdstr.src
@@ -796,7 +797,7 @@ msgctxt ""
 "STR_ObjNameSingulCUSTOMSHAPE\n"
 "string.text"
 msgid "Shape"
-msgstr ""
+msgstr "Афигура"
 
 #: svdstr.src
 msgctxt ""
@@ -804,7 +805,7 @@ msgctxt ""
 "STR_ObjNamePluralCUSTOMSHAPE\n"
 "string.text"
 msgid "Shapes"
-msgstr ""
+msgstr "Афигурақәа"
 
 #: svdstr.src
 msgctxt ""
@@ -812,7 +813,7 @@ msgctxt ""
 "STR_ObjNameSingulGRAFMAC\n"
 "string.text"
 msgid "Mac graphic"
-msgstr ""
+msgstr "Mac аграфикатә обиеқт "
 
 #: svdstr.src
 msgctxt ""
@@ -1003,7 +1004,7 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNamePlural\n"
 "string.text"
-msgid "draw objects"
+msgid "Drawing objects"
 msgstr ""
 
 #: svdstr.src
@@ -1027,7 +1028,7 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNameSingulPlural\n"
 "string.text"
-msgid "draw object(s)"
+msgid "Draw object(s)"
 msgstr ""
 
 #: svdstr.src
@@ -1083,7 +1084,7 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNameSingulLathe3d\n"
 "string.text"
-msgid "rotation object"
+msgid "Rotation object"
 msgstr ""
 
 #: svdstr.src
@@ -1091,7 +1092,7 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNamePluralLathe3d\n"
 "string.text"
-msgid "rotation objects"
+msgid "Rotation objects"
 msgstr ""
 
 #: svdstr.src
@@ -1139,7 +1140,7 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNameSingulSphere3d\n"
 "string.text"
-msgid "sphere"
+msgid "Sphere"
 msgstr ""
 
 #: svdstr.src
@@ -1147,7 +1148,7 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNamePluralSphere3d\n"
 "string.text"
-msgid "spheres"
+msgid "Spheres"
 msgstr ""
 
 #: svdstr.src
@@ -1172,7 +1173,7 @@ msgctxt ""
 "STR_EditDelete\n"
 "string.text"
 msgid "Delete %1"
-msgstr ""
+msgstr "Ианыхтәуп %1"
 
 #: svdstr.src
 msgctxt ""
@@ -1324,14 +1325,6 @@ msgctxt ""
 "STR_EditSetSegmentsKind\n"
 "string.text"
 msgid "Modify bézier properties of %1"
-msgstr ""
-
-#: svdstr.src
-msgctxt ""
-"svdstr.src\n"
-"STR_EditShut\n"
-"string.text"
-msgid "Close %1"
 msgstr ""
 
 #: svdstr.src
@@ -1556,6 +1549,22 @@ msgctxt ""
 "STR_DistributeMarkedObjects\n"
 "string.text"
 msgid "Distribute selected objects"
+msgstr "Иеихшатәуп иалху аобиеқтқәа"
+
+#: svdstr.src
+msgctxt ""
+"svdstr.src\n"
+"STR_EqualizeWidthMarkedObjects\n"
+"string.text"
+msgid "Equalize Width %1"
+msgstr ""
+
+#: svdstr.src
+msgctxt ""
+"svdstr.src\n"
+"STR_EqualizeHeightMarkedObjects\n"
+"string.text"
+msgid "Equalize Height %1"
 msgstr ""
 
 #: svdstr.src
@@ -1596,38 +1605,6 @@ msgctxt ""
 "STR_ExchangePaste\n"
 "string.text"
 msgid "Insert object(s)"
-msgstr ""
-
-#: svdstr.src
-msgctxt ""
-"svdstr.src\n"
-"STR_ExchangeClpCut\n"
-"string.text"
-msgid "Cut %1"
-msgstr ""
-
-#: svdstr.src
-msgctxt ""
-"svdstr.src\n"
-"STR_ExchangeClpPaste\n"
-"string.text"
-msgid "Paste Clipboard"
-msgstr ""
-
-#: svdstr.src
-msgctxt ""
-"svdstr.src\n"
-"STR_ExchangeDD\n"
-"string.text"
-msgid "Drag and Drop %1"
-msgstr ""
-
-#: svdstr.src
-msgctxt ""
-"svdstr.src\n"
-"STR_ExchangeDDPaste\n"
-"string.text"
-msgid "Insert Drag and Drop"
 msgstr ""
 
 #: svdstr.src
@@ -1844,7 +1821,7 @@ msgctxt ""
 "STR_ViewMarked\n"
 "string.text"
 msgid "%1 selected"
-msgstr ""
+msgstr "Иалхуп аобиеқт %1 "
 
 #: svdstr.src
 msgctxt ""
@@ -1972,7 +1949,7 @@ msgctxt ""
 "STR_UndoNewPage\n"
 "string.text"
 msgid "Insert page"
-msgstr ""
+msgstr "Ибжьаргылатәуп адаҟьа"
 
 #: svdstr.src
 msgctxt ""
@@ -1980,7 +1957,7 @@ msgctxt ""
 "STR_UndoDelPage\n"
 "string.text"
 msgid "Delete page"
-msgstr ""
+msgstr "Ианыхтәуп адаҟьа"
 
 #: svdstr.src
 msgctxt ""
@@ -1988,7 +1965,7 @@ msgctxt ""
 "STR_UndoCopPage\n"
 "string.text"
 msgid "Copy page"
-msgstr ""
+msgstr "Адаҟьа акопиа"
 
 #: svdstr.src
 msgctxt ""
@@ -2052,7 +2029,7 @@ msgctxt ""
 "STR_UndoDelLayer\n"
 "string.text"
 msgid "Delete layer"
-msgstr ""
+msgstr "Ианыхтәуп аҿыгҳара"
 
 #: svdstr.src
 msgctxt ""
@@ -2492,7 +2469,7 @@ msgctxt ""
 "STR_ItemValCIRC_FULL\n"
 "string.text"
 msgid "full circle"
-msgstr ""
+msgstr "агьежь"
 
 #: svdstr.src
 msgctxt ""
@@ -2612,7 +2589,7 @@ msgctxt ""
 "STR_ItemNam_CAPTIONESCDIR\n"
 "string.text"
 msgid "Exit direction"
-msgstr ""
+msgstr "Аҭыҵырҭа ахырхарҭа"
 
 #: svdstr.src
 msgctxt ""
@@ -2836,7 +2813,7 @@ msgctxt ""
 "STR_ItemNam_GRAFMODE\n"
 "string.text"
 msgid "Graphics mode"
-msgstr ""
+msgstr "Аграфикатә режим"
 
 #: svdstr.src
 msgctxt ""
@@ -2972,7 +2949,7 @@ msgctxt ""
 "SIP_XA_LINESTYLE\n"
 "string.text"
 msgid "Line style"
-msgstr ""
+msgstr "Аҵәаӷәа астиль"
 
 #: svdstr.src
 msgctxt ""
@@ -3356,7 +3333,7 @@ msgctxt ""
 "SIP_XA_FORMTXTSTYLE\n"
 "string.text"
 msgid "Fontwork style"
-msgstr ""
+msgstr "Атеқсттә еффект астиль"
 
 #: svdstr.src
 msgctxt ""
@@ -3404,7 +3381,7 @@ msgctxt ""
 "SIP_XA_FORMTXTSHADOW\n"
 "string.text"
 msgid "Fontwork shadow"
-msgstr ""
+msgstr "Атеқсттә еффект агага"
 
 #: svdstr.src
 msgctxt ""
@@ -3412,7 +3389,7 @@ msgctxt ""
 "SIP_XA_FORMTXTSHDWCOLOR\n"
 "string.text"
 msgid "Fontwork shadow color"
-msgstr ""
+msgstr "Атеқсттә еффект аҧштәы агага"
 
 #: svdstr.src
 msgctxt ""
@@ -3804,7 +3781,7 @@ msgctxt ""
 "SIP_SA_CUSTOMSHAPE_ADJUSTMENT\n"
 "string.text"
 msgid "Shape Adjustment"
-msgstr ""
+msgstr "Аиҟаратәра"
 
 #: svdstr.src
 msgctxt ""
@@ -3833,9 +3810,9 @@ msgstr ""
 #: svdstr.src
 msgctxt ""
 "svdstr.src\n"
-"SIP_SA_AUTOGROWSIZE\n"
+"SIP_SA_CHAINNEXTNAME\n"
 "string.text"
-msgid "Auto grow shape to fit text"
+msgid "Next link in text chain"
 msgstr ""
 
 #: svdstr.src
@@ -4556,7 +4533,7 @@ msgctxt ""
 "SIP_EE_CHAR_COLOR\n"
 "string.text"
 msgid "Font color"
-msgstr ""
+msgstr "Ашрифт аҧштәы"
 
 #: svdstr.src
 msgctxt ""
@@ -4564,7 +4541,7 @@ msgctxt ""
 "SIP_EE_CHAR_FONTINFO\n"
 "string.text"
 msgid "Character set"
-msgstr ""
+msgstr "Акодркра"
 
 #: svdstr.src
 msgctxt ""
@@ -4572,7 +4549,7 @@ msgctxt ""
 "SIP_EE_CHAR_FONTHEIGHT\n"
 "string.text"
 msgid "Font size"
-msgstr ""
+msgstr "Акегль"
 
 #: svdstr.src
 msgctxt ""
@@ -4580,7 +4557,7 @@ msgctxt ""
 "SIP_EE_CHAR_FONTWIDTH\n"
 "string.text"
 msgid "Font width"
-msgstr ""
+msgstr "Ашрифт аҭбаара"
 
 #: svdstr.src
 msgctxt ""
@@ -4772,7 +4749,7 @@ msgctxt ""
 "SIP_SA_GRAFMODE\n"
 "string.text"
 msgid "Graphics mode"
-msgstr ""
+msgstr "Аграфикатә режим"
 
 #: svdstr.src
 msgctxt ""
@@ -4788,7 +4765,7 @@ msgctxt ""
 "STR_ObjNameSingulMEDIA\n"
 "string.text"
 msgid "Media object"
-msgstr ""
+msgstr "Амедиатә обиеқт"
 
 #: svdstr.src
 msgctxt ""
@@ -4796,7 +4773,7 @@ msgctxt ""
 "STR_ObjNamePluralMEDIA\n"
 "string.text"
 msgid "Media objects"
-msgstr ""
+msgstr "Амедиатә обиеқт"
 
 #: svdstr.src
 msgctxt ""
@@ -4836,7 +4813,7 @@ msgctxt ""
 "STR_UNDO_COL_DELETE\n"
 "string.text"
 msgid "Delete column"
-msgstr ""
+msgstr "Ианыхтәуп аиҵагыла"
 
 #: svdstr.src
 msgctxt ""
@@ -4844,7 +4821,7 @@ msgctxt ""
 "STR_UNDO_ROW_DELETE\n"
 "string.text"
 msgid "Delete row"
-msgstr ""
+msgstr "Ианыхтәуп ацәаҳәа"
 
 #: svdstr.src
 msgctxt ""
@@ -4889,6 +4866,14 @@ msgstr ""
 #: svdstr.src
 msgctxt ""
 "svdstr.src\n"
+"STR_TABLE_DELETE_CELL_CONTENTS\n"
+"string.text"
+msgid "Delete cell contents"
+msgstr "Ианыхтәуп абларҭа иаҵанакуа"
+
+#: svdstr.src
+msgctxt ""
+"svdstr.src\n"
 "STR_TABLE_STYLE\n"
 "string.text"
 msgid "Table style"
@@ -4923,13 +4908,13 @@ msgctxt ""
 "svdstr.src\n"
 "STR_ObjNameSingulFONTWORK\n"
 "string.text"
-msgid "font work"
-msgstr ""
+msgid "Font work"
+msgstr "Атеқсттә еффект"
 
 #: svdstr.src
 msgctxt ""
 "svdstr.src\n"
 "STR_ObjNamePluralFONTWORK\n"
 "string.text"
-msgid "font works"
-msgstr ""
+msgid "Font works"
+msgstr "Атеқсттә еффектқәа"

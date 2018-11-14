@@ -51,12 +51,14 @@ $(eval $(call gb_Library_use_externals,wpftwriter,\
 	boost_headers \
 	ebook \
 	etonyek \
+	icu_headers \
 	icui18n \
 	icuuc \
 	libxml2 \
 	mwaw \
 	odfgen \
 	revenge \
+	staroffice \
 	wpd \
 	wpg \
 	wps \
@@ -69,6 +71,7 @@ $(eval $(call gb_Library_add_exception_objects,wpftwriter,\
 	writerperfect/source/writer/MSWorksImportFilter \
 	writerperfect/source/writer/MWAWImportFilter \
 	writerperfect/source/writer/PagesImportFilter \
+	writerperfect/source/writer/StarOfficeWriterImportFilter \
 	writerperfect/source/writer/WordPerfectImportFilter \
 ))
 

@@ -27,33 +27,28 @@
 #include <database.hxx>
 
 
-SvMetaObject *SvMetaSlot::MakeClone() const
-{
-        return new SvMetaSlot( *this );
-}
-
 SvMetaSlot::SvMetaSlot()
-    : aRecordPerSet( true, false )
-    , aRecordAbsolute( false, false )
+    : aRecordPerSet( true )
+    , aRecordAbsolute( false )
     , pLinkedSlot(nullptr)
     , pNextSlot(nullptr)
     , nListPos(0)
     , pEnumValue(nullptr)
-    , aReadOnlyDoc ( true, false )
-    , aExport( true, false )
+    , aReadOnlyDoc ( true )
+    , aExport( true )
 {
 }
 
 SvMetaSlot::SvMetaSlot( SvMetaType * pType )
     : SvMetaAttribute( pType )
-    , aRecordPerSet( true, false )
-    , aRecordAbsolute( false, false )
+    , aRecordPerSet( true )
+    , aRecordAbsolute( false )
     , pLinkedSlot(nullptr)
     , pNextSlot(nullptr)
     , nListPos(0)
     , pEnumValue(nullptr)
-    , aReadOnlyDoc ( true, false )
-    , aExport( true, false )
+    , aReadOnlyDoc ( true )
+    , aExport( true )
 {
 }
 
@@ -110,12 +105,12 @@ OString SvMetaSlot::GetMangleName() const
 /** reference disbandment **/
 SvMetaType * SvMetaSlot::GetSlotType() const
 {
-    if( aSlotType.Is() || !GetRef() ) return aSlotType;
+    if( aSlotType.Is() || !GetRef() ) return aSlotType.get();
     return static_cast<SvMetaSlot *>(GetRef())->GetSlotType();
 }
 SvMetaAttribute * SvMetaSlot::GetMethod() const
 {
-    if( aMethod.Is() || !GetRef() ) return aMethod;
+    if( aMethod.Is() || !GetRef() ) return aMethod.get();
     return static_cast<SvMetaSlot *>(GetRef())->GetMethod();
 }
 const OString& SvMetaSlot::GetGroupId() const
@@ -221,18 +216,6 @@ bool SvMetaSlot::GetContainer() const
     return static_cast<SvMetaSlot *>(GetRef())->GetContainer();
 }
 
-bool SvMetaSlot::GetImageRotation() const
-{
-    if( aImageRotation.IsSet() || !GetRef() ) return aImageRotation;
-    return static_cast<SvMetaSlot *>(GetRef())->GetImageRotation();
-}
-
-bool SvMetaSlot::GetImageReflection() const
-{
-    if( aImageReflection.IsSet() || !GetRef() ) return aImageReflection;
-    return static_cast<SvMetaSlot *>(GetRef())->GetImageReflection();
-}
-
 void SvMetaSlot::ReadAttributesSvIdl( SvIdlDataBase & rBase,
                                     SvTokenStream & rInStm )
 {
@@ -249,24 +232,18 @@ void SvMetaSlot::ReadAttributesSvIdl( SvIdlDataBase & rBase,
 
     if( aToggle.ReadSvIdl( SvHash_Toggle(), rInStm ) )
     {
-        SetToggle( aToggle );
         bOk = true;
     }
     if( aAutoUpdate.ReadSvIdl( SvHash_AutoUpdate(), rInStm ) )
     {
-        SetAutoUpdate( aAutoUpdate );
         bOk = true;
     }
-
     if( aAsynchron.ReadSvIdl( SvHash_Asynchron(), rInStm ) )
     {
-        SetAsynchron( aAsynchron );
         bOk = true;
     }
-
     if( aRecordAbsolute.ReadSvIdl( SvHash_RecordAbsolute(), rInStm ) )
     {
-        SetRecordAbsolute( aRecordAbsolute);
         bOk = true;
     }
     if( aRecordPerItem.ReadSvIdl( SvHash_RecordPerItem(), rInStm ) )
@@ -292,8 +269,6 @@ void SvMetaSlot::ReadAttributesSvIdl( SvIdlDataBase & rBase,
 
     bOk |= aFastCall.ReadSvIdl( SvHash_FastCall(), rInStm );
     bOk |= aContainer.ReadSvIdl( SvHash_Container(), rInStm );
-    bOk |= aImageRotation.ReadSvIdl( SvHash_ImageRotation(), rInStm );
-    bOk |= aImageReflection.ReadSvIdl( SvHash_ImageReflection(), rInStm );
 
     if( !bOk )
     {
@@ -500,7 +475,7 @@ void SvMetaSlot::Insert( SvSlotElementList& rList, const OString& rPrefix,
                 if (aSId.equals(pAttr->GetSlotId().getString()))
                 {
                     SvMetaSlot& rSlot = dynamic_cast<SvMetaSlot&>(*pAttr);
-                    xEnumSlot = rSlot.Clone();
+                    xEnumSlot = new SvMetaSlot( rSlot );
                     break;
                 }
             }
@@ -508,7 +483,7 @@ void SvMetaSlot::Insert( SvSlotElementList& rList, const OString& rPrefix,
             if ( m == rBase.GetSlotList().size() )
             {
                 OSL_FAIL("Invalid EnumSlot!");
-                xEnumSlot = Clone();
+                xEnumSlot = new SvMetaSlot( *this );
                 sal_uLong nValue;
                 if ( rBase.FindId(aSId , &nValue) )
                 {
@@ -524,7 +499,7 @@ void SvMetaSlot::Insert( SvSlotElementList& rList, const OString& rPrefix,
             xEnumSlot->SetEnumValue(enumValue);
 
             if ( !pFirstEnumSlot || xEnumSlot->GetSlotId().GetValue() < pFirstEnumSlot->GetSlotId().GetValue() )
-                pFirstEnumSlot = xEnumSlot;
+                pFirstEnumSlot = xEnumSlot.get();
 
             // insert the created slave as well
             xEnumSlot->Insert( rList, rPrefix, rBase);
@@ -774,10 +749,6 @@ void SvMetaSlot::WriteSlot( const OString& rShellName, sal_uInt16 nCount,
         rOutStm.WriteOString( MakeSlotName( SvHash_Container() ) ).WriteChar( '|' );
     if ( GetReadOnlyDoc() )
         rOutStm.WriteOString( MakeSlotName( SvHash_ReadOnlyDoc() ) ).WriteChar( '|' );
-    if( GetImageRotation() )
-        rOutStm.WriteOString( MakeSlotName( SvHash_ImageRotation() ) ).WriteChar( '|' );
-    if( GetImageReflection() )
-        rOutStm.WriteOString( MakeSlotName( SvHash_ImageReflection() ) ).WriteChar( '|' );
     rOutStm.WriteCharPtr( "SfxSlotMode::NONE" );
 
     rOutStm.WriteChar( ',' ) << endl;

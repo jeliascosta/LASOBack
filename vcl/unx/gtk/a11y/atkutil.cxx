@@ -44,6 +44,7 @@
 #include <gtk/gtk.h>
 #include <config_version.h>
 
+#include <cassert>
 #include <set>
 
 using namespace ::com::sun::star;
@@ -90,7 +91,14 @@ atk_wrapper_focus_idle_handler (gpointer data)
                     wrapper_obj->mpText.set(wrapper_obj->mpContext, css::uno::UNO_QUERY);
                     if ( wrapper_obj->mpText.is() )
                     {
-                        gint caretPos = wrapper_obj->mpText->getCaretPosition();
+                        gint caretPos = -1;
+
+                        try {
+                            caretPos = wrapper_obj->mpText->getCaretPosition();
+                        }
+                        catch(const uno::Exception&) {
+                            g_warning( "Exception in getCaretPosition()" );
+                        }
 
                         if ( caretPos != -1 )
                         {
@@ -483,7 +491,19 @@ static void handle_toolbox_buttonchange(VclWindowEvent const *pEvent)
 
 /*****************************************************************************/
 
-static std::set< VclPtr<vcl::Window> > g_aWindowList;
+namespace {
+
+struct WindowList {
+    ~WindowList() { assert(list.empty()); };
+        // needs to be empty already on DeInitVCL, but at least check it's empty
+        // on exit
+
+    std::set< VclPtr<vcl::Window> > list;
+};
+
+WindowList g_aWindowList;
+
+}
 
 static void handle_get_focus(::VclWindowEvent const * pEvent)
 {
@@ -534,9 +554,9 @@ static void handle_get_focus(::VclWindowEvent const * pEvent)
     }
     else
     {
-        if( g_aWindowList.find(pWindow) == g_aWindowList.end() )
+        if( g_aWindowList.list.find(pWindow) == g_aWindowList.list.end() )
         {
-            g_aWindowList.insert(pWindow);
+            g_aWindowList.list.insert(pWindow);
             try
             {
                 aDocumentFocusListener->attachRecursive(xAccessible, xContext, xStateSet);
@@ -607,6 +627,7 @@ void WindowEventHandler(void *, VclSimpleEvent& rEvent)
             break;
 
         case VCLEVENT_MENU_HIGHLIGHT:
+
             if (const VclMenuEvent* pMenuEvent = dynamic_cast<const VclMenuEvent*>(&rEvent))
             {
                 handle_menu_highlighted(pMenuEvent);
@@ -617,6 +638,7 @@ void WindowEventHandler(void *, VclSimpleEvent& rEvent)
                 if (xAccessible.is())
                     atk_wrapper_focus_tracker_notify_when_idle(xAccessible);
             }
+
             break;
 
         case VCLEVENT_TOOLBOX_HIGHLIGHT:
@@ -628,7 +650,7 @@ void WindowEventHandler(void *, VclSimpleEvent& rEvent)
             break;
 
         case VCLEVENT_OBJECT_DYING:
-            g_aWindowList.erase( static_cast< ::VclWindowEvent const * >(&rEvent)->GetWindow() );
+            g_aWindowList.list.erase( static_cast< ::VclWindowEvent const * >(&rEvent)->GetWindow() );
             SAL_FALLTHROUGH;
         case VCLEVENT_TOOLBOX_HIGHLIGHTOFF:
             handle_toolbox_highlightoff(static_cast< ::VclWindowEvent const * >(&rEvent)->GetWindow());

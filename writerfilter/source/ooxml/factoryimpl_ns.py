@@ -428,7 +428,7 @@ def factoryChooseAction(actionNode):
         ret.append("        {")
         extra_space = "        "
 
-    if actionNode.getAttribute("action") in ("handleXNotes", "handleHdrFtr", "handleComment", "handlePicture", "handleBreak", "handleOLE", "handleFontRel"):
+    if actionNode.getAttribute("action") in ("handleXNotes", "handleHdrFtr", "handleComment", "handlePicture", "handleBreak", "handleOLE", "handleFontRel", "handleHyperlinkURL"):
         ret.append("    %sif (OOXMLFastContextHandlerProperties* pProperties = dynamic_cast<OOXMLFastContextHandlerProperties*>(pHandler))" % extra_space)
         ret.append("    %s    pProperties->%s();" % (extra_space, actionNode.getAttribute("action")))
     elif actionNode.getAttribute("action") == "propagateCharacterPropertiesAsSet":
@@ -706,7 +706,9 @@ def createImpl(modelNode, nsName):
 #include "oox/token/tokens.hxx"
 
 #ifdef _MSC_VER
+#pragma warning(disable:4060) // switch statement contains no 'case' or 'default' labels
 #pragma warning(disable:4065) // switch statement contains 'default' but no 'case' labels
+#pragma warning(disable:4702) // unreachable code
 #endif
 
 namespace writerfilter {

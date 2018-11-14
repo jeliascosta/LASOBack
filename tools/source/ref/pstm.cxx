@@ -56,7 +56,6 @@ SvPersistStream::SvPersistStream( SvClassManager & rMgr, SvStream * pStream )
     , pStm( pStream )
     , aPUIdx( 1 )
     , nStartIdx( 1 )
-    , pRefStm( nullptr )
 {
     DBG_ASSERT( nStartIdx != 0, "zero index not allowed" );
     m_isWritable = true;
@@ -69,11 +68,6 @@ SvPersistStream::SvPersistStream( SvClassManager & rMgr, SvStream * pStream )
 }
 
 SvPersistStream::~SvPersistStream()
-{
-    ClearStream();
-}
-
-void SvPersistStream::ClearStream()
 {
     if( pStm != nullptr )
     {
@@ -90,18 +84,18 @@ void SvPersistStream::ResetError()
     pStm->ResetError();
 }
 
-sal_uIntPtr SvPersistStream::GetData( void* pData, sal_uIntPtr nSize )
+std::size_t SvPersistStream::GetData( void* pData, std::size_t nSize )
 {
     DBG_ASSERT( pStm, "stream not set" );
-    sal_uIntPtr nRet = pStm->Read( pData, nSize );
+    std::size_t const nRet = pStm->ReadBytes( pData, nSize );
     SetError( pStm->GetError() );
     return nRet;
 }
 
-sal_uIntPtr SvPersistStream::PutData( const void* pData, sal_uIntPtr nSize )
+std::size_t SvPersistStream::PutData( const void* pData, std::size_t nSize )
 {
     DBG_ASSERT( pStm, "stream not set" );
-    sal_uIntPtr nRet = pStm->Write( pData, nSize );
+    std::size_t const nRet = pStm->WriteBytes( pData, nSize );
     SetError( pStm->GetError() );
     return nRet;
 }
@@ -123,10 +117,7 @@ SvPersistStream::Index SvPersistStream::GetIndex( SvPersistBase * pObj ) const
     PersistBaseMap::const_iterator it = aPTable.find( pObj );
     if( it == aPTable.end() )
     {
-        if ( pRefStm )
-            return pRefStm->GetIndex( pObj );
-        else
-            return 0;
+        return 0;
     }
     return it->second;
 }
@@ -135,8 +126,6 @@ SvPersistBase * SvPersistStream::GetObject( Index nIdx ) const
 {
     if( nIdx >= nStartIdx )
         return aPUIdx.Get( nIdx );
-    else if( pRefStm )
-        return pRefStm->GetObject( nIdx );
     return nullptr;
 }
 

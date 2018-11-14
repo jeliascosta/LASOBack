@@ -35,6 +35,7 @@ $(eval $(call gb_Module_add_targets,vcl,\
 			$(if $(ENABLE_HEADLESS),, \
 				Executable_vcldemo \
 				Executable_icontest \
+				Executable_visualbackendtest \
 				Executable_mtfdemo ))) \
     $(if $(filter-out ANDROID IOS WNT,$(OS)), \
         Executable_svdemo \
@@ -106,7 +107,8 @@ $(eval $(call gb_Module_add_check_targets,vcl,\
 	CppunitTest_vcl_mapmode \
 	CppunitTest_vcl_outdev \
 	CppunitTest_vcl_app_test \
-	CppunitTest_vcl_wmf_test \
+	$(if $(MERGELIBS),,CppunitTest_vcl_wmf_test) \
+	CppunitTest_vcl_jpeg_read_write_test \
 ))
 
 
@@ -129,4 +131,10 @@ $(eval $(call gb_Module_add_check_targets,vcl,\
 	CppunitTest_vcl_blocklistparser_test \
 ))
 endif
+
+# screenshots
+$(eval $(call gb_Module_add_screenshot_targets,vcl,\
+    CppunitTest_vcl_dialogs_test \
+))
+
 # vim: set noet sw=4 ts=4:

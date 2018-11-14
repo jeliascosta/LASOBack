@@ -210,7 +210,7 @@ public:
                      OUString const& i_rXmlId);
 
     bool IsUsed() const { return pStartNode!=nullptr ||
-                                     xSubTable.Is() || bProtected;}
+                                     xSubTable.is() || bProtected;}
 
     sal_uInt32 GetRowSpan() const { return nRowSpan; }
     void SetRowSpan( sal_uInt32 nSet ) { nRowSpan = nSet; }
@@ -281,12 +281,12 @@ inline void SwXMLTableCell_Impl::SetStartNode( const SwStartNode *pSttNd )
 
 inline SwXMLTableContext *SwXMLTableCell_Impl::GetSubTable() const
 {
-    return static_cast<SwXMLTableContext *>(&xSubTable);
+    return static_cast<SwXMLTableContext *>(xSubTable.get());
 }
 
 inline void SwXMLTableCell_Impl::Dispose()
 {
-    if( xSubTable.Is() )
+    if( xSubTable.is() )
         xSubTable = nullptr;
 }
 
@@ -412,12 +412,11 @@ class SwXMLTableCellContext_Impl : public SvXMLImportContext
     bool                    bHasTextContent : 1;
     bool                    bHasTableContent : 1;
 
-    SwXMLTableContext *GetTable() { return static_cast<SwXMLTableContext *>(&xMyTable); }
+    SwXMLTableContext *GetTable() { return static_cast<SwXMLTableContext *>(xMyTable.get()); }
 
     bool HasContent() const { return bHasTextContent || bHasTableContent; }
     inline void InsertContent_();
     inline void InsertContent();
-    inline void InsertContentIfNotThere();
     inline void InsertContent( SwXMLTableContext *pTable );
 
 public:
@@ -427,7 +426,7 @@ public:
             const Reference< xml::sax::XAttributeList > & xAttrList,
             SwXMLTableContext *pTable );
 
-    virtual ~SwXMLTableCellContext_Impl();
+    virtual ~SwXMLTableCellContext_Impl() override;
 
     virtual SvXMLImportContext *CreateChildContext(
             sal_uInt16 nPrefix, const OUString& rLocalName,
@@ -594,12 +593,6 @@ inline void SwXMLTableCellContext_Impl::InsertContent()
     InsertContent_();
 }
 
-inline void SwXMLTableCellContext_Impl::InsertContentIfNotThere()
-{
-    if( !HasContent() )
-        InsertContent();
-}
-
 inline void SwXMLTableCellContext_Impl::InsertContent(
                                                 SwXMLTableContext *pTable )
 {
@@ -659,8 +652,8 @@ SvXMLImportContext *SwXMLTableCellContext_Impl::CreateChildContext(
     }
     else
     {
-        if( GetTable()->IsValid() )
-            InsertContentIfNotThere();
+        if( GetTable()->IsValid() && !HasContent() )
+            InsertContent();
         // fdo#60842: "office:string-value" overrides text content -> no import
         if (!(m_bValueTypeIsString && m_bHasStringValue))
         {
@@ -738,7 +731,7 @@ class SwXMLTableColContext_Impl : public SvXMLImportContext
 {
     SvXMLImportContextRef   xMyTable;
 
-    SwXMLTableContext *GetTable() { return static_cast<SwXMLTableContext *>(&xMyTable); }
+    SwXMLTableContext *GetTable() { return static_cast<SwXMLTableContext *>(xMyTable.get()); }
 
 public:
 
@@ -747,7 +740,7 @@ public:
             const Reference< xml::sax::XAttributeList > & xAttrList,
             SwXMLTableContext *pTable );
 
-    virtual ~SwXMLTableColContext_Impl();
+    virtual ~SwXMLTableColContext_Impl() override;
 
     SwXMLImport& GetSwImport() { return static_cast<SwXMLImport&>(GetImport()); }
 };
@@ -777,7 +770,7 @@ SwXMLTableColContext_Impl::SwXMLTableColContext_Impl(
             if( IsXMLToken( aLocalName, XML_STYLE_NAME ) )
                 aStyleName = rValue;
             else if( IsXMLToken( aLocalName, XML_NUMBER_COLUMNS_REPEATED ) )
-                nColRep = (sal_uInt32)rValue.toInt32();
+                nColRep = (sal_uInt32)std::max<sal_Int32>(1, rValue.toInt32());
             else if( IsXMLToken( aLocalName, XML_DEFAULT_CELL_STYLE_NAME ) )
                 aDfltCellStyleName = rValue;
         }
@@ -823,7 +816,7 @@ class SwXMLTableColsContext_Impl : public SvXMLImportContext
 {
     SvXMLImportContextRef   xMyTable;
 
-    SwXMLTableContext *GetTable() { return static_cast<SwXMLTableContext *>(&xMyTable); }
+    SwXMLTableContext *GetTable() { return static_cast<SwXMLTableContext *>(xMyTable.get()); }
 
 public:
 
@@ -833,7 +826,7 @@ public:
             const Reference< xml::sax::XAttributeList > & xAttrList,
             SwXMLTableContext *pTable );
 
-    virtual ~SwXMLTableColsContext_Impl();
+    virtual ~SwXMLTableColsContext_Impl() override;
 
     virtual SvXMLImportContext *CreateChildContext(
             sal_uInt16 nPrefix, const OUString& rLocalName,
@@ -881,7 +874,7 @@ class SwXMLTableRowContext_Impl : public SvXMLImportContext
 
     sal_uInt32                  nRowRepeat;
 
-    SwXMLTableContext *GetTable() { return static_cast<SwXMLTableContext *>(&xMyTable); }
+    SwXMLTableContext *GetTable() { return static_cast<SwXMLTableContext *>(xMyTable.get()); }
 
 public:
 
@@ -890,7 +883,7 @@ public:
             const Reference< xml::sax::XAttributeList > & xAttrList,
             SwXMLTableContext *pTable, bool bInHead=false );
 
-    virtual ~SwXMLTableRowContext_Impl();
+    virtual ~SwXMLTableRowContext_Impl() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
             const OUString& rLocalName,
@@ -1001,7 +994,7 @@ class SwXMLTableRowsContext_Impl : public SvXMLImportContext
 
     bool bHeader;
 
-    SwXMLTableContext *GetTable() { return static_cast<SwXMLTableContext *>(&xMyTable); }
+    SwXMLTableContext *GetTable() { return static_cast<SwXMLTableContext *>(xMyTable.get()); }
 
 public:
 
@@ -1011,7 +1004,7 @@ public:
             SwXMLTableContext *pTable,
             bool bHead );
 
-    virtual ~SwXMLTableRowsContext_Impl();
+    virtual ~SwXMLTableRowsContext_Impl() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
             const OUString& rLocalName,
@@ -1071,7 +1064,7 @@ public:
     SwXMLDDETableContext_Impl(
         SwXMLImport& rImport, sal_uInt16 nPrfx, const OUString& rLName);
 
-    virtual ~SwXMLDDETableContext_Impl();
+    virtual ~SwXMLDDETableContext_Impl() override;
 
     virtual void StartElement(
         const Reference<xml::sax::XAttributeList> & xAttrList) override;
@@ -1173,9 +1166,9 @@ static SwDDEFieldType* lcl_GetDDEFieldType(SwXMLDDETableContext_Impl* pContext,
 {
     // make command string
     const OUString sCommand(pContext->GetDDEApplication()
-        + OUString(sfx2::cTokenSeparator)
+        + OUStringLiteral1(sfx2::cTokenSeparator)
         + pContext->GetDDEItem()
-        + OUString(sfx2::cTokenSeparator)
+        + OUStringLiteral1(sfx2::cTokenSeparator)
         + pContext->GetDDETopic());
 
     const SfxLinkUpdateMode nType = pContext->GetIsAutomaticUpdate()
@@ -1286,7 +1279,6 @@ SwXMLTableContext::SwXMLTableContext( SwXMLImport& rImport,
     m_pBoxFormat( nullptr ),
     m_pLineFormat( nullptr ),
     m_pSharedBoxFormats(nullptr),
-    m_pDDESource(nullptr),
     m_bFirstSection( true ),
     m_bRelWidth( true ),
     m_bHasSubTables( false ),
@@ -1319,6 +1311,8 @@ SwXMLTableContext::SwXMLTableContext( SwXMLImport& rImport,
                 aName = rValue;
             else if( IsXMLToken( aLocalName, XML_DEFAULT_CELL_STYLE_NAME ) )
                 m_aDfltCellStyleName = rValue;
+            else if( IsXMLToken( aLocalName, XML_TEMPLATE_NAME ) )
+                m_aTemplateName = rValue;
         }
         else if ( (XML_NAMESPACE_XML == nPrefix) &&
                  IsXMLToken( aLocalName, XML_ID ) )
@@ -1427,7 +1421,6 @@ SwXMLTableContext::SwXMLTableContext( SwXMLImport& rImport,
     m_pLineFormat( nullptr ),
     m_pSharedBoxFormats(nullptr),
     m_xParentTable( pTable ),
-    m_pDDESource(nullptr),
     m_bFirstSection( false ),
     m_bRelWidth( true ),
     m_bHasSubTables( false ),
@@ -1489,14 +1482,9 @@ SvXMLImportContext *SwXMLTableContext::CreateChildContext( sal_uInt16 nPrefix,
         // save context for later processing (discard old context, if approp.)
         if( IsValid() )
         {
-            if (m_pDDESource != nullptr)
-            {
-                m_pDDESource->ReleaseRef();
-            }
-            m_pDDESource = new SwXMLDDETableContext_Impl( GetSwImport(), nPrefix,
-                                                        rLocalName );
-            m_pDDESource->AddFirstRef();
-            pContext = m_pDDESource;
+            m_xDDESource.set(new SwXMLDDETableContext_Impl( GetSwImport(), nPrefix,
+                                                        rLocalName ));
+            pContext = m_xDDESource.get();
         }
         break;
     }
@@ -1644,7 +1632,7 @@ void SwXMLTableContext::InsertCell( const OUString& rStyleName,
     if( sStyleName.isEmpty() )
     {
         sStyleName = (*m_pRows)[m_nCurRow]->GetDefaultCellStyleName();
-        if( sStyleName.isEmpty() && HasColumnDefaultCellStyleNames() )
+        if( sStyleName.isEmpty() && m_pColumnDefaultCellStyleNames )
         {
             sStyleName = GetColumnDefaultCellStyleName( m_nCurCol );
             if( sStyleName.isEmpty() )
@@ -1829,8 +1817,8 @@ SwTableBox *SwXMLTableContext::NewTableBox( const SwStartNode *pStNd,
 {
     // The topmost table is the only table that maintains the two members
     // pBox1 and bFirstSection.
-    if( m_xParentTable.Is() )
-        return static_cast<SwXMLTableContext *>(&m_xParentTable)->NewTableBox( pStNd,
+    if( m_xParentTable.is() )
+        return static_cast<SwXMLTableContext *>(m_xParentTable.get())->NewTableBox( pStNd,
                                                                   pUpper );
 
     SwTableBox *pBox;
@@ -2661,6 +2649,7 @@ void SwXMLTableContext::MakeTable()
 
     m_pTableNode->GetTable().SetRowsToRepeat( m_nHeaderRows );
     m_pTableNode->GetTable().SetTableModel( !m_bHasSubTables );
+    m_pTableNode->GetTable().SetTableStyleName( m_aTemplateName );
 
     const SfxItemSet *pAutoItemSet = nullptr;
     if( !m_aStyleName.isEmpty() &&
@@ -2786,15 +2775,15 @@ void SwXMLTableContext::MakeTable()
         rRow->Dispose();
 
     // now that table is complete, change into DDE table (if appropriate)
-    if (nullptr != m_pDDESource)
+    if (m_xDDESource.is())
     {
         // change existing table into DDE table:
         // 1) Get DDE field type (get data from dde-source context),
-        SwDDEFieldType* pFieldType = lcl_GetDDEFieldType( m_pDDESource,
+        SwDDEFieldType* pFieldType = lcl_GetDDEFieldType( m_xDDESource.get(),
                                                         m_pTableNode );
 
         // 2) release the DDE source context,
-        m_pDDESource->ReleaseRef();
+        m_xDDESource.set(nullptr);
 
         // 3) create new DDE table, and
         SwDDETable* pDDETable = new SwDDETable( m_pTableNode->GetTable(),
@@ -2836,8 +2825,8 @@ const SwStartNode *SwXMLTableContext::InsertTableSection(
 {
     // The topmost table is the only table that maintains the two members
     // pBox1 and bFirstSection.
-    if( m_xParentTable.Is() )
-        return static_cast<SwXMLTableContext *>(&m_xParentTable)
+    if( m_xParentTable.is() )
+        return static_cast<SwXMLTableContext *>(m_xParentTable.get())
                     ->InsertTableSection(pPrevSttNd, pStringValueStyleName);
 
     const SwStartNode *pStNd;
@@ -2904,7 +2893,7 @@ const SwStartNode *SwXMLTableContext::InsertTableSection(
 
 void SwXMLTableContext::EndElement()
 {
-    if( IsValid() && !m_xParentTable.Is() )
+    if( IsValid() && !m_xParentTable.is() )
     {
         MakeTable();
         GetImport().GetTextImport()->SetCursor( m_xOldCursor );

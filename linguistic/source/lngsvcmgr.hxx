@@ -138,11 +138,11 @@ class LngSvcMgr :
 
     void UpdateAll();
     void stopListening();
-    DECL_LINK_TYPED( updateAndBroadcast, Idle*, void );
+    DECL_LINK( updateAndBroadcast, Idle*, void );
 
 public:
     LngSvcMgr();
-    virtual ~LngSvcMgr();
+    virtual ~LngSvcMgr() override;
 
     // XLinguServiceManager
     virtual css::uno::Reference< css::linguistic2::XSpellChecker > SAL_CALL getSpellChecker(  ) throw (css::uno::RuntimeException, std::exception) override;

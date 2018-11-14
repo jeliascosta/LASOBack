@@ -62,10 +62,7 @@ $(eval $(call gb_CppunitTest_set_include,sc_copypaste,\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_api,sc_copypaste,\
-    offapi \
-    udkapi \
-))
+$(eval $(call gb_CppunitTest_use_sdk_api,sc_copypaste))
 
 $(eval $(call gb_CppunitTest_use_ure,sc_copypaste))
 $(eval $(call gb_CppunitTest_use_vcl,sc_copypaste))
@@ -105,6 +102,7 @@ $(eval $(call gb_CppunitTest_use_components,sc_copypaste,\
     unotools/util/utl \
     unoxml/source/rdf/unordf \
     unoxml/source/service/unoxml \
+    uui/util/uui \
     xmloff/util/xo \
     xmlsecurity/util/xmlsecurity \
     xmlsecurity/util/xsec_fw \

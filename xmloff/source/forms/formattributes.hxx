@@ -271,7 +271,7 @@ namespace xmloff
         <p>The construction of this class is rather expensive (or at least it's initialization from outside),
         so it should be shared</p>
     */
-    class OAttribute2Property
+    class OAttribute2Property final
     {
     public:
         // TODO: maybe the following struct should be used for exports, too. In this case we would not need to
@@ -289,13 +289,13 @@ namespace xmloff
             AttributeAssignment() : pEnumMap(nullptr), bInverseSemantics(false) { }
         };
 
-    protected:
+    private:
         typedef std::map<OUString, AttributeAssignment> AttributeAssignments;
         AttributeAssignments        m_aKnownProperties;
 
     public:
         OAttribute2Property();
-        virtual ~OAttribute2Property();
+        ~OAttribute2Property();
 
         /** return the AttributeAssignment which corresponds to the given attribute
 
@@ -381,7 +381,7 @@ namespace xmloff
             const sal_uInt16 _nAttributeDefault, const SvXMLEnumMapEntry* _pValueMap,
             const css::uno::Type* _pType = nullptr);
 
-    protected:
+    private:
         /// some common code for the various add*Property methods
         AttributeAssignment& implAdd(
             const sal_Char* _pAttributeName, const OUString& _rPropertyName,

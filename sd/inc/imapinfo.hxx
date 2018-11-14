@@ -32,18 +32,18 @@ class SdIMapInfo : public SdrObjUserData, public SfxListener
 
 public:
                     SdIMapInfo() :
-                        SdrObjUserData( SdUDInventor, SD_IMAPINFO_ID ) {};
+                        SdrObjUserData( SdrInventor::StarDrawUserData, SD_IMAPINFO_ID ) {};
 
                     SdIMapInfo( const ImageMap& rImageMap ) :
-                        SdrObjUserData( SdUDInventor, SD_IMAPINFO_ID ),
+                        SdrObjUserData( SdrInventor::StarDrawUserData, SD_IMAPINFO_ID ),
                         aImageMap( rImageMap ) {};
 
                     SdIMapInfo( const SdIMapInfo& rIMapInfo ) :
-                        SdrObjUserData( SdUDInventor, SD_IMAPINFO_ID ),
+                        SdrObjUserData( SdrInventor::StarDrawUserData, SD_IMAPINFO_ID ),
                         SfxListener(),
                         aImageMap( rIMapInfo.aImageMap ) {};
 
-    virtual         ~SdIMapInfo() {};
+    virtual         ~SdIMapInfo() override {};
 
     virtual SdrObjUserData* Clone( SdrObject* ) const override { return new SdIMapInfo( *this ); }
 

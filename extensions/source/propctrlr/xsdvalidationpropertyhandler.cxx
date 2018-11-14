@@ -26,7 +26,6 @@
 #include "xsddatatypes.hxx"
 #include "modulepcr.hxx"
 #include "formresid.hrc"
-#include "formlocalid.hrc"
 #include "propctrlr.hrc"
 #include "newdatatype.hxx"
 #include "xsdvalidationhelper.hxx"
@@ -42,7 +41,6 @@
 #include <com/sun/star/inspection/PropertyLineElement.hpp>
 #include <vcl/msgbox.hxx>
 #include <tools/debug.hxx>
-#include <svtools/localresaccess.hxx>
 #include <sal/macros.h>
 
 #include <algorithm>

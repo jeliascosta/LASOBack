@@ -45,7 +45,7 @@ public:
     {
     public:
         ExternalRefListener(ScChartListener& rParent, ScDocument* pDoc);
-        virtual ~ExternalRefListener();
+        virtual ~ExternalRefListener() override;
         virtual void notify(sal_uInt16 nFileId, ScExternalRefManager::LinkUpdateType eType) override;
         void addFileId(sal_uInt16 nFileId);
         void removeFileId(sal_uInt16 nFileId);
@@ -79,7 +79,7 @@ public:
     ScChartListener( const OUString& rName, ScDocument* pDoc,
                      ::std::vector<ScTokenRef>* pTokens );
     ScChartListener( const ScChartListener& );
-    virtual ~ScChartListener();
+    virtual ~ScChartListener() override;
 
     const OUString& GetName() const { return maName;}
 
@@ -94,7 +94,7 @@ public:
     void            StartListeningTo();
     void            EndListeningTo();
     void            ChangeListening( const ScRangeListRef& rRangeListRef,
-                                    bool bDirty = false );
+                                    bool bDirty );
     void            Update();
     ScRangeListRef  GetRangeList() const;
     void            SetRangeList( const ScRangeListRef& rNew );
@@ -145,7 +145,7 @@ private:
     Idle            aIdle;
     ScDocument*     pDoc;
 
-                    DECL_LINK_TYPED(TimerHdl, Idle *, void);
+                    DECL_LINK(TimerHdl, Idle *, void);
 
     ScChartListenerCollection& operator=( const ScChartListenerCollection& ) = delete;
 
@@ -184,7 +184,7 @@ public:
     void            UpdateDirtyCharts();
     void            SetDirty();
     void            SetDiffDirty( const ScChartListenerCollection&,
-                        bool bSetChartRangeLists = false );
+                        bool bSetChartRangeLists );
 
     void            SetRangeDirty( const ScRange& rRange );     // for example rows/columns
 

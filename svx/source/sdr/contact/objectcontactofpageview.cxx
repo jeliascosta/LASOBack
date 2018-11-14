@@ -36,6 +36,7 @@
 #include <drawinglayer/processor2d/processor2dtools.hxx>
 #include <svx/unoapi.hxx>
 #include <unotools/configmgr.hxx>
+#include <comphelper/lok.hxx>
 
 #include "eventhandler.hxx"
 #include <memory>
@@ -168,7 +169,7 @@ namespace sdr
             bool bClipRegionPushed(false);
             const vcl::Region& rRedrawArea(rDisplayInfo.GetRedrawArea());
 
-            if(!rRedrawArea.IsEmpty())
+            if(!rRedrawArea.IsEmpty() && !comphelper::LibreOfficeKit::isActive())
             {
                 bClipRegionPushed = true;
                 pOutDev->Push(PushFlags::CLIPREGION);
@@ -231,6 +232,15 @@ namespace sdr
 
                 // transform to world coordinates
                 aViewRange.transform(rTargetOutDev.GetInverseViewTransformation());
+                if (comphelper::LibreOfficeKit::isActive() &&
+                    comphelper::LibreOfficeKit::isLocalRendering())
+                {
+                    const int TWIPS_PER_PIXEL = 15;
+                    aViewRange = basegfx::B2DRange(aViewRange.getMinimum().getX(),
+                                                   aViewRange.getMinimum().getY(),
+                                                   aViewRange.getMaximum().getX() * TWIPS_PER_PIXEL,
+                                                   aViewRange.getMaximum().getY() * TWIPS_PER_PIXEL);
+                }
             }
 
             // update local ViewInformation2D
@@ -249,6 +259,11 @@ namespace sdr
             // and may use the MapMode from the Target OutDev in the DisplayInfo
             xPrimitiveSequence = rDrawPageVOContact.getPrimitive2DSequenceHierarchy(rDisplayInfo);
 #else
+            // Hmm, !HAVE_FEATURE_DESKTOP && !ANDROID means iOS,
+            // right? But does it make sense to use a different code
+            // path for iOS than for Android; both use tiled rendering
+            // etc now.
+
             // HACK: this only works when we are drawing sdr shapes via
             // drawinglayer; but it can happen that the hierarchy contains
             // more than just the shapes, and then it fails.
@@ -290,16 +305,35 @@ namespace sdr
             {
                 // prepare OutputDevice (historical stuff, maybe soon removed)
                 rDisplayInfo.ClearGhostedDrawMode(); // reset, else the VCL-paint with the processor will not do the right thing
-                pOutDev->SetLayoutMode(TEXT_LAYOUT_DEFAULT); // reset, default is no BiDi/RTL
+                pOutDev->SetLayoutMode(ComplexTextLayoutFlags::Default); // reset, default is no BiDi/RTL
+
+                // Save the map-mode since creating the 2D processor will replace it.
+                const MapMode aOrigMapMode = pOutDev->GetMapMode();
 
                 // create renderer
                 std::unique_ptr<drawinglayer::processor2d::BaseProcessor2D> pProcessor2D(
                     drawinglayer::processor2d::createProcessor2DFromOutputDevice(
                         rTargetOutDev, getViewInformation2D()));
 
+                if (comphelper::LibreOfficeKit::isActive() &&
+                    comphelper::LibreOfficeKit::isLocalRendering())
+                {
+                    // Restore the origin.
+                    MapMode aMapMode = pOutDev->GetMapMode();
+                    aMapMode.SetOrigin(aOrigMapMode.GetOrigin());
+                    pOutDev->SetMapMode(aMapMode);
+                }
+
                 if(pProcessor2D)
                 {
                     pProcessor2D->process(xPrimitiveSequence);
+                }
+
+                if (comphelper::LibreOfficeKit::isActive() &&
+                    comphelper::LibreOfficeKit::isLocalRendering())
+                {
+                    // Restore the original map-mode.
+                    pOutDev->SetMapMode(aOrigMapMode);
                 }
             }
 
@@ -319,8 +353,7 @@ namespace sdr
         // test if visualizing of entered groups is switched on at all
         bool ObjectContactOfPageView::DoVisualizeEnteredGroup() const
         {
-            SdrView& rView = GetPageWindow().GetPageView().GetView();
-            return rView.DoVisualizeEnteredGroup();
+            return true;
         }
 
         // get active group's (the entered group) ViewContact

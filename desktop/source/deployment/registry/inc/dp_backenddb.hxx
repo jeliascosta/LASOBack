@@ -58,11 +58,11 @@ protected:
 
     /* caller must make sure that only one thread accesses the function
      */
-    css::uno::Reference<css::xml::dom::XDocument> getDocument();
+    css::uno::Reference<css::xml::dom::XDocument> const & getDocument();
 
     /* the namespace prefix is "reg" (without quotes)
      */
-    css::uno::Reference<css::xml::xpath::XXPathAPI> getXPathAPI();
+    css::uno::Reference<css::xml::xpath::XXPathAPI> const & getXPathAPI();
     void save();
     void removeElement(OUString const & sXPathExpression);
 
@@ -155,7 +155,7 @@ class RegisteredDb: public BackendDb
 public:
     RegisteredDb( css::uno::Reference<css::uno::XComponentContext> const &  xContext,
                   OUString const & url);
-    virtual ~RegisteredDb() {};
+    virtual ~RegisteredDb() override {};
 
 
     void addEntry(OUString const & url);

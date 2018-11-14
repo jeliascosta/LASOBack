@@ -45,7 +45,7 @@ public:
     ChartFrameLoader() = delete;
 
     explicit ChartFrameLoader(css::uno::Reference< css::uno::XComponentContext > const & xContext);
-    virtual ~ChartFrameLoader();
+    virtual ~ChartFrameLoader() override;
 
     // css::lang::XServiceInfo
     virtual OUString SAL_CALL getImplementationName()
@@ -54,9 +54,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // css::frame::XFrameLoader
 

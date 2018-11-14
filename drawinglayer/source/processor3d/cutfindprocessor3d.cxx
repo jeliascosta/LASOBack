@@ -41,14 +41,13 @@ namespace drawinglayer
             maBack(rBack),
             maResult(),
             maCombinedTransform(),
-            mbAnyHit(bAnyHit),
-            mbUseInvisiblePrimitiveContent(true)
+            mbAnyHit(bAnyHit)
         {
         }
 
         void CutFindProcessor::processBasePrimitive3D(const primitive3d::BasePrimitive3D& rCandidate)
         {
-            if(getAnyHit() && maResult.size())
+            if(mbAnyHit && maResult.size())
             {
                 // stop processing as soon as a hit was recognized
                 return;
@@ -123,10 +122,7 @@ namespace drawinglayer
 
                     if(!rChildren.empty())
                     {
-                        if(getUseInvisiblePrimitiveContent())
-                        {
                             process(rChildren);
-                        }
                     }
 
                     break;
@@ -138,19 +134,7 @@ namespace drawinglayer
 
                     if(rChildren.size())
                     {
-                        if(1.0 <= rPrimitive.getTransparence())
-                        {
-                            // not visible, but use for HitTest
-                            if(getUseInvisiblePrimitiveContent())
-                            {
-                                   process(rChildren);
-                            }
-                        }
-                        else if(rPrimitive.getTransparence() >= 0.0 && rPrimitive.getTransparence() < 1.0)
-                        {
-                            // visible; use content
-                            process(rChildren);
-                        }
+                        process(rChildren);
                     }
 
                     break;

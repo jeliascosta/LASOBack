@@ -21,6 +21,7 @@
 #include <vcl/svapp.hxx>
 #include <vcl/scrbar.hxx>
 #include <vcl/builderfactory.hxx>
+#include <vcl/fixed.hxx>
 
 #include "formula/funcutl.hxx"
 #include "formula/IControlReferenceHandler.hxx"
@@ -259,48 +260,28 @@ void ArgInput::UpdateAccessibleNames()
     pRefBtn->SetAccessibleName(aName);
 }
 
-void ArgInput::FxClick()
-{
-    aFxClickLink.Call(*this);
-}
-
-void ArgInput::FxFocus()
-{
-    aFxFocusLink.Call(*this);
-}
-
-void ArgInput::EdFocus()
-{
-    aEdFocusLink.Call(*this);
-}
-
-void ArgInput::EdModify()
-{
-    aEdModifyLink.Call(*this);
-}
-
-IMPL_LINK_TYPED( ArgInput, FxBtnClickHdl, Button*, pBtn, void )
+IMPL_LINK( ArgInput, FxBtnClickHdl, Button*, pBtn, void )
 {
     if(pBtn == pBtnFx)
-        FxClick();
+        aFxClickLink.Call(*this);
 }
 
-IMPL_LINK_TYPED( ArgInput, FxBtnFocusHdl, Control&, rControl, void )
+IMPL_LINK( ArgInput, FxBtnFocusHdl, Control&, rControl, void )
 {
     if(&rControl == pBtnFx)
-        FxFocus();
+        aFxFocusLink.Call(*this);
 }
 
-IMPL_LINK_TYPED( ArgInput, EdFocusHdl, Control&, rControl, void )
+IMPL_LINK( ArgInput, EdFocusHdl, Control&, rControl, void )
 {
     if(&rControl == pEdArg)
-        EdFocus();
+        aEdFocusLink.Call(*this);
 }
 
-IMPL_LINK_TYPED( ArgInput, EdModifyHdl, Edit&, rEdit, void )
+IMPL_LINK( ArgInput, EdModifyHdl, Edit&, rEdit, void )
 {
     if(&rEdit == pEdArg)
-        EdModify();
+        aEdModifyLink.Call(*this);
 }
 
 // class EditBox
@@ -338,12 +319,6 @@ void EditBox::dispose()
     pMEdit->Disable();
     pMEdit.disposeAndClear();
     Control::dispose();
-}
-
-// When the selection is changed this function will be called
-void EditBox::SelectionChanged()
-{
-    aSelChangedLink.Call(*this);
 }
 
 // When the size is changed, MultiLineEdit must be adapted..
@@ -402,7 +377,7 @@ bool EditBox::PreNotify( NotifyEvent& rNEvt )
 
 //When an Event cleared wurde, this routine is
 //first called.
-IMPL_LINK_NOARG_TYPED(EditBox, ChangedHdl, void*, void)
+IMPL_LINK_NOARG(EditBox, ChangedHdl, void*, void)
 {
     if(pMEdit!=nullptr)
     {
@@ -410,7 +385,7 @@ IMPL_LINK_NOARG_TYPED(EditBox, ChangedHdl, void*, void)
 
         if(aNewSel.Min()!=aOldSel.Min() || aNewSel.Max()!=aOldSel.Max())
         {
-            SelectionChanged();
+            aSelChangedLink.Call(*this);
             aOldSel=aNewSel;
         }
     }
@@ -431,17 +406,6 @@ RefEdit::RefEdit( vcl::Window* _pParent, vcl::Window* pShrinkModeLabel, WinBits 
     : Edit( _pParent, nStyle )
     , aIdle("formula RefEdit Idle")
     , pAnyRefDlg( nullptr )
-    , pLabelWidget(pShrinkModeLabel)
-{
-    aIdle.SetIdleHdl( LINK( this, RefEdit, UpdateHdl ) );
-    aIdle.SetPriority( SchedulerPriority::LOW );
-}
-
-RefEdit::RefEdit( vcl::Window* _pParent,IControlReferenceHandler* pParent,
-    vcl::Window* pShrinkModeLabel, const ResId& rResId )
-    : Edit( _pParent, rResId )
-    , aIdle("formula RefEdit Idle")
-    , pAnyRefDlg( pParent )
     , pLabelWidget(pShrinkModeLabel)
 {
     aIdle.SetIdleHdl( LINK( this, RefEdit, UpdateHdl ) );
@@ -552,7 +516,7 @@ void RefEdit::LoseFocus()
         pAnyRefDlg->HideReference();
 }
 
-IMPL_LINK_NOARG_TYPED(RefEdit, UpdateHdl, Idle *, void)
+IMPL_LINK_NOARG(RefEdit, UpdateHdl, Idle *, void)
 {
     if( pAnyRefDlg )
         pAnyRefDlg->ShowReference( GetText() );

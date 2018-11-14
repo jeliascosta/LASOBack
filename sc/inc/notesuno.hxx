@@ -27,6 +27,7 @@
 #include <com/sun/star/text/XSimpleText.hpp>
 #include <cppuhelper/implbase.hxx>
 #include <svl/lstner.hxx>
+#include <rtl/ref.hxx>
 #include "address.hxx"
 
 class ScDocShell;
@@ -43,7 +44,7 @@ class ScAnnotationObj : public cppu::WeakImplHelper<
 {
 public:
                             ScAnnotationObj(ScDocShell* pDocSh, const ScAddress& rPos);
-    virtual                 ~ScAnnotationObj();
+    virtual                 ~ScAnnotationObj() override;
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
@@ -118,7 +119,7 @@ private:
 private:
     ScDocShell*             pDocShell;
     ScAddress               aCellPos;
-    SvxUnoText*             pUnoText;
+    rtl::Reference<SvxUnoText> pUnoText;
 };
 
 #endif

@@ -51,8 +51,8 @@ class SVX_DLLPUBLIC SvxIMapDlgChildWindow : public SfxChildWindow
 
     SFX_DECL_CHILDWINDOW_WITHID( SvxIMapDlgChildWindow );
 
-    static void UpdateIMapDlg( const Graphic& rGraphic, const ImageMap* pImageMap = nullptr,
-                               const TargetList* pTargetList = nullptr, void* pEditingObj = nullptr );
+    static void UpdateIMapDlg( const Graphic& rGraphic, const ImageMap* pImageMap,
+                               const TargetList* pTargetList, void* pEditingObj = nullptr );
 };
 
 
@@ -71,7 +71,7 @@ protected:
 
 public:
 
-    SvxIMapDlgItem( sal_uInt16 nId, SvxIMapDlg& rIMapDlg, SfxBindings& rBindings );
+    SvxIMapDlgItem( SvxIMapDlg& rIMapDlg, SfxBindings& rBindings );
 };
 
 class IMapOwnData;
@@ -118,16 +118,16 @@ class SVX_DLLPUBLIC SvxIMapDlg : public SfxModelessDialog // SfxFloatingWindow
 
     virtual bool    Close() override;
 
-    DECL_LINK_TYPED( TbxClickHdl, ToolBox*, void );
-    DECL_LINK_TYPED( InfoHdl, IMapWindow&, void );
-    DECL_LINK_TYPED( MousePosHdl, GraphCtrl*, void );
-    DECL_LINK_TYPED( GraphSizeHdl, GraphCtrl*, void );
-    DECL_LINK_TYPED( URLModifyHdl, Edit&, void );
-    DECL_LINK_TYPED( URLModifyComboBoxHdl, ComboBox&, void );
-    DECL_LINK_TYPED( URLLoseFocusHdl, Control&, void );
-    DECL_LINK_TYPED( UpdateHdl, Idle *, void );
-    DECL_LINK_TYPED( StateHdl, GraphCtrl*, void );
-    DECL_LINK_TYPED( MiscHdl, LinkParamNone*, void );
+    DECL_LINK( TbxClickHdl, ToolBox*, void );
+    DECL_LINK( InfoHdl, IMapWindow&, void );
+    DECL_LINK( MousePosHdl, GraphCtrl*, void );
+    DECL_LINK( GraphSizeHdl, GraphCtrl*, void );
+    DECL_LINK( URLModifyHdl, Edit&, void );
+    DECL_LINK( URLModifyComboBoxHdl, ComboBox&, void );
+    DECL_LINK( URLLoseFocusHdl, Control&, void );
+    DECL_LINK( UpdateHdl, Idle *, void );
+    DECL_LINK( StateHdl, GraphCtrl*, void );
+    DECL_LINK( MiscHdl, LinkParamNone*, void );
 
     void                DoOpen();
     bool                DoSave();
@@ -137,25 +137,19 @@ public:
 
                         SvxIMapDlg( SfxBindings *pBindings, SfxChildWindow *pCW,
                                     vcl::Window* pParent );
-                        virtual ~SvxIMapDlg();
+                        virtual ~SvxIMapDlg() override;
     virtual void        dispose() override;
 
     void                SetExecState( bool bEnable );
 
-    void                SetGraphic( const Graphic& rGraphic );
-
-    void                SetEditingObject( void* pObj ) { pCheckObj = pObj; }
     const void*         GetEditingObject() const { return pCheckObj; }
 
-    void                SetImageMap( const ImageMap& rImageMap );
     const ImageMap&     GetImageMap() const;
 
     void                SetTargetList( const TargetList& rTargetList );
 
-    void                UpdateLink( const Graphic& rGraphic, const ImageMap* pImageMap = nullptr,
-                                const TargetList* pTargetList = nullptr, void* pEditingObj = nullptr );
-
-    virtual void        KeyInput( const KeyEvent& rKEvt ) override;
+    void                UpdateLink( const Graphic& rGraphic, const ImageMap* pImageMap,
+                                const TargetList* pTargetList, void* pEditingObj = nullptr );
 };
 
 SVX_DLLPUBLIC SvxIMapDlg* GetIMapDlg();

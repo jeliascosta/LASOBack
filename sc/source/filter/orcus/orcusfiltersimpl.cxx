@@ -17,14 +17,19 @@
 #include <sfx2/frame.hxx>
 #include <sfx2/sfxsids.hrc>
 #include <svl/itemset.hxx>
+#include <rtl/bootstrap.hxx>
+#include <rtl/ustring.hxx>
+#include <comphelper/string.hxx>
 
 #include <orcus/spreadsheet/import_interface.hpp>
 #include <orcus/orcus_csv.hpp>
 #include <orcus/orcus_gnumeric.hpp>
 #include <orcus/orcus_xlsx.hpp>
 #include <orcus/orcus_ods.hpp>
+#include <orcus/orcus_import_ods.hpp>
 #include <orcus/global.hpp>
-
+#include <orcus/stream.hpp>
+#include <orcus/orcus_import_ods.hpp>
 #include <com/sun/star/task/XStatusIndicator.hpp>
 
 #ifdef _WIN32
@@ -83,13 +88,24 @@ bool ScOrcusFiltersImpl::importGnumeric(ScDocument& rDoc, SfxMedium& rMedium) co
 {
     ScOrcusFactory aFactory(rDoc);
     aFactory.setStatusIndicator(getStatusIndicator(rMedium));
-    OString aSysPath = toSystemPath(rMedium.GetName());
-    const char* path = aSysPath.getStr();
+    SvStream* pStream = rMedium.GetInStream();
+    pStream->Seek(0);
+    static const size_t nReadBuffer = 1024*32;
+    OStringBuffer aBuffer((int(nReadBuffer)));
+    size_t nRead = 0;
+    do
+    {
+        char pData[nReadBuffer];
+        nRead = pStream->ReadBytes(pData, nReadBuffer);
+        aBuffer.append(static_cast<sal_Char*>(pData), nRead);
+    }
+    while (nRead == nReadBuffer);
 
     try
     {
+        rDoc.ClearTabs();
         orcus::orcus_gnumeric filter(&aFactory);
-        filter.read_file(path);
+        filter.read_stream(aBuffer.getStr(), aBuffer.getLength());
     }
     catch (const std::exception& e)
     {
@@ -136,6 +152,26 @@ bool ScOrcusFiltersImpl::importODS(ScDocument& rDoc, SfxMedium& rMedium) const
     catch (const std::exception& e)
     {
         SAL_WARN("sc", "Unable to load ods file! " << e.what());
+        return false;
+    }
+
+    return true;
+}
+
+bool ScOrcusFiltersImpl::importODS_Styles(ScDocument& rDoc, OUString& aPath) const
+{
+    OString aUrl = OUStringToOString(aPath, RTL_TEXTENCODING_UTF8);
+    const char* path = aUrl.getStr();
+
+    try
+    {
+        std::string content = orcus::load_file_content(path);
+        ScOrcusStyles styles(rDoc);
+        orcus::import_ods::read_styles(content.c_str(), content.size(), &styles);
+    }
+    catch (const std::exception& e)
+    {
+        SAL_WARN("sc", "Unable to load styles from xml file! " << e.what());
         return false;
     }
 

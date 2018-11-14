@@ -1903,6 +1903,24 @@ SfxBoolItem HelpTip SID_HELPTIPS
 ]
 
 
+SfxVoidItem EmojiControl SID_EMOJI_CONTROL
+
+[
+    AutoUpdate = FALSE,
+    FastCall = TRUE,
+    ReadOnlyDoc = FALSE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = TRUE,
+    GroupId = GID_SPECIAL;
+]
+
+
 SfxVoidItem HideCurPage SID_BASICIDE_HIDECURPAGE
 ()
 [
@@ -2605,8 +2623,7 @@ SfxBoolItem Sidebar SID_SIDEBAR
     GroupId = GID_VIEW;
 ]
 
-
-SfxBoolItem Notebookbar SID_NOTEBOOKBAR
+SfxBoolItem Menubar SID_MENUBAR
 [
     AutoUpdate = TRUE,
     FastCall = FALSE,
@@ -2618,7 +2635,25 @@ SfxBoolItem Notebookbar SID_NOTEBOOKBAR
     Asynchron;
 
     AccelConfig = FALSE,
-    MenuConfig = FALSE,
+    MenuConfig = TRUE,
+    ToolBoxConfig = TRUE,
+    GroupId = GID_VIEW;
+]
+
+SfxBoolItem Notebookbar SID_NOTEBOOKBAR
+(SfxStringItem File SID_NOTEBOOKBAR)
+[
+    AutoUpdate = TRUE,
+    FastCall = FALSE,
+    ReadOnlyDoc = TRUE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+    Asynchron;
+
+    AccelConfig = FALSE,
+    MenuConfig = TRUE,
     ToolBoxConfig = FALSE,
     GroupId = GID_VIEW;
 ]
@@ -2774,6 +2809,24 @@ SfxObjectItem Open SID_OPENDOC
 ]
 
 SfxObjectItem OpenRemote SID_OPENREMOTE
+(SfxStringItem URL SID_FILE_NAME,SfxStringItem FilterName SID_FILTER_NAME,SfxStringItem OpenFlags SID_OPTIONS,SfxStringItem Password SID_PASSWORD,SfxStringItem FilterOptions SID_FILE_FILTEROPTIONS,SfxInt16Item Version SID_VERSION,SfxStringItem Referer SID_REFERER,SfxStringItem SuggestedSaveAsDir SID_DEFAULTFILEPATH,SfxStringItem SuggestedSaveAsName SID_DEFAULTFILENAME)
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = TRUE,
+    Toggle = FALSE,
+    Container = TRUE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+    Asynchron;
+
+    AccelConfig = TRUE,
+    MenuConfig = TRUE,
+    ToolBoxConfig = TRUE,
+    GroupId = GID_APPLICATION;
+]
+
+SfxObjectItem SignPDF SID_SIGNPDF
 (SfxStringItem URL SID_FILE_NAME,SfxStringItem FilterName SID_FILTER_NAME,SfxStringItem OpenFlags SID_OPTIONS,SfxStringItem Password SID_PASSWORD,SfxStringItem FilterOptions SID_FILE_FILTEROPTIONS,SfxInt16Item Version SID_VERSION,SfxStringItem Referer SID_REFERER,SfxStringItem SuggestedSaveAsDir SID_DEFAULTFILEPATH,SfxStringItem SuggestedSaveAsName SID_DEFAULTFILENAME)
 [
     AutoUpdate = FALSE,
@@ -3410,7 +3463,7 @@ SfxBoolItem MacroRecordingFloat SID_RECORDING_FLOATWINDOW
 
 
 SfxVoidItem Redo SID_REDO
-( SfxUInt16Item Redo SID_REDO )
+( SfxUInt16Item Redo SID_REDO, SfxBoolItem Repair SID_REPAIRPACKAGE )
 [
     AutoUpdate = FALSE,
     FastCall = FALSE,
@@ -4441,6 +4494,23 @@ SfxTemplateItem ListStyle SID_STYLE_FAMILY5
     GroupId = GID_DOCUMENT;
 ]
 
+SfxTemplateItem TableStyle SID_STYLE_FAMILY6
+
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = TRUE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = FALSE,
+    GroupId = GID_DOCUMENT;
+]
 
 SfxBoolItem TipsDialog SID_TIPWINDOW
 
@@ -4520,7 +4590,7 @@ SfxVoidItem BasicIDEShowWindow SID_BASICIDE_SHOWWINDOW
 
 
 SfxVoidItem Undo SID_UNDO
-( SfxUInt16Item Undo SID_UNDO )
+( SfxUInt16Item Undo SID_UNDO, SfxBoolItem Repair SID_REPAIRPACKAGE )
 [
     AutoUpdate = FALSE,
     FastCall = FALSE,
@@ -5029,7 +5099,36 @@ SfxVoidItem SendFeedback SID_SEND_FEEDBACK
     ToolBoxConfig = TRUE,
     GroupId = GID_APPLICATION;
 ]
+SfxVoidItem QuestionAnswers SID_Q_AND_A
+()
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = TRUE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
 
+    AccelConfig = TRUE,
+    MenuConfig = TRUE,
+    GroupId = GID_APPLICATION;
+]
+SfxVoidItem Documentation SID_DOCUMENTATION
+()
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = TRUE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+
+    AccelConfig = TRUE,
+    MenuConfig = TRUE,
+    GroupId = GID_APPLICATION;
+]
 
 SfxVoidItem ShowLicense SID_SHOW_LICENSE
 ()
@@ -5212,24 +5311,6 @@ SfxVoidItem NewXForms FN_XFORMS_INIT
 ]
 
 
-SfxVoidItem AutoPilotPresentations SID_SD_AUTOPILOT
-( SfxUnoFrameItem Frame SID_FILLFRAME, SfxBoolItem Hidden SID_HIDDEN )
-[
-    AutoUpdate = FALSE,
-    FastCall = FALSE,
-    ReadOnlyDoc = TRUE,
-    Toggle = FALSE,
-    Container = TRUE,
-    RecordAbsolute = FALSE,
-    RecordPerSet;
-
-    AccelConfig = FALSE,
-    MenuConfig = TRUE,
-    ToolBoxConfig = FALSE,
-    GroupId = GID_APPLICATION;
-]
-
-
 SfxVoidItem NewPresentation SID_NEWSD
 ( SfxUnoFrameItem Frame SID_FILLFRAME, SfxBoolItem Hidden SID_HIDDEN )
 [
@@ -5350,6 +5431,22 @@ SfxVoidItem RecentFileList SID_RECENTFILELIST
     GroupId = GID_APPLICATION;
 ]
 
+SfxVoidItem ToolbarMode SID_TOOLBAR_MODE
+(SfxStringItem Mode SID_TOOLBAR_MODE)
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = TRUE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+
+    AccelConfig = FALSE,
+    MenuConfig = TRUE,
+    ToolBoxConfig = FALSE,
+    GroupId = GID_APPLICATION;
+]
 
 SfxVoidItem AvailableToolbars SID_AVAILABLE_TOOLBARS
 (SfxStringItem Toolbar SID_AVAILABLE_TOOLBARS)
@@ -5691,6 +5788,23 @@ SfxStringItem Insert3DModel SID_INSERT_3DMODEL
     AutoUpdate = FALSE,
     FastCall = FALSE,
     ReadOnlyDoc = FALSE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+
+    AccelConfig = TRUE,
+    MenuConfig = TRUE,
+    ToolBoxConfig = TRUE,
+    GroupId = GID_APPLICATION;
+]
+
+SfxVoidItem SafeMode SID_SAFE_MODE
+()
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = TRUE,
     Toggle = FALSE,
     Container = FALSE,
     RecordAbsolute = FALSE,

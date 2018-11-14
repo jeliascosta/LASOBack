@@ -24,15 +24,14 @@
 #include <com/sun/star/sheet/NamedRangeFlag.hpp>
 #include <com/sun/star/sheet/ReferenceFlags.hpp>
 #include <com/sun/star/sheet/SingleReference.hpp>
-#include <com/sun/star/sheet/XFormulaTokens.hpp>
 #include <com/sun/star/sheet/XPrintAreas.hpp>
 #include <osl/diagnose.h>
 #include <rtl/ustrbuf.hxx>
+#include <oox/helper/binaryinputstream.hxx>
 #include <oox/helper/attributelist.hxx>
 #include <oox/helper/propertyset.hxx>
 #include <oox/token/tokens.hxx>
 #include "addressconverter.hxx"
-#include "biffinputstream.hxx"
 #include "externallinkbuffer.hxx"
 #include "formulaparser.hxx"
 #include "worksheetbuffer.hxx"
@@ -215,7 +214,7 @@ Any DefinedNameBase::getReference( const ScAddress& rBaseAddr ) const
                 Any aRefAny = lclConvertReference( aApiExtRef.Reference, rBaseAddr, nRelFlags );
                 if( aRefAny.hasValue() )
                 {
-                    aApiExtRef.Reference <<= aRefAny;
+                    aApiExtRef.Reference = aRefAny;
                     return Any( aApiExtRef );
                 }
             }
@@ -299,10 +298,6 @@ void DefinedName::createNameObject( sal_Int32 nIndex )
     if( /*maModel.mbHidden ||*/ maModel.mbFunction || maModel.mbVBName )
         return;
 
-    // skip BIFF names without stream position (e.g. BIFF3-BIFF4 internal 3D references)
-    if( (getFilterType() == FILTER_BIFF) && !mxBiffStrm.get() )
-        return;
-
     // convert original name to final Calc name (TODO: filter invalid characters from model name)
     maCalcName = isBuiltinName() ? lclGetPrefixedName( mcBuiltinId ) : maModel.maName;
 
@@ -337,7 +332,7 @@ std::unique_ptr<ScTokenArray> DefinedName::getScTokens(
     // Compile the tokens into RPN once to populate information into tokens
     // where necessary, e.g. for TableRef inner reference. RPN can be discarded
     // after, a resulting error must be reset.
-    sal_uInt16 nErr = pArray->GetCodeError();
+    FormulaError nErr = pArray->GetCodeError();
     aCompiler.CompileTokenArray();
     pArray->DelRPN();
     pArray->SetCodeError(nErr);
@@ -352,7 +347,6 @@ void DefinedName::convertFormula( const css::uno::Sequence<css::sheet::ExternalL
         return;
 
     // convert and set formula of the defined name
-    if ( getFilterType() == FILTER_OOXML )
     {
         std::unique_ptr<ScTokenArray> pTokenArray = getScTokens( rExternalLinks);
         mpScRangeData->SetCode( *pTokenArray );

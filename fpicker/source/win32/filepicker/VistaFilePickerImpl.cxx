@@ -66,11 +66,11 @@ bool createFolderItem(OUString const & url, ComPtr<IShellItem> & folder) {
     }
 #if defined __MINGW32__
     HRESULT res = SHCreateItemFromParsingName(
-        reinterpret_cast<LPCTSTR>(path.getStr()), NULL, IID_IShellItem,
+        reinterpret_cast<PCWSTR>(path.getStr()), NULL, IID_IShellItem,
         reinterpret_cast<void **>(&folder));
 #else
     HRESULT res = SHCreateItemFromParsingName(
-        path.getStr(), NULL, IID_PPV_ARGS(&folder));
+        path.getStr(), nullptr, IID_PPV_ARGS(&folder));
 #endif
     return SUCCEEDED(res);
 }
@@ -101,7 +101,7 @@ static const GUID CLIENTID_FILEOPEN_LINK            = {0x39AC4BAE, 0x7D2D, 0x46B
 
 OUString lcl_getURLFromShellItem (IShellItem* pItem)
 {
-    LPOLESTR pStr = NULL;
+    LPOLESTR pStr = nullptr;
     OUString sURL;
 
     SIGDN   eConversion = SIGDN_FILESYSPATH;
@@ -137,8 +137,8 @@ OUString lcl_getURLFromShellItem (IShellItem* pItem)
     {
         COMDLG_FILTERSPEC aSpec;
 
-        aSpec.pszName = reinterpret_cast<LPCTSTR>(aFilter.first.getStr()) ;
-        aSpec.pszSpec = reinterpret_cast<LPCTSTR>(aFilter.second.getStr());
+        aSpec.pszName = reinterpret_cast<PCWSTR>(aFilter.first.getStr()) ;
+        aSpec.pszSpec = reinterpret_cast<PCWSTR>(aFilter.second.getStr());
 
         lList.push_back(aSpec);
     }
@@ -153,8 +153,8 @@ VistaFilePickerImpl::VistaFilePickerImpl()
     , m_hLastResult  ()
     , m_lFilters     ()
     , m_iEventHandler(new VistaFilePickerEventHandler(this))
-    , m_bInExecute   (sal_False)
-    , m_bWasExecuted (sal_False)
+    , m_bInExecute   (false)
+    , m_bWasExecuted (false)
     , m_sDirectory   ()
     , m_sFilename    ()
 {
@@ -179,11 +179,11 @@ void VistaFilePickerImpl::before()
     // So we make it by try-and-error ...
     // If first CoInitialize will fail .. we unitialize COM initialize it new .-)
 
-    m_hLastResult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+    m_hLastResult = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if ( FAILED(m_hLastResult) )
     {
         CoUninitialize();
-        m_hLastResult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+        m_hLastResult = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     }
 }
 
@@ -305,7 +305,7 @@ void VistaFilePickerImpl::impl_sta_addFilePickerListener(const RequestRef& rRequ
     aLock.clear();
     // <- SYNCHRONIZED
 
-    VistaFilePickerEventHandler* pHandlerImpl = (VistaFilePickerEventHandler*)iHandler.get();
+    VistaFilePickerEventHandler* pHandlerImpl = static_cast<VistaFilePickerEventHandler*>(iHandler.get());
     if (pHandlerImpl)
         pHandlerImpl->addFilePickerListener(xListener);
 }
@@ -324,7 +324,7 @@ void VistaFilePickerImpl::impl_sta_removeFilePickerListener(const RequestRef& rR
     aLock.clear();
     // <- SYNCHRONIZED
 
-    VistaFilePickerEventHandler* pHandlerImpl = (VistaFilePickerEventHandler*)iHandler.get();
+    VistaFilePickerEventHandler* pHandlerImpl = static_cast<VistaFilePickerEventHandler*>(iHandler.get());
     if (pHandlerImpl)
         pHandlerImpl->removeFilePickerListener(xListener);
 }
@@ -351,7 +351,7 @@ void VistaFilePickerImpl::impl_sta_appendFilterGroup(const RequestRef& rRequest)
     ::osl::ResettableMutexGuard aLock(m_aMutex);
 
     if ( m_lFilters.numFilter() > 0 && aFilterGroup.getLength() > 0 )
-        m_lFilters.addFilter( STRING_SEPARATOR, "", sal_True );
+        m_lFilters.addFilter( STRING_SEPARATOR, "", true );
 
     ::sal_Int32 c = aFilterGroup.getLength();
     ::sal_Int32 i = 0;
@@ -442,7 +442,7 @@ void VistaFilePickerImpl::impl_sta_CreateOpenDialog(const RequestRef& rRequest)
     ::sal_Int32 nTemplate = rRequest->getArgumentOrDefault(PROP_TEMPLATE_DESCR, (::sal_Int32)0);
     impl_sta_enableFeatures(nFeatures, nTemplate);
 
-    VistaFilePickerEventHandler* pHandlerImpl = (VistaFilePickerEventHandler*)iHandler.get();
+    VistaFilePickerEventHandler* pHandlerImpl = static_cast<VistaFilePickerEventHandler*>(iHandler.get());
     if (pHandlerImpl)
         pHandlerImpl->startListening(iDialog);
 }
@@ -487,18 +487,18 @@ void VistaFilePickerImpl::impl_sta_CreateSaveDialog(const RequestRef& rRequest)
         css::uno::Reference<css::awt::XSystemDependentWindowPeer> xSysDepWin(xWindow,css::uno::UNO_QUERY);
         if(xSysDepWin.is()) {
             css::uno::Sequence<sal_Int8> aProcessIdent(16);
-            rtl_getGlobalProcessId((sal_uInt8*)aProcessIdent.getArray());
+            rtl_getGlobalProcessId(reinterpret_cast<sal_uInt8*>(aProcessIdent.getArray()));
             css::uno::Any aAny = xSysDepWin->getWindowHandle(aProcessIdent,css::lang::SystemDependent::SYSTEM_WIN32);
             sal_Int64 tmp = 0;
             aAny >>= tmp;
             if(tmp != 0)
-                m_hParentWindow = (HWND) tmp;
+                m_hParentWindow = reinterpret_cast<HWND>(tmp);
         }
     }
 
     impl_sta_enableFeatures(nFeatures, nTemplate);
 
-    VistaFilePickerEventHandler* pHandlerImpl = (VistaFilePickerEventHandler*)iHandler.get();
+    VistaFilePickerEventHandler* pHandlerImpl = static_cast<VistaFilePickerEventHandler*>(iHandler.get());
     if (pHandlerImpl)
         pHandlerImpl->startListening(iDialog);
 }
@@ -514,7 +514,7 @@ static void setLabelToControl(CResourceProvider& rResourceProvider, TFileDialogC
 {
     OUString aLabel = rResourceProvider.getResString(nControlId);
     aLabel = SOfficeToWindowsLabel(aLabel);
-    iCustom->SetControlLabel(nControlId, reinterpret_cast<LPCWSTR>(aLabel.getStr()) );
+    iCustom->SetControlLabel(nControlId, reinterpret_cast<PCWSTR>(aLabel.getStr()) );
 }
 
 
@@ -524,6 +524,7 @@ void VistaFilePickerImpl::impl_sta_enableFeatures(::sal_Int32 nFeatures, ::sal_I
     switch (nTemplate)
     {
         case css::ui::dialogs::TemplateDescription::FILEOPEN_SIMPLE :
+        case css::ui::dialogs::TemplateDescription::FILEOPEN_PREVIEW :
         case css::ui::dialogs::TemplateDescription::FILESAVE_SIMPLE :
             aGUID = CLIENTID_FILEDIALOG_SIMPLE;
             break;
@@ -551,6 +552,7 @@ void VistaFilePickerImpl::impl_sta_enableFeatures(::sal_Int32 nFeatures, ::sal_I
             break;
 
         case css::ui::dialogs::TemplateDescription::FILEOPEN_PLAY :
+        case css::ui::dialogs::TemplateDescription::FILEOPEN_LINK_PLAY :
             aGUID = CLIENTID_FILEOPEN_PLAY;
             break;
 
@@ -647,7 +649,7 @@ void VistaFilePickerImpl::impl_sta_enableFeatures(::sal_Int32 nFeatures, ::sal_I
 
 void VistaFilePickerImpl::impl_sta_SetMultiSelectionMode(const RequestRef& rRequest)
 {
-    const sal_Bool bMultiSelection = rRequest->getArgumentOrDefault(PROP_MULTISELECTION_MODE, (sal_Bool)sal_True);
+    const bool bMultiSelection = rRequest->getArgumentOrDefault(PROP_MULTISELECTION_MODE, true);
 
     // SYNCHRONIZED->
     ::osl::ResettableMutexGuard aLock(m_aMutex);
@@ -677,7 +679,7 @@ void VistaFilePickerImpl::impl_sta_SetTitle(const RequestRef& rRequest)
     aLock.clear();
     // <- SYNCHRONIZED
 
-    iDialog->SetTitle(reinterpret_cast<LPCTSTR>(sTitle.getStr()));
+    iDialog->SetTitle(reinterpret_cast<PCWSTR>(sTitle.getStr()));
 }
 
 
@@ -691,7 +693,7 @@ void VistaFilePickerImpl::impl_sta_SetFileName(const RequestRef& rRequest)
     aLock.clear();
     // <- SYNCHRONIZED
 
-    iDialog->SetFileName(reinterpret_cast<LPCTSTR>(sFileName.getStr()));
+    iDialog->SetFileName(reinterpret_cast<PCWSTR>(sFileName.getStr()));
 }
 
 
@@ -764,7 +766,7 @@ void VistaFilePickerImpl::impl_sta_SetDefaultName(const RequestRef& rRequest)
             sFilename = sFilename.copy(0, nSepPos);
     }
 
-    iDialog->SetFileName ( reinterpret_cast<LPCTSTR>(sFilename.getStr()));
+    iDialog->SetFileName ( reinterpret_cast<PCWSTR>(sFilename.getStr()));
     m_sFilename = sFilename;
 }
 
@@ -797,7 +799,7 @@ void VistaFilePickerImpl::impl_sta_setFiltersOnDialog()
 
     if ( bValue )
     {
-        LPCWSTR lpFilterExt = lFilters[0].pszSpec;
+        PCWSTR lpFilterExt = lFilters[0].pszSpec;
 
         lpFilterExt = wcsrchr( lpFilterExt, '.' );
         if ( lpFilterExt )
@@ -815,7 +817,7 @@ void VistaFilePickerImpl::impl_sta_getSelectedFiles(const RequestRef& rRequest)
 
     TFileOpenDialog iOpen      = m_iDialogOpen;
     TFileSaveDialog iSave      = m_iDialogSave;
-    sal_Bool      bInExecute = m_bInExecute;
+    bool bInExecute = m_bInExecute;
 
     aLock.clear();
     // <- SYNCHRONIZED
@@ -838,8 +840,7 @@ void VistaFilePickerImpl::impl_sta_getSelectedFiles(const RequestRef& rRequest)
                 hResult = iOpen->GetResult(&iItem);
         }
     }
-    else
-    if (iSave.is())
+    else if (iSave.is())
     {
         if (bInExecute)
             hResult = iSave->GetCurrentSelection(&iItem);
@@ -896,9 +897,9 @@ void VistaFilePickerImpl::impl_sta_ShowDialogModal(const RequestRef& rRequest)
     // it's important to know if we are showing the dialog.
     // Some dialog interface methods can't be called then or some
     // tasks must be done differently .-) (e.g. see impl_sta_getSelectedFiles())
-    m_bInExecute = sal_True;
+    m_bInExecute = true;
 
-    m_bWasExecuted = sal_True;
+    m_bWasExecuted = true;
 
     aLock.clear();
     // <- SYNCHRONIZED
@@ -934,7 +935,7 @@ void VistaFilePickerImpl::impl_sta_ShowDialogModal(const RequestRef& rRequest)
                         ::std::vector< COMDLG_FILTERSPEC > lFilters = lcl_buildFilterList(m_lFilters);
                         if ( nRealIndex < lFilters.size() )
                         {
-                            LPCWSTR lpFilterExt = lFilters[nRealIndex].pszSpec;
+                            PCWSTR lpFilterExt = lFilters[nRealIndex].pszSpec;
 
                             lpFilterExt = wcsrchr( lpFilterExt, '.' );
                             if ( lpFilterExt )
@@ -948,7 +949,7 @@ void VistaFilePickerImpl::impl_sta_ShowDialogModal(const RequestRef& rRequest)
                 osl_getSystemPathFromFileURL( aFileURL.pData, &aSystemPath.pData );
 
                 WIN32_FIND_DATA aFindFileData;
-                HANDLE  hFind = FindFirstFile( reinterpret_cast<LPCWSTR>(aSystemPath.getStr()), &aFindFileData );
+                HANDLE  hFind = FindFirstFile( reinterpret_cast<PCWSTR>(aSystemPath.getStr()), &aFindFileData );
                 if (hFind != INVALID_HANDLE_VALUE)
                     iDialog->SetFolder(pFolder);
                 else
@@ -977,7 +978,7 @@ void VistaFilePickerImpl::impl_sta_ShowDialogModal(const RequestRef& rRequest)
 
     // SYNCHRONIZED->
     aLock.reset();
-    m_bInExecute = sal_False;
+    m_bInExecute = false;
     aLock.clear();
     // <- SYNCHRONIZED
 
@@ -985,7 +986,7 @@ void VistaFilePickerImpl::impl_sta_ShowDialogModal(const RequestRef& rRequest)
         return;
 
     impl_sta_getSelectedFiles(rRequest);
-    rRequest->setArgument(PROP_DIALOG_SHOW_RESULT, sal_True);
+    rRequest->setArgument(PROP_DIALOG_SHOW_RESULT, true);
 }
 
 
@@ -1026,8 +1027,7 @@ TFileDialogCustomize VistaFilePickerImpl::impl_getCustomizeInterface()
 #else
         m_iDialogOpen.query(&iCustom);
 #endif
-    else
-    if (m_iDialogSave.is())
+    else if (m_iDialogSave.is())
 #ifdef __MINGW32__
         m_iDialogSave->QueryInterface(IID_IFileDialogCustomize, (void**)(&iCustom));
 #else
@@ -1055,7 +1055,7 @@ void VistaFilePickerImpl::impl_sta_SetControlValue(const RequestRef& rRequest)
 {
     ::sal_Int16   nId     = rRequest->getArgumentOrDefault(PROP_CONTROL_ID    , INVALID_CONTROL_ID    );
     ::sal_Int16   nAction = rRequest->getArgumentOrDefault(PROP_CONTROL_ACTION, INVALID_CONTROL_ACTION);
-    css::uno::Any aValue  = rRequest->getArgumentOrDefault(PROP_CONTROL_VALUE , css::uno::Any()       );
+    css::uno::Any aValue  = rRequest->getValue(PROP_CONTROL_VALUE);
 
     // don't check for right values here ...
     // most parameters are optional !
@@ -1074,7 +1074,7 @@ void VistaFilePickerImpl::impl_sta_SetControlValue(const RequestRef& rRequest)
         //case css::ui::dialogs::ExtendedFilePickerElementIds::CHECKBOX_PREVIEW : // can be ignored ... preview is supported native now !
         case css::ui::dialogs::ExtendedFilePickerElementIds::CHECKBOX_SELECTION :
             {
-                sal_Bool bValue   = sal_False;
+                sal_Bool bValue   = false;
                            aValue >>= bValue;
                 iCustom->SetCheckButtonState(nId, bValue);
             }
@@ -1102,7 +1102,7 @@ void VistaFilePickerImpl::impl_sta_SetControlValue(const RequestRef& rRequest)
                             for (::sal_Int32 i=0; i<lItems.getLength(); ++i)
                             {
                                 const OUString& sItem = lItems[i];
-                                hResult = iCustom->AddControlItem(nId, i, reinterpret_cast<LPCTSTR>(sItem.getStr()));
+                                hResult = iCustom->AddControlItem(nId, i, reinterpret_cast<PCWSTR>(sItem.getStr()));
                             }
                         }
                         break;
@@ -1139,8 +1139,8 @@ void VistaFilePickerImpl::impl_sta_GetControlValue(const RequestRef& rRequest)
 
     css::uno::Any aValue;
     if( m_bWasExecuted )
-    switch (nId)
-    {
+        switch (nId)
+        {
         case css::ui::dialogs::ExtendedFilePickerElementIds::CHECKBOX_PASSWORD :
         case css::ui::dialogs::ExtendedFilePickerElementIds::CHECKBOX_READONLY :
         case css::ui::dialogs::ExtendedFilePickerElementIds::CHECKBOX_FILTEROPTIONS :
@@ -1151,10 +1151,10 @@ void VistaFilePickerImpl::impl_sta_GetControlValue(const RequestRef& rRequest)
                 BOOL    bValue  = FALSE;
                 HRESULT hResult = iCustom->GetCheckButtonState(nId, &bValue);
                 if ( SUCCEEDED(hResult) )
-                    aValue = css::uno::makeAny((sal_Bool)bValue);
+                    aValue = css::uno::makeAny(bool(bValue));
             }
             break;
-    }
+        }
 
     if (aValue.hasValue())
         rRequest->setArgument(PROP_CONTROL_VALUE, aValue);
@@ -1172,7 +1172,7 @@ void VistaFilePickerImpl::impl_sta_SetControlLabel(const RequestRef& rRequest)
     TFileDialogCustomize iCustom = impl_getCustomizeInterface();
     if ( ! iCustom.is())
         return;
-    iCustom->SetControlLabel ( nId, reinterpret_cast<LPCTSTR>(sLabel.getStr()));
+    iCustom->SetControlLabel ( nId, reinterpret_cast<PCWSTR>(sLabel.getStr()));
 }
 
 
@@ -1184,7 +1184,7 @@ void VistaFilePickerImpl::impl_sta_GetControlLabel(const RequestRef& /*rRequest*
 void VistaFilePickerImpl::impl_sta_EnableControl(const RequestRef& rRequest)
 {
     ::sal_Int16 nId      = rRequest->getArgumentOrDefault(PROP_CONTROL_ID    , INVALID_CONTROL_ID  );
-    sal_Bool  bEnabled = rRequest->getArgumentOrDefault(PROP_CONTROL_ENABLE, (sal_Bool)sal_True);
+    bool bEnabled = rRequest->getArgumentOrDefault(PROP_CONTROL_ENABLE, true);
 
     // don't check for right values here ...
     // most parameters are optional !
@@ -1218,7 +1218,7 @@ void VistaFilePickerImpl::impl_SetDefaultExtension( const OUString& currentFilte
             posOfSemiColon = FilterExt.getLength() - 1;
 
         FilterExt = OUString(pFirstExtStart, posOfSemiColon - posOfPoint);
-        iDialog->SetDefaultExtension ( reinterpret_cast<LPCTSTR>(FilterExt.getStr()) );
+        iDialog->SetDefaultExtension ( reinterpret_cast<PCWSTR>(FilterExt.getStr()) );
    }
 }
 
@@ -1237,10 +1237,10 @@ void VistaFilePickerImpl::onAutoExtensionChanged (bool bChecked)
     aLock.clear();
     // <- SYNCHRONIZED
 
-    LPCWSTR pExt = 0;
+    PCWSTR pExt = nullptr;
     if ( bChecked )
     {
-        pExt = reinterpret_cast<LPCTSTR>(sExt.getStr());
+        pExt = reinterpret_cast<PCWSTR>(sExt.getStr());
         pExt = wcsrchr( pExt, '.' );
         if ( pExt )
             pExt++;

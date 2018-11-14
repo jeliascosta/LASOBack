@@ -264,7 +264,7 @@ sal_Bool SAL_CALL ODBFilter::filter( const Sequence< PropertyValue >& rDescripto
     if ( xWindow.is() )
     {
         SolarMutexGuard aGuard;
-        vcl::Window* pFocusWindow = VCLUnoHelper::GetWindow( xWindow );
+        VclPtr<vcl::Window> pFocusWindow = VCLUnoHelper::GetWindow( xWindow );
         if ( pFocusWindow )
             pFocusWindow->LeaveWait();
     }
@@ -407,7 +407,7 @@ SvXMLImportContext* ODBFilter::CreateContext( sal_uInt16 nPrefix,
             pContext = CreateStylesContext(nPrefix, rLocalName, xAttrList, true);
             break;
         case XML_TOK_DOC_SCRIPT:
-            pContext = CreateScriptContext( rLocalName );
+            pContext = new XMLScriptContext( *this, rLocalName, GetModel() );
             break;
     }
 
@@ -728,13 +728,7 @@ SvXMLImportContext* ODBFilter::CreateStylesContext(sal_uInt16 _nPrefix,const OUS
 }
 
 
-SvXMLImportContext* ODBFilter::CreateScriptContext( const OUString& _rLocalName )
-{
-    return new XMLScriptContext( *this, _rLocalName, GetModel() );
-}
-
-
-rtl::Reference < XMLPropertySetMapper > ODBFilter::GetTableStylesPropertySetMapper() const
+rtl::Reference < XMLPropertySetMapper > const & ODBFilter::GetTableStylesPropertySetMapper() const
 {
     if ( !m_xTableStylesPropertySetMapper.is() )
     {
@@ -744,7 +738,7 @@ rtl::Reference < XMLPropertySetMapper > ODBFilter::GetTableStylesPropertySetMapp
 }
 
 
-rtl::Reference < XMLPropertySetMapper > ODBFilter::GetColumnStylesPropertySetMapper() const
+rtl::Reference < XMLPropertySetMapper > const & ODBFilter::GetColumnStylesPropertySetMapper() const
 {
     if ( !m_xColumnStylesPropertySetMapper.is() )
     {
@@ -754,7 +748,7 @@ rtl::Reference < XMLPropertySetMapper > ODBFilter::GetColumnStylesPropertySetMap
 }
 
 
-rtl::Reference < XMLPropertySetMapper > ODBFilter::GetCellStylesPropertySetMapper() const
+rtl::Reference < XMLPropertySetMapper > const & ODBFilter::GetCellStylesPropertySetMapper() const
 {
     if ( !m_xCellStylesPropertySetMapper.is() )
     {

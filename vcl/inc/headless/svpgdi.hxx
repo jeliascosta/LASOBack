@@ -60,7 +60,7 @@
 
 struct BitmapBuffer;
 class GlyphCache;
-class ServerFont;
+class FreetypeFont;
 typedef struct _cairo cairo_t;
 typedef struct _cairo_surface cairo_surface_t;
 typedef struct _cairo_user_data_key cairo_user_data_key_t;
@@ -117,7 +117,7 @@ protected:
 
 public:
     SvpSalGraphics();
-    virtual ~SvpSalGraphics();
+    virtual ~SvpSalGraphics() override;
 
     virtual SalGraphicsImpl* GetImpl() const override { return nullptr; };
     virtual void            GetResolution( sal_Int32& rDPIX, sal_Int32& rDPIY ) override;
@@ -132,15 +132,15 @@ public:
     virtual void            SetFillColor() override;
     virtual void            SetFillColor( SalColor nSalColor ) override;
 
-    virtual void            SetXORMode( bool bSet, bool ) override;
+    virtual void            SetXORMode( bool bSet ) override;
 
     virtual void            SetROPLineColor( SalROPColor nROPColor ) override;
     virtual void            SetROPFillColor( SalROPColor nROPColor ) override;
 
     virtual void            SetTextColor( SalColor nSalColor ) override;
     virtual void            SetFont( FontSelectPattern*, int nFallbackLevel ) override;
-    virtual void            GetFontMetric( ImplFontMetricDataPtr&, int nFallbackLevel ) override;
-    virtual const FontCharMapPtr GetFontCharMap() const override;
+    virtual void            GetFontMetric( ImplFontMetricDataRef&, int nFallbackLevel ) override;
+    virtual const FontCharMapRef GetFontCharMap() const override;
     virtual bool GetFontCapabilities(vcl::FontCapabilities &rFontCapabilities) const override;
     virtual void            GetDevFontList( PhysicalFontCollection* ) override;
     virtual void ClearDevFontCache() override;
@@ -163,12 +163,13 @@ public:
     virtual void            FreeEmbedFontData( const void* pData, long nDataLen ) override;
     virtual void            GetGlyphWidths( const PhysicalFontFace*,
                                             bool bVertical,
-                                            Int32Vector& rWidths,
+                                            std::vector< sal_Int32 >& rWidths,
                                             Ucs2UIntMap& rUnicodeEnc ) override;
     virtual bool            GetGlyphBoundRect( sal_GlyphId nIndex, Rectangle& ) override;
     virtual bool            GetGlyphOutline( sal_GlyphId nIndex, basegfx::B2DPolyPolygon& ) override;
     virtual SalLayout*      GetTextLayout( ImplLayoutArgs&, int nFallbackLevel ) override;
-    virtual void            DrawServerFontLayout( const ServerFontLayout& ) override;
+    virtual void            DrawSalLayout( const CommonSalLayout& ) override;
+    virtual void            DrawServerFontLayout( const GenericSalLayout&, const FreetypeFont& ) override;
     virtual bool            supportsOperation( OutDevSupportType ) const override;
     virtual void            drawPixel( long nX, long nY ) override;
     virtual void            drawPixel( long nX, long nY, SalColor nSalColor ) override;

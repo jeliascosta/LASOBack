@@ -17,8 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/standard/vclxaccessiblecombobox.hxx>
-#include <accessibility/standard/vclxaccessiblelist.hxx>
+#include <standard/vclxaccessiblecombobox.hxx>
+#include <standard/vclxaccessiblelist.hxx>
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 #include <vcl/svapp.hxx>
@@ -45,12 +45,6 @@ bool VCLXAccessibleComboBox::IsValid() const
 {
     return GetWindow().get() != nullptr;
 }
-
-void VCLXAccessibleComboBox::ProcessWindowEvent (const VclWindowEvent& rVclWindowEvent)
-{
-    VCLXAccessibleBox::ProcessWindowEvent( rVclWindowEvent );
-}
-
 
 // XServiceInfo
 

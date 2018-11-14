@@ -215,13 +215,6 @@ void SmRect::BuildRect(const OutputDevice &rDev, const SmFormat *pFormat,
 }
 
 
-void SmRect::Init(const OutputDevice &rDev, const SmFormat *pFormat,
-                  const OUString &rText, sal_uInt16 nEBorderWidth)
-    // get rectangle fitting for drawing 'rText' on OutputDevice 'rDev'
-{
-    BuildRect(rDev, pFormat, rText, nEBorderWidth);
-}
-
 
 SmRect::SmRect(const OutputDevice &rDev, const SmFormat *pFormat,
                const OUString &rText, long nEBorderWidth)
@@ -229,7 +222,8 @@ SmRect::SmRect(const OutputDevice &rDev, const SmFormat *pFormat,
     OSL_ENSURE( nEBorderWidth >= 0, "BorderWidth is negative" );
     if (nEBorderWidth < 0)
         nEBorderWidth = 0;
-    Init(rDev, pFormat, rText, sal::static_int_cast<sal_uInt16>(nEBorderWidth));
+    // get rectangle fitting for drawing 'rText' on OutputDevice 'rDev'
+    BuildRect(rDev, pFormat, rText, sal::static_int_cast<sal_uInt16>(nEBorderWidth));
 }
 
 
@@ -462,7 +456,7 @@ SmRect & SmRect::ExtendBy(const SmRect &rRect, RectCopyMBL eCopyMode)
                 CopyMBL(rRect);
                 break;
             case RectCopyMBL::None:
-                ClearBaseline();
+                bHasBaseline = false;
                 nAlignM = (nAlignT + nAlignB) / 2;
                 break;
             case RectCopyMBL::Xor:

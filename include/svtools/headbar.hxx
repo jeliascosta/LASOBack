@@ -196,13 +196,12 @@ enum class HeaderBarItemBits
     FLAT                = 0x0800,
     DOWNARROW           = 0x1000,
     UPARROW             = 0x2000,
-    USERDRAW            = 0x4000,
     STDSTYLE            = LEFT | LEFTIMAGE | VCENTER | CLICKABLE,
 };
 
 namespace o3tl
 {
-    template<> struct typed_flags<HeaderBarItemBits> : is_typed_flags<HeaderBarItemBits, 0x7fff> {};
+    template<> struct typed_flags<HeaderBarItemBits> : is_typed_flags<HeaderBarItemBits, 0x3fff> {};
 }
 
 #define HEADERBAR_APPEND            ((sal_uInt16)0xFFFF)
@@ -269,8 +268,8 @@ private:
     virtual void ApplySettings(vcl::RenderContext& rRenderContext) override;
 
 public:
-    HeaderBar( vcl::Window* pParent, WinBits nWinBits = WB_STDHEADERBAR );
-    virtual ~HeaderBar();
+    HeaderBar( vcl::Window* pParent, WinBits nWinBits );
+    virtual ~HeaderBar() override;
     virtual void dispose() override;
 
     virtual void        MouseButtonDown( const MouseEvent& rMEvt ) override;
@@ -284,8 +283,6 @@ public:
     virtual void        StateChanged( StateChangedType nStateChange ) override;
     virtual void        DataChanged( const DataChangedEvent& rDCEvt ) override;
 
-    void                StartDrag();
-    void                Drag();
     virtual void        EndDrag();
     virtual void        Select();
     virtual void        DoubleClick();
@@ -297,8 +294,8 @@ public:
     void                MoveItem( sal_uInt16 nItemId, sal_uInt16 nNewPos );
     void                Clear();
 
-    void                SetOffset( long nNewOffset = 0 );
-    inline void         SetDragSize( long nNewSize = 0 ) { mnDragSize = nNewSize; }
+    void                SetOffset( long nNewOffset );
+    inline void         SetDragSize( long nNewSize ) { mnDragSize = nNewSize; }
 
     sal_uInt16          GetItemCount() const;
     sal_uInt16          GetItemPos( sal_uInt16 nItemId ) const;
@@ -322,8 +319,7 @@ public:
 
     Size                CalcWindowSizePixel() const;
 
-    inline void         SetHelpId( const OString& rId )    { Window::SetHelpId( rId ); }
-
+    using Window::SetHelpId;
 
     inline void         SetStartDragHdl( const Link<HeaderBar*,void>& rLink )      { maStartDragHdl = rLink; }
     inline void         SetDragHdl( const Link<HeaderBar*,void>& rLink )           { maDragHdl = rLink; }
@@ -336,7 +332,7 @@ public:
     /** Creates and returns the accessible object of the header bar. */
     virtual css::uno::Reference< css::accessibility::XAccessible >  CreateAccessible() override;
     void SetAccessible( const css::uno::Reference< css::accessibility::XAccessible >& );
-    virtual css::uno::Reference< css::awt::XWindowPeer > GetComponentInterface( bool bCreate ) override;
+    virtual css::uno::Reference< css::awt::XWindowPeer > GetComponentInterface( bool bCreate = true ) override;
 
 };
 

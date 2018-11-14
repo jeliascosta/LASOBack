@@ -3,18 +3,18 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ui\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2016-12-01 12:11+0100\n"
-"PO-Revision-Date: 2016-10-18 12:46+0000\n"
-"Last-Translator: Anonymous Pootle User\n"
+"POT-Creation-Date: 2017-06-01 14:03+0200\n"
+"PO-Revision-Date: 2017-07-28 12:43+0000\n"
+"Last-Translator: Мікалай Удодаў <crom-a@tut.by>\n"
 "Language-Team: Belarusian <yury.tarasievich@gmail.com>\n"
 "Language: be\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: LibreOffice\n"
 "X-Accelerator-Marker: ~\n"
-"X-POOTLE-MTIME: 1476794815.000000\n"
+"X-Generator: Pootle 2.8\n"
+"X-POOTLE-MTIME: 1501245781.000000\n"
 
 #: aboutconfigdialog.ui
 msgctxt ""
@@ -184,7 +184,7 @@ msgctxt ""
 "copyright\n"
 "label\n"
 "string.text"
-msgid "Copyright © 2000–2016 LibreOffice contributors."
+msgid "Copyright © 2000–2017 LibreOffice contributors."
 msgstr ""
 
 #: aboutdialog.ui
@@ -3237,7 +3237,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Recent Colors"
-msgstr ""
+msgstr "Папярэднія колеры"
 
 #: colorpage.ui
 msgctxt ""
@@ -4531,7 +4531,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Get more dictionaries online..."
-msgstr ""
+msgstr "Атрымаць больш слоўнікаў у сеціве..."
 
 #: editmodulesdialog.ui
 #, fuzzy
@@ -5558,7 +5558,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_File type:"
-msgstr ""
+msgstr "Тып ф_айла:"
 
 #: galleryfilespage.ui
 msgctxt ""
@@ -6240,7 +6240,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "User-defined Dictionaries"
-msgstr ""
+msgstr "Слоўнікі карыстальніка"
 
 #: hangulhanjaoptdialog.ui
 msgctxt ""
@@ -6258,7 +6258,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Show recently used entries first"
-msgstr ""
+msgstr "Паказваць нядаўнія запісы ў пачатку"
 
 #: hangulhanjaoptdialog.ui
 msgctxt ""
@@ -6440,7 +6440,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Open File"
-msgstr ""
+msgstr "Адкрыць файл"
 
 #: hyperlinkdocpage.ui
 msgctxt ""
@@ -6449,7 +6449,7 @@ msgctxt ""
 "tooltip_text\n"
 "string.text"
 msgid "Open File"
-msgstr ""
+msgstr "Адкрыць файл"
 
 #: hyperlinkdocpage.ui
 msgctxt ""
@@ -6851,7 +6851,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_File:"
-msgstr ""
+msgstr "Ф_айл:"
 
 #: hyperlinknewdocpage.ui
 msgctxt ""
@@ -8258,7 +8258,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Add Command"
-msgstr ""
+msgstr "Дадаць каманду"
 
 #: menuassignpage.ui
 msgctxt ""
@@ -10741,7 +10741,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Help Improve %PRODUCTNAME"
-msgstr ""
+msgstr "Дапамажыце палепшыць %PRODUCTNAME"
 
 #: opthtmlpage.ui
 msgctxt ""
@@ -11264,7 +11264,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_User-defined dictionaries:"
-msgstr ""
+msgstr "_Слоўнікі карыстальніка:"
 
 #: optlingupage.ui
 msgctxt ""
@@ -11292,7 +11292,7 @@ msgctxt ""
 "AtkObject::accessible-name\n"
 "string.text"
 msgid "Edit User-defined dictionaries"
-msgstr ""
+msgstr "Рэдагаваць слоўнікі карыстальніка"
 
 #: optlingupage.ui
 msgctxt ""
@@ -11320,7 +11320,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Get more dictionaries online..."
-msgstr ""
+msgstr "Іншыя слоўнікі ў сеціве..."
 
 #: optlingupage.ui
 #, fuzzy
@@ -12321,13 +12321,14 @@ msgid "_Company:"
 msgstr "Кампанія"
 
 #: optuserpage.ui
+#, fuzzy
 msgctxt ""
 "optuserpage.ui\n"
 "nameft\n"
 "label\n"
 "string.text"
-msgid "Name/initials:"
-msgstr ""
+msgid "First/last _name/initials:"
+msgstr "Імя/Прозвішча/Ініцыялы"
 
 #: optuserpage.ui
 #, fuzzy
@@ -12400,11 +12401,20 @@ msgstr "Факс/эл.пошта"
 #: optuserpage.ui
 msgctxt ""
 "optuserpage.ui\n"
+"firstname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "First name"
+msgstr "Імя"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
 "lastname-atkobject\n"
 "AtkObject::accessible-name\n"
 "string.text"
-msgid "Name"
-msgstr ""
+msgid "Last name"
+msgstr "Прозвішча"
 
 #: optuserpage.ui
 msgctxt ""
@@ -12504,6 +12514,89 @@ msgctxt ""
 "string.text"
 msgid "Use data for document properties"
 msgstr "Ужываць звесткі ва ўласцівасцях дакументаў"
+
+#: optuserpage.ui
+#, fuzzy
+msgctxt ""
+"optuserpage.ui\n"
+"rusnameft\n"
+"label\n"
+"string.text"
+msgid "Last name/first _name/father’s name/initials:"
+msgstr "Прозвішча/Імя/Імя па бацьку/Ініцыялы"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"ruslastname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Last name"
+msgstr "Прозвішча"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"rusfathersname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Father's name"
+msgstr "Імя бацькі"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"russhortname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Initials"
+msgstr "Ініцыялы"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"rusfirstname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "First name"
+msgstr "Імя"
+
+#: optuserpage.ui
+#, fuzzy
+msgctxt ""
+"optuserpage.ui\n"
+"eastnameft\n"
+"label\n"
+"string.text"
+msgid "Last/first _name/initials:"
+msgstr "Прозвішча/Імя/Ініцыялы"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"eastlastname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Last name"
+msgstr "Прозвішча"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"eastfirstname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "First name"
+msgstr "Імя"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"eastshortname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Initials"
+msgstr "Ініцыялы"
 
 #: optuserpage.ui
 #, fuzzy
@@ -12666,33 +12759,6 @@ msgstr "Значкі ў меню"
 #: optviewpage.ui
 msgctxt ""
 "optviewpage.ui\n"
-"menuicons\n"
-"0\n"
-"stringlist.text"
-msgid "Automatic"
-msgstr "Аўтаматычна"
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
-"menuicons\n"
-"1\n"
-"stringlist.text"
-msgid "Hide"
-msgstr "Не паказваць"
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
-"menuicons\n"
-"2\n"
-"stringlist.text"
-msgid "Show"
-msgstr "Паказваць"
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
 "contextmenushortcuts\n"
 "0\n"
 "stringlist.text"
@@ -12725,6 +12791,33 @@ msgctxt ""
 "string.text"
 msgid "Shortcuts in context menus:"
 msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"menuicons\n"
+"0\n"
+"stringlist.text"
+msgid "Automatic"
+msgstr "Аўтаматычна"
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"menuicons\n"
+"1\n"
+"stringlist.text"
+msgid "Hide"
+msgstr "Не паказваць"
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"menuicons\n"
+"2\n"
+"stringlist.text"
+msgid "Show"
+msgstr "Паказваць"
 
 #: optviewpage.ui
 msgctxt ""
@@ -12911,16 +13004,6 @@ msgid "Screen font antialiasin_g"
 msgstr "Згладжванне шрыфтаў на экране"
 
 #: optviewpage.ui
-#, fuzzy
-msgctxt ""
-"optviewpage.ui\n"
-"aafrom\n"
-"label\n"
-"string.text"
-msgid "fro_m:"
-msgstr "ад"
-
-#: optviewpage.ui
 msgctxt ""
 "optviewpage.ui\n"
 "label9\n"
@@ -12993,6 +13076,16 @@ msgid "Large"
 msgstr ""
 
 #: optviewpage.ui
+#, fuzzy
+msgctxt ""
+"optviewpage.ui\n"
+"aafrom\n"
+"label\n"
+"string.text"
+msgid "fro_m:"
+msgstr "ад"
+
+#: optviewpage.ui
 msgctxt ""
 "optviewpage.ui\n"
 "label1\n"
@@ -13012,14 +13105,13 @@ msgid "Mouse _positioning:"
 msgstr "Курсор мышкі ў дыялогах"
 
 #: optviewpage.ui
-#, fuzzy
 msgctxt ""
 "optviewpage.ui\n"
 "label12\n"
 "label\n"
 "string.text"
 msgid "Middle mouse _button:"
-msgstr "Сярэдняя кнопка мышкі"
+msgstr "Сярэдняя кнопка мышк_і:"
 
 #: optviewpage.ui
 msgctxt ""
@@ -14005,7 +14097,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Open file read-only"
-msgstr ""
+msgstr "Адкрыць толькі для чытання"
 
 #: password.ui
 msgctxt ""
@@ -15101,7 +15193,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Paste the following markup into the help file:"
-msgstr ""
+msgstr "Устаўце наступную разметку ў файл даведкі:"
 
 #: scriptorganizer.ui
 msgctxt ""
@@ -15301,7 +15393,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "When creating PDF _files"
-msgstr "Пры стварэнні файлаў PDF"
+msgstr "Пры стварэнні ф_айлаў PDF"
 
 #: securityoptionsdialog.ui
 msgctxt ""

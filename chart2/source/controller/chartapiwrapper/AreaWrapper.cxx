@@ -19,7 +19,6 @@
 
 #include "AreaWrapper.hxx"
 #include "macros.hxx"
-#include "ContainerHelper.hxx"
 #include "Chart2ModelContact.hxx"
 #include "WrappedDirectStateProperty.hxx"
 #include <com/sun/star/drawing/FillStyle.hpp>
@@ -39,7 +38,6 @@ using ::com::sun::star::uno::Sequence;
 
 namespace
 {
-static const char lcl_aServiceName[] = "com.sun.star.comp.chart.Area";
 
 struct StaticAreaWrapperPropertyArray_Initializer
 {
@@ -75,9 +73,9 @@ namespace chart
 namespace wrapper
 {
 
-AreaWrapper::AreaWrapper( std::shared_ptr< Chart2ModelContact > spChart2ModelContact ) :
-        m_spChart2ModelContact( spChart2ModelContact ),
-        m_aEventListenerContainer( m_aMutex )
+AreaWrapper::AreaWrapper(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact)
+    : m_spChart2ModelContact(spChart2ModelContact)
+    , m_aEventListenerContainer(m_aMutex)
 {
 }
 
@@ -166,27 +164,10 @@ const std::vector< WrappedProperty* > AreaWrapper::createWrappedProperties()
     return aWrappedProperties;
 }
 
-Sequence< OUString > AreaWrapper::getSupportedServiceNames_Static()
-{
-    Sequence< OUString > aServices( 4 );
-    aServices[ 0 ] = "com.sun.star.xml.UserDefinedAttributesSupplier";
-    aServices[ 1 ] = "com.sun.star.beans.PropertySet";
-    aServices[ 2 ] = "com.sun.star.drawing.FillProperties";
-    aServices[ 3 ] = "com.sun.star.drawing.LineProperties";
-
-    return aServices;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL AreaWrapper::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString AreaWrapper::getImplementationName_Static()
-{
-    return OUString(lcl_aServiceName);
+    return OUString("com.sun.star.comp.chart.Area");
 }
 
 sal_Bool SAL_CALL AreaWrapper::supportsService( const OUString& rServiceName )
@@ -198,7 +179,11 @@ sal_Bool SAL_CALL AreaWrapper::supportsService( const OUString& rServiceName )
 css::uno::Sequence< OUString > SAL_CALL AreaWrapper::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return {
+        "com.sun.star.xml.UserDefinedAttributesSupplier",
+        "com.sun.star.beans.PropertySet",
+        "com.sun.star.drawing.FillProperties",
+        "com.sun.star.drawing.LineProperties" };
 }
 
 } //  namespace wrapper

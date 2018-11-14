@@ -57,13 +57,11 @@ public:
     AccessibleControlShape(
         const AccessibleShapeInfo& rShapeInfo,
         const AccessibleShapeTreeInfo& rShapeTreeInfo);
-    virtual ~AccessibleControlShape( );
+    virtual ~AccessibleControlShape( ) override;
 
     const css::uno::Reference< css::beans::XPropertySet >& SAL_CALL  GetControlModel( ) { return m_xControlModel;} ;
     AccessibleControlShape* SAL_CALL GetLabeledByControlShape();
 protected:
-    //---  XAccessible  ----------------------------------------
-    virtual css::uno::Reference< css::accessibility::XAccessibleContext> SAL_CALL getAccessibleContext( ) throw(css::uno::RuntimeException, std::exception) override;
 
     //---  XAccessibleComponent  -------------------------------
     /// forward the focus to the contained control(in alive mode)
@@ -149,9 +147,6 @@ protected:
     /// stops multiplexing the state changes of our aggregate context
     void    stopStateMultiplexing( );
 
-    /// retrieves the SdrObject of the shape we represent
-    SdrObject*  getSdrObject( ) const;
-
     /** adjusts our AccessibleRole, depending on the control type we're working for
 
         <p>Only to be called during initialization</p>
@@ -183,7 +178,7 @@ private:
     css::uno::Reference< css::lang::XComponent >
                     m_xControlContextComponent;     // cached interface of our aggregate
 
-    ::comphelper::OWrappedAccessibleChildrenManager*
+    rtl::Reference<::comphelper::OWrappedAccessibleChildrenManager>
                     m_pChildManager;
 
     bool        m_bListeningForName     : 1;    // are we currently listening for changes of the "Name" property?

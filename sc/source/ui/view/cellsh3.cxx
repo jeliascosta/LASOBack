@@ -18,6 +18,8 @@
  */
 
 #include "scitems.hxx"
+#include <editeng/editview.hxx>
+#include <editeng/editeng.hxx>
 #include <sfx2/viewfrm.hxx>
 #include <sfx2/bindings.hxx>
 #include <sfx2/dispatch.hxx>
@@ -41,6 +43,7 @@
 #include "editable.hxx"
 #include "markdata.hxx"
 #include "scabstdlg.hxx"
+#include "columnspanset.hxx"
 
 #include <config_telepathy.h>
 
@@ -176,19 +179,37 @@ void ScCellShell::Execute( SfxRequest& rReq )
                 {
                     OUString aStr( static_cast<const SfxStringItem&>(pReqArgs->
                                     Get( SID_ENTER_STRING )).GetValue() );
-
-                    pTabViewShell->EnterData( GetViewData()->GetCurX(),
-                                               GetViewData()->GetCurY(),
-                                               GetViewData()->GetTabNo(),
-                                               aStr );
+                    const SfxPoolItem* pDontCommitItem;
+                    bool bCommit = true;
+                    if (pReqArgs->HasItem(FN_PARAM_1, &pDontCommitItem))
+                        bCommit = !(static_cast<const SfxBoolItem*>(pDontCommitItem)->GetValue());
 
                     ScInputHandler* pHdl = SC_MOD()->GetInputHdl( pTabViewShell );
+                    if (bCommit)
+                    {
+                        pTabViewShell->EnterData( GetViewData()->GetCurX(),
+                                                  GetViewData()->GetCurY(),
+                                                  GetViewData()->GetTabNo(),
+                                                  aStr );
+                    }
+                    else
+                    {
+                        SC_MOD()->SetInputMode(SC_INPUT_TABLE);
+
+                        EditView* pTableView = pHdl->GetActiveView();
+                        pHdl->DataChanging();
+                        if (pTableView)
+                            pTableView->GetEditEngine()->SetText(aStr);
+                        pHdl->DataChanged();
+
+                        SC_MOD()->SetInputMode(SC_INPUT_NONE);
+                    }
+
                     if ( !pHdl || !pHdl->IsInEnterHandler() )
                     {
                         //  UpdateInputHandler is needed after the cell content
                         //  has changed, but if called from EnterHandler, UpdateInputHandler
                         //  will be called later when moving the cursor.
-
                         pTabViewShell->UpdateInputHandler();
                     }
 
@@ -346,7 +367,7 @@ void ScCellShell::Execute( SfxRequest& rReq )
                 }
                 else
                 {
-                    pTabViewShell->ExecuteCellFormatDlg( rReq );
+                    pTabViewShell->ExecuteCellFormatDlg( rReq, "" );
                 }
             }
             break;
@@ -435,7 +456,7 @@ void ScCellShell::Execute( SfxRequest& rReq )
                         OUString aName;
                         OUString aComment;
                         Color  aColor;
-                        sal_uInt16 nFlags;
+                        ScScenarioFlags nFlags;
 
                         OUString aTmp;
                         pDoc->GetName(nTab, aTmp);
@@ -476,7 +497,7 @@ void ScCellShell::Execute( SfxRequest& rReq )
                                 aArgComment = static_cast<const SfxStringItem*>(pItem)->GetValue();
 
                             aColor = Color( COL_LIGHTGRAY );        // Default
-                            nFlags = 0;                             // not-TwoWay
+                            nFlags = ScScenarioFlags::NONE;         // not TwoWay
 
                             pTabViewShell->MakeScenario( aArgName, aArgComment, aColor, nFlags );
                             if( ! rReq.IsAPI() )
@@ -488,7 +509,7 @@ void ScCellShell::Execute( SfxRequest& rReq )
                             ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
                             OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
 
-                            std::unique_ptr<AbstractScNewScenarioDlg> pNewDlg(pFact->CreateScNewScenarioDlg(pTabViewShell->GetDialogParent(), aName, false, bSheetProtected));
+                            ScopedVclPtr<AbstractScNewScenarioDlg> pNewDlg(pFact->CreateScNewScenarioDlg(pTabViewShell->GetDialogParent(), aName, false, bSheetProtected));
                             OSL_ENSURE(pNewDlg, "Dialog create fail!");
                             if ( pNewDlg->Execute() == RET_OK )
                             {
@@ -518,7 +539,29 @@ void ScCellShell::Execute( SfxRequest& rReq )
 
         case FID_ROW_HEIGHT:
             {
-                if ( pReqArgs )
+                const SfxPoolItem* pRow;
+                const SfxPoolItem* pHeight;
+
+                if ( pReqArgs && pReqArgs->HasItem( FN_PARAM_1, &pRow ) &&
+                                 pReqArgs->HasItem( FN_PARAM_2, &pHeight ) )
+                {
+                    std::vector<sc::ColRowSpan> aRanges;
+                    SCCOLROW nRow = static_cast<const SfxUInt16Item*>(pRow)->GetValue() - 1;
+                    sal_uInt16 nHeight = static_cast<const SfxUInt16Item*>(pHeight)->GetValue();
+                    ScMarkData& rMark = GetViewData()->GetMarkData();
+
+                    if ( rMark.IsRowMarked( static_cast<SCROW>(nRow) ) )
+                    {
+                        aRanges = rMark.GetMarkedRowSpans();
+                    }
+                    else
+                    {
+                        aRanges.push_back(sc::ColRowSpan(nRow, nRow));
+                    }
+
+                    pTabViewShell->SetWidthOrHeight(false, aRanges, SC_SIZE_DIRECT, nHeight);
+                }
+                else if ( pReqArgs )
                 {
                     const SfxUInt16Item&  rUInt16Item = static_cast<const SfxUInt16Item&>(pReqArgs->Get( FID_ROW_HEIGHT ));
 
@@ -538,7 +581,7 @@ void ScCellShell::Execute( SfxRequest& rReq )
                     ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
                     assert(pFact); //ScAbstractFactory create fail!
 
-                    std::unique_ptr<AbstractScMetricInputDlg> pDlg(pFact->CreateScMetricInputDlg(
+                    ScopedVclPtr<AbstractScMetricInputDlg> pDlg(pFact->CreateScMetricInputDlg(
                         pTabViewShell->GetDialogParent(), "RowHeightDialog",
                         nCurHeight, ScGlobal::nStdRowHeight,
                         eMetric, 2, MAX_ROW_HEIGHT));
@@ -579,7 +622,7 @@ void ScCellShell::Execute( SfxRequest& rReq )
                     ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
                     assert(pFact); //ScAbstractFactory create fail!
 
-                    std::unique_ptr<AbstractScMetricInputDlg> pDlg(pFact->CreateScMetricInputDlg(
+                    ScopedVclPtr<AbstractScMetricInputDlg> pDlg(pFact->CreateScMetricInputDlg(
                         pTabViewShell->GetDialogParent(), "OptimalRowHeightDialog",
                         ScGlobal::nLastRowHeightExtra, 0, eMetric, 1, MAX_EXTRA_HEIGHT));
                     assert(pDlg); //Dialog create fail!
@@ -601,7 +644,29 @@ void ScCellShell::Execute( SfxRequest& rReq )
 
         case FID_COL_WIDTH:
             {
-                if ( pReqArgs )
+                const SfxPoolItem* pColumn;
+                const SfxPoolItem* pWidth;
+
+                if ( pReqArgs && pReqArgs->HasItem( FN_PARAM_1, &pColumn ) &&
+                                 pReqArgs->HasItem( FN_PARAM_2, &pWidth ) )
+                {
+                    std::vector<sc::ColRowSpan> aRanges;
+                    SCCOLROW nColumn = static_cast<const SfxUInt16Item*>(pColumn)->GetValue() - 1;
+                    sal_uInt16 nWidth = static_cast<const SfxUInt16Item*>(pWidth)->GetValue();
+                    ScMarkData& rMark = GetViewData()->GetMarkData();
+
+                    if ( rMark.IsColumnMarked( static_cast<SCCOL>(nColumn) ) )
+                    {
+                        aRanges = rMark.GetMarkedColSpans();
+                    }
+                    else
+                    {
+                        aRanges.push_back(sc::ColRowSpan(nColumn, nColumn));
+                    }
+
+                    pTabViewShell->SetWidthOrHeight(true, aRanges, SC_SIZE_DIRECT, nWidth);
+                }
+                else if ( pReqArgs )
                 {
                     const SfxUInt16Item&  rUInt16Item = static_cast<const SfxUInt16Item&>(pReqArgs->Get( FID_COL_WIDTH ));
 
@@ -621,7 +686,7 @@ void ScCellShell::Execute( SfxRequest& rReq )
                     ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
                     assert(pFact); //ScAbstractFactory create fail!
 
-                    std::unique_ptr<AbstractScMetricInputDlg> pDlg(pFact->CreateScMetricInputDlg(
+                    ScopedVclPtr<AbstractScMetricInputDlg> pDlg(pFact->CreateScMetricInputDlg(
                         pTabViewShell->GetDialogParent(), "ColWidthDialog", nCurHeight,
                         STD_COL_WIDTH, eMetric, 2, MAX_COL_WIDTH));
                     assert(pDlg); //Dialog create fail!
@@ -661,7 +726,7 @@ void ScCellShell::Execute( SfxRequest& rReq )
                     ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
                     assert(pFact); //ScAbstractFactory create fail!
 
-                    std::unique_ptr<AbstractScMetricInputDlg> pDlg(pFact->CreateScMetricInputDlg(
+                    ScopedVclPtr<AbstractScMetricInputDlg> pDlg(pFact->CreateScMetricInputDlg(
                         pTabViewShell->GetDialogParent(), "OptimalColWidthDialog",
                         ScGlobal::nLastColWidthExtra, STD_EXTRA_WIDTH, eMetric, 1, MAX_EXTRA_WIDTH));
                     assert(pDlg); //Dialog create fail!
@@ -810,7 +875,7 @@ void ScCellShell::Execute( SfxRequest& rReq )
                         ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
                         OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
 
-                        std::unique_ptr<AbstractScAutoFormatDlg> pDlg(pFact->CreateScAutoFormatDlg(pDlgParent, ScGlobal::GetOrCreateAutoFormat(), pNewEntry.get(), GetViewData()));
+                        ScopedVclPtr<AbstractScAutoFormatDlg> pDlg(pFact->CreateScAutoFormatDlg(pDlgParent, ScGlobal::GetOrCreateAutoFormat(), pNewEntry.get(), GetViewData()));
                         OSL_ENSURE(pDlg, "Dialog create fail!");
 
                         if ( pDlg->Execute() == RET_OK )

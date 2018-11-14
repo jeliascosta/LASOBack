@@ -818,8 +818,21 @@ namespace {
 }
 
 WatchdogTimings::WatchdogTimings()
-    : maTimingValues({{6,   20} /* 1.5s,  5s */, {20, 120} /*  5s, 30s */,
-                      {60, 240} /*  15s, 60s */, {60, 240} /* 15s, 60s */})
+    : maTimingValues
+#if defined _MSC_VER && _MSC_VER <= 1800
+    // note: Apple clang's parser segfaults on this
+                    (
+#else
+    // note: MSVC 2013 can't parse this, error C2797
+                    {
+#endif
+                     {{6,   20} /* 1.5s,  5s */, {20, 120} /*  5s, 30s */,
+                      {60, 240} /*  15s, 60s */, {60, 240} /* 15s, 60s */}
+#if defined _MSC_VER && _MSC_VER <= 1800
+                    )
+#else
+                    }
+#endif
     , mbRelaxed(false)
 {
 }
@@ -963,18 +976,39 @@ OpenGLVCLContextZone::OpenGLVCLContextZone()
     OpenGLContext::makeVCLCurrent();
 }
 
+namespace
+{
+    bool bTempOpenGLDisabled = false;
+}
+
+PreDefaultWinNoOpenGLZone::PreDefaultWinNoOpenGLZone()
+{
+    bTempOpenGLDisabled = true;
+}
+
+PreDefaultWinNoOpenGLZone::~PreDefaultWinNoOpenGLZone()
+{
+    bTempOpenGLDisabled = false;
+}
+
 bool OpenGLHelper::isVCLOpenGLEnabled()
 {
     /**
      * The !bSet part should only be called once! Changing the results in the same
      * run will mix OpenGL and normal rendering.
      */
+
     static bool bSet = false;
     static bool bEnable = false;
     static bool bForceOpenGL = false;
 
     // If we are a console app, then we don't use OpenGL
     if ( Application::IsConsoleOnly() )
+        return false;
+
+    //tdf#106155, disable GL while loading certain bitmaps needed for the initial toplevel windows
+    //under raw X (kde4) vclplug
+    if (bTempOpenGLDisabled)
         return false;
 
     if (bSet)
@@ -993,15 +1027,13 @@ bool OpenGLHelper::isVCLOpenGLEnabled()
     bForceOpenGL = !!getenv("SAL_FORCEGL") || officecfg::Office::Common::VCL::ForceOpenGL::get();
 
     bool bRet = false;
+    bool bSupportsVCLOpenGL = supportsVCLOpenGL();
+    // always call supportsVCLOpenGL to de-zombie the glxtest child process on X11
     if (bForceOpenGL)
     {
         bRet = true;
     }
-    else if (!supportsVCLOpenGL())
-    {
-        bRet = false;
-    }
-    else
+    else if (bSupportsVCLOpenGL)
     {
         static bool bEnableGLEnv = !!getenv("SAL_ENABLEGL");
 
@@ -1012,6 +1044,10 @@ bool OpenGLHelper::isVCLOpenGLEnabled()
             bEnable = false;
         else if (officecfg::Office::Common::VCL::UseOpenGL::get())
             bEnable = true;
+
+        // Force disable in safe mode
+        if (Application::IsSafeModeEnabled())
+            bEnable = false;
 
         bRet = bEnable;
     }
@@ -1033,11 +1069,15 @@ bool OpenGLWrapper::isVCLOpenGLEnabled()
 
 void OpenGLHelper::debugMsgStream(std::ostringstream const &pStream)
 {
-    debugMsgPrint ("%x: %s", osl_getThreadIdentifier(nullptr),
-                   pStream.str().c_str());
+    debugMsgPrint(0, "%x: %s", osl_getThreadIdentifier(nullptr), pStream.str().c_str());
 }
 
-void OpenGLHelper::debugMsgPrint(const char *pFormat, ...)
+void OpenGLHelper::debugMsgStreamWarn(std::ostringstream const &pStream)
+{
+    debugMsgPrint(1, "%x: %s", osl_getThreadIdentifier(nullptr), pStream.str().c_str());
+}
+
+void OpenGLHelper::debugMsgPrint(const int nType, const char *pFormat, ...)
 {
     va_list aArgs;
     va_start (aArgs, pFormat);
@@ -1051,9 +1091,16 @@ void OpenGLHelper::debugMsgPrint(const char *pFormat, ...)
 
     bool bHasContext = OpenGLContext::hasCurrent();
     if (!bHasContext)
-        strcat(pStr, "- no GL context");
+        strcat(pStr, " (no GL context)");
 
-    SAL_INFO("vcl.opengl", pStr);
+    if (nType == 0)
+    {
+        SAL_INFO("vcl.opengl", pStr);
+    }
+    else if (nType == 1)
+    {
+        SAL_WARN("vcl.opengl", pStr);
+    }
 
     if (bHasContext)
     {
@@ -1074,42 +1121,6 @@ void OpenGLHelper::debugMsgPrint(const char *pFormat, ...)
     }
 
     va_end (aArgs);
-}
-
-OutputDevice::PaintScope::PaintScope(OutputDevice *pDev)
-    : pHandle( nullptr )
-{
-    if( pDev->mpGraphics || pDev->AcquireGraphics() )
-    {
-    }
-}
-
-/**
- * Flush all the queued rendering commands to the screen for this context.
- */
-void OutputDevice::PaintScope::flush()
-{
-    if( pHandle )
-    {
-        OpenGLContext *pContext = static_cast<OpenGLContext *>( pHandle );
-        pHandle = nullptr;
-        pContext->mnPainting--;
-        assert( pContext->mnPainting >= 0 );
-        if( pContext->mnPainting == 0 )
-        {
-            pContext->makeCurrent();
-            pContext->AcquireDefaultFramebuffer();
-            glFlush();
-            pContext->swapBuffers();
-            CHECK_GL_ERROR();
-        }
-        pContext->release();
-    }
-}
-
-OutputDevice::PaintScope::~PaintScope()
-{
-    flush();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -17,7 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-
 #include <svtools/menuoptions.hxx>
 #include <unotools/configmgr.hxx>
 #include <unotools/configitem.hxx>
@@ -31,9 +30,7 @@
 
 #include <list>
 
-
 //  namespaces
-
 
 using namespace ::utl                   ;
 using namespace ::osl                   ;
@@ -43,51 +40,45 @@ using namespace ::com::sun::star::uno   ;
 #define DEFAULT_DONTHIDEDISABLEDENTRIES         false
 #define DEFAULT_FOLLOWMOUSE                     true
 #define DEFAULT_MENUICONS                       TRISTATE_INDET
+#define DEFAULT_CONTEXTMENUSHORTCUTS            TRISTATE_INDET
 
 #define PROPERTYNAME_DONTHIDEDISABLEDENTRIES    "DontHideDisabledEntry"
 #define PROPERTYNAME_FOLLOWMOUSE                "FollowMouse"
 #define PROPERTYNAME_SHOWICONSINMENUES          "ShowIconsInMenues"
 #define PROPERTYNAME_SYSTEMICONSINMENUES        "IsSystemIconsInMenus"
+#define PROPERTYNAME_SHORTCUTSINCONTEXMENU      "ShortcutsInContextMenus"
 
 #define PROPERTYHANDLE_DONTHIDEDISABLEDENTRIES  0
 #define PROPERTYHANDLE_FOLLOWMOUSE              1
 #define PROPERTYHANDLE_SHOWICONSINMENUES        2
 #define PROPERTYHANDLE_SYSTEMICONSINMENUES      3
-
-#define PROPERTYCOUNT                           4
+#define PROPERTYHANDLE_SHORTCUTSINCONTEXMENU    4
 
 #include <tools/link.hxx>
 
-
 //  private declarations!
-
 
 class SvtMenuOptions_Impl : public ConfigItem
 {
 
     //  private member
 
-
     private:
         bool        m_bDontHideDisabledEntries          ;   /// cache "DontHideDisabledEntries" of Menu section
         bool        m_bFollowMouse                      ;   /// cache "FollowMouse" of Menu section
         TriState    m_eMenuIcons                        ;   /// cache "MenuIcons" of Menu section
-
+        TriState    m_eContextMenuShortcuts             ;   /// cache "ShortcutsInContextMenus" of Menu section
 
     //  public methods
 
-
     public:
-
 
         //  constructor / destructor
 
-
          SvtMenuOptions_Impl();
-        virtual ~SvtMenuOptions_Impl();
+        virtual ~SvtMenuOptions_Impl() override;
 
         //  override methods of baseclass
-
 
         /*-****************************************************************************************************
             @short      called for notify of configmanager
@@ -103,7 +94,6 @@ class SvtMenuOptions_Impl : public ConfigItem
         virtual void Notify( const Sequence< OUString >& seqPropertyNames ) override;
 
         //  public interface
-
 
         /*-****************************************************************************************************
             @short      access method to get internal values
@@ -124,9 +114,17 @@ class SvtMenuOptions_Impl : public ConfigItem
                         // tdf#93451: don't Commit() here, it's too early
                     }
 
+        TriState    GetContextMenuShortcuts() const
+                    { return m_eContextMenuShortcuts; }
+
+        void        SetContextMenuShortcuts(TriState eState)
+                    {
+                        m_eContextMenuShortcuts = eState;
+                        SetModified();
+                        Commit();
+                    }
 
     //  private methods
-
 
     private:
 
@@ -139,9 +137,8 @@ class SvtMenuOptions_Impl : public ConfigItem
             @return     A list of needed configuration keys is returned.
         *//*-*****************************************************************************************************/
 
-        static Sequence< OUString > impl_GetPropertyNames();
+        static Sequence< OUString > const & impl_GetPropertyNames();
 };
-
 
 //  constructor
 
@@ -152,6 +149,7 @@ SvtMenuOptions_Impl::SvtMenuOptions_Impl()
     ,   m_bDontHideDisabledEntries  ( DEFAULT_DONTHIDEDISABLEDENTRIES   )
     ,   m_bFollowMouse              ( DEFAULT_FOLLOWMOUSE               )
     ,   m_eMenuIcons                ( DEFAULT_MENUICONS                 )
+    ,   m_eContextMenuShortcuts     ( DEFAULT_CONTEXTMENUSHORTCUTS      )
 {
     // Use our static list of configuration keys to get his values.
     Sequence< OUString >    seqNames    = impl_GetPropertyNames();
@@ -207,6 +205,13 @@ SvtMenuOptions_Impl::SvtMenuOptions_Impl()
                                                                 seqValues[nProperty] >>= bSystemMenuIcons;
                                                             }
                                                             break;
+            case PROPERTYHANDLE_SHORTCUTSINCONTEXMENU   :   {
+                                                                DBG_ASSERT(!(seqValues[nProperty].getValueTypeClass()!=TypeClass_SHORT), "SvtMenuOptions_Impl::SvtMenuOptions_Impl()\nWho has changed the value type of \"Office.Common\\View\\Menu\\ShortcutsInContextMenus\"?" );
+                                                                sal_Int16 nContextMenuShortcuts;
+                                                                if ( seqValues[nProperty] >>= nContextMenuShortcuts )
+                                                                    m_eContextMenuShortcuts = static_cast<TriState>(nContextMenuShortcuts);
+                                                            }
+                                                            break;
         }
     }
 
@@ -215,14 +220,12 @@ SvtMenuOptions_Impl::SvtMenuOptions_Impl()
     EnableNotification( seqNames );
 }
 
-
 //  destructor
 
 SvtMenuOptions_Impl::~SvtMenuOptions_Impl()
 {
     assert(!IsModified()); // should have been committed
 }
-
 
 //  public method
 
@@ -269,13 +272,19 @@ void SvtMenuOptions_Impl::Notify( const Sequence< OUString >& seqPropertyNames )
             DBG_ASSERT(!(seqValues[nProperty].getValueTypeClass()!=TypeClass_BOOLEAN), "SvtMenuOptions_Impl::SvtMenuOptions_Impl()\nWho has changed the value type of \"Office.Common\\View\\Menu\\IsSystemIconsInMenus\"?" );
             bMenuSettingsChanged |= seqValues[nProperty] >>= bSystemMenuIcons;
         }
+        else if( seqPropertyNames[nProperty] == PROPERTYNAME_SHORTCUTSINCONTEXMENU )
+        {
+            DBG_ASSERT(!(seqValues[nProperty].getValueTypeClass()!=TypeClass_SHORT), "SvtMenuOptions_Impl::SvtMenuOptions_Impl()\nWho has changed the value type of \"Office.Common\\View\\Menu\\ShortcutsInContextMenus\"?" );
+            sal_Int16 nContextMenuShortcuts;
+            if ( seqValues[nProperty] >>= nContextMenuShortcuts )
+                m_eContextMenuShortcuts = static_cast<TriState>(nContextMenuShortcuts);
+        }
         else assert( false && "SvtMenuOptions_Impl::Notify()\nUnknown property detected ... I can't handle these!\n" );
     }
 
     if ( bMenuSettingsChanged )
         m_eMenuIcons = bSystemMenuIcons ? TRISTATE_INDET : static_cast<TriState>(bMenuIcons);
 }
-
 
 //  public method
 
@@ -309,101 +318,93 @@ void SvtMenuOptions_Impl::ImplCommit()
                                                                 seqValues[nProperty] <<= bValue;
                                                             }
                                                             break;
+            case PROPERTYHANDLE_SHORTCUTSINCONTEXMENU   :   {
+                                                                seqValues[nProperty] <<= static_cast<sal_Int16>(m_eContextMenuShortcuts);
+                                                            }
+                                                            break;
         }
     }
     // Set properties in configuration.
     PutProperties( seqNames, seqValues );
 }
 
-
 //  private method
 
-Sequence< OUString > SvtMenuOptions_Impl::impl_GetPropertyNames()
+Sequence< OUString > const & SvtMenuOptions_Impl::impl_GetPropertyNames()
 {
-    // Build static list of configuration key names.
-    static const OUString pProperties[] =
-    {
+    static const Sequence<OUString> seqPropertyNames {
         OUString(PROPERTYNAME_DONTHIDEDISABLEDENTRIES)    ,
         OUString(PROPERTYNAME_FOLLOWMOUSE)                ,
         OUString(PROPERTYNAME_SHOWICONSINMENUES)          ,
-        OUString(PROPERTYNAME_SYSTEMICONSINMENUES)
+        OUString(PROPERTYNAME_SYSTEMICONSINMENUES)        ,
+        OUString(PROPERTYNAME_SHORTCUTSINCONTEXMENU)
     };
-    // Initialize return sequence with these list ...
-    static const Sequence< OUString > seqPropertyNames( pProperties, PROPERTYCOUNT );
-    // ... and return it.
     return seqPropertyNames;
 }
 
-//  initialize static member
-//  DON'T DO IT IN YOUR HEADER!
-//  see definition for further information
+namespace {
 
-SvtMenuOptions_Impl*    SvtMenuOptions::m_pDataContainer    = nullptr  ;
-sal_Int32               SvtMenuOptions::m_nRefCount         = 0     ;
+std::weak_ptr<SvtMenuOptions_Impl> g_pMenuOptions;
 
-
-//  constructor
+}
 
 SvtMenuOptions::SvtMenuOptions()
 {
     // Global access, must be guarded (multithreading!).
     MutexGuard aGuard( GetOwnStaticMutex() );
-    // Increase our refcount ...
-    ++m_nRefCount;
-    // ... and initialize our data container only if it not already!
-    if( m_pDataContainer == nullptr )
-    {
-        m_pDataContainer = new SvtMenuOptions_Impl();
 
+    m_pImpl = g_pMenuOptions.lock();
+    if( !m_pImpl )
+    {
+        m_pImpl = std::make_shared<SvtMenuOptions_Impl>();
+        g_pMenuOptions = m_pImpl;
         svtools::ItemHolder2::holdConfigItem(E_MENUOPTIONS);
     }
 }
-
-
-//  destructor
 
 SvtMenuOptions::~SvtMenuOptions()
 {
     // Global access, must be guarded (multithreading!)
     MutexGuard aGuard( GetOwnStaticMutex() );
-    // Decrease our refcount.
-    --m_nRefCount;
-    // If last instance was deleted ...
-    // we must destroy our static data container!
-    if( m_nRefCount <= 0 )
-    {
-        delete m_pDataContainer;
-        m_pDataContainer = nullptr;
-    }
-}
 
+    m_pImpl.reset();
+}
 
 //  public method
 
 bool SvtMenuOptions::IsEntryHidingEnabled() const
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
-    return m_pDataContainer->IsEntryHidingEnabled();
+    return m_pImpl->IsEntryHidingEnabled();
 }
-
 
 //  public method
 
 TriState SvtMenuOptions::GetMenuIconsState() const
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
-    return m_pDataContainer->GetMenuIconsState();
+    return m_pImpl->GetMenuIconsState();
 }
-
 
 //  public method
 
 void SvtMenuOptions::SetMenuIconsState(TriState eState)
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
-    m_pDataContainer->SetMenuIconsState(eState);
+    m_pImpl->SetMenuIconsState(eState);
 }
 
+TriState SvtMenuOptions::GetContextMenuShortcuts() const
+{
+    MutexGuard aGuard( GetOwnStaticMutex() );
+    return m_pImpl->GetContextMenuShortcuts();
+}
+
+void SvtMenuOptions::SetContextMenuShortcuts(TriState eState)
+{
+    MutexGuard aGuard( GetOwnStaticMutex() );
+    m_pImpl->SetContextMenuShortcuts(eState);
+}
 
 //  private method
 

@@ -36,7 +36,7 @@ namespace dbaui
     {
         friend class VclPtr<OConnectionTabPage>;
     protected:
-        // user authentification
+        // user authentication
         VclPtr<FixedText>          m_pFL2;
         VclPtr<FixedText>          m_pUserNameLabel;
         VclPtr<Edit>               m_pUserName;
@@ -52,11 +52,11 @@ namespace dbaui
         VclPtr<PushButton>         m_pTestConnection;
 
         // called when the test connection button was clicked
-        DECL_LINK_TYPED(OnTestJavaClickHdl, Button*, void);
-        DECL_LINK_TYPED(OnEditModified, Edit&, void);
+        DECL_LINK(OnTestJavaClickHdl, Button*, void);
+        DECL_LINK(OnEditModified, Edit&, void);
 
     public:
-        virtual ~OConnectionTabPage();
+        virtual ~OConnectionTabPage() override;
         virtual void dispose() override;
         static VclPtr<SfxTabPage> Create( vcl::Window* pParent, const SfxItemSet* _rAttrSet );
         virtual bool        FillItemSet (SfxItemSet* _rCoreAttrs) override;

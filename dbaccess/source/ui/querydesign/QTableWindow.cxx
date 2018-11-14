@@ -49,14 +49,11 @@ using namespace ::com::sun::star::container;
 using namespace ::com::sun::star::beans;
 using namespace dbaui;
 // class OQueryTableWindow
-OQueryTableWindow::OQueryTableWindow( vcl::Window* pParent, const TTableWindowData::value_type& pTabWinData, sal_Unicode* pszInitialAlias)
+OQueryTableWindow::OQueryTableWindow( vcl::Window* pParent, const TTableWindowData::value_type& pTabWinData)
     :OTableWindow( pParent, pTabWinData )
     ,m_nAliasNum(0)
 {
-    if (pszInitialAlias != nullptr)
-        m_strInitialAlias = OUString(pszInitialAlias);
-    else
-        m_strInitialAlias = GetAliasName();
+    m_strInitialAlias = GetAliasName();
 
     // if table name matches alias, do not pass to InitialAlias,
     // as the appending of a possible token could not succeed...
@@ -93,7 +90,7 @@ bool OQueryTableWindow::Init()
         sAliasName += "_" + OUString::number(m_nAliasNum);
     }
 
-    sAliasName = comphelper::string::remove(sAliasName, '"');
+    sAliasName = sAliasName.replaceAll("\"", "");
     SetAliasName(sAliasName);
         // SetAliasName passes it as WinName, hence it uses the base class
     // reset the title
@@ -185,11 +182,6 @@ bool OQueryTableWindow::ExistsField(const OUString& strFieldName, OTableFieldDes
 bool OQueryTableWindow::ExistsAVisitedConn() const
 {
     return static_cast<const OQueryTableView*>(getTableView())->ExistsAVisitedConn(this);
-}
-
-void OQueryTableWindow::KeyInput( const KeyEvent& rEvt )
-{
-    OTableWindow::KeyInput( rEvt );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

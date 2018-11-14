@@ -106,9 +106,9 @@ class SvtMatchContext_Impl: public salhelper::Thread
     css::uno::Reference< css::ucb::XCommandProcessor > processor_;
     sal_Int32 commandId_;
 
-    DECL_LINK_TYPED(                Select_Impl, void*, void );
+    DECL_LINK(                Select_Impl, void*, void );
 
-    virtual                         ~SvtMatchContext_Impl();
+    virtual                         ~SvtMatchContext_Impl() override;
     virtual void                    execute() override;
     void                            doExecute();
     void                            Insert( const OUString& rCompletion, const OUString& rURL, bool bForce = false);
@@ -207,7 +207,7 @@ void SvtMatchContext_Impl::execute( )
 // Cancellable does not discard the information gained so far, it
 // inserts all collected completions into the listbox.
 
-IMPL_LINK_NOARG_TYPED( SvtMatchContext_Impl, Select_Impl, void*, void )
+IMPL_LINK_NOARG( SvtMatchContext_Impl, Select_Impl, void*, void )
 {
     // avoid recursion through cancel button
     {
@@ -241,8 +241,8 @@ IMPL_LINK_NOARG_TYPED( SvtMatchContext_Impl, Select_Impl, void*, void )
         {
             OUString sUpperURL( sURL.toAsciiUpperCase() );
 
-            if ( ::std::none_of( pBox->pImp->m_aFilters.begin(),
-                                 pBox->pImp->m_aFilters.end(),
+            if ( ::std::none_of( pBox->pImpl->m_aFilters.begin(),
+                                 pBox->pImpl->m_aFilters.end(),
                                  FilterMatch( sUpperURL ) ) )
             {   // this URL is not allowed
                 bValidCompletionsFiltered = true;
@@ -262,8 +262,8 @@ IMPL_LINK_NOARG_TYPED( SvtMatchContext_Impl, Select_Impl, void*, void )
     }
 
     // transfer string lists to listbox and forget them
-    pBox->pImp->aURLs = aURLs;
-    pBox->pImp->aCompletions = aCompletions;
+    pBox->pImpl->aURLs = aURLs;
+    pBox->pImpl->aCompletions = aCompletions;
     aURLs.clear();
     aCompletions.clear();
 
@@ -442,7 +442,7 @@ void SvtMatchContext_Impl::ReadFolder( const OUString& rURL,
 
                         // folders should get a final slash automatically
                         if ( bIsFolder )
-                            aInput += OUString(aDelimiter);
+                            aInput += OUStringLiteral1(aDelimiter);
 
                         Insert( aInput, aObj.GetMainURL( INetURLObject::NO_DECODE ), true );
                     }
@@ -861,7 +861,7 @@ VCL_BUILDER_DECL_FACTORY(SvtURLBox)
 
 void SvtURLBox::Init(bool bSetDefaultHelpID)
 {
-    pImp = new SvtURLBox_Impl();
+    pImpl.reset( new SvtURLBox_Impl );
 
     if (bSetDefaultHelpID && GetHelpId().isEmpty())
         SetHelpId( ".uno:OpenURL" );
@@ -888,7 +888,7 @@ void SvtURLBox::dispose()
         pCtx->join();
     }
 
-    delete pImp;
+    pImpl.reset();
     ComboBox::dispose();
 }
 
@@ -959,8 +959,8 @@ void SvtURLBox::UpdatePicklistForSmartProtocol_Impl()
                             OUString aUpperURL( aURL );
                             aUpperURL = aUpperURL.toAsciiUpperCase();
 
-                            bFound = ::std::any_of(pImp->m_aFilters.begin(),
-                                                   pImp->m_aFilters.end(),
+                            bFound = ::std::any_of(pImpl->m_aFilters.begin(),
+                                                   pImpl->m_aFilters.end(),
                                                    FilterMatch( aUpperURL ) );
                         }
                         if ( bFound )
@@ -1061,12 +1061,6 @@ bool SvtURLBox::ProcessKey( const vcl::KeyCode& rKey )
 }
 
 
-void SvtURLBox::Modify()
-{
-    ComboBox::Modify();
-}
-
-
 bool SvtURLBox::PreNotify( NotifyEvent& rNEvt )
 {
     if( rNEvt.GetWindow() == GetSubEdit() && rNEvt.GetType() == MouseNotifyEvent::KEYINPUT )
@@ -1099,10 +1093,9 @@ bool SvtURLBox::PreNotify( NotifyEvent& rNEvt )
     return ComboBox::PreNotify( rNEvt );
 }
 
-IMPL_LINK_NOARG_TYPED(SvtURLBox, AutoCompleteHdl_Impl, Edit&, void)
+IMPL_LINK_NOARG(SvtURLBox, AutoCompleteHdl_Impl, Edit&, void)
 {
-    if ( GetSubEdit()->GetAutocompleteAction() == AutocompleteAction::KeyInput )
-        TryAutoComplete();
+    TryAutoComplete();
 }
 
 bool SvtURLBox::Notify( NotifyEvent &rEvt )
@@ -1161,7 +1154,7 @@ OUString SvtURLBox::GetURL()
         return aPlaceHolder;
 
     // try to get the right case preserving URL from the list of URLs
-    for(std::vector<OUString>::iterator i = pImp->aCompletions.begin(), j = pImp->aURLs.begin(); i != pImp->aCompletions.end() && j != pImp->aURLs.end(); ++i, ++j)
+    for(std::vector<OUString>::iterator i = pImpl->aCompletions.begin(), j = pImpl->aURLs.begin(); i != pImpl->aCompletions.end() && j != pImpl->aURLs.end(); ++i, ++j)
     {
         if((*i).equals(aText))
             return *j;
@@ -1240,8 +1233,8 @@ void SvtURLBox::SetBaseURL( const OUString& rURL )
     ::osl::MutexGuard aGuard( theSvtMatchContextMutex::get() );
 
     // Reset match lists
-    pImp->aCompletions.clear();
-    pImp->aURLs.clear();
+    pImpl->aCompletions.clear();
+    pImpl->aURLs.clear();
 
     aBaseURL = rURL;
 }
@@ -1344,8 +1337,8 @@ bool SvtURLBox_Impl::TildeParsing(
 
 void SvtURLBox::SetFilter(const OUString& _sFilter)
 {
-    pImp->m_aFilters.clear();
-    FilterMatch::createWildCardFilterList(_sFilter,pImp->m_aFilters);
+    pImpl->m_aFilters.clear();
+    FilterMatch::createWildCardFilterList(_sFilter,pImpl->m_aFilters);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

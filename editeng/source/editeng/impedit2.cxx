@@ -73,7 +73,7 @@ using namespace ::com::sun::star;
 static sal_uInt16 lcl_CalcExtraSpace( ParaPortion*, const SvxLineSpacingItem& rLSItem )
 {
     sal_uInt16 nExtra = 0;
-    if ( rLSItem.GetInterLineSpaceRule() == SVX_INTER_LINE_SPACE_FIX )
+    if ( rLSItem.GetInterLineSpaceRule() == SvxInterLineSpaceRule::Fix )
     {
         nExtra = rLSItem.GetInterLineSpace();
     }
@@ -208,7 +208,7 @@ void ImpEditEngine::SetRefMapMode( const MapMode& rMapMode )
     mpOwnDev.disposeAndClear();
     mpOwnDev = VclPtr<VirtualDevice>::Create();
     pRefDev = mpOwnDev;
-    pRefDev->SetMapMode( MAP_TWIP );
+    pRefDev->SetMapMode( MapUnit::MapTwip );
     SetRefDevice( pRefDev );
 
     pRefDev->SetMapMode( rMapMode );
@@ -738,11 +738,11 @@ EditSelection ImpEditEngine::MoveCursor( const KeyEvent& rKeyEvent, EditView* pE
 
     EditPaM aOldPaM( aPaM );
 
-    TextDirectionality eTextDirection = TextDirectionality_LeftToRight_TopToBottom;
+    TextDirectionality eTextDirection = TextDirectionality::LeftToRight_TopToBottom;
     if ( IsVertical() )
-        eTextDirection = TextDirectionality_TopToBottom_RightToLeft;
+        eTextDirection = TextDirectionality::TopToBottom_RightToLeft;
     else if ( IsRightToLeft( GetEditDoc().GetPos( aPaM.GetNode() ) ) )
-        eTextDirection = TextDirectionality_RightToLeft_TopToBottom;
+        eTextDirection = TextDirectionality::RightToLeft_TopToBottom;
 
     KeyEvent aTranslatedKeyEvent = rKeyEvent.LogicalTextDirectionality( eTextDirection );
 
@@ -1741,18 +1741,21 @@ sal_uInt16 ImpEditEngine::GetI18NScriptType( const EditPaM& rPaM, sal_Int32* pEn
     {
         sal_Int32 nPara = GetEditDoc().GetPos( rPaM.GetNode() );
         const ParaPortion* pParaPortion = GetParaPortions().SafeGetObject( nPara );
-        if ( pParaPortion->aScriptInfos.empty() )
-            const_cast<ImpEditEngine*>(this)->InitScriptTypes( nPara );
-
-        const ScriptTypePosInfos& rTypes = pParaPortion->aScriptInfos;
-
-        const sal_Int32 nPos = rPaM.GetIndex();
-        ScriptTypePosInfos::const_iterator itr = std::find_if(rTypes.begin(), rTypes.end(), FindByPos(nPos));
-        if(itr != rTypes.end())
+        if (pParaPortion)
         {
-            nScriptType = itr->nScriptType;
-            if( pEndPos )
-                *pEndPos = itr->nEndPos;
+            if ( pParaPortion->aScriptInfos.empty() )
+                const_cast<ImpEditEngine*>(this)->InitScriptTypes( nPara );
+
+            const ScriptTypePosInfos& rTypes = pParaPortion->aScriptInfos;
+
+            const sal_Int32 nPos = rPaM.GetIndex();
+            ScriptTypePosInfos::const_iterator itr = std::find_if(rTypes.begin(), rTypes.end(), FindByPos(nPos));
+            if(itr != rTypes.end())
+            {
+                nScriptType = itr->nScriptType;
+                if( pEndPos )
+                    *pEndPos = itr->nEndPos;
+            }
         }
     }
     return nScriptType ? nScriptType : SvtLanguageOptions::GetI18NScriptTypeOfLanguage( GetDefaultLanguage() );
@@ -3441,29 +3444,61 @@ uno::Reference< datatransfer::XTransferable > ImpEditEngine::CreateTransferable(
     return xDataObj;
 }
 
-EditSelection ImpEditEngine::InsertText( uno::Reference< datatransfer::XTransferable >& rxDataObj, const OUString& rBaseURL, const EditPaM& rPaM, bool bUseSpecial )
+EditSelection ImpEditEngine::InsertText( uno::Reference< datatransfer::XTransferable > const & rxDataObj, const OUString& rBaseURL, const EditPaM& rPaM, bool bUseSpecial )
 {
     EditSelection aNewSelection( rPaM );
 
-    if ( rxDataObj.is() )
-    {
-        datatransfer::DataFlavor aFlavor;
-        bool bDone = false;
+    if ( !rxDataObj.is() )
+        return aNewSelection;
 
-        if ( bUseSpecial )
+    datatransfer::DataFlavor aFlavor;
+    bool bDone = false;
+
+    if ( bUseSpecial )
+    {
+        // BIN
+        SotExchange::GetFormatDataFlavor( SotClipboardFormatId::EDITENGINE, aFlavor );
+        if ( rxDataObj->isDataFlavorSupported( aFlavor ) )
         {
-            // BIN
-            SotExchange::GetFormatDataFlavor( SotClipboardFormatId::EDITENGINE, aFlavor );
-            if ( rxDataObj->isDataFlavorSupported( aFlavor ) )
+            try
             {
+                uno::Any aData = rxDataObj->getTransferData( aFlavor );
+                uno::Sequence< sal_Int8 > aSeq;
+                aData >>= aSeq;
+                {
+                    SvMemoryStream aBinStream( aSeq.getArray(), aSeq.getLength(), StreamMode::READ );
+                    aNewSelection = Read( aBinStream, rBaseURL, EE_FORMAT_BIN, rPaM );
+                }
+                bDone = true;
+            }
+            catch( const css::uno::Exception& )
+            {
+            }
+        }
+
+        if ( !bDone )
+        {
+            // RTF
+            SotExchange::GetFormatDataFlavor( SotClipboardFormatId::RTF, aFlavor );
+            // RICHTEXT
+            datatransfer::DataFlavor aFlavorRichtext;
+            SotExchange::GetFormatDataFlavor( SotClipboardFormatId::RICHTEXT, aFlavorRichtext );
+            bool bRtfSupported = rxDataObj->isDataFlavorSupported( aFlavor );
+            bool bRichtextSupported  = rxDataObj->isDataFlavorSupported( aFlavorRichtext );
+            if ( bRtfSupported || bRichtextSupported )
+            {
+                if(bRichtextSupported)
+                {
+                    aFlavor = aFlavorRichtext;
+                }
                 try
                 {
                     uno::Any aData = rxDataObj->getTransferData( aFlavor );
                     uno::Sequence< sal_Int8 > aSeq;
                     aData >>= aSeq;
                     {
-                        SvMemoryStream aBinStream( aSeq.getArray(), aSeq.getLength(), StreamMode::READ );
-                        aNewSelection = Read( aBinStream, rBaseURL, EE_FORMAT_BIN, rPaM );
+                        SvMemoryStream aRTFStream( aSeq.getArray(), aSeq.getLength(), StreamMode::READ );
+                        aNewSelection = Read( aRTFStream, rBaseURL, EE_FORMAT_RTF, rPaM );
                     }
                     bDone = true;
                 }
@@ -3471,51 +3506,28 @@ EditSelection ImpEditEngine::InsertText( uno::Reference< datatransfer::XTransfer
                 {
                 }
             }
-
-            if ( !bDone )
-            {
-                // RTF
-                SotExchange::GetFormatDataFlavor( SotClipboardFormatId::RTF, aFlavor );
-                if ( rxDataObj->isDataFlavorSupported( aFlavor ) )
-                {
-                    try
-                    {
-                        uno::Any aData = rxDataObj->getTransferData( aFlavor );
-                        uno::Sequence< sal_Int8 > aSeq;
-                        aData >>= aSeq;
-                        {
-                            SvMemoryStream aRTFStream( aSeq.getArray(), aSeq.getLength(), StreamMode::READ );
-                            aNewSelection = Read( aRTFStream, rBaseURL, EE_FORMAT_RTF, rPaM );
-                        }
-                        bDone = true;
-                    }
-                    catch( const css::uno::Exception& )
-                    {
-                    }
-                }
-            }
-            if ( !bDone )
-            {
-                // XML ?
-                // Currently, there is nothing like "The" XML format, StarOffice doesn't offer plain XML in Clipboard...
-            }
         }
         if ( !bDone )
         {
-            SotExchange::GetFormatDataFlavor( SotClipboardFormatId::STRING, aFlavor );
-            if ( rxDataObj->isDataFlavorSupported( aFlavor ) )
+            // XML ?
+            // Currently, there is nothing like "The" XML format, StarOffice doesn't offer plain XML in Clipboard...
+        }
+    }
+    if ( !bDone )
+    {
+        SotExchange::GetFormatDataFlavor( SotClipboardFormatId::STRING, aFlavor );
+        if ( rxDataObj->isDataFlavorSupported( aFlavor ) )
+        {
+            try
             {
-                try
-                {
-                    uno::Any aData = rxDataObj->getTransferData( aFlavor );
-                    OUString aText;
-                    aData >>= aText;
-                    aNewSelection = ImpInsertText( rPaM, aText );
-                }
-                catch( ... )
-                {
-                    ; // #i9286# can happen, even if isDataFlavorSupported returns true...
-                }
+                uno::Any aData = rxDataObj->getTransferData( aFlavor );
+                OUString aText;
+                aData >>= aText;
+                aNewSelection = ImpInsertText( rPaM, aText );
+            }
+            catch( ... )
+            {
+                ; // #i9286# can happen, even if isDataFlavorSupported returns true...
             }
         }
     }
@@ -3531,7 +3543,7 @@ Range ImpEditEngine::GetInvalidYOffsets( ParaPortion* pPortion )
     {
         const SvxULSpaceItem& rULSpace = static_cast<const SvxULSpaceItem&>(pPortion->GetNode()->GetContentAttribs().GetItem( EE_PARA_ULSPACE ));
         const SvxLineSpacingItem& rLSItem = static_cast<const SvxLineSpacingItem&>(pPortion->GetNode()->GetContentAttribs().GetItem( EE_PARA_SBL ));
-        sal_uInt16 nSBL = ( rLSItem.GetInterLineSpaceRule() == SVX_INTER_LINE_SPACE_FIX )
+        sal_uInt16 nSBL = ( rLSItem.GetInterLineSpaceRule() == SvxInterLineSpaceRule::Fix )
                             ? GetYValue( rLSItem.GetInterLineSpace() ) : 0;
 
         // only from the top ...
@@ -3574,7 +3586,7 @@ Range ImpEditEngine::GetInvalidYOffsets( ParaPortion* pPortion )
                 aRange.Max() += rL.GetHeight();
             }
 
-            if( ( rLSItem.GetInterLineSpaceRule() == SVX_INTER_LINE_SPACE_PROP ) && rLSItem.GetPropLineSpace() &&
+            if( ( rLSItem.GetInterLineSpaceRule() == SvxInterLineSpaceRule::Prop ) && rLSItem.GetPropLineSpace() &&
                 ( rLSItem.GetPropLineSpace() < 100 ) )
             {
                 const EditLine& rL = pPortion->GetLines()[nFirstInvalid];
@@ -3601,7 +3613,7 @@ EditPaM ImpEditEngine::GetPaM( ParaPortion* pPortion, Point aDocPos, bool bSmart
     aPaM.SetNode( pPortion->GetNode() );
 
     const SvxLineSpacingItem& rLSItem = static_cast<const SvxLineSpacingItem&>(pPortion->GetNode()->GetContentAttribs().GetItem( EE_PARA_SBL ));
-    sal_uInt16 nSBL = ( rLSItem.GetInterLineSpaceRule() == SVX_INTER_LINE_SPACE_FIX )
+    sal_uInt16 nSBL = ( rLSItem.GetInterLineSpaceRule() == SvxInterLineSpaceRule::Fix )
                         ? GetYValue( rLSItem.GetInterLineSpace() ) : 0;
 
     long nY = pPortion->GetFirstLineOffset();
@@ -4017,7 +4029,7 @@ void ImpEditEngine::CalcHeight( ParaPortion* pPortion )
         {
             const SvxULSpaceItem& rULItem = static_cast<const SvxULSpaceItem&>(pPortion->GetNode()->GetContentAttribs().GetItem( EE_PARA_ULSPACE ));
             const SvxLineSpacingItem& rLSItem = static_cast<const SvxLineSpacingItem&>(pPortion->GetNode()->GetContentAttribs().GetItem( EE_PARA_SBL ));
-            sal_Int32 nSBL = ( rLSItem.GetInterLineSpaceRule() == SVX_INTER_LINE_SPACE_FIX ) ? GetYValue( rLSItem.GetInterLineSpace() ) : 0;
+            sal_Int32 nSBL = ( rLSItem.GetInterLineSpaceRule() == SvxInterLineSpaceRule::Fix ) ? GetYValue( rLSItem.GetInterLineSpace() ) : 0;
 
             if ( nSBL )
             {
@@ -4115,7 +4127,7 @@ Rectangle ImpEditEngine::GetEditCursor( ParaPortion* pPortion, sal_Int32 nIndex,
     long nY = pPortion->GetFirstLineOffset();
 
     const SvxLineSpacingItem& rLSItem = static_cast<const SvxLineSpacingItem&>(pPortion->GetNode()->GetContentAttribs().GetItem( EE_PARA_SBL ));
-    sal_uInt16 nSBL = ( rLSItem.GetInterLineSpaceRule() == SVX_INTER_LINE_SPACE_FIX )
+    sal_uInt16 nSBL = ( rLSItem.GetInterLineSpaceRule() == SvxInterLineSpaceRule::Fix )
                         ? GetYValue( rLSItem.GetInterLineSpace() ) : 0;
 
     sal_Int32 nCurIndex = 0;
@@ -4354,7 +4366,7 @@ void ImpEditEngine::LeaveBlockNotifications()
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ImpEditEngine, DocModified, LinkParamNone*, void)
+IMPL_LINK_NOARG(ImpEditEngine, DocModified, LinkParamNone*, void)
 {
     aModifyHdl.Call( nullptr /*GetEditEnginePtr()*/ ); // NULL, because also used for Outliner
 }

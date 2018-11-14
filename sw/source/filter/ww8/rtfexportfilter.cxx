@@ -27,6 +27,7 @@
 
 #include <unotools/mediadescriptor.hxx>
 #include <unotools/ucbstreamhelper.hxx>
+#include <o3tl/make_unique.hxx>
 
 using namespace ::com::sun::star;
 
@@ -69,21 +70,20 @@ sal_Bool RtfExportFilter::filter(const uno::Sequence< beans::PropertyValue >& aD
     // we get SwPaM for the entire document; copy&paste is handled internally, not via UNO
     SwPaM aPam(pDoc->GetNodes().GetEndOfContent());
     aPam.SetMark();
-    aPam.Move(fnMoveBackward, fnGoDoc);
+    aPam.Move(fnMoveBackward, GoInDoc);
 
-    SwPaM* pCurPam = new SwPaM(*aPam.End(), *aPam.Start());
+    auto pCurPam = o3tl::make_unique<SwPaM>(*aPam.End(), *aPam.Start());
 
     // export the document
     // (in a separate block so that it's destructed before the commit)
     {
-        RtfExport aExport(this, pDoc, pCurPam, &aPam, nullptr);
+        RtfExport aExport(this, pDoc, pCurPam.get(), &aPam, nullptr);
         aExport.ExportDocument(true);
     }
 
     // delete the pCurPam
-    while (pCurPam->GetNext() != pCurPam)
+    while (pCurPam->GetNext() != pCurPam.get())
         delete pCurPam->GetNext();
-    delete pCurPam;
     delete pStream;
 
     return true;

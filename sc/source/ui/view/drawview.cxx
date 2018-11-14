@@ -35,6 +35,9 @@
 #include <sfx2/viewfrm.hxx>
 #include <svx/sdrundomanager.hxx>
 #include <svx/xbtmpit.hxx>
+#include <comphelper/lok.hxx>
+#include <sfx2/lokhelper.hxx>
+#include <LibreOfficeKit/LibreOfficeKitEnums.h>
 
 #include "drawview.hxx"
 #include "global.hxx"
@@ -310,7 +313,7 @@ void ScDrawView::RecalcScale()
     }
     else
     {
-        Point aLogic = pDev->LogicToPixel( Point(1000,1000), MAP_TWIP );
+        Point aLogic = pDev->LogicToPixel( Point(1000,1000), MapUnit::MapTwip );
         nPPTX = aLogic.X() / 1000.0;
         nPPTY = aLogic.Y() / 1000.0;
                                             //! Zoom, handed over ???
@@ -387,7 +390,7 @@ void ScDrawView::MarkListHasChanged()
     if ( nMarkCount == 0 && !pViewData->GetViewShell()->IsDrawSelMode() && !bInConstruct )
     {
         //  relock layers that may have been unlocked before
-        LockBackgroundLayer();
+        LockBackgroundLayer(true);
         LockInternalLayer();
     }
 
@@ -550,6 +553,19 @@ bool ScDrawView::SdrBeginTextEdit(
         bOnlyOneView, bGrabFocus );
 
     ScTabViewShell* pViewSh = pViewData->GetViewShell();
+
+    if (comphelper::LibreOfficeKit::isActive())
+    {
+        if (OutlinerView* pView = GetTextEditOutlinerView())
+        {
+            Rectangle aRectangle = pView->GetOutputArea();
+            if (pWinL && pWinL->GetMapMode().GetMapUnit() == MapUnit::Map100thMM)
+                aRectangle = OutputDevice::LogicToLogic(aRectangle, MapUnit::Map100thMM, MapUnit::MapTwip);
+            OString sRectangle = aRectangle.toString();
+            SfxLokHelper::notifyOtherViews(pViewSh, LOK_CALLBACK_VIEW_LOCK, "rectangle", sRectangle);
+        }
+    }
+
     if ( pViewSh->GetViewFrame() )
     {
         SfxFrame& rFrame = pViewSh->GetViewFrame()->GetFrame();
@@ -570,6 +586,10 @@ SdrEndTextEditKind ScDrawView::SdrEndTextEdit( bool bDontDeleteReally )
     const SdrEndTextEditKind eRet = FmFormView::SdrEndTextEdit( bDontDeleteReally );
 
     ScTabViewShell* pViewSh = pViewData->GetViewShell();
+
+    if (comphelper::LibreOfficeKit::isActive())
+        SfxLokHelper::notifyOtherViews(pViewSh, LOK_CALLBACK_VIEW_LOCK, "rectangle", "EMPTY");
+
     if ( pViewSh->GetViewFrame() )
     {
         SfxFrame& rFrame = pViewSh->GetViewFrame()->GetFrame();
@@ -636,7 +656,7 @@ SdrObject* ScDrawView::GetObjectByName(const OUString& rName)
             DBG_ASSERT(pPage,"Page ?");
             if (pPage)
             {
-                SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
+                SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
                 SdrObject* pObject = aIter.Next();
                 while (pObject)
                 {
@@ -670,7 +690,7 @@ void ScDrawView::SelectCurrentViewObject( const OUString& rName )
             DBG_ASSERT(pPage,"Page ?");
             if (pPage)
             {
-                SdrObjListIter aIter( *pPage, IM_DEEPWITHGROUPS );
+                SdrObjListIter aIter( *pPage, SdrIterMode::DeepWithGroups );
                 SdrObject* pObject = aIter.Next();
                 while (pObject && !pFound)
                 {
@@ -724,7 +744,7 @@ bool ScDrawView::SelectObject( const OUString& rName )
             OSL_ENSURE(pPage,"Page ?");
             if (pPage)
             {
-                SdrObjListIter aIter( *pPage, IM_DEEPWITHGROUPS );
+                SdrObjListIter aIter( *pPage, SdrIterMode::DeepWithGroups );
                 SdrObject* pObject = aIter.Next();
                 while (pObject && !pFound)
                 {
@@ -757,7 +777,7 @@ bool ScDrawView::SelectObject( const OUString& rName )
                 !pDoc->IsTabProtected( nTab ) &&
                 !pViewData->GetSfxDocShell()->IsReadOnly() )
         {
-            UnlockBackgroundLayer();
+            LockBackgroundLayer(false);
         }
 
         SdrPageView* pPV = GetSdrPageView();
@@ -823,6 +843,11 @@ void ScDrawView::MakeVisible( const Rectangle& rRect, vcl::Window& rWin )
 
     if ( pViewData && pViewData->GetActiveWin() == &rWin )
         pViewData->GetView()->MakeVisible( rRect );
+}
+
+SfxViewShell* ScDrawView::GetSfxViewShell() const
+{
+    return pViewData->GetViewShell();
 }
 
 void ScDrawView::DeleteMarked()

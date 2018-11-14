@@ -34,12 +34,12 @@
 #include <basegfx/vector/b2dsize.hxx>
 
 
-enum GraphicType
+enum class GraphicType
 {
-    GRAPHIC_NONE,
-    GRAPHIC_BITMAP,
-    GRAPHIC_GDIMETAFILE,
-    GRAPHIC_DEFAULT
+    NONE,
+    Bitmap,
+    GdiMetafile,
+    Default
 };
 
 namespace com { namespace sun { namespace star { namespace graphic { class XGraphic;} } } }
@@ -78,11 +78,9 @@ class VCL_DLLPUBLIC GraphicConversionParameters
 private:
     Size            maSizePixel;            // default is (0,0)
 
-    // bitfield
     bool            mbUnlimitedSize : 1;    // default is false
     bool            mbAntiAliase : 1;       // default is false
     bool            mbSnapHorVerLines : 1;  // default is false
-    bool            mbScaleHighQuality : 1; // default is false
 
 public:
     GraphicConversionParameters(
@@ -93,8 +91,7 @@ public:
     :   maSizePixel(rSizePixel),
         mbUnlimitedSize(bUnlimitedSize),
         mbAntiAliase(bAntiAliase),
-        mbSnapHorVerLines(bSnapHorVerLines),
-        mbScaleHighQuality(false)
+        mbSnapHorVerLines(bSnapHorVerLines)
     {
     }
 
@@ -103,32 +100,33 @@ public:
     bool            getUnlimitedSize() const { return mbUnlimitedSize; }
     bool            getAntiAliase() const { return mbAntiAliase; }
     bool            getSnapHorVerLines() const { return mbSnapHorVerLines; }
-    bool            getScaleHighQuality() const { return mbScaleHighQuality; }
 };
 
 class VCL_DLLPUBLIC Graphic : public SvDataCopyStream
 {
 private:
 
-    ImpGraphic*    mpImpGraphic;
+    std::shared_ptr<ImpGraphic> mxImpGraphic;
 
 public:
 
     SAL_DLLPRIVATE void ImplTestRefCount();
-    SAL_DLLPRIVATE ImpGraphic* ImplGetImpGraphic() const { return mpImpGraphic; }
+    SAL_DLLPRIVATE ImpGraphic* ImplGetImpGraphic() const { return mxImpGraphic.get(); }
 
 public:
                     Graphic();
                     Graphic( const Graphic& rGraphic );
+                    Graphic( Graphic&& rGraphic );
                     Graphic( const Bitmap& rBmp );
                     Graphic( const BitmapEx& rBmpEx );
                     Graphic( const SvgDataPtr& rSvgDataPtr );
                     Graphic( const Animation& rAnimation );
                     Graphic( const GDIMetaFile& rMtf );
                     Graphic( const css::uno::Reference< css::graphic::XGraphic >& rxGraphic );
-    virtual         ~Graphic();
+    virtual         ~Graphic() override;
 
     Graphic&        operator=( const Graphic& rGraphic );
+    Graphic&        operator=( Graphic&& rGraphic );
     bool            operator==( const Graphic& rGraphic ) const;
     bool            operator!=( const Graphic& rGraphic ) const;
     bool            operator!() const;
@@ -183,8 +181,8 @@ public:
                           const Size& rDestSize,
                           long nExtraData = 0L,
                           OutputDevice* pFirstFrameOutDev = nullptr );
-    void            StopAnimation( OutputDevice* pOutputDevice = nullptr,
-                          long nExtraData = 0L );
+    void            StopAnimation( OutputDevice* pOutputDevice,
+                          long nExtraData );
 
     void            SetAnimationNotifyHdl( const Link<Animation*,void>& rLink );
     Link<Animation*,void> GetAnimationNotifyHdl() const;
@@ -195,10 +193,10 @@ public:
 
 public:
 
-    GraphicReader*  GetContext();
-    void            SetContext( GraphicReader* pReader );
-    void            SetDummyContext(bool value);
-    bool            IsDummyContext();
+    std::shared_ptr<GraphicReader>& GetContext();
+    void                            SetContext( const std::shared_ptr<GraphicReader> &pReader );
+    void                            SetDummyContext(bool value);
+    bool                            IsDummyContext();
 private:
     friend class GraphicObject;
 
@@ -222,6 +220,9 @@ public:
 public:
 
     const SvgDataPtr& getSvgData() const;
+
+    void setPdfData(const css::uno::Sequence<sal_Int8>& rPdfData);
+    const css::uno::Sequence<sal_Int8>& getPdfData() const;
 
     static css::uno::Sequence<sal_Int8> getUnoTunnelId();
 };

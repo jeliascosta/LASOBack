@@ -53,11 +53,9 @@ class PresentationFactory
       public PresentationFactoryInterfaceBase
 {
 public:
-    static const OUString msPresentationViewURL;
-
     PresentationFactory (
         const css::uno::Reference<css::frame::XController>& rxController);
-    virtual ~PresentationFactory();
+    virtual ~PresentationFactory() override;
 
     virtual void SAL_CALL disposing() override;
 

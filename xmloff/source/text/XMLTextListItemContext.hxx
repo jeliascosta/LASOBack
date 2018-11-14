@@ -44,8 +44,8 @@ public:
             const sal_uInt16 nPrfx,
             const OUString& rLName,
             const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
-            const bool bIsHeader = false );
-    virtual ~XMLTextListItemContext();
+            const bool bIsHeader );
+    virtual ~XMLTextListItemContext() override;
 
     virtual void EndElement() override;
 

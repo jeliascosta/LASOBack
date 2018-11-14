@@ -73,13 +73,13 @@ void FuExpandPage::DoExecute( SfxRequest& )
     // find selected page (only standard pages)
     SdPage* pActualPage = nullptr;
     sal_uInt16 i = 0;
-    sal_uInt16 nCount = mpDoc->GetSdPageCount(PK_STANDARD);
+    sal_uInt16 nCount = mpDoc->GetSdPageCount(PageKind::Standard);
 
     while (!pActualPage && i < nCount)
     {
-        if (mpDoc->GetSdPage(i, PK_STANDARD)->IsSelected())
+        if (mpDoc->GetSdPage(i, PageKind::Standard)->IsSelected())
         {
-            pActualPage = mpDoc->GetSdPage(i, PK_STANDARD);
+            pActualPage = mpDoc->GetSdPage(i, PageKind::Standard);
         }
 
         i++;
@@ -87,8 +87,8 @@ void FuExpandPage::DoExecute( SfxRequest& )
 
     if (pActualPage)
     {
-        ::sd::Outliner* pOutl =
-              new ::sd::Outliner( mpDoc, OutlinerMode::OutlineObject );
+        SdOutliner* pOutl =
+              new SdOutliner( mpDoc, OutlinerMode::OutlineObject );
         pOutl->SetUpdateMode(false);
         pOutl->EnableUndo(false);
 
@@ -162,7 +162,7 @@ void FuExpandPage::DoExecute( SfxRequest& )
                                           pActualNotesPage->GetUppBorder(),
                                           pActualNotesPage->GetRgtBorder(),
                                           pActualNotesPage->GetLwrBorder() );
-                    pNotesPage->SetPageKind(PK_NOTES);
+                    pNotesPage->SetPageKind(PageKind::Notes);
                     pNotesPage->SetName(OUString());
 
                     // insert page after current page

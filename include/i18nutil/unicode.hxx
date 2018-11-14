@@ -72,7 +72,6 @@ class I18NUTIL_DLLPUBLIC ToggleUnicodeCodepoint
 {
 private:
     OUStringBuffer maInput;
-    OUStringBuffer maOutput;
     OUStringBuffer maUtf16;
     OUStringBuffer maCombining;
     bool mbAllowMoreChars = true;
@@ -80,8 +79,6 @@ private:
     bool mbIsHexString = false;
 
 public:
-    ToggleUnicodeCodepoint();
-
     /**
     Build an input string of valid UTF16 units to toggle.
         -do not call the other functions until the input process is complete

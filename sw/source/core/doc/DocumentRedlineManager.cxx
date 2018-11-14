@@ -27,9 +27,11 @@
 #include <docary.hxx>
 #include <ndtxt.hxx>
 #include <comcore.hrc>
+#include <unocrsr.hxx>
 #include <swmodule.hxx>
 #include <editsh.hxx>
 #include <vcl/layout.hxx>
+#include <comphelper/flagguard.hxx>
 
 using namespace com::sun::star;
 
@@ -246,8 +248,8 @@ namespace
                     if( bDelRedl )
                         delete pRedl;
 
-                    RedlineMode_t eOld = rDoc.getIDocumentRedlineAccess().GetRedlineMode();
-                    rDoc.getIDocumentRedlineAccess().SetRedlineMode_intern( (RedlineMode_t)(eOld & ~(nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_IGNORE)));
+                    RedlineFlags eOld = rDoc.getIDocumentRedlineAccess().GetRedlineFlags();
+                    rDoc.getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld & ~RedlineFlags(RedlineFlags::On | RedlineFlags::Ignore));
 
                     if( pCSttNd && pCEndNd )
                         rDoc.getIDocumentContentOperations().DeleteAndJoin( aPam );
@@ -263,7 +265,7 @@ namespace
                             rDoc.getIDocumentContentOperations().DelFullPara( aPam );
                         }
                     }
-                    rDoc.getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+                    rDoc.getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
                 }
                 else if( bDelRedl )
                     delete pRedl;
@@ -360,8 +362,8 @@ namespace
                     if( bDelRedl )
                         delete pRedl;
 
-                    RedlineMode_t eOld = rDoc.getIDocumentRedlineAccess().GetRedlineMode();
-                    rDoc.getIDocumentRedlineAccess().SetRedlineMode_intern( (RedlineMode_t)(eOld & ~(nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_IGNORE)));
+                    RedlineFlags eOld = rDoc.getIDocumentRedlineAccess().GetRedlineFlags();
+                    rDoc.getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld & ~RedlineFlags(RedlineFlags::On | RedlineFlags::Ignore));
 
                     if( pCSttNd && pCEndNd )
                         rDoc.getIDocumentContentOperations().DeleteAndJoin( aPam );
@@ -377,7 +379,7 @@ namespace
                             rDoc.getIDocumentContentOperations().DelFullPara( aPam );
                         }
                     }
-                    rDoc.getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+                    rDoc.getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
                 }
                 else if( bDelRedl )
                     delete pRedl;
@@ -574,13 +576,39 @@ namespace
             }
         }
     }
+
+    /// in case some text is deleted, ensure that the not-yet-inserted
+    /// SwRangeRedline has its positions corrected not to point to deleted node
+    class TemporaryRedlineUpdater
+    {
+    private:
+        SwRangeRedline & m_rRedline;
+        std::shared_ptr<SwUnoCursor> m_pCursor;
+    public:
+        TemporaryRedlineUpdater(SwDoc & rDoc, SwRangeRedline & rRedline)
+            : m_rRedline(rRedline)
+            , m_pCursor(rDoc.CreateUnoCursor(*rRedline.GetPoint(), false))
+        {
+            if (m_rRedline.HasMark())
+            {
+                m_pCursor->SetMark();
+                *m_pCursor->GetMark() = *m_rRedline.GetMark();
+                *m_rRedline.GetMark() = SwPosition(rDoc.GetNodes().GetEndOfContent());
+            }
+            *m_rRedline.GetPoint() = SwPosition(rDoc.GetNodes().GetEndOfContent());
+        }
+        ~TemporaryRedlineUpdater()
+        {
+            static_cast<SwPaM&>(m_rRedline) = *m_pCursor;
+        }
+    };
 }
 
 namespace sw
 {
 
 DocumentRedlineManager::DocumentRedlineManager( SwDoc& i_rSwdoc ) : m_rDoc( i_rSwdoc ),
-                                                                    meRedlineMode((RedlineMode_t)(nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_SHOW_DELETE)),
+                                                                    meRedlineFlags(RedlineFlags::ShowInsert | RedlineFlags::ShowDelete),
                                                                     mpRedlineTable( new SwRedlineTable ),
                                                                     mpExtraRedlineTable ( new SwExtraRedlineTable ),
                                                                     mpAutoFormatRedlnComment( nullptr ),
@@ -590,39 +618,34 @@ DocumentRedlineManager::DocumentRedlineManager( SwDoc& i_rSwdoc ) : m_rDoc( i_rS
 {
 }
 
-RedlineMode_t DocumentRedlineManager::GetRedlineMode() const
+RedlineFlags DocumentRedlineManager::GetRedlineFlags() const
 {
-    return meRedlineMode;
+    return meRedlineFlags;
 }
 
-void DocumentRedlineManager::SetRedlineMode( RedlineMode_t eMode )
+void DocumentRedlineManager::SetRedlineFlags( RedlineFlags eMode )
 {
-    if( meRedlineMode != eMode )
+    if( meRedlineFlags != eMode )
     {
-        if( (nsRedlineMode_t::REDLINE_SHOW_MASK & meRedlineMode) != (nsRedlineMode_t::REDLINE_SHOW_MASK & eMode)
-            || 0 == (nsRedlineMode_t::REDLINE_SHOW_MASK & eMode) )
+        if( (RedlineFlags::ShowMask & meRedlineFlags) != (RedlineFlags::ShowMask & eMode)
+            || !(RedlineFlags::ShowMask & eMode) )
         {
             bool bSaveInXMLImportFlag = m_rDoc.IsInXMLImport();
             m_rDoc.SetInXMLImport( false );
             // and then hide/display everything
             void (SwRangeRedline::*pFnc)(sal_uInt16, size_t) = nullptr;
 
-            switch( nsRedlineMode_t::REDLINE_SHOW_MASK & eMode )
-            {
-            case nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_SHOW_DELETE :
+            RedlineFlags eShowMode = RedlineFlags::ShowMask & eMode;
+            if (eShowMode == (RedlineFlags::ShowInsert | RedlineFlags::ShowDelete))
                 pFnc = &SwRangeRedline::Show;
-                break;
-            case nsRedlineMode_t::REDLINE_SHOW_INSERT:
+            else if (eShowMode == RedlineFlags::ShowInsert)
                 pFnc = &SwRangeRedline::Hide;
-                break;
-            case nsRedlineMode_t::REDLINE_SHOW_DELETE:
+            else if (eShowMode == RedlineFlags::ShowDelete)
                 pFnc = &SwRangeRedline::ShowOriginal;
-                break;
-
-            default:
+            else
+            {
                 pFnc = &SwRangeRedline::Hide;
-                eMode = (RedlineMode_t)(eMode | nsRedlineMode_t::REDLINE_SHOW_INSERT);
-                break;
+                eMode |= RedlineFlags::ShowInsert;
             }
 
             CheckAnchoredFlyConsistency(m_rDoc);
@@ -643,7 +666,7 @@ void DocumentRedlineManager::SetRedlineMode( RedlineMode_t eMode )
             CHECK_REDLINE( *this )
             m_rDoc.SetInXMLImport( bSaveInXMLImportFlag );
         }
-        meRedlineMode = eMode;
+        meRedlineFlags = eMode;
         m_rDoc.getIDocumentState().SetModified();
     }
 
@@ -652,17 +675,17 @@ void DocumentRedlineManager::SetRedlineMode( RedlineMode_t eMode )
 
 bool DocumentRedlineManager::IsRedlineOn() const
 {
-    return IDocumentRedlineAccess::IsRedlineOn(meRedlineMode);
+    return IDocumentRedlineAccess::IsRedlineOn(meRedlineFlags);
 }
 
 bool DocumentRedlineManager::IsIgnoreRedline() const
 {
-    return (nsRedlineMode_t::REDLINE_IGNORE & meRedlineMode);
+    return bool(RedlineFlags::Ignore & meRedlineFlags);
 }
 
-void DocumentRedlineManager::SetRedlineMode_intern(RedlineMode_t eMode)
+void DocumentRedlineManager::SetRedlineFlags_intern(RedlineFlags eMode)
 {
-    meRedlineMode = eMode;
+    meRedlineFlags = eMode;
 }
 
 const SwRedlineTable& DocumentRedlineManager::GetRedlineTable() const
@@ -739,7 +762,7 @@ bool DocumentRedlineManager::AppendRedline( SwRangeRedline* pNewRedl, bool bCall
     bool bMerged = false;
     CHECK_REDLINE( *this )
 
-    if (IsRedlineOn() && !IsShowOriginal(meRedlineMode))
+    if (IsRedlineOn() && !IsShowOriginal(meRedlineFlags))
     {
         pNewRedl->InvalidateRange();
 
@@ -1128,7 +1151,7 @@ bool DocumentRedlineManager::AppendRedline( SwRangeRedline* pNewRedl, bool bCall
                         if( pRedl->IsOwnRedline( *pNewRedl ) &&
                             pRedl->CanCombine( *pNewRedl ) )
                         {
-                            if( IsHideChanges( meRedlineMode ))
+                            if( IsHideChanges( meRedlineFlags ))
                             {
                                 // Before we can merge, we make it visible!
                                 // We insert temporarily so that pNew is
@@ -1177,14 +1200,14 @@ bool DocumentRedlineManager::AppendRedline( SwRangeRedline* pNewRedl, bool bCall
                 {
                     // b62341295: Do not throw away redlines
                     // even if they are not allowed to be combined
-                    RedlineMode_t eOld = meRedlineMode;
-                    if( !( eOld & nsRedlineMode_t::REDLINE_DONTCOMBINE_REDLINES ) &&
+                    RedlineFlags eOld = meRedlineFlags;
+                    if( !( eOld & RedlineFlags::DontCombineRedlines ) &&
                         pRedl->IsOwnRedline( *pNewRedl ) )
                     {
 
-              // Set to NONE, so that the Delete::Redo merges the Redline data correctly!
-              // The ShowMode needs to be retained!
-              meRedlineMode = (RedlineMode_t)(eOld & ~(nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_IGNORE));
+                        // Set to NONE, so that the Delete::Redo merges the Redline data correctly!
+                        // The ShowMode needs to be retained!
+                        meRedlineFlags = eOld & ~RedlineFlags(RedlineFlags::On | RedlineFlags::Ignore);
                         switch( eCmpPos )
                         {
                         case POS_EQUAL:
@@ -1196,7 +1219,7 @@ bool DocumentRedlineManager::AppendRedline( SwRangeRedline* pNewRedl, bool bCall
                         case POS_INSIDE:
                             if( bCallDelete )
                             {
-                              meRedlineMode = (RedlineMode_t)(meRedlineMode | nsRedlineMode_t::REDLINE_IGNOREDELETE_REDLINES);
+                                meRedlineFlags |= RedlineFlags::IgnoreDeleteRedlines;
 
                                 // DeleteAndJoin does not yield the
                                 // desired result if there is no paragraph to
@@ -1219,20 +1242,19 @@ bool DocumentRedlineManager::AppendRedline( SwRangeRedline* pNewRedl, bool bCall
                             }
                             delete pNewRedl;
                             pNewRedl = nullptr;
+                            if (eCmpPos == POS_INSIDE)
+                                pRedl->MaybeNotifyModification();
                             break;
 
                         case POS_OUTSIDE:
                             {
                                 mpRedlineTable->Remove( n );
                                 bDec = true;
-                                // We insert temporarily so that pNew is
-                                // also dealt with when moving the indices.
                                 if( bCallDelete )
                                 {
-                                    mpRedlineTable->Insert( pNewRedl );
+                                    TemporaryRedlineUpdater const u(m_rDoc, *pNewRedl);
                                     m_rDoc.getIDocumentContentOperations().DeleteAndJoin( *pRedl );
-                                    if( !mpRedlineTable->Remove( pNewRedl ) )
-                                        pNewRedl = nullptr;
+                                    n = 0;      // re-initialize
                                 }
                                 delete pRedl;
                             }
@@ -1254,12 +1276,8 @@ bool DocumentRedlineManager::AppendRedline( SwRangeRedline* pNewRedl, bool bCall
 
                                 if( bCallDelete )
                                 {
-                                    // We insert temporarily so that pNew is
-                                    // also dealt with when moving the indices.
-                                    mpRedlineTable->Insert( pNewRedl );
+                                    TemporaryRedlineUpdater const u(m_rDoc, *pNewRedl);
                                     m_rDoc.getIDocumentContentOperations().DeleteAndJoin( aPam );
-                                    if( !mpRedlineTable->Remove( pNewRedl ) )
-                                        pNewRedl = nullptr;
                                     n = 0;      // re-initialize
                                 }
                                 bDec = true;
@@ -1280,12 +1298,8 @@ bool DocumentRedlineManager::AppendRedline( SwRangeRedline* pNewRedl, bool bCall
 
                                 if( bCallDelete )
                                 {
-                                    // We insert temporarily so that pNew is
-                                    // also dealt with when moving the indices.
-                                    mpRedlineTable->Insert( pNewRedl );
+                                    TemporaryRedlineUpdater const u(m_rDoc, *pNewRedl);
                                     m_rDoc.getIDocumentContentOperations().DeleteAndJoin( aPam );
-                                    if( !mpRedlineTable->Remove( pNewRedl ) )
-                                        pNewRedl = nullptr;
                                     n = 0;      // re-initialize
                                     bDec = true;
                                 }
@@ -1295,7 +1309,7 @@ bool DocumentRedlineManager::AppendRedline( SwRangeRedline* pNewRedl, bool bCall
                             break;
                         }
 
-                        meRedlineMode = eOld;
+                        meRedlineFlags = eOld;
                     }
                     else
                     {
@@ -1312,7 +1326,7 @@ bool DocumentRedlineManager::AppendRedline( SwRangeRedline* pNewRedl, bool bCall
                                 pRedl->PushData( *pNewRedl );
                                 delete pNewRedl;
                                 pNewRedl = nullptr;
-                                if( IsHideChanges( meRedlineMode ))
+                                if( IsHideChanges( meRedlineFlags ))
                                 {
                                     pRedl->Hide(0, mpRedlineTable->GetPos(pRedl));
                                 }
@@ -1376,7 +1390,7 @@ bool DocumentRedlineManager::AppendRedline( SwRangeRedline* pNewRedl, bool bCall
                                 {
                                     pRedl->PushData( *pNewRedl );
                                     pNewRedl->SetEnd( *pRStt, pEnd );
-                                    if( IsHideChanges( meRedlineMode ))
+                                    if( IsHideChanges( meRedlineFlags ))
                                     {
                                         mpRedlineTable->Insert(pNewRedl);
                                         pRedl->Hide(0, mpRedlineTable->GetPos(pRedl));
@@ -1404,7 +1418,7 @@ bool DocumentRedlineManager::AppendRedline( SwRangeRedline* pNewRedl, bool bCall
                                 {
                                     pRedl->PushData( *pNewRedl );
                                     pNewRedl->SetStart( *pREnd, pStt );
-                                    if( IsHideChanges( meRedlineMode ))
+                                    if( IsHideChanges( meRedlineFlags ))
                                     {
                                         mpRedlineTable->Insert( pNewRedl );
                                         pRedl->Hide(0, mpRedlineTable->GetPos(pRedl));
@@ -1673,12 +1687,12 @@ bool DocumentRedlineManager::AppendRedline( SwRangeRedline* pNewRedl, bool bCall
     {
         if( bCallDelete && nsRedlineType_t::REDLINE_DELETE == pNewRedl->GetType() )
         {
-            RedlineMode_t eOld = meRedlineMode;
+            RedlineFlags eOld = meRedlineFlags;
             // Set to NONE, so that the Delete::Redo merges the Redline data correctly!
             // The ShowMode needs to be retained!
-            meRedlineMode = (RedlineMode_t)(eOld & ~(nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_IGNORE));
+            meRedlineFlags = eOld & ~RedlineFlags(RedlineFlags::On | RedlineFlags::Ignore);
             m_rDoc.getIDocumentContentOperations().DeleteAndJoin( *pNewRedl );
-            meRedlineMode = eOld;
+            meRedlineFlags = eOld;
         }
         delete pNewRedl;
         pNewRedl = nullptr;
@@ -1698,7 +1712,7 @@ bool DocumentRedlineManager::AppendTableRowRedline( SwTableRowRedline* pNewRedl,
     CHECK_REDLINE( this )
     */
 
-    if (IsRedlineOn() && !IsShowOriginal(meRedlineMode))
+    if (IsRedlineOn() && !IsShowOriginal(meRedlineFlags))
     {
         // #TODO - equivalent for 'SwTableRowRedline'
         /*
@@ -1715,12 +1729,12 @@ bool DocumentRedlineManager::AppendTableRowRedline( SwTableRowRedline* pNewRedl,
         /*
         if( bCallDelete && nsRedlineType_t::REDLINE_DELETE == pNewRedl->GetType() )
         {
-            RedlineMode_t eOld = meRedlineMode;
+            RedlineFlags eOld = meRedlineFlags;
             // Set to NONE, so that the Delete::Redo merges the Redline data correctly!
             // The ShowMode needs to be retained!
-            meRedlineMode = (RedlineMode_t)(eOld & ~(nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_IGNORE));
+            meRedlineFlags = eOld & ~(RedlineFlags::On | RedlineFlags::Ignore);
             DeleteAndJoin( *pNewRedl );
-            meRedlineMode = eOld;
+            meRedlineFlags = eOld;
         }
         delete pNewRedl, pNewRedl = 0;
         */
@@ -1743,7 +1757,7 @@ bool DocumentRedlineManager::AppendTableCellRedline( SwTableCellRedline* pNewRed
     CHECK_REDLINE( this )
     */
 
-    if (IsRedlineOn() && !IsShowOriginal(meRedlineMode))
+    if (IsRedlineOn() && !IsShowOriginal(meRedlineFlags))
     {
         // #TODO - equivalent for 'SwTableCellRedline'
         /*
@@ -1760,12 +1774,12 @@ bool DocumentRedlineManager::AppendTableCellRedline( SwTableCellRedline* pNewRed
         /*
         if( bCallDelete && nsRedlineType_t::REDLINE_DELETE == pNewRedl->GetType() )
         {
-            RedlineMode_t eOld = meRedlineMode;
+            RedlineFlags eOld = meRedlineFlags;
             // Set to NONE, so that the Delete::Redo merges the Redline data correctly!
             // The ShowMode needs to be retained!
-            meRedlineMode = (RedlineMode_t)(eOld & ~(nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_IGNORE));
+            meRedlineFlags = eOld & ~(RedlineFlags::On | RedlineFlags::Ignore);
             DeleteAndJoin( *pNewRedl );
-            meRedlineMode = eOld;
+            meRedlineFlags = eOld;
         }
         delete pNewRedl, pNewRedl = 0;
         */
@@ -1783,15 +1797,11 @@ void DocumentRedlineManager::CompressRedlines()
     CHECK_REDLINE( *this )
 
     void (SwRangeRedline::*pFnc)(sal_uInt16, size_t) = nullptr;
-    switch( nsRedlineMode_t::REDLINE_SHOW_MASK & meRedlineMode )
-    {
-    case nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_SHOW_DELETE:
+    RedlineFlags eShow = RedlineFlags::ShowMask & meRedlineFlags;
+    if( eShow == (RedlineFlags::ShowInsert | RedlineFlags::ShowDelete))
         pFnc = &SwRangeRedline::Show;
-        break;
-    case nsRedlineMode_t::REDLINE_SHOW_INSERT:
+    else if (eShow == RedlineFlags::ShowInsert)
         pFnc = &SwRangeRedline::Hide;
-        break;
-    }
 
     // Try to merge identical ones
     for( size_t n = 1; n < mpRedlineTable->size(); ++n )
@@ -1891,7 +1901,7 @@ bool DocumentRedlineManager::SplitRedline( const SwPaM& rRange )
 bool DocumentRedlineManager::DeleteRedline( const SwPaM& rRange, bool bSaveInUndo,
                             sal_uInt16 nDelType )
 {
-    if( nsRedlineMode_t::REDLINE_IGNOREDELETE_REDLINES & meRedlineMode ||
+    if( RedlineFlags::IgnoreDeleteRedlines & meRedlineFlags ||
         !rRange.HasMark() || *rRange.GetMark() == *rRange.GetPoint() )
         return false;
 
@@ -2109,9 +2119,9 @@ bool DocumentRedlineManager::AcceptRedline( sal_uInt16 nPos, bool bCallDelete )
     bool bRet = false;
 
     // Switch to visible in any case
-    if( (nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_SHOW_DELETE) !=
-        (nsRedlineMode_t::REDLINE_SHOW_MASK & meRedlineMode) )
-      SetRedlineMode( (RedlineMode_t)(nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_SHOW_DELETE | meRedlineMode));
+    if( (RedlineFlags::ShowInsert | RedlineFlags::ShowDelete) !=
+        (RedlineFlags::ShowMask & meRedlineFlags) )
+      SetRedlineFlags( RedlineFlags::ShowInsert | RedlineFlags::ShowDelete | meRedlineFlags );
 
     SwRangeRedline* pTmp = (*mpRedlineTable)[ nPos ];
     if( pTmp->HasMark() && pTmp->IsVisible() )
@@ -2175,9 +2185,9 @@ bool DocumentRedlineManager::AcceptRedline( sal_uInt16 nPos, bool bCallDelete )
 bool DocumentRedlineManager::AcceptRedline( const SwPaM& rPam, bool bCallDelete )
 {
     // Switch to visible in any case
-    if( (nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_SHOW_DELETE) !=
-        (nsRedlineMode_t::REDLINE_SHOW_MASK & meRedlineMode) )
-      SetRedlineMode( (RedlineMode_t)(nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_SHOW_DELETE | meRedlineMode));
+    if( (RedlineFlags::ShowInsert | RedlineFlags::ShowDelete) !=
+        (RedlineFlags::ShowMask & meRedlineFlags) )
+      SetRedlineFlags( RedlineFlags::ShowInsert | RedlineFlags::ShowDelete | meRedlineFlags );
 
     // The Selection is only in the ContentSection. If there are Redlines
     // to Non-ContentNodes before or after that, then the Selections
@@ -2223,9 +2233,9 @@ bool DocumentRedlineManager::RejectRedline( sal_uInt16 nPos, bool bCallDelete )
     bool bRet = false;
 
     // Switch to visible in any case
-    if( (nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_SHOW_DELETE) !=
-        (nsRedlineMode_t::REDLINE_SHOW_MASK & meRedlineMode) )
-      SetRedlineMode( (RedlineMode_t)(nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_SHOW_DELETE | meRedlineMode));
+    if( (RedlineFlags::ShowInsert | RedlineFlags::ShowDelete) !=
+        (RedlineFlags::ShowMask & meRedlineFlags) )
+      SetRedlineFlags( RedlineFlags::ShowInsert | RedlineFlags::ShowDelete | meRedlineFlags );
 
     SwRangeRedline* pTmp = (*mpRedlineTable)[ nPos ];
     if( pTmp->HasMark() && pTmp->IsVisible() )
@@ -2289,9 +2299,9 @@ bool DocumentRedlineManager::RejectRedline( sal_uInt16 nPos, bool bCallDelete )
 bool DocumentRedlineManager::RejectRedline( const SwPaM& rPam, bool bCallDelete )
 {
     // Switch to visible in any case
-    if( (nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_SHOW_DELETE) !=
-        (nsRedlineMode_t::REDLINE_SHOW_MASK & meRedlineMode) )
-      SetRedlineMode((RedlineMode_t)(nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_SHOW_DELETE | meRedlineMode));
+    if( (RedlineFlags::ShowInsert | RedlineFlags::ShowDelete) !=
+        (RedlineFlags::ShowMask & meRedlineFlags) )
+      SetRedlineFlags( RedlineFlags::ShowInsert | RedlineFlags::ShowDelete | meRedlineFlags );
 
     // The Selection is only in the ContentSection. If there are Redlines
     // to Non-ContentNodes before or after that, then the Selections
@@ -2664,22 +2674,20 @@ void DocumentRedlineManager::SetAutoFormatRedlineComment( const OUString* pText,
 
 #define MAX_REDLINE_COUNT   250
 
-void DocumentRedlineManager::checkRedlining(RedlineMode_t& _rReadlineMode)
+void DocumentRedlineManager::checkRedlining(RedlineFlags& _rReadlineMode)
 {
     const SwRedlineTable& rRedlineTable = GetRedlineTable();
     SwEditShell* pEditShell = m_rDoc.GetEditShell();
     vcl::Window* pParent = pEditShell ? pEditShell->GetWin() : nullptr;
     if ( pParent && !mbReadlineChecked && rRedlineTable.size() > MAX_REDLINE_COUNT
-        && !((_rReadlineMode & nsRedlineMode_t::REDLINE_SHOW_DELETE) == nsRedlineMode_t::REDLINE_SHOW_DELETE) )
+        && !((_rReadlineMode & RedlineFlags::ShowDelete) == RedlineFlags::ShowDelete) )
     {
         ScopedVclPtrInstance< MessageDialog > aQuery(pParent, "QueryShowChangesDialog", "modules/swriter/ui/queryshowchangesdialog.ui");
         sal_uInt16 nResult = aQuery->Execute();
         mbReadlineChecked = true;
         if ( nResult == RET_YES )
         {
-            sal_Int32 nMode = (sal_Int32)_rReadlineMode;
-            nMode |= nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_SHOW_DELETE;
-            _rReadlineMode = (RedlineMode_t)nMode;
+            _rReadlineMode |= RedlineFlags::ShowInsert | RedlineFlags::ShowDelete;
         }
     }
 }

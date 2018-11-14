@@ -23,7 +23,7 @@
 
 #include <vcl/svapp.hxx>
 
-#include <toolkit/awt/Vclxwindow.hxx>
+#include <toolkit/awt/vclxwindow.hxx>
 
 #include "AccEventListener.hxx"
 #include "AccObjectManagerAgent.hxx"
@@ -112,7 +112,7 @@ void AccEventListener::HandleDescriptionChangedEvent(Any desc)
  */
 void AccEventListener::HandleBoundrectChangedEvent()
 {
-    pAgent->UpdateLocation(m_xAccessible.get());
+    AccObjectManagerAgent::UpdateLocation(m_xAccessible.get());
     pAgent->NotifyAccEvent(UM_EVENT_BOUNDRECT_CHANGED, m_xAccessible.get());
 }
 

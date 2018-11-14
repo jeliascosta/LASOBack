@@ -187,7 +187,7 @@ void SwDocTest::testFileNameFields()
 
     INetURLObject aTempFileURL(aTempFile.GetURL());
     OUString sFileURL = aTempFileURL.GetMainURL(INetURLObject::NO_DECODE);
-    SfxMedium aDstMed(sFileURL, STREAM_STD_READWRITE);
+    SfxMedium aDstMed(sFileURL, StreamMode::STD_READWRITE);
 
     std::shared_ptr<SfxFilter> pFilter(new SfxFilter(
         OUString("Text"),
@@ -310,9 +310,9 @@ SwTextNode* getModelToViewTestDocument(SwDoc *pDoc)
     aPaM.DeleteMark();
 
     //turn on red-lining and show changes
-    pDoc->getIDocumentRedlineAccess().SetRedlineMode(nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_SHOW_DELETE|nsRedlineMode_t::REDLINE_SHOW_INSERT);
+    pDoc->getIDocumentRedlineAccess().SetRedlineFlags(RedlineFlags::On | RedlineFlags::ShowDelete|RedlineFlags::ShowInsert);
     CPPUNIT_ASSERT_MESSAGE("redlining should be on", pDoc->getIDocumentRedlineAccess().IsRedlineOn());
-    CPPUNIT_ASSERT_MESSAGE("redlines should be visible", IDocumentRedlineAccess::IsShowChanges(pDoc->getIDocumentRedlineAccess().GetRedlineMode()));
+    CPPUNIT_ASSERT_MESSAGE("redlines should be visible", IDocumentRedlineAccess::IsShowChanges(pDoc->getIDocumentRedlineAccess().GetRedlineFlags()));
 
     //set start of selection to last A
     aPaM.GetPoint()->nContent.Assign(aPaM.GetContentNode(), 4);
@@ -377,7 +377,7 @@ void SwDocTest::testModelToViewHelperExpandFieldsExpandFootnoteReplaceMode()
             ExpandMode::ExpandFields | ExpandMode::ExpandFootnote | ExpandMode::ReplaceMode);
     OUString sViewText = aModelToViewHelper.getViewText();
     CPPUNIT_ASSERT_EQUAL(
-        OUString("AAAAA BBBBB " + OUString(CHAR_ZWSP) + " CCCCC " + OUString(CHAR_ZWSP) + " DDDDD"),
+        OUString("AAAAA BBBBB " + OUStringLiteral1(CHAR_ZWSP) + " CCCCC " + OUStringLiteral1(CHAR_ZWSP) + " DDDDD"),
         sViewText);
     CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(2),
         aModelToViewHelper.getFootnotePositions().size());
@@ -421,7 +421,7 @@ void SwDocTest::testModelToViewHelperExpandFieldsHideInvisible()
     ModelToViewHelper aModelToViewHelper(*pTextNode, ExpandMode::HideInvisible);
     OUString sViewText = aModelToViewHelper.getViewText();
     CPPUNIT_ASSERT_EQUAL(
-        OUString("AAAAA CCCCC " + OUStringLiteral1<CH_TXTATR_BREAKWORD>() + " DDDDD"),
+        OUString("AAAAA CCCCC " + OUStringLiteral1(CH_TXTATR_BREAKWORD) + " DDDDD"),
         sViewText);
 }
 
@@ -432,7 +432,7 @@ void SwDocTest::testModelToViewHelperExpandFieldsHideRedlined()
     ModelToViewHelper aModelToViewHelper(*pTextNode, ExpandMode::HideDeletions);
     OUString sViewText = aModelToViewHelper.getViewText();
     CPPUNIT_ASSERT_EQUAL(
-        OUString("AAAABB " + OUStringLiteral1<CH_TXTATR_BREAKWORD>() + " CCCCC " + OUStringLiteral1<CH_TXTATR_BREAKWORD>() + " DDDDD"),
+        OUString("AAAABB " + OUStringLiteral1(CH_TXTATR_BREAKWORD) + " CCCCC " + OUStringLiteral1(CH_TXTATR_BREAKWORD) + " DDDDD"),
         sViewText);
 }
 
@@ -453,7 +453,7 @@ void SwDocTest::testModelToViewHelperExpandFieldsHideInvisibleExpandFootnoteRepl
         ExpandMode::ExpandFields | ExpandMode::HideInvisible | ExpandMode::ExpandFootnote | ExpandMode::ReplaceMode);
     OUString sViewText = aModelToViewHelper.getViewText();
     CPPUNIT_ASSERT_EQUAL(
-        OUString("AAAAA CCCCC " + OUString(CHAR_ZWSP) + " DDDDD"),
+        OUString("AAAAA CCCCC " + OUStringLiteral1(CHAR_ZWSP) + " DDDDD"),
         sViewText);
     CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(1),
         aModelToViewHelper.getFootnotePositions().size());
@@ -481,7 +481,7 @@ void SwDocTest::testModelToViewHelperExpandFieldsHideHideRedlinedExpandFootnoteR
         ExpandMode::ExpandFields | ExpandMode::HideDeletions | ExpandMode::ExpandFootnote | ExpandMode::ReplaceMode);
     OUString sViewText = aModelToViewHelper.getViewText();
     CPPUNIT_ASSERT_EQUAL(
-       OUString("AAAABB " + OUString(CHAR_ZWSP) + " CCCCC " + OUString(CHAR_ZWSP) + " DDDDD"),
+       OUString("AAAABB " + OUStringLiteral1(CHAR_ZWSP) + " CCCCC " + OUStringLiteral1(CHAR_ZWSP) + " DDDDD"),
        sViewText);
     CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(2),
         aModelToViewHelper.getFootnotePositions().size());
@@ -523,7 +523,7 @@ void SwDocTest::testModelToViewHelperExpandFieldsHideInvisibleHideRedlinedExpand
         ExpandMode::ExpandFields | ExpandMode::HideInvisible | ExpandMode::HideDeletions | ExpandMode::ExpandFootnote | ExpandMode::ReplaceMode);
     OUString sViewText = aModelToViewHelper.getViewText();
     CPPUNIT_ASSERT_EQUAL(sViewText,
-        OUString("AAAACCCCC " + OUString(CHAR_ZWSP) + " DDDDD"));
+        OUString("AAAACCCCC " + OUStringLiteral1(CHAR_ZWSP) + " DDDDD"));
     CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(1),
         aModelToViewHelper.getFootnotePositions().size());
     CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(10),
@@ -549,7 +549,7 @@ void SwDocTest::testModelToViewHelperExpandFieldsExpandFootnoteReplaceMode2()
         ExpandMode::ExpandFields | ExpandMode::ExpandFootnote | ExpandMode::ReplaceMode);
     OUString sViewText = aModelToViewHelper.getViewText();
     CPPUNIT_ASSERT_EQUAL(
-        OUString("AAAAA" + OUString(CHAR_ZWSP) + "CCCCC"),
+        OUString("AAAAA" + OUStringLiteral1(CHAR_ZWSP) + "CCCCC"),
         sViewText);
     CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(0),
         aModelToViewHelper.getFootnotePositions().size());
@@ -743,9 +743,9 @@ void SwDocTest::testSwScanner()
         CPPUNIT_ASSERT_EQUAL(aDocStat.nWord, static_cast<sal_uLong>(2));
 
         //turn on red-lining and show changes
-        m_pDoc->getIDocumentRedlineAccess().SetRedlineMode(nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_SHOW_DELETE|nsRedlineMode_t::REDLINE_SHOW_INSERT);
+        m_pDoc->getIDocumentRedlineAccess().SetRedlineFlags(RedlineFlags::On | RedlineFlags::ShowDelete|RedlineFlags::ShowInsert);
         CPPUNIT_ASSERT_MESSAGE("redlining should be on", m_pDoc->getIDocumentRedlineAccess().IsRedlineOn());
-        CPPUNIT_ASSERT_MESSAGE("redlines should be visible", IDocumentRedlineAccess::IsShowChanges(m_pDoc->getIDocumentRedlineAccess().GetRedlineMode()));
+        CPPUNIT_ASSERT_MESSAGE("redlines should be visible", IDocumentRedlineAccess::IsShowChanges(m_pDoc->getIDocumentRedlineAccess().GetRedlineFlags()));
 
         //delete everything except the first word
         aPaM.SetMark(); //set start of selection to current pos
@@ -762,9 +762,9 @@ void SwDocTest::testSwScanner()
         pTextNode->SetWordCountDirty(true);
 
         //keep red-lining on but hide changes
-        m_pDoc->getIDocumentRedlineAccess().SetRedlineMode(nsRedlineMode_t::REDLINE_ON);
+        m_pDoc->getIDocumentRedlineAccess().SetRedlineFlags(RedlineFlags::On);
         CPPUNIT_ASSERT_MESSAGE("redlining should be still on", m_pDoc->getIDocumentRedlineAccess().IsRedlineOn());
-        CPPUNIT_ASSERT_MESSAGE("redlines should be invisible", !IDocumentRedlineAccess::IsShowChanges(m_pDoc->getIDocumentRedlineAccess().GetRedlineMode()));
+        CPPUNIT_ASSERT_MESSAGE("redlines should be invisible", !IDocumentRedlineAccess::IsShowChanges(m_pDoc->getIDocumentRedlineAccess().GetRedlineFlags()));
 
         aDocStat.Reset();
         pTextNode->CountWords(aDocStat, 0, pTextNode->Len()); //but word-counting the text should only count the non-deleted text
@@ -794,7 +794,7 @@ void SwDocTest::testSwScanner()
 
         // https://bugs.libreoffice.org/show_bug.cgi?id=68347 we do want to count
         // redline *added* text though
-        m_pDoc->getIDocumentRedlineAccess().SetRedlineMode(nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_SHOW_DELETE|nsRedlineMode_t::REDLINE_SHOW_INSERT);
+        m_pDoc->getIDocumentRedlineAccess().SetRedlineFlags(RedlineFlags::On | RedlineFlags::ShowDelete|RedlineFlags::ShowInsert);
         aPaM.DeleteMark();
         aPaM.GetPoint()->nContent.Assign(aPaM.GetContentNode(), 0);
         m_pDoc->getIDocumentContentOperations().InsertString(aPaM, "redline-new-text ");
@@ -1036,7 +1036,7 @@ getRandomPosition(SwDoc *pDoc, int /* nOffset */)
     SwPaM pam(aPos);
     for (sal_uLong i = 0; i < n; ++i)
     {
-        pam.Move(fnMoveBackward, fnGoNode);
+        pam.Move(fnMoveBackward, GoInNode);
     }
     return *pam.GetPoint();
 }
@@ -1044,15 +1044,15 @@ getRandomPosition(SwDoc *pDoc, int /* nOffset */)
 void SwDocTest::randomTest()
 {
     CPPUNIT_ASSERT_MESSAGE("SwDoc::IsRedlineOn()", !m_pDoc->getIDocumentRedlineAccess().IsRedlineOn());
-    RedlineMode_t modes[] = {
-        nsRedlineMode_t::REDLINE_ON,
-        nsRedlineMode_t::REDLINE_SHOW_MASK,
-        nsRedlineMode_t::REDLINE_NONE,
-        nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_SHOW_MASK,
-        nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_IGNORE,
-        nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_IGNORE | nsRedlineMode_t::REDLINE_SHOW_MASK,
-        nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_SHOW_INSERT,
-        nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_SHOW_DELETE
+    RedlineFlags modes[] = {
+        RedlineFlags::On,
+        RedlineFlags::ShowMask,
+        RedlineFlags::NONE,
+        RedlineFlags::On | RedlineFlags::ShowMask,
+        RedlineFlags::On | RedlineFlags::Ignore,
+        RedlineFlags::On | RedlineFlags::Ignore | RedlineFlags::ShowMask,
+        RedlineFlags::On | RedlineFlags::ShowInsert,
+        RedlineFlags::On | RedlineFlags::ShowDelete
     };
     static const char *authors[] = {
         "Jim", "Bob", "JimBobina", "Helga", "Gertrude", "Spagna", "Hurtleweed"
@@ -1063,7 +1063,7 @@ void SwDocTest::randomTest()
         m_pDoc->ClearDoc();
 
         // setup redlining
-        m_pDoc->getIDocumentRedlineAccess().SetRedlineMode(modes[rlm]);
+        m_pDoc->getIDocumentRedlineAccess().SetRedlineFlags(modes[rlm]);
         SW_MOD()->SetRedlineAuthor(OUString::createFromAscii(authors[0]));
 
         for( int i = 0; i < 2000; i++ )
@@ -1238,19 +1238,22 @@ void SwDocTest::testMarkMove()
         m_pDoc->getIDocumentContentOperations().InsertString(aPaM, "Paragraph 1");
         aPaM.SetMark();
         aPaM.GetMark()->nContent -= aPaM.GetMark()->nContent.GetIndex();
-        pMarksAccess->makeMark(aPaM, "Para1", IDocumentMarkAccess::MarkType::BOOKMARK);
+        pMarksAccess->makeMark(aPaM, "Para1",
+            IDocumentMarkAccess::MarkType::BOOKMARK, sw::mark::InsertMode::New);
 
         m_pDoc->getIDocumentContentOperations().AppendTextNode(*aPaM.GetPoint());
         m_pDoc->getIDocumentContentOperations().InsertString(aPaM, "Paragraph 2");
         aPaM.SetMark();
         aPaM.GetMark()->nContent -= aPaM.GetMark()->nContent.GetIndex();
-        pMarksAccess->makeMark(aPaM, "Para2", IDocumentMarkAccess::MarkType::BOOKMARK);
+        pMarksAccess->makeMark(aPaM, "Para2",
+            IDocumentMarkAccess::MarkType::BOOKMARK, sw::mark::InsertMode::New);
 
         m_pDoc->getIDocumentContentOperations().AppendTextNode(*aPaM.GetPoint());
         m_pDoc->getIDocumentContentOperations().InsertString(aPaM, "Paragraph 3");
         aPaM.SetMark();
         aPaM.GetMark()->nContent -= aPaM.GetMark()->nContent.GetIndex();
-        pMarksAccess->makeMark(aPaM, "Para3", IDocumentMarkAccess::MarkType::BOOKMARK);
+        pMarksAccess->makeMark(aPaM, "Para3",
+            IDocumentMarkAccess::MarkType::BOOKMARK, sw::mark::InsertMode::New);
     }
 
     // join paragraph 2 and 3 and check
@@ -1659,6 +1662,30 @@ void SwDocTest::testTableCellComparison()
     CPPUNIT_ASSERT_EQUAL( +1, sw_CompareCellRanges("A2", "Z2", "A1", "Z1", false) );
     CPPUNIT_ASSERT_EQUAL( +1, sw_CompareCellRanges("A2", "Z2", "A1", "Z1", true) );
     CPPUNIT_ASSERT_EQUAL( +1, sw_CompareCellRanges("A6", "Z2", "A1", "Z1", true) );
+
+    OUString rCell1 = OUString("A1");
+    OUString rCell2 = OUString("C5");
+
+    sw_NormalizeRange(rCell1, rCell2);
+    CPPUNIT_ASSERT_EQUAL( OUString("A1"), rCell1 );
+    CPPUNIT_ASSERT_EQUAL( OUString("C5"), rCell2 );
+
+    sw_NormalizeRange(rCell2, rCell1);
+    CPPUNIT_ASSERT_EQUAL( OUString("C5"), rCell1 );
+    CPPUNIT_ASSERT_EQUAL( OUString("A1"), rCell2 );
+
+    rCell1 = OUString("A5");
+    rCell2 = OUString("C1");
+
+    sw_NormalizeRange(rCell1, rCell2);
+    CPPUNIT_ASSERT_EQUAL( OUString("A1"), rCell1 );
+    CPPUNIT_ASSERT_EQUAL( OUString("C5"), rCell2 );
+
+    sw_NormalizeRange(rCell2, rCell1);
+    CPPUNIT_ASSERT_EQUAL( OUString("C5"), rCell1 );
+    CPPUNIT_ASSERT_EQUAL( OUString("A1"), rCell2 );
+
+    CPPUNIT_ASSERT_EQUAL( OUString(), sw_GetCellName(-1, -1) );
 }
 
 void SwDocTest::setUp()

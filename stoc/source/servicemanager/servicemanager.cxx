@@ -17,6 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <o3tl/any.hxx>
 #include <osl/mutex.hxx>
 #include <osl/diagnose.h>
 #include <rtl/ref.hxx>
@@ -158,7 +161,7 @@ public:
         : aFactories( rFactories )
         , nIt( 0 )
         {}
-    virtual ~ServiceEnumeration_Impl() {}
+    virtual ~ServiceEnumeration_Impl() override {}
 
     // XEnumeration
     sal_Bool SAL_CALL hasMoreElements()
@@ -250,7 +253,7 @@ public:
         : aImplementationMap( rImplementationMap )
         , aIt( aImplementationMap.begin() )
         {}
-    virtual ~ImplementationEnumeration_Impl();
+    virtual ~ImplementationEnumeration_Impl() override;
 
     // XEnumeration
     virtual sal_Bool SAL_CALL hasMoreElements()
@@ -369,7 +372,7 @@ class OServiceManager
 {
 public:
     explicit OServiceManager( Reference< XComponentContext > const & xContext );
-    virtual ~OServiceManager();
+    virtual ~OServiceManager() override;
 
     // XInitialization
     void SAL_CALL initialize( Sequence< Any > const & args )
@@ -493,7 +496,7 @@ class OServiceManagerWrapper : public OServiceManagerMutex, public t_OServiceMan
 {
     Reference< XComponentContext > m_xContext;
     Reference< XMultiComponentFactory > m_root;
-    inline Reference< XMultiComponentFactory > getRoot()
+    Reference< XMultiComponentFactory > const & getRoot()
     {
         if (! m_root.is())
         {
@@ -509,7 +512,7 @@ protected:
 public:
     explicit OServiceManagerWrapper(
         Reference< XComponentContext > const & xContext );
-    virtual ~OServiceManagerWrapper();
+    virtual ~OServiceManagerWrapper() override;
 
     // XServiceInfo
     virtual OUString SAL_CALL getImplementationName() throw (RuntimeException, std::exception) override
@@ -848,7 +851,7 @@ Sequence< OUString > OServiceManager::getUniqueAvailableServiceNames(
         aNameSet.insert( (*aIt++).first );
     */
 
-    return comphelper::containerToSequence<OUString>(aNameSet);
+    return comphelper::containerToSequence(aNameSet);
 }
 
 // XMultiComponentFactory
@@ -1111,12 +1114,10 @@ sal_Bool OServiceManager::has( const Any & Element )
         return m_ImplementationMap.find( xEle ) !=
             m_ImplementationMap.end();
     }
-    else if (Element.getValueTypeClass() == TypeClass_STRING)
+    else if (auto implName = o3tl::tryAccess<OUString>(Element))
     {
-        OUString const & implName =
-            *static_cast< OUString const * >(Element.getValue());
         MutexGuard aGuard( m_mutex );
-        return m_ImplementationNameMap.find( implName ) !=
+        return m_ImplementationNameMap.find( *implName ) !=
             m_ImplementationNameMap.end();
     }
     return false;
@@ -1160,7 +1161,7 @@ void OServiceManager::insert( const Any & Element )
         for( sal_Int32 i = 0; i < aServiceNames.getLength(); i++ )
         {
             m_ServiceMap.insert( HashMultimap_OWString_Interface::value_type(
-                pArray[i], *static_cast<Reference<XInterface > const *>(Element.getValue()) ) );
+                pArray[i], *o3tl::doAccess<Reference<XInterface>>(Element) ) );
         }
     }
     }
@@ -1190,17 +1191,15 @@ void OServiceManager::remove( const Any & Element )
     {
         xEle.set( Element, UNO_QUERY_THROW );
     }
-    else if (Element.getValueTypeClass() == TypeClass_STRING)
+    else if (auto implName = o3tl::tryAccess<OUString>(Element))
     {
-        OUString const & implName =
-            *static_cast< OUString const * >(Element.getValue());
         MutexGuard aGuard( m_mutex );
         HashMap_OWString_Interface::const_iterator const iFind(
-            m_ImplementationNameMap.find( implName ) );
+            m_ImplementationNameMap.find( *implName ) );
         if (iFind == m_ImplementationNameMap.end())
         {
             throw NoSuchElementException(
-                "element is not in: " + implName,
+                "element is not in: " + *implName,
                 static_cast< OWeakObject * >(this) );
         }
         xEle = iFind->second;
@@ -1271,7 +1270,7 @@ class ORegistryServiceManager : public OServiceManager
 {
 public:
     explicit ORegistryServiceManager( Reference< XComponentContext > const & xContext );
-    virtual ~ORegistryServiceManager();
+    virtual ~ORegistryServiceManager() override;
 
     // XInitialization
     void SAL_CALL initialize(const Sequence< Any >& Arguments)

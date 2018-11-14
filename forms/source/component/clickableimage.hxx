@@ -77,7 +77,7 @@ namespace frm
         css::uno::Reference< css::form::submission::XSubmission >
                                                 m_xSubmissionDelegate;
 
-        DECL_LINK_TYPED( DownloadDoneLink, void*, void );
+        DECL_LINK( DownloadDoneLink, void*, void );
 
         inline ImageProducer* GetImageProducer() { return m_pProducer; }
 
@@ -97,7 +97,7 @@ namespace frm
             const OUString& _rDefault
         );
         DECLARE_DEFAULT_CLONE_CTOR( OClickableImageBaseModel )
-        virtual ~OClickableImageBaseModel();
+        virtual ~OClickableImageBaseModel() override;
 
         // UNO Binding
         DECLARE_UNO3_AGG_DEFAULTS(OClickableImageBaseModel, OControlModel)
@@ -115,7 +115,7 @@ namespace frm
         virtual void SAL_CALL setFastPropertyValue_NoBroadcast(sal_Int32 nHandle, const css::uno::Any& rValue) throw (css::uno::Exception, std::exception) override;
 
         virtual sal_Bool SAL_CALL convertFastPropertyValue(css::uno::Any& rConvertedValue, css::uno::Any& rOldValue, sal_Int32 nHandle, const css::uno::Any& rValue )
-            throw(css::lang::IllegalArgumentException) override;
+            throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
         using ::cppu::OPropertySetHelper::getFastPropertyValue;
 
@@ -153,7 +153,7 @@ namespace frm
         // to be called from within the cloning-ctor of your derived class
         void implInitializeImageURL( );
 
-        DECL_LINK_TYPED( OnImageImportDone, ::Graphic*, void );
+        DECL_LINK( OnImageImportDone, ::Graphic*, void );
     };
 
     class ImageModelMethodGuard : public ::osl::MutexGuard
@@ -187,10 +187,10 @@ namespace frm
         friend class OImageProducerThread_Impl;
 
     private:
-        OImageProducerThread_Impl*          m_pThread;
+        rtl::Reference<OImageProducerThread_Impl>  m_pThread;
         ::comphelper::OInterfaceContainerHelper2   m_aSubmissionVetoListeners;
         ::std::unique_ptr< ControlFeatureInterception >
-                                            m_pFeatureInterception;
+                                                   m_pFeatureInterception;
 
     protected:
         ::comphelper::OInterfaceContainerHelper2 m_aApproveActionListeners;
@@ -213,7 +213,7 @@ namespace frm
         OClickableImageBaseControl(
             const css::uno::Reference< css::uno::XComponentContext>& _rxFactory,
             const OUString& _aService);
-        virtual ~OClickableImageBaseControl();
+        virtual ~OClickableImageBaseControl() override;
 
     protected:
         // UNO Binding

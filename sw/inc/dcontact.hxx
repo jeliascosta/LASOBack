@@ -105,7 +105,7 @@ public:
 
     /// For reader. Only the connection is created.
     SwContact( SwFrameFormat *pToRegisterIn );
-    virtual ~SwContact();
+    virtual ~SwContact() override;
 
     virtual const SwAnchoredObject* GetAnchoredObj( const SdrObject* _pSdrObj ) const = 0;
     virtual SwAnchoredObject* GetAnchoredObj( SdrObject* _pSdrObj ) = 0;
@@ -197,7 +197,7 @@ public:
 
     /// Creates DrawObject and registers it with the Model.
     SwFlyDrawContact( SwFlyFrameFormat* pToRegisterIn, SdrModel* pMod );
-    virtual ~SwFlyDrawContact();
+    virtual ~SwFlyDrawContact() override;
 
     virtual const SwAnchoredObject* GetAnchoredObj( const SdrObject* _pSdrObj ) const override;
     virtual SwAnchoredObject* GetAnchoredObj( SdrObject* _pSdrObj ) override;
@@ -242,7 +242,7 @@ class SwDrawVirtObj : public SdrVirtObj
 
         SwDrawVirtObj( SdrObject&       _rNewObj,
                        SwDrawContact&   _rDrawContact );
-        virtual ~SwDrawVirtObj();
+        virtual ~SwDrawVirtObj() override;
 
         /// access to offset
         virtual const Point GetOffset() const override;
@@ -298,10 +298,6 @@ class SwDrawVirtObj : public SdrVirtObj
         virtual SdrLayerID GetLayer() const override;
         virtual void NbcSetLayer(SdrLayerID nLayer) override;
         virtual void SetLayer(SdrLayerID nLayer) override;
-
-        /// FullDrag support
-        virtual bool supportsFullDrag() const override;
-        virtual SdrObject* getFullDragClone() const override;
 
         virtual void SetBoundRectDirty() override;
         virtual const Rectangle& GetCurrentBoundRect() const override;
@@ -387,7 +383,7 @@ class SwDrawContact : public SwContact
     public:
 
         SwDrawContact( SwFrameFormat *pToRegisterIn, SdrObject *pObj );
-        virtual ~SwDrawContact();
+        virtual ~SwDrawContact() override;
 
         virtual const SwAnchoredObject* GetAnchoredObj( const SdrObject* _pSdrObj ) const override;
         virtual SwAnchoredObject* GetAnchoredObj( SdrObject* _pSdrObj ) override;
@@ -406,10 +402,6 @@ class SwDrawContact : public SwContact
         inline SwPageFrame* GetPageFrame()
         {
             return maAnchoredDrawObj.GetPageFrame();
-        }
-        void SetPageFrame( SwPageFrame* _pNewPageFrame )
-        {
-            return maAnchoredDrawObj.SetPageFrame( _pNewPageFrame );
         }
         void ChkPage();
         SwPageFrame* FindPage( const SwRect &rRect );

@@ -59,9 +59,6 @@ using comphelper::string::getTokenCount;
 OString*  pStdParType  = nullptr;
 OString*  pStdPar1     = nullptr;
 OString*  pStdPar2     = nullptr;
-OString*  pWinParType  = nullptr;
-OString*  pWinPar1     = nullptr;
-OString*  pWinPar2     = nullptr;
 sal_uInt32      nRefDeep     = 10;
 AtomContainer*  pHS          = nullptr;
 
@@ -296,7 +293,6 @@ OString RscCmdLine::substitutePaths( const OString& rIn )
 
 RscCompiler::RscCompiler( RscCmdLine * pLine, RscTypCont * pTypCont )
 {
-    fListing      = nullptr;
     fExitFile     = nullptr;
 
     //Set Command Line, set Type Container
@@ -307,9 +303,6 @@ RscCompiler::RscCompiler( RscCmdLine * pLine, RscTypCont * pTypCont )
 RscCompiler::~RscCompiler()
 {
     pTC->pEH->SetListFile( nullptr );
-
-    if( fListing )
-        fclose( fListing );
 
     if( fExitFile )
         fclose( fExitFile );
@@ -346,7 +339,7 @@ ERRTYPE RscCompiler::Start()
                 aIndex = pTC->aFileTab.NextIndex( aIndex );
             }
 
-            pTC->pEH->SetListFile( fListing );
+            pTC->pEH->SetListFile( nullptr );
         }
     }
 
@@ -621,10 +614,10 @@ ERRTYPE RscCompiler::Link()
             }
             catch (RscIoError&)
             {
-                OString sMsg("Error with paths:\n");
-                sMsg += "temporary rc file: " + aRcTmp + "\n";
-                sMsg += "temporary ilst file: " + aSysListTmp + "\n";
-                sMsg += "ilst file: " + aSysList + "\n";
+                OString sMsg = "Error with paths:\n"
+                        "temporary rc file: " + aRcTmp + "\n"
+                        "temporary ilst file: " + aSysListTmp + "\n"
+                        "ilst file: " + aSysList + "\n";
                 pTC->pEH->FatalError(ERR_OPENFILE, RscId(), sMsg.getStr());
             }
             if ( nullptr == (fExitFile = foutput = fopen( aRcTmp.getStr(), "wb" )) )
@@ -867,7 +860,7 @@ void RscCompiler::PreprocessSrsFile( const RscCmdLine::OutputFile& rOutputFile,
 
                 if (aLine.indexOf(';') == -1)
                 {
-                    const sal_Size nImgListStartPos = aIStm.Tell();
+                    const sal_uInt64 nImgListStartPos = aIStm.Tell();
 
                     do
                     {
@@ -894,7 +887,7 @@ void RscCompiler::PreprocessSrsFile( const RscCmdLine::OutputFile& rOutputFile,
 
                         aLine = comphelper::string::stripStart(aLine, ' ');
                         aLine = comphelper::string::stripStart(aLine, '\t');
-                        aLine = comphelper::string::remove(aLine, ';');
+                        aLine = aLine.replaceAll(";", "");
 
                         if (comphelper::string::isdigitAsciiString(aLine))
                         {
@@ -913,7 +906,7 @@ void RscCompiler::PreprocessSrsFile( const RscCmdLine::OutputFile& rOutputFile,
                         }
                     }
 
-                    const sal_Size nImgListEndPos = aIStm.Tell();
+                    const sal_uInt64 nImgListEndPos = aIStm.Tell();
                     aIStm.Seek( nImgListStartPos );
                     while( aIStm.Tell() < nImgListEndPos )
                     {

@@ -7,9 +7,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+#include <cassert>
+#include <limits>
+
 #include "clang/Lex/Lexer.h"
 
-#include "compat.hxx"
 #include "plugin.hxx"
 
 namespace {
@@ -27,11 +29,17 @@ public:
 
     bool VisitImplicitCastExpr(ImplicitCastExpr const * expr);
 
+    bool TraverseLinkageSpecDecl(LinkageSpecDecl * decl);
+
 private:
     bool isFromCIncludeFile(SourceLocation spellingLocation) const;
 
+    bool isSharedCAndCppCode(SourceLocation location) const;
+
     void handleImplicitCastSubExpr(
         ImplicitCastExpr const * castExpr, Expr const * subExpr);
+
+    unsigned int externCContexts_ = 0;
 };
 
 bool LiteralToBoolConversion::VisitImplicitCastExpr(
@@ -47,14 +55,34 @@ bool LiteralToBoolConversion::VisitImplicitCastExpr(
     return true;
 }
 
+bool LiteralToBoolConversion::TraverseLinkageSpecDecl(LinkageSpecDecl * decl) {
+    assert(externCContexts_ != std::numeric_limits<unsigned int>::max()); //TODO
+    ++externCContexts_;
+    bool ret = RecursiveASTVisitor::TraverseLinkageSpecDecl(decl);
+    assert(externCContexts_ != 0);
+    --externCContexts_;
+    return ret;
+}
+
 bool LiteralToBoolConversion::isFromCIncludeFile(
     SourceLocation spellingLocation) const
 {
-    return !compat::isInMainFile(compiler.getSourceManager(), spellingLocation)
+    return !compiler.getSourceManager().isInMainFile(spellingLocation)
         && (StringRef(
                 compiler.getSourceManager().getPresumedLoc(spellingLocation)
                 .getFilename())
             .endswith(".h"));
+}
+
+bool LiteralToBoolConversion::isSharedCAndCppCode(SourceLocation location) const
+{
+    // Assume that code is intended to be shared between C and C++ if it comes
+    // from an include file ending in .h, and is either in an extern "C" context
+    // or the body of a macro definition:
+    return
+        isFromCIncludeFile(compiler.getSourceManager().getSpellingLoc(location))
+        && (externCContexts_ != 0
+            || compiler.getSourceManager().isMacroBodyExpansion(location));
 }
 
 void LiteralToBoolConversion::handleImplicitCastSubExpr(
@@ -93,16 +121,14 @@ void LiteralToBoolConversion::handleImplicitCastSubExpr(
         while (compiler.getSourceManager().isMacroArgExpansion(loc)) {
             loc = compiler.getSourceManager().getImmediateMacroCallerLoc(loc);
         }
-        if (compat::isMacroBodyExpansion(compiler, loc)) {
+        if (compiler.getSourceManager().isMacroBodyExpansion(loc)) {
             StringRef name { Lexer::getImmediateMacroName(
                 loc, compiler.getSourceManager(), compiler.getLangOpts()) };
             if (name == "sal_False" || name == "sal_True") {
                 loc = compiler.getSourceManager().getImmediateExpansionRange(
                     loc).first;
             }
-            if (isFromCIncludeFile(
-                    compiler.getSourceManager().getSpellingLoc(loc)))
-            {
+            if (isSharedCAndCppCode(loc)) {
                 return;
             }
         }

@@ -66,7 +66,6 @@ struct PopupControllerEntry
 
 typedef std::unordered_map< OUString, PopupControllerEntry, OUStringHash > PopupControllerCache;
 
-class BmkMenu;
 class AddonMenu;
 class AddonPopupMenu;
 class MenuBarManager : public css::frame::XStatusListener                ,
@@ -82,9 +81,7 @@ class MenuBarManager : public css::frame::XStatusListener                ,
             const css::uno::Reference< css::frame::XFrame >& rFrame,
             const css::uno::Reference< css::util::XURLTransformer >& _xURLTransformer,
             Menu*           pAddonMenu,
-            bool            bDelete,
-            bool            bDeleteChildren,
-            bool popup);
+            bool            popup);
 
     public:
         MenuBarManager(
@@ -95,10 +92,9 @@ class MenuBarManager : public css::frame::XStatusListener                ,
             const OUString& aModuleIdentifier,
             Menu* pMenu,
             bool bDelete,
-            bool bDeleteChildren,
             bool bHasMenuBar = true );
 
-        virtual ~MenuBarManager();
+        virtual ~MenuBarManager() override;
 
         // XInterface
         virtual void SAL_CALL acquire() throw() override;
@@ -127,7 +123,7 @@ class MenuBarManager : public css::frame::XStatusListener                ,
         // XSystemDependentMenuPeer
         virtual css::uno::Any SAL_CALL getMenuHandle( const css::uno::Sequence< sal_Int8 >& ProcessId, sal_Int16 SystemType ) throw (css::uno::RuntimeException, std::exception) override;
 
-        DECL_LINK_TYPED( Select, Menu *, bool );
+        DECL_LINK( Select, Menu *, bool );
 
         Menu*   GetMenuBar() const { return m_pVCLMenu; }
 
@@ -146,16 +142,14 @@ class MenuBarManager : public css::frame::XStatusListener                ,
                               const css::uno::Reference< css::frame::XFrame >& rFrame,
                               const css::uno::Reference< css::frame::XDispatchProvider >& rDispatchProvider,
                               const OUString& rModuleIdentifier,
-                              bool bDelete,
-                              bool bDeleteChildren );
+                              bool bDelete );
         void SetItemContainer( const css::uno::Reference< css::container::XIndexAccess >& rItemContainer );
         void GetPopupController( PopupControllerCache& rPopupController );
 
     protected:
-        DECL_LINK_TYPED(Highlight, Menu *, bool);
-        DECL_LINK_TYPED( Activate, Menu *, bool );
-        DECL_LINK_TYPED( Deactivate, Menu *, bool );
-        DECL_LINK_TYPED( AsyncSettingsHdl, Timer *, void );
+        DECL_LINK( Activate, Menu *, bool );
+        DECL_LINK( Deactivate, Menu *, bool );
+        DECL_LINK( AsyncSettingsHdl, Timer *, void );
 
         void RemoveListener();
         void RequestImages();
@@ -199,13 +193,11 @@ class MenuBarManager : public css::frame::XStatusListener                ,
         bool         CreatePopupMenuController( MenuItemHandler* pMenuItemHandler );
         void             AddMenu(MenuBarManager* pSubMenuManager,const OUString& _sItemCommand,sal_uInt16 _nItemId);
         sal_uInt16           FillItemCommand(OUString& _rItemCommand, Menu* _pMenu,sal_uInt16 _nIndex) const;
-        void             Init(const css::uno::Reference< css::frame::XFrame >& rFrame,Menu* pAddonMenu,bool bDelete,bool bDeleteChildren,bool _bHandlePopUp);
+        void             Init(const css::uno::Reference< css::frame::XFrame >& rFrame,Menu* pAddonMenu,bool _bHandlePopUp);
         void             SetHdl();
 
         bool                                                         m_bDisposed;
-        bool                                                         m_bInitialized;
         bool                                                         m_bDeleteMenu;
-        bool                                                         m_bDeleteChildren;
         bool                                                         m_bActive;
         bool                                                         m_bIsBookmarkMenu;
         bool                                                         m_bShowMenuImages;
@@ -215,7 +207,7 @@ class MenuBarManager : public css::frame::XStatusListener                ,
         bool                                                         m_bHasMenuBar;
         OUString                                                     m_aMenuItemCommand;
         OUString                                                     m_aModuleIdentifier;
-        Menu*                                                        m_pVCLMenu;
+        VclPtr<Menu>                                                 m_pVCLMenu;
         css::uno::Reference< css::frame::XFrame >                    m_xFrame;
         css::uno::Reference< css::container::XNameAccess >           m_xUICommandLabels;
         css::uno::Reference< css::frame::XUIControllerFactory >      m_xPopupMenuControllerFactory;

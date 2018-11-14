@@ -63,8 +63,6 @@ struct SvGlobalHashNames
     SvStringHashEntryRef MM_FastCall;
     SvStringHashEntryRef MM_SbxObject;
     SvStringHashEntryRef MM_Container;
-    SvStringHashEntryRef MM_ImageRotation;
-    SvStringHashEntryRef MM_ImageReflection;
     SvStringHashEntryRef MM_ReadOnlyDoc;
     SvStringHashEntryRef MM_struct;
     SvStringHashEntryRef MM_SlotType;
@@ -90,7 +88,7 @@ inline SvStringHashEntry * SvHash_##Name()                   \
 {                                                            \
     if( !GetIdlApp().pGlobalNames )                          \
         GetIdlApp().pGlobalNames = new SvGlobalHashNames();  \
-    return GetIdlApp().pGlobalNames->MM_##Name;              \
+    return GetIdlApp().pGlobalNames->MM_##Name.get();      \
 }
 
 HASH_INLINE(module)
@@ -129,8 +127,6 @@ HASH_INLINE(AccelConfig)
 HASH_INLINE(FastCall)
 HASH_INLINE(SbxObject)
 HASH_INLINE(Container)
-HASH_INLINE(ImageRotation)
-HASH_INLINE(ImageReflection)
 HASH_INLINE(ReadOnlyDoc)
 HASH_INLINE(struct)
 HASH_INLINE(SlotType)

@@ -18,6 +18,7 @@
  */
 
 #include <cppuhelper/supportsservice.hxx>
+#include <o3tl/any.hxx>
 #include <vcl/svapp.hxx>
 
 #include "miscuno.hxx"
@@ -45,14 +46,7 @@ bool ScUnoHelpFunctions::GetBoolProperty( const uno::Reference<beans::XPropertyS
     {
         try
         {
-            uno::Any aAny(xProp->getPropertyValue( rName ));
-            //! type conversion???
-            //  operator >>= shouldn't be used for bool (?)
-            if ( aAny.getValueTypeClass() == uno::TypeClass_BOOLEAN )
-            {
-                //! safe way to get bool value from any???
-                bRet = *static_cast<sal_Bool const *>(aAny.getValue());
-            }
+            xProp->getPropertyValue( rName ) >>= bRet;
         }
         catch(uno::Exception&)
         {
@@ -60,6 +54,24 @@ bool ScUnoHelpFunctions::GetBoolProperty( const uno::Reference<beans::XPropertyS
         }
     }
     return bRet;
+}
+
+sal_Int16 ScUnoHelpFunctions::GetShortProperty( const css::uno::Reference< css::beans::XPropertySet>& xProp,
+                                                const OUString& rName, sal_Int16 nDefault )
+{
+    sal_Int16 nRet = nDefault;
+    if ( xProp.is() )
+    {
+        try
+        {
+            xProp->getPropertyValue( rName ) >>= nRet;
+        }
+        catch(uno::Exception&)
+        {
+            // keep default
+        }
+    }
+    return nRet;
 }
 
 sal_Int32 ScUnoHelpFunctions::GetLongProperty( const uno::Reference<beans::XPropertySet>& xProp,
@@ -131,9 +143,8 @@ OUString ScUnoHelpFunctions::GetStringProperty(
 
 bool ScUnoHelpFunctions::GetBoolFromAny( const uno::Any& aAny )
 {
-    if ( aAny.getValueTypeClass() == uno::TypeClass_BOOLEAN )
-        return *static_cast<sal_Bool const *>(aAny.getValue());
-    return false;
+    auto b = o3tl::tryAccess<bool>(aAny);
+    return b && *b;
 }
 
 sal_Int16 ScUnoHelpFunctions::GetInt16FromAny( const uno::Any& aAny )

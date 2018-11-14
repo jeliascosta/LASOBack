@@ -128,7 +128,7 @@ bool SwFEShell::Copy( SwDoc* pClpDoc, const OUString* pNewClpText )
     }
 
     pClpDoc->getIDocumentFieldsAccess().LockExpFields();
-    pClpDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( nsRedlineMode_t::REDLINE_DELETE_REDLINES );
+    pClpDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( RedlineFlags::DeleteRedlines );
     bool bRet;
 
     // do we want to copy a FlyFrame?
@@ -153,16 +153,16 @@ bool SwFEShell::Copy( SwDoc* pClpDoc, const OUString* pNewClpText )
         }
         pFlyFormat = pClpDoc->getIDocumentLayoutAccess().CopyLayoutFormat( *pFlyFormat, aAnchor, true, true );
 
-       // assure the "RootFormat" is the first element in Spz-Array
+        // assure the "RootFormat" is the first element in Spz-Array
         // (if necessary Flys were copied in Flys)
         SwFrameFormats& rSpzFrameFormats = *pClpDoc->GetSpzFrameFormats();
         if( rSpzFrameFormats[ 0 ] != pFlyFormat )
         {
-            SwFrameFormats::iterator it = std::find( rSpzFrameFormats.begin(), rSpzFrameFormats.end(), pFlyFormat );
-            OSL_ENSURE( it != rSpzFrameFormats.end(), "Fly not contained in Spz-Array" );
-
-            rSpzFrameFormats.erase( it );
-            rSpzFrameFormats.insert( rSpzFrameFormats.begin(), pFlyFormat );
+#ifndef NDEBUG
+            bool inserted =
+#endif
+                rSpzFrameFormats.newDefault( pFlyFormat );
+            assert( !inserted && "Fly not contained in Spz-Array" );
         }
 
         if ( FLY_AS_CHAR == aAnchor.GetAnchorId() )
@@ -227,7 +227,7 @@ bool SwFEShell::Copy( SwDoc* pClpDoc, const OUString* pNewClpText )
     else
         bRet = CopySelToDoc( pClpDoc );     // copy the selections
 
-    pClpDoc->getIDocumentRedlineAccess().SetRedlineMode_intern((RedlineMode_t)0 );
+    pClpDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( RedlineFlags::NONE );
     pClpDoc->getIDocumentFieldsAccess().UnlockExpFields();
     if( !pClpDoc->getIDocumentFieldsAccess().IsExpFieldsLocked() )
         pClpDoc->getIDocumentFieldsAccess().UpdateExpFields(nullptr, true);
@@ -466,8 +466,8 @@ bool SwFEShell::Copy( SwFEShell* pDestShell, const Point& rSttPt,
         // set a flag in Doc, handled in TextNodes
         mpDoc->SetCopyIsMove( true );
 
-    RedlineMode_t eOldRedlMode = pDestShell->GetDoc()->getIDocumentRedlineAccess().GetRedlineMode();
-    pDestShell->GetDoc()->getIDocumentRedlineAccess().SetRedlineMode_intern( (RedlineMode_t)(eOldRedlMode | nsRedlineMode_t::REDLINE_DELETE_REDLINES));
+    RedlineFlags eOldRedlMode = pDestShell->GetDoc()->getIDocumentRedlineAccess().GetRedlineFlags();
+    pDestShell->GetDoc()->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOldRedlMode | RedlineFlags::DeleteRedlines );
 
     // If there are table formulas in the area, then display the table first
     // so that the table formula can calculate a new value first
@@ -648,7 +648,7 @@ bool SwFEShell::Copy( SwFEShell* pDestShell, const Point& rSttPt,
             bRet = SwEditShell::Copy( pDestShell );
     }
 
-    pDestShell->GetDoc()->getIDocumentRedlineAccess().SetRedlineMode_intern( eOldRedlMode );
+    pDestShell->GetDoc()->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOldRedlMode );
     mpDoc->SetCopyIsMove( bCopyIsMove );
 
     // have new table formulas been inserted?
@@ -702,12 +702,12 @@ bool SwFEShell::Paste( SwDoc* pClpDoc )
         SwContentNode* pCNd = aCpyPam.GetNode().GetContentNode();
         if( pCNd )
             aCpyPam.GetPoint()->nContent.Assign( pCNd, 0 );
-        else if( !aCpyPam.Move( fnMoveForward, fnGoNode ))
-            aCpyPam.Move( fnMoveBackward, fnGoNode );
+        else if( !aCpyPam.Move( fnMoveForward, GoInNode ))
+            aCpyPam.Move( fnMoveBackward, GoInNode );
     }
 
     aCpyPam.SetMark();
-    aCpyPam.Move( fnMoveForward, fnGoDoc );
+    aCpyPam.Move( fnMoveForward, GoInDoc );
 
     bool bRet = true;
     StartAllAction();
@@ -902,7 +902,6 @@ bool SwFEShell::Paste( SwDoc* pClpDoc )
                 if( !Imp()->GetDrawView() )
                     MakeDrawView();
 
-                std::set<const SwFrameFormat*> aTextBoxes = SwTextBoxHelper::findTextBoxes(pClpDoc);
                 for ( auto pCpyFormat : *pClpDoc->GetSpzFrameFormats() )
                 {
                     bool bInsWithFormat = true;
@@ -972,7 +971,7 @@ bool SwFEShell::Paste( SwDoc* pClpDoc )
                             }
 
                             // Ignore TextBoxes, they are already handled in sw::DocumentLayoutManager::CopyLayoutFormat().
-                            if (aTextBoxes.find(pCpyFormat) != aTextBoxes.end())
+                            if (SwTextBoxHelper::isTextBox(pCpyFormat, RES_FLYFRMFMT))
                                 continue;
 
                             aAnchor.SetAnchor( pPos );
@@ -1116,7 +1115,7 @@ bool SwFEShell::PastePages( SwFEShell& rToFill, sal_uInt16 nStartPage, sal_uInt1
         Pop(false);
         return false;
     }
-    MovePage( fnPageCurr, fnPageStart );
+    MovePage( GetThisFrame, GetFirstSub );
     SwPaM aCpyPam( *GetCursor()->GetPoint() );
     OUString sStartingPageDesc = GetPageDesc( GetCurPageDesc()).GetName();
     SwPageDesc* pDesc = rToFill.FindPageDescByName( sStartingPageDesc, true );
@@ -1144,7 +1143,7 @@ bool SwFEShell::PastePages( SwFEShell& rToFill, sal_uInt16 nStartPage, sal_uInt1
         EndUndo(UNDO_INSERT);
     }
 
-    MovePage( fnPageCurr, fnPageEnd );
+    MovePage( GetThisFrame, GetLastSub );
     aCpyPam.SetMark();
     *aCpyPam.GetMark() = *GetCursor()->GetPoint();
 
@@ -1213,7 +1212,7 @@ bool SwFEShell::GetDrawObjGraphic( SotClipboardFormatId nFormat, Graphic& rGrf )
                     Graphic aGrf( *pGrf );
                     if( SotClipboardFormatId::GDIMETAFILE == nFormat )
                     {
-                        if( GRAPHIC_BITMAP != aGrf.GetType() )
+                        if( GraphicType::Bitmap != aGrf.GetType() )
                         {
                             rGrf = aGrf;
                             bConvert = false;
@@ -1240,7 +1239,7 @@ bool SwFEShell::GetDrawObjGraphic( SotClipboardFormatId nFormat, Graphic& rGrf )
                             rGrf = aMtf;
                         }
                     }
-                    else if( GRAPHIC_BITMAP == aGrf.GetType() )
+                    else if( GraphicType::Bitmap == aGrf.GetType() )
                     {
                         rGrf = aGrf;
                         bConvert = false;
@@ -1253,7 +1252,7 @@ bool SwFEShell::GetDrawObjGraphic( SotClipboardFormatId nFormat, Graphic& rGrf )
                         const Size aSz( GetSelectedFlyFrame()->Prt().SSize() );
                         ScopedVclPtrInstance< VirtualDevice > pVirtDev(*GetWin());
 
-                        MapMode aTmp( MAP_TWIP );
+                        MapMode aTmp( MapUnit::MapTwip );
                         pVirtDev->SetMapMode( aTmp );
                         if( pVirtDev->SetOutputSize( aSz ) )
                         {
@@ -1468,7 +1467,7 @@ void SwFEShell::Paste( SvStream& rStrm, SwPasteSdr nAction, const Point* pPt )
                     // for SdrGrafObj, use the graphic as fill style argument
                     const Graphic& rGraphic = pSdrGrafObj->GetGraphic();
 
-                    if(GRAPHIC_NONE != rGraphic.GetType() && GRAPHIC_DEFAULT != rGraphic.GetType())
+                    if(GraphicType::NONE != rGraphic.GetType() && GraphicType::Default != rGraphic.GetType())
                     {
                         aSet.Put(XFillBitmapItem(OUString(), rGraphic));
                         aSet.Put(XFillStyleItem(drawing::FillStyle_BITMAP));

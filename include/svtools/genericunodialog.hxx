@@ -68,13 +68,9 @@ namespace svt
             ,public ::comphelper::OMutexAndBroadcastHelper
             ,public ::comphelper::OPropertyContainer
     {
-    private:
-        ::osl::Mutex                    m_aExecutionMutex;  /// access safety for execute/cancel
-
     protected:
         VclPtr<Dialog>              m_pDialog;                  /// the dialog to execute
         bool                        m_bExecuting : 1;           /// we're currently executing the dialog
-        bool                        m_bCanceled : 1;            /// endDialog was called while we were executing
         bool                        m_bTitleAmbiguous : 1;      /// m_sTitle has not been set yet
         bool                        m_bInitialized : 1;         /// has "initialize" been called?
         bool                        m_bNeedInitialization : 1;  /// do we need to be initialized before any other API call is allowed?
@@ -91,7 +87,7 @@ namespace svt
 
     protected:
         OGenericUnoDialog(const css::uno::Reference< css::uno::XComponentContext >& _rxContext);
-        virtual ~OGenericUnoDialog();
+        virtual ~OGenericUnoDialog() override;
 
     public:
         // UNO
@@ -125,8 +121,8 @@ namespace svt
         */
         virtual VclPtr<Dialog> createDialog(vcl::Window* _pParent) = 0;
 
-        /// called to destroy the dialog used. the default implementation just deletes m_pDialog and resets it to NULL
-        virtual void destroyDialog();
+        /// called to destroy the dialog used. deletes m_pDialog and resets it to NULL
+        void destroyDialog();
 
         /** called after the dialog has been executed
             @param      _nExecutionResult       the execution result as returned by Dialog::Execute
@@ -142,7 +138,7 @@ namespace svt
         virtual void implInitialize(const css::uno::Any& _rValue);
 
     private:
-        DECL_LINK_TYPED( OnDialogDying, VclWindowEvent&, void );
+        DECL_LINK( OnDialogDying, VclWindowEvent&, void );
 
         /** ensures that m_pDialog is not <NULL/>
 

@@ -83,7 +83,6 @@ class TOOLS_DLLPUBLIC StringRangeEnumerator
         sal_Int32   nFirst;
         sal_Int32   nLast;
 
-        Range() : nFirst( -1 ), nLast( -1 ) {}
         Range( sal_Int32 i_nFirst, sal_Int32 i_nLast ) : nFirst( i_nFirst ), nLast( i_nLast ) {}
     };
     std::vector< StringRangeEnumerator::Range >            maSequence;
@@ -133,7 +132,6 @@ public:
     Iterator begin( const std::set< sal_Int32 >* i_pPossibleValues = nullptr ) const;
     Iterator end( const std::set< sal_Int32 >* i_pPossibleValues = nullptr ) const;
 
-    bool isValidInput() const { return mbValidInput; }
     bool hasValue( sal_Int32 nValue, const std::set< sal_Int32 >* i_pPossibleValues = nullptr ) const;
 
     /**
@@ -165,7 +163,7 @@ public:
                                      sal_Int32 i_nMinNumber,
                                      sal_Int32 i_nMaxNumber,
                                      sal_Int32 i_nLogicalOffset = -1,
-                                     std::set< sal_Int32 >* i_pPossibleValues = nullptr
+                                     std::set< sal_Int32 > const * i_pPossibleValues = nullptr
                                     );
 };
 

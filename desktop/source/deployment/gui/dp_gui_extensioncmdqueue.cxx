@@ -50,6 +50,7 @@
 #include <com/sun/star/uno/Sequence.hxx>
 #include <com/sun/star/uno/XInterface.hpp>
 #include <com/sun/star/uno/TypeClass.hpp>
+#include <o3tl/any.hxx>
 #include <osl/diagnose.h>
 #include <osl/mutex.hxx>
 #include <rtl/ref.hxx>
@@ -122,7 +123,6 @@ class ProgressCmdEnv
 
     DialogHelper*   m_pDialogHelper;
     OUString        m_sTitle;
-    bool            m_bAborted;
     bool            m_bWarnUser;
     sal_Int32       m_nCurrentProgress;
 
@@ -131,7 +131,7 @@ class ProgressCmdEnv
     void update_( uno::Any const & Status ) throw ( uno::RuntimeException );
 
 public:
-    virtual ~ProgressCmdEnv();
+    virtual ~ProgressCmdEnv() override;
 
     /** When param bAskWhenInstalling = true, then the user is asked if he
     agrees to install this extension. In case this extension is already installed
@@ -146,7 +146,6 @@ public:
         : m_xContext( rContext )
         , m_pDialogHelper( pDialogHelper )
         , m_sTitle( rTitle )
-        , m_bAborted( false )
         , m_bWarnUser( false )
         , m_nCurrentProgress(0)
         {}
@@ -156,8 +155,7 @@ public:
     void startProgress();
     void stopProgress();
     void progressSection( const OUString &rText,
-                          const uno::Reference< task::XAbortChannel > &xAbortChannel = nullptr );
-    inline bool isAborted() const { return m_bAborted; }
+                          const uno::Reference< task::XAbortChannel > &xAbortChannel );
     inline void setWarnUser( bool bNewVal ) { m_bWarnUser = bNewVal; }
 
     // XCommandEnvironment
@@ -232,7 +230,7 @@ public:
     bool isBusy();
 
 private:
-    virtual ~Thread();
+    virtual ~Thread() override;
 
     virtual void execute() override;
 
@@ -294,26 +292,20 @@ void ProgressCmdEnv::progressSection( const OUString &rText,
                                       const uno::Reference< task::XAbortChannel > &xAbortChannel )
 {
     m_xAbortChannel = xAbortChannel;
-    if (! m_bAborted)
+    m_nCurrentProgress = 0;
+    if ( m_pDialogHelper )
     {
-        m_nCurrentProgress = 0;
-        if ( m_pDialogHelper )
-        {
-            m_pDialogHelper->updateProgress( rText, xAbortChannel );
-            m_pDialogHelper->updateProgress( 5 );
-        }
+        m_pDialogHelper->updateProgress( rText, xAbortChannel );
+        m_pDialogHelper->updateProgress( 5 );
     }
 }
 
 
 void ProgressCmdEnv::updateProgress()
 {
-    if ( ! m_bAborted )
-    {
-        long nProgress = ((m_nCurrentProgress*5) % 100) + 5;
-        if ( m_pDialogHelper )
-            m_pDialogHelper->updateProgress( nProgress );
-    }
+    long nProgress = ((m_nCurrentProgress*5) % 100) + 5;
+    if ( m_pDialogHelper )
+        m_pDialogHelper->updateProgress( nProgress );
 }
 
 
@@ -449,7 +441,7 @@ void ProgressCmdEnv::handle( uno::Reference< task::XInteractionRequest > const &
         {
             SolarMutexGuard guard;
             ScopedVclPtrInstance<MessageDialog> box(m_pDialogHelper? m_pDialogHelper->getWindow() : nullptr,
-                                                    ResId(id, *DeploymentGuiResMgr::get()), VCL_MESSAGE_WARNING, VCL_BUTTONS_OK_CANCEL);
+                                                    ResId(id, *DeploymentGuiResMgr::get()), VclMessageType::Warning, VCL_BUTTONS_OK_CANCEL);
             OUString s;
             if (bEqualNames)
             {
@@ -562,8 +554,8 @@ void ProgressCmdEnv::update_( uno::Any const & rStatus )
     OUString text;
     if ( rStatus.hasValue() && !( rStatus >>= text) )
     {
-        if ( rStatus.getValueTypeClass() == uno::TypeClass_EXCEPTION )
-            text = static_cast< uno::Exception const *>( rStatus.getValue() )->Message;
+        if ( auto e = o3tl::tryAccess<uno::Exception>(rStatus) )
+            text = e->Message;
         if ( text.isEmpty() )
             text = ::comphelper::anyToString( rStatus ); // fallback
 
@@ -690,7 +682,7 @@ void ExtensionCmdQueue::Thread::execute()
     //Needed for use of the service "com.sun.star.system.SystemShellExecute" in
     //DialogHelper::openWebBrowser
     CoUninitialize();
-    (void) CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+    (void) CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 #endif
     for (;;)
     {
@@ -729,7 +721,7 @@ void ExtensionCmdQueue::Thread::execute()
         // addExtension is called, which then blocks the main thread, then we deadlock.
         bool bStartProgress = true;
 
-        while ( !currentCmdEnv->isAborted() && --nSize >= 0 )
+        while ( --nSize >= 0 )
         {
             {
                 osl::MutexGuard aGuard( m_mutex );
@@ -800,11 +792,13 @@ void ExtensionCmdQueue::Thread::execute()
                 uno::Any exc( ::cppu::getCaughtException() );
                 OUString msg;
                 deployment::DeploymentException dpExc;
-                if ((exc >>= dpExc) &&
-                    dpExc.Cause.getValueTypeClass() == uno::TypeClass_EXCEPTION)
+                if (exc >>= dpExc)
                 {
-                    // notify error cause only:
-                    msg = static_cast< uno::Exception const * >( dpExc.Cause.getValue() )->Message;
+                    if (auto e = o3tl::tryAccess<uno::Exception>(dpExc.Cause))
+                    {
+                        // notify error cause only:
+                        msg = e->Message;
+                    }
                 }
                 if (msg.isEmpty()) // fallback for debugging purposes
                     msg = ::comphelper::anyToString(exc);

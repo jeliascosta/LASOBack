@@ -78,10 +78,6 @@ namespace frm
     public:
         explicit FormOperations( const css::uno::Reference< css::uno::XComponentContext >& _rxContext );
 
-        // XServiceInfo - static versions
-        static OUString getImplementationName_Static(  ) throw(css::uno::RuntimeException);
-        static css::uno::Sequence< OUString > getSupportedServiceNames_Static(  ) throw(css::uno::RuntimeException);
-
         struct MethodAccess { friend class MethodGuard; private: MethodAccess() { } };
 
         inline void enterMethod( MethodAccess ) const
@@ -102,7 +98,7 @@ namespace frm
         }
 
     protected:
-        virtual ~FormOperations();
+        virtual ~FormOperations() override;
 
         // XInitialization
         virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
@@ -148,10 +144,6 @@ namespace frm
         // service constructors
         void    createWithFormController( const css::uno::Reference< css::form::runtime::XFormController >& _rxController );
         void    createWithForm( const css::uno::Reference< css::form::XForm >& _rxForm );
-
-        /** determines whether or not we're already disposed
-        */
-        inline bool impl_isDisposed_nothrow() const { return !m_xCursor.is(); }
 
         /** checks whether the instance is already disposed, and throws an exception if so
         */
@@ -309,7 +301,7 @@ namespace frm
         {
         public:
             impl_appendOrderByColumn_throw(const FormOperations *pFO,
-                                           css::uno::Reference< css::beans::XPropertySet > xField,
+                                           css::uno::Reference< css::beans::XPropertySet > const & xField,
                                            bool bUp)
                 : m_pFO(pFO)
                 , m_xField(xField)
@@ -328,7 +320,7 @@ namespace frm
         {
         public:
             impl_appendFilterByColumn_throw(const FormOperations *pFO,
-                                            css::uno::Reference< css::beans::XPropertySet > xField)
+                                            css::uno::Reference< css::beans::XPropertySet > const & xField)
                 : m_pFO(pFO)
                 , m_xField(xField)
             {};

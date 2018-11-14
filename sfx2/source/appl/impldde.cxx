@@ -59,10 +59,10 @@ class SvDDELinkEditDialog : public ModalDialog
     VclPtr<Edit>            m_pEdDdeItem;
     VclPtr<OKButton>        m_pOKButton;
 
-    DECL_LINK_TYPED( EditHdl_Impl, Edit&, void );
+    DECL_LINK( EditHdl_Impl, Edit&, void );
 public:
     SvDDELinkEditDialog( vcl::Window* pParent, SvBaseLink* );
-    virtual ~SvDDELinkEditDialog();
+    virtual ~SvDDELinkEditDialog() override;
     virtual void dispose() override;
     OUString GetCmd() const;
 };
@@ -110,7 +110,7 @@ OUString SvDDELinkEditDialog::GetCmd() const
     return sRet;
 }
 
-IMPL_LINK_NOARG_TYPED( SvDDELinkEditDialog, EditHdl_Impl, Edit&, void)
+IMPL_LINK_NOARG( SvDDELinkEditDialog, EditHdl_Impl, Edit&, void)
 {
     m_pOKButton->Enable( !m_pEdDdeApp->GetText().isEmpty() &&
                          !m_pEdDdeTopic->GetText().isEmpty() &&
@@ -313,7 +313,7 @@ bool SvDDEObject::IsDataComplete() const
     return bWaitForData;
 }
 
-IMPL_LINK_TYPED( SvDDEObject, ImplGetDDEData, const DdeData*, pData, void )
+IMPL_LINK( SvDDEObject, ImplGetDDEData, const DdeData*, pData, void )
 {
     SotClipboardFormatId nFmt = pData->GetFormat();
     switch( nFmt )
@@ -326,8 +326,8 @@ IMPL_LINK_TYPED( SvDDEObject, ImplGetDDEData, const DdeData*, pData, void )
 
     default:
         {
-            const sal_Char* p = static_cast<sal_Char const *>(pData->operator const void*());
-            long nLen = SotClipboardFormatId::STRING == nFmt ? (p ? strlen( p ) : 0) : (long)*pData;
+            const sal_Char* p = static_cast<sal_Char const *>(pData->getData());
+            long nLen = SotClipboardFormatId::STRING == nFmt ? (p ? strlen( p ) : 0) : pData->getSize();
 
             Sequence< sal_Int8 > aSeq( reinterpret_cast<const sal_Int8*>(p), nLen );
             if( pGetData )
@@ -347,7 +347,7 @@ IMPL_LINK_TYPED( SvDDEObject, ImplGetDDEData, const DdeData*, pData, void )
     }
 }
 
-IMPL_LINK_TYPED( SvDDEObject, ImplDoneDDEData, bool, bValid, void )
+IMPL_LINK( SvDDEObject, ImplDoneDDEData, bool, bValid, void )
 {
     if( !bValid && ( pRequest || pLink ))
     {

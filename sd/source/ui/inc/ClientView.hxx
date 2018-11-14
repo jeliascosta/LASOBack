@@ -35,11 +35,8 @@ class ClientView
 public:
     ClientView (
         DrawDocShell* pDocSh,
-        OutputDevice* pOutDev,
-        DrawViewShell* pShell);
-    virtual ~ClientView();
-
-    virtual void CompleteRedraw(OutputDevice* pOutDev, const vcl::Region& rReg, sdr::contact::ViewObjectContactRedirector* pRedirector = nullptr) override;
+        OutputDevice* pOutDev);
+    virtual ~ClientView() override;
 
     /* if the view should not do a Invalidate() on the windows, you have to
        override the following two methods and do something different */

@@ -122,11 +122,6 @@ sal_Int32 ScAccessibleFilterMenu::getBackground()
 
 // XAccessibleContext
 
-OUString ScAccessibleFilterMenu::getAccessibleName() throw (RuntimeException, std::exception)
-{
-    return ScAccessibleContextBase::getAccessibleName();
-}
-
 sal_Int32 ScAccessibleFilterMenu::getAccessibleChildCount()
     throw (RuntimeException, std::exception)
 {
@@ -345,11 +340,6 @@ bool ScAccessibleFilterMenu::isSelected() const
     return mpWindow->isMenuItemSelected(mnMenuPos);
 }
 
-bool ScAccessibleFilterMenu::isFocused() const
-{
-    return isSelected();
-}
-
 void ScAccessibleFilterMenu::updateStates()
 {
     if (!mxStateSet.is())
@@ -366,7 +356,7 @@ void ScAccessibleFilterMenu::updateStates()
     p->insert(SENSITIVE);
     p->insert(OPAQUE);
 
-    if (isFocused())
+    if (isSelected())
         p->insert(FOCUSED);
 
     if (isSelected())

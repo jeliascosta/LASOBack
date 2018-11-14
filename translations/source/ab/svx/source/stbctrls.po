@@ -3,16 +3,17 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2015-04-22 23:41+0200\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"POT-Creation-Date: 2017-04-11 22:26+0200\n"
+"PO-Revision-Date: 2017-07-27 08:19+0000\n"
+"Last-Translator: Андрей Абухба <aabuchba@mail.ru>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: ab\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: LibreOffice\n"
 "X-Accelerator-Marker: ~\n"
+"X-Generator: Pootle 2.8\n"
+"X-POOTLE-MTIME: 1501143554.000000\n"
 
 #: stbctrls.src
 msgctxt ""
@@ -37,7 +38,7 @@ msgctxt ""
 "RID_SVXSTR_OVERWRITE_TEXT\n"
 "string.text"
 msgid "Overwrite"
-msgstr ""
+msgstr "Аҧсахра"
 
 #: stbctrls.src
 msgctxt ""
@@ -46,7 +47,7 @@ msgctxt ""
 "SELECTION_STANDARD\n"
 "menuitem.text"
 msgid "Standard selection"
-msgstr ""
+msgstr "Истандарту алкаара"
 
 #: stbctrls.src
 msgctxt ""
@@ -73,7 +74,7 @@ msgctxt ""
 "SELECTION_BLOCK\n"
 "menuitem.text"
 msgid "Block selection"
-msgstr ""
+msgstr "Блокла алхра"
 
 #: stbctrls.src
 msgctxt ""
@@ -150,17 +151,17 @@ msgstr ""
 #: stbctrls.src
 msgctxt ""
 "stbctrls.src\n"
-"RID_SVXSTR_ZOOMTOOL_HINT\n"
+"RID_SVXSTR_WARN_MISSING_SMARTART\n"
 "string.text"
-msgid "Zoom level. Right-click to change zoom level or click to open Zoom dialog."
+msgid "Could not load all SmartArts. Saving in Microsoft Office 2010 or later would avoid this issue."
 msgstr ""
 
 #: stbctrls.src
 msgctxt ""
 "stbctrls.src\n"
-"RID_SVXSTR_ZOOM\n"
+"RID_SVXSTR_ZOOMTOOL_HINT\n"
 "string.text"
-msgid "Adjust zoom level"
+msgid "Zoom level. Right-click to change zoom level or click to open Zoom dialog."
 msgstr ""
 
 #: stbctrls.src
@@ -233,7 +234,7 @@ msgctxt ""
 "RID_SVXSTR_ZOOM_WHOLE_PAGE\n"
 "string.text"
 msgid "Entire Page"
-msgstr ""
+msgstr "Адаҟьа зегьы"
 
 #: stbctrls.src
 msgctxt ""
@@ -254,11 +255,19 @@ msgstr ""
 #: stbctrls.src
 msgctxt ""
 "stbctrls.src\n"
+"RID_SIDEBAR_EMPTY_PANEL_TEXT\n"
+"string.text"
+msgid "Properties for the task that you are performing are not available for the current selection"
+msgstr ""
+
+#: stbctrls.src
+msgctxt ""
+"stbctrls.src\n"
 "RID_SVXMNU_ZOOM\n"
 "ZOOM_WHOLE_PAGE\n"
 "menuitem.text"
 msgid "Entire Page"
-msgstr ""
+msgstr "Адаҟьа зегьы"
 
 #: stbctrls.src
 msgctxt ""
@@ -384,7 +393,7 @@ msgctxt ""
 "PSZ_FUNC_SELECTION_COUNT\n"
 "menuitem.text"
 msgid "Selection count"
-msgstr ""
+msgstr "Алкаарақәа рхыҧхьаӡара"
 
 #: stbctrls.src
 msgctxt ""

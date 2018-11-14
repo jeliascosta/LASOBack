@@ -69,11 +69,9 @@ using namespace ::com::sun::star::awt;
 // OHTMLReader
 OHTMLReader::OHTMLReader(SvStream& rIn,const SharedConnection& _rxConnection,
                         const Reference< css::util::XNumberFormatter >& _rxNumberF,
-                        const css::uno::Reference< css::uno::XComponentContext >& _rxContext,
-                        const TColumnVector* pList,
-                        const OTypeInfoMap* _pInfoMap)
+                        const css::uno::Reference< css::uno::XComponentContext >& _rxContext)
     : HTMLParser(rIn)
-    , ODatabaseExport( _rxConnection, _rxNumberF, _rxContext, pList, _pInfoMap, rIn )
+    , ODatabaseExport( _rxConnection, _rxNumberF, _rxContext, nullptr, nullptr, rIn )
     , m_nTableCount(0)
     , m_nWidth(0)
     , m_nColumnWidth(87)
@@ -150,7 +148,7 @@ void OHTMLReader::NextToken( int nToken )
             case HTML_THEAD_ON:
             case HTML_TBODY_ON:
                 {
-                    sal_Size nTell = rInput.Tell(); // perhaps alters position of the stream
+                    sal_uInt64 const nTell = rInput.Tell(); // perhaps alters position of the stream
                     if ( !m_xTable.is() )
                     {// use first line as header
                         m_bError = !CreateTable(nToken);

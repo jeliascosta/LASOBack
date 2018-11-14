@@ -62,7 +62,7 @@ class FWE_DLLPUBLIC OReadStatusBarDocumentHandler :
         };
 
         OReadStatusBarDocumentHandler( const css::uno::Reference< css::container::XIndexContainer >& aStatusBarItems );
-        virtual ~OReadStatusBarDocumentHandler();
+        virtual ~OReadStatusBarDocumentHandler() override;
 
         // XDocumentHandler
         virtual void SAL_CALL startDocument()
@@ -111,26 +111,25 @@ class FWE_DLLPUBLIC OReadStatusBarDocumentHandler :
         };
 
         bool                                                      m_bStatusBarStartFound;
-        bool                                                      m_bStatusBarEndFound;
         bool                                                      m_bStatusBarItemStartFound;
         StatusBarHashMap                                          m_aStatusBarMap;
         css::uno::Reference< css::container::XIndexContainer >    m_aStatusBarItems;
         css::uno::Reference< css::xml::sax::XLocator >            m_xLocator;
 };
 
-class FWE_DLLPUBLIC OWriteStatusBarDocumentHandler
+class FWE_DLLPUBLIC OWriteStatusBarDocumentHandler final
 {
     public:
         OWriteStatusBarDocumentHandler(
             const css::uno::Reference< css::container::XIndexAccess >& rStatusBarItems,
             const css::uno::Reference< css::xml::sax::XDocumentHandler >& rWriteDocHandler );
-        virtual ~OWriteStatusBarDocumentHandler();
+        ~OWriteStatusBarDocumentHandler();
 
         void WriteStatusBarDocument() throw
             ( css::xml::sax::SAXException,
               css::uno::RuntimeException );
 
-    protected:
+    private:
         void WriteStatusBarItem(
             const OUString& rCommandURL,
             const OUString& rHelpURL,

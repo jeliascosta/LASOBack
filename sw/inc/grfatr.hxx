@@ -58,10 +58,10 @@ public:
     virtual sal_uInt16          GetValueCount() const override;
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText,
-                                    const IntlWrapper*    pIntl = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText,
+                                  const IntlWrapper*    pIntl = nullptr ) const override;
 
     virtual bool             QueryValue( css::uno::Any& rVal,
                                         sal_uInt8 nMemberId = 0 ) const override;
@@ -94,8 +94,8 @@ class SwRotationGrf : public SfxUInt16Item
 {
     Size aUnrotatedSize;
 public:
-    SwRotationGrf( sal_Int16 nVal = 0 )
-        : SfxUInt16Item( RES_GRFATR_ROTATION, nVal )
+    SwRotationGrf()
+        : SfxUInt16Item( RES_GRFATR_ROTATION, 0 )
     {}
     SwRotationGrf( sal_Int16 nVal, const Size& rSz )
         : SfxUInt16Item( RES_GRFATR_ROTATION, nVal ), aUnrotatedSize( rSz )
@@ -105,10 +105,10 @@ public:
     virtual SfxPoolItem* Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText,
-                                    const IntlWrapper* pIntl = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText,
+                                  const IntlWrapper* pIntl = nullptr ) const override;
     virtual bool             QueryValue( css::uno::Any& rVal,
                                             sal_uInt8 nMemberId = 0 ) const override;
     virtual bool             PutValue( const css::uno::Any& rVal,
@@ -127,10 +127,10 @@ public:
     // pure virtual methods from SfxInt16Item
     virtual SfxPoolItem* Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText,
-                                    const IntlWrapper* pIntl = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText,
+                                  const IntlWrapper* pIntl = nullptr ) const override;
 };
 
 class SW_DLLPUBLIC SwContrastGrf : public SfxInt16Item
@@ -143,10 +143,10 @@ public:
     // pure virtual methods from SfxInt16Item
     virtual SfxPoolItem* Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText,
-                                    const IntlWrapper* pIntl = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText,
+                                  const IntlWrapper* pIntl = nullptr ) const override;
 };
 
 class SwChannelGrf : public SfxInt16Item
@@ -159,10 +159,10 @@ protected:
 public:
     // pure virtual methods from SfxInt16Item
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText,
-                                    const IntlWrapper* pIntl = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText,
+                                  const IntlWrapper* pIntl = nullptr ) const override;
 };
 
 class SwChannelRGrf : public SwChannelGrf
@@ -202,19 +202,19 @@ public:
     {}
 
     inline SwGammaGrf& operator=( const SwGammaGrf& rCopy )
-        {
-            SetValue( rCopy.GetValue() );
-            return *this;
-        }
+    {
+        nValue = rCopy.nValue;
+        return *this;
+    }
 
     // pure virtual methods from SfxEnumItem
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText,
-                                    const IntlWrapper* pIntl = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText,
+                                  const IntlWrapper* pIntl = nullptr ) const override;
 
     virtual bool             QueryValue( css::uno::Any& rVal,
                                             sal_uInt8 nMemberId = 0 ) const override;
@@ -222,7 +222,6 @@ public:
                                             sal_uInt8 nMemberId ) override;
 
     const double& GetValue() const              { return nValue; }
-    void SetValue( const double& rVal )         { nValue = rVal; }
 };
 
 class SwInvertGrf: public SfxBoolItem
@@ -235,10 +234,10 @@ public:
     // pure virtual methods from SfxInt16Item
     virtual SfxPoolItem* Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText,
-                                    const IntlWrapper* pIntl = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText,
+                                  const IntlWrapper* pIntl = nullptr ) const override;
 };
 
 class SwTransparencyGrf : public SfxByteItem
@@ -251,10 +250,10 @@ public:
     // pure virtual methods from SfxInt16Item
     virtual SfxPoolItem* Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText,
-                                    const IntlWrapper* pIntl = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText,
+                                  const IntlWrapper* pIntl = nullptr ) const override;
     virtual bool            QueryValue( css::uno::Any& rVal,
                                         sal_uInt8 nMemberId = 0 ) const override;
     virtual bool            PutValue( const css::uno::Any& rVal,
@@ -274,10 +273,10 @@ public:
     // pure virtual methods of SfxEnumItem
     virtual sal_uInt16          GetValueCount() const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText,
-                                    const IntlWrapper*    pIntl = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText,
+                                  const IntlWrapper*    pIntl = nullptr ) const override;
 
     virtual bool            QueryValue( css::uno::Any& rVal,
                                         sal_uInt8 nMemberId = 0 ) const override;

@@ -23,7 +23,6 @@
 
 #include <sal/log.hxx>
 #include <unotools/localedatawrapper.hxx>
-#include <unotools/numberformatcodewrapper.hxx>
 #include <unotools/calendarwrapper.hxx>
 #include <unotools/digitgroupingiterator.hxx>
 #include <tools/debug.hxx>
@@ -35,6 +34,7 @@
 #include <com/sun/star/i18n/CalendarFieldIndex.hpp>
 #include <com/sun/star/i18n/CalendarDisplayIndex.hpp>
 #include <com/sun/star/i18n/NumberFormatIndex.hpp>
+#include <com/sun/star/i18n/NumberFormatMapper.hpp>
 
 #include <comphelper/processfactory.hxx>
 #include <rtl/instance.hxx>
@@ -89,7 +89,8 @@ LocaleDataWrapper::LocaleDataWrapper(
         xLD( LocaleData::create(rxContext) ),
         maLanguageTag( rLanguageTag ),
         bLocaleDataItemValid( false ),
-        bReservedWordValid( false )
+        bReservedWordValid( false ),
+        bSecondaryCalendarValid( false )
 {
     invalidateData();
 }
@@ -102,7 +103,8 @@ LocaleDataWrapper::LocaleDataWrapper(
         xLD( LocaleData::create(m_xContext) ),
         maLanguageTag( rLanguageTag ),
         bLocaleDataItemValid( false ),
-        bReservedWordValid( false )
+        bReservedWordValid( false ),
+        bSecondaryCalendarValid( false )
 {
     invalidateData();
 }
@@ -149,6 +151,8 @@ void LocaleDataWrapper::invalidateData()
         bReservedWordValid = false;
     }
     xDefaultCalendar.reset();
+    xSecondaryCalendar.reset();
+    bSecondaryCalendarValid = false;
     if (aGrouping.getLength())
         aGrouping[0] = 0;
     if (aDateAcceptancePatterns.getLength())
@@ -475,6 +479,61 @@ MeasurementSystem LocaleDataWrapper::mapMeasurementStringToEnum( const OUString&
     return MEASURE_US;
 }
 
+void LocaleDataWrapper::getSecondaryCalendarImpl()
+{
+    if (!xSecondaryCalendar && !bSecondaryCalendarValid)
+    {
+        Sequence< Calendar2 > xCals = getAllCalendars();
+        sal_Int32 nCount = xCals.getLength();
+        if (nCount > 1)
+        {
+            sal_Int32 nNonDef = -1;
+            const Calendar2* pArr = xCals.getArray();
+            for (sal_Int32 i=0; i<nCount; ++i)
+            {
+                if (!pArr[i].Default)
+                {
+                    nNonDef = i;
+                    break;
+                }
+            }
+            if (nNonDef >= 0)
+                xSecondaryCalendar.reset( new Calendar2( xCals[nNonDef]));
+        }
+        bSecondaryCalendarValid = true;
+    }
+}
+
+bool LocaleDataWrapper::doesSecondaryCalendarUseEC( const OUString& rName ) const
+{
+    if (rName.isEmpty())
+        return false;
+
+    // Check language tag first to avoid loading all calendars of this locale.
+    LanguageTag aLoaded( getLoadedLanguageTag());
+    OUString aBcp47( aLoaded.getBcp47());
+    // So far determine only by locale, we know for a few.
+    /* TODO: check date format codes? or add to locale data? */
+    if (    aBcp47 != "ja-JP" &&
+            aBcp47 != "lo-LA" &&
+            aBcp47 != "zh-TW")
+        return false;
+
+    ::utl::ReadWriteGuard aGuard( aMutex );
+
+    if (!bSecondaryCalendarValid)
+    {   // no cached content
+        aGuard.changeReadToWrite();
+        const_cast<LocaleDataWrapper*>(this)->getSecondaryCalendarImpl();
+    }
+    if (!xSecondaryCalendar)
+        return false;
+    if (!xSecondaryCalendar->Name.equalsIgnoreAsciiCase( rName))
+        return false;
+
+    return true;
+}
+
 void LocaleDataWrapper::getDefaultCalendarImpl()
 {
     if (!xDefaultCalendar)
@@ -498,7 +557,7 @@ void LocaleDataWrapper::getDefaultCalendarImpl()
     }
 }
 
-const std::shared_ptr< css::i18n::Calendar2 > LocaleDataWrapper::getDefaultCalendar() const
+const std::shared_ptr< css::i18n::Calendar2 >& LocaleDataWrapper::getDefaultCalendar() const
 {
     ::utl::ReadWriteGuard aGuard( aMutex );
     if (!xDefaultCalendar)
@@ -691,9 +750,8 @@ void LocaleDataWrapper::scanCurrFormatImpl( const OUString& rCode,
 
 void LocaleDataWrapper::getCurrFormatsImpl()
 {
-    NumberFormatCodeWrapper aNumberFormatCode( m_xContext, getMyLocale() );
-    uno::Sequence< NumberFormatCode > aFormatSeq
-        = aNumberFormatCode.getAllFormatCode( KNumberFormatUsage::CURRENCY );
+    css::uno::Reference< css::i18n::XNumberFormatCode > xNFC = i18n::NumberFormatMapper::create( m_xContext );
+    uno::Sequence< NumberFormatCode > aFormatSeq = xNFC->getAllFormatCode( KNumberFormatUsage::CURRENCY, getMyLocale() );
     sal_Int32 nCnt = aFormatSeq.getLength();
     if ( !nCnt )
     {   // bad luck
@@ -939,9 +997,8 @@ DateFormat LocaleDataWrapper::scanDateFormatImpl( const OUString& rCode )
 
 void LocaleDataWrapper::getDateFormatsImpl()
 {
-    NumberFormatCodeWrapper aNumberFormatCode( m_xContext, getMyLocale() );
-    uno::Sequence< NumberFormatCode > aFormatSeq
-        = aNumberFormatCode.getAllFormatCode( KNumberFormatUsage::DATE );
+    css::uno::Reference< css::i18n::XNumberFormatCode > xNFC = i18n::NumberFormatMapper::create( m_xContext );
+    uno::Sequence< NumberFormatCode > aFormatSeq = xNFC->getAllFormatCode( KNumberFormatUsage::DATE, getMyLocale() );
     sal_Int32 nCnt = aFormatSeq.getLength();
     if ( !nCnt )
     {   // bad luck
@@ -1134,6 +1191,16 @@ static sal_Unicode* ImplAddUNum( sal_Unicode* pBuf, sal_uInt64 nNumber, int nMin
     return pBuf;
 }
 
+static sal_Unicode* ImplAddNum( sal_Unicode* pBuf, sal_Int64 nNumber, int nMinLen )
+{
+    if (nNumber < 0)
+    {
+        *pBuf++ = '-';
+        nNumber = -nNumber;
+    }
+    return ImplAddUNum( pBuf, nNumber, nMinLen);
+}
+
 static sal_Unicode* ImplAdd2UNum( sal_Unicode* pBuf, sal_uInt16 nNumber, bool bLeading )
 {
     DBG_ASSERT( nNumber < 100, "ImplAdd2UNum() - Number >= 100" );
@@ -1324,7 +1391,7 @@ OUString LocaleDataWrapper::getDate( const Date& rDate ) const
     sal_Unicode* pBuf = aBuf;
     sal_uInt16  nDay    = rDate.GetDay();
     sal_uInt16  nMonth  = rDate.GetMonth();
-    sal_uInt16  nYear   = rDate.GetYear();
+    sal_Int16   nYear   = rDate.GetYear();
     sal_uInt16  nYearLen;
 
     if ( true /* IsDateCentury() */ )
@@ -1342,17 +1409,17 @@ OUString LocaleDataWrapper::getDate( const Date& rDate ) const
             pBuf = ImplAddString( pBuf, getDateSep() );
             pBuf = ImplAdd2UNum( pBuf, nMonth, true /* IsDateMonthLeadingZero() */ );
             pBuf = ImplAddString( pBuf, getDateSep() );
-            pBuf = ImplAddUNum( pBuf, nYear, nYearLen );
+            pBuf = ImplAddNum( pBuf, nYear, nYearLen );
         break;
         case MDY :
             pBuf = ImplAdd2UNum( pBuf, nMonth, true /* IsDateMonthLeadingZero() */ );
             pBuf = ImplAddString( pBuf, getDateSep() );
             pBuf = ImplAdd2UNum( pBuf, nDay, true /* IsDateDayLeadingZero() */ );
             pBuf = ImplAddString( pBuf, getDateSep() );
-            pBuf = ImplAddUNum( pBuf, nYear, nYearLen );
+            pBuf = ImplAddNum( pBuf, nYear, nYearLen );
         break;
         default:
-            pBuf = ImplAddUNum( pBuf, nYear, nYearLen );
+            pBuf = ImplAddNum( pBuf, nYear, nYearLen );
             pBuf = ImplAddString( pBuf, getDateSep() );
             pBuf = ImplAdd2UNum( pBuf, nMonth, true /* IsDateMonthLeadingZero() */ );
             pBuf = ImplAddString( pBuf, getDateSep() );

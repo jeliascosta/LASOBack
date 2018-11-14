@@ -449,7 +449,7 @@ public:
     const ContentEnumeration& operator=(const ContentEnumeration&) = delete;
 
 private:
-    virtual ~ContentEnumeration() {}
+    virtual ~ContentEnumeration() override {}
 
     virtual sal_Bool SAL_CALL hasMoreElements()
         throw (css::uno::RuntimeException, std::exception) override;
@@ -508,7 +508,7 @@ public:
     const SingletonFactory& operator=(const SingletonFactory&) = delete;
 
 private:
-    virtual ~SingletonFactory() {}
+    virtual ~SingletonFactory() override {}
 
     virtual css::uno::Reference< css::uno::XInterface > SAL_CALL
     createInstanceWithContext(
@@ -564,7 +564,7 @@ public:
     const ImplementationWrapper& operator=(const ImplementationWrapper&) = delete;
 
 private:
-    virtual ~ImplementationWrapper() {}
+    virtual ~ImplementationWrapper() override {}
 
     virtual css::uno::Reference< css::uno::XInterface > SAL_CALL
     createInstanceWithContext(
@@ -812,13 +812,19 @@ void cppuhelper::ServiceManager::loadImplementation(
         if (ctor != nullptr) {
             assert(!implementation->info->environment.isEmpty());
             css::uno::Environment curEnv(css::uno::Environment::getCurrent());
+            if (!curEnv.is()) {
+                throw css::uno::DeploymentException(
+                    "cannot get current environment",
+                    css::uno::Reference<css::uno::XInterface>());
+            }
             css::uno::Environment env(
                 cppuhelper::detail::getEnvironment(
                     implementation->info->environment,
                     implementation->info->name));
-            if (!(curEnv.is() && env.is())) {
+            if (!env.is()) {
                 throw css::uno::DeploymentException(
-                    "cannot get environments",
+                    ("cannot get environment "
+                     + implementation->info->environment),
                     css::uno::Reference<css::uno::XInterface>());
             }
             if (curEnv.get() != env.get()) {
@@ -1404,9 +1410,9 @@ void cppuhelper::ServiceManager::removeEventListenerFromComponent(
     }
 }
 
-void cppuhelper::ServiceManager::readRdbs(rtl::OUString const & uris) {
+void cppuhelper::ServiceManager::init(rtl::OUString const & rdbUris) {
     for (sal_Int32 i = 0; i != -1;) {
-        rtl::OUString uri(uris.getToken(0, ' ', i));
+        rtl::OUString uri(rdbUris.getToken(0, ' ', i));
         if (uri.isEmpty()) {
             continue;
         }

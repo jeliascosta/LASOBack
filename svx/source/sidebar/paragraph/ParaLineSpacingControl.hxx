@@ -31,11 +31,11 @@ class ParaLineSpacingControl : public SfxPopupWindow
 {
 public:
     explicit ParaLineSpacingControl(sal_uInt16 nId);
-    virtual ~ParaLineSpacingControl();
+    virtual ~ParaLineSpacingControl() override;
     virtual void dispose() override;
 
 private:
-    SfxMapUnit              meLNSpaceUnit;
+    MapUnit                        meLNSpaceUnit;
 
     VclPtr<Edit>                   mpActLineDistFld;
 
@@ -69,9 +69,9 @@ private:
     /// Set the entry and update the metric fields.
     void SelectEntryPos(sal_Int32 nPos);
 
-    DECL_LINK_TYPED(LineSPDistHdl_Impl, ListBox&, void);
-    DECL_LINK_TYPED(LineSPDistAtHdl_Impl, Edit&, void);
-    DECL_LINK_TYPED(PredefinedValuesHandler, Button*, void);
+    DECL_LINK(LineSPDistHdl_Impl, ListBox&, void);
+    DECL_LINK(LineSPDistAtHdl_Impl, Edit&, void);
+    DECL_LINK(PredefinedValuesHandler, Button*, void);
 };
 
 }

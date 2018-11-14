@@ -133,7 +133,7 @@ namespace dbaui
         if(m_pViewSwitch)
             m_pViewSwitch->GrabFocus();
     }
-    IMPL_LINK_NOARG_TYPED( OQueryContainerWindow, SplitHdl, Splitter*, void )
+    IMPL_LINK_NOARG( OQueryContainerWindow, SplitHdl, Splitter*, void )
     {
         m_pSplitter->SetPosPixel( Point( m_pSplitter->GetPosPixel().X(),m_pSplitter->GetSplitPosPixel() ) );
         Resize();
@@ -203,7 +203,7 @@ namespace dbaui
             Size aSize = GetOutputSizePixel();
             Size aBeamer(aSize.Width(),sal_Int32(aSize.Height()*0.33));
 
-            const long  nFrameHeight = LogicToPixel( Size( 0, 3 ), MAP_APPFONT ).Height();
+            const long  nFrameHeight = LogicToPixel( Size( 0, 3 ), MapUnit::MapAppFont ).Height();
             Point aPos(0,aBeamer.Height()+nFrameHeight);
 
             m_pBeamer->SetPosSizePixel(Point(0,0),aBeamer);

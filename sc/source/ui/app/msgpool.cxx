@@ -55,10 +55,11 @@ ScMessagePool::ScMessagePool()
     aGlobalUserListItem     ( ScUserListItem        ( SCITEM_USERLIST ) ),
 
     aPrintWarnItem          ( SfxBoolItem           ( SCITEM_PRINTWARN, false ) ),
-    aCondFormatDlgItem      ( ScCondFormatDlgItem   ( nullptr, -1, false ) )
-{
-    ppPoolDefaults = new SfxPoolItem*[MSGPOOL_END - MSGPOOL_START + 1];
+    aCondFormatDlgItem      ( ScCondFormatDlgItem   ( nullptr, -1, false ) ),
 
+    ppPoolDefaults(new SfxPoolItem*[MSGPOOL_END - MSGPOOL_START + 1]),
+    pDocPool(new ScDocumentPool)
+{
     ppPoolDefaults[SCITEM_STRING            - MSGPOOL_START] = &aGlobalStringItem;
     ppPoolDefaults[SCITEM_SEARCHDATA        - MSGPOOL_START] = &aGlobalSearchItem;
     ppPoolDefaults[SCITEM_SORTDATA          - MSGPOOL_START] = &aGlobalSortItem;
@@ -72,8 +73,6 @@ ScMessagePool::ScMessagePool()
     ppPoolDefaults[SCITEM_CONDFORMATDLGDATA - MSGPOOL_START] = &aCondFormatDlgItem;
 
     SetDefaults( ppPoolDefaults );
-
-    pDocPool = new ScDocumentPool;
 
     SetSecondaryPool( pDocPool );
 }
@@ -91,13 +90,13 @@ ScMessagePool::~ScMessagePool()
     SfxItemPool::Free(pDocPool);
 }
 
-SfxMapUnit ScMessagePool::GetMetric( sal_uInt16 nWhich ) const
+MapUnit ScMessagePool::GetMetric( sal_uInt16 nWhich ) const
 {
     // Own attributes: Twips, everything else 1/100 mm
     if ( nWhich >= ATTR_STARTINDEX && nWhich <= ATTR_ENDINDEX )
-        return SFX_MAPUNIT_TWIP;
+        return MapUnit::MapTwip;
     else
-        return SFX_MAPUNIT_100TH_MM;
+        return MapUnit::Map100thMM;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -91,7 +91,7 @@ SwMailMergeLayoutPage::SwMailMergeLayoutPage( SwMailMergeWizard* _pParent) :
     get(m_pUpPB, "up");
     get(m_pDownPB, "down");
     get(m_pExampleContainerWIN, "example");
-    Size aSize(LogicToPixel(Size(124, 159), MAP_APPFONT));
+    Size aSize(LogicToPixel(Size(124, 159), MapUnit::MapAppFont));
     m_pExampleContainerWIN->set_width_request(aSize.Width());
     m_pExampleContainerWIN->set_height_request(aSize.Height());
     get(m_pZoomLB, "zoom");
@@ -318,10 +318,10 @@ SwFrameFormat* SwMailMergeLayoutPage::InsertAddressFrame(
         SwFieldMgr aFieldMgr(&rShell);
         //create a database string source.command.commandtype.column
         const SwDBData& rData = rConfigItem.GetCurrentDBData();
-        OUString sDBName(rData.sDataSource + OUString(DB_DELIM)
-            + rData.sCommand + OUString(DB_DELIM));
+        OUString sDBName(rData.sDataSource + OUStringLiteral1(DB_DELIM)
+            + rData.sCommand + OUStringLiteral1(DB_DELIM));
         const OUString sDatabaseConditionPrefix(sDBName.replace(DB_DELIM, '.'));
-        sDBName += OUString::number(rData.nCommandType) + OUString(DB_DELIM);
+        sDBName += OUString::number(rData.nCommandType) + OUStringLiteral1(DB_DELIM);
 
         // if only the country is in an address line the
         // paragraph has to be hidden depending on the
@@ -449,7 +449,7 @@ void SwMailMergeLayoutPage::InsertGreeting(SwWrtShell& rShell, SwMailMergeConfig
     else
     {
         //we may end up inside of a paragraph if the left margin is not at DEFAULT_LEFT_DISTANCE
-        rShell.MovePara(GetfnParaCurr(), GetfnParaStart());
+        rShell.MovePara(GoCurrPara, fnParaStart);
     }
     bool bSplitNode = !rShell.GetText().isEmpty();
     sal_Int32 nMoves = rConfigItem.GetGreetingMoves();
@@ -510,9 +510,9 @@ void SwMailMergeLayoutPage::InsertGreeting(SwWrtShell& rShell, SwMailMergeConfig
             const OUString sConditionBase("[" + sCommonBase + sGenderColumn + "]");
             const OUString sNameColumnBase("[" + sCommonBase + sNameColumn + "]");
 
-            const OUString sDBName(rData.sDataSource + OUString(DB_DELIM)
-                + rData.sCommand + OUString(DB_DELIM)
-                + OUString::number(rData.nCommandType) + OUString(DB_DELIM));
+            const OUString sDBName(rData.sDataSource + OUStringLiteral1(DB_DELIM)
+                + rData.sCommand + OUStringLiteral1(DB_DELIM)
+                + OUString::number(rData.nCommandType) + OUStringLiteral1(DB_DELIM));
 
 //          Female:  [database.sGenderColumn] != "rFemaleGenderValue" && [database.NameColumn]
 //          Male:    [database.sGenderColumn] == "rFemaleGenderValue" && [database.rGenderColumn]
@@ -620,7 +620,7 @@ void SwMailMergeLayoutPage::InsertGreeting(SwWrtShell& rShell, SwMailMergeConfig
     OSL_ENSURE(nullptr == rShell.GetTableFormat(), "What to do with a table here?");
 }
 
-IMPL_LINK_NOARG_TYPED(SwMailMergeLayoutPage, PreviewLoadedHdl_Impl, SwOneExampleFrame&, void)
+IMPL_LINK_NOARG(SwMailMergeLayoutPage, PreviewLoadedHdl_Impl, SwOneExampleFrame&, void)
 {
     m_pExampleContainerWIN->Show();
 
@@ -660,7 +660,7 @@ IMPL_LINK_NOARG_TYPED(SwMailMergeLayoutPage, PreviewLoadedHdl_Impl, SwOneExample
     m_pTopMF->SetMax(rPageSize.GetHeight() - DEFAULT_TOP_DISTANCE);
 }
 
-IMPL_LINK_TYPED(SwMailMergeLayoutPage, ZoomHdl_Impl, ListBox&, rBox, void)
+IMPL_LINK(SwMailMergeLayoutPage, ZoomHdl_Impl, ListBox&, rBox, void)
 {
     if(m_pExampleWrtShell)
     {
@@ -682,11 +682,11 @@ IMPL_LINK_TYPED(SwMailMergeLayoutPage, ZoomHdl_Impl, ListBox&, rBox, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SwMailMergeLayoutPage, ChangeAddressLoseFocusHdl_Impl, Control&, void)
+IMPL_LINK_NOARG(SwMailMergeLayoutPage, ChangeAddressLoseFocusHdl_Impl, Control&, void)
 {
     ChangeAddressHdl_Impl(*m_pLeftMF);
 }
-IMPL_LINK_NOARG_TYPED(SwMailMergeLayoutPage, ChangeAddressHdl_Impl, SpinField&, void)
+IMPL_LINK_NOARG(SwMailMergeLayoutPage, ChangeAddressHdl_Impl, SpinField&, void)
 {
     if(m_pExampleWrtShell && m_pAddressBlockFormat)
     {
@@ -706,7 +706,7 @@ IMPL_LINK_NOARG_TYPED(SwMailMergeLayoutPage, ChangeAddressHdl_Impl, SpinField&, 
     }
 }
 
-IMPL_LINK_TYPED(SwMailMergeLayoutPage, GreetingsHdl_Impl, Button*, pButton, void)
+IMPL_LINK(SwMailMergeLayoutPage, GreetingsHdl_Impl, Button*, pButton, void)
 {
     bool bDown = pButton == m_pDownPB;
     bool bMoved = m_pExampleWrtShell->MoveParagraph( bDown ? 1 : -1 );
@@ -719,7 +719,7 @@ IMPL_LINK_TYPED(SwMailMergeLayoutPage, GreetingsHdl_Impl, Button*, pButton, void
     }
 }
 
-IMPL_LINK_TYPED(SwMailMergeLayoutPage, AlignToTextHdl_Impl, Button*, pBox, void)
+IMPL_LINK(SwMailMergeLayoutPage, AlignToTextHdl_Impl, Button*, pBox, void)
 {
     bool bCheck = static_cast<CheckBox*>(pBox)->IsChecked() && pBox->IsEnabled();
     m_pLeftFT->Enable(!bCheck);

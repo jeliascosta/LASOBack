@@ -156,7 +156,7 @@ bool SwFieldType::PutValue( const uno::Any& , sal_uInt16 )
 
 void SwFieldTypes::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swFieldTypes"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwFieldTypes"));
     sal_uInt16 nCount = size();
     for (sal_uInt16 nType = 0; nType < nCount; ++nType)
     {
@@ -299,7 +299,7 @@ bool  SwField::QueryValue( uno::Any& rVal, sal_uInt16 nWhichId ) const
             rVal <<= !m_bIsAutomaticLanguage;
         break;
         default:
-            OSL_FAIL("illegal property");
+            assert(false);
     }
     return true;
 }
@@ -316,7 +316,7 @@ bool SwField::PutValue( const uno::Any& rVal, sal_uInt16 nWhichId )
         }
         break;
         default:
-            OSL_FAIL("illegal property");
+            assert(false);
     }
     return true;
 }
@@ -760,7 +760,7 @@ bool SwField::IsClickable() const
 
 void SwField::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swField"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwField"));
     xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("symbol"), "%s", BAD_CAST(typeid(*this).name()));
     xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("ptr"), "%p", this);
 

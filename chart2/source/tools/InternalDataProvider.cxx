@@ -59,9 +59,6 @@ namespace chart
 namespace
 {
 
-// note: in xmloff this name is used to indicate usage of own data
-static const char lcl_aServiceName[] = "com.sun.star.comp.chart.InternalDataProvider";
-
 static const char lcl_aCategoriesRangeName[] = "categories";
 static const char lcl_aCategoriesLevelRangeNamePrefix[] = "categoriesL "; //L <-> level
 static const char lcl_aCategoriesPointRangeNamePrefix[] = "categoriesP "; //P <-> point
@@ -533,10 +530,7 @@ InternalDataProvider::createDataSequenceFromArray( const OUString& rArrayStr, co
             {
                 // Opening quote.
                 bAllNumeric = false;
-                ++p;
-                if (p == pEnd)
-                    break;
-                pElem = p;
+                pElem = nullptr;
             }
             else
             {
@@ -552,11 +546,7 @@ InternalDataProvider::createDataSequenceFromArray( const OUString& rArrayStr, co
                     break;
             }
         }
-        else if (bInQuote)
-        {
-            // Do nothing.
-        }
-        else if (*p == ';')
+        else if (*p == ';' && !bInQuote)
         {
             // element separator.
             if (pElem)
@@ -576,7 +566,7 @@ InternalDataProvider::createDataSequenceFromArray( const OUString& rArrayStr, co
     }
 
     if (rRole == "values-y" || rRole == "values-first" || rRole == "values-last" ||
-        rRole == "values-min" || rRole == "values-max")
+        rRole == "values-min" || rRole == "values-max" || rRole == "values-size")
     {
         // Column values.  Append a new data column and populate it.
 
@@ -654,11 +644,6 @@ Reference< chart2::data::XDataSequence > InternalDataProvider::createDataSequenc
         new UncachedDataSequence( this, rRangeRepresentation, rRole ));
     addDataSequenceToMap( rRangeRepresentation, xSeq );
     return xSeq;
-}
-
-void InternalDataProvider::createDefaultData()
-{
-    m_aInternalData.createDefaultData();
 }
 
 // ____ XDataProvider ____
@@ -1355,7 +1340,7 @@ public:
     explicit SplitCategoriesProvider_ForComplexDescriptions( const ::std::vector< ::std::vector< uno::Any > >& rComplexDescriptions )
         : m_rComplexDescriptions( rComplexDescriptions )
     {}
-    virtual ~SplitCategoriesProvider_ForComplexDescriptions()
+    virtual ~SplitCategoriesProvider_ForComplexDescriptions() override
     {}
 
     virtual sal_Int32 getLevelCount() const override;
@@ -1536,8 +1521,9 @@ void SAL_CALL InternalDataProvider::initialize(const uno::Sequence< uno::Any > &
 {
     comphelper::SequenceAsHashMap aArgs(_aArguments);
     if ( aArgs.getUnpackedValueOrDefault( "CreateDefaultData", false ) )
-        createDefaultData();
+            m_aInternalData.createDefaultData();
 }
+
 // ____ XCloneable ____
 Reference< util::XCloneable > SAL_CALL InternalDataProvider::createClone()
     throw (uno::RuntimeException, std::exception)
@@ -1545,21 +1531,11 @@ Reference< util::XCloneable > SAL_CALL InternalDataProvider::createClone()
     return Reference< util::XCloneable >( new InternalDataProvider( *this ));
 }
 
-Sequence< OUString > InternalDataProvider::getSupportedServiceNames_Static()
-{
-    Sequence<OUString> aServices { "com.sun.star.chart2.data.DataProvider" };
-    return aServices;
-}
-
 OUString SAL_CALL InternalDataProvider::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString InternalDataProvider::getImplementationName_Static()
-{
-    return OUString(lcl_aServiceName);
+    // note: in xmloff this name is used to indicate usage of own data
+    return OUString("com.sun.star.comp.chart.InternalDataProvider");
 }
 
 sal_Bool SAL_CALL InternalDataProvider::supportsService( const OUString& rServiceName )
@@ -1571,7 +1547,7 @@ sal_Bool SAL_CALL InternalDataProvider::supportsService( const OUString& rServic
 css::uno::Sequence< OUString > SAL_CALL InternalDataProvider::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return { "com.sun.star.chart2.data.DataProvider" };
 }
 
 } //  namespace chart

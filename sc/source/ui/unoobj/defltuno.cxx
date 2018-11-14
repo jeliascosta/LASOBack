@@ -18,7 +18,7 @@
  */
 
 #include <editeng/memberids.hrc>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <svl/itemprop.hxx>
 #include <svx/unomid.hxx>
 #include <vcl/svapp.hxx>
@@ -89,8 +89,7 @@ ScDocDefaultsObj::~ScDocDefaultsObj()
 
 void ScDocDefaultsObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
     {
         pDocShell = nullptr;       // document gone
     }
@@ -102,7 +101,7 @@ void ScDocDefaultsObj::ItemsChanged()
     {
         //! if not in XML import, adjust row heights
 
-        pDocShell->PostPaint(ScRange(0, 0, 0, MAXCOL, MAXROW, MAXTAB), PAINT_GRID);
+        pDocShell->PostPaint(ScRange(0, 0, 0, MAXCOL, MAXROW, MAXTAB), PaintPartFlags::Grid);
     }
 }
 

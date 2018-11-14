@@ -74,6 +74,13 @@ File gid_File_Extra_Databasebiblio
     Name = "extras_databasebiblio.filelist";
 End
 
+File gid_File_Extra_Emojiconfig
+    Dir = FILELIST_DIR;
+    USER_FILE_BODY;
+    Styles = (FILELIST, WORKSTATION);
+    Name = "sfx2_emojiconfig.filelist";
+End
+
 #ifdef USING_X11
 
 File gid_File_Extra_Fontunxppds
@@ -162,13 +169,6 @@ File gid_File_Extra_Palettes
     USER_FILE_BODY;
     Styles = (FILELIST, WORKSTATION);
     Name = "extras_palettes.filelist";
-End
-
-File gid_File_Extra_Tpllayoutimpr
-    Dir = FILELIST_DIR;
-    TXT_FILE_BODY;
-    Styles = (FILELIST);
-    Name = "extras_tpllayoutimpr.filelist";
 End
 
 File gid_File_Extra_Tplofficorr

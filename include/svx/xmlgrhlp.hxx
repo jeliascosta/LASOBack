@@ -31,10 +31,9 @@
 #include <com/sun/star/embed/XStorage.hpp>
 #include <svx/svxdllapi.h>
 
-enum SvXMLGraphicHelperMode
+enum class SvXMLGraphicHelperMode
 {
-    GRAPHICHELPER_MODE_READ = 0,
-    GRAPHICHELPER_MODE_WRITE = 1
+    Read, Write
 };
 
 struct SvxGraphicHelperStream_Impl
@@ -64,7 +63,7 @@ private:
     SvXMLGraphicHelperMode      meCreateMode;
     bool                        mbDirect;
 
-    SVX_DLLPRIVATE bool                 ImplGetStreamNames( const OUString& rURLStr,
+    SVX_DLLPRIVATE static bool          ImplGetStreamNames( const OUString& rURLStr,
                                                     OUString& rPictureStorageName,
                                                     OUString& rPictureStreamName );
     SVX_DLLPRIVATE css::uno::Reference < css::embed::XStorage >
@@ -72,7 +71,7 @@ private:
     SVX_DLLPRIVATE SvxGraphicHelperStream_Impl
                                             ImplGetGraphicStream( const OUString& rPictureStorageName,
                                                       const OUString& rPictureStreamName );
-    SVX_DLLPRIVATE OUString                 ImplGetGraphicMimeType( const OUString& rFileName ) const;
+    SVX_DLLPRIVATE static OUString      ImplGetGraphicMimeType( const OUString& rFileName );
     SVX_DLLPRIVATE Graphic                  ImplReadGraphic( const OUString& rPictureStorageName,
                                                  const OUString& rPictureStreamName );
     SVX_DLLPRIVATE bool                 ImplWriteGraphic( const OUString& rPictureStorageName,
@@ -83,7 +82,7 @@ private:
 
 protected:
                                 SvXMLGraphicHelper();
-                                virtual ~SvXMLGraphicHelper();
+                                virtual ~SvXMLGraphicHelper() override;
     void                        Init( const css::uno::Reference < css::embed::XStorage >& xXMLStorage,
                                       SvXMLGraphicHelperMode eCreateMode,
                                       bool bDirect );

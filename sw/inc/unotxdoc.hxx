@@ -203,7 +203,7 @@ private:
     using SfxBaseModel::removeEventListener;
 
 protected:
-    virtual ~SwXTextDocument();
+    virtual ~SwXTextDocument() override;
 public:
     SwXTextDocument(SwDocShell* pShell);
 
@@ -416,12 +416,10 @@ public:
     virtual OUString getPartHash(int nPart) override;
     /// @see vcl::ITiledRenderable::initializeForTiledRendering().
     virtual void initializeForTiledRendering(const css::uno::Sequence<css::beans::PropertyValue>& rArguments) override;
-    /// @see vcl::ITiledRenderable::registerCallback().
-    virtual void registerCallback(LibreOfficeKitCallback pCallback, void* pData) override;
     /// @see vcl::ITiledRenderable::postKeyEvent().
     virtual void postKeyEvent(int nType, int nCharCode, int nKeyCode) override;
     /// @see vcl::ITiledRenderable::postMouseEvent().
-    virtual void postMouseEvent(int nType, int nX, int nY, int nCount, int nButtons = MOUSE_LEFT, int nModifier = 0) override;
+    virtual void postMouseEvent(int nType, int nX, int nY, int nCount, int nButtons, int nModifier) override;
     /// @see vcl::ITiledRenderable::setTextSelection().
     virtual void setTextSelection(int nType, int nX, int nY) override;
     /// @see vcl::ITiledRenderable::getTextSelection().
@@ -440,9 +438,11 @@ public:
     virtual void setClientVisibleArea(const Rectangle& rRectangle) override;
     /// @see vcl::ITiledRenderable::getPointer().
     virtual Pointer getPointer() override;
+    /// @see vcl::ITiledRenderable::getTrackedChangeAuthors().
+    OUString getTrackedChangeAuthors() override;
 
     // css::tiledrendering::XTiledRenderable
-    virtual void SAL_CALL paintTile( const ::css::uno::Any& Parent, ::sal_Int32 nOutputWidth, ::sal_Int32 nOutputHeight, ::sal_Int32 nTilePosX, ::sal_Int32 nTilePosY, ::sal_Int32 nTileWidth, ::sal_Int32 nTileHeight ) throw (::css::uno::RuntimeException, ::std::exception) override;
+    virtual void SAL_CALL paintTile( const ::css::uno::Any& Parent, ::sal_Int32 nOutputWidth, ::sal_Int32 nOutputHeight, ::sal_Int32 nTilePosX, ::sal_Int32 nTilePosY, ::sal_Int32 nTileWidth, ::sal_Int32 nTileHeight ) throw (::css::uno::RuntimeException, std::exception) override;
 
     void                        Invalidate();
     void                        Reactivate(SwDocShell* pNewDocShell);
@@ -455,7 +455,7 @@ public:
     SwUnoCursor* FindAny(const css::uno::Reference< css::util::XSearchDescriptor > & xDesc,
                                             css::uno::Reference< css::text::XTextCursor > & xCursor, bool bAll,
                                             sal_Int32& nResult,
-                                            css::uno::Reference< css::uno::XInterface >  xLastResult);
+                                            css::uno::Reference< css::uno::XInterface > const & xLastResult);
 
     SwDocShell*                 GetDocShell() {return pDocShell;}
 
@@ -481,7 +481,7 @@ class SwXLinkTargetSupplier : public cppu::WeakImplHelper
 
 public:
     SwXLinkTargetSupplier(SwXTextDocument& rxDoc);
-    virtual ~SwXLinkTargetSupplier();
+    virtual ~SwXLinkTargetSupplier() override;
 
     //XNameAccess
     virtual css::uno::Any SAL_CALL getByName(const OUString& Name)  throw( css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception ) override;
@@ -515,11 +515,11 @@ class SwXLinkNameAccessWrapper : public cppu::WeakImplHelper
     SwXTextDocument*                                      pxDoc;
 
 public:
-    SwXLinkNameAccessWrapper(css::uno::Reference< css::container::XNameAccess >  xAccess,
+    SwXLinkNameAccessWrapper(css::uno::Reference< css::container::XNameAccess >  const & xAccess,
             const OUString& rLinkDisplayName, const OUString& sSuffix);
     SwXLinkNameAccessWrapper(SwXTextDocument& rxDoc,
             const OUString& rLinkDisplayName, const OUString& sSuffix);
-    virtual ~SwXLinkNameAccessWrapper();
+    virtual ~SwXLinkNameAccessWrapper() override;
 
     //XNameAccess
     virtual css::uno::Any SAL_CALL getByName(const OUString& Name)  throw( css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception ) override;
@@ -560,7 +560,7 @@ class SwXOutlineTarget : public cppu::WeakImplHelper
 
 public:
     SwXOutlineTarget(const OUString& rOutlineText);
-    virtual ~SwXOutlineTarget();
+    virtual ~SwXOutlineTarget() override;
 
     //XPropertySet
     virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(css::uno::RuntimeException, std::exception) override;
@@ -590,7 +590,7 @@ class SwXDocumentPropertyHelper : public SvxUnoForbiddenCharsTable
     SwDoc*  m_pDoc;
 public:
     SwXDocumentPropertyHelper(SwDoc& rDoc);
-    virtual ~SwXDocumentPropertyHelper();
+    virtual ~SwXDocumentPropertyHelper() override;
     css::uno::Reference<css::uno::XInterface> GetDrawTable(short nWhich);
     void Invalidate();
 

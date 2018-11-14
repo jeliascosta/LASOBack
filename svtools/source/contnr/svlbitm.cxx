@@ -180,9 +180,9 @@ SvLBoxString::~SvLBoxString()
 {
 }
 
-sal_uInt16 SvLBoxString::GetType() const
+SvLBoxItemType SvLBoxString::GetType() const
 {
-    return SV_ITEM_ID_LBOXSTRING;
+    return SvLBoxItemType::String;
 }
 
 void SvLBoxString::Paint(
@@ -238,49 +238,6 @@ void SvLBoxString::InitViewData(
 }
 
 // ***************************************************************
-// class SvLBoxBmp
-// ***************************************************************
-
-
-SvLBoxBmp::SvLBoxBmp() : SvLBoxItem()
-{
-}
-
-SvLBoxBmp::~SvLBoxBmp()
-{
-}
-
-sal_uInt16 SvLBoxBmp::GetType() const
-{
-    return SV_ITEM_ID_LBOXBMP;
-}
-
-void SvLBoxBmp::InitViewData( SvTreeListBox* pView,SvTreeListEntry* pEntry,
-    SvViewDataItem* pViewData)
-{
-    if( !pViewData )
-        pViewData = pView->GetViewDataItem( pEntry, this );
-    pViewData->maSize = aBmp.GetSizePixel();
-}
-
-void SvLBoxBmp::Paint(const Point& rPos, SvTreeListBox& rDev, vcl::RenderContext& rRenderContext,
-                      const SvViewDataEntry* /*pView*/, const SvTreeListEntry& /*rEntry*/)
-{
-    DrawImageFlags nStyle = rDev.IsEnabled() ? DrawImageFlags::NONE : DrawImageFlags::Disable;
-    rRenderContext.DrawImage(rPos, aBmp ,nStyle);
-}
-
-SvLBoxItem* SvLBoxBmp::Create() const
-{
-    return new SvLBoxBmp;
-}
-
-void SvLBoxBmp::Clone( SvLBoxItem* pSource )
-{
-    aBmp = static_cast<SvLBoxBmp*>(pSource)->aBmp;
-}
-
-// ***************************************************************
 // class SvLBoxButton
 // ***************************************************************
 
@@ -309,9 +266,9 @@ SvLBoxButton::~SvLBoxButton()
 {
 }
 
-sal_uInt16 SvLBoxButton::GetType() const
+SvLBoxItemType SvLBoxButton::GetType() const
 {
-    return SV_ITEM_ID_LBOXBUTTON;
+    return SvLBoxItemType::Button;
 }
 
 bool SvLBoxButton::ClickHdl( SvTreeListBox*, SvTreeListEntry* pEntry )
@@ -463,12 +420,11 @@ SvLBoxContextBmp::SvLBoxContextBmp()
 
 SvLBoxContextBmp::~SvLBoxContextBmp()
 {
-    delete m_pImpl;
 }
 
-sal_uInt16 SvLBoxContextBmp::GetType() const
+SvLBoxItemType SvLBoxContextBmp::GetType() const
 {
-    return SV_ITEM_ID_LBOXCONTEXTBMP;
+    return SvLBoxItemType::ContextBmp;
 }
 
 void SvLBoxContextBmp::SetModeImages( const Image& _rBitmap1, const Image& _rBitmap2 )

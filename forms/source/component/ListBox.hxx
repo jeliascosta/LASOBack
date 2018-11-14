@@ -146,7 +146,7 @@ public:
                 throw (css::uno::Exception, std::exception) override;
     virtual sal_Bool SAL_CALL convertFastPropertyValue(
                 css::uno::Any& _rConvertedValue, css::uno::Any& _rOldValue, sal_Int32 _nHandle, const css::uno::Any& _rValue )
-                throw (css::lang::IllegalArgumentException) override;
+                throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
 protected:
     static const ::connectivity::ORowSetValue s_aEmptyValue;
@@ -209,7 +209,7 @@ protected:
 
     void init();
     css::uno::Any getCurrentSingleValue() const;
-    css::uno::Any getCurrentMultiValue() const;
+    css::uno::Sequence<css::uno::Any> getCurrentMultiValue() const;
     css::uno::Sequence< sal_Int16 > translateBindingValuesToControlValue(
         const css::uno::Sequence< const css::uno::Any > &i_aValues)
         const;
@@ -234,8 +234,6 @@ private:
     sal_Int32   getValueType() const;
 
     void        convertBoundValues(sal_Int32 nType) const;
-
-    bool        impl_hasBoundComponent() const { return m_nBoundColumnType != css::sdbc::DataType::SQLNULL; }
 };
 
 
@@ -270,7 +268,7 @@ protected:
 
 public:
     explicit OListBoxControl(const css::uno::Reference< css::uno::XComponentContext>& _rxFactory);
-    virtual ~OListBoxControl();
+    virtual ~OListBoxControl() override;
 
     // UNO Anbindung
     DECLARE_UNO3_AGG_DEFAULTS(OListBoxControl, OBoundControl)
@@ -329,7 +327,7 @@ protected:
     virtual void processEvent( const ::comphelper::AnyEvent& _rEvent ) override;
 
 private:
-    DECL_LINK_TYPED( OnTimeout, Idle*, void );
+    DECL_LINK( OnTimeout, Idle*, void );
 };
 
 

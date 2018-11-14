@@ -46,12 +46,13 @@ protected:
     virtual void InvalidateCursorPos_() override;
     virtual void InvalidateFocus_() override;
 
-    virtual ~SwAccessiblePage();
+    virtual ~SwAccessiblePage() override;
 
 public:
     // convenience constructor to avoid typecast;
     // may only be called with SwPageFrame argument
-    SwAccessiblePage( SwAccessibleMap* pInitMap, const SwFrame* pFrame );
+    SwAccessiblePage(std::shared_ptr<SwAccessibleMap> const& pInitMap,
+                     const SwFrame* pFrame);
 
     // XAccessibleContext methods that need to be overridden
 

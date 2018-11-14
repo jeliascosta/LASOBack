@@ -63,7 +63,7 @@ public:
     SetUseHighContrastTheme(bool);
 
     void
-    SetPreferredIconTheme(const OUString&);
+    SetPreferredIconTheme(const OUString&, bool bDarkIconTheme);
 
     bool
     operator==(const vcl::IconThemeSelector&) const;
@@ -77,8 +77,7 @@ private:
     ReturnFallback(const std::vector<IconThemeInfo>& installedThemes);
 
     /** The name of the icon theme which is used as fallback */
-    static const OUString
-    FALLBACK_ICON_THEME_ID;
+    static const OUStringLiteral FALLBACK_ICON_THEME_ID;
 
 
     static OUString
@@ -86,6 +85,7 @@ private:
 
     OUString mPreferredIconTheme;
     bool mUseHighContrastTheme;
+    bool mPreferDarkIconTheme;
 
     friend class ::IconThemeSelectorTest;
 };

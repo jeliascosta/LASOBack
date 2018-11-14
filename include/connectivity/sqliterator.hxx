@@ -158,8 +158,7 @@ namespace connectivity
         OSQLParseTreeIterator(
             const css::uno::Reference< css::sdbc::XConnection >& _rxConnection,
             const css::uno::Reference< css::container::XNameAccess >& _rxTables,
-            const OSQLParser& _rParser,
-            const OSQLParseNode* pRoot = nullptr );
+            const OSQLParser& _rParser );
         ~OSQLParseTreeIterator();
 
         inline static void * SAL_CALL operator new( size_t nSize )
@@ -176,7 +175,6 @@ namespace connectivity
         // The parse tree to be analysed/traversed:
         // If NULL is passed, the current parse tree will be deleted and the error status cleared.
         void setParseTree(const OSQLParseNode * pNewParseTree);
-//      void setParser(const OSQLParser* _pParser) { m_pParser = _pParser; }
         const OSQLParseNode * getParseTree() const { return m_pParseTree; };
 
         // subtrees in case of a select statement
@@ -207,15 +205,6 @@ namespace connectivity
             order (depending on the statement type).
         */
         void traverseAll();
-
-        /** traverses selected parts of the statement tree, and fills our data with
-            the information obtained during traversal
-
-            @param _nIncludeMask
-                set of TraversalParts bits, specifying which information is to be collected.
-                Note TraversalParts is currently not
-        */
-        void traverseSome( TraversalParts _nIncludeMask );
 
         // The TableRangeMap contains all tables associated with the range name found first.
         const OSQLTables& getTables() const;
@@ -359,12 +348,6 @@ namespace connectivity
         */
         void impl_appendError( const css::sdbc::SQLException& _rError );
 
-        /** resets our errors
-        */
-        inline void impl_resetErrors()
-        {
-            m_aErrors = css::sdbc::SQLException();
-        }
         void impl_fillJoinConditions(const OSQLParseNode* i_pJoinCondition);
     };
 }

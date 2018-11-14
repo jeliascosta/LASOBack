@@ -73,7 +73,7 @@ public:
                             sal_uInt16 nFieldIdx,
                             const ScDPObject& rDPObj, const ScDPSaveGroupDimension& rGroupDim,
                             const XclExpPCField& rBaseField );
-    virtual             ~XclExpPCField();
+    virtual             ~XclExpPCField() override;
 
     /** Sets the passed field as direct grouping child field of this field. */
     void                SetGroupChildField( const XclExpPCField& rChildField );
@@ -89,7 +89,7 @@ public:
     sal_uInt16          GetItemIndex( const OUString& rItemName ) const;
 
     /** Returns the size an item index needs to write out. */
-    sal_Size            GetIndexSize() const;
+    std::size_t         GetIndexSize() const;
     /** Writes the item index at the passed source row position as part of the SXINDEXLIST record. */
     void                WriteIndex( XclExpStream& rStrm, sal_uInt32 nSrcRow ) const;
 
@@ -186,9 +186,6 @@ public:
     static void SaveXml( XclExpXmlStream& rStrm );
 
 private:
-    /** Returns read/write access to a pivot cache field. */
-    XclExpPCField*      GetFieldAcc( sal_uInt16 nFieldIdx );
-
     /** Adds all pivot cache fields. */
     void                AddFields( const ScDPObject& rDPObj );
 
@@ -439,7 +436,6 @@ private:
 
     XclExpPivotCacheList maPCacheList;      /// List of all pivot caches.
     XclExpPivotTableList maPTableList;      /// List of all pivot tables.
-    bool                mbShareCaches;      /// true = Tries to share caches between tables.
 };
 
 #endif

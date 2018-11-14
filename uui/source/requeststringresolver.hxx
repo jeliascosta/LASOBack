@@ -21,7 +21,6 @@
 #define INCLUDED_UUI_SOURCE_REQUESTSTRINGRESOLVER_HXX
 
 #include <com/sun/star/lang/XServiceInfo.hpp>
-#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/task/XInteractionRequestStringResolver.hpp>
 #include <com/sun/star/uno/XComponentContext.hpp>
 #include <cppuhelper/implbase.hxx>
@@ -35,16 +34,8 @@ class UUIInteractionRequestStringResolver:
         css::task::XInteractionRequestStringResolver >
 {
 public:
-    static char const m_aImplementationName[];
-
-    static css::uno::Sequence< OUString >
-    getSupportedServiceNames_static();
-
-    static css::uno::Reference< css::uno::XInterface >
-    SAL_CALL
-    createInstance(
-        css::uno::Reference< css::lang::XMultiServiceFactory > const &
-    rServiceFactory);
+    explicit UUIInteractionRequestStringResolver(
+        css::uno::Reference< css::uno::XComponentContext > const & rxContext);
 
 private:
     std::unique_ptr<UUIInteractionHelper> m_pImpl;
@@ -52,10 +43,7 @@ private:
     UUIInteractionRequestStringResolver(UUIInteractionRequestStringResolver &) = delete;
     void operator =(UUIInteractionRequestStringResolver&) = delete;
 
-    explicit UUIInteractionRequestStringResolver(
-        css::uno::Reference< css::uno::XComponentContext > const & rxContext);
-
-    virtual ~UUIInteractionRequestStringResolver();
+    virtual ~UUIInteractionRequestStringResolver() override;
 
     virtual OUString SAL_CALL getImplementationName()
         throw (css::uno::RuntimeException, std::exception) override;

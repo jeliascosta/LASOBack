@@ -22,11 +22,11 @@
 
 #include <com/sun/star/uno/Reference.hxx>
 #include <com/sun/star/container/XIndexReplace.hpp>
+#include <sal/types.h>
 
 namespace com { namespace sun { namespace star {
     namespace text { class XTextContent; }
 } } }
-#include <sal/types.h>
 
 class XMLTextListAutoStylePool;
 
@@ -119,11 +119,6 @@ public:
     }
 
     bool BelongsToSameList( const XMLTextNumRuleInfo& rCmp ) const;
-
-    inline bool HasSameNumRules( const XMLTextNumRuleInfo& rCmp ) const
-    {
-        return rCmp.msNumRulesName == msNumRulesName;
-    }
 
     inline bool IsContinueingPreviousSubTree() const
     {

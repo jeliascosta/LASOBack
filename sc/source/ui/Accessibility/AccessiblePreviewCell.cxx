@@ -19,9 +19,6 @@
 
 #include <sal/config.h>
 
-#include <memory>
-#include <utility>
-
 #include "scitems.hxx"
 #include <editeng/eeitem.hxx>
 #include <tools/gen.hxx>
@@ -86,8 +83,7 @@ void SAL_CALL ScAccessiblePreviewCell::disposing()
 
 void ScAccessiblePreviewCell::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if (pSimpleHint && pSimpleHint->GetId() == SC_HINT_ACC_VISAREACHANGED)
+    if (rHint.GetId() == SC_HINT_ACC_VISAREACHANGED)
     {
         if (mpTextHelper)
             mpTextHelper->UpdateChildren();
@@ -283,9 +279,10 @@ void ScAccessiblePreviewCell::CreateTextHelper()
 {
     if (!mpTextHelper)
     {
-        ::std::unique_ptr< SvxEditSource > pEditSource (new ScAccessibilityEditSource(o3tl::make_unique<ScAccessiblePreviewCellTextData>(mpViewShell, maCellAddress)));
-
-        mpTextHelper = new ::accessibility::AccessibleTextHelper( std::move(pEditSource) );
+        mpTextHelper = new ::accessibility::AccessibleTextHelper(
+            o3tl::make_unique<ScAccessibilityEditSource>(
+                o3tl::make_unique<ScAccessiblePreviewCellTextData>(
+                    mpViewShell, maCellAddress)));
         mpTextHelper->SetEventSource( this );
 
         // paragraphs in preview are transient

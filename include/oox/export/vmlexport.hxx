@@ -105,8 +105,8 @@ class OOX_DLLPUBLIC VMLExport : public EscherEx
     bool *m_pShapeTypeWritten;
 
 public:
-                        VMLExport( ::sax_fastparser::FSHelperPtr pSerializer, VMLTextExport* pTextExport = nullptr );
-    virtual             ~VMLExport();
+                        VMLExport( ::sax_fastparser::FSHelperPtr const & pSerializer, VMLTextExport* pTextExport = nullptr );
+    virtual             ~VMLExport() override;
 
     const ::sax_fastparser::FSHelperPtr&
                         GetFS() { return m_pSerializer; }
@@ -147,7 +147,7 @@ private:
     virtual void OpenContainer( sal_uInt16 nEscherContainer, int nRecInstance = 0 ) override;
     virtual void CloseContainer() override;
 
-    virtual sal_uInt32 EnterGroup( const OUString& rShapeName, const Rectangle* pBoundRect = nullptr ) override;
+    virtual sal_uInt32 EnterGroup( const OUString& rShapeName, const Rectangle* pBoundRect ) override;
     virtual void LeaveGroup() override;
 
     virtual void AddShape( sal_uInt32 nShapeType, sal_uInt32 nShapeFlags, sal_uInt32 nShapeId = 0 ) override;

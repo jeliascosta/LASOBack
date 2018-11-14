@@ -99,14 +99,7 @@ SdPageObjsTLB::SdPageObjsTransferable::SdPageObjsTransferable(
     rParent.SetupDragOrigin();
 }
 
-VCL_BUILDER_DECL_FACTORY(SdPageObjsTLB)
-{
-    WinBits nWinStyle = WB_TABSTOP;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-        nWinStyle |= WB_BORDER;
-    rRet = VclPtr<SdPageObjsTLB>::Create(pParent, nWinStyle);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(SdPageObjsTLB, WB_TABSTOP)
 
 SdPageObjsTLB::SdPageObjsTransferable::~SdPageObjsTransferable()
 {
@@ -195,39 +188,6 @@ SotClipboardFormatId SdPageObjsTLB::SdPageObjsTransferable::GetListBoxDropFormat
     return mnListBoxDropFormatId;
 }
 
-SdPageObjsTLB::SdPageObjsTLB( vcl::Window* pParentWin, const SdResId& rSdResId )
-:   SvTreeListBox       ( pParentWin, rSdResId )
-,   bisInSdNavigatorWin  ( false )
-,   mpParent            ( pParentWin )
-,   mpDoc               ( nullptr )
-,   mpBookmarkDoc       ( nullptr )
-,   mpMedium            ( nullptr )
-,   mpOwnMedium         ( nullptr )
-,   maImgOle             ( BitmapEx( SdResId( BMP_OLE ) ) )
-,   maImgGraphic         ( BitmapEx( SdResId( BMP_GRAPHIC ) ) )
-,   mbLinkableSelected  ( false )
-,   mpDropNavWin        ( nullptr )
-,   mpFrame             ( nullptr )
-,   mbSaveTreeItemState ( false )
-,   mbShowAllShapes     ( false )
-,   mbShowAllPages      ( false )
-{
-    // add lines to Tree-ListBox
-    SetStyle( GetStyle() | WB_TABSTOP | WB_BORDER | WB_HASLINES |
-                           WB_HASBUTTONS | // WB_HASLINESATROOT |
-                           WB_HSCROLL |
-                           WB_HASBUTTONSATROOT |
-                           WB_QUICK_SEARCH /* i31275 */ );
-    SetNodeBitmaps( Image(Bitmap( SdResId(BMP_EXPAND) )),
-                    Image(Bitmap( SdResId(BMP_COLLAPSE) )));
-
-    SetDragDropMode(
-         DragDropMode::CTRL_MOVE | DragDropMode::CTRL_COPY |
-            DragDropMode::APP_MOVE  | DragDropMode::APP_COPY  | DragDropMode::APP_DROP );
-
-    m_pAccel = ::svt::AcceleratorExecute::createAcceleratorHelper();
-}
-
 SdPageObjsTLB::SdPageObjsTLB( vcl::Window* pParentWin, WinBits nStyle )
 :   SvTreeListBox       ( pParentWin, nStyle )
 ,   bisInSdNavigatorWin ( false )
@@ -300,9 +260,9 @@ OUString SdPageObjsTLB::getAltLongDescText(SvTreeListEntry* pEntry , bool isAltT
     for( pageNo = 0;  pageNo < maxPages; pageNo++ )
     {
         const SdPage* pPage = static_cast<const SdPage*>( mpDoc->GetPage( pageNo ) );
-        if( pPage->GetPageKind() != PK_STANDARD ) continue;
+        if( pPage->GetPageKind() != PageKind::Standard ) continue;
         if( pPage->GetName() !=  ParentName ) continue;
-        SdrObjListIter aIter( *pPage, IM_FLAT );
+        SdrObjListIter aIter( *pPage, SdrIterMode::Flat );
         while( aIter.IsMore() )
         {
             pObj = aIter.Next();
@@ -532,8 +492,8 @@ void SdPageObjsTLB::Fill( const SdDrawDocument* pInDoc, bool bAllPages,
     while( nPage < nMaxPages )
     {
         const SdPage* pPage = static_cast<const SdPage*>( mpDoc->GetPage( nPage ) );
-        if(  (mbShowAllPages || pPage->GetPageKind() == PK_STANDARD)
-             && !(pPage->GetPageKind()==PK_HANDOUT)   ) //#94954# never list the normal handout page ( handout-masterpage is used instead )
+        if(  (mbShowAllPages || pPage->GetPageKind() == PageKind::Standard)
+             && !(pPage->GetPageKind()==PageKind::Handout)   ) //#94954# never list the normal handout page ( handout-masterpage is used instead )
         {
             bool bPageExluded = pPage->IsExcluded();
 
@@ -617,7 +577,7 @@ void SdPageObjsTLB::AddShapeList (
     SdrObjListIter aIter(
         rList,
         !rList.HasObjectNavigationOrder() /* use navigation order, if available */,
-        IM_FLAT);
+        SdrIterMode::Flat);
 
     bool  bMarked=false;
     if(bisInSdNavigatorWin)
@@ -651,7 +611,7 @@ void SdPageObjsTLB::AddShapeList (
 
         if( !aStr.isEmpty() )
         {
-            if( pObj->GetObjInventor() == SdrInventor && pObj->GetObjIdentifier() == OBJ_OLE2 )
+            if( pObj->GetObjInventor() == SdrInventor::Default && pObj->GetObjIdentifier() == OBJ_OLE2 )
             {
                 SvTreeListEntry *pNewEntry = InsertEntry(
                     aStr,
@@ -685,7 +645,7 @@ void SdPageObjsTLB::AddShapeList (
                     }
                 }
             }
-            else if( pObj->GetObjInventor() == SdrInventor && pObj->GetObjIdentifier() == OBJ_GRAF )
+            else if( pObj->GetObjInventor() == SdrInventor::Default && pObj->GetObjIdentifier() == OBJ_GRAF )
             {
                 SvTreeListEntry *pNewEntry = InsertEntry(
                     aStr,
@@ -817,7 +777,7 @@ void SdPageObjsTLB::SetShowAllShapes (
 }
 
 /**
- * Checks if the pages (PK_STANDARD) of a doc and the objects on the pages
+ * Checks if the pages (PageKind::Standard) of a doc and the objects on the pages
  * are identical to the TreeLB.
  * If a doc is provided, this will be the used doc (important by more than
  * one document).
@@ -841,7 +801,7 @@ bool SdPageObjsTLB::IsEqualToDoc( const SdDrawDocument* pInDoc )
     while( nPage < nMaxPages )
     {
         const SdPage* pPage = static_cast<const SdPage*>( mpDoc->GetPage( nPage ) );
-        if( pPage->GetPageKind() == PK_STANDARD )
+        if( pPage->GetPageKind() == PageKind::Standard )
         {
             if( !pEntry )
                 return false;
@@ -855,7 +815,7 @@ bool SdPageObjsTLB::IsEqualToDoc( const SdDrawDocument* pInDoc )
             SdrObjListIter aIter(
                 *pPage,
                 !pPage->HasObjectNavigationOrder() /* use navigation order, if available */,
-                IM_DEEPWITHGROUPS );
+                SdrIterMode::DeepWithGroups );
 
             while( aIter.IsMore() )
             {
@@ -935,7 +895,7 @@ void SdPageObjsTLB::RequestingChildren( SvTreeListEntry* pFileEntry )
             while( nPage < nMaxPages )
             {
                 SdPage* pPage = static_cast<SdPage*>( mpBookmarkDoc->GetPage( nPage ) );
-                if( pPage->GetPageKind() == PK_STANDARD )
+                if( pPage->GetPageKind() == PageKind::Standard )
                 {
                     pPageEntry = InsertEntry( pPage->GetName(),
                                               aImgPage,
@@ -945,7 +905,7 @@ void SdPageObjsTLB::RequestingChildren( SvTreeListEntry* pFileEntry )
                                               TREELIST_APPEND,
                                               reinterpret_cast< void* >( 1 ) );
 
-                    SdrObjListIter aIter( *pPage, IM_DEEPWITHGROUPS );
+                    SdrObjListIter aIter( *pPage, SdrIterMode::DeepWithGroups );
 
                     while( aIter.IsMore() )
                     {
@@ -953,11 +913,11 @@ void SdPageObjsTLB::RequestingChildren( SvTreeListEntry* pFileEntry )
                         OUString aStr( GetObjectName( pObj ) );
                         if( !aStr.isEmpty() )
                         {
-                            if( pObj->GetObjInventor() == SdrInventor && pObj->GetObjIdentifier() == OBJ_OLE2 )
+                            if( pObj->GetObjInventor() == SdrInventor::Default && pObj->GetObjIdentifier() == OBJ_OLE2 )
                             {
                                 InsertEntry(aStr, maImgOle, maImgOle, pPageEntry);
                             }
-                            else if( pObj->GetObjInventor() == SdrInventor && pObj->GetObjIdentifier() == OBJ_GRAF )
+                            else if( pObj->GetObjInventor() == SdrInventor::Default && pObj->GetObjIdentifier() == OBJ_GRAF )
                             {
                                 InsertEntry(aStr, maImgGraphic, maImgGraphic, pPageEntry);
                             }
@@ -1128,7 +1088,7 @@ void SdPageObjsTLB::KeyInput( const KeyEvent& rKEvt )
             if (pSdDrawDocShell)
             {
                 pSdDrawDocShell->GetObjectIsmarked(aStr, true);
-                bMarked = pSdDrawDocShell->GetObjectIsmarked(aStr);
+                bMarked = pSdDrawDocShell->GetObjectIsmarked(aStr, false);
             }
             pNewEntry->SetMarked(bMarked);
             Invalidate();
@@ -1164,7 +1124,7 @@ void SdPageObjsTLB::StartDrag( sal_Int8 nAction, const Point& rPosPixel)
         // targets.  This prevents moving shapes from one page to another.
 
         // Select all entries and disable them as drop targets.
-        SetSelectionMode(MULTIPLE_SELECTION);
+        SetSelectionMode(SelectionMode::Multiple);
         SetCursor(static_cast<SvTreeListEntry*>(nullptr));
         SelectAll(true, false);
         EnableSelectionAsDropTarget(false);
@@ -1183,7 +1143,7 @@ void SdPageObjsTLB::StartDrag( sal_Int8 nAction, const Point& rPosPixel)
 
         // Set selection back to the entry under the mouse.
         SelectAll(false, false);
-        SetSelectionMode(SINGLE_SELECTION);
+        SetSelectionMode(SelectionMode::Single);
         Select(pEntry);
 
         // We can delete the Navigator from ExecuteDrag (when switching to
@@ -1215,7 +1175,7 @@ void SdPageObjsTLB::DoDrag()
 
         if( eDragType == NAVIGATOR_DRAGTYPE_LINK )
             nDNDActions = DND_ACTION_LINK;  // Either COPY *or* LINK, never both!
-        else if (mpDoc->GetSdPageCount(PK_STANDARD) == 1)
+        else if (mpDoc->GetSdPageCount(PageKind::Standard) == 1)
         {
             // Can not move away the last slide in a document.
             nDNDActions = DND_ACTION_COPY;
@@ -1385,7 +1345,7 @@ sal_Int8 SdPageObjsTLB::ExecuteDrop( const ExecuteDropEvent& rEvt )
 /**
  * Handler for Dragging
  */
-IMPL_LINK_NOARG_TYPED(SdPageObjsTLB, ExecDragHdl, void*, void)
+IMPL_LINK_NOARG(SdPageObjsTLB, ExecDragHdl, void*, void)
 {
     // as link, then it is allowed to asynchronous, without ImpMouseMoveMsg on
     // the stack, delete the Navigator
@@ -1561,7 +1521,6 @@ void SdPageObjsTLB::AddShapeToTransferable (
         aObjectDescriptor.maDisplayName = pDocShell->GetMedium()->GetURLObject().GetURLNoPass();
     else
         aObjectDescriptor.maDisplayName.clear();
-    aObjectDescriptor.mbCanLink = false;
 
     rTransferable.SetStartPos(aDragPos);
     rTransferable.SetObjectDescriptor( aObjectDescriptor );

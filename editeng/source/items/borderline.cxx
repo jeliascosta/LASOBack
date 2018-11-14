@@ -91,8 +91,7 @@ Color SvxBorderLine::threeDMediumColor( Color aMain )
 
 SvxBorderLine::SvxBorderLine( const Color *pCol, long nWidth,
        SvxBorderStyle nStyle,
-       Color (*pColorOutFn)( Color ), Color (*pColorInFn)( Color ),
-       Color (*pColorGapFn)( Color ) )
+       Color (*pColorOutFn)( Color ), Color (*pColorInFn)( Color ) )
 : m_nWidth( nWidth )
 , m_bMirrorWidths( false )
 , m_aWidthImpl( SvxBorderLine::getWidthImpl( nStyle ) )
@@ -102,7 +101,7 @@ SvxBorderLine::SvxBorderLine( const Color *pCol, long nWidth,
 , m_bUseLeftTop( false )
 , m_pColorOutFn( pColorOutFn )
 , m_pColorInFn( pColorInFn )
-, m_pColorGapFn( pColorGapFn )
+, m_pColorGapFn( nullptr )
 {
     if ( pCol )
         aColor = *pCol;
@@ -633,10 +632,10 @@ void SvxBorderLine::SetWidth( long nWidth )
     m_nWidth = nWidth;
 }
 
-OUString SvxBorderLine::GetValueString( SfxMapUnit eSrcUnit,
-                                      SfxMapUnit eDestUnit,
-                                      const IntlWrapper* pIntl,
-                                      bool bMetricStr) const
+OUString SvxBorderLine::GetValueString(MapUnit eSrcUnit,
+                                       MapUnit eDestUnit,
+                                       const IntlWrapper* pIntl,
+                                       bool bMetricStr) const
 {
     static const sal_uInt16 aStyleIds[] =
     {

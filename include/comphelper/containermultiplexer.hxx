@@ -67,23 +67,17 @@ namespace comphelper
         void setAdapter(OContainerListenerAdapter* _pAdapter);
     };
 
-
-    //= OContainerListenerAdapter
-    class SAL_DLLPUBLIC_TEMPLATE OContainerListenerAdapter_BASE
-        : public cppu::WeakImplHelper<css::container::XContainerListener> {};
-
     class COMPHELPER_DLLPUBLIC OContainerListenerAdapter
-        : public OContainerListenerAdapter_BASE
+        : public cppu::WeakImplHelper<css::container::XContainerListener>
     {
         friend class OContainerListener;
 
-    protected:
+    private:
         css::uno::Reference< css::container::XContainer >
                                 m_xContainer;
         OContainerListener*     m_pListener;
-        sal_Int32               m_nLockCount;
 
-        virtual ~OContainerListenerAdapter();
+        virtual ~OContainerListenerAdapter() override;
 
     public:
         OContainerListenerAdapter(OContainerListener* _pListener,
@@ -96,9 +90,6 @@ namespace comphelper
         virtual void SAL_CALL elementInserted( const css::container::ContainerEvent& Event ) throw(css::uno::RuntimeException, std::exception) override;
         virtual void SAL_CALL elementRemoved( const css::container::ContainerEvent& Event ) throw(css::uno::RuntimeException, std::exception) override;
         virtual void SAL_CALL elementReplaced( const css::container::ContainerEvent& Event ) throw(css::uno::RuntimeException, std::exception) override;
-
-        // locking the multiplexer
-        sal_Int32   locked() const { return m_nLockCount; }
 
         /// dispose the object. No multiplexing anymore
         void        dispose();

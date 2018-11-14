@@ -68,29 +68,31 @@ using sc::TwipsToHMM;
 ScPatternAttr::ScPatternAttr( SfxItemSet* pItemSet, const OUString& rStyleName )
     :   SfxSetItem  ( ATTR_PATTERN, pItemSet ),
         pName       ( new OUString( rStyleName ) ),
-        pStyle      ( nullptr )
+        pStyle      ( nullptr ),
+        mnKey(0)
 {
 }
 
-ScPatternAttr::ScPatternAttr( SfxItemSet* pItemSet, ScStyleSheet* pStyleSheet )
+ScPatternAttr::ScPatternAttr( SfxItemSet* pItemSet )
     :   SfxSetItem  ( ATTR_PATTERN, pItemSet ),
         pName       ( nullptr ),
-        pStyle      ( pStyleSheet )
+        pStyle      ( nullptr ),
+        mnKey(0)
 {
-    if ( pStyleSheet )
-        GetItemSet().SetParent( &pStyleSheet->GetItemSet() );
 }
 
 ScPatternAttr::ScPatternAttr( SfxItemPool* pItemPool )
     :   SfxSetItem  ( ATTR_PATTERN, new SfxItemSet( *pItemPool, ATTR_PATTERN_START, ATTR_PATTERN_END ) ),
         pName       ( nullptr ),
-        pStyle      ( nullptr )
+        pStyle      ( nullptr ),
+        mnKey(0)
 {
 }
 
 ScPatternAttr::ScPatternAttr( const ScPatternAttr& rPatternAttr )
     :   SfxSetItem  ( rPatternAttr ),
-        pStyle      ( rPatternAttr.pStyle )
+        pStyle      ( rPatternAttr.pStyle ),
+        mnKey(rPatternAttr.mnKey)
 {
     if (rPatternAttr.pName)
         pName = new OUString(*rPatternAttr.pName);
@@ -389,8 +391,8 @@ void ScPatternAttr::GetFont(
             aFraction = *pScale;
         Size aSize( 0, (long) nFontHeight );
         MapMode aDestMode = pOutDev->GetMapMode();
-        MapMode aSrcMode( MAP_TWIP, Point(), aFraction, aFraction );
-        if (aDestMode.GetMapUnit() == MAP_PIXEL && pOutDev->GetDPIX() > 0)
+        MapMode aSrcMode( MapUnit::MapTwip, Point(), aFraction, aFraction );
+        if (aDestMode.GetMapUnit() == MapUnit::MapPixel && pOutDev->GetDPIX() > 0)
             aEffSize = pOutDev->LogicToPixel( aSize, aSrcMode );
         else
         {
@@ -1252,7 +1254,7 @@ void ScPatternAttr::UpdateStyleSheet(ScDocument* pDoc)
         //  Assumes that "Standard" is always the 1st entry!
         if (!pStyle)
         {
-            SfxStyleSheetIteratorPtr pIter = pDoc->GetStyleSheetPool()->CreateIterator( SfxStyleFamily::Para, SFXSTYLEBIT_ALL );
+            std::shared_ptr<SfxStyleSheetIterator> pIter = pDoc->GetStyleSheetPool()->CreateIterator( SfxStyleFamily::Para, SFXSTYLEBIT_ALL );
             pStyle = dynamic_cast< ScStyleSheet* >(pIter->First());
         }
 
@@ -1383,9 +1385,9 @@ long ScPatternAttr::GetRotateVal( const SfxItemSet* pCondSet ) const
     return nAttrRotate;
 }
 
-sal_uInt8 ScPatternAttr::GetRotateDir( const SfxItemSet* pCondSet ) const
+ScRotateDir ScPatternAttr::GetRotateDir( const SfxItemSet* pCondSet ) const
 {
-    sal_uInt8 nRet = SC_ROTDIR_NONE;
+    ScRotateDir nRet = ScRotateDir::NONE;
 
     long nAttrRotate = GetRotateVal( pCondSet );
     if ( nAttrRotate )
@@ -1394,23 +1396,33 @@ sal_uInt8 ScPatternAttr::GetRotateDir( const SfxItemSet* pCondSet ) const
                                     GetItem(ATTR_ROTATE_MODE, pCondSet)).GetValue();
 
         if ( eRotMode == SVX_ROTATE_MODE_STANDARD || nAttrRotate == 18000 )
-            nRet = SC_ROTDIR_STANDARD;
+            nRet = ScRotateDir::Standard;
         else if ( eRotMode == SVX_ROTATE_MODE_CENTER )
-            nRet = SC_ROTDIR_CENTER;
+            nRet = ScRotateDir::Center;
         else if ( eRotMode == SVX_ROTATE_MODE_TOP || eRotMode == SVX_ROTATE_MODE_BOTTOM )
         {
             long nRot180 = nAttrRotate % 18000;     // 1/100 degrees
             if ( nRot180 == 9000 )
-                nRet = SC_ROTDIR_CENTER;
+                nRet = ScRotateDir::Center;
             else if ( ( eRotMode == SVX_ROTATE_MODE_TOP && nRot180 < 9000 ) ||
                       ( eRotMode == SVX_ROTATE_MODE_BOTTOM && nRot180 > 9000 ) )
-                nRet = SC_ROTDIR_LEFT;
+                nRet = ScRotateDir::Left;
             else
-                nRet = SC_ROTDIR_RIGHT;
+                nRet = ScRotateDir::Right;
         }
     }
 
     return nRet;
+}
+
+void ScPatternAttr::SetKey(sal_uInt64 nKey)
+{
+    mnKey = nKey;
+}
+
+sal_uInt64 ScPatternAttr::GetKey() const
+{
+    return mnKey;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -197,7 +197,7 @@ class FieldDeletionModify : public SwModify
                 mpFormatField->Add(this);
         }
 
-        virtual ~FieldDeletionModify()
+        virtual ~FieldDeletionModify() override
         {
             if (mpFormatField)
             {
@@ -222,7 +222,7 @@ class FieldDeletionModify : public SwModify
             }
         }
     private:
-        AbstractFieldInputDlg* mpInputFieldDlg;
+        VclPtr<AbstractFieldInputDlg> mpInputFieldDlg;
         SwFormatField* mpFormatField;
 };
 
@@ -233,7 +233,7 @@ bool SwWrtShell::StartInputFieldDlg( SwField* pField, bool bNextButton,
 
     SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
     OSL_ENSURE(pFact, "Dialog creation failed!");
-    std::unique_ptr<AbstractFieldInputDlg> pDlg(pFact->CreateFieldInputDlg(pParentWin, *this, pField, bNextButton));
+    ScopedVclPtr<AbstractFieldInputDlg> pDlg(pFact->CreateFieldInputDlg(pParentWin, *this, pField, bNextButton));
     OSL_ENSURE(pDlg, "Dialog creation failed!");
     if(pWindowState && !pWindowState->isEmpty())
         pDlg->SetWindowState(*pWindowState);
@@ -248,7 +248,7 @@ bool SwWrtShell::StartInputFieldDlg( SwField* pField, bool bNextButton,
     if(pWindowState)
         *pWindowState = pDlg->GetWindowState();
 
-    pDlg.reset();
+    pDlg.disposeAndClear();
     GetWin()->Update();
     return bRet;
 }
@@ -258,14 +258,14 @@ bool SwWrtShell::StartDropDownFieldDlg(SwField* pField, bool bNextButton, OStrin
     SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
     OSL_ENSURE(pFact, "SwAbstractDialogFactory fail!");
 
-    std::unique_ptr<AbstractDropDownFieldDialog> pDlg(pFact->CreateDropDownFieldDialog(*this, pField, bNextButton));
+    ScopedVclPtr<AbstractDropDownFieldDialog> pDlg(pFact->CreateDropDownFieldDialog(*this, pField, bNextButton));
     OSL_ENSURE(pDlg, "Dialog creation failed!");
     if(pWindowState && !pWindowState->isEmpty())
         pDlg->SetWindowState(*pWindowState);
     const short nRet = pDlg->Execute();
     if(pWindowState)
         *pWindowState = pDlg->GetWindowState();
-    pDlg.reset();
+    pDlg.disposeAndClear();
     bool bRet = RET_CANCEL == nRet;
     GetWin()->Update();
     if(RET_YES == nRet)
@@ -473,7 +473,7 @@ void LoadURL( SwViewShell& rVSh, const OUString& rURL, sal_uInt16 nFilter,
     // We are doing tiledRendering, let the client handles the URL loading.
     if (comphelper::LibreOfficeKit::isActive())
     {
-        rVSh.libreOfficeKitCallback(LOK_CALLBACK_HYPERLINK_CLICKED, rURL.toUtf8().getStr());
+        rVSh.GetSfxViewShell()->libreOfficeKitViewCallback(LOK_CALLBACK_HYPERLINK_CLICKED, rURL.toUtf8().getStr());
         return;
     }
 
@@ -553,10 +553,10 @@ void SwWrtShell::NavigatorPaste( const NaviContentBookmark& rBkmk,
     else
     {
         SwSectionData aSection( FILE_LINK_SECTION, GetUniqueSectionName() );
-        OUString aLinkFile( rBkmk.GetURL().getToken(0, '#') );
-        aLinkFile += OUString(sfx2::cTokenSeparator);
-        aLinkFile += OUString(sfx2::cTokenSeparator);
-        aLinkFile += rBkmk.GetURL().getToken(1, '#');
+        OUString aLinkFile = rBkmk.GetURL().getToken(0, '#')
+            + OUStringLiteral1(sfx2::cTokenSeparator)
+            + OUStringLiteral1(sfx2::cTokenSeparator)
+            + rBkmk.GetURL().getToken(1, '#');
         aSection.SetLinkFileName( aLinkFile );
         aSection.SetProtectFlag( true );
         const SwSection* pIns = InsertSection( aSection );

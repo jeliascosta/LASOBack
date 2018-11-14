@@ -321,7 +321,7 @@ public:
     void SetRestartListing( bool bSet ) { bRestartListing = bSet; }
     bool IsRestartListing() const { return bRestartListing; }
 
-    void SetAppendMode( SwHTMLAppendMode eMode=AM_NORMAL ) { eAppend = eMode; }
+    void SetAppendMode( SwHTMLAppendMode eMode ) { eAppend = eMode; }
     SwHTMLAppendMode GetAppendMode() const { return eAppend; }
 };
 
@@ -331,23 +331,32 @@ class HTMLTable;
 class SwCSS1Parser;
 class SwHTMLNumRuleInfo;
 
-typedef ::std::vector<std::unique_ptr<ImageMap>> ImageMaps;
+typedef std::vector<std::unique_ptr<ImageMap>> ImageMaps;
 
-#define HTML_CNTXT_PROTECT_STACK    0x0001
-#define HTML_CNTXT_STRIP_PARA       0x0002
-#define HTML_CNTXT_KEEP_NUMRULE     0x0004
-#define HTML_CNTXT_HEADER_DIST      0x0008
-#define HTML_CNTXT_FOOTER_DIST      0x0010
-#define HTML_CNTXT_KEEP_ATTRS       0x0020
+enum class HtmlContextFlags {
+    ProtectStack    = 0x0001,
+    StripPara       = 0x0002,
+    KeepNumrule     = 0x0004,
+    HeaderDist      = 0x0008,
+    FooterDist      = 0x0010,
+    KeepAttrs       = 0x0020,
+    MultiColMask    = StripPara | KeepNumrule | KeepAttrs // for headers, footers or footnotes
+};
+namespace o3tl
+{
+    template<> struct typed_flags<HtmlContextFlags> : is_typed_flags<HtmlContextFlags, 0x03f> {};
+}
 
-#define CONTEXT_FLAGS_ABSPOS    \
-    (HTML_CNTXT_PROTECT_STACK | \
-     HTML_CNTXT_STRIP_PARA)
-
-#define HTML_FF_BOX                 0x0001
-#define HTML_FF_BACKGROUND          0x0002
-#define HTML_FF_PADDING             0x0004
-#define HTML_FF_DIRECTION           0x0008
+enum class HtmlFrameFormatFlags {
+    Box                 = 0x0001,
+    Background          = 0x0002,
+    Padding             = 0x0004,
+    Direction           = 0x0008,
+};
+namespace o3tl
+{
+    template<> struct typed_flags<HtmlFrameFormatFlags> : is_typed_flags<HtmlFrameFormatFlags, 0x0f> {};
+}
 
 class SwHTMLParser : public SfxHTMLParser, public SwClient
 {
@@ -436,7 +445,6 @@ class SwHTMLParser : public SfxHTMLParser, public SwClient
                                 // Flag um doppeltes init durch Rekursion
                                 // zu verhindern.
     bool m_bViewCreated : 1;      // die View wurde schon erzeugt (asynchron)
-    bool m_bSetCursor : 1;          // Cursor wieder auf den Anfang setzen
     bool m_bSetModEnabled : 1;
 
     bool m_bInFloatingFrame : 1;  // Wir sind in einen Floating Frame
@@ -453,7 +461,6 @@ class SwHTMLParser : public SfxHTMLParser, public SwClient
     bool m_bNoParSpace : 1;
     // 16
 
-    bool m_bAnyStarBasic : 1;     // gibt es ueberhaupt ein StarBasic-Modul
     bool m_bInNoEmbed : 1;        // Wir sind in einem NOEMBED-Bereich
 
     bool m_bInTitle : 1;          // Wir sind im Titel
@@ -484,7 +491,7 @@ class SwHTMLParser : public SfxHTMLParser, public SwClient
     SwViewShell *CallEndAction( bool bChkAction = false, bool bChkPtr = true );
     SwViewShell *CheckActionViewShell();
 
-    DECL_LINK_TYPED( AsyncCallback, void*, void );
+    DECL_LINK( AsyncCallback, void*, void );
 
     // Attribute am Dok setzen
     void SetAttr_( bool bChkEnd, bool bBeforeTable, HTMLAttrs *pPostIts );
@@ -505,14 +512,13 @@ class SwHTMLParser : public SfxHTMLParser, public SwClient
     // ppDepAttr gibt einen Attribut-Tabellen-Eintrag an, dessen Attribute
     // gesetzt sein muessen, bevor das Attribut beendet werden darf
     void NewAttr( HTMLAttr **ppAttr, const SfxPoolItem& rItem );
-    bool EndAttr( HTMLAttr *pAttr, HTMLAttr **ppDepAttr=nullptr,
-                  bool bChkEmpty=true );
+    bool EndAttr( HTMLAttr *pAttr, bool bChkEmpty=true );
     void DeleteAttr( HTMLAttr* pAttr );
 
     void EndContextAttrs( HTMLAttrContext *pContext );
     void SaveAttrTab( HTMLAttrTable& rNewAttrTab );
     void SplitAttrTab( const SwPosition& rNewPos );
-    void SplitAttrTab( HTMLAttrTable& rNewAttrTab, bool bMoveEndBack = true );
+    void SplitAttrTab( HTMLAttrTable& rNewAttrTab, bool bMoveEndBack );
     void RestoreAttrTab( HTMLAttrTable& rNewAttrTab );
     void InsertAttr( const SfxPoolItem& rItem, bool bInsAtStart );
     void InsertAttrs( HTMLAttrs& rAttrs );
@@ -586,9 +592,9 @@ class SwHTMLParser : public SfxHTMLParser, public SwClient
 
     // Fly-Frames einfuegen/verlassen
     void InsertFlyFrame( const SfxItemSet& rItemSet, HTMLAttrContext *pCntxt,
-                         const OUString& rId, sal_uInt16 nFlags );
+                         const OUString& rId );
 
-    void SaveDocContext( HTMLAttrContext *pCntxt, sal_uInt16 nFlags,
+    void SaveDocContext( HTMLAttrContext *pCntxt, HtmlContextFlags nFlags,
                        const SwPosition *pNewPos );
     void RestoreDocContext( HTMLAttrContext *pCntxt );
 
@@ -609,7 +615,7 @@ class SwHTMLParser : public SfxHTMLParser, public SwClient
     void NewNumBulList( int nToken );
     void EndNumBulList( int nToken=0 );
     void NewNumBulListItem( int nToken );
-    void EndNumBulListItem( int nToken=0, bool bSetColl=true,
+    void EndNumBulListItem( int nToken, bool bSetColl,
                             bool bLastPara=false );
 
     // Definitions-Listen <DL> mit <DD>, <DT>
@@ -671,7 +677,7 @@ private:
                                  SfxItemSet &rFrameItemSet );
 
     static void SetFrameFormatAttrs( SfxItemSet &rItemSet, SvxCSS1PropertyInfo &rPropInfo,
-                         sal_uInt16 nFlags, SfxItemSet &rFrameItemSet );
+                         HtmlFrameFormatFlags nFlags, SfxItemSet &rFrameItemSet );
 
     // Frames anlegen und Auto-gebundene Rahmen registrieren
     void RegisterFlyFrame( SwFrameFormat *pFlyFrame );
@@ -709,7 +715,6 @@ private:
     void InsertParam();     // htmlplug.cxx
 
     void InsertFloatingFrame();
-    void EndFloatingFrame() { m_bInFloatingFrame = false; }
 
     // <BODY>-Tag auswerten: Hintergrund-Grafiken und -Farben setzen (htmlgrin.cxx)
     void InsertBodyOptions();
@@ -723,7 +728,7 @@ private:
     // eine Bookmark einfuegen
     void InsertBookmark( const OUString& rName );
 
-    void InsertCommentText( const sal_Char *pTag = nullptr );
+    void InsertCommentText( const sal_Char *pTag );
     void InsertComment( const OUString& rName, const sal_Char *pTag = nullptr );
 
     // sind im aktuellen Absatz Bookmarks vorhanden?
@@ -868,7 +873,7 @@ public:         // used in tables
 protected:
     // Executed for each token recognized by CallParser
     virtual void NextToken( int nToken ) override;
-    virtual ~SwHTMLParser();
+    virtual ~SwHTMLParser() override;
 
     // If the document is removed, remove the parser as well
     virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew ) override;
@@ -880,7 +885,7 @@ public:
     SwHTMLParser( SwDoc* pD, SwPaM & rCursor, SvStream& rIn,
                     const OUString& rFileName,
                     const OUString& rBaseURL,
-                    bool bReadNewDoc = true,
+                    bool bReadNewDoc,
                     SfxMedium* pMed = nullptr, bool bReadUTF8 = false,
                     bool bIgnoreHTMLComments = false );
 

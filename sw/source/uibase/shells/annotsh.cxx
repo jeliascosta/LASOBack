@@ -102,7 +102,7 @@
 #include <svx/dialogs.hrc>
 
 #include <svx/svxids.hrc>
-#include <sfx2/sidebar/EnumContext.hxx>
+#include <vcl/EnumContext.hxx>
 #include <svl/itempool.hxx>
 #include <editeng/outliner.hxx>
 #include <editeng/editeng.hxx>
@@ -156,7 +156,7 @@ SwAnnotationShell::SwAnnotationShell( SwView& r )
     : rView(r)
 {
     SetPool(SwAnnotationShell::GetAnnotationPool(rView));
-    SfxShell::SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_Annotation));
+    SfxShell::SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context_Annotation));
 }
 
 SwAnnotationShell::~SwAnnotationShell()
@@ -320,21 +320,21 @@ void SwAnnotationShell::Exec( SfxRequest &rReq )
 
         case SID_ATTR_PARA_LINESPACE_10:
         {
-            SvxLineSpacingItem aItem(SVX_LINESPACE_ONE_LINE, EE_PARA_SBL);
+            SvxLineSpacingItem aItem(LINE_SPACE_DEFAULT_HEIGHT, EE_PARA_SBL);
             aItem.SetPropLineSpace(100);
             aNewAttr.Put(aItem);
         }
         break;
         case SID_ATTR_PARA_LINESPACE_15:
         {
-            SvxLineSpacingItem aItem(SVX_LINESPACE_ONE_POINT_FIVE_LINES, EE_PARA_SBL);
+            SvxLineSpacingItem aItem(LINE_SPACE_DEFAULT_HEIGHT, EE_PARA_SBL);
             aItem.SetPropLineSpace(150);
             aNewAttr.Put(aItem);
         }
         break;
         case SID_ATTR_PARA_LINESPACE_20:
         {
-            SvxLineSpacingItem aItem(SVX_LINESPACE_TWO_LINES, EE_PARA_SBL);
+            SvxLineSpacingItem aItem(LINE_SPACE_DEFAULT_HEIGHT, EE_PARA_SBL);
             aItem.SetPropLineSpace(200);
             aNewAttr.Put(aItem);
         }
@@ -362,11 +362,11 @@ void SwAnnotationShell::Exec( SfxRequest &rReq )
             SvxEscapement eEsc = (SvxEscapement ) static_cast<const SvxEscapementItem&>(
                             aEditAttr.Get( EE_CHAR_ESCAPEMENT ) ).GetEnumValue();
 
-            if( eEsc == SVX_ESCAPEMENT_SUPERSCRIPT )
-                aItem.SetEscapement( SVX_ESCAPEMENT_OFF );
+            if( eEsc == SvxEscapement::Superscript )
+                aItem.SetEscapement( SvxEscapement::Off );
             else
-                aItem.SetEscapement( SVX_ESCAPEMENT_SUPERSCRIPT );
-            aNewAttr.Put( aItem, EE_CHAR_ESCAPEMENT );
+                aItem.SetEscapement( SvxEscapement::Superscript );
+            aNewAttr.Put( aItem );
         }
         break;
         case FN_SET_SUB_SCRIPT:
@@ -375,11 +375,11 @@ void SwAnnotationShell::Exec( SfxRequest &rReq )
             SvxEscapement eEsc = (SvxEscapement ) static_cast<const SvxEscapementItem&>(
                             aEditAttr.Get( EE_CHAR_ESCAPEMENT ) ).GetEnumValue();
 
-            if( eEsc == SVX_ESCAPEMENT_SUBSCRIPT )
-                aItem.SetEscapement( SVX_ESCAPEMENT_OFF );
+            if( eEsc == SvxEscapement::Subscript )
+                aItem.SetEscapement( SvxEscapement::Off );
             else
-                aItem.SetEscapement( SVX_ESCAPEMENT_SUBSCRIPT );
-            aNewAttr.Put( aItem, EE_CHAR_ESCAPEMENT );
+                aItem.SetEscapement( SvxEscapement::Subscript );
+            aNewAttr.Put( aItem );
         }
         break;
         case SID_HYPERLINK_SETLINK:
@@ -396,7 +396,7 @@ void SwAnnotationShell::Exec( SfxRequest &rReq )
 
                 const SvxFieldItem* pFieldItem = pOLV->GetFieldAtSelection();
 
-                if (pFieldItem && dynamic_cast< const SvxURLField *>( pFieldItem->GetField() ) != nullptr )
+                if (pFieldItem && dynamic_cast<const SvxURLField *>(pFieldItem->GetField()) != nullptr)
                 {
                     // Select the field so that it will be deleted during insert
                     ESelection aSel = pOLV->GetSelection();
@@ -490,7 +490,7 @@ void SwAnnotationShell::Exec( SfxRequest &rReq )
                 SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
                 OSL_ENSURE(pFact, "SwAbstractDialogFactory fail!");
 
-                std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateSwCharDlg( rView.GetWindow(), rView, aDlgAttr, SwCharDlgMode::Ann));
+                ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateSwCharDlg( rView.GetWindow(), rView, aDlgAttr, SwCharDlgMode::Ann));
                 OSL_ENSURE(pDlg, "Dialog creation failed!");
                 if (nSlot == SID_CHAR_DLG_EFFECT)
                 {
@@ -536,7 +536,7 @@ void SwAnnotationShell::Exec( SfxRequest &rReq )
                 aDlgAttr.Put(aEditAttr);
 
                 aDlgAttr.Put( SvxHyphenZoneItem( false, RES_PARATR_HYPHENZONE) );
-                aDlgAttr.Put( SvxFormatBreakItem( SVX_BREAK_NONE, RES_BREAK ) );
+                aDlgAttr.Put( SvxFormatBreakItem( SvxBreak::NONE, RES_BREAK ) );
                 aDlgAttr.Put( SvxFormatSplitItem( true, RES_PARATR_SPLIT ) );
                 aDlgAttr.Put( SvxWidowsItem( 0, RES_PARATR_WIDOWS ) );
                 aDlgAttr.Put( SvxOrphansItem( 0, RES_PARATR_ORPHANS ) );
@@ -544,7 +544,7 @@ void SwAnnotationShell::Exec( SfxRequest &rReq )
                 SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
                 OSL_ENSURE(pFact, "SwAbstractDialogFactory fail!");
 
-                std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateSwParaDlg( rView.GetWindow(), rView, aDlgAttr, nullptr, true ));
+                ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateSwParaDlg( rView.GetWindow(), rView, aDlgAttr, true ));
                 OSL_ENSURE(pDlg, "Dialog creation failed!");
                 sal_uInt16 nRet = pDlg->Execute();
                 if(RET_OK == nRet)
@@ -603,7 +603,10 @@ void SwAnnotationShell::Exec( SfxRequest &rReq )
     }
 
     if(nEEWhich && pNewAttrs)
-        aNewAttr.Put(pNewAttrs->Get(nWhich), nEEWhich);
+    {
+        std::unique_ptr<SfxPoolItem> pNewItem(pNewAttrs->Get(nWhich).CloneSetWhich(nEEWhich));
+        aNewAttr.Put(*pNewItem);
+    }
 
     Rectangle aNullRect;
     Rectangle aOutRect = pOLV->GetOutputArea();
@@ -702,7 +705,10 @@ void SwAnnotationShell::GetState(SfxItemSet& rSet)
                     aSetItem.GetItemSet().Put( aEditAttr, false );
                     const SfxPoolItem* pI = aSetItem.GetItemOfScript( nScriptType );
                     if( pI )
-                        rSet.Put( *pI, nWhich );
+                    {
+                        std::unique_ptr<SfxPoolItem> pNewItem(pI->CloneSetWhich(nWhich));
+                        rSet.Put( *pNewItem );
+                    }
                     else
                         rSet.InvalidateItem( nWhich );
                 }
@@ -720,14 +726,14 @@ void SwAnnotationShell::GetState(SfxItemSet& rSet)
             case FN_SET_SUPER_SCRIPT:
             case FN_SET_SUB_SCRIPT:
             {
-                sal_uInt16 nEsc;
+                SvxEscapement nEsc;
                 if (nWhich==FN_SET_SUPER_SCRIPT)
-                    nEsc = SVX_ESCAPEMENT_SUPERSCRIPT;
+                    nEsc = SvxEscapement::Superscript;
                 else
-                    nEsc = SVX_ESCAPEMENT_SUBSCRIPT;
+                    nEsc = SvxEscapement::Subscript;
 
                 const SfxPoolItem *pEscItem = &aEditAttr.Get( EE_CHAR_ESCAPEMENT );
-                if( nEsc == static_cast<const SvxEscapementItem*>(pEscItem)->GetEnumValue() )
+                if( nEsc == static_cast<const SvxEscapementItem*>(pEscItem)->GetEscapement() )
                     rSet.Put( SfxBoolItem( nWhich, true ));
                 else
                     rSet.InvalidateItem( nWhich );
@@ -851,15 +857,16 @@ void SwAnnotationShell::GetState(SfxItemSet& rSet)
 
         if(nEEWhich)
         {
-            rSet.Put(aEditAttr.Get(nEEWhich), nWhich);
-        if(nEEWhich == EE_CHAR_KERNING)
-        {
-            SfxItemState eState = aEditAttr.GetItemState( EE_CHAR_KERNING );
-            if ( eState == SfxItemState::DONTCARE )
+            std::unique_ptr<SfxPoolItem> pNewItem(aEditAttr.Get(nEEWhich).CloneSetWhich(nWhich));
+            rSet.Put(*pNewItem);
+            if(nEEWhich == EE_CHAR_KERNING)
             {
-                rSet.InvalidateItem(EE_CHAR_KERNING);
+                SfxItemState eState = aEditAttr.GetItemState( EE_CHAR_KERNING );
+                if ( eState == SfxItemState::DONTCARE )
+                {
+                    rSet.InvalidateItem(EE_CHAR_KERNING);
+                }
             }
-        }
         }
 
         if (pPostItMgr->GetActiveSidebarWin()->GetLayoutStatus()==SwPostItHelper::DELETED)
@@ -910,10 +917,11 @@ void SwAnnotationShell::ExecClpbrd(SfxRequest &rReq)
             if (pPostItMgr->GetActiveSidebarWin()->GetLayoutStatus()!=SwPostItHelper::DELETED)
             {
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-                std::unique_ptr<SfxAbstractPasteDialog> pDlg(pFact->CreatePasteDialog( &rView.GetEditWin() ));
+                ScopedVclPtr<SfxAbstractPasteDialog> pDlg(pFact->CreatePasteDialog( &rView.GetEditWin() ));
 
                 pDlg->Insert( SotClipboardFormatId::STRING, OUString() );
                 pDlg->Insert( SotClipboardFormatId::RTF,    OUString() );
+                pDlg->Insert( SotClipboardFormatId::RICHTEXT,    OUString() );
 
                 TransferableDataHelper aDataHelper( TransferableDataHelper::CreateFromSystemClipboard( &rView.GetEditWin() ) );
 
@@ -933,10 +941,10 @@ void SwAnnotationShell::ExecClpbrd(SfxRequest &rReq)
         {
             SotClipboardFormatId nFormat = SotClipboardFormatId::NONE;
             const SfxPoolItem* pItem;
-            if ( rReq.GetArgs() && rReq.GetArgs()->GetItemState(nSlot, true, &pItem) == SfxItemState::SET &&
-                                    dynamic_cast< const SfxUInt32Item *>( pItem ) !=  nullptr )
+            if (rReq.GetArgs() && rReq.GetArgs()->GetItemState(nSlot, true, &pItem) == SfxItemState::SET)
             {
-                nFormat = static_cast<SotClipboardFormatId>(static_cast<const SfxUInt32Item*>(pItem)->GetValue());
+                if (const SfxUInt32Item* pUInt32Item = dynamic_cast<const SfxUInt32Item *>(pItem))
+                    nFormat = static_cast<SotClipboardFormatId>(pUInt32Item->GetValue());
             }
 
             if ( nFormat != SotClipboardFormatId::NONE )
@@ -960,7 +968,8 @@ void SwAnnotationShell::StateClpbrd(SfxItemSet &rSet)
     OutlinerView* pOLV = pPostItMgr->GetActiveSidebarWin()->GetOutlinerView();
 
     TransferableDataHelper aDataHelper( TransferableDataHelper::CreateFromSystemClipboard( &rView.GetEditWin() ) );
-    bool bPastePossible = ( aDataHelper.HasFormat( SotClipboardFormatId::STRING ) || aDataHelper.HasFormat( SotClipboardFormatId::RTF ) );
+    bool bPastePossible = ( aDataHelper.HasFormat( SotClipboardFormatId::STRING ) || aDataHelper.HasFormat( SotClipboardFormatId::RTF )
+        || aDataHelper.HasFormat( SotClipboardFormatId::RICHTEXT ));
     bPastePossible = bPastePossible &&  (pPostItMgr->GetActiveSidebarWin()->GetLayoutStatus()!=SwPostItHelper::DELETED);
 
     SfxWhichIter aIter(rSet);
@@ -996,6 +1005,8 @@ void SwAnnotationShell::StateClpbrd(SfxItemSet &rSet)
                         SvxClipboardFormatItem aFormats( SID_CLIPBOARD_FORMAT_ITEMS );
                         if ( aDataHelper.HasFormat( SotClipboardFormatId::RTF ) )
                             aFormats.AddClipbrdFormat( SotClipboardFormatId::RTF );
+                        if ( aDataHelper.HasFormat( SotClipboardFormatId::RICHTEXT ) )
+                            aFormats.AddClipbrdFormat( SotClipboardFormatId::RICHTEXT );
                         aFormats.AddClipbrdFormat( SotClipboardFormatId::STRING );
                         rSet.Put( aFormats );
                     }
@@ -1056,13 +1067,11 @@ void SwAnnotationShell::StateInsert(SfxItemSet &rSet)
 
                     if (pFieldItem)
                     {
-                        const SvxFieldData* pField = pFieldItem->GetField();
-
-                        if (dynamic_cast< const SvxURLField *>( pField ) !=  nullptr)
+                        if (const SvxURLField* pURLField = dynamic_cast<const SvxURLField *>(pFieldItem->GetField()))
                         {
-                            aHLinkItem.SetName(static_cast<const SvxURLField*>( pField)->GetRepresentation());
-                            aHLinkItem.SetURL(static_cast<const SvxURLField*>( pField)->GetURL());
-                            aHLinkItem.SetTargetFrame(static_cast<const SvxURLField*>( pField)->GetTargetFrame());
+                            aHLinkItem.SetName(pURLField->GetRepresentation());
+                            aHLinkItem.SetURL(pURLField->GetURL());
+                            aHLinkItem.SetTargetFrame(pURLField->GetTargetFrame());
                         }
                     }
                     else
@@ -1282,8 +1291,8 @@ void SwAnnotationShell::ExecLingu(SfxRequest &rReq)
                             Any* pArray = aSeq.getArray();
                             PropertyValue aParam;
                             aParam.Name = "ParentWindow";
-                            aParam.Value <<= makeAny(xDialogParentWindow);
-                            pArray[0] <<= makeAny(aParam);
+                            aParam.Value = makeAny(xDialogParentWindow);
+                            pArray[0] = makeAny(aParam);
                             xInit->initialize( aSeq );
 
                             //execute dialog
@@ -1685,8 +1694,8 @@ void SwAnnotationShell::InsertSymbol(SfxRequest& rReq)
         sSym = static_cast<const SfxStringItem*>(pItem)->GetValue();
         const SfxPoolItem* pFtItem = nullptr;
         pArgs->GetItemState( GetPool().GetWhich(SID_ATTR_SPECIALCHAR), false, &pFtItem);
-        const SfxStringItem* pFontItem = dynamic_cast<const SfxStringItem*>( pFtItem  );
-        if ( pFontItem )
+
+        if (const SfxStringItem* pFontItem = dynamic_cast<const SfxStringItem*>(pFtItem))
             sFontName = pFontItem->GetValue();
     }
 
@@ -1723,7 +1732,7 @@ void SwAnnotationShell::InsertSymbol(SfxRequest& rReq)
             aAllSet.Put( SfxStringItem( SID_FONT_NAME, aSetDlgFont.GetFamilyName() ) );
 
         // If character is selected then it can be shown.
-        std::unique_ptr<SfxAbstractDialog> pDlg(pFact->CreateSfxDialog( rView.GetWindow(), aAllSet,
+        ScopedVclPtr<SfxAbstractDialog> pDlg(pFact->CreateSfxDialog( rView.GetWindow(), aAllSet,
             rView.GetViewFrame()->GetFrame().GetFrameInterface(), RID_SVXDLG_CHARMAP ));
 
         sal_uInt16 nResult = pDlg->Execute();
@@ -1774,11 +1783,17 @@ void SwAnnotationShell::InsertSymbol(SfxRequest& rReq)
                                 EE_CHAR_FONTINFO );
         SvtScriptType nScriptBreak = g_pBreakIt->GetAllScriptsOfText( sSym );
         if( SvtScriptType::LATIN & nScriptBreak )
-            aSetFont.Put( aFontItem, EE_CHAR_FONTINFO );
+            aSetFont.Put( aFontItem );
         if( SvtScriptType::ASIAN & nScriptBreak )
-            aSetFont.Put( aFontItem, EE_CHAR_FONTINFO_CJK );
+        {
+            aFontItem.SetWhich(EE_CHAR_FONTINFO_CJK);
+            aSetFont.Put( aFontItem );
+        }
         if( SvtScriptType::COMPLEX & nScriptBreak )
-            aSetFont.Put( aFontItem, EE_CHAR_FONTINFO_CTL );
+        {
+            aFontItem.SetWhich(EE_CHAR_FONTINFO_CTL);
+            aSetFont.Put( aFontItem );
+        }
         pOLV->SetAttribs(aSetFont);
 
         // Erase selection

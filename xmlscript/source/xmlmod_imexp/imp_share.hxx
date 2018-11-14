@@ -24,6 +24,7 @@
 
 #include <cppuhelper/implbase.hxx>
 #include <rtl/ustrbuf.hxx>
+#include <rtl/ref.hxx>
 
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/container/XNameContainer.hpp>
@@ -49,6 +50,7 @@ struct ModuleImport
     ModuleDescriptor& mrModuleDesc;
 
     sal_Int32 XMLNS_SCRIPT_UID;
+private:
     sal_Int32 XMLNS_LIBRARY_UID;
     sal_Int32 XMLNS_XLINK_UID;
 
@@ -61,7 +63,7 @@ public:
     {
     }
 
-    virtual ~ModuleImport();
+    virtual ~ModuleImport() override;
 
     // XRoot
     virtual void SAL_CALL startDocument(
@@ -84,9 +86,7 @@ public:
 class ModuleElement
     : public ::cppu::WeakImplHelper< css::xml::input::XElement >
 {
-protected:
-    ModuleImport * _pImport;
-    ModuleElement * _pParent;
+    rtl::Reference<ModuleImport> mxImport;
 
     OUString _aLocalName;
     css::uno::Reference< css::xml::input::XAttributes > _xAttributes;
@@ -96,8 +96,8 @@ public:
     ModuleElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
-        ModuleElement * pParent, ModuleImport * pImport );
-    virtual ~ModuleElement();
+        ModuleImport * pImport );
+    virtual ~ModuleElement() override;
 
     // XElement
     virtual css::uno::Reference< css::xml::input::XElement > SAL_CALL getParent()

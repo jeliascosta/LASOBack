@@ -122,7 +122,7 @@ private:
         they have become inactive, i.e. after they are not used anymore by a
         slide sorter.
     */
-    const sal_uInt32 mnMaximalRecentlyCacheCount;
+    static const sal_uInt32 mnMaximalRecentlyCacheCount = 2;
 
     PageCacheManager();
     ~PageCacheManager();
@@ -139,7 +139,7 @@ private:
         most mnMaximalRecentlyCacheCount members.
     */
     void PutRecentlyUsedCache(
-        DocumentKey pDocument,
+        DocumentKey const & pDocument,
         const Size& rPreviewSize,
         const std::shared_ptr<Cache>& rpCache);
 

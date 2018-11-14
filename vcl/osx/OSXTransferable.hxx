@@ -37,11 +37,11 @@
 class OSXTransferable : public ::cppu::WeakImplHelper<css::datatransfer::XTransferable>
 {
 public:
-  explicit OSXTransferable(css::uno::Reference< css::datatransfer::XMimeContentTypeFactory> rXMimeCntFactory,
+  explicit OSXTransferable(css::uno::Reference< css::datatransfer::XMimeContentTypeFactory> const & rXMimeCntFactory,
                            DataFlavorMapperPtr_t pDataFlavorMapper,
                            NSPasteboard* pasteboard);
 
-  virtual ~OSXTransferable();
+  virtual ~OSXTransferable() override;
   OSXTransferable(const OSXTransferable&) = delete;
   OSXTransferable& operator=(const OSXTransferable&) = delete;
 

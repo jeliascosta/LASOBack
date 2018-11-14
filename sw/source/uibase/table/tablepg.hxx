@@ -70,25 +70,25 @@ class SwFormatTablePage : public SfxTabPage
     void        Init();
     void        ModifyHdl(const Edit* pEdit);
 
-    DECL_LINK_TYPED( AutoClickHdl, Button*, void );
-    DECL_LINK_TYPED( RelWidthClickHdl, Button*, void );
+    DECL_LINK( AutoClickHdl, Button*, void );
+    DECL_LINK( RelWidthClickHdl, Button*, void );
     void RightModify();
-    DECL_LINK_TYPED( UpDownHdl, SpinField&, void );
-    DECL_LINK_TYPED( LoseFocusHdl, Control&, void );
+    DECL_LINK( UpDownHdl, SpinField&, void );
+    DECL_LINK( LoseFocusHdl, Control&, void );
 
     using TabPage::ActivatePage;
     using TabPage::DeactivatePage;
 
 public:
     SwFormatTablePage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~SwFormatTablePage();
+    virtual ~SwFormatTablePage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rAttrSet);
     virtual bool        FillItemSet( SfxItemSet* rSet ) override;
     virtual void        Reset( const SfxItemSet* rSet ) override;
     virtual void        ActivatePage( const SfxItemSet& rSet ) override;
-    virtual sfxpg       DeactivatePage( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC   DeactivatePage( SfxItemSet* pSet ) override;
 };
 
 // TabPage Format/Table/Columns
@@ -117,12 +117,12 @@ class SwTableColumnPage : public SfxTabPage
     bool            bPercentMode:1;
 
     void        Init(bool bWeb);
-    DECL_LINK_TYPED( AutoClickHdl, Button *, void );
+    DECL_LINK( AutoClickHdl, Button *, void );
     void        ModifyHdl( MetricField* pEdit );
-    DECL_LINK_TYPED( UpHdl, SpinField&, void );
-    DECL_LINK_TYPED( DownHdl, SpinField&, void );
-    DECL_LINK_TYPED( LoseFocusHdl, Control&, void );
-    DECL_LINK_TYPED( ModeHdl, Button *, void );
+    DECL_LINK( UpHdl, SpinField&, void );
+    DECL_LINK( DownHdl, SpinField&, void );
+    DECL_LINK( LoseFocusHdl, Control&, void );
+    DECL_LINK( ModeHdl, Button *, void );
     void        UpdateCols( sal_uInt16 nAktPos );
     SwTwips     GetVisibleWidth(sal_uInt16 nPos);
     void        SetVisibleWidth(sal_uInt16 nPos, SwTwips nNewWidth);
@@ -132,14 +132,14 @@ class SwTableColumnPage : public SfxTabPage
 
 public:
     SwTableColumnPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~SwTableColumnPage();
+    virtual ~SwTableColumnPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rAttrSet);
     virtual bool        FillItemSet( SfxItemSet* rSet ) override;
     virtual void        Reset( const SfxItemSet* rSet ) override;
     virtual void        ActivatePage( const SfxItemSet& rSet ) override;
-    virtual sfxpg       DeactivatePage( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC   DeactivatePage( SfxItemSet* pSet ) override;
 
 };
 
@@ -172,18 +172,18 @@ class SwTextFlowPage : public SfxTabPage
     bool            bPageBreak;
     bool            bHtmlMode;
 
-    DECL_LINK_TYPED(PageBreakHdl_Impl, Button*, void);
-    DECL_LINK_TYPED(ApplyCollClickHdl_Impl, Button*, void);
-    DECL_LINK_TYPED( PageBreakPosHdl_Impl, Button*, void );
-    DECL_LINK_TYPED( PageBreakTypeHdl_Impl, Button*, void );
-    DECL_LINK_TYPED(PageNoClickHdl_Impl, Button*, void);
-    DECL_LINK_TYPED( SplitHdl_Impl, Button*, void );
-    DECL_STATIC_LINK_TYPED( SwTextFlowPage, SplitRowHdl_Impl, Button*, void );
-    DECL_LINK_TYPED( HeadLineCBClickHdl, Button* = nullptr, void );
+    DECL_LINK(PageBreakHdl_Impl, Button*, void);
+    DECL_LINK(ApplyCollClickHdl_Impl, Button*, void);
+    DECL_LINK( PageBreakPosHdl_Impl, Button*, void );
+    DECL_LINK( PageBreakTypeHdl_Impl, Button*, void );
+    DECL_LINK(PageNoClickHdl_Impl, Button*, void);
+    DECL_LINK( SplitHdl_Impl, Button*, void );
+    DECL_STATIC_LINK( SwTextFlowPage, SplitRowHdl_Impl, Button*, void );
+    DECL_LINK( HeadLineCBClickHdl, Button* = nullptr, void );
 
 public:
     SwTextFlowPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~SwTextFlowPage();
+    virtual ~SwTextFlowPage() override;
     virtual void dispose() override;
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rAttrSet);
     virtual bool        FillItemSet( SfxItemSet* rSet ) override;

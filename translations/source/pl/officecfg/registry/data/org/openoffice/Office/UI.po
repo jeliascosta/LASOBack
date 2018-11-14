@@ -4,8 +4,8 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
 "POT-Creation-Date: 2016-12-27 21:51+0100\n"
-"PO-Revision-Date: 2017-03-25 19:20+0000\n"
-"Last-Translator: Mateusz Zasuwik <mzasuwik@gmail.com>\n"
+"PO-Revision-Date: 2017-09-30 11:58+0000\n"
+"Last-Translator: Michał Newiak <manveru1986@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: pl\n"
 "MIME-Version: 1.0\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 "X-Accelerator-Marker: ~\n"
 "X-Generator: Pootle 2.8\n"
-"X-POOTLE-MTIME: 1490469606.000000\n"
+"X-POOTLE-MTIME: 1506772711.000000\n"
 
 #: BaseWindowState.xcu
 msgctxt ""
@@ -8564,7 +8564,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "E-mail as ~Microsoft PowerPoint Presentation..."
-msgstr "E-mail jako prezentacja ~Microsoft Excel PowerPoint..."
+msgstr "E-mail jako prezentacja ~Microsoft PowerPoint..."
 
 #: DrawImpressCommands.xcu
 msgctxt ""
@@ -9914,7 +9914,7 @@ msgctxt ""
 "UIName\n"
 "value.text"
 msgid "Page Master Pane"
-msgstr ""
+msgstr "Ramka wzorca strony"
 
 #: DrawWindowState.xcu
 msgctxt ""
@@ -9923,7 +9923,7 @@ msgctxt ""
 "UIName\n"
 "value.text"
 msgid "Page Master Pane (no selection)"
-msgstr ""
+msgstr "Ramka wzorca strony (brak zaznaczenia)"
 
 #: DrawWindowState.xcu
 msgctxt ""
@@ -20284,7 +20284,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "~Get help online..."
-msgstr "Uzyskaj pomoc online..."
+msgstr "~Uzyskaj pomoc online..."
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -24226,7 +24226,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "Default"
-msgstr ""
+msgstr "Domyślny"
 
 #: Sidebar.xcu
 msgctxt ""
@@ -25450,7 +25450,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "~Link"
-msgstr ""
+msgstr "~Łącze"
 
 #: WriterCommands.xcu
 msgctxt ""
@@ -25612,7 +25612,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "Insert Link"
-msgstr ""
+msgstr "Wstaw łącze"
 
 #: WriterCommands.xcu
 msgctxt ""
@@ -26170,7 +26170,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "Links Active"
-msgstr ""
+msgstr "Aktywne łącza"
 
 #: WriterCommands.xcu
 msgctxt ""
@@ -26656,7 +26656,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "Clear"
-msgstr ""
+msgstr "Wyczyść"
 
 #: WriterCommands.xcu
 msgctxt ""

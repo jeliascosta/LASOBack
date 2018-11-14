@@ -24,6 +24,7 @@
 #include <vcl/lstbox.hxx>
 #include <vcl/toolbox.hxx>
 #include <sfx2/ctrlitem.hxx>
+#include <svx/sidebar/PanelLayout.hxx>
 #include "sdtreelb.hxx"
 #include "pres.hxx"
 
@@ -65,8 +66,8 @@ public:
     bool    HasName() { return bName; }
     bool    IsActive() { return bActive; }
 
-    void    SetName( bool bOn = true ) { bName = bOn; }
-    void    SetActive( bool bOn = true ) { bActive = bOn; }
+    void    SetName( bool bOn ) { bName = bOn; }
+    void    SetActive( bool bOn ) { bActive = bOn; }
 
 private:
     friend class SdNavigatorWin;
@@ -75,8 +76,7 @@ private:
     ::sd::DrawDocShell* mpDocShell;
 };
 
-class SdNavigatorWin
-    : public vcl::Window
+class SdNavigatorWin : public PanelLayout
 {
 public:
     typedef ::std::function<void ()> UpdateRequestFunctor;
@@ -88,12 +88,9 @@ public:
             update is necessary.  When <FALSE/> the navigator will
             rely on others to trigger updates.
     */
-    SdNavigatorWin(
-        vcl::Window* pParent,
-        const SdResId& rSdResId,
-        SfxBindings* pBindings);
+    SdNavigatorWin(vcl::Window* pParent, SfxBindings* pBindings);
     void SetUpdateRequestFunctor(const UpdateRequestFunctor& rUpdateRequest);
-    virtual ~SdNavigatorWin();
+    virtual ~SdNavigatorWin() override;
     virtual void                dispose() override;
 
     virtual void                KeyInput( const KeyEvent& rKEvt ) override;
@@ -106,7 +103,6 @@ public:
     NavigatorDragType           GetNavigatorDragType();
 
 protected:
-    virtual void                Resize() override;
     virtual bool                Notify(NotifyEvent& rNEvt) override;
 
 private:
@@ -118,8 +114,6 @@ private:
     VclPtr<SdPageObjsTLB>       maTlbObjects;
     VclPtr<ListBox>             maLbDocs;
 
-    Size                        maSize;
-    Size                        maMinSize;
     bool                        mbDocImported;
     OUString                    maDropFileName;
     NavigatorDragType           meDragType;
@@ -128,26 +122,23 @@ private:
     SdNavigatorControllerItem*  mpNavigatorCtrlItem;
     SdPageNameControllerItem*   mpPageNameCtrlItem;
 
-    ImageList                   maImageList;
-
     /** This flag controls whether all shapes or only the named shapes are
         shown.
     */
     //    bool                        mbShowAllShapes;
 
-    static sal_uInt16           GetDragTypeSdResId( NavigatorDragType eDT, bool bImage = false );
+    static sal_uInt16           GetDragTypeSdResId( NavigatorDragType eDT, bool bImage );
     NavDocInfo*                 GetDocInfo();
 
-                                DECL_LINK_TYPED( SelectToolboxHdl, ToolBox *, void );
-                                DECL_LINK_TYPED( DropdownClickToolBoxHdl, ToolBox *, void );
-                                DECL_LINK_TYPED( ClickObjectHdl, SvTreeListBox*, bool );
-                                DECL_LINK_TYPED( SelectDocumentHdl, ListBox&, void );
-                                DECL_LINK_TYPED( MenuSelectHdl, Menu *, bool );
-                                DECL_LINK_TYPED( ShapeFilterCallback, Menu *, bool );
+                                DECL_LINK( SelectToolboxHdl, ToolBox *, void );
+                                DECL_LINK( DropdownClickToolBoxHdl, ToolBox *, void );
+                                DECL_LINK( ClickObjectHdl, SvTreeListBox*, bool );
+                                DECL_LINK( SelectDocumentHdl, ListBox&, void );
+                                DECL_LINK( MenuSelectHdl, Menu *, bool );
+                                DECL_LINK( ShapeFilterCallback, Menu *, bool );
 
-    virtual void                DataChanged( const DataChangedEvent& rDCEvt ) override;
     void                        SetDragImage();
-    void                        ApplyImageList();
+
 public:
     //when object is marked , fresh the corresponding entry tree .
     static sd::DrawDocShell*    GetDrawDocShell(const SdDrawDocument*);

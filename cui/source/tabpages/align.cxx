@@ -129,16 +129,16 @@ void lcl_MaybeResetAlignToDistro(
 
     p = static_cast<const SfxEnumItem*>(pItem);
     SvxCellJustifyMethod eMethod = static_cast<SvxCellJustifyMethod>(p->GetEnumValue());
-    if (eMethod == SVX_JUSTIFY_METHOD_DISTRIBUTE)
+    if (eMethod == SvxCellJustifyMethod::Distribute)
         // Select the 'distribute' entry in the specified list box.
         rLB.SelectEntryPos(nListPos);
 }
 
 void lcl_SetJustifyMethodToItemSet(SfxItemSet& rSet, sal_uInt16 nWhichJM, const ListBox& rLB, sal_uInt16 nListPos)
 {
-    SvxCellJustifyMethod eJM = SVX_JUSTIFY_METHOD_AUTO;
+    SvxCellJustifyMethod eJM = SvxCellJustifyMethod::Auto;
     if (rLB.GetSelectEntryPos() == nListPos)
-        eJM = SVX_JUSTIFY_METHOD_DISTRIBUTE;
+        eJM = SvxCellJustifyMethod::Distribute;
 
     SvxJustifyMethodItem aItem(eJM, nWhichJM);
     rSet.Put(aItem);
@@ -215,23 +215,23 @@ AlignmentTabPage::AlignmentTabPage( vcl::Window* pParent, const SfxItemSet& rCor
     // This page needs ExchangeSupport.
     SetExchangeSupport();
 
-    AddItemConnection( new HorJustConnection( SID_ATTR_ALIGN_HOR_JUSTIFY, *m_pLbHorAlign, s_pHorJustMap, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_ALIGN_INDENT, *m_pFtIndent, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new sfx::MetricConnection<sfx::UInt16ItemWrapper>( SID_ATTR_ALIGN_INDENT, *m_pEdIndent, FUNIT_TWIP, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_ALIGN_VER_JUSTIFY, *m_pFtVerAlign, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new VerJustConnection( SID_ATTR_ALIGN_VER_JUSTIFY, *m_pLbVerAlign, s_pVerJustMap, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new DialControlConnection( SID_ATTR_ALIGN_DEGREES, *m_pCtrlDial, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_ALIGN_DEGREES, *m_pFtRotate, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_ALIGN_LOCKPOS, *m_pFtRefEdge, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new RotateModeConnection( SID_ATTR_ALIGN_LOCKPOS, *m_pVsRefEdge, s_pRotateModeMap, sfx::ITEMCONN_HIDE_UNKNOWN ) );
+    AddItemConnection( new HorJustConnection( SID_ATTR_ALIGN_HOR_JUSTIFY, *m_pLbHorAlign, s_pHorJustMap, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_ALIGN_INDENT, *m_pFtIndent, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new sfx::MetricConnection<sfx::UInt16ItemWrapper>( SID_ATTR_ALIGN_INDENT, *m_pEdIndent, FUNIT_TWIP, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_ALIGN_VER_JUSTIFY, *m_pFtVerAlign, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new VerJustConnection( SID_ATTR_ALIGN_VER_JUSTIFY, *m_pLbVerAlign, s_pVerJustMap, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new DialControlConnection( SID_ATTR_ALIGN_DEGREES, *m_pCtrlDial, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_ALIGN_DEGREES, *m_pFtRotate, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_ALIGN_LOCKPOS, *m_pFtRefEdge, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new RotateModeConnection( SID_ATTR_ALIGN_LOCKPOS, *m_pVsRefEdge, s_pRotateModeMap, ItemConnFlags::HideUnknown ) );
     AddItemConnection( new OrientStackedConnection( SID_ATTR_ALIGN_STACKED, *m_pOrientHlp ) );
-    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_ALIGN_STACKED, *m_pCbStacked, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new sfx::CheckBoxConnection( SID_ATTR_ALIGN_ASIANVERTICAL, *m_pCbAsianMode, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new sfx::CheckBoxConnection( SID_ATTR_ALIGN_LINEBREAK, *m_pBtnWrap, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new sfx::CheckBoxConnection( SID_ATTR_ALIGN_HYPHENATION, *m_pBtnHyphen, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new sfx::CheckBoxConnection( SID_ATTR_ALIGN_SHRINKTOFIT, *m_pBtnShrink, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_FRAMEDIRECTION, *m_pBoxDirection, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new FrameDirListBoxConnection( SID_ATTR_FRAMEDIRECTION, *m_pLbFrameDir, sfx::ITEMCONN_HIDE_UNKNOWN ) );
+    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_ALIGN_STACKED, *m_pCbStacked, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new sfx::CheckBoxConnection( SID_ATTR_ALIGN_ASIANVERTICAL, *m_pCbAsianMode, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new sfx::CheckBoxConnection( SID_ATTR_ALIGN_LINEBREAK, *m_pBtnWrap, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new sfx::CheckBoxConnection( SID_ATTR_ALIGN_HYPHENATION, *m_pBtnHyphen, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new sfx::CheckBoxConnection( SID_ATTR_ALIGN_SHRINKTOFIT, *m_pBtnShrink, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_FRAMEDIRECTION, *m_pBoxDirection, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new FrameDirListBoxConnection( SID_ATTR_FRAMEDIRECTION, *m_pLbFrameDir, ItemConnFlags::HideUnknown ) );
 
 }
 
@@ -316,11 +316,11 @@ void AlignmentTabPage::Reset( const SfxItemSet* rCoreAttrs )
     UpdateEnableControls();
 }
 
-SfxTabPage::sfxpg AlignmentTabPage::DeactivatePage( SfxItemSet* _pSet )
+DeactivateRC AlignmentTabPage::DeactivatePage( SfxItemSet* _pSet )
 {
     if( _pSet )
         FillItemSet( _pSet );
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 void AlignmentTabPage::DataChanged( const DataChangedEvent& rDCEvt )
@@ -400,8 +400,8 @@ bool AlignmentTabPage::HasAlignmentChanged( const SfxItemSet& rNew, sal_uInt16 n
 {
     const SfxItemSet& rOld = GetItemSet();
     const SfxPoolItem* pItem;
-    SvxCellJustifyMethod eMethodOld = SVX_JUSTIFY_METHOD_AUTO;
-    SvxCellJustifyMethod eMethodNew = SVX_JUSTIFY_METHOD_AUTO;
+    SvxCellJustifyMethod eMethodOld = SvxCellJustifyMethod::Auto;
+    SvxCellJustifyMethod eMethodNew = SvxCellJustifyMethod::Auto;
     if (rOld.GetItemState(nWhich, true, &pItem) == SfxItemState::SET)
     {
         const SfxEnumItem* p = static_cast<const SfxEnumItem*>(pItem);
@@ -417,12 +417,12 @@ bool AlignmentTabPage::HasAlignmentChanged( const SfxItemSet& rNew, sal_uInt16 n
     return eMethodOld != eMethodNew;
 }
 
-IMPL_LINK_NOARG_TYPED(AlignmentTabPage, UpdateEnableClickHdl, Button*, void)
+IMPL_LINK_NOARG(AlignmentTabPage, UpdateEnableClickHdl, Button*, void)
 {
     UpdateEnableControls();
 }
 
-IMPL_LINK_NOARG_TYPED(AlignmentTabPage, UpdateEnableHdl, ListBox&, void)
+IMPL_LINK_NOARG(AlignmentTabPage, UpdateEnableHdl, ListBox&, void)
 {
     UpdateEnableControls();
 }

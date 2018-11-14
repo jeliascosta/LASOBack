@@ -48,10 +48,9 @@ namespace ucbhelper
         /** Defines the storage kind found
          *  on which the inputstream acts.
          */
+        FdInputStream(oslFileHandle tmpfl);
 
-        FdInputStream(oslFileHandle tmpfl = nullptr);
-
-        virtual ~FdInputStream();
+        virtual ~FdInputStream() override;
 
         virtual sal_Int32 SAL_CALL
         readBytes(css::uno::Sequence< sal_Int8 >& aData,

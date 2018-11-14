@@ -22,7 +22,6 @@
 
 #include "layfrm.hxx"
 #include "flowfrm.hxx"
-#include <set>
 
 class SwSection;
 class SwSectionFormat;
@@ -56,7 +55,7 @@ class SwSectionFrame: public SwLayoutFrame, public SwFlowFrame
     bool IsEndnoteAtMyEnd() const;
 
     virtual void DestroyImpl() override;
-    virtual ~SwSectionFrame();
+    virtual ~SwSectionFrame() override;
 
 protected:
     virtual void MakeAll(vcl::RenderContext* pRenderContext) override;
@@ -160,8 +159,6 @@ public:
 
     DECL_FIXEDMEMPOOL_NEWDEL(SwSectionFrame)
 };
-
-class SwDestroyList : public std::set<SwSectionFrame*> {};
 
 inline const SwSectionFrame *SwSectionFrame::GetFollow() const
 {

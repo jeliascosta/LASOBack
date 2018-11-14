@@ -31,7 +31,7 @@
 #include <unx/i18n_ic.hxx>
 #include <unx/saldisp.hxx>
 #include <unx/salframe.h>
-#include <unx/saldata.hxx>
+#include <unx/salinst.h>
 
 #include <vcl/wrkwin.hxx>
 #include <vcl/fixed.hxx>
@@ -91,10 +91,10 @@ class XIMStatusWindow : public StatusWindow
     void layout();
     bool checkLastParent() const;
 
-    DECL_LINK_TYPED( DelayedShowHdl, void*, void );
+    DECL_LINK( DelayedShowHdl, void*, void );
 public:
     explicit XIMStatusWindow( bool bOn );
-    virtual ~XIMStatusWindow();
+    virtual ~XIMStatusWindow() override;
 
     virtual void setPosition( SalFrame* ) override;
     virtual void setText( const OUString & ) override;
@@ -257,7 +257,7 @@ void XIMStatusWindow::setPosition( SalFrame* pParent )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(XIMStatusWindow, DelayedShowHdl, void*, void)
+IMPL_LINK_NOARG(XIMStatusWindow, DelayedShowHdl, void*, void)
 {
     m_nDelayedEvent = nullptr;
     const SystemEnvData* pData = GetSystemData();
@@ -299,12 +299,12 @@ namespace vcl {
 class IIIMPStatusWindow : public StatusWindow
 {
     VclPtr<MenuButton>      m_aStatusBtn;
-    PopupMenu               m_aMenu;
+    ScopedVclPtrInstance<PopupMenu> m_aMenu;
     SalFrame*               m_pResetFocus;
     bool                    m_bShow;
     bool                    m_bOn;
 
-    DECL_LINK_TYPED( SelectHdl, MenuButton*, void );
+    DECL_LINK( SelectHdl, MenuButton*, void );
 
     void show();
 
@@ -314,7 +314,7 @@ public:
     virtual void setText( const OUString & ) override;
     virtual void show( bool bShow, I18NStatus::ShowReason eReason ) override;
     virtual void toggle( bool bOn ) override;
-    virtual ~IIIMPStatusWindow() { disposeOnce(); }
+    virtual ~IIIMPStatusWindow() override { disposeOnce(); }
     virtual void dispose() override;
     void layout();
 
@@ -338,13 +338,13 @@ IIIMPStatusWindow::IIIMPStatusWindow( SalFrame* pParent, bool bOn ) :
     layout();
 
     m_aStatusBtn->SetSelectHdl( LINK( this, IIIMPStatusWindow, SelectHdl ) );
-    m_aStatusBtn->SetPopupMenu( &m_aMenu );
+    m_aStatusBtn->SetPopupMenu( m_aMenu.get() );
     m_aStatusBtn->Show();
 
     const ::std::vector< I18NStatus::ChoiceData >& rChoices( I18NStatus::get().getChoices() );
     int i = 1;
     for( ::std::vector< I18NStatus::ChoiceData >::const_iterator it = rChoices.begin(); it != rChoices.end(); ++it, i++ )
-        m_aMenu.InsertItem( i, it->aString );
+        m_aMenu->InsertItem( i, it->aString );
 
     if( pParent )
     {
@@ -458,7 +458,7 @@ void IIIMPStatusWindow::GetFocus()
     }
 }
 
-IMPL_LINK_TYPED( IIIMPStatusWindow, SelectHdl, MenuButton*, pBtn, void )
+IMPL_LINK( IIIMPStatusWindow, SelectHdl, MenuButton*, pBtn, void )
 {
     if( pBtn == m_aStatusBtn )
     {

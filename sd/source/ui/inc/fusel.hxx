@@ -44,7 +44,6 @@ public:
     virtual bool MouseButtonDown(const MouseEvent& rMEvt) override;
 
     virtual void Activate() override;
-    virtual void Deactivate() override;
 
     virtual void SelectionHasChanged() override;
 
@@ -70,11 +69,10 @@ protected:
         SdDrawDocument* pDoc,
         SfxRequest& rReq);
 
-    virtual ~FuSelection();
+    virtual ~FuSelection() override;
 
     bool            bTempRotation;
     bool            bSelectionChanged;
-    bool            bHideAndAnimate;
     SdrHdl*         pHdl;
     bool            bSuppressChangesOfSelection;
     bool            bMirrorSide0;

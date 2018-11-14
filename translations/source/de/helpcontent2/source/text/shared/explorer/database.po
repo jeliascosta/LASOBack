@@ -4,8 +4,8 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
 "POT-Creation-Date: 2016-12-01 12:12+0100\n"
-"PO-Revision-Date: 2017-03-24 20:03+0000\n"
-"Last-Translator: Christian Kühl <kuehl.christian@googlemail.com>\n"
+"PO-Revision-Date: 2017-10-22 12:46+0000\n"
+"Last-Translator: Sophia Schröder <sophia.schroeder@outlook.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Accelerator-Marker: ~\n"
 "X-Generator: Pootle 2.8\n"
-"X-POOTLE-MTIME: 1490385780.000000\n"
+"X-POOTLE-MTIME: 1508676379.000000\n"
 
 #: 02000000.xhp
 msgctxt ""
@@ -30,7 +30,7 @@ msgctxt ""
 "bm_id3150445\n"
 "help.text"
 msgid "<bookmark_value>queries;overview (Base)</bookmark_value><bookmark_value>tables in databases; printing queries (Base)</bookmark_value><bookmark_value>printing; queries (Base)</bookmark_value><bookmark_value>queries; printing (Base)</bookmark_value>"
-msgstr "<bookmark_value>Abfragen;Übersicht (Base)</bookmark_value>  <bookmark_value>Tabellen in Datenbanken;Abfragen drucken (Base)</bookmark_value>  <bookmark_value>Drucken;Abfragen (Base)</bookmark_value>  <bookmark_value>Abfragen;Drucken (Base)</bookmark_value>"
+msgstr "<bookmark_value>Abfragen; Übersicht (Base)</bookmark_value><bookmark_value>Tabellen in Datenbanken; Abfragen drucken (Base)</bookmark_value><bookmark_value>Drucken; Abfragen (Base)</bookmark_value><bookmark_value>Abfragen; Drucken (Base)</bookmark_value>"
 
 #: 02000000.xhp
 msgctxt ""
@@ -102,7 +102,7 @@ msgctxt ""
 "43\n"
 "help.text"
 msgid "Drag the name of the table or query into the open text document or spreadsheet. The dialog <link href=\"text/shared/02/12070000.xhp\" name=\"Insert Database Columns\">Insert Database Columns</link> opens."
-msgstr "Ziehen Sie den Namen der Tabelle oder Abfrage in das offene Text- bzw. Tabellendokument. Der Dialog <link href=\"text/shared/02/12070000.xhp\" name=\"Datenbankspalten einfügen\">Datenbankspalten einfügen</link> wird geöffnet."
+msgstr "Ziehen Sie den Namen der Tabelle oder Abfrage in das offene Text- beziehungsweise Tabellendokument. Der Dialog <link href=\"text/shared/02/12070000.xhp\" name=\"Datenbankspalten einfügen\">Datenbankspalten einfügen</link> wird geöffnet."
 
 #: 02000000.xhp
 msgctxt ""
@@ -244,7 +244,7 @@ msgctxt ""
 "bm_id3150445\n"
 "help.text"
 msgid "<bookmark_value>queries; missing elements (Base)</bookmark_value>"
-msgstr "<bookmark_value>Abfragen;fehlende Elemente (Base)</bookmark_value>"
+msgstr "<bookmark_value>Abfragen; fehlende Elemente (Base)</bookmark_value>"
 
 #: 02000002.xhp
 msgctxt ""
@@ -325,7 +325,7 @@ msgctxt ""
 "9\n"
 "help.text"
 msgid "<ahelp hid=\".\">Allows you to open the query design in the <link href=\"text/shared/explorer/database/02010100.xhp\" name=\"SQL Mode\">SQL Mode</link> and to interpret the query as a <link href=\"text/shared/02/14030000.xhp\" name=\"Native SQL\">Native SQL</link>.</ahelp> You can only quit the native SQL mode when the $[officename] statement is completely interpreted (only possible if the used tables or fields in the query really exist)."
-msgstr "<ahelp hid=\".\">Erlaubt Ihnen, das Abfragedesign im <link href=\"text/shared/explorer/database/02010100.xhp\" name=\"SQL Mode\">SQL-Modus</link> zu öffnen und die Abfrage als <link href=\"text/shared/02/14030000.xhp\" name=\"Native SQL\">Natives SQL</link>zu verarbeiten.</ahelp> Sie können den nativen SQL-Modus nur beenden, wenn das $[officename]-Statement komplett interpretiert wurde (nur möglich, wenn die benutzten Tabellen oder Felder in der Abfrage wirklich existieren)."
+msgstr "<ahelp hid=\".\">Erlaubt Ihnen, den Abfrageentwurf im <link href=\"text/shared/explorer/database/02010100.xhp\" name=\"SQL Mode\">SQL-Modus</link> zu öffnen und die Abfrage als <link href=\"text/shared/02/14030000.xhp\" name=\"Native SQL\">Natives SQL</link>zu verarbeiten.</ahelp> Sie können den nativen SQL-Modus nur beenden, wenn das $[officename]-Statement komplett interpretiert wurde (nur möglich, wenn die benutzten Tabellen oder Felder in der Abfrage wirklich existieren)."
 
 #: 02000002.xhp
 msgctxt ""
@@ -377,7 +377,7 @@ msgctxt ""
 "bm_id3153323\n"
 "help.text"
 msgid "<bookmark_value>views; creating database views (Base)</bookmark_value>  <bookmark_value>queries; creating in design view (Base)</bookmark_value>  <bookmark_value>designing; queries (Base)</bookmark_value>  <bookmark_value>design view; queries/views (Base)</bookmark_value>  <bookmark_value>joining;tables (Base)</bookmark_value>  <bookmark_value>tables in databases; joining for queries (Base)</bookmark_value>  <bookmark_value>queries; joining tables (Base)</bookmark_value>  <bookmark_value>tables in databases; relations (Base)</bookmark_value>  <bookmark_value>relations; joining tables (Base)</bookmark_value>  <bookmark_value>queries; deleting table links (Base)</bookmark_value>  <bookmark_value>criteria of query design (Base)</bookmark_value>  <bookmark_value>queries; formulating filter conditions (Base)</bookmark_value>  <bookmark_value>filter conditions;in queries (Base)</bookmark_value>  <bookmark_value>parameters; queries (Base)</bookmark_value>  <bookmark_value>queries; parameter queries (Base)</bookmark_value>  <bookmark_value>SQL; queries (Base)</bookmark_value>  <bookmark_value>native SQL (Base)</bookmark_value>"
-msgstr "<bookmark_value>Ansichten;Datenbankansichten erzeugen (Base)</bookmark_value>  <bookmark_value>Abfragen;in der Entwurfsansicht erstellen (Base)</bookmark_value>  <bookmark_value>Entwerfen;Abfragen (Base)</bookmark_value>  <bookmark_value>Entwurfsansicht;Abfragen/Ansichten (Base)</bookmark_value>  <bookmark_value>Verknüpfen;Tabellen (Base)</bookmark_value>  <bookmark_value>Tabellen in Datenbanken;für Abfragen verknüpfen (Base)</bookmark_value>  <bookmark_value>Abfragen;Tabellen verknüpfen (Base)</bookmark_value>  <bookmark_value>Tabellen in Datenbanken;Relationen (Base)</bookmark_value>  <bookmark_value>Relationen;Tabellen verknüpfen (Base)</bookmark_value>  <bookmark_value>Abfragen;Tabellenverknüpfungen löschen (Base)</bookmark_value>  <bookmark_value>Kriterien beim Entwerfen von Abfragen (Base)</bookmark_value>  <bookmark_value>Abfragen;Filterbedingungen formulieren (Base)</bookmark_value>  <bookmark_value>Filterbedingungen;in Abfragen (Base)</bookmark_value>  <bookmark_value>Parameter;Abfragen (Base)</bookmark_value>  <bookmark_value>Abfragen;Parameterabfragen (Base)</bookmark_value>  <bookmark_value>SQL;Abfragen (Base)</bookmark_value>  <bookmark_value>Native SQL (Base)</bookmark_value>"
+msgstr "<bookmark_value>Ansichten; Datenbankansichten erzeugen (Base)</bookmark_value><bookmark_value>Abfragen; in der Entwurfsansicht erstellen (Base)</bookmark_value><bookmark_value>Entwerfen; Abfragen (Base)</bookmark_value><bookmark_value>Entwurfsansicht; Abfragen/Ansichten (Base)</bookmark_value><bookmark_value>Verknüpfen; Tabellen (Base)</bookmark_value><bookmark_value>Tabellen in Datenbanken; für Abfragen verknüpfen (Base)</bookmark_value><bookmark_value>Abfragen; Tabellen verknüpfen (Base)</bookmark_value><bookmark_value>Tabellen in Datenbanken; Relationen (Base)</bookmark_value><bookmark_value>Relationen; Tabellen verknüpfen (Base)</bookmark_value><bookmark_value>Abfragen; Tabellenverknüpfungen löschen (Base)</bookmark_value><bookmark_value>Kriterien beim Entwerfen von Abfragen (Base)</bookmark_value><bookmark_value>Abfragen; Filterbedingungen formulieren (Base)</bookmark_value><bookmark_value>Filterbedingungen; in Abfragen (Base)</bookmark_value><bookmark_value>Parameter; Abfragen (Base)</bookmark_value><bookmark_value>Abfragen; Parameterabfragen (Base)</bookmark_value><bookmark_value>SQL; Abfragen (Base)</bookmark_value><bookmark_value>Natives SQL (Base)</bookmark_value>"
 
 #: 02010100.xhp
 msgctxt ""
@@ -409,7 +409,7 @@ msgctxt ""
 "par_id3159176\n"
 "help.text"
 msgid "Selecting the <emph>Create View</emph> command from the <emph>Tables</emph> tab page of a database document, you see the <emph>View Design</emph> window that resembles the <emph>Query Design</emph> window described here."
-msgstr "Wenn Sie im Aufgabenfensters einer Datenbank  im Bereich <emph>Tabellen</emph> den Befehl <emph>Ansicht erstellen</emph> wählen, wird das Fenster <emph>Ansichtsentwurf</emph> geöffnet, das dem hier beschriebenen Fenster <emph>Abfrageentwurf</emph> entspricht."
+msgstr "Wenn Sie im Aufgabenfensters einer Datenbank im Bereich <emph>Tabellen</emph> den Befehl <emph>Ansicht erstellen</emph> wählen, wird das Fenster <emph>Ansichtsentwurf</emph> geöffnet, das dem hier beschriebenen Fenster <emph>Abfrageentwurf</emph> entspricht."
 
 #: 02010100.xhp
 msgctxt ""
@@ -417,7 +417,7 @@ msgctxt ""
 "par_id8307138\n"
 "help.text"
 msgid "The Query Design window layout is stored with a created query, but cannot be stored with a created view."
-msgstr "Das Aussehen der Abfrage-Entwurfsansicht wird mit der erzeugten Abfrage gespeichert. Sie kann aber nicht mit der erzeugten Ansicht gespeichert werden."
+msgstr "Das Aussehen der Ansicht Abfrageentwurf wird mit der erzeugten Abfrage gespeichert, kann jedoch nicht mit der erzeugten Ansicht gespeichert werden."
 
 #: 02010100.xhp
 msgctxt ""
@@ -449,7 +449,7 @@ msgctxt ""
 "par_id3152474\n"
 "help.text"
 msgid "In the top of the query Design View window, the <link href=\"text/shared/main0214.xhp\" name=\"icons\">icons</link> of the <emph>Query Design</emph> Bar and the <emph>Design</emph> bar are displayed."
-msgstr "Am oberen Rand des Entwurfsfensters werden die <link href=\"text/shared/main0214.xhp\" name=\"Symbole\">Symbole</link> der Symbolleisten <emph>Abfrageentwurf</emph> und <emph>Design</emph> angezeigt."
+msgstr "Am oberen Rand des Fensters Abfrageentwurfsansicht werden die <link href=\"text/shared/main0214.xhp\" name=\"Symbole\">Symbole</link> der Symbolleisten <emph>Abfrageentwurf</emph> und <emph>Design</emph> angezeigt."
 
 #: 02010100.xhp
 msgctxt ""
@@ -465,7 +465,7 @@ msgctxt ""
 "hd_id8226264\n"
 "help.text"
 msgid "Keys in Query Design View"
-msgstr "Schlüssel in der Abfrageentwurfsansicht"
+msgstr "Tasten in der Ansicht Abfrageentwurf"
 
 #: 02010100.xhp
 msgctxt ""
@@ -553,7 +553,7 @@ msgctxt ""
 "par_id3144762\n"
 "help.text"
 msgid "<ahelp hid=\"HID_CTL_QRYDGNTAB\">Double-click fields to add them to the query. Drag-and-drop to define relations.</ahelp>"
-msgstr "<ahelp hid=\"HID_CTL_QRYDGNTAB\">Doppelklicken Sie auf Felder, um sie der Abfrage hinzuzufügen. Mit Ziehen&Ablegen definieren Sie Relationen.</ahelp>"
+msgstr "<ahelp hid=\"HID_CTL_QRYDGNTAB\">Doppelklicken Sie auf Felder, um sie der Abfrage hinzuzufügen. Mit Ziehen-und-Ablegen definieren Sie Relationen.</ahelp>"
 
 #: 02010100.xhp
 msgctxt ""
@@ -625,7 +625,7 @@ msgctxt ""
 "par_id3155302\n"
 "help.text"
 msgid "To do this, click a field name in a table (for example, the field name \"Item-Number\" from the Customer table), hold down the mouse button and then drag the field name to the field name of the other table (\"Item-Number\" from the Item table). When you release the mouse button, a line connecting the two fields in the two windows appears. The corresponding condition that the content of the two field names must be identical is entered in the resulting SQL query."
-msgstr "Klicken Sie dazu ein Datenfeld einer Tabelle an (z.B. das Datenfeld \"Artikel-Nummer\" aus der Kunden-Tabelle) und ziehen Sie dann bei gedrückt gehaltener Maustaste auf das Datenfeld der anderen Tabelle (\"Artikel-Nummer\" aus der Artikel-Tabelle). Wenn Sie nun die Maustaste loslassen, sehen Sie eine Linie, die die beiden Felder in den beiden Fenstern verbindet. In der resultierenden SQL-Abfrage wird die entsprechende Bedingung eingetragen, dass der Inhalt beider Datenfelder gleich sein muss."
+msgstr "Klicken Sie dazu ein Datenfeld einer Tabelle an (beispielsweise das Datenfeld \"Artikel-Nummer\" aus der Kunden-Tabelle) und ziehen Sie dann bei gedrückt gehaltener Maustaste auf das Datenfeld der anderen Tabelle (\"Artikel-Nummer\" aus der Artikel-Tabelle). Wenn Sie nun die Maustaste loslassen, sehen Sie eine Linie, die die beiden Felder in den beiden Fenstern verbindet. In der resultierenden SQL-Abfrage wird die entsprechende Bedingung eingetragen, dass der Inhalt beider Datenfelder gleich sein muss."
 
 #: 02010100.xhp
 msgctxt ""
@@ -721,7 +721,7 @@ msgctxt ""
 "par_id3146791\n"
 "help.text"
 msgid "First, select all field names from the tables that you want to add to the query. You can do this either with drag-and-drop or by double-clicking a field name in the table window. With the drag-and-drop method, use the mouse to drag a field name from the table window into the lower area of the query design. As you do this, you can decide which column you want to add the field to. Select a field name by double-clicking. It will then be added to the next free column."
-msgstr "Wählen Sie zunächst in den Tabellen alle Feldnamen aus, die in der Abfrage berücksichtigt werden sollen. Dies geschieht entweder per Ziehen und Ablegen oder durch Doppelklicken auf einen Feldnamen im Tabellenfenster. Beim Ziehen und Ablegen ziehen Sie einen Feldnamen mit der Maus aus dem Tabellenfenster in den unteren Fensterbereich des Abfrageentwurfs. Dabei können Sie entscheiden, in welche Spalte das Feld eingefügt werden soll. Wählen Sie einen Feldnamen aus, indem Sie darauf doppelklicken. Er wird dann in die nächste freie Spalte eingefügt."
+msgstr "Wählen Sie zunächst in den Tabellen alle Feldnamen aus, die in der Abfrage berücksichtigt werden sollen. Dies geschieht entweder per Ziehen-und-Ablegen oder durch Doppelklicken auf einen Feldnamen im Tabellenfenster. Beim Ziehen-und-Ablegen ziehen Sie einen Feldnamen mit der Maus aus dem Tabellenfenster in den unteren Fensterbereich des Abfrageentwurfs. Dabei können Sie entscheiden, in welche Spalte das Feld eingefügt werden soll. Wählen Sie einen Feldnamen aus, indem Sie darauf doppelklicken. Er wird dann in die nächste freie Spalte eingefügt."
 
 #: 02010100.xhp
 msgctxt ""
@@ -1305,7 +1305,7 @@ msgctxt ""
 "par_id3153240\n"
 "help.text"
 msgid "Insert the \"Item\" and \"Suppliers\" tables into the query design."
-msgstr "Die Tabelle \"Artikel\" und \"Lieferanten\" in den Abfrageentwurf einfügen."
+msgstr "Die Tabellen \"Artikel\" und \"Lieferanten\" in den Abfrageentwurf einfügen."
 
 #: 02010100.xhp
 msgctxt ""
@@ -1849,7 +1849,7 @@ msgctxt ""
 "bm_id3157985\n"
 "help.text"
 msgid "<bookmark_value>placeholders; in SQL queries</bookmark_value>"
-msgstr "<bookmark_value>Platzhalter;in SQL-Abfragen</bookmark_value>"
+msgstr "<bookmark_value>Platzhalter; in SQL-Abfragen</bookmark_value>"
 
 #: 02010100.xhp
 msgctxt ""
@@ -2697,7 +2697,7 @@ msgctxt ""
 "par_id3152570\n"
 "help.text"
 msgid "In $[officename] you do not need any knowledge of SQL for most queries, since you do not have to enter the SQL code. If you create a query in the query design, $[officename] automatically converts your instructions into the corresponding SQL syntax. If, with the help of the <emph>Switch Design View On/Off </emph>button, you change to the SQL view, you can see the SQL commands for a query that has been created previously."
-msgstr "Da $[officename] nicht die Eingabe des SQL-Codes verlangt, können Sie die meisten Abfragen auch ohne SQL-Kenntnisse durchführen. Während Sie eine Abfrage im Abfrageentwurf erstellen, setzt $[officename] Ihre Anweisungen automatisch in die entsprechende SQL-Syntax um. Wenn Sie mit der Schaltfläche <emph>Design-Ansicht an-, ausschalten</emph> in die SQL-Ansicht wechseln, sehen Sie die SQL-Befehle einer zuvor erstellten Abfrage."
+msgstr "Da $[officename] nicht die Eingabe des SQL-Codes verlangt, können Sie die meisten Abfragen auch ohne SQL-Kenntnisse durchführen. Während Sie eine Abfrage im Abfrageentwurf erstellen, setzt $[officename] Ihre Anweisungen automatisch in die entsprechende SQL-Syntax um. Wenn Sie mit der Schaltfläche <emph>Entwurfsansicht ein/aus</emph> in die SQL-Ansicht wechseln, sehen Sie die SQL-Befehle einer zuvor erstellten Abfrage."
 
 #: 02010100.xhp
 msgctxt ""
@@ -2737,7 +2737,7 @@ msgctxt ""
 "bm_id3154015\n"
 "help.text"
 msgid "<bookmark_value>links;relational databases (Base)</bookmark_value>      <bookmark_value>inner joins (Base)</bookmark_value>      <bookmark_value>joins in databases (Base)</bookmark_value>      <bookmark_value>left joins (Base)</bookmark_value>      <bookmark_value>right joins (Base)</bookmark_value>      <bookmark_value>full joins (Base)</bookmark_value>"
-msgstr "<bookmark_value>Verknüpfungen;relationale Datenbanken (Base)</bookmark_value>  <bookmark_value>Innerer Verbund (Base)</bookmark_value>  <bookmark_value>Verknüpfungen in Datenbanken (Base)</bookmark_value>  <bookmark_value>Linker Verbund (Base)</bookmark_value>  <bookmark_value>Rechter Verbund (Base)</bookmark_value>  <bookmark_value>Vollständiger Verbund (Base)</bookmark_value>"
+msgstr "<bookmark_value>Verknüpfungen; relationale Datenbanken (Base)</bookmark_value><bookmark_value>Innerer Verbund (Base)</bookmark_value><bookmark_value>Verknüpfungen in Datenbanken (Base)</bookmark_value><bookmark_value>Linker Verbund (Base)</bookmark_value><bookmark_value>Rechter Verbund (Base)</bookmark_value><bookmark_value>Vollständiger Verbund (Base)</bookmark_value>"
 
 #: 02010101.xhp
 msgctxt ""
@@ -2755,7 +2755,7 @@ msgctxt ""
 "2\n"
 "help.text"
 msgid "If you double-click a connection between two linked fields in the query design, or if you choose <emph>Insert - New Relation</emph>, the <emph>Join Properties</emph> dialog appears. These properties will be used in all queries created in the future."
-msgstr "Wenn Sie im Abfrageentwurf auf die Verbindungslinie zwischen zwei verknüpften Feldern doppelklicken oder <emph>Einfügen - Neue Relation</emph>... wählen, öffnet sich der Dialog <emph>Verbundeigenschaften</emph>. Diese Eigenschaften werden auf alle künftig erstellten Abfragen übertragen."
+msgstr "Wenn Sie im Abfrageentwurf auf die Verbindungslinie zwischen zwei verknüpften Feldern doppelklicken oder <emph>Einfügen - Neue Relation...</emph> wählen, öffnet sich der Dialog <emph>Verbundeigenschaften</emph>. Diese Eigenschaften werden auf alle künftig erstellten Abfragen übertragen."
 
 #: 02010101.xhp
 msgctxt ""
@@ -2931,7 +2931,7 @@ msgctxt ""
 "bm_id3156136\n"
 "help.text"
 msgid "<bookmark_value>forms; general information (Base)</bookmark_value>"
-msgstr "<bookmark_value>Formulare;allgemeine Informationen (Base)</bookmark_value>"
+msgstr "<bookmark_value>Formulare; allgemeine Informationen (Base)</bookmark_value>"
 
 #: 04000000.xhp
 msgctxt ""
@@ -3028,7 +3028,7 @@ msgctxt ""
 "bm_id3148668\n"
 "help.text"
 msgid "<bookmark_value>forms; designing (Base)</bookmark_value>"
-msgstr "<bookmark_value>Formulare;entwerfen (Base)</bookmark_value>"
+msgstr "<bookmark_value>Formulare; entwerfen (Base)</bookmark_value>"
 
 #: 04030000.xhp
 msgctxt ""
@@ -3091,7 +3091,7 @@ msgctxt ""
 "8\n"
 "help.text"
 msgid "If there is an error when assigning properties to the objects contained in the form (for example, when assigning a non-existent database table to an object), a corresponding error message appears. This error message may contain a <emph>More</emph> button. <ahelp hid=\"dummy\">If you click <emph>More</emph>, a dialog displaying more information about the current problem appears.</ahelp>"
-msgstr "Sollten beim Festlegen der Eigenschaften der Objekte im Formular Fehler auftreten (wenn Sie z. B. einem Objekt eine nicht vorhandene Datenbanktabelle zuweisen), so wird eine entsprechende Fehlermeldung angezeigt. In einer solchen Fehlermeldung ist unter Umständen die Schaltfläche <emph>Zusätze</emph> enthalten. <ahelp hid=\"dummy\">Wenn Sie auf <emph>Zusätze</emph> klicken, wird ein Dialog mit näheren Angaben zu dem angetroffenen Problem angezeigt.</ahelp>"
+msgstr "Sollten beim Festlegen der Eigenschaften der Objekte im Formular Fehler auftreten (wenn Sie beispielsweise einem Objekt eine nicht vorhandene Datenbanktabelle zuweisen), so wird eine entsprechende Fehlermeldung angezeigt. In einer solchen Fehlermeldung ist unter Umständen die Schaltfläche <emph>Zusätze</emph> enthalten. <ahelp hid=\"dummy\">Wenn Sie auf <emph>Zusätze</emph> klicken, wird ein Dialog mit näheren Angaben zu dem angetroffenen Problem angezeigt.</ahelp>"
 
 #: 05000000.xhp
 msgctxt ""
@@ -3509,7 +3509,7 @@ msgctxt ""
 "7\n"
 "help.text"
 msgid "<ahelp hid=\"HID_TABDESIGN_NAMECELL\">Specifies the name of the data field. Note the database restrictions, such as the length of the name, special characters and spaces.</ahelp>"
-msgstr "<ahelp hid=\"HID_TABDESIGN_NAMECELL\">Gibt den Namen des Datenfelds an. Beachten Sie bitte die Einschränkungen der Datenbank wie z. B. zulässige Länge des Namens, Sonderzeichen und Leerzeichen.</ahelp>"
+msgstr "<ahelp hid=\"HID_TABDESIGN_NAMECELL\">Gibt den Namen des Datenfelds an. Beachten Sie bitte die Einschränkungen der Datenbank, wie beispielsweise zulässige Länge des Namens, Sonder- und Leerzeichen.</ahelp>"
 
 #: 05010000.xhp
 msgctxt ""
@@ -4073,7 +4073,7 @@ msgctxt ""
 "19\n"
 "help.text"
 msgid "<ahelp hid=\"HID_CTL_RELATIONTAB\">Here you can link together tables from the current database through common data fields.</ahelp> Click the <emph>New Relation</emph> icon to create the relationships, or simply drag-and-drop with the mouse."
-msgstr "<ahelp hid=\"HID_CTL_RELATIONTAB\">Hier können Sie Tabellen aus der aktuellen Datenbank über gemeinsame Datenfelder verbinden.</ahelp> Klicken Sie auf das Symbol <emph>Neue Relationen</emph> oder stellen Sie die neuen Relationen einfach per Ziehen und Ablegen mit der Maus her."
+msgstr "<ahelp hid=\"HID_CTL_RELATIONTAB\">Hier können Sie Tabellen aus der aktuellen Datenbank über gemeinsame Datenfelder verbinden.</ahelp> Klicken Sie auf das Symbol <emph>Neue Relationen</emph> oder stellen Sie die neuen Relationen einfach per Ziehen-und-Ablegen mit der Maus her."
 
 #: 05020000.xhp
 msgctxt ""
@@ -4082,7 +4082,7 @@ msgctxt ""
 "3\n"
 "help.text"
 msgid "This function is only available if you are working with a relational database."
-msgstr "Diese Funktion steht nicht bei allen Datenbanken zur Verfügung. Sie erhalten ggf. die Meldung \"Die Datenbank unterstützt keine Relationen.\" Eine ähnliche Funktionalität ist dann eventuell im Abfrageentwurf durch Verbundeigenschaften möglich."
+msgstr "Diese Funktion steht nicht bei allen Datenbanken zur Verfügung. Sie erhalten gegebenfalls die Meldung \"Die Datenbank unterstützt keine Relationen.\" Eine ähnliche Funktionalität ist dann eventuell im Abfrageentwurf durch Verbundeigenschaften möglich."
 
 #: 05020000.xhp
 msgctxt ""
@@ -4109,7 +4109,7 @@ msgctxt ""
 "5\n"
 "help.text"
 msgid "The selected tables are shown in the top area of the design view. You can close a table window through the context menu or with the Delete key."
-msgstr "Ein Tabellenfenster können Sie über das Kontextmenü oder mit der (Entf)-Taste wieder entfernen."
+msgstr "Die ausgewählten Tabellen werden im oberen Bereich der Entwurfsansicht angezeigt. Ein Tabellenfenster können Sie über das Kontextmenü oder mit der Taste Entf wieder schließen."
 
 #: 05020000.xhp
 msgctxt ""
@@ -4117,7 +4117,7 @@ msgctxt ""
 "bm_id3148922\n"
 "help.text"
 msgid "<bookmark_value>primary keys;inserting (Base)</bookmark_value><bookmark_value>keys;primary keys (Base)</bookmark_value><bookmark_value>external keys (Base)</bookmark_value>"
-msgstr "<bookmark_value>Primärschlüssel;einfügen (Base)</bookmark_value>  <bookmark_value>Schlüssel;Primärschlüssel (Base)</bookmark_value>  <bookmark_value>Fremdschlüssel (Base)</bookmark_value>"
+msgstr "<bookmark_value>Primärschlüssel; einfügen (Base)</bookmark_value><bookmark_value>Schlüssel; Primärschlüssel (Base)</bookmark_value><bookmark_value>Fremdschlüssel (Base)</bookmark_value>"
 
 #: 05020000.xhp
 msgctxt ""
@@ -4161,7 +4161,7 @@ msgctxt ""
 "bm_id3155430\n"
 "help.text"
 msgid "<bookmark_value>relations; creating and deleting (Base)</bookmark_value>"
-msgstr "<bookmark_value>Relationen;erstellen und löschen (Base)</bookmark_value>"
+msgstr "<bookmark_value>Relationen; erstellen und löschen (Base)</bookmark_value>"
 
 #: 05020000.xhp
 msgctxt ""
@@ -4213,7 +4213,7 @@ msgctxt ""
 "bm_id3150499\n"
 "help.text"
 msgid "<bookmark_value>relations; properties (Base)</bookmark_value><bookmark_value>key fields for relations (Base)</bookmark_value><bookmark_value>cascading update (Base)</bookmark_value>"
-msgstr "<bookmark_value>Relationen;Eigenschaften (Base)</bookmark_value>  <bookmark_value>Schlüsselfelder für Relationen (Base)</bookmark_value>  <bookmark_value>Kaskadierende Aktualisierung (Base)</bookmark_value>"
+msgstr "<bookmark_value>Relationen; Eigenschaften (Base)</bookmark_value><bookmark_value>Schlüsselfelder für Relationen (Base)</bookmark_value><bookmark_value>Kaskadierende Aktualisierung (Base)</bookmark_value>"
 
 #: 05020100.xhp
 msgctxt ""
@@ -4491,7 +4491,7 @@ msgctxt ""
 "tit\n"
 "help.text"
 msgid "Copy a Table by Drag-and-Drop"
-msgstr "Kopieren einer Tabelle durch Ziehen und Ablegen"
+msgstr "Kopieren einer Tabelle durch Ziehen-und-Ablegen"
 
 #: 05030000.xhp
 msgctxt ""
@@ -4500,7 +4500,7 @@ msgctxt ""
 "1\n"
 "help.text"
 msgid "<link href=\"text/shared/explorer/database/05030000.xhp\" name=\"Copy Query or Table by Drag-and-Drop\">Copy Query or Table by Drag-and-Drop</link>"
-msgstr "<link href=\"text/shared/explorer/database/05030000.xhp\" name=\"Kopieren einer Abfrage oder Tabelle mithilfe von Ziehen&Ablegen\">Kopieren einer Abfrage oder Tabelle mithilfe von Ziehen&Ablegen</link>"
+msgstr "<link href=\"text/shared/explorer/database/05030000.xhp\" name=\"Kopieren einer Abfrage oder Tabelle mithilfe von Ziehen-und-Ablegen\">Kopieren einer Abfrage oder Tabelle mithilfe von Ziehen-und-Ablegen</link>"
 
 #: 05030000.xhp
 msgctxt ""
@@ -4508,7 +4508,7 @@ msgctxt ""
 "bm_id3155535\n"
 "help.text"
 msgid "<bookmark_value>queries; copying (Base)</bookmark_value><bookmark_value>tables in databases; copying database tables (Base)</bookmark_value>"
-msgstr "<bookmark_value>Abfragen;kopieren (Base)</bookmark_value>  <bookmark_value>Tabellen in Datenbanken;Datenbanktabellen kopieren (Base)</bookmark_value>"
+msgstr "<bookmark_value>Abfragen; kopieren (Base)</bookmark_value><bookmark_value>Tabellen in Datenbanken; Datenbanktabellen kopieren (Base)</bookmark_value>"
 
 #: 05030000.xhp
 msgctxt ""
@@ -4517,7 +4517,7 @@ msgctxt ""
 "2\n"
 "help.text"
 msgid "Dragging-and-dropping a query or table opens the <emph>Copy Table </emph>dialog, which allows you to define the options for copying a query or a table."
-msgstr "Durch das Ziehen und Ablegen einer Abfrage oder Tabelle öffnet sich der Dialog <emph>Tabelle kopieren</emph>, in dem Sie die Optionen zum Kopieren von Abfragen und Tabellen festlegen."
+msgstr "Durch das Ziehen-und-Ablegen einer Abfrage oder Tabelle öffnet sich der Dialog <emph>Tabelle kopieren</emph>, in dem Sie die Optionen zum Kopieren von Abfragen und Tabellen festlegen."
 
 #: 05030000.xhp
 msgctxt ""
@@ -4722,7 +4722,7 @@ msgctxt ""
 "bm_id3149164\n"
 "help.text"
 msgid "<bookmark_value>primary keys; defining</bookmark_value>"
-msgstr "<bookmark_value>Primärschlüssel;definieren</bookmark_value>"
+msgstr "<bookmark_value>Primärschlüssel; definieren</bookmark_value>"
 
 #: 05030100.xhp
 msgctxt ""
@@ -4793,7 +4793,7 @@ msgctxt ""
 "2\n"
 "help.text"
 msgid "In the data source explorer, you can copy a table by dragging and dropping the table onto the table container. The <emph>Apply columns </emph>dialog is the second window of the <emph>Copy table</emph> dialog."
-msgstr "Im Datenquellen-Explorer können Sie eine Tabelle durch Ziehen und Ablegen auf dem Tabellencontainer kopieren. Der Dialog <emph>Spaltenübernahme</emph> ist das zweite Fenster im Dialog <emph>Tabelle kopieren</emph>."
+msgstr "Im Datenquellen-Explorer können Sie eine Tabelle durch Ziehen-und-Ablegen auf dem Tabellencontainer kopieren. Der Dialog <emph>Spaltenübernahme</emph> ist das zweite Fenster im Dialog <emph>Tabelle kopieren</emph>."
 
 #: 05030200.xhp
 msgctxt ""
@@ -4891,7 +4891,7 @@ msgctxt ""
 "2\n"
 "help.text"
 msgid "In the data source explorer, you can copy a table by dragging and dropping the table onto the table container. The<emph> Type formatting </emph>dialog is the third window of the <emph>Copy table</emph> dialog."
-msgstr "Im Datenquellen-Explorer können Sie eine Tabelle durch Ziehen und Ablegen auf dem Tabellencontainer kopieren. Der Dialog <emph>Typformatierungen</emph> ist das dritte Fenster im Dialog <emph>Tabelle kopieren</emph>."
+msgstr "Im Datenquellen-Explorer können Sie eine Tabelle durch Ziehen-und-Ablegen auf dem Tabellencontainer kopieren. Der Dialog <emph>Typformatierungen</emph> ist das dritte Fenster im Dialog <emph>Tabelle kopieren</emph>."
 
 #: 05030300.xhp
 msgctxt ""
@@ -5026,7 +5026,7 @@ msgctxt ""
 "18\n"
 "help.text"
 msgid "$[officename] can automatically recognize field contents when you copy database tables by drag and drop."
-msgstr "Beim Kopieren von Datenbanktabellen per Ziehen und Ablegen werden die Feldinhalte von $[officename] mitunter automatisch erkannt."
+msgstr "Beim Kopieren von Datenbanktabellen per Ziehen-und-Ablegen werden die Feldinhalte von $[officename] mitunter automatisch erkannt."
 
 #: 05030300.xhp
 msgctxt ""
@@ -5088,7 +5088,7 @@ msgctxt ""
 "2\n"
 "help.text"
 msgid "In the data source explorer, you can copy a table by dragging and dropping the table onto the table container. If you select the <emph>Attach data </emph>check box on the first page of the <emph>Copy table </emph>dialog, the <emph>Assign columns </emph>dialog opens as the second window. You can use this dialog to map the contents of a data field in the source table to a different data field in the destination table."
-msgstr "Im Datenquellen-Explorer ist es möglich, Tabellen durch Ziehen und Ablegen in den Tabellencontainer zu kopieren. Wenn Sie auf der ersten Seite des Dialogs <emph>Tabelle kopieren</emph> die Option <emph>Daten anhängen</emph> markieren, wird <emph>Spalten zuordnen</emph> als zweites Fenster geöffnet. Dort können Sie den Inhalt eines Datenfelds aus der Quelltabelle einem anderen Datenfeld in der Zieltabelle zuordnen."
+msgstr "Im Datenquellen-Explorer ist es möglich, Tabellen durch Ziehen-und-Ablegen in den Tabellencontainer zu kopieren. Wenn Sie auf der ersten Seite des Dialogs <emph>Tabelle kopieren</emph> die Option <emph>Daten anhängen</emph> markieren, wird <emph>Spalten zuordnen</emph> als zweites Fenster geöffnet. Dort können Sie den Inhalt eines Datenfelds aus der Quelltabelle einem anderen Datenfeld in der Zieltabelle zuordnen."
 
 #: 05030400.xhp
 msgctxt ""
@@ -5247,7 +5247,7 @@ msgctxt ""
 "bm_id3152594\n"
 "help.text"
 msgid "<bookmark_value>access rights for database tables (Base)</bookmark_value><bookmark_value>tables in databases; access rights to (Base)</bookmark_value>"
-msgstr "<bookmark_value>Zugriffsrechte für Datenbanktabellen (Base)</bookmark_value>  <bookmark_value>Tabellen in Datenbanken;Zugriffsrechte für (Base)</bookmark_value>"
+msgstr "<bookmark_value>Zugriffsrechte für Datenbanktabellen (Base)</bookmark_value><bookmark_value>Tabellen in Datenbanken; Zugriffsrechte für (Base)</bookmark_value>"
 
 #: 05040100.xhp
 msgctxt ""
@@ -5436,7 +5436,7 @@ msgctxt ""
 "24\n"
 "help.text"
 msgid "<ahelp hid=\".\">Allows the user to modify the defined references, for example, to enter new relations for the table or to delete existing relations.</ahelp>"
-msgstr "<ahelp hid=\".\">Hiermit gestatten Sie einem Benutzer, die definierten Beziehungen zu ändern; es dürfen also z. B. neue Relationen für die Tabelle eingefügt oder vorhandene gelöscht werden.</ahelp>"
+msgstr "<ahelp hid=\".\">Hiermit gestatten Sie einem Benutzer, die definierten Beziehungen zu ändern; so dürfen beispielsweise neue Relationen für die Tabelle eingefügt oder vorhandene gelöscht werden.</ahelp>"
 
 #: 05040200.xhp
 msgctxt ""
@@ -5486,7 +5486,7 @@ msgctxt ""
 "bm_id3155449\n"
 "help.text"
 msgid "<bookmark_value>databases;drag and drop (Base)</bookmark_value>"
-msgstr "<bookmark_value>Datenbanken;Ziehen&Ablegen (Base)</bookmark_value>"
+msgstr "<bookmark_value>Datenbanken; Ziehen-und-Ablegen (Base)</bookmark_value>"
 
 #: 11000002.xhp
 msgctxt ""
@@ -6045,7 +6045,7 @@ msgctxt ""
 "bm_id3148983\n"
 "help.text"
 msgid "<bookmark_value>SQL; executing SQL statements (Base)</bookmark_value><bookmark_value>databases; administration through SQL (Base)</bookmark_value>"
-msgstr "<bookmark_value>SQL;SQL-Befehle ausführen (Base)</bookmark_value>  <bookmark_value>Datenbanken;Verwaltung über SQL (Base)</bookmark_value>"
+msgstr "<bookmark_value>SQL; SQL-Befehle ausführen (Base)</bookmark_value><bookmark_value>Datenbanken; Verwaltung über SQL (Base)</bookmark_value>"
 
 #: 11080000.xhp
 msgctxt ""
@@ -6072,7 +6072,7 @@ msgctxt ""
 "23\n"
 "help.text"
 msgid "You can only enter administration commands in this dialog, such as Grant, Create Table, or Drop Table, and not filter commands. The commands that you can enter depend on the data source, for example, dBASE can only run some of the SQL commands list here."
-msgstr "In diesem Dialog können Sie nur Verwaltungsbefehle, wie z. B. Grant, Create Table oder Drop Table eingeben und keine Filterbefehle. Die Befehle, die Sie eingeben können, hängen von der Datenquelle ab. Z.B kann dBase nur einige der hier aufgelisteten SQL-Befehle ausführen."
+msgstr "In diesem Dialog können Sie nur Verwaltungsbefehle, wie beispielsweise Grant, Create Table oder Drop Table, eingeben und keine Filterbefehle. Die Befehle, die Sie eingeben können, hängen von der Datenquelle ab. Beispielsweise kann dBase nur einige der hier aufgelisteten SQL-Befehle ausführen."
 
 #: 11080000.xhp
 msgctxt ""
@@ -6108,7 +6108,7 @@ msgctxt ""
 "24\n"
 "help.text"
 msgid "For example, for a \"Bibliography\" data source, you can enter the following SQL command:"
-msgstr "Für die Datenquelle \"Bibliography\" können Sie z. B. den folgenden SQL-Befehl eingeben:"
+msgstr "Für die Datenquelle \"Bibliography\" können Sie beispielsweise den folgenden SQL-Befehl eingeben:"
 
 #: 11080000.xhp
 msgctxt ""
@@ -6974,7 +6974,7 @@ msgctxt ""
 "21\n"
 "help.text"
 msgid "<ahelp hid=\"HID_DLG_ADABAS_DATADEVSPACE\">Enter the path for the data DEVSPACE.</ahelp> This file stores user data, such as tables and indexes, as well as the SQL catalog (schema info). The data contained in one user table is evenly distributed across all DATADEVSPACEs. The combined size of all DATADEVSPACEs corresponds to the size of the database."
-msgstr "<ahelp hid=\"HID_DLG_ADABAS_DATADEVSPACE\">Geben Sie den Pfad des Daten-DEVSPACE ein.</ahelp> In diesen Dateien werden Benutzerdaten, z. B. Tabellen und Indizes, sowie der SQL-Katalog (Schema-Informationen) gespeichert. Die in einer Benutzertabelle enthaltenen Daten werden gleichmäßig über alle DATADEVSPACEs verteilt. Die Größe aller DATADEVSPACEs zusammen entspricht der Größe der Datenbank."
+msgstr "<ahelp hid=\"HID_DLG_ADABAS_DATADEVSPACE\">Geben Sie den Pfad des Daten-DEVSPACE ein.</ahelp> In diesen Dateien werden Benutzerdaten, beispielsweise Tabellen und Indizes, sowie der SQL-Katalog (Schema-Informationen) gespeichert. Die in einer Benutzertabelle enthaltenen Daten werden gleichmäßig über alle DATADEVSPACEs verteilt. Die Größe aller DATADEVSPACEs zusammen entspricht der Größe der Datenbank."
 
 #: 30100000.xhp
 msgctxt ""
@@ -7064,7 +7064,7 @@ msgctxt ""
 "31\n"
 "help.text"
 msgid "<ahelp hid=\"HID_DLG_ADABAS_CACHE_SIZE\">Enter the size of the data cache in megabytes. </ahelp> The data buffer can be simultaneously accessed by all users and stores the most recently accessed pages from the DATADEVSPACEs."
-msgstr "<ahelp hid=\"HID_DLG_ADABAS_CACHE_SIZE\">Geben Sie eine Größe für den Daten-Cache in MB ein. </ahelp> Dieser allen Benutzern gleichzeitig zur Verfügung stehende Cache enthält die Seiten aus den DATADEVSPACEs, auf die zuletzt zugegriffen wurde."
+msgstr "<ahelp hid=\"HID_DLG_ADABAS_CACHE_SIZE\">Geben Sie eine Größe für den Daten-Zwischenspeicher in MB ein. </ahelp> Dieser allen Benutzern gleichzeitig zur Verfügung stehende Zwischenspeicher enthält die Seiten aus den DATADEVSPACEs, auf die zuletzt zugegriffen wurde."
 
 #: dabaadvprop.xhp
 msgctxt ""
@@ -7352,7 +7352,7 @@ msgctxt ""
 "hd_id1101718\n"
 "help.text"
 msgid "Form data input checks for required fields"
-msgstr "Fomulardateneingabeprüfungen für Pflichtfelder"
+msgstr "Formulardateneingabeprüfungen für Pflichtfelder"
 
 #: dabaadvpropdat.xhp
 msgctxt ""
@@ -7672,7 +7672,7 @@ msgctxt ""
 "par_idN105D7\n"
 "help.text"
 msgid "<ahelp hid=\".\">Enter the host name of the server that contains the database, for example ldap.server.com.</ahelp>"
-msgstr "<ahelp hid=\".\">Geben Sie den Host-Namen des Servers ein, auf dem die Datenbank installiert ist, z. B. \"ldap.Server.com\".</ahelp>"
+msgstr "<ahelp hid=\".\">Geben Sie den Host-Namen des Servers ein, auf dem die Datenbank installiert ist, beispielsweise \"ldap.server.com\".</ahelp>"
 
 #: dabapropadd.xhp
 msgctxt ""
@@ -7792,7 +7792,7 @@ msgctxt ""
 "par_idN106B0\n"
 "help.text"
 msgid "<ahelp hid=\".\">Enter the starting point to search the LDAP database, for example, dc=com.</ahelp>"
-msgstr "<ahelp hid=\".\">Geben Sie den Ausgangspunkt für die Suche in der LDAP-Datenbank an, z. B. \"dc=com\".</ahelp>"
+msgstr "<ahelp hid=\".\">Geben Sie den Ausgangspunkt für die Suche in der LDAP-Datenbank an, beispielsweise \"dc=com\".</ahelp>"
 
 #: dabapropadd.xhp
 msgctxt ""
@@ -8016,7 +8016,7 @@ msgctxt ""
 "par_idN107E9\n"
 "help.text"
 msgid "<ahelp hid=\".\">Enter or select the character that is used as a decimal separator in the text file, for example, a period (0.5) or a comma (0,5).</ahelp>"
-msgstr "<ahelp hid=\".\">Geben Sie das in der Textdatei verwendeten Dezimaltrennzeichen, z.B. einen Punkt (0.5) oder ein Komma (0,5), ein oder wählen Sie es aus.</ahelp>"
+msgstr "<ahelp hid=\".\">Geben Sie das in der Textdatei verwendete Dezimaltrennzeichen ein oder wählen Sie es aus, beispielsweise einen Punkt (0.5) oder ein Komma (0,5).</ahelp>"
 
 #: dabapropadd.xhp
 msgctxt ""
@@ -8032,7 +8032,7 @@ msgctxt ""
 "par_idN107F6\n"
 "help.text"
 msgid "<ahelp hid=\".\">Enter or select the character that is used as a thousands separator in the text file, for example a comma (1,000), or a period (1.000).</ahelp>"
-msgstr "<ahelp hid=\".\">Geben Sie das in der Textdatei verwendete Tausendertrennzeichen, z.B. einen Punkt (1.000) oder ein Komma (1,000), ein oder wählen Sie es aus.</ahelp>"
+msgstr "<ahelp hid=\".\">Geben Sie das in der Textdatei verwendete Tausendertrennzeichen ein oder wählen Sie es aus, beispielsweise einen Punkt (1.000) oder ein Komma (1,000).</ahelp>"
 
 #: dabapropadd.xhp
 msgctxt ""
@@ -8448,7 +8448,7 @@ msgctxt ""
 "bm_id2026429\n"
 "help.text"
 msgid "<bookmark_value>wizards;databases (Base)</bookmark_value><bookmark_value>Database Wizard (Base)</bookmark_value><bookmark_value>databases; formats (Base)</bookmark_value><bookmark_value>MySQL databases (Base)</bookmark_value><bookmark_value>dBASE; database settings (Base)</bookmark_value><bookmark_value>spreadsheets;as databases (base)</bookmark_value>"
-msgstr "<bookmark_value>Assistenten;Datenbanken (Base)</bookmark_value>  <bookmark_value>Datenbank Assistent (Base)</bookmark_value>  <bookmark_value>Datenbanken;Formate (Base)</bookmark_value>  <bookmark_value>MySQL Datenbanken (Base)</bookmark_value>  <bookmark_value>dBASE;Datenbank Einstellungen (Base)</bookmark_value>  <bookmark_value>Tabellendokumente;als Datenbanken (Base)</bookmark_value>"
+msgstr "<bookmark_value>Assistenten; Datenbanken (Base)</bookmark_value><bookmark_value>Datenbank-Assistent (Base)</bookmark_value><bookmark_value>Datenbanken; Formate (Base)</bookmark_value><bookmark_value>MySQL Datenbanken (Base)</bookmark_value><bookmark_value>dBASE; Einstellungen Datenbank (Base)</bookmark_value><bookmark_value>Tabellendokumente; als Datenbanken (Base)</bookmark_value>"
 
 #: dabawiz00.xhp
 msgctxt ""
@@ -8496,7 +8496,7 @@ msgctxt ""
 "par_idN105DF\n"
 "help.text"
 msgid "If you open the Database Wizard to create a database file for an existing database connection, there may be more steps to specify paths, authentication information, and more."
-msgstr "Wenn Sie den Datenbank-Assistenten zum Erstellen einer Datenbankdatei für eine vorhandene Datenbankverbindung öffnen, können mehr Schritte vorhanden sein - zum Festlegen von Pfaden, von Authentifizierungsinformationen usw."
+msgstr "Wenn Sie den Datenbank-Assistenten zum Erstellen einer Datenbankdatei für eine vorhandene Datenbankverbindung öffnen, können auch mehrere Schritte nötig sein, beispielsweise zum Festlegen von Pfaden, Authentifizierungsinformationen und anderem mehr."
 
 #: dabawiz00.xhp
 msgctxt ""
@@ -8600,7 +8600,7 @@ msgctxt ""
 "bm_id2082583\n"
 "help.text"
 msgid "<bookmark_value>databases; connecting (Base)</bookmark_value>"
-msgstr "<bookmark_value>Datenbanken;Verbinden (Base)</bookmark_value>"
+msgstr "<bookmark_value>Datenbanken; verbinden (Base)</bookmark_value>"
 
 #: dabawiz01.xhp
 msgctxt ""
@@ -8920,7 +8920,7 @@ msgctxt ""
 "bm_id2755516\n"
 "help.text"
 msgid "<bookmark_value>Access databases (base)</bookmark_value><bookmark_value>Microsoft Office;Access databases (base)</bookmark_value>"
-msgstr "<bookmark_value>Access-Datenbanken (Base)</bookmark_value>  <bookmark_value>Microsoft Office;Access-Datenbanken (Base)</bookmark_value>"
+msgstr "<bookmark_value>Access-Datenbanken (Base)</bookmark_value><bookmark_value>Microsoft Office; Access-Datenbanken (Base)</bookmark_value>"
 
 #: dabawiz02access.xhp
 msgctxt ""
@@ -9088,7 +9088,7 @@ msgctxt ""
 "bm_id7565233\n"
 "help.text"
 msgid "<bookmark_value>ADO databases (Base)</bookmark_value><bookmark_value>MS ADO interface (Base)</bookmark_value><bookmark_value>databases;ADO (Base)</bookmark_value>"
-msgstr "<bookmark_value>ADO-Datenbanken (Base)</bookmark_value>  <bookmark_value>MS ADO-Schnittstelle (Base)</bookmark_value>  <bookmark_value>Datenbanken;ADO (Base)</bookmark_value>"
+msgstr "<bookmark_value>ADO-Datenbanken (Base)</bookmark_value><bookmark_value>MS ADO-Schnittstelle (Base)</bookmark_value><bookmark_value>Datenbanken; ADO (Base)</bookmark_value>"
 
 #: dabawiz02ado.xhp
 msgctxt ""
@@ -9304,7 +9304,7 @@ msgctxt ""
 "bm_id3726920\n"
 "help.text"
 msgid "<bookmark_value>JDBC; databases (Base)</bookmark_value><bookmark_value>databases; JDBC (Base)</bookmark_value>"
-msgstr "<bookmark_value>JDBC;Datenbanken (Base)</bookmark_value>  <bookmark_value>Datenbanken;JDBC (Base)</bookmark_value>"
+msgstr "<bookmark_value>JDBC; Datenbanken (Base)</bookmark_value><bookmark_value>Datenbanken; JDBC (Base)</bookmark_value>"
 
 #: dabawiz02jdbc.xhp
 msgctxt ""
@@ -9560,7 +9560,7 @@ msgctxt ""
 "bm_id22583\n"
 "help.text"
 msgid "<bookmark_value>LDAP server; address books (Base)</bookmark_value><bookmark_value>address books; LDAP server (Base)</bookmark_value><bookmark_value>data sources; LDAP server (Base)</bookmark_value>"
-msgstr "<bookmark_value>LDAP-Server;Adressbücher (Base)</bookmark_value>  <bookmark_value>Adressbücher;LDAP-Server (Base)</bookmark_value>  <bookmark_value>Datenquellen;LDAP-Server (Base)</bookmark_value>"
+msgstr "<bookmark_value>LDAP-Server; Adressbücher (Base)</bookmark_value><bookmark_value>Adressbücher; LDAP-Server (Base)</bookmark_value><bookmark_value>Datenquellen; LDAP-Server (Base)</bookmark_value>"
 
 #: dabawiz02ldap.xhp
 msgctxt ""
@@ -9608,7 +9608,7 @@ msgctxt ""
 "par_idN10598\n"
 "help.text"
 msgid "<ahelp hid=\"HID_DSADMIN_LDAP_BASEDN\">Enter the starting point to search the LDAP database, for example, \"dc=com\".</ahelp>"
-msgstr "<ahelp hid=\"HID_DSADMIN_LDAP_BASEDN\">Geben Sie den Ausgangspunkt für die Suche in der LDAP-Datenbank an, z.B. \"dc=com\".</ahelp>"
+msgstr "<ahelp hid=\"HID_DSADMIN_LDAP_BASEDN\">Geben Sie den Ausgangspunkt für die Suche in der LDAP-Datenbank an, beispielsweise \"dc=com\".</ahelp>"
 
 #: dabawiz02ldap.xhp
 msgctxt ""
@@ -9768,7 +9768,7 @@ msgctxt ""
 "bm_id3149031\n"
 "help.text"
 msgid "<bookmark_value>ODBC;database (Base)</bookmark_value><bookmark_value>databases;ODBC (Base)</bookmark_value>"
-msgstr "<bookmark_value>ODBC;Datenbanken (Base)</bookmark_value>  <bookmark_value>Datenbanken;ODBC (Base)</bookmark_value>"
+msgstr "<bookmark_value>ODBC; Datenbank (Base)</bookmark_value><bookmark_value>Datenbanken; ODBC (Base)</bookmark_value>"
 
 #: dabawiz02odbc.xhp
 msgctxt ""
@@ -10168,7 +10168,7 @@ msgctxt ""
 "bm_id2517166\n"
 "help.text"
 msgid "<bookmark_value>tables in databases;importing text formats (Base)</bookmark_value><bookmark_value>text databases (Base)</bookmark_value>"
-msgstr "<bookmark_value>Tabellen in Datenbanken;Textformate importieren (Base)</bookmark_value>  <bookmark_value>Textdatenbanken (Base)</bookmark_value>"
+msgstr "<bookmark_value>Tabellen in Datenbanken; Textformate importieren (Base)</bookmark_value><bookmark_value>Textdatenbanken (Base)</bookmark_value>"
 
 #: dabawiz02text.xhp
 msgctxt ""
@@ -10320,7 +10320,7 @@ msgctxt ""
 "par_idN105BC\n"
 "help.text"
 msgid "<ahelp hid=\"HID_DSADMIN_DECIMAL_SEPARATOR\">Enter or select the character that is used as a decimal separator in the text file, for example, a period (0.5) or a comma (0,5).</ahelp>"
-msgstr "<ahelp hid=\"HID_DSADMIN_DECIMAL_SEPARATOR\">Geben Sie das in der Textdatei verwendeten Dezimaltrennzeichen, z.B. einen Punkt (0.5) oder ein Komma (0,5), ein oder wählen Sie es aus.</ahelp>"
+msgstr "<ahelp hid=\"HID_DSADMIN_DECIMAL_SEPARATOR\">Geben Sie das in der Textdatei verwendete Dezimaltrennzeichen ein oder wählen Sie es aus, beispielsweise einen Punkt (0.5) oder ein Komma (0,5).</ahelp>"
 
 #: dabawiz02text.xhp
 msgctxt ""
@@ -10336,7 +10336,7 @@ msgctxt ""
 "par_idN105D7\n"
 "help.text"
 msgid "<ahelp hid=\"HID_DSADMIN_THOUSANDS_SEPARATOR\">Enter or select the character that is used as a thousands separator in the text file, for example a comma (1,000), or a period (1.000).</ahelp>"
-msgstr "<ahelp hid=\"HID_DSADMIN_THOUSANDS_SEPARATOR\">Geben Sie das in der Textdatei verwendete Tausendertrennzeichen, z.B. einen Punkt (1.000) oder ein Komma (1,000), ein oder wählen Sie es aus.</ahelp>"
+msgstr "<ahelp hid=\"HID_DSADMIN_THOUSANDS_SEPARATOR\">Geben Sie das in der Textdatei verwendete Tausendertrennzeichen ein oder wählen Sie es aus, beispielsweise einen Punkt (1.000) oder ein Komma (1,000).</ahelp>"
 
 #: dabawiz02text.xhp
 msgctxt ""
@@ -10432,7 +10432,7 @@ msgctxt ""
 "bm_id8622089\n"
 "help.text"
 msgid "<bookmark_value>databases;main page (Base)</bookmark_value><bookmark_value>$[officename] Base data sources</bookmark_value><bookmark_value>data sources;$[officename] Base</bookmark_value>"
-msgstr "<bookmark_value>Datenbanken;Hauptseite (Base)</bookmark_value>  <bookmark_value>$[officename] Base Datenquellen</bookmark_value>  <bookmark_value>Datenquellen;$[officename] Base</bookmark_value>"
+msgstr "<bookmark_value>Datenbanken; Hauptseite (Base)</bookmark_value><bookmark_value>$[officename] Base Datenquellen</bookmark_value><bookmark_value>Datenquellen; $[officename] Base</bookmark_value>"
 
 #: main.xhp
 msgctxt ""
@@ -10448,7 +10448,7 @@ msgctxt ""
 "par_idN107BD\n"
 "help.text"
 msgid "In %PRODUCTNAME Base, you can access data that is stored in a wide variety of database file formats. %PRODUCTNAME Base natively supports some flat file database formats, such as the dBASE format. You can also use %PRODUCTNAME Base to connect to external relational databases, such as databases from MySQL or Oracle."
-msgstr "In %PRODUCTNAME Base können Sie auf Daten zugreifen, die in einer großen Vielfalt von Datenbankdateiformaten gespeichert sind. %PRODUCTNAME Base unterstützt intern einige Flat-File-Datenbankformate, wie zum Beispiel das dBase-Format. Sie können auch %PRODUCTNAME Base zur Verbindung mit externen relationalen Datenbanken wie z.B. MySQL oder Oracle benutzen."
+msgstr "In %PRODUCTNAME Base können Sie auf Daten zugreifen, die in einer großen Vielfalt von Datenbankdateiformaten gespeichert sind. %PRODUCTNAME Base unterstützt intern einige Flat-File-Datenbankformate, wie zum Beispiel das dBase-Format. Sie können auch %PRODUCTNAME Base zur Verbindung mit externen relationalen Datenbanken wie beispielsweise von MySQL oder Oracle benutzen."
 
 #: main.xhp
 msgctxt ""
@@ -10732,7 +10732,7 @@ msgctxt ""
 "par_idN105B1\n"
 "help.text"
 msgid "<ahelp hid=\".\">Starts the <link href=\"text/shared/autopi/01090000.xhp\">Form Wizard</link> for the selected table, query, or view.</ahelp>"
-msgstr "<ahelp hid=\".\">Startet den <link href=\"text/shared/autopi/01090000.xhp\">Formular-Assistenten</link> für die ausgewählte Tabelle, Abfrage bzw. Ansicht.</ahelp>"
+msgstr "<ahelp hid=\".\">Startet den <link href=\"text/shared/autopi/01090000.xhp\">Formular-Assistenten</link> für die ausgewählte Tabelle, Abfrage beziehungsweise Ansicht.</ahelp>"
 
 #: menuedit.xhp
 msgctxt ""
@@ -10748,7 +10748,7 @@ msgctxt ""
 "par_idN105C6\n"
 "help.text"
 msgid "<ahelp hid=\".\">Starts the <link href=\"text/shared/autopi/01100000.xhp\">Report Wizard</link> for the selected table, query, or view.</ahelp>"
-msgstr "<ahelp hid=\".\">Startet den <link href=\"text/shared/autopi/01100000.xhp\">Berichtsassistenten</link> für die ausgewählte Tabelle, Abfrage bzw. Ansicht.</ahelp>"
+msgstr "<ahelp hid=\".\">Startet den <link href=\"text/shared/autopi/01100000.xhp\">Berichtsassistenten</link> für die ausgewählte Tabelle, Abfrage oder Ansicht.</ahelp>"
 
 #: menuedit.xhp
 msgctxt ""
@@ -10876,7 +10876,7 @@ msgctxt ""
 "par_idN105D5\n"
 "help.text"
 msgid "Save As"
-msgstr "Speichern unter"
+msgstr "Speichern unter..."
 
 #: menufile.xhp
 msgctxt ""
@@ -11569,7 +11569,7 @@ msgctxt ""
 "bm_id6009095\n"
 "help.text"
 msgid "<bookmark_value>wizards;macros (Base)</bookmark_value>         <bookmark_value>Macro Wizard (Base)</bookmark_value>         <bookmark_value>macros;attaching new (Base)</bookmark_value>         <bookmark_value>migrating macros (Base)</bookmark_value>"
-msgstr "<bookmark_value>Assistenten;Makros (Base)</bookmark_value>  <bookmark_value>Makroassistent (Base)</bookmark_value>  <bookmark_value>Makros;Neue anfügen (Base)</bookmark_value>  <bookmark_value>Makros migrieren (Base)</bookmark_value>"
+msgstr "<bookmark_value>Assistenten; Makros (Base)</bookmark_value><bookmark_value>Makroassistent (Base)</bookmark_value><bookmark_value>Makros; neue anfügen (Base)</bookmark_value><bookmark_value>Makros migrieren (Base)</bookmark_value>"
 
 #: migrate_macros.xhp
 msgctxt ""
@@ -11585,7 +11585,7 @@ msgctxt ""
 "par_id0112200902353466\n"
 "help.text"
 msgid "<ahelp hid=\".\">The Database Document Macro Migration Wizard moves existing macros from sub-documents of an old Base file into the new Base file's macro storage area.</ahelp>"
-msgstr "<ahelp hid=\".\">Der Migrationsassistent für Datenbankmakros verschiebt vorhandene Makros aus Unter-Dokumenten einer alten Datenbankdatei in den Makro-Speicherbereich der neuen Datenbankdatei.</ahelp>"
+msgstr "<ahelp hid=\".\">Der Migrationsassistent für Datenbankmakros verschiebt vorhandene Makros aus Unterdokumenten einer alten Datenbankdatei in den Makro-Speicherbereich der neuen Datenbankdatei.</ahelp>"
 
 #: migrate_macros.xhp
 msgctxt ""
@@ -11609,7 +11609,7 @@ msgctxt ""
 "par_id0112200902353542\n"
 "help.text"
 msgid "Previously, macros have been allowed to reside only in the text sub-documents of forms and reports. Now macros can also be stored in the Base file itself. This means that macros in Base files can be called now from any of its sub-components: forms, reports, table design, query design, relation design, table data view."
-msgstr "Bisher konnten Makros nur in den Text-Unterdokumenten von Formularen oder Berichten gespeichert werden. Jetzt können Makros auch in der Datenbankdatei selbst gespeichert werden. Das bedeutet, dass Makros in den Datenbankdateien nun von allen ihren Unterkomponenten aufgerufen werden können: Formulare, Berichte, Tabellenentwurf, Abfrageentwurf, Verknüpfungsentwurf, Tabellendatenansicht, usw."
+msgstr "Bisher konnten Makros nur in den Text-Unterdokumenten von Formularen oder Berichten gespeichert werden. Jetzt können Makros auch in der Datenbankdatei selbst gespeichert werden. Das bedeutet, dass Makros in den Datenbankdateien nun von allen ihren Unterkomponenten aufgerufen werden können: Formulare, Berichte, Tabellenentwurf, Abfrageentwurf, Verknüpfungsentwurf, Tabellendatenansicht."
 
 #: migrate_macros.xhp
 msgctxt ""
@@ -11633,7 +11633,7 @@ msgctxt ""
 "par_id0112200903075951\n"
 "help.text"
 msgid "For example, it is possible that macros from the sub-documents had the same module names and macro names. After you moved the macros into one common macro storage area, you must edit the macros to make the names unique. The wizard cannot do this."
-msgstr "ist Es zum Beispiel ist möglich, dass Makros aus dem Unterdokument die gleichen Modul- und Makronamen haben. Nachdem Sie die Makros in einen gemeinsamen Makro-Speicherbereich verschoben haben, müssen Sie die Makros bearbeiten, damit sie einen eindeutigen Namen haben. Das kann der Assistent nicht für Sie tun."
+msgstr "Es ist zum Beispiel möglich, dass Makros aus dem Unterdokument die gleichen Modul- und Makronamen haben. Nachdem Sie die Makros in einen gemeinsamen Makro-Speicherbereich verschoben haben, müssen Sie die Makros bearbeiten, damit sie einen eindeutigen Namen haben. Das kann der Assistent nicht für Sie tun."
 
 #: migrate_macros.xhp
 msgctxt ""
@@ -11641,7 +11641,7 @@ msgctxt ""
 "par_id0112200903075915\n"
 "help.text"
 msgid "The wizard can backup the Base file to another folder of your choice. The wizard changes the original Base file. The backup remains unchanged."
-msgstr "Der Assistent kann die Datenbankdatei in ein anderes Verzeichnis Ihrer Wahl sichern. Der Assistent ändert die Original-Datenbankdatei. Die gesicherten Daten bleiben unverändert"
+msgstr "Der Assistent kann die Datenbankdatei in ein anderes Verzeichnis Ihrer Wahl sichern. Der Assistent ändert die Original-Datenbankdatei. Die gesicherten Daten bleiben unverändert."
 
 #: migrate_macros.xhp
 msgctxt ""
@@ -11705,7 +11705,7 @@ msgctxt ""
 "par_idN10583\n"
 "help.text"
 msgid "Remember password till end of session"
-msgstr "Kennwort bis Applikationsende merken"
+msgstr "Kennwort bis Sitzungsende merken"
 
 #: password.xhp
 msgctxt ""
@@ -12561,7 +12561,7 @@ msgctxt ""
 "bm_id1614429\n"
 "help.text"
 msgid "<bookmark_value>Report Builder</bookmark_value><bookmark_value>Oracle Report Builder</bookmark_value>"
-msgstr "<bookmark_value>Bericht-Designer</bookmark_value>  <bookmark_value>Oracle Bericht-Designer</bookmark_value>"
+msgstr "<bookmark_value>Bericht-Designer</bookmark_value><bookmark_value>Oracle Bericht-Designer</bookmark_value>"
 
 #: rep_main.xhp
 msgctxt ""
@@ -12673,7 +12673,7 @@ msgctxt ""
 "par_id7050691\n"
 "help.text"
 msgid "Click the Reports icon in the Base window, then choose Create Report in Design View."
-msgstr "Klicken Sie das Symbol Berichte im Fenster Base und wählen Sie dann Bericht in der Entwurfsansicht erstellen..."
+msgstr "Klicken Sie das Symbol Berichte im Fenster Base und wählen Sie dann Bericht in der Entwurfsansicht erstellen."
 
 #: rep_main.xhp
 msgctxt ""
@@ -12753,7 +12753,7 @@ msgctxt ""
 "par_id1589098\n"
 "help.text"
 msgid "You insert database fields by drag-and-drop into the Detail area. See the section \"To insert fields into the report\" below."
-msgstr "Datenbankfelder fügen Sie durch Ziehen und Ablegen in den Detailbereich ein. Siehe auch Abschnitt \"Felder in den Bericht einfügen.\" weiter unten."
+msgstr "Datenbankfelder fügen Sie durch Ziehen-und-Ablegen in den Detailbereich ein. Siehe auch Abschnitt \"Felder in den Bericht einfügen\" weiter unten."
 
 #: rep_main.xhp
 msgctxt ""
@@ -13145,7 +13145,7 @@ msgctxt ""
 "par_id7599108\n"
 "help.text"
 msgid "If you like to sort and group, open the Report Builder view, then open the Sorting and Grouping dialog. Select to show a Group Header for the fields that you want to group, and select to hide the Group Header for the fields that you want to be sorted. Close the Sorting and Grouping window and execute the report."
-msgstr "Wenn Sie sortieren und gruppieren möchten, öffnen Sie die Berichtsentwurfsansicht und dann den Dialog Sortierung und Gruppierung. Für die Felder, die Sie gruppieren möchten, zeigen Sie den Gruppenkopf an. Für die Felder, nach denen Sie sortieren möchten, blenden Sie, den Gruppenkopf aus. Schließen Sie das Fenster Sortierung und Gruppierung und führen dann den Bericht aus."
+msgstr "Wenn Sie sortieren und gruppieren möchten, öffnen Sie die Berichtsentwurfsansicht und dann den Dialog Sortierung und Gruppierung. Für die Felder, die Sie gruppieren möchten, zeigen Sie den Gruppenkopf an. Für die Felder, nach denen Sie sortieren möchten, blenden Sie den Gruppenkopf aus. Schließen Sie das Fenster Sortierung und Gruppierung und führen dann den Bericht aus."
 
 #: rep_main.xhp
 msgctxt ""
@@ -13193,7 +13193,7 @@ msgctxt ""
 "bm_id5823847\n"
 "help.text"
 msgid "<bookmark_value>formulas in reports;editing</bookmark_value><bookmark_value>functions in reports;editing</bookmark_value>"
-msgstr "<bookmark_value>Formeln in Berichten;Bearbeiten</bookmark_value>  <bookmark_value>Funktionen in Berichten;Bearbeiten</bookmark_value>"
+msgstr "<bookmark_value>Formeln in Berichten; Bearbeiten</bookmark_value><bookmark_value>Funktionen in Berichten; Bearbeiten</bookmark_value>"
 
 #: rep_navigator.xhp
 msgctxt ""
@@ -13297,7 +13297,7 @@ msgctxt ""
 "par_id1803643\n"
 "help.text"
 msgid "Open the context menu (right click) on the functions entry, choose to create a new function, and select it."
-msgstr "Öffnen Sie das Kontext-Menü (rechter Mausklick) des Funktionseintrags, entscheiden sich eine neue Funktion zu erstellen und wählen sie aus."
+msgstr "Öffnen Sie das Kontextmenü (rechter Mausklick) des Funktionseintrags, entscheiden sich eine neue Funktion zu erstellen und wählen sie aus."
 
 #: rep_navigator.xhp
 msgctxt ""
@@ -13313,7 +13313,7 @@ msgctxt ""
 "par_id6247749\n"
 "help.text"
 msgid "Change the name to e.g. CostCalc and the formula to [CostCalc] + [enter your cost column name]."
-msgstr "Ändere den Namen z. B. zu CostCalc und die Formel zu [CostCalc] + [fügen Sie Ihren cost Spaltennamen ein]."
+msgstr "Ändern Sie den Namen beispielsweise zu CostCalc und die Formel zu [CostCalc] + [fügen Sie Ihren cost Spaltennamen ein]."
 
 #: rep_navigator.xhp
 msgctxt ""
@@ -13481,7 +13481,7 @@ msgctxt ""
 "par_id3479415\n"
 "help.text"
 msgid "Select to show the page numbers in the Page Header area or in the Page Footer area."
-msgstr "Wählen Sie, ob die Seitenzahlen im Seitenkopf-oder Seitenfußbereich angezeigt werden."
+msgstr "Wählen Sie, ob die Seitenzahlen im Seitenkopf- oder im Seitenfußbereich angezeigt werden."
 
 #: rep_pagenumbers.xhp
 msgctxt ""
@@ -13697,7 +13697,7 @@ msgctxt ""
 "par_id6164433\n"
 "help.text"
 msgid "<ahelp hid=\".\" visibility=\"hidden\">New Row Or Column specifies, for a multi-column design, whether the current section and/or the next section will be printed on a new row or column.</ahelp>"
-msgstr "<ahelp hid=\".\" visibility=\"hidden\">Neue Zeile oder Spalte legt für ein mehrspaltiges Design fest, ob der aktuelle Abschnitt und/oder der nächste Abschnitt in einer neuen Zeile bzw. Spalte gedruckt wird.</ahelp>"
+msgstr "<ahelp hid=\".\" visibility=\"hidden\">Neue Zeile oder Spalte legt für ein mehrspaltiges Design fest, ob der aktuelle Abschnitt und/oder der nächste Abschnitt in einer neuen Zeile beziehungsweise Spalte gedruckt wird.</ahelp>"
 
 #: rep_prop.xhp
 msgctxt ""
@@ -13825,7 +13825,7 @@ msgctxt ""
 "par_id876186\n"
 "help.text"
 msgid "The Groups box shows the fields in an order from top to bottom. You can select any field, then click the Move Up or Move Down button to move this field up or down in the list."
-msgstr "Die Gruppenliste zeigt die Einträge in der Reihenfolge von oben nach unten. Sie können irgendeinen Eintrag auswählen, dann die Schaltfläche Nach Oben bzw.Nach Unten drücken, um den Eintrag zu verschieben."
+msgstr "Die Gruppenliste zeigt die Einträge in der Reihenfolge von oben nach unten. Sie können irgendeinen Eintrag auswählen, dann die Schaltfläche Nach Oben beziehungsweise Nach Unten drücken, um den Eintrag zu verschieben."
 
 #: rep_sort.xhp
 msgctxt ""
@@ -14001,7 +14001,7 @@ msgctxt ""
 "bm_id6009094\n"
 "help.text"
 msgid "<bookmark_value>wizards;database tables (Base)</bookmark_value><bookmark_value>Table Wizard (Base)</bookmark_value>"
-msgstr "<bookmark_value>Assistenten;Datenbanktabellen (Base)</bookmark_value>  <bookmark_value>Tabellen-Assistent (Base)</bookmark_value>"
+msgstr "<bookmark_value>Assistenten; Datenbanktabellen (Base)</bookmark_value><bookmark_value>Tabellen-Assistent (Base)</bookmark_value>"
 
 #: tablewizard00.xhp
 msgctxt ""

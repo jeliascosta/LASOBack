@@ -57,10 +57,7 @@ typedef struct
 } ProxyEntry;
 
 
-// helper functions
-
-
-namespace // private
+namespace
 {
     ProxyEntry ReadProxyEntry(const OUString& aProxy, sal_Int32& i)
     {
@@ -98,8 +95,7 @@ namespace // private
         return ProxyEntry();
     }
 
-} // end private namespace
-
+} // unnamed namespace
 
 WinInetBackend::WinInetBackend()
 {
@@ -123,9 +119,9 @@ WinInetBackend::WinInetBackend()
             LPINTERNET_PROXY_INFO lpi = &pi;
             DWORD dwLength = sizeof (INTERNET_PROXY_INFO);
             BOOL ok = lpfnInternetQueryOption(
-                NULL,
+                nullptr,
                 INTERNET_OPTION_PROXY,
-                (LPVOID)lpi,
+                lpi,
                 &dwLength );
             if (!ok)
             {
@@ -140,12 +136,12 @@ WinInetBackend::WinInetBackend()
                     // alloca is nice because it is fast and we don't
                     // have to free the allocated memory, it will be
                     // automatically done
-                    lpi = reinterpret_cast< LPINTERNET_PROXY_INFO >(
+                    lpi = static_cast< LPINTERNET_PROXY_INFO >(
                         alloca( dwLength ) );
                     ok = lpfnInternetQueryOption(
-                        NULL,
+                        nullptr,
                         INTERNET_OPTION_PROXY,
-                        (LPVOID)lpi,
+                        lpi,
                         &dwLength );
                     if (!ok)
                     {
@@ -222,13 +218,10 @@ WinInetBackend::WinInetBackend()
 
 
                 ProxyEntry aTypeIndepProxy = FindProxyEntry( aProxyList, OUString());
-                ProxyEntry aHttpProxy = FindProxyEntry( aProxyList, OUString(
-                    "http"  ) );
-                ProxyEntry aHttpsProxy  = FindProxyEntry( aProxyList, OUString(
-                    "https"  ) );
+                ProxyEntry aHttpProxy = FindProxyEntry( aProxyList, "http" );
+                ProxyEntry aHttpsProxy  = FindProxyEntry( aProxyList, "https" );
 
-                ProxyEntry aFtpProxy  = FindProxyEntry( aProxyList, OUString(
-                    "ftp"  ) );
+                ProxyEntry aFtpProxy  = FindProxyEntry( aProxyList, "ftp" );
 
                 if( aTypeIndepProxy.Server.getLength() )
                 {
@@ -295,17 +288,14 @@ WinInetBackend::WinInetBackend()
     }
 }
 
-
 WinInetBackend::~WinInetBackend()
 {
 }
-
 
 WinInetBackend* WinInetBackend::createInstance()
 {
     return new WinInetBackend;
 }
-
 
 void WinInetBackend::setPropertyValue(
     OUString const &, css::uno::Any const &)
@@ -356,11 +346,9 @@ css::uno::Any WinInetBackend::getPropertyValue(
     }
 }
 
-
 OUString SAL_CALL WinInetBackend::getBackendName() {
     return OUString("com.sun.star.comp.configuration.backend.WinInetBackend") ;
 }
-
 
 OUString SAL_CALL WinInetBackend::getImplementationName()
     throw (uno::RuntimeException)

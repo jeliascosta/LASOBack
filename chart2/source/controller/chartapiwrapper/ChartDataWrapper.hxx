@@ -48,10 +48,10 @@ class ChartDataWrapper : public MutexContainer, public
     css::lang::XComponent >
 {
 public:
-    explicit ChartDataWrapper( std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
-    ChartDataWrapper( std::shared_ptr< Chart2ModelContact > spChart2ModelContact
+    explicit ChartDataWrapper(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
+    ChartDataWrapper(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact
         , const css::uno::Reference< css::chart::XChartData >& xNewData );
-    virtual ~ChartDataWrapper();
+    virtual ~ChartDataWrapper() override;
 
     /// XServiceInfo declarations
     virtual OUString SAL_CALL getImplementationName()
@@ -60,9 +60,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
 protected:
     // ____ XDateCategories ____

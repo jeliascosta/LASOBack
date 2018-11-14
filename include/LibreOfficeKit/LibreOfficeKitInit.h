@@ -42,7 +42,7 @@ extern "C"
     #endif
     #define SEPARATOR         '/'
 
-    void *lok_loadlib(const char *pFN)
+    inline void *lok_loadlib(const char *pFN)
     {
         return dlopen(pFN, RTLD_LAZY
 #if defined LOK_LOADLIB_GLOBAL
@@ -51,21 +51,33 @@ extern "C"
                       );
     }
 
+#ifndef __OBJC__
+    inline
+#endif
     char *lok_dlerror(void)
     {
         return dlerror();
     }
 
+#ifndef __OBJC__
+    inline
+#endif
     void *lok_dlsym(void *Hnd, const char *pName)
     {
         return dlsym(Hnd, pName);
     }
 
+#ifndef __OBJC__
+    inline
+#endif
     int lok_dlclose(void *Hnd)
     {
         return dlclose(Hnd);
     }
 
+#ifndef __OBJC__
+    inline
+#endif
     void extendUnoPath(const char *pPath)
     {
         (void)pPath;
@@ -146,7 +158,7 @@ static void *lok_dlopen( const char *install_path, char ** _imp_lib )
 
     *_imp_lib = NULL;
 
-#if !(defined(__APPLE__) && defined(__arm__))
+#if !(defined(__APPLE__) && (defined(__arm__) || defined(__arm64__)))
     size_t partial_length;
 
     if (!install_path)
@@ -161,19 +173,20 @@ static void *lok_dlopen( const char *install_path, char ** _imp_lib )
 
     // allocate large enough buffer
     partial_length = strlen(install_path);
-    imp_lib = (char *) malloc(partial_length + sizeof(TARGET_LIB) + sizeof(TARGET_MERGED_LIB) + 2);
+    size_t imp_lib_size = partial_length + sizeof(TARGET_LIB) + sizeof(TARGET_MERGED_LIB) + 2;
+    imp_lib = (char *) malloc(imp_lib_size);
     if (!imp_lib)
     {
         fprintf( stderr, "failed to open library : not enough memory\n");
         return NULL;
     }
 
-    strcpy(imp_lib, install_path);
+    strncpy(imp_lib, install_path, imp_lib_size);
 
     extendUnoPath(install_path);
 
     imp_lib[partial_length++] = SEPARATOR;
-    strcpy(imp_lib + partial_length, TARGET_LIB);
+    strncpy(imp_lib + partial_length, TARGET_LIB, imp_lib_size - partial_length);
 
     dlhandle = lok_loadlib(imp_lib);
     if (!dlhandle)
@@ -191,7 +204,7 @@ static void *lok_dlopen( const char *install_path, char ** _imp_lib )
             return NULL;
         }
 
-        strcpy(imp_lib + partial_length, TARGET_MERGED_LIB);
+        strncpy(imp_lib + partial_length, TARGET_MERGED_LIB, imp_lib_size - partial_length);
 
         dlhandle = lok_loadlib(imp_lib);
         if (!dlhandle)

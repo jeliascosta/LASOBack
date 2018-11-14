@@ -41,14 +41,13 @@ protected:
     OUString                   maCheckBoxText;
     bool                       mbCheck;
 
-    SAL_DLLPRIVATE void ImplInitMessBoxData();
     SAL_DLLPRIVATE void ImplInitButtons();
     SAL_DLLPRIVATE void ImplPosControls();
 
 public:
                         MessBox( vcl::Window* pParent, WinBits nStyle,
                                  const OUString& rTitle, const OUString& rMessage );
-    virtual             ~MessBox();
+    virtual             ~MessBox() override;
     virtual void        dispose() override;
 
     virtual void        StateChanged( StateChangedType nStateChange ) override;
@@ -67,9 +66,6 @@ public:
 
 class VCL_DLLPUBLIC InfoBox : public MessBox
 {
-private:
-    SAL_DLLPRIVATE void ImplInitInfoBoxData();
-
 public:
                         InfoBox( vcl::Window* pParent, const OUString& rMessage );
                         InfoBox( vcl::Window* pParent, WinBits nStyle,
@@ -80,9 +76,6 @@ public:
 
 class VCL_DLLPUBLIC WarningBox : public MessBox
 {
-private:
-    SAL_DLLPRIVATE void ImplInitWarningBoxData();
-
 public:
                         WarningBox( vcl::Window* pParent, WinBits nStyle,
                                     const OUString& rMessage );
@@ -94,9 +87,6 @@ public:
 
 class VCL_DLLPUBLIC ErrorBox : public MessBox
 {
-private:
-    SAL_DLLPRIVATE void ImplInitErrorBoxData();
-
 public:
                         ErrorBox( vcl::Window* pParent, WinBits nStyle,
                                   const OUString& rMessage );
@@ -106,9 +96,6 @@ public:
 
 class VCL_DLLPUBLIC QueryBox : public MessBox
 {
-private:
-    SAL_DLLPRIVATE void ImplInitQueryBoxData();
-
 public:
                         QueryBox( vcl::Window* pParent, WinBits nStyle,
                                   const OUString& rMessage );

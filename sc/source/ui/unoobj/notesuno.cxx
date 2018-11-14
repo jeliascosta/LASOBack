@@ -20,7 +20,7 @@
 #include "notesuno.hxx"
 
 #include <vcl/svapp.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <editeng/unotext.hxx>
 #include <editeng/unoprnms.hxx>
 #include <svx/svdpool.hxx>
@@ -57,8 +57,7 @@ SC_SIMPLE_SERVICE_INFO( ScAnnotationObj, "ScAnnotationObj", "com.sun.star.sheet.
 
 ScAnnotationObj::ScAnnotationObj(ScDocShell* pDocSh, const ScAddress& rPos) :
     pDocShell( pDocSh ),
-    aCellPos( rPos ),
-    pUnoText( nullptr )
+    aCellPos( rPos )
 {
     pDocShell->GetDocument().AddUnoObject(*this);
 
@@ -72,9 +71,6 @@ ScAnnotationObj::~ScAnnotationObj()
 
     if (pDocShell)
         pDocShell->GetDocument().RemoveUnoObject(*this);
-
-    if (pUnoText)
-        pUnoText->release();
 }
 
 void ScAnnotationObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
@@ -85,8 +81,7 @@ void ScAnnotationObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
 
         //! Ref-Update
     }
-    else if ( dynamic_cast<const SfxSimpleHint*>(&rHint) &&
-            static_cast<const SfxSimpleHint&>(rHint).GetId() == SFX_HINT_DYING )
+    else if ( rHint.GetId() == SFX_HINT_DYING )
     {
         pDocShell = nullptr;       // ungueltig geworden
     }
@@ -237,14 +232,13 @@ uno::Reference < drawing::XShape > SAL_CALL ScAnnotationObj::getAnnotationShape(
 
 SvxUnoText& ScAnnotationObj::GetUnoText()
 {
-    if (!pUnoText)
+    if (!pUnoText.is())
     {
         ScAnnotationEditSource aEditSource( pDocShell, aCellPos );
         pUnoText = new SvxUnoText( &aEditSource, lcl_GetAnnotationPropertySet(),
                                     uno::Reference<text::XText>() );
-        pUnoText->acquire();
     }
-    return *pUnoText;
+    return *pUnoText.get();
 }
 
 const ScPostIt* ScAnnotationObj::ImplGetNote() const

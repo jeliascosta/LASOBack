@@ -49,14 +49,8 @@ namespace frm
         );
 
     protected:
-        virtual ~ONavigationBarControl();
+        virtual ~ONavigationBarControl() override;
 
-    public:
-        // XServiceInfo - static version
-        static  OUString SAL_CALL getImplementationName_Static();
-        static  css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames_Static();
-
-    protected:
         // UNO
         DECLARE_UNO3_AGG_DEFAULTS( ONavigationBarControl, UnoControl )
         virtual css::uno::Any SAL_CALL queryAggregation( const css::uno::Type& _rType ) throw ( css::uno::RuntimeException, std::exception ) override;
@@ -98,7 +92,7 @@ namespace frm
         explicit ONavigationBarPeer(
             const css::uno::Reference< css::uno::XComponentContext >& _rxORB
         );
-        virtual ~ONavigationBarPeer();
+        virtual ~ONavigationBarPeer() override;
 
     public:
         // XInterface

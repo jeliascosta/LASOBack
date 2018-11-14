@@ -38,7 +38,7 @@
 
 #include <toolkit/awt/vclxmenu.hxx>
 #include <cppuhelper/compbase7.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <cppuhelper/weak.hxx>
 #include <rtl/ustring.hxx>
 
@@ -55,12 +55,12 @@ namespace svt
                         css::frame::XDispatchProvider      ,
                         css::frame::XDispatch > PopupMenuControllerBaseType;
 
-    class SVT_DLLPUBLIC PopupMenuControllerBase : protected ::comphelper::OBaseMutex,   // Struct for right initialization of mutex member! Must be first of baseclasses.
+    class SVT_DLLPUBLIC PopupMenuControllerBase : protected ::cppu::BaseMutex,   // Struct for right initialization of mutex member! Must be first of baseclasses.
                                                   public PopupMenuControllerBaseType
     {
         public:
             PopupMenuControllerBase( const css::uno::Reference< css::uno::XComponentContext >& xContext );
-            virtual ~PopupMenuControllerBase();
+            virtual ~PopupMenuControllerBase() override;
 
             // XServiceInfo
             virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException, std::exception) override = 0;
@@ -95,7 +95,7 @@ namespace svt
             // XEventListener
             virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw ( css::uno::RuntimeException, std::exception ) override;
 
-            void dispatchCommand( const OUString& sCommandURL, const css::uno::Sequence< css::beans::PropertyValue >& rArgs );
+            void dispatchCommand( const OUString& sCommandURL, const css::uno::Sequence< css::beans::PropertyValue >& rArgs, const OUString& sTarget = OUString() );
 
     protected:
             void throwIfDisposed() throw ( css::uno::RuntimeException );
@@ -111,7 +111,7 @@ namespace svt
             virtual void impl_setPopupMenu();
             static OUString determineBaseURL( const OUString& aURL );
 
-            DECL_STATIC_LINK_TYPED( PopupMenuControllerBase, ExecuteHdl_Impl, void*, void );
+            DECL_STATIC_LINK( PopupMenuControllerBase, ExecuteHdl_Impl, void*, void );
 
 
             bool                                                   m_bInitialized;

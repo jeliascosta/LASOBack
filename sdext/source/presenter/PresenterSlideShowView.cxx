@@ -75,7 +75,6 @@ PresenterSlideShowView::PresenterSlideShowView (
       mnPageAspectRatio(28.0/21.0),
       maBroadcaster(m_aMutex),
       mpBackground(),
-      mbIsInModifyNotification(false),
       mbIsForcedPaintPending(false),
       mbIsPaintPending(true),
       msClickToExitPresentationText(),
@@ -362,13 +361,13 @@ geometry::AffineMatrix2D SAL_CALL PresenterSlideShowView::getTransformation()
         // optimizations the avoid updates when the transformation is
         // unchanged (when the window size changes then due to the constant
         // aspect ratio the size of the preview may remain the same while
-        // the position changes.  The position, however, is rapresented by
+        // the position changes.  The position, however, is represented by
         // the position of the view window.  This transformation is given
         // relative to the view window and therefore does not contain the
         // position.)
         const awt::Rectangle aWindowBox = mxViewWindow->getPosSize();
         return geometry::AffineMatrix2D(
-            aWindowBox.Width-1, 0, (mbIsInModifyNotification ? 1 : 0),
+            aWindowBox.Width-1, 0, 0,
             0, aWindowBox.Height-1, 0);
     }
     else
@@ -815,8 +814,15 @@ void PresenterSlideShowView::PaintInnerWindow (const awt::PaintEvent& rEvent)
         pIterator->notifyEach(&awt::XPaintListener::windowPaint, aEvent);
     }
 
-    if (mbIsForcedPaintPending)
-        ForceRepaint();
+    /** The slide show relies on the back buffer of the canvas not being
+        modified.  With a shared canvas there are times when that can not be
+        guaranteed.
+    */
+    if (mbIsForcedPaintPending && mxSlideShow.is() && mbIsViewAdded)
+    {
+        mxSlideShow->removeView(this);
+        impl_addAndConfigureView();
+    }
 
     // Finally, in double buffered environments, request the changes to be
     // made visible.
@@ -928,15 +934,6 @@ void PresenterSlideShowView::Resize()
     // we have to enforce a complete repaint.
     if ( ! mbIsPaintPending)
         mbIsForcedPaintPending = true;
-}
-
-void PresenterSlideShowView::ForceRepaint()
-{
-    if (mxSlideShow.is() && mbIsViewAdded)
-    {
-        mxSlideShow->removeView(this);
-        impl_addAndConfigureView();
-    }
 }
 
 void PresenterSlideShowView::CreateBackgroundPolygons()

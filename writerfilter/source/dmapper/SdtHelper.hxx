@@ -45,7 +45,7 @@ namespace dmapper
  * w:sdt tokens can't be imported as form fields, as w:sdt supports
  * e.g. date picking as well.
  */
-class SdtHelper
+class SdtHelper final
 {
     DomainMapper_Impl& m_rDM_Impl;
 
@@ -67,11 +67,10 @@ class SdtHelper
     bool m_bOutsideAParagraph;
 
     /// Create and append the drawing::XControlShape, containing the various models.
-    void createControlShape(css::awt::Size aSize, css::uno::Reference<css::awt::XControlModel> const&);
     void createControlShape(css::awt::Size aSize, css::uno::Reference<css::awt::XControlModel> const&, const css::uno::Sequence<css::beans::PropertyValue>& rGrabBag);
 public:
     SdtHelper(DomainMapper_Impl& rDM_Impl);
-    virtual ~SdtHelper();
+    ~SdtHelper();
 
     std::vector<OUString>& getDropDownItems()
     {

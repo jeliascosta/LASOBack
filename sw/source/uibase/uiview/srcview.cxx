@@ -356,7 +356,7 @@ void SwSrcView::Execute(SfxRequest& rReq)
                 pMed->CloseOutStream();
                 pMed->Commit();
                 pDocShell->GetDoc()->getIDocumentState().ResetModified();
-                SourceSaved();
+                bSourceSaved = true;
                 aEditWin->ClearModifyFlag();
             }
         }
@@ -570,7 +570,7 @@ void SwSrcView::StartSearchAndReplace(const SvxSearchItem& rSearchItem,
                                                   bool bApi,
                                                   bool bRecursive)
 {
-    ExtTextView* pTextView = aEditWin->GetTextView();
+    TextView* pTextView = aEditWin->GetTextView();
     TextSelection aSel;
     TextPaM aPaM;
 
@@ -688,10 +688,10 @@ sal_Int32 SwSrcView::PrintSource(
     pOutDev->Push();
 
     TextEngine* pTextEngine = aEditWin->GetTextEngine();
-    pOutDev->SetMapMode( MAP_100TH_MM );
+    pOutDev->SetMapMode( MapUnit::Map100thMM );
     vcl::Font aFont( aEditWin->GetOutWin()->GetFont() );
     Size aSize( aFont.GetFontSize() );
-    aSize = aEditWin->GetOutWin()->PixelToLogic( aSize, MAP_100TH_MM );
+    aSize = aEditWin->GetOutWin()->PixelToLogic( aSize, MapUnit::Map100thMM );
     aFont.SetFontSize( aSize );
     aFont.SetColor( COL_BLACK );
     pOutDev->SetFont( aFont );
@@ -752,14 +752,10 @@ sal_Int32 SwSrcView::PrintSource(
 
 void SwSrcView::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint &&
+    if ( rHint.GetId() == SFX_HINT_MODECHANGED ||
             (
-                pSimpleHint->GetId() == SFX_HINT_MODECHANGED ||
-                (
-                    pSimpleHint->GetId() == SFX_HINT_TITLECHANGED &&
-                    !GetDocShell()->IsReadOnly() && aEditWin->IsReadonly()
-                )
+             rHint.GetId() == SFX_HINT_TITLECHANGED &&
+             !GetDocShell()->IsReadOnly() && aEditWin->IsReadonly()
             )
        )
     {
@@ -815,7 +811,7 @@ void SwSrcView::Load(SwDocShell* pDocShell)
         else
         {
             vcl::Window *pTmpWindow = &GetViewFrame()->GetWindow();
-            ScopedVclPtrInstance<MessageDialog>(pTmpWindow, SW_RES(STR_ERR_SRCSTREAM), VCL_MESSAGE_INFO)->Execute();
+            ScopedVclPtrInstance<MessageDialog>(pTmpWindow, SW_RES(STR_ERR_SRCSTREAM), VclMessageType::Info)->Execute();
         }
     }
     else
@@ -826,7 +822,7 @@ void SwSrcView::Load(SwDocShell* pDocShell)
         SvtSaveOptions aOpt;
 
         {
-            SfxMedium aMedium( sFileURL,STREAM_READWRITE );
+            SfxMedium aMedium( sFileURL,StreamMode::READWRITE );
             SwWriter aWriter( aMedium, *pDocShell->GetDoc() );
             WriterRef xWriter;
             ::GetHTMLWriter(OUString(), aMedium.GetBaseURL( true ), xWriter);

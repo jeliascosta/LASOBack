@@ -51,36 +51,40 @@
 
 class SvxURLField;
 
-enum SdrViewContext {SDRCONTEXT_STANDARD,
-                     SDRCONTEXT_POINTEDIT,
-                     SDRCONTEXT_GLUEPOINTEDIT,
-                     SDRCONTEXT_GRAPHIC,
-                     SDRCONTEXT_MEDIA,
-                     SDRCONTEXT_TABLE};
+enum class SdrViewContext {
+    Standard,
+    PointEdit,
+    GluePointEdit,
+    Graphic,
+    Media,
+    Table
+};
 
-enum SdrEventKind  {SDREVENT_NONE,
-                    SDREVENT_TEXTEDIT,
-                    SDREVENT_MOVACTION,
-                    SDREVENT_ENDACTION,
-                    SDREVENT_BCKACTION,
-                    SDREVENT_BRKACTION,
-                    SDREVENT_ENDCREATE,
-                    SDREVENT_ENDDRAG,
-                    SDREVENT_MARKOBJ,
-                    SDREVENT_MARKPOINT,
-                    SDREVENT_MARKGLUEPOINT,
-                    SDREVENT_BEGMARK,
-                    SDREVENT_BEGINSOBJPOINT,
-                    SDREVENT_ENDINSOBJPOINT,
-                    SDREVENT_BEGINSGLUEPOINT,
-                    SDREVENT_BEGDRAGHELPLINE,
-                    SDREVENT_BEGDRAGOBJ,
-                    SDREVENT_BEGCREATEOBJ,
-                    SDREVENT_BEGMACROOBJ,
-                    SDREVENT_BEGTEXTEDIT,
-                    SDREVENT_ENDMARK,
-                    SDREVENT_BRKMARK,
-                    SDREVENT_EXECUTEURL};
+enum class SdrEventKind {
+    NONE,
+    TextEdit,
+    MoveAction,
+    EndAction,
+    BackAction,
+    BrkAction,
+    EndCreate,
+    EndDrag,
+    MarkObj,
+    MarkPoint,
+    MarkGluePoint,
+    BeginMark,
+    BeginInsertObjPoint,
+    EndInsertObjPoint,
+    BeginInsertGluePoint,
+    BeginDragHelpline,
+    BeginDragObj,
+    BeginCreateObj,
+    BeginMacroObj,
+    BeginTextEdit,
+    EndMark,
+    BrkMark,
+    ExecuteUrl
+};
 
 /* for PickAnything() */
 enum class SdrMouseEventKind
@@ -165,7 +169,7 @@ protected:
 
 public:
     explicit SdrView(SdrModel* pModel1, OutputDevice* pOut = nullptr);
-    virtual ~SdrView();
+    virtual ~SdrView() override;
 
     // The default value for all dispatchers is activated. If the app for example
     // wants to intervene in MouseDispatcher for special treatment, you have to
@@ -199,7 +203,7 @@ public:
     virtual void ConfigurationChanged( utl::ConfigurationBroadcaster*, sal_uInt32 ) override;
 
     bool SetAttributes(const SfxItemSet& rSet, bool bReplaceAll=false) { return SdrCreateView::SetAttributes(rSet,bReplaceAll); }
-    bool SetStyleSheet(SfxStyleSheet* pStyleSheet, bool bDontRemoveHardAttr=false) { return SdrCreateView::SetStyleSheet(pStyleSheet,bDontRemoveHardAttr); }
+    bool SetStyleSheet(SfxStyleSheet* pStyleSheet, bool bDontRemoveHardAttr) { return SdrCreateView::SetStyleSheet(pStyleSheet,bDontRemoveHardAttr); }
 
     /* new interface src537 */
     bool GetAttributes(SfxItemSet& rTargetSet, bool bOnlyHardAttr=false) const;
@@ -233,7 +237,7 @@ public:
     //   bAddMark=TRUE: add to existing selection (->Shift)
     //   bUnmark=TRUE: remove objects from selection which are inside of
     //                 the enveloped frame.
-    bool BegMark(const Point& rPnt, bool bAddMark=false, bool bUnmark=false);
+    bool BegMark(const Point& rPnt, bool bAddMark, bool bUnmark);
 
     // The following actions are possible:
     //   - ObjectCreating

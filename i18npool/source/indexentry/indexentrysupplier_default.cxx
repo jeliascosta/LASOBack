@@ -165,13 +165,13 @@ OUString Index::getIndexDescription(const OUString& rIndexEntry)
 
 #define LOCALE_EN lang::Locale(OUString("en"), OUString(), OUString())
 
-void Index::makeIndexKeys(const lang::Locale &rLocale, const OUString &algorithm) throw (RuntimeException)
+void Index::makeIndexKeys(const lang::Locale &rLocale, const OUString &algorithm) throw (RuntimeException, std::exception)
 {
-    OUString keyStr = LocaleDataImpl().getIndexKeysByAlgorithm(rLocale, algorithm);
+    OUString keyStr = LocaleDataImpl::get()->getIndexKeysByAlgorithm(rLocale, algorithm);
 
     if (keyStr.isEmpty()) {
-        keyStr = LocaleDataImpl().getIndexKeysByAlgorithm(LOCALE_EN,
-                    LocaleDataImpl().getDefaultIndexAlgorithm(LOCALE_EN));
+        keyStr = LocaleDataImpl::get()->getIndexKeysByAlgorithm(LOCALE_EN,
+                    LocaleDataImpl::get()->getDefaultIndexAlgorithm(LOCALE_EN));
         if (keyStr.isEmpty())
             throw RuntimeException();
     }
@@ -205,10 +205,10 @@ void Index::makeIndexKeys(const lang::Locale &rLocale, const OUString &algorithm
                         continue;
                     } else if (keyStr[i] == '_') {
                         for (curr=keyStr[i-1]+1;  curr <= keyStr[i+1]; curr++)
-                            skipping_chars+=OUString(curr);
+                            skipping_chars+=OUStringLiteral1(curr);
                         i+=2;
                     } else {
-                        skipping_chars+=OUString(keyStr[i]);
+                        skipping_chars+=OUStringLiteral1(keyStr[i]);
                     }
                 }
                 break;
@@ -251,14 +251,14 @@ void Index::makeIndexKeys(const lang::Locale &rLocale, const OUString &algorithm
     }
 }
 
-void Index::init(const lang::Locale &rLocale, const OUString& algorithm) throw (RuntimeException)
+void Index::init(const lang::Locale &rLocale, const OUString& algorithm) throw (RuntimeException, std::exception)
 {
     makeIndexKeys(rLocale, algorithm);
 
-    Sequence< UnicodeScript > scriptList = LocaleDataImpl().getUnicodeScripts( rLocale );
+    Sequence< UnicodeScript > scriptList = LocaleDataImpl::get()->getUnicodeScripts( rLocale );
 
     if (scriptList.getLength() == 0) {
-        scriptList = LocaleDataImpl().getUnicodeScripts(LOCALE_EN);
+        scriptList = LocaleDataImpl::get()->getUnicodeScripts(LOCALE_EN);
         if (scriptList.getLength() == 0)
             throw RuntimeException();
     }

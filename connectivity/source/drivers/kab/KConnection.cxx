@@ -41,8 +41,8 @@ KabConnection::KabConnection(
     css::uno::Reference<css::sdbc::XDriver> const & driver)
          : OMetaConnection_BASE(m_aMutex),
          OSubComponent<KabConnection, KabConnection_BASE>(driver, this),
-         m_xMetaData(NULL),
-         m_pAddressBook(NULL),
+         m_xMetaData(nullptr),
+         m_pAddressBook(nullptr),
          m_xComponentContext(componentContext)
 {}
 
@@ -54,7 +54,7 @@ KabConnection::~KabConnection()
 
 void SAL_CALL KabConnection::release() throw()
 {
-    relase_ChildImpl();
+    release_ChildImpl();
 }
 
 //TODO: is doing this after the ctor, and the manual ref counting really
@@ -101,7 +101,7 @@ Reference< XPreparedStatement > SAL_CALL KabConnection::prepareCall( const OUStr
     checkDisposed(KabConnection_BASE::rBHelper.bDisposed);
 
     // not implemented yet :-) a task to do
-    return NULL;
+    return nullptr;
 }
 
 OUString SAL_CALL KabConnection::nativeSQL( const OUString& _sSql ) throw(SQLException, RuntimeException, std::exception)
@@ -126,7 +126,7 @@ sal_Bool SAL_CALL KabConnection::getAutoCommit(  ) throw(SQLException, RuntimeEx
     // you have to distinguish which if you are in autocommit mode or not
     // at normal case true should be fine here
 
-    return sal_True;
+    return true;
 }
 
 void SAL_CALL KabConnection::commit(  ) throw(SQLException, RuntimeException, std::exception)
@@ -184,7 +184,7 @@ sal_Bool SAL_CALL KabConnection::isReadOnly(  ) throw(SQLException, RuntimeExcep
     checkDisposed(KabConnection_BASE::rBHelper.bDisposed);
 
     // return if your connection to readonly
-    return sal_False;
+    return false;
 }
 
 void SAL_CALL KabConnection::setCatalog( const OUString& ) throw(SQLException, RuntimeException, std::exception)
@@ -224,17 +224,17 @@ sal_Int32 SAL_CALL KabConnection::getTransactionIsolation(  ) throw(SQLException
     return TransactionIsolation::NONE;
 }
 
-Reference< ::com::sun::star::container::XNameAccess > SAL_CALL KabConnection::getTypeMap(  ) throw(SQLException, RuntimeException, std::exception)
+Reference< css::container::XNameAccess > SAL_CALL KabConnection::getTypeMap(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabConnection_BASE::rBHelper.bDisposed);
 
     // if your driver has special database types you can return it here
 
-    return NULL;
+    return nullptr;
 }
 
-void SAL_CALL KabConnection::setTypeMap( const Reference< ::com::sun::star::container::XNameAccess >& ) throw(SQLException, RuntimeException, std::exception)
+void SAL_CALL KabConnection::setTypeMap( const Reference< css::container::XNameAccess >& ) throw(SQLException, RuntimeException, std::exception)
 {
     // the other way around
 }
@@ -274,13 +274,13 @@ void KabConnection::disposing()
     }
     m_aStatements.clear();
 
-    if (m_pAddressBook != NULL)
+    if (m_pAddressBook != nullptr)
     {
         KABC::StdAddressBook::close();
-        m_pAddressBook = NULL;
+        m_pAddressBook = nullptr;
     }
 
-    m_xMetaData = ::com::sun::star::uno::WeakReference< ::com::sun::star::sdbc::XDatabaseMetaData>();
+    m_xMetaData = css::uno::WeakReference< css::sdbc::XDatabaseMetaData>();
 
     dispose_ChildImpl();
     KabConnection_BASE::disposing();

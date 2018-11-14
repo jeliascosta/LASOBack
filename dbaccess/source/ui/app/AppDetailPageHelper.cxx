@@ -48,6 +48,7 @@
 #include <com/sun/star/ucb/XCommandProcessor.hpp>
 #include <com/sun/star/ucb/Command.hpp>
 #include <com/sun/star/util/XCloseable.hpp>
+#include <comphelper/string.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
 #include "AppView.hxx"
 #include "dbaccess_helpid.hrc"
@@ -127,7 +128,7 @@ namespace
     // class OPreviewWindow
     class OTablePreviewWindow : public vcl::Window
     {
-        DECL_LINK_TYPED(OnDisableInput, void*, void);
+        DECL_LINK(OnDisableInput, void*, void);
         void ImplInitSettings();
     protected:
         virtual void DataChanged(const DataChangedEvent& rDCEvt) override;
@@ -146,7 +147,7 @@ namespace
             PostUserEvent( LINK( this, OTablePreviewWindow, OnDisableInput), nullptr, true );
         return bRet;
     }
-    IMPL_LINK_NOARG_TYPED(OTablePreviewWindow, OnDisableInput, void*, void)
+    IMPL_LINK_NOARG(OTablePreviewWindow, OnDisableInput, void*, void)
     {
         EnableInput(false);
     }
@@ -186,18 +187,15 @@ OAppDetailPageHelper::OAppDetailPageHelper(vcl::Window* _pParent,OAppBorderWindo
     ,m_aBorder(VclPtr<Window>::Create(this,WB_BORDER | WB_READONLY))
     ,m_aPreview(VclPtr<OPreviewWindow>::Create(m_aBorder.get()))
     ,m_aDocumentInfo(VclPtr< ::svtools::ODocumentInfoPreview>::Create(m_aBorder.get(), WB_LEFT | WB_VSCROLL | WB_READONLY) )
+    ,m_aMenu( VclPtr<PopupMenu>::Create( ModuleRes( RID_MENU_APP_PREVIEW ) ) )
     ,m_ePreviewMode(_ePreviewMode)
 {
-
     m_aBorder->SetBorderStyle(WindowBorderStyle::MONO);
-
-    m_aMenu.reset(new PopupMenu( ModuleRes( RID_MENU_APP_PREVIEW ) ));
 
     m_aTBPreview->SetOutStyle(TOOLBOX_STYLE_FLAT);
     m_aTBPreview->InsertItem(SID_DB_APP_DISABLE_PREVIEW,m_aMenu->GetItemText(SID_DB_APP_DISABLE_PREVIEW),ToolBoxItemBits::LEFT|ToolBoxItemBits::DROPDOWN|ToolBoxItemBits::AUTOSIZE|ToolBoxItemBits::RADIOCHECK);
     m_aTBPreview->SetHelpId(HID_APP_VIEW_PREVIEW_CB);
     m_aTBPreview->SetDropdownClickHdl( LINK( this, OAppDetailPageHelper, OnDropdownClickHdl ) );
-    m_aTBPreview->EnableMenuStrings();
     m_aTBPreview->Enable();
 
     m_aPreview->SetHelpId(HID_APP_VIEW_PREVIEW_1);
@@ -242,7 +240,7 @@ void OAppDetailPageHelper::dispose()
             rpBox.disposeAndClear();
         }
     }
-    m_aMenu.reset();
+    m_aMenu.disposeAndClear();
     m_pTablePreview.disposeAndClear();
     m_aDocumentInfo.disposeAndClear();
     m_aPreview.disposeAndClear();
@@ -738,7 +736,7 @@ DBTreeListBox* OAppDetailPageHelper::createTree( DBTreeListBox* _pTreeView, cons
     _pTreeView->SetStyle(_pTreeView->GetStyle() | WB_HASLINES | WB_SORT | WB_HASBUTTONS | WB_HSCROLL |WB_HASBUTTONSATROOT | WB_TABSTOP);
     _pTreeView->GetModel()->SetSortMode(SortAscending);
     _pTreeView->EnableCheckButton( nullptr ); // do not show any buttons
-    _pTreeView->SetSelectionMode(MULTIPLE_SELECTION);
+    _pTreeView->SetSelectionMode(SelectionMode::Multiple);
 
     _pTreeView->SetDefaultCollapsedEntryBmp( _rImage );
     _pTreeView->SetDefaultExpandedEntryBmp( _rImage );
@@ -890,33 +888,33 @@ void OAppDetailPageHelper::elementRemoved( ElementType _eType,const OUString& _r
     }
 }
 
-IMPL_LINK_TYPED(OAppDetailPageHelper, OnEntryEnterKey, DBTreeListBox*, _pTree, void )
+IMPL_LINK(OAppDetailPageHelper, OnEntryEnterKey, DBTreeListBox*, _pTree, void )
 {
     OnEntryDoubleClick(_pTree);
 }
-IMPL_LINK_TYPED(OAppDetailPageHelper, OnEntryDoubleClick, SvTreeListBox*, _pTree, bool)
+IMPL_LINK(OAppDetailPageHelper, OnEntryDoubleClick, SvTreeListBox*, _pTree, bool)
 {
     OSL_ENSURE( _pTree, "OAppDetailPageHelper, OnEntryDoubleClick: invalid callback!" );
     bool bHandled = ( _pTree != nullptr ) && getBorderWin().getView()->getAppController().onEntryDoubleClick( *_pTree );
     return bHandled;
 }
 
-IMPL_LINK_NOARG_TYPED(OAppDetailPageHelper, OnEntrySelChange, LinkParamNone*, void)
+IMPL_LINK_NOARG(OAppDetailPageHelper, OnEntrySelChange, LinkParamNone*, void)
 {
     getBorderWin().getView()->getAppController().onSelectionChanged();
 }
 
-IMPL_LINK_NOARG_TYPED( OAppDetailPageHelper, OnCopyEntry, LinkParamNone*, void )
+IMPL_LINK_NOARG( OAppDetailPageHelper, OnCopyEntry, LinkParamNone*, void )
 {
     getBorderWin().getView()->getAppController().onCopyEntry();
 }
 
-IMPL_LINK_NOARG_TYPED( OAppDetailPageHelper, OnPasteEntry, LinkParamNone*, void )
+IMPL_LINK_NOARG( OAppDetailPageHelper, OnPasteEntry, LinkParamNone*, void )
 {
     getBorderWin().getView()->getAppController().onPasteEntry();
 }
 
-IMPL_LINK_NOARG_TYPED( OAppDetailPageHelper, OnDeleteEntry, LinkParamNone*, void )
+IMPL_LINK_NOARG( OAppDetailPageHelper, OnDeleteEntry, LinkParamNone*, void )
 {
     getBorderWin().getView()->getAppController().onDeleteEntry();
 }
@@ -931,7 +929,7 @@ void OAppDetailPageHelper::Resize()
     vcl::Window* pWindow = getCurrentView();
     if ( pWindow )
     {
-        Size aFLSize = LogicToPixel( Size( 2, 6 ), MAP_APPFONT );
+        Size aFLSize = LogicToPixel( Size( 2, 6 ), MapUnit::MapAppFont );
         sal_Int32 n6PPT = aFLSize.Height();
         long nHalfOutputWidth = static_cast<long>(nOutputWidth * 0.5);
 
@@ -955,6 +953,14 @@ void OAppDetailPageHelper::Resize()
 bool OAppDetailPageHelper::isPreviewEnabled()
 {
     return m_ePreviewMode != E_PREVIEWNONE;
+}
+
+namespace
+{
+    OUString stripTrailingDots(const OUString& rStr)
+    {
+        return comphelper::string::stripEnd(rStr, '.');
+    }
 }
 
 void OAppDetailPageHelper::switchPreview(PreviewMode _eMode,bool _bForce)
@@ -983,7 +989,7 @@ void OAppDetailPageHelper::switchPreview(PreviewMode _eMode,bool _bForce)
         }
 
         m_aMenu->CheckItem(nSelectedAction);
-        m_aTBPreview->SetItemText(SID_DB_APP_DISABLE_PREVIEW, m_aMenu->GetItemText(nSelectedAction));
+        m_aTBPreview->SetItemText(SID_DB_APP_DISABLE_PREVIEW, stripTrailingDots(m_aMenu->GetItemText(nSelectedAction)));
         Resize();
 
         // simulate a selectionChanged event at the controller, to force the preview to be updated
@@ -1130,7 +1136,7 @@ void OAppDetailPageHelper::showPreview( const OUString& _sDataSourceName,
     }
 }
 
-IMPL_LINK_NOARG_TYPED(OAppDetailPageHelper, OnDropdownClickHdl, ToolBox*, void)
+IMPL_LINK_NOARG(OAppDetailPageHelper, OnDropdownClickHdl, ToolBox*, void)
 {
     m_aTBPreview->EndSelection();
 
@@ -1145,7 +1151,7 @@ IMPL_LINK_NOARG_TYPED(OAppDetailPageHelper, OnDropdownClickHdl, ToolBox*, void)
     m_aTBPreview->Update();
 
     // execute the menu
-    std::unique_ptr<PopupMenu> aMenu(new PopupMenu( ModuleRes( RID_MENU_APP_PREVIEW ) ));
+    ScopedVclPtrInstance<PopupMenu> aMenu( ModuleRes( RID_MENU_APP_PREVIEW ) );
 
     const sal_uInt16 pActions[] = { SID_DB_APP_DISABLE_PREVIEW
                             , SID_DB_APP_VIEW_DOC_PREVIEW
@@ -1168,7 +1174,7 @@ IMPL_LINK_NOARG_TYPED(OAppDetailPageHelper, OnDropdownClickHdl, ToolBox*, void)
     m_aTBPreview->SetItemDown( SID_DB_APP_DISABLE_PREVIEW, false);
     if ( nSelectedAction )
     {
-        m_aTBPreview->SetItemText(SID_DB_APP_DISABLE_PREVIEW, aMenu->GetItemText(nSelectedAction));
+        m_aTBPreview->SetItemText(SID_DB_APP_DISABLE_PREVIEW, stripTrailingDots(aMenu->GetItemText(nSelectedAction)));
         Resize();
         getBorderWin().getView()->getAppController().executeChecked(nSelectedAction,Sequence<PropertyValue>());
     }

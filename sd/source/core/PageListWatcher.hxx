@@ -58,7 +58,7 @@ public:
     virtual ~ImpPageListWatcher();
 
     void Invalidate() { mbPageListValid = false; }
-    SdPage* GetSdPage(PageKind ePgKind, sal_uInt32 nPgNum = 0L);
+    SdPage* GetSdPage(PageKind ePgKind, sal_uInt32 nPgNum);
     sal_uInt32 GetSdPageCount(PageKind ePgKind);
     sal_uInt32 GetVisibleSdPageCount();
 };
@@ -71,7 +71,7 @@ protected:
 
 public:
     explicit ImpDrawPageListWatcher(const SdrModel& rModel);
-    virtual ~ImpDrawPageListWatcher();
+    virtual ~ImpDrawPageListWatcher() override;
 };
 
 class ImpMasterPageListWatcher : public ImpPageListWatcher
@@ -82,7 +82,7 @@ protected:
 
 public:
     explicit ImpMasterPageListWatcher(const SdrModel& rModel);
-    virtual ~ImpMasterPageListWatcher();
+    virtual ~ImpMasterPageListWatcher() override;
 };
 
 #endif

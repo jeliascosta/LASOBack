@@ -29,7 +29,7 @@
 #include <basegfx/matrix/b2dhommatrix.hxx>
 #include <tools/stream.hxx>
 #include <vcl/timer.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <vcl/lazydelete.hxx>
 #include <vcl/dibtools.hxx>
 
@@ -40,7 +40,7 @@ namespace
 {
     typedef ::std::vector< VclPtr<VirtualDevice> > aBuffers;
 
-    class VDevBuffer : public Timer, protected comphelper::OBaseMutex
+    class VDevBuffer : public Timer, protected cppu::BaseMutex
     {
     private:
         // available buffers
@@ -56,7 +56,7 @@ namespace
 
     public:
         VDevBuffer();
-        virtual ~VDevBuffer();
+        virtual ~VDevBuffer() override;
 
         VirtualDevice* alloc(OutputDevice& rOutDev, const Size& rSizePixel, bool bClear, bool bMonoChrome);
         void free(VirtualDevice& rDevice);
@@ -66,7 +66,7 @@ namespace
     };
 
     VDevBuffer::VDevBuffer()
-    :   Timer(),
+    :   Timer("VDevBuffer timer"),
         maFreeBuffers(),
         maUsedBuffers()
     {
@@ -196,7 +196,7 @@ namespace
         {
             // reused, reset some values
             pRetval->SetMapMode();
-            pRetval->SetRasterOp(ROP_OVERPAINT);
+            pRetval->SetRasterOp(RasterOp::OverPaint);
         }
 
         // remember allocated buffer
@@ -295,7 +295,7 @@ namespace drawinglayer
             // copy AA flag for new target
             mpContent->SetAntialiasing(mrOutDev.GetAntialiasing());
 
-            // copy RasterOp (e.g. may be ROP_XOR on destination)
+            // copy RasterOp (e.g. may be RasterOp::Xor on destination)
             mpContent->SetRasterOp(mrOutDev.GetRasterOp());
         }
     }
@@ -347,9 +347,9 @@ namespace drawinglayer
             }
 #endif
 
-            // during painting the buffer, disable evtl. set RasterOp (may be ROP_XOR)
+            // during painting the buffer, disable evtl. set RasterOp (may be RasterOp::Xor)
             const RasterOp aOrigRasterOp(mrOutDev.GetRasterOp());
-            mrOutDev.SetRasterOp(ROP_OVERPAINT);
+            mrOutDev.SetRasterOp(RasterOp::OverPaint);
 
             if(mpAlpha)
             {

@@ -42,11 +42,11 @@ private:
     static ::std::list<ScAddInListener*> aAllListeners;
 
     // always allocated via CreateListener
-    ScAddInListener( css::uno::Reference<css::sheet::XVolatileResult> xVR,
+    ScAddInListener( css::uno::Reference<css::sheet::XVolatileResult> const & xVR,
                     ScDocument* pD );
 
 public:
-    virtual ~ScAddInListener();
+    virtual ~ScAddInListener() override;
 
     // create Listener and put it into global list
     static ScAddInListener* CreateListener(

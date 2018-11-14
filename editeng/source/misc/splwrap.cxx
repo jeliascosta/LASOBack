@@ -79,15 +79,7 @@ void SvxPrepareAutoCorrect( OUString &rOldText, const OUString &rNewText )
 #define SVX_LANG_MISSING            2
 #define SVX_LANG_MISSING_DO_WARN    3
 
-struct lt_LanguageType
-{
-    bool operator()( LanguageType n1, LanguageType n2 ) const
-    {
-        return n1 < n2;
-    }
-};
-
-typedef std::map< LanguageType, sal_uInt16, lt_LanguageType >   LangCheckState_map_t;
+typedef std::map< LanguageType, sal_uInt16 >   LangCheckState_map_t;
 
 static LangCheckState_map_t & GetLangCheckState()
 {
@@ -155,7 +147,7 @@ SvxSpellWrapper::SvxSpellWrapper( vcl::Window* pWn,
     bRevAllowed ( true ),
     bAllRight   ( bIsAllRight )
 {
-    Reference< linguistic2::XLinguProperties >  xProp( SvxGetLinguPropertySet() );
+    Reference< linguistic2::XLinguProperties >  xProp( LinguMgr::GetLinguPropertySet() );
     bool bWrapReverse = xProp.is() && xProp->getIsWrapReverse();
     bReverse = bWrapReverse;
     bStartDone = !bReverse && bStart;
@@ -183,7 +175,7 @@ SvxSpellWrapper::SvxSpellWrapper( vcl::Window* pWn,
 
 
 sal_Int16 SvxSpellWrapper::CheckSpellLang(
-        Reference< XSpellChecker1 > xSpell, sal_Int16 nLang)
+        Reference< XSpellChecker1 > const & xSpell, sal_Int16 nLang)
 {
     LangCheckState_map_t &rLCS = GetLangCheckState();
 
@@ -208,7 +200,7 @@ sal_Int16 SvxSpellWrapper::CheckSpellLang(
 }
 
 sal_Int16 SvxSpellWrapper::CheckHyphLang(
-        Reference< XHyphenator >  xHyph, sal_Int16 nLang)
+        Reference< XHyphenator > const & xHyph, sal_Int16 nLang)
 {
     LangCheckState_map_t &rLCS = GetLangCheckState();
 
@@ -275,12 +267,12 @@ void SvxSpellWrapper::SpellDocument( )
     if ( bOtherCntnt )
     {
         bReverse = false;
-        SpellStart( SVX_SPELL_OTHER );
+        SpellStart( SvxSpellArea::Other );
     }
     else
     {
         bStartChk = bReverse;
-        SpellStart( bReverse ? SVX_SPELL_BODY_START : SVX_SPELL_BODY_END );
+        SpellStart( bReverse ? SvxSpellArea::BodyStart : SvxSpellArea::BodyEnd );
     }
 
     if ( FindSpellError() )
@@ -293,7 +285,7 @@ void SvxSpellWrapper::SpellDocument( )
         if (xHyphWord.is())
         {
             EditAbstractDialogFactory* pFact = EditAbstractDialogFactory::Create();
-            std::unique_ptr<AbstractHyphenWordDialog> pDlg(pFact->CreateHyphenWordDialog( pWin,
+            ScopedVclPtr<AbstractHyphenWordDialog> pDlg(pFact->CreateHyphenWordDialog( pWin,
                             xHyphWord->getWord(),
                             LanguageTag( xHyphWord->getLocale() ).getLanguageType(),
                             xHyph, this ));
@@ -311,7 +303,7 @@ void SvxSpellWrapper::SpellDocument( )
 
 bool SvxSpellWrapper::SpellNext( )
 {
-    Reference< linguistic2::XLinguProperties >  xProp( SvxGetLinguPropertySet() );
+    Reference< linguistic2::XLinguProperties >  xProp( LinguMgr::GetLinguPropertySet() );
     bool bWrapReverse = xProp.is() && xProp->getIsWrapReverse();
     bool bActRev = bRevAllowed && bWrapReverse;
 
@@ -340,7 +332,7 @@ bool SvxSpellWrapper::SpellNext( )
             bOtherCntnt = false;
             bStartDone = !bReverse;
             bEndDone  = bReverse;
-            SpellStart( SVX_SPELL_BODY );
+            SpellStart( SvxSpellArea::Body );
             return true;
         }
         return false;
@@ -351,7 +343,7 @@ bool SvxSpellWrapper::SpellNext( )
     if ( bOtherCntnt )
     {
         bStartChk = false;
-        SpellStart( SVX_SPELL_BODY );
+        SpellStart( SvxSpellArea::Body );
         bGoOn = true;
     }
     else if ( bStartDone && bEndDone )
@@ -360,7 +352,7 @@ bool SvxSpellWrapper::SpellNext( )
         // Body area done, ask for special area
         if( !IsHyphen() && bIsSpellSpecial && HasOtherCnt() )
         {
-            SpellStart( SVX_SPELL_OTHER );
+            SpellStart( SvxSpellArea::Other );
             bOtherCntnt = bGoOn = true;
         }
         else if ( SpellMore() )  // check another document?
@@ -368,7 +360,7 @@ bool SvxSpellWrapper::SpellNext( )
             bOtherCntnt = false;
             bStartDone = !bReverse;
             bEndDone  = bReverse;
-            SpellStart( SVX_SPELL_BODY );
+            SpellStart( SvxSpellArea::Body );
             return true;
         }
     }
@@ -378,7 +370,7 @@ bool SvxSpellWrapper::SpellNext( )
         WAIT_OFF();
 
         sal_uInt16 nResId = bReverse ? RID_SVXSTR_QUERY_BW_CONTINUE : RID_SVXSTR_QUERY_CONTINUE;
-        ScopedVclPtrInstance< MessageDialog > aBox(pWin, EditResId(nResId), VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO);
+        ScopedVclPtrInstance< MessageDialog > aBox(pWin, EditResId(nResId), VclMessageType::Question, VCL_BUTTONS_YES_NO);
         if ( aBox->Execute() != RET_YES )
         {
             // sacrifice the other area if necessary ask for special area
@@ -389,7 +381,7 @@ bool SvxSpellWrapper::SpellNext( )
         else
         {
             bStartChk = !bStartDone;
-            SpellStart( bStartChk ? SVX_SPELL_BODY_START : SVX_SPELL_BODY_END );
+            SpellStart( bStartChk ? SvxSpellArea::BodyStart : SvxSpellArea::BodyEnd );
             bGoOn = true;
         }
         WAIT_ON();
@@ -402,7 +394,7 @@ Reference< XDictionary >  SvxSpellWrapper::GetAllRightDic()
 {
     Reference< XDictionary >  xDic;
 
-    Reference< XSearchableDictionaryList >  xDicList( SvxGetDictionaryList() );
+    Reference< XSearchableDictionaryList >  xDicList( LinguMgr::GetDictionaryList() );
     if (xDicList.is())
     {
         Sequence< Reference< XDictionary >  > aDics( xDicList->getDictionaries() );
@@ -431,7 +423,7 @@ Reference< XDictionary >  SvxSpellWrapper::GetAllRightDic()
 
         if (!xDic.is())
         {
-            xDic = SvxGetOrCreatePosDic( xDicList );
+            xDic = LinguMgr::GetStandardDic();
             if (xDic.is())
                 xDic->setActive( true );
         }
@@ -471,7 +463,7 @@ bool SvxSpellWrapper::FindSpellError()
             {
                 // look up in ChangeAllList for misspelled word
                 Reference< XDictionary >    xChangeAllList(
-                        SvxGetChangeAllList(), UNO_QUERY );
+                        LinguMgr::GetChangeAllList(), UNO_QUERY );
                 Reference< XDictionaryEntry >   xEntry;
                 if (xChangeAllList.is())
                     xEntry = xChangeAllList->getEntry( xAlt->getWord() );

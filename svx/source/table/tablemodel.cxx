@@ -24,6 +24,7 @@
 
 #include <vcl/svapp.hxx>
 #include <osl/mutex.hxx>
+#include <libxml/xmlwriter.h>
 
 #include "cell.hxx"
 #include "cellcursor.hxx"
@@ -339,18 +340,6 @@ void TableModel::dispose() throw (RuntimeException, std::exception)
 }
 
 
-void SAL_CALL TableModel::addEventListener( const Reference< XEventListener >& xListener ) throw (RuntimeException, std::exception)
-{
-    TableModelBase::addEventListener( xListener );
-}
-
-
-void SAL_CALL TableModel::removeEventListener( const Reference< XEventListener >& xListener ) throw (RuntimeException, std::exception)
-{
-    TableModelBase::removeEventListener( xListener );
-}
-
-
 // XModifiable
 
 
@@ -631,7 +620,7 @@ void TableModel::insertColumns( sal_Int32 nIndex, sal_Int32 nCount )
 
             sal_Int32 nRows = getRowCountImpl();
             while( nRows-- )
-                maRows[nRows]->insertColumns( nIndex, nCount );
+                maRows[nRows]->insertColumns( nIndex, nCount, nullptr );
 
             ColumnVector aNewColumns(nCount);
             for( sal_Int32 nOffset = 0; nOffset < nCount; ++nOffset )
@@ -1133,6 +1122,17 @@ void TableModel::updateColumns()
     {
         (*iter++)->mnColumn = nColumn++;
     }
+}
+
+void TableModel::dumpAsXml(struct _xmlTextWriter * pWriter) const
+{
+    xmlTextWriterStartElement(pWriter, BAD_CAST("TableModel"));
+    for (sal_Int32 nRow = 0; nRow < getRowCountImpl(); ++nRow)
+        for (sal_Int32 nCol = 0; nCol < getColumnCountImpl(); ++nCol)
+        {
+            maRows[nRow]->maCells[nCol]->dumpAsXml(pWriter, nRow, nCol);
+        }
+    xmlTextWriterEndElement(pWriter);
 }
 
 } }

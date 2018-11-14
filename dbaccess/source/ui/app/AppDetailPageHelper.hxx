@@ -86,7 +86,7 @@ namespace dbaui
         VclPtr< ::svtools::ODocumentInfoPreview>
                                   m_aDocumentInfo;
         VclPtr<vcl::Window>       m_pTablePreview;
-        ::std::unique_ptr<PopupMenu> m_aMenu;
+        ScopedVclPtr<PopupMenu>   m_aMenu;
         PreviewMode               m_ePreviewMode;
         css::uno::Reference < css::frame::XFrame2 >
                                   m_xFrame;
@@ -149,23 +149,23 @@ namespace dbaui
         */
         DBTreeListBox* createSimpleTree( const OString& _sHelpId, const Image& _rImage);
 
-        DECL_LINK_TYPED( OnEntryDoubleClick,    SvTreeListBox*, bool );
-        DECL_LINK_TYPED( OnEntryEnterKey,       DBTreeListBox*, void );
-        DECL_LINK_TYPED( OnEntrySelChange,      LinkParamNone*, void );
+        DECL_LINK( OnEntryDoubleClick,    SvTreeListBox*, bool );
+        DECL_LINK( OnEntryEnterKey,       DBTreeListBox*, void );
+        DECL_LINK( OnEntrySelChange,      LinkParamNone*, void );
 
-        DECL_LINK_TYPED( OnCopyEntry,           LinkParamNone*, void );
-        DECL_LINK_TYPED( OnPasteEntry,          LinkParamNone*, void );
-        DECL_LINK_TYPED( OnDeleteEntry,         LinkParamNone*, void );
+        DECL_LINK( OnCopyEntry,           LinkParamNone*, void );
+        DECL_LINK( OnPasteEntry,          LinkParamNone*, void );
+        DECL_LINK( OnDeleteEntry,         LinkParamNone*, void );
 
         // click a TB slot
-        DECL_LINK_TYPED(OnDropdownClickHdl, ToolBox*, void);
+        DECL_LINK(OnDropdownClickHdl, ToolBox*, void);
 
         inline OAppBorderWindow& getBorderWin() const { return m_rBorderWin; }
         void ImplInitSettings();
 
     public:
         OAppDetailPageHelper(vcl::Window* _pParent,OAppBorderWindow& _rBorderWin,PreviewMode _ePreviewMode);
-        virtual ~OAppDetailPageHelper();
+        virtual ~OAppDetailPageHelper() override;
         virtual void dispose() override;
 
         // Window overrides

@@ -17,6 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <o3tl/any.hxx>
 #include <tools/datetime.hxx>
 #include <svl/zforlist.hxx>
 #include <com/sun/star/util/DateTime.hpp>
@@ -149,7 +152,7 @@ tools::Time SwDateTimeField::GetTime() const
 {
     double fDummy;
     double fFract = modf(GetValue(), &fDummy);
-    DateTime aDT((long)fDummy, 0);
+    DateTime aDT(Date(static_cast<sal_Int32>(fDummy)), 0);
     aDT += fFract;
     return static_cast<tools::Time>(aDT);
 }
@@ -162,7 +165,7 @@ bool SwDateTimeField::QueryValue( uno::Any& rVal, sal_uInt16 nWhichId ) const
         rVal <<= IsFixed();
         break;
     case FIELD_PROP_BOOL2:
-        rVal <<= IsDate();
+        rVal <<= (nSubType & DATEFLD) != 0;
         break;
     case FIELD_PROP_FORMAT:
         rVal <<= (sal_Int32)GetFormat();
@@ -188,14 +191,14 @@ bool SwDateTimeField::PutValue( const uno::Any& rVal, sal_uInt16 nWhichId )
     switch( nWhichId )
     {
     case FIELD_PROP_BOOL1:
-        if(*static_cast<sal_Bool const *>(rVal.getValue()))
+        if(*o3tl::doAccess<bool>(rVal))
             nSubType |= FIXEDFLD;
         else
             nSubType &= ~FIXEDFLD;
         break;
     case FIELD_PROP_BOOL2:
         nSubType &=  ~(DATEFLD|TIMEFLD);
-        nSubType |= *static_cast<sal_Bool const *>(rVal.getValue()) ? DATEFLD : TIMEFLD;
+        nSubType |= *o3tl::doAccess<bool>(rVal) ? DATEFLD : TIMEFLD;
         break;
     case FIELD_PROP_FORMAT:
         rVal >>= nTmp;

@@ -31,7 +31,7 @@ class SvxAccessibleTextAdapter : public SvxTextForwarder
 {
 public:
     SvxAccessibleTextAdapter();
-    virtual ~SvxAccessibleTextAdapter();
+    virtual ~SvxAccessibleTextAdapter() override;
 
     virtual sal_Int32       GetParagraphCount() const override;
     virtual sal_Int32       GetTextLen( sal_Int32 nParagraph ) const override;
@@ -114,7 +114,7 @@ class SvxAccessibleTextEditViewAdapter : public SvxEditViewForwarder
 public:
 
                         SvxAccessibleTextEditViewAdapter();
-    virtual             ~SvxAccessibleTextEditViewAdapter();
+    virtual             ~SvxAccessibleTextEditViewAdapter() override;
 
     // SvxViewForwarder interface
     virtual bool        IsValid() const override;
@@ -140,14 +140,14 @@ class EDITENG_DLLPUBLIC SvxEditSourceAdapter : public SvxEditSource
 {
 public:
     SvxEditSourceAdapter();
-    virtual ~SvxEditSourceAdapter();
+    virtual ~SvxEditSourceAdapter() override;
 
     virtual SvxEditSource*                      Clone() const override;
     virtual SvxTextForwarder*                   GetTextForwarder() override;
     SvxAccessibleTextAdapter*                   GetTextForwarderAdapter(); // covariant return types don't work on MSVC
     virtual SvxViewForwarder*                   GetViewForwarder() override;
     virtual SvxEditViewForwarder*               GetEditViewForwarder( bool bCreate = false ) override;
-    SvxAccessibleTextEditViewAdapter*           GetEditViewForwarderAdapter( bool bCreate = false ); // covariant return types don't work on MSVC
+    SvxAccessibleTextEditViewAdapter*           GetEditViewForwarderAdapter( bool bCreate ); // covariant return types don't work on MSVC
     virtual void                                UpdateData() override;
     virtual SfxBroadcaster&                     GetBroadcaster() const override;
 

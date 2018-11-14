@@ -57,13 +57,13 @@
 
 #include "salinst.hxx"
 #include "salframe.hxx"
+#include "sallayout.hxx"
 #include "salsys.hxx"
 #include "svdata.hxx"
 #include "salimestatus.hxx"
-#include "xconnection.hxx"
+#include "displayconnectiondispatch.hxx"
 #include "window.h"
 #include "accmgr.hxx"
-#include "idlemgr.hxx"
 #include "svids.hrc"
 
 #include <com/sun/star/uno/Reference.h>
@@ -188,10 +188,6 @@ struct ImplPostEventData
     ~ImplPostEventData() {}
 };
 
-typedef ::std::pair< VclPtr<vcl::Window>, ImplPostEventData* > ImplPostEventPair;
-
-static ::std::list< ImplPostEventPair > aPostedEventList;
-
 Application* GetpApp()
 {
     ImplSVData* pSVData = ImplGetSVData();
@@ -261,7 +257,7 @@ OUString Application::GetCommandLineParam( sal_uInt16 nParam )
 OUString Application::GetAppFileName()
 {
     ImplSVData* pSVData = ImplGetSVData();
-    DBG_ASSERT( pSVData->maAppData.mpAppFileName, "AppFileName should be set to something after SVMain!" );
+    SAL_WARN_IF( !pSVData->maAppData.mpAppFileName, "vcl", "AppFileName should be set to something after SVMain!" );
     if ( pSVData->maAppData.mpAppFileName )
         return *pSVData->maAppData.mpAppFileName;
 
@@ -333,14 +329,14 @@ const vcl::KeyCode* Application::GetReservedKeyCode( sal_uLong i )
         return &ImplReservedKeys::get()->first[i].mKeyCode;
 }
 
-IMPL_STATIC_LINK_NOARG_TYPED( ImplSVAppData, ImplEndAllPopupsMsg, void*, void )
+IMPL_STATIC_LINK_NOARG( ImplSVAppData, ImplEndAllPopupsMsg, void*, void )
 {
     ImplSVData* pSVData = ImplGetSVData();
     while (pSVData->maWinData.mpFirstFloat)
         pSVData->maWinData.mpFirstFloat->EndPopupMode(FloatWinPopupEndFlags::Cancel);
 }
 
-IMPL_STATIC_LINK_NOARG_TYPED( ImplSVAppData, ImplEndAllDialogsMsg, void*, void )
+IMPL_STATIC_LINK_NOARG( ImplSVAppData, ImplEndAllDialogsMsg, void*, void )
 {
     vcl::Window* pAppWindow = Application::GetFirstTopLevelWindow();
     while (pAppWindow)
@@ -412,7 +408,7 @@ namespace
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ImplSVAppData, VclEventTestingHdl, Idle *, void)
+IMPL_LINK_NOARG(ImplSVAppData, VclEventTestingHdl, Idle *, void)
 {
     if (Application::AnyInput())
     {
@@ -424,7 +420,7 @@ IMPL_LINK_NOARG_TYPED(ImplSVAppData, VclEventTestingHdl, Idle *, void)
     }
 }
 
-IMPL_STATIC_LINK_NOARG_TYPED( ImplSVAppData, ImplVclEventTestingHdl, void*, void )
+IMPL_STATIC_LINK_NOARG( ImplSVAppData, ImplVclEventTestingHdl, void*, void )
 {
     ImplSVData* pSVData = ImplGetSVData();
     SAL_INFO("vcl.eventtesting", "EventTestLimit is " << pSVData->maAppData.mnEventTestLimit);
@@ -447,7 +443,7 @@ IMPL_STATIC_LINK_NOARG_TYPED( ImplSVAppData, ImplVclEventTestingHdl, void*, void
     }
 }
 
-IMPL_STATIC_LINK_NOARG_TYPED( ImplSVAppData, ImplPrepareExitMsg, void*, void )
+IMPL_STATIC_LINK_NOARG( ImplSVAppData, ImplPrepareExitMsg, void*, void )
 {
     //now close top level frames
     (void)GetpApp()->QueryExit();
@@ -576,7 +572,7 @@ void Application::ReAcquireSolarMutex(sal_uLong const nReleased)
 #endif
 }
 
-IMPL_STATIC_LINK_NOARG_TYPED( ImplSVAppData, ImplQuitMsg, void*, void )
+IMPL_STATIC_LINK_NOARG( ImplSVAppData, ImplQuitMsg, void*, void )
 {
     ImplGetSVData()->maAppData.mbAppQuit = true;
 }
@@ -724,7 +720,7 @@ void Application::SetSettings( const AllSettings& rSettings )
             while ( pFrame )
             {
                 // restore AppFont cache data
-                pFrame->mpWindowImpl->mpFrameData->meMapUnit = MAP_PIXEL;
+                pFrame->mpWindowImpl->mpFrameData->meMapUnit = MapUnit::MapPixel;
 
                 // call UpdateSettings from ClientWindow in order to prevent updating data twice
                 vcl::Window* pClientWin = pFrame;
@@ -918,7 +914,7 @@ ImplSVEvent * Application::PostKeyEvent( sal_uLong nEvent, vcl::Window *pWin, Ke
         if( nEventId )
         {
             pPostEventData->mnEventId = nEventId;
-            aPostedEventList.push_back( ImplPostEventPair( pWin, pPostEventData ) );
+            ImplGetSVData()->maAppData.maPostedEventList.push_back( ImplPostEventPair( pWin, pPostEventData ) );
         }
         else
             delete pPostEventData;
@@ -951,7 +947,7 @@ ImplSVEvent * Application::PostMouseEvent( sal_uLong nEvent, vcl::Window *pWin, 
         if( nEventId )
         {
             pPostEventData->mnEventId = nEventId;
-            aPostedEventList.push_back( ImplPostEventPair( pWin, pPostEventData ) );
+            ImplGetSVData()->maAppData.maPostedEventList.push_back( ImplPostEventPair( pWin, pPostEventData ) );
         }
         else
             delete pPostEventData;
@@ -961,7 +957,7 @@ ImplSVEvent * Application::PostMouseEvent( sal_uLong nEvent, vcl::Window *pWin, 
 }
 
 
-IMPL_STATIC_LINK_TYPED( Application, PostEventHandler, void*, pCallData, void )
+IMPL_STATIC_LINK( Application, PostEventHandler, void*, pCallData, void )
 {
     const SolarMutexGuard aGuard;
     ImplPostEventData*  pData = static_cast< ImplPostEventData * >( pCallData );
@@ -1016,14 +1012,15 @@ IMPL_STATIC_LINK_TYPED( Application, PostEventHandler, void*, pCallData, void )
         ImplWindowFrameProc( pData->mpWin.get()->mpWindowImpl->mpFrameWindow.get(), nEvent, pEventData );
 
     // remove this event from list of posted events, watch for destruction of internal data
-    ::std::list< ImplPostEventPair >::iterator aIter( aPostedEventList.begin() );
+    auto svdata = ImplGetSVData();
+    ::std::list< ImplPostEventPair >::iterator aIter( svdata->maAppData.maPostedEventList.begin() );
 
-    while( aIter != aPostedEventList.end() )
+    while( aIter != svdata->maAppData.maPostedEventList.end() )
     {
         if( nEventId == (*aIter).second->mnEventId )
         {
             delete (*aIter).second;
-            aIter = aPostedEventList.erase( aIter );
+            aIter = svdata->maAppData.maPostedEventList.erase( aIter );
         }
         else
             ++aIter;
@@ -1035,9 +1032,10 @@ void Application::RemoveMouseAndKeyEvents( vcl::Window* pWin )
     const SolarMutexGuard aGuard;
 
     // remove all events for specific window, watch for destruction of internal data
-    ::std::list< ImplPostEventPair >::iterator aIter( aPostedEventList.begin() );
+    auto svdata = ImplGetSVData();
+    ::std::list< ImplPostEventPair >::iterator aIter( svdata->maAppData.maPostedEventList.begin() );
 
-    while( aIter != aPostedEventList.end() )
+    while( aIter != svdata->maAppData.maPostedEventList.end() )
     {
         if( pWin == (*aIter).first )
         {
@@ -1045,7 +1043,7 @@ void Application::RemoveMouseAndKeyEvents( vcl::Window* pWin )
                 RemoveUserEvent( (*aIter).second->mnEventId );
 
             delete (*aIter).second;
-            aIter = aPostedEventList.erase( aIter );
+            aIter = svdata->maAppData.maPostedEventList.erase( aIter );
         }
         else
             ++aIter;
@@ -1083,34 +1081,15 @@ void Application::RemoveUserEvent( ImplSVEvent * nUserEvent )
 {
     if(nUserEvent)
     {
-        DBG_ASSERT( !nUserEvent->mpWindow,
+        SAL_WARN_IF( nUserEvent->mpWindow, "vcl",
                     "Application::RemoveUserEvent(): Event is send to a window" );
-        DBG_ASSERT( nUserEvent->mbCall,
+        SAL_WARN_IF( !nUserEvent->mbCall, "vcl",
                     "Application::RemoveUserEvent(): Event is already removed" );
 
         nUserEvent->mpWindow.clear();
         nUserEvent->mpInstanceRef.clear();
         nUserEvent->mbCall = false;
     }
-}
-
-bool Application::InsertIdleHdl( const Link<Application*,void>& rLink, sal_uInt16 nPrio )
-{
-    ImplSVData* pSVData = ImplGetSVData();
-
-    // create if does not exist
-    if ( !pSVData->maAppData.mpIdleMgr )
-        pSVData->maAppData.mpIdleMgr = new ImplIdleMgr;
-
-    return pSVData->maAppData.mpIdleMgr->InsertIdleHdl( rLink, nPrio );
-}
-
-void Application::RemoveIdleHdl( const Link<Application*,void>& rLink )
-{
-    ImplSVData* pSVData = ImplGetSVData();
-
-    if ( pSVData->maAppData.mpIdleMgr )
-        pSVData->maAppData.mpIdleMgr->RemoveIdleHdl( rLink );
 }
 
 WorkWindow* Application::GetAppWindow()
@@ -1239,6 +1218,13 @@ OUString Application::GetHWOSConfInfo()
     aDetails.append( GetToolkitName() );
     aDetails.append( "; " );
 #endif
+
+    aDetails.append( VclResId(SV_APP_LAYOUT_ENGINE).toString() );
+    if (SalLayout::UseCommonLayout())
+        aDetails.append( VclResId(SV_APP_LAYOUT_NEW).toString() );
+    else
+        aDetails.append( VclResId(SV_APP_LAYOUT_OLD).toString() );
+    aDetails.append( "; " );
 
     return aDetails.makeStringAndClear();
 }
@@ -1396,39 +1382,6 @@ Help* Application::GetHelp()
     return ImplGetSVData()->maAppData.mpHelp;
 }
 
-void Application::EnableAutoHelpId()
-{
-    ImplGetSVData()->maHelpData.mbAutoHelpId = true;
-}
-
-bool Application::IsAutoHelpIdEnabled()
-{
-    return ImplGetSVData()->maHelpData.mbAutoHelpId;
-}
-
-void Application::EnableAutoMnemonic( bool bEnabled )
-{
-    AllSettings aSettings = GetSettings();
-    StyleSettings aStyle = aSettings.GetStyleSettings();
-    aStyle.SetAutoMnemonic( bEnabled );
-    aSettings.SetStyleSettings( aStyle );
-    SetSettings( aSettings );
-}
-
-bool Application::IsAutoMnemonicEnabled()
-{
-    return GetSettings().GetStyleSettings().GetAutoMnemonic();
-}
-
-void Application::SetDialogScaleX( short nScale )
-{
-    ImplSVData* pSVData = ImplGetSVData();
-    pSVData->maAppData.mnDialogScaleX = nScale;
-    pSVData->maGDIData.mnAppFontX = pSVData->maGDIData.mnRealAppFontX;
-    if ( nScale )
-        pSVData->maGDIData.mnAppFontX += (pSVData->maGDIData.mnAppFontX*nScale)/100;
-}
-
 OUString Application::GetToolkitName()
 {
     ImplSVData* pSVData = ImplGetSVData();
@@ -1507,7 +1460,7 @@ void Application::SetDialogCancelMode( DialogCancelMode mode )
 
 bool Application::IsDialogCancelEnabled()
 {
-    return ImplGetSVData()->maAppData.meDialogCancel != DIALOG_CANCEL_OFF;
+    return ImplGetSVData()->maAppData.meDialogCancel != DialogCancelMode::Off;
 }
 
 void Application::SetSystemWindowMode( SystemWindowFlags nMode )
@@ -1558,7 +1511,7 @@ UnoWrapperBase* Application::GetUnoWrapper( bool bCreateIfNotExist )
             }
             aTkLib.release();
         }
-        DBG_ASSERT( pSVData->mpUnoWrapper, "UnoWrapper could not be created!" );
+        SAL_WARN_IF( !pSVData->mpUnoWrapper, "vcl", "UnoWrapper could not be created!" );
 #else
         pSVData->mpUnoWrapper = CreateUnoWrapper();
 #endif
@@ -1570,7 +1523,7 @@ UnoWrapperBase* Application::GetUnoWrapper( bool bCreateIfNotExist )
 void Application::SetUnoWrapper( UnoWrapperBase* pWrapper )
 {
     ImplSVData* pSVData = ImplGetSVData();
-    DBG_ASSERT( !pSVData->mpUnoWrapper, "SetUnoWrapper: Wrapper already exists" );
+    SAL_WARN_IF( pSVData->mpUnoWrapper, "vcl", "SetUnoWrapper: Wrapper already exists" );
     pSVData->mpUnoWrapper = pWrapper;
 }
 
@@ -1580,7 +1533,7 @@ css::uno::Reference< css::awt::XDisplayConnection > Application::GetDisplayConne
 
     if( !pSVData->mxDisplayConnection.is() )
     {
-        pSVData->mxDisplayConnection.set( new vcl::DisplayConnection );
+        pSVData->mxDisplayConnection.set( new vcl::DisplayConnectionDispatch );
         pSVData->mxDisplayConnection->start();
     }
 
@@ -1665,7 +1618,7 @@ const LocaleDataWrapper& Application::GetAppLocaleDataWrapper()
 void Application::EnableHeadlessMode( bool dialogsAreFatal )
 {
     SetDialogCancelMode(
-        dialogsAreFatal ? DIALOG_CANCEL_FATAL : DIALOG_CANCEL_SILENT );
+        dialogsAreFatal ? DialogCancelMode::Fatal : DialogCancelMode::Silent );
 }
 
 bool Application::IsHeadlessModeEnabled()
@@ -1696,6 +1649,18 @@ bool Application::IsEventTestingModeEnabled()
 void Application::EnableEventTestingMode()
 {
     bEventTestingMode = true;
+}
+
+static bool bSafeMode = false;
+
+bool Application::IsSafeModeEnabled()
+{
+    return bSafeMode;
+}
+
+void Application::EnableSafeMode()
+{
+    bSafeMode = true;
 }
 
 void Application::ShowNativeErrorBox(const OUString& sTitle  ,

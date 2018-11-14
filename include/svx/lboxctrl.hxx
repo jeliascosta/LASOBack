@@ -29,39 +29,24 @@ class ToolBox;
 class SvxPopupWindowListBox;
 
 
-class SvxListBoxControl : public SfxToolBoxControl
+class SVX_DLLPUBLIC SvxUndoRedoControl : public SfxToolBoxControl
 {
-protected:
     OUString                aActionStr;
     VclPtr<SvxPopupWindowListBox> pPopupWin;
+    std::vector< OUString > aUndoRedoList;
+    OUString                aDefaultTooltip;
 
     void    Impl_SetInfo( sal_Int32 nCount );
 
-    DECL_LINK_TYPED( PopupModeEndHdl, FloatingWindow*, void );
-    DECL_LINK_TYPED( SelectHdl, ListBox&, void );
-
-public:
-    SvxListBoxControl( sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx );
-    virtual ~SvxListBoxControl();
-
-    virtual VclPtr<SfxPopupWindow> CreatePopupWindow() override;
-    virtual void                StateChanged( sal_uInt16 nSID,
-                                              SfxItemState eState,
-                                              const SfxPoolItem* pState ) override;
-};
-
-
-class SVX_DLLPUBLIC SvxUndoRedoControl : public SvxListBoxControl
-{
-    std::vector< OUString > aUndoRedoList;
-    OUString                aDefaultTooltip;
+    DECL_LINK( PopupModeEndHdl, FloatingWindow*, void );
+    DECL_LINK( SelectHdl, ListBox&, void );
 
 public:
     SFX_DECL_TOOLBOX_CONTROL();
 
     SvxUndoRedoControl( sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx );
+    virtual ~SvxUndoRedoControl() override;
 
-    virtual ~SvxUndoRedoControl();
     virtual void StateChanged( sal_uInt16 nSID,
                                SfxItemState eState,
                                const SfxPoolItem* pState ) override;

@@ -35,7 +35,9 @@ namespace sw {
         public:
             MarkManager(/*[in/out]*/ SwDoc& rDoc);
             // IDocumentMarkAccess
-            virtual ::sw::mark::IMark* makeMark(const SwPaM& rPaM, const OUString& rName, IDocumentMarkAccess::MarkType eMark) override;
+            virtual ::sw::mark::IMark* makeMark(const SwPaM& rPaM,
+                const OUString& rName, IDocumentMarkAccess::MarkType eMark,
+                sw::mark::InsertMode eMode) override;
 
             virtual sw::mark::IFieldmark* makeFieldBookmark( const SwPaM& rPaM,
                 const OUString& rName,
@@ -55,7 +57,7 @@ namespace sw {
             virtual void correctMarksAbsolute(const SwNodeIndex& rOldNode, const SwPosition& rNewPos, const sal_Int32 nOffset) override;
             virtual void correctMarksRelative(const SwNodeIndex& rOldNode, const SwPosition& rNewPos, const sal_Int32 nOffset) override;
 
-            virtual void deleteMarks(const SwNodeIndex& rStt, const SwNodeIndex& rEnd, ::std::vector< ::sw::mark::SaveBookmark>* pSaveBkmk, const SwIndex* pSttIdx, const SwIndex* pEndIdx) override;
+            virtual void deleteMarks(const SwNodeIndex& rStt, const SwNodeIndex& rEnd, std::vector< ::sw::mark::SaveBookmark>* pSaveBkmk, const SwIndex* pSttIdx, const SwIndex* pEndIdx) override;
 
             // deleters
             virtual std::shared_ptr<ILazyDeleter>
@@ -101,7 +103,9 @@ namespace sw {
 
             // make names
             OUString getUniqueMarkName(const OUString& rName) const;
+        public: // FIXME should be private, needs refactor
             void sortMarks();
+        private:
             void sortSubsetMarks();
 
             // container for all marks

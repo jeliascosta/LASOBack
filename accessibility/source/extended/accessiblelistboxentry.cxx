@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include "accessibility/extended/accessiblelistboxentry.hxx"
+#include "extended/accessiblelistboxentry.hxx"
 #include <svtools/treelistbox.hxx>
 #include <svtools/stringtransfer.hxx>
 #include <svtools/svlbitm.hxx>
@@ -40,8 +40,8 @@
 #include <comphelper/sequence.hxx>
 #include <comphelper/accessibleeventnotifier.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
-#include <accessibility/helper/accresmgr.hxx>
-#include <accessibility/helper/accessiblestrings.hrc>
+#include <helper/accresmgr.hxx>
+#include <helper/accessiblestrings.hrc>
 #include <com/sun/star/accessibility/XAccessibleValue.hpp>
 #define ACCESSIBLE_ACTION_COUNT 1
 
@@ -257,33 +257,19 @@ namespace accessibility
 
     OUString SAL_CALL AccessibleListBoxEntry::getImplementationName() throw(RuntimeException, std::exception)
     {
-        return getImplementationName_Static();
+        return OUString( "com.sun.star.comp.svtools.AccessibleTreeListBoxEntry" );
     }
 
     Sequence< OUString > SAL_CALL AccessibleListBoxEntry::getSupportedServiceNames() throw(RuntimeException, std::exception)
     {
-        return getSupportedServiceNames_Static();
+        return {"com.sun.star.accessibility.AccessibleContext",
+                "com.sun.star.accessibility.AccessibleComponent",
+                "com.sun.star.awt.AccessibleTreeListBoxEntry"};
     }
 
     sal_Bool SAL_CALL AccessibleListBoxEntry::supportsService( const OUString& _rServiceName ) throw (RuntimeException, std::exception)
     {
         return cppu::supportsService(this, _rServiceName);
-    }
-
-    // XServiceInfo - static methods
-
-    Sequence< OUString > AccessibleListBoxEntry::getSupportedServiceNames_Static() throw( RuntimeException )
-    {
-        Sequence< OUString > aSupported(3);
-        aSupported[0] = "com.sun.star.accessibility.AccessibleContext";
-        aSupported[1] = "com.sun.star.accessibility.AccessibleComponent";
-        aSupported[2] = "com.sun.star.awt.AccessibleTreeListBoxEntry";
-        return aSupported;
-    }
-
-    OUString AccessibleListBoxEntry::getImplementationName_Static() throw( RuntimeException )
-    {
-        return OUString( "com.sun.star.comp.svtools.AccessibleTreeListBoxEntry" );
     }
 
     // XAccessible
@@ -462,7 +448,7 @@ namespace accessibility
         while( iCount < iTotleItemCount )
         {
             const SvLBoxItem& rItem = pEntry->GetItem( iCount );
-            if ( rItem.GetType() == SV_ITEM_ID_LBOXSTRING &&
+            if ( rItem.GetType() == SvLBoxItemType::String &&
                  !static_cast<const SvLBoxString&>( rItem ).GetText().isEmpty() )
             {
                 iRealItemCount++;
@@ -816,8 +802,6 @@ namespace accessibility
         checkActionIndex_Impl( nIndex );
         EnsureIsAlive();
 
-        static const char sActionDesc1[] = "Check";
-        static const char sActionDesc2[] = "UnCheck";
         // sal_Bool bHasButtons = (getListBox()->GetStyle() & WB_HASBUTTONS)!=0;
         SvTreeListEntry* pEntry = getListBox()->GetEntryFromPath( m_aEntryPath );
         SvButtonState state = getListBox()->GetCheckButtonState( pEntry );
@@ -827,9 +811,9 @@ namespace accessibility
             if(getAccessibleRole() == AccessibleRole::CHECK_BOX)
             {
                 if ( state == SvButtonState::Checked )
-                    return OUString(sActionDesc2);
+                    return OUString("UnCheck");
                 else if (state == SvButtonState::Unchecked)
-                    return OUString(sActionDesc1);
+                    return OUString("Check");
             }
             else
             {

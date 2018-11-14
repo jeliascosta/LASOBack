@@ -43,7 +43,6 @@ private:
     Link<Splitter*,void>   maSplitHdl;
     Link<Splitter*,void>   maEndSplitHdl;
 
-    SAL_DLLPRIVATE void      ImplInitSplitterData();
     SAL_DLLPRIVATE void      ImplDrawSplitter();
     SAL_DLLPRIVATE void      ImplSplitMousePos( Point& rPos );
     SAL_DLLPRIVATE void      ImplStartKbdSplitting();
@@ -62,7 +61,7 @@ protected:
 
 public:
     explicit            Splitter( vcl::Window* pParent, WinBits nStyle = WB_VSCROLL );
-    virtual             ~Splitter();
+    virtual             ~Splitter() override;
     virtual void        dispose() override;
 
     void                StartSplit();
@@ -72,12 +71,11 @@ public:
     virtual void        MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual void        Tracking( const TrackingEvent& rTEvt ) override;
 
-    virtual bool        Notify( NotifyEvent& rNEvt ) override;
-
     virtual void        GetFocus() override;
     virtual void        LoseFocus() override;
     virtual void        KeyInput( const KeyEvent& rKEvt ) override;
     virtual void        Paint( vcl::RenderContext& rRenderContext, const Rectangle& rPaintRect ) override;
+    virtual Size        GetOptimalSize() const override;
 
     virtual void        DataChanged( const DataChangedEvent& rDCEvt ) override;
 

@@ -61,38 +61,20 @@ using namespace ::xmloff::token;
 #define NSPREFIX "ooo:"
 
 // ooo xml elements
-static const char    aOOOElemMetaSlides[] = NSPREFIX "meta_slides";
-static const char    aOOOElemMetaSlide[] = NSPREFIX "meta_slide";
 static const char    aOOOElemTextField[] = NSPREFIX "text_field";
 
-// ooo xml attributes for meta_slides
-static const char    aOOOAttrNumberOfSlides[] = NSPREFIX "number-of-slides";
-static const char    aOOOAttrStartSlideNumber[] = NSPREFIX "start-slide-number";
-static const char    aOOOAttrNumberingType[] = NSPREFIX "page-numbering-type";
-static const char    aOOOAttrUsePositionedChars[] = NSPREFIX "use-positioned-chars";
 
 // ooo xml attributes for meta_slide
 static const char    aOOOAttrSlide[] = NSPREFIX "slide";
 static const char    aOOOAttrMaster[] = NSPREFIX "master";
 static const char    aOOOAttrBackgroundVisibility[] = NSPREFIX "background-visibility";
 static const char    aOOOAttrMasterObjectsVisibility[] = NSPREFIX "master-objects-visibility";
-static const char    aOOOAttrPageNumberVisibility[] = NSPREFIX "page-number-visibility";
-static const char    aOOOAttrDateTimeVisibility[] = NSPREFIX "date-time-visibility";
-static const char    aOOOAttrFooterVisibility[] = NSPREFIX "footer-visibility";
 static const OUString aOOOAttrDateTimeField = NSPREFIX "date-time-field";
 static const char    aOOOAttrFooterField[] = NSPREFIX "footer-field";
-static const char    aOOOAttrHeaderField[] = NSPREFIX "header-field";
 static const char    aOOOAttrHasTransition[] = NSPREFIX "has-transition";
-static const char    aOOOAttrIdList[] = NSPREFIX "id-list";
 
 // ooo xml attributes for pages and shapes
 static const char    aOOOAttrName[] = NSPREFIX "name";
-
-// ooo xml attributes for date_time_field
-static const char    aOOOAttrDateTimeFormat[] = NSPREFIX "date-time-format";
-
-// ooo xml attributes for Placeholder Shapes
-static const char    aOOOAttrTextAdjust[] = NSPREFIX "text-adjust";
 
 static const char    constSvgNamespace[] = "http://www.w3.org/2000/svg";
 
@@ -163,7 +145,7 @@ public:
         SvXMLElementExport aExp( *pSVGExport, XML_NAMESPACE_NONE, "g", true, true );
         pSVGExport->GetDocHandler()->characters( text );
     }
-    virtual ~FixedTextField() {}
+    virtual ~FixedTextField() override {}
 };
 
 
@@ -179,7 +161,7 @@ public:
     {
         implGrowCharSet( aTextFieldCharSets, text, aOOOAttrDateTimeField );
     }
-    virtual ~FixedDateTimeField() {}
+    virtual ~FixedDateTimeField() override {}
 };
 
 
@@ -196,7 +178,7 @@ public:
         static const OUString sFieldId = aOOOAttrFooterField;
         implGrowCharSet( aTextFieldCharSets, text, sFieldId );
     }
-    virtual ~FooterField() {}
+    virtual ~FooterField() override {}
 };
 
 
@@ -207,7 +189,7 @@ public:
     {
         return OUString( "VariableTextField" );
     }
-    virtual ~VariableTextField() {}
+    virtual ~VariableTextField() override {}
 };
 
 
@@ -292,7 +274,7 @@ public:
 
         OUString sDateTimeFormat = sDateFormat + " " + sTimeFormat;
 
-        pSVGExport->AddAttribute( XML_NAMESPACE_NONE, aOOOAttrDateTimeFormat, sDateTimeFormat );
+        pSVGExport->AddAttribute( XML_NAMESPACE_NONE, NSPREFIX "date-time-format", sDateTimeFormat );
         SvXMLElementExport aExp( *pSVGExport, XML_NAMESPACE_NONE, "g", true, true );
     }
     virtual void growCharSet( SVGFilter::UCharSetMapMap & aTextFieldCharSets ) const override
@@ -306,7 +288,7 @@ public:
             aTextFieldCharSets[ *aMasterPageIt ][ sFieldId ].insert( (sal_Unicode)( format ) );
         }
     }
-    virtual ~VariableDateTimeField() {}
+    virtual ~VariableDateTimeField() override {}
 };
 
 
@@ -373,48 +355,36 @@ SVGExport::SVGExport(
         XML_NAMESPACE_ANIMATION);
 }
 
-
 SVGExport::~SVGExport()
 {
     GetDocHandler()->endDocument();
 }
 
-
-ObjectRepresentation::ObjectRepresentation() :
-    mpMtf( nullptr )
+ObjectRepresentation::ObjectRepresentation()
 {
 }
-
 
 ObjectRepresentation::ObjectRepresentation( const Reference< XInterface >& rxObject,
                                             const GDIMetaFile& rMtf ) :
     mxObject( rxObject ),
-    mpMtf( new GDIMetaFile( rMtf ) )
+    mxMtf( new GDIMetaFile( rMtf ) )
 {
 }
-
 
 ObjectRepresentation::ObjectRepresentation( const ObjectRepresentation& rPresentation ) :
     mxObject( rPresentation.mxObject ),
-    mpMtf( rPresentation.mpMtf ? new GDIMetaFile( *rPresentation.mpMtf ) : nullptr )
+    mxMtf( rPresentation.mxMtf ? new GDIMetaFile( *rPresentation.mxMtf ) : nullptr )
 {
 }
-
-
-ObjectRepresentation::~ObjectRepresentation()
-{
-    delete mpMtf;
-}
-
 
 ObjectRepresentation& ObjectRepresentation::operator=( const ObjectRepresentation& rPresentation )
 {
     // Check for self-assignment
     if (this == &rPresentation)
         return *this;
+
     mxObject = rPresentation.mxObject;
-    delete mpMtf;
-    mpMtf = rPresentation.mpMtf ? new GDIMetaFile( *rPresentation.mpMtf ) : nullptr;
+    mxMtf.reset(rPresentation.mxMtf ? new GDIMetaFile(*rPresentation.mxMtf) : nullptr);
 
     return *this;
 }
@@ -935,19 +905,19 @@ void SVGFilter::implGenerateMetaData()
         // we wrap all meta presentation info into a svg:defs element
         SvXMLElementExport aDefsElem( *mpSVGExport, XML_NAMESPACE_NONE, "defs", true, true );
 
-        mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, "id", aOOOElemMetaSlides );
-        mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, aOOOAttrNumberOfSlides, OUString::number( nCount ) );
-        mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, aOOOAttrStartSlideNumber, OUString::number( mnVisiblePage ) );
+        mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, "id", NSPREFIX "meta_slides" );
+        mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, NSPREFIX "number-of-slides", OUString::number( nCount ) );
+        mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, NSPREFIX "start-slide-number", OUString::number( mnVisiblePage ) );
 
         if( mpSVGExport->IsUsePositionedCharacters() )
         {
-            mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, aOOOAttrUsePositionedChars, "true" );
+            mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, NSPREFIX "use-positioned-chars", "true" );
         }
 
         // Add a (global) Page Numbering Type attribute for the document
-        // NOTE: at present pSdrModel->GetPageNumType() returns always SVX_ARABIC
+        // NOTE: at present pSdrModel->GetPageNumType() returns always css::style::NumberingType::ARABIC
         // so the following code fragment is pretty unuseful
-        sal_Int32 nPageNumberingType =  SVX_ARABIC;
+        sal_Int32 nPageNumberingType = css::style::NumberingType::ARABIC;
         SvxDrawPage* pSvxDrawPage = SvxDrawPage::getImplementation( mSelectedPages[0] );
         if( pSvxDrawPage )
         {
@@ -958,37 +928,37 @@ void SVGFilter::implGenerateMetaData()
             // That is used by CalcFieldHdl method.
             mVisiblePagePropSet.nPageNumberingType = nPageNumberingType;
         }
-        if( nPageNumberingType != SVX_NUMBER_NONE )
+        if( nPageNumberingType != css::style::NumberingType::NUMBER_NONE )
         {
             OUString sNumberingType;
             switch( nPageNumberingType )
             {
-                case SVX_CHARS_UPPER_LETTER:
+                case css::style::NumberingType::CHARS_UPPER_LETTER:
                     sNumberingType = "alpha-upper";
                     break;
-                case SVX_CHARS_LOWER_LETTER:
+                case css::style::NumberingType::CHARS_LOWER_LETTER:
                     sNumberingType = "alpha-lower";
                     break;
-                case SVX_ROMAN_UPPER:
+                case css::style::NumberingType::ROMAN_UPPER:
                     sNumberingType = "roman-upper";
                     break;
-                case SVX_ROMAN_LOWER:
+                case css::style::NumberingType::ROMAN_LOWER:
                     sNumberingType = "roman-lower";
                     break;
-                case SVX_ARABIC:
+                case css::style::NumberingType::ARABIC:
                     // arabic numbering type is the default, so we do not append any attribute for it
                 default:
                     // in case the numbering type is not handled we fall back on arabic numbering
                     break;
             }
             if( !sNumberingType.isEmpty() )
-                mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, aOOOAttrNumberingType, sNumberingType );
+                mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, NSPREFIX "page-numbering-type", sNumberingType );
         }
 
 
         {
             SvXMLElementExport    aExp( *mpSVGExport, XML_NAMESPACE_NONE, "g", true, true );
-            const OUString                aId( aOOOElemMetaSlide );
+            const OUString                aId( NSPREFIX "meta_slide" );
             const OUString                aElemTextFieldId( aOOOElemTextField );
             std::vector< TextField* >     aFieldSet;
 
@@ -1045,10 +1015,10 @@ void SVGFilter::implGenerateMetaData()
 
                             //  Page Number Field
                             xPropSet->getPropertyValue( "IsPageNumberVisible" )  >>= bPageNumberVisibility;
-                            bPageNumberVisibility = bPageNumberVisibility && ( nPageNumberingType != SVX_NUMBER_NONE );
+                            bPageNumberVisibility = bPageNumberVisibility && ( nPageNumberingType != css::style::NumberingType::NUMBER_NONE );
                             if( bPageNumberVisibility ) // visibility default value: 'hidden'
                             {
-                                mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, aOOOAttrPageNumberVisibility, "visible" );
+                                mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, NSPREFIX "page-number-visibility", "visible" );
                             }
 
                             // Date/Time Field
@@ -1075,7 +1045,7 @@ void SVGFilter::implGenerateMetaData()
                             }
                             else
                             {
-                                mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, aOOOAttrDateTimeVisibility, "hidden" );
+                                mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, NSPREFIX "date-time-visibility", "hidden" );
                             }
 
                             // Footer Field
@@ -1091,7 +1061,7 @@ void SVGFilter::implGenerateMetaData()
                             }
                             else
                             {
-                                mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, aOOOAttrFooterVisibility, "hidden" );
+                                mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, NSPREFIX "footer-visibility", "hidden" );
                             }
                         }
                         else
@@ -1225,7 +1195,7 @@ void SVGFilter::implExportTextShapeIndex()
             if( !rPageId.isEmpty() && !sTextShapeIdList.isEmpty() )
             {
                 mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, aOOOAttrSlide, rPageId  );
-                mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, aOOOAttrIdList, sTextShapeIdList );
+                mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, NSPREFIX "id-list", sTextShapeIdList );
                 SvXMLElementExport aGElem( *mpSVGExport, XML_NAMESPACE_NONE, "g", true, true );
             }
         }
@@ -1391,7 +1361,7 @@ void SVGFilter::implGetPagePropSet( const Reference< XDrawPage > & rxPage )
     mVisiblePagePropSet.bIsDateTimeFieldVisible             = true;
     mVisiblePagePropSet.bIsDateTimeFieldFixed               = true;
     mVisiblePagePropSet.nDateTimeFormat                     = SVXDATEFORMAT_B;
-    mVisiblePagePropSet.nPageNumberingType                  = SVX_ARABIC;
+    mVisiblePagePropSet.nPageNumberingType                  = css::style::NumberingType::ARABIC;
 
     //  We collect info on master page elements visibility, and placeholder text shape content.
     Reference< XPropertySet > xPropSet( rxPage, UNO_QUERY );
@@ -1779,7 +1749,7 @@ bool SVGFilter::implExportShape( const Reference< XShape >& rxShape, bool bMaste
                                 default:
                                     break;
                             }
-                            mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, aOOOAttrTextAdjust, sTextAdjust );
+                            mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, NSPREFIX "text-adjust", sTextAdjust );
                         }
                     }
                     mpSVGExport->AddAttribute( XML_NAMESPACE_NONE, "class", aShapeClass );
@@ -1969,9 +1939,9 @@ bool SVGFilter::implCreateObjectsFromShape( const Reference< XDrawPage > & rxPag
         {
             Graphic aGraphic( SdrExchangeView::GetObjGraphic( pObj->GetModel(), pObj ) );
 
-            if( aGraphic.GetType() != GRAPHIC_NONE )
+            if( aGraphic.GetType() != GraphicType::NONE )
             {
-                if( aGraphic.GetType() == GRAPHIC_BITMAP )
+                if( aGraphic.GetType() == GraphicType::Bitmap )
                 {
                     GDIMetaFile    aMtf;
                     const Point    aNullPt;
@@ -1979,7 +1949,7 @@ bool SVGFilter::implCreateObjectsFromShape( const Reference< XDrawPage > & rxPag
 
                     aMtf.AddAction( new MetaBmpExScaleAction( aNullPt, aSize, aGraphic.GetBitmapEx() ) );
                     aMtf.SetPrefSize( aSize );
-                    aMtf.SetPrefMapMode( MAP_100TH_MM );
+                    aMtf.SetPrefMapMode( MapUnit::Map100thMM );
 
                     (*mpObjects)[ rxShape ] = ObjectRepresentation( rxShape, aMtf );
                 }
@@ -2044,14 +2014,14 @@ bool SVGFilter::implCreateObjectsFromShape( const Reference< XDrawPage > & rxPag
                                             pAction->Duplicate();
                                             aEmbeddedBitmapMtf.AddAction( pAction );
                                             aEmbeddedBitmapMtf.SetPrefSize( aSize );
-                                            aEmbeddedBitmapMtf.SetPrefMapMode( MAP_100TH_MM );
+                                            aEmbeddedBitmapMtf.SetPrefMapMode( MapUnit::Map100thMM );
                                             mEmbeddedBitmapActionSet.insert( ObjectRepresentation( rxShape, aEmbeddedBitmapMtf ) );
                                             pAction->Duplicate();
                                             aMtf.AddAction( pAction );
                                         }
                                     }
                                     aMtf.SetPrefSize( aSize );
-                                    aMtf.SetPrefMapMode( MAP_100TH_MM );
+                                    aMtf.SetPrefMapMode( MapUnit::Map100thMM );
                                     mEmbeddedBitmapActionMap[ rxShape ] = ObjectRepresentation( rxShape, aMtf );
                                 }
                             }
@@ -2148,7 +2118,7 @@ OUString SVGFilter::implGetInterfaceName( const Reference< XInterface >& rxIf )
 }
 
 
-IMPL_LINK_TYPED( SVGFilter, CalcFieldHdl, EditFieldInfo*, pInfo, void )
+IMPL_LINK( SVGFilter, CalcFieldHdl, EditFieldInfo*, pInfo, void )
 {
     bool bFieldProcessed = false;
     if( pInfo && mbPresentation )
@@ -2168,7 +2138,7 @@ IMPL_LINK_TYPED( SVGFilter, CalcFieldHdl, EditFieldInfo*, pInfo, void )
             }
             bool bHasCharSetMap = !( mTextFieldCharSets.find( mCreateOjectsCurrentMasterPage ) == mTextFieldCharSets.end() );
 
-            static const OUString aHeaderId( aOOOAttrHeaderField );
+            static const OUString aHeaderId( NSPREFIX "header-field" );
             static const OUString aFooterId( aOOOAttrFooterField );
             static const OUString aDateTimeId( aOOOAttrDateTimeField );
             static const OUString aVariableDateTimeId( aOOOAttrDateTimeField + "-variable" );
@@ -2286,20 +2256,20 @@ IMPL_LINK_TYPED( SVGFilter, CalcFieldHdl, EditFieldInfo*, pInfo, void )
             {
                 switch( mVisiblePagePropSet.nPageNumberingType )
                 {
-                    case SVX_CHARS_UPPER_LETTER:
+                    case css::style::NumberingType::CHARS_UPPER_LETTER:
                         aRepresentation += "QWERTYUIOPASDFGHJKLZXCVBNM";
                         break;
-                    case SVX_CHARS_LOWER_LETTER:
+                    case css::style::NumberingType::CHARS_LOWER_LETTER:
                         aRepresentation += "qwertyuiopasdfghjklzxcvbnm";
                         break;
-                    case SVX_ROMAN_UPPER:
+                    case css::style::NumberingType::ROMAN_UPPER:
                         aRepresentation += "IVXLCDM";
                         break;
-                    case SVX_ROMAN_LOWER:
+                    case css::style::NumberingType::ROMAN_LOWER:
                         aRepresentation += "ivxlcdm";
                         break;
                     // arabic numbering type is the default
-                    case SVX_ARABIC:
+                    case css::style::NumberingType::ARABIC:
                     // in case the numbering type is not handled we fall back on arabic numbering
                     default:
                         aRepresentation += "0123456789";
@@ -2317,7 +2287,7 @@ IMPL_LINK_TYPED( SVGFilter, CalcFieldHdl, EditFieldInfo*, pInfo, void )
                     UCharSet::const_iterator aChar = pCharSet->begin();
                     for( ; aChar != pCharSet->end(); ++aChar )
                     {
-                        aRepresentation += OUString( *aChar );
+                        aRepresentation += OUStringLiteral1( *aChar );
                     }
                 }
                 pInfo->SetRepresentation( aRepresentation );
@@ -2336,7 +2306,7 @@ IMPL_LINK_TYPED( SVGFilter, CalcFieldHdl, EditFieldInfo*, pInfo, void )
 
 void SVGExport::writeMtf( const GDIMetaFile& rMtf )
 {
-    const Size aSize( OutputDevice::LogicToLogic( rMtf.GetPrefSize(), rMtf.GetPrefMapMode(), MAP_MM ) );
+    const Size aSize( OutputDevice::LogicToLogic( rMtf.GetPrefSize(), rMtf.GetPrefMapMode(), MapUnit::MapMM ) );
     rtl::OUString aAttr;
     Reference< XExtendedDocumentHandler> xExtDocHandler( GetDocHandler(), UNO_QUERY );
 
@@ -2375,8 +2345,8 @@ void SVGExport::writeMtf( const GDIMetaFile& rMtf )
         aObjects.push_back( ObjectRepresentation( Reference< XInterface >(), rMtf ) );
         SVGFontExport aSVGFontExport( *this, aObjects );
 
-        Point aPoint100thmm( OutputDevice::LogicToLogic( rMtf.GetPrefMapMode().GetOrigin(), rMtf.GetPrefMapMode(), MAP_100TH_MM ) );
-        Size  aSize100thmm( OutputDevice::LogicToLogic( rMtf.GetPrefSize(), rMtf.GetPrefMapMode(), MAP_100TH_MM ) );
+        Point aPoint100thmm( OutputDevice::LogicToLogic( rMtf.GetPrefMapMode().GetOrigin(), rMtf.GetPrefMapMode(), MapUnit::Map100thMM ) );
+        Size  aSize100thmm( OutputDevice::LogicToLogic( rMtf.GetPrefSize(), rMtf.GetPrefMapMode(), MapUnit::Map100thMM ) );
 
         SVGActionWriter aWriter( *this, aSVGFontExport );
         aWriter.WriteMetaFile( aPoint100thmm, aSize100thmm, rMtf,

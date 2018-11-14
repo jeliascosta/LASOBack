@@ -101,23 +101,24 @@ enum AutoLayout
     AUTOLAYOUT_END
 };
 
-enum PageKind
+enum class PageKind
 {
-    PK_STANDARD,
-    PK_NOTES,
-    PK_HANDOUT
+    Standard,
+    Notes,
+    Handout,
+    LAST = Handout
 };
 
-enum EditMode
+enum class EditMode
 {
-    EM_PAGE,
-    EM_MASTERPAGE
+    Page,
+    MasterPage
 };
 
-enum DocumentType
+enum class DocumentType
 {
-    DOCUMENT_TYPE_IMPRESS,
-    DOCUMENT_TYPE_DRAW
+    Impress,
+    Draw
 };
 
 enum NavigatorDragType

@@ -21,6 +21,7 @@
 #include <comphelper/string.hxx>
 #include <editeng/unolingu.hxx>
 #include <editeng/langitem.hxx>
+#include <o3tl/any.hxx>
 #include <o3tl/make_unique.hxx>
 #include <swtypes.hxx>
 #include <tools/resid.hxx>
@@ -383,7 +384,7 @@ bool SwAuthorityFieldType::QueryValue( Any& rVal, sal_uInt16 nWhichId ) const
         }
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -413,10 +414,10 @@ bool    SwAuthorityFieldType::PutValue( const Any& rAny, sal_uInt16 nWhichId )
         break;
     }
     case FIELD_PROP_BOOL1:
-        m_bIsSequence = *static_cast<sal_Bool const *>(rAny.getValue());
+        m_bIsSequence = *o3tl::doAccess<bool>(rAny);
         break;
     case FIELD_PROP_BOOL2:
-        m_bSortByDocument = *static_cast<sal_Bool const *>(rAny.getValue());
+        m_bSortByDocument = *o3tl::doAccess<bool>(rAny);
         break;
 
     case FIELD_PROP_LOCALE:
@@ -450,7 +451,7 @@ bool    SwAuthorityFieldType::PutValue( const Any& rAny, sal_uInt16 nWhichId )
                         }
                         else if(pValue[j].Name == UNO_NAME_IS_SORT_ASCENDING)
                         {
-                            aSortKey.bSortAscending = *static_cast<sal_Bool const *>(pValue[j].Value.getValue());
+                            aSortKey.bSortAscending = *o3tl::doAccess<bool>(pValue[j].Value);
                         }
                     }
                     m_SortKeyArr.push_back(aSortKey);
@@ -459,7 +460,7 @@ bool    SwAuthorityFieldType::PutValue( const Any& rAny, sal_uInt16 nWhichId )
         }
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return bRet;
 }
@@ -541,7 +542,7 @@ OUString SwAuthorityField::ConditionalExpandAuthIdentifier() const
             sRet += pEntry->GetAuthorField(AUTH_FIELD_IDENTIFIER);
     }
     if(pAuthType->GetSuffix())
-        sRet += OUString(pAuthType->GetSuffix());
+        sRet += OUStringLiteral1(pAuthType->GetSuffix());
     return sRet;
 }
 

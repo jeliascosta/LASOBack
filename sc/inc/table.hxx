@@ -25,6 +25,7 @@
 #include <tools/gen.hxx>
 #include <tools/color.hxx>
 #include <com/sun/star/uno/Sequence.hxx>
+#include "attarray.hxx"
 #include "column.hxx"
 #include "colcontainer.hxx"
 #include "sortparam.hxx"
@@ -34,6 +35,7 @@
 #include "cellvalue.hxx"
 #include <formula/types.hxx>
 #include "calcmacros.hxx"
+#include "formula/errorcodes.hxx"
 
 #include <set>
 #include <map>
@@ -145,8 +147,8 @@ private:
     sal_uInt16*         pColWidth;
     std::unique_ptr<ScFlatUInt16RowSegments> mpRowHeights;
 
-    sal_uInt8*          pColFlags;
-    ScBitMaskCompressedArray< SCROW, sal_uInt8>*     pRowFlags;
+    CRFlags*            pColFlags;
+    ScBitMaskCompressedArray< SCROW, CRFlags>*     pRowFlags;
     std::unique_ptr<ScFlatBoolColSegments>  mpHiddenCols;
     std::unique_ptr<ScFlatBoolRowSegments>  mpHiddenRows;
     std::unique_ptr<ScFlatBoolColSegments>  mpFilteredCols;
@@ -184,7 +186,7 @@ private:
     ScRangeList*    pScenarioRanges;
     Color           aScenarioColor;
     Color           aTabBgColor;
-    sal_uInt16          nScenarioFlags;
+    ScScenarioFlags nScenarioFlags;
     ScDBData*       pDBDataNoName;
     mutable ScRangeName* mpRangeName;
 
@@ -205,7 +207,10 @@ private:
     bool            mbPageBreaksValid:1;
     bool            mbForceBreaks:1;
 
+    ScAttrArray     aNextColAttrArray;
+
 friend class ScDocument;                    // for FillInfo
+friend class ScColumn;
 friend class ScValueIterator;
 friend class ScHorizontalValueIterator;
 friend class ScDBQueryDataIterator;
@@ -279,8 +284,8 @@ public:
     void         SetScenarioColor(const Color& rNew)         { aScenarioColor = rNew; }
     const Color& GetTabBgColor() const                       { return aTabBgColor; }
     void         SetTabBgColor(const Color& rColor);
-    sal_uInt16  GetScenarioFlags() const                     { return nScenarioFlags; }
-    void        SetScenarioFlags(sal_uInt16 nNew)            { nScenarioFlags = nNew; }
+    ScScenarioFlags GetScenarioFlags() const                 { return nScenarioFlags; }
+    void        SetScenarioFlags(ScScenarioFlags nNew)       { nScenarioFlags = nNew; }
     void        SetActiveScenario(bool bSet)                 { bActiveScenario = bSet; }
     bool        IsActiveScenario() const                     { return bActiveScenario; }
 
@@ -331,7 +336,7 @@ public:
     bool        HasBlockMatrixFragment( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2 ) const;
     bool        HasSelectionMatrixFragment( const ScMarkData& rMark ) const;
 
-    bool        IsBlockEmpty( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2, bool bIgnoreNotes = false ) const;
+    bool        IsBlockEmpty( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2, bool bIgnoreNotes ) const;
 
     bool        SetString( SCCOL nCol, SCROW nRow, SCTAB nTab, const OUString& rString,
                            ScSetStringParam* pParam = nullptr );
@@ -362,7 +367,7 @@ public:
 
     void        SetValue( SCCOL nCol, SCROW nRow, const double& rVal );
     void        SetValues( SCCOL nCol, SCROW nRow, const std::vector<double>& rVals );
-    void        SetError( SCCOL nCol, SCROW nRow, sal_uInt16 nError);
+    void        SetError( SCCOL nCol, SCROW nRow, FormulaError nError);
     SCSIZE      GetPatternCount( SCCOL nCol ) const;
     SCSIZE      GetPatternCount( SCCOL nCol, SCROW nRow1, SCROW nRow2 ) const;
     bool        ReservePatternCount( SCCOL nCol, SCSIZE nReserve );
@@ -395,7 +400,7 @@ public:
     size_t GetNoteCount( SCCOL nCol ) const;
     SCROW GetNotePosition( SCCOL nCol, size_t nIndex ) const;
     void CreateAllNoteCaptions();
-    void ForgetNoteCaptions( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2 );
+    void ForgetNoteCaptions( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2, bool bPreserveData );
 
     void GetAllNoteEntries( std::vector<sc::NoteEntry>& rNotes ) const;
     void GetNotesInRange( const ScRange& rRange, std::vector<sc::NoteEntry>& rNotes ) const;
@@ -405,13 +410,13 @@ public:
     void        InsertRow( SCCOL nStartCol, SCCOL nEndCol, SCROW nStartRow, SCSIZE nSize );
     void DeleteRow(
         const sc::ColumnSet& rRegroupCols, SCCOL nStartCol, SCCOL nEndCol, SCROW nStartRow, SCSIZE nSize,
-        bool* pUndoOutline = nullptr, std::vector<ScAddress>* pGroupPos = nullptr );
+        bool* pUndoOutline, std::vector<ScAddress>* pGroupPos );
 
     bool        TestInsertCol( SCROW nStartRow, SCROW nEndRow, SCSIZE nSize ) const;
     void InsertCol(
         const sc::ColumnSet& rRegroupCols, SCCOL nStartCol, SCROW nStartRow, SCROW nEndRow, SCSIZE nSize );
     void DeleteCol(
-        const sc::ColumnSet& rRegroupCols, SCCOL nStartCol, SCROW nStartRow, SCROW nEndRow, SCSIZE nSize, bool* pUndoOutline = nullptr );
+        const sc::ColumnSet& rRegroupCols, SCCOL nStartCol, SCROW nStartRow, SCROW nEndRow, SCSIZE nSize, bool* pUndoOutline );
 
     void DeleteArea(
         SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2, InsertDeleteFlags nDelFlag,
@@ -477,7 +482,7 @@ public:
     void        CopyScenarioFrom( const ScTable* pSrcTab );
     void        CopyScenarioTo( ScTable* pDestTab ) const;
     bool        TestCopyScenarioTo( const ScTable* pDestTab ) const;
-    void        MarkScenarioIn( ScMarkData& rMark, sal_uInt16 nNeededBits ) const;
+    void        MarkScenarioIn(ScMarkData& rMark, ScScenarioFlags nNeededBits) const;
     bool        HasScenarioRange( const ScRange& rRange ) const;
     void        InvalidateScenarioRanges();
     const ScRangeList* GetScenarioRanges() const;
@@ -505,7 +510,7 @@ public:
 
     bool        ShrinkToUsedDataArea( bool& o_bShrunk, SCCOL& rStartCol, SCROW& rStartRow,
                                       SCCOL& rEndCol, SCROW& rEndRow, bool bColumnsOnly,
-                                      bool bStickyTopRow, bool bStickyLeftCol ) const;
+                                      bool bStickyTopRow, bool bStickyLeftCol, bool bConsiderCellNotes=false ) const;
 
     SCROW GetLastDataRow( SCCOL nCol1, SCCOL nCol2, SCROW nLastRow ) const;
 
@@ -524,15 +529,16 @@ public:
     bool        HasStringCells( SCCOL nStartCol, SCROW nStartRow,
                                 SCCOL nEndCol, SCROW nEndRow ) const;
 
-    sal_uInt16      GetErrCode( const ScAddress& rPos ) const
+    FormulaError    GetErrCode( const ScAddress& rPos ) const
                     {
                         return ValidColRow(rPos.Col(),rPos.Row()) ?
                             aCol[rPos.Col()].GetErrCode( rPos.Row() ) :
-                            0;
+                            FormulaError::NONE;
                     }
 
     void        ResetChanged( const ScRange& rRange );
 
+    void CheckVectorizationState();
     void SetAllFormulasDirty( const sc::SetFormulaDirtyContext& rCxt );
     void        SetDirty( const ScRange&, ScColumn::BroadcastMode );
     void        SetDirtyAfterLoad();
@@ -550,7 +556,7 @@ public:
                 position broadcasted. */
     bool BroadcastBroadcasters( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2, ScHint& rHint );
 
-    bool CompileErrorCells( sc::CompileFormulaContext& rCxt, sal_uInt16 nErrCode );
+    bool CompileErrorCells( sc::CompileFormulaContext& rCxt, FormulaError nErrCode );
 
     void UpdateReference(
         sc::RefUpdateContext& rCxt, ScDocument* pUndoDoc = nullptr,
@@ -588,8 +594,8 @@ public:
 
     void        FindMaxRotCol( RowInfo* pRowInfo, SCSIZE nArrCount, SCCOL nX1, SCCOL nX2 );
 
-    bool        HasAttrib( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2, sal_uInt16 nMask ) const;
-    bool        HasAttribSelection( const ScMarkData& rMark, sal_uInt16 nMask ) const;
+    bool        HasAttrib( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2, HasAttrFlags nMask ) const;
+    bool        HasAttribSelection( const ScMarkData& rMark, HasAttrFlags nMask ) const;
     bool IsMerged( SCCOL nCol, SCROW nRow ) const;
     bool        ExtendMerge( SCCOL nStartCol, SCROW nStartRow,
                                 SCCOL& rEndCol, SCROW& rEndRow,
@@ -633,7 +639,7 @@ public:
     void        AddCondFormatData( const ScRangeList& rRange, sal_uInt32 nIndex );
     void        RemoveCondFormatData( const ScRangeList& rRange, sal_uInt32 nIndex );
 
-    void        ApplyStyle( SCCOL nCol, SCROW nRow, const ScStyleSheet& rStyle );
+    void        ApplyStyle( SCCOL nCol, SCROW nRow, const ScStyleSheet* rStyle );
     void        ApplyStyleArea( SCCOL nStartCol, SCROW nStartRow, SCCOL nEndCol, SCROW nEndRow, const ScStyleSheet& rStyle );
     void        ApplySelectionStyle(const ScStyleSheet& rStyle, const ScMarkData& rMark);
     void        ApplySelectionLineStyle( const ScMarkData& rMark,
@@ -718,7 +724,7 @@ public:
 
     sal_uInt16      GetColWidth( SCCOL nCol, bool bHiddenAsZero = true ) const;
     sal_uLong GetColWidth( SCCOL nStartCol, SCCOL nEndCol ) const;
-    SC_DLLPUBLIC sal_uInt16 GetRowHeight( SCROW nRow, SCROW* pStartRow = nullptr, SCROW* pEndRow = nullptr, bool bHiddenAsZero = true ) const;
+    SC_DLLPUBLIC sal_uInt16 GetRowHeight( SCROW nRow, SCROW* pStartRow, SCROW* pEndRow = nullptr, bool bHiddenAsZero = true ) const;
     sal_uLong       GetRowHeight( SCROW nStartRow, SCROW nEndRow, bool bHiddenAsZero = true ) const;
     sal_uLong       GetScaledRowHeight( SCROW nStartRow, SCROW nEndRow, double fScale ) const;
     sal_uLong       GetColOffset( SCCOL nCol, bool bHiddenAsZero = true ) const;
@@ -748,8 +754,8 @@ public:
     void        ShowRows(SCROW nRow1, SCROW nRow2, bool bShow);
     void        DBShowRows(SCROW nRow1, SCROW nRow2, bool bShow);
 
-    void        SetRowFlags( SCROW nRow, sal_uInt8 nNewFlags );
-    void        SetRowFlags( SCROW nStartRow, SCROW nEndRow, sal_uInt8 nNewFlags );
+    void        SetRowFlags( SCROW nRow, CRFlags nNewFlags );
+    void        SetRowFlags( SCROW nStartRow, SCROW nEndRow, CRFlags nNewFlags );
 
                 /// @return  the index of the last row with any set flags (auto-pagebreak is ignored).
     SCROW      GetLastFlaggedRow() const;
@@ -761,10 +767,10 @@ public:
 
     bool       IsDataFiltered(SCCOL nColStart, SCROW nRowStart, SCCOL nColEnd, SCROW nRowEnd) const;
     bool       IsDataFiltered(const ScRange& rRange) const;
-    sal_uInt8       GetColFlags( SCCOL nCol ) const;
-    sal_uInt8       GetRowFlags( SCROW nRow ) const;
+    CRFlags    GetColFlags( SCCOL nCol ) const;
+    CRFlags    GetRowFlags( SCROW nRow ) const;
 
-    const ScBitMaskCompressedArray< SCROW, sal_uInt8> * GetRowFlagsArray() const
+    const ScBitMaskCompressedArray< SCROW, CRFlags> * GetRowFlagsArray() const
                     { return pRowFlags; }
 
     bool        UpdateOutlineCol( SCCOL nStartCol, SCCOL nEndCol, bool bShow );
@@ -844,7 +850,7 @@ public:
         const ScSortParam& rSortParam, bool bKeepQuery, bool bUpdateRefs,
         ScProgress* pProgress, sc::ReorderParam* pUndo );
 
-    void Reorder( const sc::ReorderParam& rParam, ScProgress* pProgress );
+    void Reorder( const sc::ReorderParam& rParam );
 
     bool ValidQuery(
         SCROW nRow, const ScQueryParam& rQueryParam, ScRefCellValue* pCell = nullptr,
@@ -913,14 +919,13 @@ public:
     SvtBroadcaster* GetBroadcaster( SCCOL nCol, SCROW nRow );
     const SvtBroadcaster* GetBroadcaster( SCCOL nCol, SCROW nRow ) const;
     void DeleteBroadcasters( sc::ColumnBlockPosition& rBlockPos, SCCOL nCol, SCROW nRow1, SCROW nRow2 );
-    bool HasBroadcaster( SCCOL nCol ) const;
 
-    void FillMatrix( ScMatrix& rMat, SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2, svl::SharedStringPool* pPool = nullptr ) const;
+    void FillMatrix( ScMatrix& rMat, SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2, svl::SharedStringPool* pPool ) const;
 
     void InterpretDirtyCells( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2 );
 
     void SetFormulaResults( SCCOL nCol, SCROW nRow, const double* pResults, size_t nLen );
-    void SetFormulaResults( SCCOL nCol, SCROW nRow, const formula::FormulaTokenRef* pResults, size_t nLen );
+    void SetFormulaResults( SCCOL nCol, SCROW nRow, const formula::FormulaConstTokenRef* pResults, size_t nLen );
 
     /**
      * Either start all formula cells as listeners unconditionally, or start
@@ -962,8 +967,8 @@ public:
 
     void finalizeOutlineImport();
 
-#if DEBUG_COLUMN_STORAGE
-    void DumpFormulaGroups( SCCOL nCol ) const;
+#if DUMP_COLUMN_STORAGE
+    void DumpColumnStorage( SCCOL nCol ) const;
 #endif
 
     /** Replace behaves differently to the Search; adjust the rCol and rRow accordingly.
@@ -1124,11 +1129,11 @@ private:
     const ScColumn* FetchColumn( SCCOL nCol ) const;
 
     void EndListeningIntersectedGroup(
-        sc::EndListeningContext& rCxt, SCCOL nCol, SCROW nRow, std::vector<ScAddress>* pGroupPos = nullptr );
+        sc::EndListeningContext& rCxt, SCCOL nCol, SCROW nRow, std::vector<ScAddress>* pGroupPos );
 
     void EndListeningIntersectedGroups(
         sc::EndListeningContext& rCxt, SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2,
-        std::vector<ScAddress>* pGroupPos = nullptr );
+        std::vector<ScAddress>* pGroupPos );
 
     void EndListeningGroup( sc::EndListeningContext& rCxt, SCCOL nCol, SCROW nRow );
     void SetNeedsListeningGroup( SCCOL nCol, SCROW nRow );

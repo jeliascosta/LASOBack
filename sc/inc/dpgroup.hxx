@@ -139,7 +139,7 @@ class ScDPGroupTableData : public ScDPTableData
 public:
                 // takes ownership of pSource
                 ScDPGroupTableData( const std::shared_ptr<ScDPTableData>& pSource, ScDocument* pDocument );
-    virtual     ~ScDPGroupTableData();
+    virtual     ~ScDPGroupTableData() override;
 
     const std::shared_ptr<ScDPTableData>& GetSourceTableData() const { return pSourceData;}
 
@@ -179,8 +179,8 @@ public:
     virtual bool                    HasCommonElement( const ScDPItemData& rFirstData, long nFirstIndex,
                                                       const ScDPItemData& rSecondData, long nSecondIndex ) const override;
 
-#if DEBUG_PIVOT_TABLE
-    virtual void Dump() const;
+#if DUMP_PIVOT_TABLE
+    virtual void Dump() const override;
 #endif
 };
 

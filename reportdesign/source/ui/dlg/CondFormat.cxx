@@ -18,7 +18,6 @@
  */
 
 #include "CondFormat.hxx"
-#include "CondFormat.hrc"
 
 #include "uistrings.hrc"
 #include "RptResId.hrc"
@@ -314,7 +313,7 @@ namespace rptui
         impl_ensureConditionVisible( nNewConditionIndex );
     }
 
-    IMPL_LINK_TYPED( ConditionalFormattingDialog, OnScroll, ScrollBar*, /*_pNotInterestedIn*/, void )
+    IMPL_LINK( ConditionalFormattingDialog, OnScroll, ScrollBar*, /*_pNotInterestedIn*/, void )
     {
         size_t nFirstCondIndex( impl_getFirstVisibleConditionIndex() );
         size_t nFocusCondIndex = impl_getFocusedConditionIndex( nFirstCondIndex );
@@ -342,7 +341,7 @@ namespace rptui
         impl_layoutConditions();
 
         // scrollbar visibility
-        if ( !impl_needScrollBar() )
+        if ( m_aConditions.size() <= MAX_CONDITIONS )
             // normalize the position, so it can, in all situations, be used as top index
             m_pCondScroll->SetThumbPos( 0 );
     }

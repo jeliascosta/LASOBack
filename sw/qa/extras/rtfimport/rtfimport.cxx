@@ -98,7 +98,7 @@ public:
 
 protected:
     /// Copy&paste helper.
-    void paste(const OUString& aFilename, uno::Reference<text::XTextRange> xTextRange = uno::Reference<text::XTextRange>())
+    void paste(const OUString& aFilename, uno::Reference<text::XTextRange> const& xTextRange = uno::Reference<text::XTextRange>())
     {
         uno::Reference<document::XFilter> xFilter(m_xSFactory->createInstance("com.sun.star.comp.Writer.RtfFilter"), uno::UNO_QUERY_THROW);
         uno::Reference<document::XImporter> xImporter(xFilter, uno::UNO_QUERY_THROW);
@@ -147,7 +147,7 @@ DECLARE_RTFIMPORT_TEST(testN192129, "n192129.rtf")
 {
     // We expect that the result will be 16x16px.
     Size aExpectedSize(16, 16);
-    MapMode aMap(MAP_100TH_MM);
+    MapMode aMap(MapUnit::Map100thMM);
     aExpectedSize = Application::GetDefaultDevice()->PixelToLogic(aExpectedSize, aMap);
 
     uno::Reference<text::XTextGraphicObjectsSupplier> xTextGraphicObjectsSupplier(mxComponent, uno::UNO_QUERY);
@@ -1099,6 +1099,16 @@ DECLARE_RTFIMPORT_TEST(testFdo59419, "fdo59419.rtf")
     CPPUNIT_ASSERT_EQUAL(sal_Int32(1), xTables->getCount());
 }
 
+DECLARE_RTFIMPORT_TEST(testHexCRLF, "hexcrlf.rtf")
+{
+    // hex-escaped \r and \n should create a paragraph break
+    getParagraph(1, "foo");
+    getParagraph(2, "bar");
+    getParagraph(3, "baz");
+    getParagraph(4, "");
+    getParagraph(5, "quux");
+}
+
 DECLARE_RTFIMPORT_TEST(testFdo58076_2, "fdo58076-2.rtf")
 {
     // Position of the picture wasn't correct.
@@ -1316,6 +1326,15 @@ DECLARE_RTFIMPORT_TEST(testN825305, "n825305.rtf")
     uno::Reference<beans::XPropertyState> xPropertyState(getShape(2), uno::UNO_QUERY);
     CPPUNIT_ASSERT_EQUAL(sal_Int32(100), getProperty<sal_Int32>(getShape(2), "BackColorTransparency"));
     beans::PropertyState ePropertyState = xPropertyState->getPropertyState("BackColorTransparency");
+    // Was beans::PropertyState_DEFAULT_VALUE.
+    CPPUNIT_ASSERT_EQUAL(beans::PropertyState_DIRECT_VALUE, ePropertyState);
+}
+
+DECLARE_RTFIMPORT_TEST(testTdf106953, "tdf106953.rtf")
+{
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(1270), getProperty<sal_Int32>(getParagraph(1), "ParaLeftMargin"));
+    uno::Reference<beans::XPropertyState> xPropertyState(getParagraph(1), uno::UNO_QUERY);
+    beans::PropertyState ePropertyState = xPropertyState->getPropertyState("ParaLeftMargin");
     // Was beans::PropertyState_DEFAULT_VALUE.
     CPPUNIT_ASSERT_EQUAL(beans::PropertyState_DIRECT_VALUE, ePropertyState);
 }
@@ -1687,8 +1706,8 @@ DECLARE_RTFIMPORT_TEST(testContSectionPageBreak, "cont-section-pagebreak.rtf")
     // SECOND and THIRD - important is that the page break is on there
     uno::Reference<text::XTextRange> xParaNext = getParagraph(3);
     CPPUNIT_ASSERT_EQUAL(OUString(""), xParaNext->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("Converted1"),
-                         getProperty<OUString>(xParaNext, "PageDescName"));
+    //If PageDescName is not empty, a page break / switch to page style is defined
+    CPPUNIT_ASSERT(uno::Any() != getProperty<OUString>(xParaNext, "PageDescName"));
     uno::Reference<text::XTextRange> xParaThird = getParagraph(4);
     CPPUNIT_ASSERT_EQUAL(OUString("THIRD"), xParaThird->getString());
     CPPUNIT_ASSERT_EQUAL(style::BreakType_NONE,
@@ -2704,6 +2723,56 @@ DECLARE_RTFIMPORT_TEST(testTdf44986, "tdf44986.rtf")
     // Check the first row of the table, it should have two cells (one separator).
     // This was 0: the first row had no separators, so it had only one cell, which was too wide.
     CPPUNIT_ASSERT_EQUAL(sal_Int32(1), getProperty< uno::Sequence<text::TableColumnSeparator> >(xTableRows->getByIndex(0), "TableColumnSeparators").getLength());
+}
+
+DECLARE_RTFIMPORT_TEST(testTdf90697, "tdf90697.rtf")
+{
+    // We want section breaks to be seen as section breaks, not as page breaks,
+    // so this document should have only one page, not three.
+    CPPUNIT_ASSERT_EQUAL(1, getPages());
+}
+
+DECLARE_RTFIMPORT_TEST(testTdf104317, "tdf104317.rtf")
+{
+    // This failed to load, we tried to set CustomShapeGeometry on a line shape.
+    uno::Reference<drawing::XDrawPageSupplier> xDrawPageSupplier(mxComponent, uno::UNO_QUERY);
+    uno::Reference<drawing::XDrawPage> xDrawPage = xDrawPageSupplier->getDrawPage();
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(1), xDrawPage->getCount());
+}
+
+DECLARE_RTFIMPORT_TEST(testTdf104744, "tdf104744.rtf")
+{
+    // This was 0, as an unexpected "left margin is 0" token was created during
+    // import.
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(1270), getProperty<sal_Int32>(getParagraph(1), "ParaLeftMargin"));
+}
+
+DECLARE_RTFIMPORT_TEST(testTdf104287, "tdf104287.rtf")
+{
+    uno::Reference<text::XTextContent> xShape(getShape(1), uno::UNO_QUERY);
+    CPPUNIT_ASSERT(xShape.is());
+    // This failed, the bitmap had no valid anchor.
+    CPPUNIT_ASSERT(xShape->getAnchor().is());
+}
+
+DECLARE_RTFIMPORT_TEST(testTdf105729, "tdf105729.rtf")
+{
+    // This was style::ParagraphAdjust_LEFT, \ltrpar undone the effect of \qc from style.
+    CPPUNIT_ASSERT_EQUAL(style::ParagraphAdjust_CENTER, static_cast<style::ParagraphAdjust>(getProperty<sal_Int16>(getParagraph(1), "ParaAdjust")));
+}
+
+DECLARE_RTFIMPORT_TEST(testTdf106694, "tdf106694.rtf")
+{
+    auto aTabs = getProperty< uno::Sequence<style::TabStop> >(getParagraph(1), "ParaTabStops");
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(1), aTabs.getLength());
+    // This was 0, tab position was incorrect, looked like it was missing.
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(14605), aTabs[0].Position);
+}
+
+DECLARE_RTFIMPORT_TEST(testTdf107116, "tdf107116.rtf")
+{
+    // This was 0, upper border around text (and its distance) was missing.
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(convertTwipToMm100(120)), getProperty<sal_Int32>(getParagraph(2), "TopBorderDistance"));
 }
 
 CPPUNIT_PLUGIN_IMPLEMENT();

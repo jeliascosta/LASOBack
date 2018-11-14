@@ -71,16 +71,16 @@ ScNoteMarker::~ScNoteMarker()
     delete pModel;
 }
 
-IMPL_LINK_NOARG_TYPED(ScNoteMarker, TimeHdl, Timer *, void)
+IMPL_LINK_NOARG(ScNoteMarker, TimeHdl, Timer *, void)
 {
     if (!bVisible)
     {
         SvtPathOptions aPathOpt;
         OUString aPath = aPathOpt.GetPalettePath();
         pModel = new SdrModel(aPath, nullptr, nullptr, false);
-        pModel->SetScaleUnit(MAP_100TH_MM);
+        pModel->SetScaleUnit(MapUnit::Map100thMM);
         SfxItemPool& rPool = pModel->GetItemPool();
-        rPool.SetDefaultMetric(SFX_MAPUNIT_100TH_MM);
+        rPool.SetDefaultMetric(MapUnit::Map100thMM);
         rPool.FreezeIdRanges();
 
         OutputDevice* pPrinter = pDoc->GetRefDevice();

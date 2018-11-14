@@ -20,7 +20,6 @@
 #ifndef INCLUDED_SC_SOURCE_FILTER_INC_SCENARIOBUFFER_HXX
 #define INCLUDED_SC_SOURCE_FILTER_INC_SCENARIOBUFFER_HXX
 
-#include <com/sun/star/table/CellAddress.hpp>
 #include <oox/helper/refmap.hxx>
 #include <oox/helper/refvector.hxx>
 #include "workbookhelper.hxx"
@@ -45,6 +44,7 @@ struct ScenarioModel
     OUString     maUser;             /// Name of user created the scenario.
     bool                mbLocked;           /// True = input cell values locked.
     bool                mbHidden;           /// True = scenario is hidden.
+    bool                mbActive;
 
     explicit            ScenarioModel();
 };
@@ -52,7 +52,7 @@ struct ScenarioModel
 class Scenario : public WorkbookHelper
 {
 public:
-    explicit            Scenario( const WorkbookHelper& rHelper, sal_Int16 nSheet );
+    explicit            Scenario( const WorkbookHelper& rHelper, sal_Int16 nSheet, bool bIsActive );
 
     /** Imports a scenario definition from a scenario element. */
     void                importScenario( const AttributeList& rAttribs );

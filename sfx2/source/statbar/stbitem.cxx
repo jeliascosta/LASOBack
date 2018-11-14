@@ -172,12 +172,6 @@ SfxStatusBarControl::~SfxStatusBarControl()
 
 
 // XInterface
-uno::Any SAL_CALL SfxStatusBarControl::queryInterface( const uno::Type & rType )
-throw( uno::RuntimeException, std::exception)
-{
-    return svt::StatusbarController::queryInterface( rType );
-}
-
 void SAL_CALL SfxStatusBarControl::acquire() throw()
 {
     OWeakObject::acquire();
@@ -186,22 +180,6 @@ void SAL_CALL SfxStatusBarControl::acquire() throw()
 void SAL_CALL SfxStatusBarControl::release() throw()
 {
     OWeakObject::release();
-}
-
-
-// XEventListener
-void SAL_CALL SfxStatusBarControl::disposing( const lang::EventObject& aEvent )
-throw( uno::RuntimeException, std::exception )
-{
-    svt::StatusbarController::disposing( aEvent );
-}
-
-
-// XComponent
-void SAL_CALL SfxStatusBarControl::dispose()
-throw (uno::RuntimeException, std::exception)
-{
-    svt::StatusbarController::dispose();
 }
 
 

@@ -23,7 +23,6 @@
 #include "JoinController.hxx"
 #include "JoinTableView.hxx"
 #include "querycontainerwindow.hxx"
-#include "queryview.hxx"
 #include "svx/ParseContext.hxx"
 #include "TableFieldDescription.hxx"
 
@@ -129,7 +128,7 @@ namespace dbaui
     public:
         OQueryController(const css::uno::Reference< css::uno::XComponentContext >& _rM);
 
-        virtual ~OQueryController();
+        virtual ~OQueryController() override;
         OTableFields&   getTableFieldDesc()         { return m_vTableFieldDesc; }
         OTableFields&   getUnUsedFields()           { return m_vUnUsedFieldsDesc; }
 
@@ -192,16 +191,6 @@ namespace dbaui
         virtual ::cppu::IPropertyArrayHelper* createArrayHelper( ) const override;
 
         // OPropertySetHelper
-        virtual sal_Bool SAL_CALL convertFastPropertyValue(
-                                    css::uno::Any& rConvertedValue,
-                                    css::uno::Any& rOldValue,
-                                    sal_Int32 nHandle,
-                                    const css::uno::Any& rValue
-                                ) throw (css::lang::IllegalArgumentException) override;
-        virtual void SAL_CALL setFastPropertyValue_NoBroadcast(
-                                    sal_Int32 nHandle,
-                                    const css::uno::Any& rValue
-                                ) throw (css::uno::Exception, std::exception ) override;
         virtual void SAL_CALL getFastPropertyValue(
                                     css::uno::Any& rValue,
                                     sal_Int32 nHandle
@@ -231,7 +220,7 @@ namespace dbaui
         virtual bool allowQueries() const override;
 
     private:
-        DECL_LINK_TYPED( OnExecuteAddTable, void*, void );
+        DECL_LINK( OnExecuteAddTable, void*, void );
 
     private:
         using OQueryController_PBase::getFastPropertyValue;

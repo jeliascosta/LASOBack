@@ -39,16 +39,13 @@ class DecoToolBox : public ToolBox
     long lastSize;
     Size maMinSize;
 
-    using Window::ImplInit;
 public:
     explicit DecoToolBox(vcl::Window* pParent);
-    virtual ~DecoToolBox() {}
-
-    void    ImplInit();
+    virtual ~DecoToolBox() override {}
 
     void    DataChanged( const DataChangedEvent& rDCEvt ) override;
 
-    void    SetImages( long nMaxHeight = 0, bool bForce = false );
+    void    SetImages( long nMaxHeight, bool bForce = false );
 
     void    calcMinSize();
     const Size& getMinSize() { return maMinSize;}
@@ -74,14 +71,13 @@ private:
         AddButtonEntry() : m_nId( 0 ) {}
     };
 
-    Menu*           pMenu;
-    PopupMenu*      pActivePopup;
+    VclPtr<Menu>           pMenu;
+    VclPtr<PopupMenu>      pActivePopup;
     sal_uInt16      nHighlightedItem;
     sal_uInt16      nRolloveredItem;
     VclPtr<vcl::Window> xSaveFocusId;
     bool            mbAutoPopup;
     bool            bIgnoreFirstMove;
-    bool            bStayActive;
     bool            mbHideAccel;
     bool            mbMenuKey;
 
@@ -103,9 +99,9 @@ private:
 
     virtual void ApplySettings(vcl::RenderContext& rRenderContext) override;
 
-    DECL_LINK_TYPED( CloseHdl, ToolBox*, void );
-    DECL_LINK_TYPED( ToolboxEventHdl, VclWindowEvent&, void );
-    DECL_LINK_TYPED( ShowHideListener, VclWindowEvent&, void );
+    DECL_LINK( CloseHdl, ToolBox*, void );
+    DECL_LINK( ToolboxEventHdl, VclWindowEvent&, void );
+    DECL_LINK( ShowHideListener, VclWindowEvent&, void );
 
     void            StateChanged( StateChangedType nType ) override;
     void            DataChanged( const DataChangedEvent& rDCEvt ) override;
@@ -114,7 +110,7 @@ private:
 
 public:
     explicit        MenuBarWindow( vcl::Window* pParent );
-    virtual         ~MenuBarWindow();
+    virtual         ~MenuBarWindow() override;
     virtual void    dispose() override;
 
     void    ShowButtons(bool bClose, bool bFloat, bool bHide);

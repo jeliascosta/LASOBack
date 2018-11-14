@@ -46,7 +46,7 @@ ScAddInListener* ScAddInListener::CreateListener(
     return pNew;
 }
 
-ScAddInListener::ScAddInListener( uno::Reference<sheet::XVolatileResult> xVR, ScDocument* pDoc ) :
+ScAddInListener::ScAddInListener( uno::Reference<sheet::XVolatileResult> const & xVR, ScDocument* pDoc ) :
     xVolRes( xVR )
 {
     pDocs = new ScAddInDocs();
@@ -120,7 +120,7 @@ void SAL_CALL ScAddInListener::modified( const css::sheet::ResultEvent& aEvent )
     {
         ScDocument* pDoc = *it;
         pDoc->TrackFormulas();
-        pDoc->GetDocumentShell()->Broadcast( SfxSimpleHint( FID_DATACHANGED ) );
+        pDoc->GetDocumentShell()->Broadcast( SfxHint( FID_DATACHANGED ) );
     }
 }
 

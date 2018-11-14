@@ -52,6 +52,10 @@ Font::Font( const vcl::Font& rFont ) : mpImplFont( rFont.mpImplFont )
 {
 }
 
+Font::Font( vcl::Font&& rFont ) : mpImplFont( std::move(rFont.mpImplFont) )
+{
+}
+
 Font::Font( const OUString& rFamilyName, const Size& rSize ) : mpImplFont()
 {
     mpImplFont->SetFamilyName( rFamilyName );
@@ -120,7 +124,7 @@ void Font::SetFontSize( const Size& rSize )
 
 void Font::SetFamily( FontFamily eFamily )
 {
-    if( mpImplFont->GetFamilyType() != eFamily )
+    if( mpImplFont->GetFamilyTypeNoAsk() != eFamily )
         mpImplFont->SetFamilyType( eFamily );
 }
 
@@ -282,6 +286,12 @@ Font& Font::operator=( const vcl::Font& rFont )
     return *this;
 }
 
+Font& Font::operator=( vcl::Font&& rFont )
+{
+    mpImplFont = std::move(rFont.mpImplFont);
+    return *this;
+}
+
 bool Font::operator==( const vcl::Font& rFont ) const
 {
     return mpImplFont == rFont.mpImplFont;
@@ -421,7 +431,7 @@ SvStream& WriteImplFont( SvStream& rOStm, const ImplFont& rImplFont )
     rOStm.WriteUChar( static_cast<sal_uInt8>(rImplFont.meKerning) );
 
     // new in version 2
-    rOStm.WriteUChar( rImplFont.meRelief );
+    rOStm.WriteUChar( (sal_uChar)rImplFont.meRelief );
     rOStm.WriteUInt16( rImplFont.maCJKLanguageTag.getLanguageType( false) );
     rOStm.WriteBool( rImplFont.mbVertical );
     rOStm.WriteUInt16( (sal_uInt16)rImplFont.meEmphasisMark );
@@ -726,7 +736,7 @@ ImplFont::ImplFont() :
     meUnderline( LINESTYLE_NONE ),
     meOverline( LINESTYLE_NONE ),
     meStrikeout( STRIKEOUT_NONE ),
-    meRelief( RELIEF_NONE ),
+    meRelief( FontRelief::NONE ),
     meEmphasisMark( FontEmphasisMark::NONE ),
     meKerning( FontKerning::NONE ),
     meCharSet( RTL_TEXTENCODING_DONTKNOW ),

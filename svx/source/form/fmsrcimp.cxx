@@ -65,23 +65,6 @@ using namespace ::com::sun::star::beans;
 using namespace ::svxform;
 
 
-// = FmSearchThread
-
-void FmSearchThread::run()
-{
-    osl_setThreadName("FmSearchThread");
-
-    m_pEngine->SearchNextImpl();
-};
-
-
-void FmSearchThread::onTerminated()
-{
-    m_aTerminationHdl.Call(this);
-    delete this;
-}
-
-
 // = FmRecordCountListener
 
 //  SMART_UNO_IMPLEMENTATION(FmRecordCountListener, UsrObject);
@@ -217,14 +200,12 @@ bool FmSearchEngine::MoveCursor()
         else
             if (m_xSearchCursor.isFirst())
             {
-                FmRecordCountListener* prclListener = new FmRecordCountListener(m_xSearchCursor);
-                prclListener->acquire();
+                rtl::Reference<FmRecordCountListener> prclListener = new FmRecordCountListener(m_xSearchCursor);
                 prclListener->SetPropChangeHandler(LINK(this, FmSearchEngine, OnNewRecordCount));
 
                 m_xSearchCursor.last();
 
                 prclListener->DisConnect();
-                prclListener->release();
             }
             else
                 m_xSearchCursor.previous();
@@ -322,82 +303,32 @@ void FmSearchEngine::BuildAndInsertFieldInfo(const Reference< css::container::XI
 
 }
 
-OUString FmSearchEngine::FormatField(const FieldInfo& rField)
-{
-    DBG_ASSERT(!m_bUsingTextComponents, "FmSearchEngine::FormatField : im UsingTextComponents-Mode bitte FormatField(sal_Int32) benutzen !");
-
-    if (!m_xFormatter.is())
-        return OUString();
-    // sonst werden Datumsflder zum Beispiel zu irgendeinem Default-Wert formatiert
-
-    OUString sReturn;
-    try
-    {
-        if (rField.bDoubleHandling)
-        {
-            double fValue = rField.xContents->getDouble();
-            if (!rField.xContents->wasNull())
-                sReturn = m_xFormatter->convertNumberToString(rField.nFormatKey, fValue);
-        }
-        else
-        {
-            OUString sValue = rField.xContents->getString();
-            if (!rField.xContents->wasNull())
-                sReturn = m_xFormatter->formatString(rField.nFormatKey, sValue);
-        }
-    }
-    catch(...)
-    {
-    }
-
-
-    return sReturn;
-}
-
-
 OUString FmSearchEngine::FormatField(sal_Int32 nWhich)
 {
-    if (m_bUsingTextComponents)
+    DBG_ASSERT((sal_uInt32)nWhich < m_aControlTexts.size(), "FmSearchEngine::FormatField(sal_Int32) : invalid position !");
+    DBG_ASSERT(m_aControlTexts[nWhich] != nullptr, "FmSearchEngine::FormatField(sal_Int32) : invalid object in array !");
+    DBG_ASSERT(m_aControlTexts[nWhich]->getControl().is(), "FmSearchEngine::FormatField : invalid control !");
+
+    if (m_nCurrentFieldIndex != -1)
     {
-        DBG_ASSERT((sal_uInt32)nWhich < m_aControlTexts.size(), "FmSearchEngine::FormatField(sal_Int32) : invalid position !");
-        DBG_ASSERT(m_aControlTexts[nWhich] != nullptr, "FmSearchEngine::FormatField(sal_Int32) : invalid object in array !");
-        DBG_ASSERT(m_aControlTexts[nWhich]->getControl().is(), "FmSearchEngine::FormatField : invalid control !");
-
-        if (m_nCurrentFieldIndex != -1)
-        {
-            DBG_ASSERT((nWhich == 0) || (nWhich == m_nCurrentFieldIndex), "FmSearchEngine::FormatField : Parameter nWhich ist ungueltig");
-            // analoge Situation wie unten
-            nWhich = m_nCurrentFieldIndex;
-        }
-
-        DBG_ASSERT((nWhich >= 0) && ((sal_uInt32)nWhich < m_aControlTexts.size()),
-            "FmSearchEngine::FormatField : invalid argument nWhich !");
-        return m_aControlTexts[m_nCurrentFieldIndex == -1 ? nWhich : m_nCurrentFieldIndex]->getCurrentText();
+        DBG_ASSERT((nWhich == 0) || (nWhich == m_nCurrentFieldIndex), "FmSearchEngine::FormatField : Parameter nWhich ist ungueltig");
+        // analoge Situation wie unten
+        nWhich = m_nCurrentFieldIndex;
     }
-    else
-    {
-        if (m_nCurrentFieldIndex != -1)
-        {
-            DBG_ASSERT((nWhich == 0) || (nWhich == m_nCurrentFieldIndex), "FmSearchEngine::FormatField : Parameter nWhich ist ungueltig");
-            // ich bin im single-field-modus, da ist auch die richtige Feld-Nummer erlaubt, obwohl dann der richtige css::sdbcx::Index
-            // fuer meinen Array-Zugriff natuerlich 0 ist
-            nWhich = 0;
-        }
 
-        DBG_ASSERT((nWhich>=0) && (nWhich < (m_arrUsedFields.end() - m_arrUsedFields.begin())),
-            "FmSearchEngine::FormatField : Parameter nWhich ist ungueltig");
-        return FormatField(m_arrUsedFields[nWhich]);
-    }
+    DBG_ASSERT((nWhich >= 0) && ((sal_uInt32)nWhich < m_aControlTexts.size()),
+        "FmSearchEngine::FormatField : invalid argument nWhich !");
+    return m_aControlTexts[m_nCurrentFieldIndex == -1 ? nWhich : m_nCurrentFieldIndex]->getCurrentText();
 }
 
 
-FmSearchEngine::SEARCH_RESULT FmSearchEngine::SearchSpecial(bool _bSearchForNull, sal_Int32& nFieldPos,
+FmSearchEngine::SearchResult FmSearchEngine::SearchSpecial(bool _bSearchForNull, sal_Int32& nFieldPos,
     FieldCollection::iterator& iterFieldLoop, const FieldCollection::iterator& iterBegin, const FieldCollection::iterator& iterEnd)
 {
     // die Startposition merken
     Any aStartMark;
     try { aStartMark = m_xSearchCursor.getBookmark(); }
-    catch ( const Exception& ) { DBG_UNHANDLED_EXCEPTION(); return SR_ERROR; }
+    catch ( const Exception& ) { DBG_UNHANDLED_EXCEPTION(); return SearchResult::Error; }
     FieldCollection::const_iterator iterInitialField = iterFieldLoop;
 
 
@@ -405,16 +336,13 @@ FmSearchEngine::SEARCH_RESULT FmSearchEngine::SearchSpecial(bool _bSearchForNull
     bool bMovedAround(false);
     do
     {
-        if (m_eMode == SM_ALLOWSCHEDULE)
-        {
-            Application::Reschedule();
-            Application::Reschedule();
-            // do 2 reschedules because of #70226# : some things done within this loop's body may cause an user event
-            // to be posted (deep within vcl), and these user events will be handled before any keyinput or paintings
-            // or anything like that. So within each loop we create one user event and handle one user event (and no
-            // paintings and these), so the office seems to be frozen while searching.
-            // FS - 70226 - 02.12.99
-        }
+        Application::Reschedule();
+        Application::Reschedule();
+        // do 2 reschedules because of #70226# : some things done within this loop's body may cause an user event
+        // to be posted (deep within vcl), and these user events will be handled before any keyinput or paintings
+        // or anything like that. So within each loop we create one user event and handle one user event (and no
+        // paintings and these), so the office seems to be frozen while searching.
+        // FS - 70226 - 02.12.99
 
         // der aktuell zu vergleichende Inhalt
         iterFieldLoop->xContents->getString();  // needed for wasNull
@@ -431,12 +359,12 @@ FmSearchEngine::SEARCH_RESULT FmSearchEngine::SearchSpecial(bool _bSearchForNull
             catch ( const Exception& ) { DBG_UNHANDLED_EXCEPTION(); }
             m_iterPreviousLocField = iterFieldLoop;
             // und wech
-            return SR_ERROR;
+            return SearchResult::Error;
         }
 
         Any aCurrentBookmark;
         try { aCurrentBookmark = m_xSearchCursor.getBookmark(); }
-        catch ( const Exception& ) { DBG_UNHANDLED_EXCEPTION(); return SR_ERROR; }
+        catch ( const Exception& ) { DBG_UNHANDLED_EXCEPTION(); return SearchResult::Error; }
 
         bMovedAround = EQUAL_BOOKMARKS(aStartMark, aCurrentBookmark) && (iterFieldLoop == iterInitialField);
 
@@ -448,21 +376,21 @@ FmSearchEngine::SEARCH_RESULT FmSearchEngine::SearchSpecial(bool _bSearchForNull
 
         // abbrechen gefordert ?
         if (CancelRequested())
-            return SR_CANCELED;
+            return SearchResult::Cancelled;
 
     } while (!bMovedAround);
 
-    return bFound ? SR_FOUND : SR_NOTFOUND;
+    return bFound ? SearchResult::Found : SearchResult::NotFound;
 }
 
 
-FmSearchEngine::SEARCH_RESULT FmSearchEngine::SearchWildcard(const OUString& strExpression, sal_Int32& nFieldPos,
+FmSearchEngine::SearchResult FmSearchEngine::SearchWildcard(const OUString& strExpression, sal_Int32& nFieldPos,
     FieldCollection::iterator& iterFieldLoop, const FieldCollection::iterator& iterBegin, const FieldCollection::iterator& iterEnd)
 {
     // die Startposition merken
     Any aStartMark;
     try { aStartMark = m_xSearchCursor.getBookmark(); }
-    catch ( const Exception& ) { DBG_UNHANDLED_EXCEPTION(); return SR_ERROR; }
+    catch ( const Exception& ) { DBG_UNHANDLED_EXCEPTION(); return SearchResult::Error; }
     FieldCollection::const_iterator iterInitialField = iterFieldLoop;
 
     WildCard aSearchExpression(strExpression);
@@ -472,16 +400,13 @@ FmSearchEngine::SEARCH_RESULT FmSearchEngine::SearchWildcard(const OUString& str
     bool bMovedAround(false);
     do
     {
-        if (m_eMode == SM_ALLOWSCHEDULE)
-        {
-            Application::Reschedule();
-            Application::Reschedule();
-            // do 2 reschedules because of #70226# : some things done within this loop's body may cause an user event
-            // to be posted (deep within vcl), and these user events will be handled before any keyinput or paintings
-            // or anything like that. So within each loop we create one user event and handle one user event (and no
-            // paintings and these), so the office seems to be frozen while searching.
-            // FS - 70226 - 02.12.99
-        }
+        Application::Reschedule();
+        Application::Reschedule();
+        // do 2 reschedules because of #70226# : some things done within this loop's body may cause an user event
+        // to be posted (deep within vcl), and these user events will be handled before any keyinput or paintings
+        // or anything like that. So within each loop we create one user event and handle one user event (and no
+        // paintings and these), so the office seems to be frozen while searching.
+        // FS - 70226 - 02.12.99
 
         // der aktuell zu vergleichende Inhalt
         OUString sCurrentCheck;
@@ -509,12 +434,12 @@ FmSearchEngine::SEARCH_RESULT FmSearchEngine::SearchWildcard(const OUString& str
             catch ( const Exception& ) { DBG_UNHANDLED_EXCEPTION(); }
             m_iterPreviousLocField = iterFieldLoop;
             // und wech
-            return SR_ERROR;
+            return SearchResult::Error;
         }
 
         Any aCurrentBookmark;
         try { aCurrentBookmark = m_xSearchCursor.getBookmark(); }
-        catch ( const Exception& ) { DBG_UNHANDLED_EXCEPTION(); return SR_ERROR; }
+        catch ( const Exception& ) { DBG_UNHANDLED_EXCEPTION(); return SearchResult::Error; }
 
         bMovedAround = EQUAL_BOOKMARKS(aStartMark, aCurrentBookmark) && (iterFieldLoop == iterInitialField);
 
@@ -526,15 +451,15 @@ FmSearchEngine::SEARCH_RESULT FmSearchEngine::SearchWildcard(const OUString& str
 
         // abbrechen gefordert ?
         if (CancelRequested())
-            return SR_CANCELED;
+            return SearchResult::Cancelled;
 
     } while (!bMovedAround);
 
-    return bFound ? SR_FOUND : SR_NOTFOUND;
+    return bFound ? SearchResult::Found : SearchResult::NotFound;
 }
 
 
-FmSearchEngine::SEARCH_RESULT FmSearchEngine::SearchRegularApprox(const OUString& strExpression, sal_Int32& nFieldPos,
+FmSearchEngine::SearchResult FmSearchEngine::SearchRegularApprox(const OUString& strExpression, sal_Int32& nFieldPos,
     FieldCollection::iterator& iterFieldLoop, const FieldCollection::iterator& iterBegin, const FieldCollection::iterator& iterEnd)
 {
     DBG_ASSERT(m_bLevenshtein || m_bRegular,
@@ -545,7 +470,7 @@ FmSearchEngine::SEARCH_RESULT FmSearchEngine::SearchRegularApprox(const OUString
     // Startposition merken
     Any aStartMark;
     try { aStartMark = m_xSearchCursor.getBookmark(); }
-    catch ( const Exception& ) { DBG_UNHANDLED_EXCEPTION(); return SR_ERROR; }
+    catch ( const Exception& ) { DBG_UNHANDLED_EXCEPTION(); return SearchResult::Error; }
     FieldCollection::const_iterator iterInitialField = iterFieldLoop;
 
     // Parameter sammeln
@@ -574,16 +499,13 @@ FmSearchEngine::SEARCH_RESULT FmSearchEngine::SearchRegularApprox(const OUString
     bool bMovedAround(false);
     do
     {
-        if (m_eMode == SM_ALLOWSCHEDULE)
-        {
-            Application::Reschedule();
-            Application::Reschedule();
-            // do 2 reschedules because of #70226# : some things done within this loop's body may cause an user event
-            // to be posted (deep within vcl), and these user events will be handled before any keyinput or paintings
-            // or anything like that. So within each loop we create one user event and handle one user event (and no
-            // paintings and these), so the office seems to be frozen while searching.
-            // FS - 70226 - 02.12.99
-        }
+        Application::Reschedule();
+        Application::Reschedule();
+        // do 2 reschedules because of #70226# : some things done within this loop's body may cause an user event
+        // to be posted (deep within vcl), and these user events will be handled before any keyinput or paintings
+        // or anything like that. So within each loop we create one user event and handle one user event (and no
+        // paintings and these), so the office seems to be frozen while searching.
+        // FS - 70226 - 02.12.99
 
         // der aktuell zu vergleichende Inhalt
         OUString sCurrentCheck;
@@ -635,12 +557,12 @@ FmSearchEngine::SEARCH_RESULT FmSearchEngine::SearchRegularApprox(const OUString
             catch ( const Exception& ) { DBG_UNHANDLED_EXCEPTION(); }
             m_iterPreviousLocField = iterFieldLoop;
             // und wech
-            return SR_ERROR;
+            return SearchResult::Error;
         }
 
         Any aCurrentBookmark;
         try { aCurrentBookmark = m_xSearchCursor.getBookmark(); }
-        catch ( const Exception& ) { DBG_UNHANDLED_EXCEPTION(); return SR_ERROR; }
+        catch ( const Exception& ) { DBG_UNHANDLED_EXCEPTION(); return SearchResult::Error; }
         bMovedAround = EQUAL_BOOKMARKS(aStartMark, aCurrentBookmark) && (iterFieldLoop == iterInitialField);
 
         if (nFieldPos == 0)
@@ -651,29 +573,27 @@ FmSearchEngine::SEARCH_RESULT FmSearchEngine::SearchRegularApprox(const OUString
 
         // abbrechen gefordert ?
         if (CancelRequested())
-            return SR_CANCELED;
+            return SearchResult::Cancelled;
 
     } while (!bMovedAround);
 
-    return bFound ? SR_FOUND : SR_NOTFOUND;
+    return bFound ? SearchResult::Found : SearchResult::NotFound;
 }
 
 
 FmSearchEngine::FmSearchEngine(const Reference< XComponentContext >& _rxContext,
         const Reference< XResultSet > & xCursor, const OUString& sVisibleFields,
-        const InterfaceArray& arrFields, FMSEARCH_MODE eMode)
+        const InterfaceArray& arrFields)
     :m_xSearchCursor(xCursor)
     ,m_aCharacterClassficator( _rxContext, SvtSysLocale().GetLanguageTag() )
     ,m_aStringCompare( _rxContext )
     ,m_nCurrentFieldIndex(-2)   // -1 hat schon eine Bedeutung, also nehme ich -2 fuer 'ungueltig'
-    ,m_bUsingTextComponents(true)
     ,m_xOriginalIterator(xCursor)
     ,m_xClonedIterator(m_xOriginalIterator, true)
-    ,m_eSearchForType(SEARCHFOR_STRING)
-    ,m_srResult(SR_FOUND)
+    ,m_eSearchForType(SearchFor::String)
+    ,m_srResult(SearchResult::Found)
     ,m_bSearchingCurrently(false)
     ,m_bCancelAsynchRequest(false)
-    ,m_eMode(eMode)
     ,m_bFormatter(true)     // das muss konsistent sein mit m_xSearchCursor, der i.A. == m_xOriginalIterator ist
     ,m_bForward(false)
     ,m_bWildcard(false)
@@ -862,36 +782,31 @@ void FmSearchEngine::SetFormatterUsing(bool bSet)
         return;
     m_bFormatter = bSet;
 
-    if (m_bUsingTextComponents)
+    // ich benutzte keinen Formatter, sondern TextComponents -> der SearchIterator muss angepasst werden
+    try
     {
-        // ich benutzte keinen Formatter, sondern TextComponents -> der SearchIterator muss angepasst werden
-        try
+        if (m_bFormatter)
         {
-            if (m_bFormatter)
-            {
-                DBG_ASSERT(m_xSearchCursor == m_xClonedIterator, "FmSearchEngine::SetFormatterUsing : inkonsistenter Zustand !");
-                m_xSearchCursor = m_xOriginalIterator;
-                m_xSearchCursor.moveToBookmark(m_xClonedIterator.getBookmark());
-                    // damit ich mit dem neuen Iterator wirklich dort weitermache, wo ich vorher aufgehoert habe
-            }
-            else
-            {
-                DBG_ASSERT(m_xSearchCursor == m_xOriginalIterator, "FmSearchEngine::SetFormatterUsing : inkonsistenter Zustand !");
-                m_xSearchCursor = m_xClonedIterator;
-                m_xSearchCursor.moveToBookmark(m_xOriginalIterator.getBookmark());
-            }
+            DBG_ASSERT(m_xSearchCursor == m_xClonedIterator, "FmSearchEngine::SetFormatterUsing : inkonsistenter Zustand !");
+            m_xSearchCursor = m_xOriginalIterator;
+            m_xSearchCursor.moveToBookmark(m_xClonedIterator.getBookmark());
+                // damit ich mit dem neuen Iterator wirklich dort weitermache, wo ich vorher aufgehoert habe
         }
-        catch( const Exception& )
+        else
         {
-            DBG_UNHANDLED_EXCEPTION();
+            DBG_ASSERT(m_xSearchCursor == m_xOriginalIterator, "FmSearchEngine::SetFormatterUsing : inkonsistenter Zustand !");
+            m_xSearchCursor = m_xClonedIterator;
+            m_xSearchCursor.moveToBookmark(m_xOriginalIterator.getBookmark());
         }
-
-        // ich muss die Fields neu binden, da der Textaustausch eventuell ueber diese Fields erfolgt und sich der unterliegende Cursor
-        // geaendert hat
-        RebuildUsedFields(m_nCurrentFieldIndex, true);
     }
-    else
-        InvalidatePreviousLoc();
+    catch( const Exception& )
+    {
+        DBG_UNHANDLED_EXCEPTION();
+    }
+
+    // ich muss die Fields neu binden, da der Textaustausch eventuell ueber diese Fields erfolgt und sich der unterliegende Cursor
+    // geaendert hat
+    RebuildUsedFields(m_nCurrentFieldIndex, true);
 }
 
 
@@ -902,7 +817,7 @@ void FmSearchEngine::PropagateProgress(bool _bDontPropagateOverflow)
         FmSearchProgress aProgress;
         try
         {
-            aProgress.aSearchState = FmSearchProgress::STATE_PROGRESS;
+            aProgress.aSearchState = FmSearchProgress::State::Progress;
             aProgress.nCurrentRecord = m_xSearchCursor.getRow() - 1;
             if (m_bForward)
                 aProgress.bOverflow = !_bDontPropagateOverflow && m_xSearchCursor.isFirst();
@@ -971,7 +886,7 @@ void FmSearchEngine::SearchNextImpl()
 
     sal_Int32 nFieldPos;
 
-    if (HasPreviousLoc())
+    if (m_aPreviousLocBookmark.hasValue())
     {
         DBG_ASSERT(EQUAL_BOOKMARKS(m_aPreviousLocBookmark, m_xSearchCursor.getBookmark()),
             "FmSearchEngine::SearchNextImpl : ungueltige Position !");
@@ -993,9 +908,9 @@ void FmSearchEngine::SearchNextImpl()
     }
 
     PropagateProgress(true);
-    SEARCH_RESULT srResult;
-    if (m_eSearchForType != SEARCHFOR_STRING)
-        srResult = SearchSpecial(m_eSearchForType == SEARCHFOR_NULL, nFieldPos, iterFieldCheck, iterBegin, iterEnd);
+    SearchResult srResult;
+    if (m_eSearchForType != SearchFor::String)
+        srResult = SearchSpecial(m_eSearchForType == SearchFor::Null, nFieldPos, iterFieldCheck, iterBegin, iterEnd);
     else if (!m_bRegular && !m_bLevenshtein)
         srResult = SearchWildcard(strSearchExpression, nFieldPos, iterFieldCheck, iterBegin, iterEnd);
     else
@@ -1003,11 +918,11 @@ void FmSearchEngine::SearchNextImpl()
 
     m_srResult = srResult;
 
-    if (SR_ERROR == m_srResult)
+    if (SearchResult::Error == m_srResult)
         return;
 
     // gefunden ?
-    if (SR_FOUND == m_srResult)
+    if (SearchResult::Found == m_srResult)
     {
         // die Pos merken
         try { m_aPreviousLocBookmark = m_xSearchCursor.getBookmark(); }
@@ -1020,7 +935,7 @@ void FmSearchEngine::SearchNextImpl()
 }
 
 
-IMPL_LINK_NOARG_TYPED(FmSearchEngine, OnSearchTerminated, FmSearchThread*, void)
+void FmSearchEngine::OnSearchTerminated()
 {
     if (!m_aProgressHandler.IsSet())
         return;
@@ -1030,20 +945,20 @@ IMPL_LINK_NOARG_TYPED(FmSearchEngine, OnSearchTerminated, FmSearchThread*, void)
     {
         switch (m_srResult)
         {
-            case SR_ERROR :
-                aProgress.aSearchState = FmSearchProgress::STATE_ERROR;
+            case SearchResult::Error :
+                aProgress.aSearchState = FmSearchProgress::State::Error;
                 break;
-            case SR_FOUND :
-                aProgress.aSearchState = FmSearchProgress::STATE_SUCCESSFULL;
+            case SearchResult::Found :
+                aProgress.aSearchState = FmSearchProgress::State::Successful;
                 aProgress.aBookmark = m_aPreviousLocBookmark;
                 aProgress.nFieldIndex = m_iterPreviousLocField - m_arrUsedFields.begin();
                 break;
-            case SR_NOTFOUND :
-                aProgress.aSearchState = FmSearchProgress::STATE_NOTHINGFOUND;
+            case SearchResult::NotFound :
+                aProgress.aSearchState = FmSearchProgress::State::NothingFound;
                 aProgress.aBookmark = m_xSearchCursor.getBookmark();
                 break;
-            case SR_CANCELED :
-                aProgress.aSearchState = FmSearchProgress::STATE_CANCELED;
+            case SearchResult::Cancelled :
+                aProgress.aSearchState = FmSearchProgress::State::Canceled;
                 aProgress.aBookmark = m_xSearchCursor.getBookmark();
                 break;
         }
@@ -1061,14 +976,14 @@ IMPL_LINK_NOARG_TYPED(FmSearchEngine, OnSearchTerminated, FmSearchThread*, void)
 }
 
 
-IMPL_LINK_TYPED(FmSearchEngine, OnNewRecordCount, sal_Int32, theCounter, void)
+IMPL_LINK(FmSearchEngine, OnNewRecordCount, sal_Int32, theCounter, void)
 {
     if (!m_aProgressHandler.IsSet())
         return;
 
     FmSearchProgress aProgress;
     aProgress.nCurrentRecord = theCounter;
-    aProgress.aSearchState = FmSearchProgress::STATE_PROGRESS_COUNTING;
+    aProgress.aSearchState = FmSearchProgress::State::ProgressCounting;
     m_aProgressHandler.Call(&aProgress);
 }
 
@@ -1100,7 +1015,6 @@ void FmSearchEngine::SwitchToContext(const Reference< css::sdbc::XResultSet > & 
     m_xSearchCursor = xCursor;
     m_xOriginalIterator = xCursor;
     m_xClonedIterator = CursorWrapper(m_xOriginalIterator, true);
-    m_bUsingTextComponents = true;
 
     fillControlTexts(arrFields);
 
@@ -1114,35 +1028,22 @@ void FmSearchEngine::ImplStartNextSearch()
     m_bCancelAsynchRequest = false;
     m_bSearchingCurrently = true;
 
-    if (m_eMode == SM_USETHREAD)
-    {
-        FmSearchThread* pSearcher = new FmSearchThread(this);
-            // der loescht sich nach Beendigung selber ...
-        pSearcher->setTerminationHandler(LINK(this, FmSearchEngine, OnSearchTerminated));
-
-        pSearcher->createSuspended();
-        pSearcher->setPriority(osl_Thread_PriorityLowest);
-        pSearcher->resume();
-    }
-    else
-    {
-        SearchNextImpl();
-        LINK(this, FmSearchEngine, OnSearchTerminated).Call(nullptr);
-    }
+    SearchNextImpl();
+    OnSearchTerminated();
 }
 
 
 void FmSearchEngine::SearchNext(const OUString& strExpression)
 {
     m_strSearchExpression = strExpression;
-    m_eSearchForType = SEARCHFOR_STRING;
+    m_eSearchForType = SearchFor::String;
     ImplStartNextSearch();
 }
 
 
 void FmSearchEngine::SearchNextSpecial(bool _bSearchForNull)
 {
-    m_eSearchForType = _bSearchForNull ? SEARCHFOR_NULL : SEARCHFOR_NOTNULL;
+    m_eSearchForType = _bSearchForNull ? SearchFor::Null : SearchFor::NotNull;
     ImplStartNextSearch();
 }
 
@@ -1189,7 +1090,7 @@ void FmSearchEngine::StartOverSpecial(bool _bSearchForNull)
 
 void FmSearchEngine::InvalidatePreviousLoc()
 {
-    m_aPreviousLocBookmark.setValue(nullptr,cppu::UnoType<void>::get());
+    m_aPreviousLocBookmark.clear();
     m_iterPreviousLocField = m_arrUsedFields.end();
 }
 

@@ -23,18 +23,17 @@
 #include <svx/svddef.hxx>
 #include <svx/svxdllapi.h>
 
-enum SdrEdgeKind {SDREDGE_ORTHOLINES,
-                  SDREDGE_THREELINES,
-                  SDREDGE_ONELINE,
-                  SDREDGE_BEZIER,
-                  SDREDGE_ARC};
+enum class SdrEdgeKind
+{
+    OrthoLines, ThreeLines, OneLine, Bezier, Arc
+};
 
 
 // class SdrEdgeKindItem
 
 class SVX_DLLPUBLIC SdrEdgeKindItem: public SfxEnumItem {
 public:
-    SdrEdgeKindItem(SdrEdgeKind eStyle=SDREDGE_ORTHOLINES): SfxEnumItem(SDRATTR_EDGEKIND,sal::static_int_cast< sal_uInt16 >(eStyle)) {}
+    SdrEdgeKindItem(SdrEdgeKind eStyle=SdrEdgeKind::OrthoLines): SfxEnumItem(SDRATTR_EDGEKIND,sal::static_int_cast< sal_uInt16 >(eStyle)) {}
     SdrEdgeKindItem(SvStream& rIn)                        : SfxEnumItem(SDRATTR_EDGEKIND,rIn)    {}
     virtual SfxPoolItem* Clone(SfxItemPool* pPool=nullptr) const override;
     virtual SfxPoolItem* Create(SvStream& rIn, sal_uInt16 nVer) const override;
@@ -43,7 +42,7 @@ public:
     virtual bool QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
     virtual OUString GetValueTextByPos(sal_uInt16 nPos) const override;
-    virtual bool GetPresentation(SfxItemPresentation ePres, SfxMapUnit eCoreMetric, SfxMapUnit ePresMetric, OUString& rText, const IntlWrapper * = nullptr) const override;
+    virtual bool GetPresentation(SfxItemPresentation ePres, MapUnit eCoreMetric, MapUnit ePresMetric, OUString& rText, const IntlWrapper * = nullptr) const override;
 };
 
 #endif

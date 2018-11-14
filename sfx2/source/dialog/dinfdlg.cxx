@@ -17,17 +17,19 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <svl/eitem.hxx>
+#include <svl/urihelper.hxx>
+#include <tools/datetime.hxx>
+#include <tools/resary.hxx>
 #include <tools/urlobj.hxx>
 #include <vcl/layout.hxx>
-#include <svl/eitem.hxx>
+#include <vcl/mnemonic.hxx>
 #include <vcl/svapp.hxx>
 #include <unotools/localedatawrapper.hxx>
 #include <unotools/cmdoptions.hxx>
 #include <comphelper/processfactory.hxx>
-#include <svl/urihelper.hxx>
 #include <unotools/useroptions.hxx>
 #include <svtools/imagemgr.hxx>
-#include <tools/datetime.hxx>
 
 #include <memory>
 
@@ -95,9 +97,6 @@ const sal_uInt16 HI_NAME = 1;
 const sal_uInt16 HI_TYPE = 2;
 const sal_uInt16 HI_VALUE = 3;
 const sal_uInt16 HI_ACTION = 4;
-
-static const char DOCUMENT_SIGNATURE_MENU_CMD[] = "Signature";
-
 
 namespace {
 
@@ -245,7 +244,7 @@ SfxDocumentInfoItem::SfxDocumentInfoItem( const OUString& rFile,
                 // "fix" property? => not a custom property => ignore it!
                 if (!(pProps[i].Attributes & css::beans::PropertyAttribute::REMOVABLE))
                 {
-                    DBG_ASSERT(false, "non-removable user-defined property?");
+                    SAL_WARN( "sfx", "non-removable user-defined property?");
                     continue;
                 }
 
@@ -343,11 +342,11 @@ void SfxDocumentInfoItem::resetUserData(const OUString & i_rAuthor)
 {
     setAuthor(i_rAuthor);
     DateTime now( DateTime::SYSTEM );
-    setCreationDate( now.GetUNODateTime() );
+    m_CreationDate = now.GetUNODateTime();
     setModifiedBy(OUString());
     setPrintedBy(OUString());
-    setModificationDate(util::DateTime());
-    setPrintDate(util::DateTime());
+    m_ModificationDate = util::DateTime();
+    m_PrintDate = util::DateTime();
     setEditingDuration(0);
     setEditingCycles(1);
 }
@@ -796,8 +795,7 @@ SfxDocumentPage::SfxDocumentPage(vcl::Window* pParent, const SfxItemSet& rItemSe
     // [i96288] Check if the document signature command is enabled
     // on the main list enable/disable the pushbutton accordingly
     SvtCommandOptions aCmdOptions;
-    if ( aCmdOptions.Lookup( SvtCommandOptions::CMDOPTION_DISABLED,
-                             DOCUMENT_SIGNATURE_MENU_CMD ) )
+    if ( aCmdOptions.Lookup( SvtCommandOptions::CMDOPTION_DISABLED, "Signature" ) )
         m_pSignatureBtn->Disable();
 }
 
@@ -830,7 +828,7 @@ void SfxDocumentPage::dispose()
 }
 
 
-IMPL_LINK_NOARG_TYPED(SfxDocumentPage, DeleteHdl, Button*, void)
+IMPL_LINK_NOARG(SfxDocumentPage, DeleteHdl, Button*, void)
 {
     OUString aName;
     if ( bEnableUseUserData && m_pUseUserDataCB->IsChecked() )
@@ -847,7 +845,7 @@ IMPL_LINK_NOARG_TYPED(SfxDocumentPage, DeleteHdl, Button*, void)
     bHandleDelete = true;
 }
 
-IMPL_LINK_NOARG_TYPED(SfxDocumentPage, SignatureHdl, Button*, void)
+IMPL_LINK_NOARG(SfxDocumentPage, SignatureHdl, Button*, void)
 {
     SfxObjectShell* pDoc = SfxObjectShell::Current();
     if( pDoc )
@@ -858,7 +856,7 @@ IMPL_LINK_NOARG_TYPED(SfxDocumentPage, SignatureHdl, Button*, void)
     }
 }
 
-IMPL_STATIC_LINK_NOARG_TYPED(SfxDocumentPage, ChangePassHdl, Button*, void)
+IMPL_STATIC_LINK_NOARG(SfxDocumentPage, ChangePassHdl, Button*, void)
 {
     SfxObjectShell* pShell = SfxObjectShell::Current();
     do
@@ -1232,12 +1230,15 @@ void SfxDocumentInfoDialog::AddFontTabPage()
 
 // class CustomPropertiesYesNoButton -------------------------------------
 
-CustomPropertiesYesNoButton::CustomPropertiesYesNoButton( vcl::Window* pParent, const ResId& rResId ) :
-    Control( pParent, rResId ),
-    m_aYesButton( VclPtr<RadioButton>::Create(this, ResId( RB_PROPERTY_YES, *rResId.GetResMgr() )) ),
-    m_aNoButton ( VclPtr<RadioButton>::Create(this, ResId( RB_PROPERTY_NO, *rResId.GetResMgr() )) )
+CustomPropertiesYesNoButton::CustomPropertiesYesNoButton(vcl::Window* pParent)
+    : Control(pParent, WB_DIALOGCONTROL | WB_BORDER)
+    , m_aYesButton(VclPtr<RadioButton>::Create(this, WB_TABSTOP))
+    , m_aNoButton(VclPtr<RadioButton>::Create(this, WB_TABSTOP))
 {
-    FreeResource();
+    m_aYesButton->SetText(MnemonicGenerator::EraseAllMnemonicChars(Button::GetStandardText(StandardButtonType::Yes)));
+    m_aYesButton->Show();
+    m_aNoButton->SetText(MnemonicGenerator::EraseAllMnemonicChars(Button::GetStandardText(StandardButtonType::No)));
+    m_aNoButton->Show();
     SetBackground( Wallpaper( GetSettings().GetStyleSettings().GetFieldColor() ) );
     SetBorderStyle( WindowBorderStyle::MONO  );
     CheckNo();
@@ -1245,7 +1246,6 @@ CustomPropertiesYesNoButton::CustomPropertiesYesNoButton( vcl::Window* pParent, 
     m_aYesButton->SetBackground( aWall );
     m_aNoButton->SetBackground( aWall );
 }
-
 
 CustomPropertiesYesNoButton::~CustomPropertiesYesNoButton()
 {
@@ -1273,7 +1273,7 @@ class DurationDialog_Impl : public ModalDialog
 public:
 
     DurationDialog_Impl( vcl::Window* pParent, const util::Duration& rDuration );
-    virtual ~DurationDialog_Impl();
+    virtual ~DurationDialog_Impl() override;
     virtual void dispose() override;
     util::Duration  GetDuration() const;
 };
@@ -1379,7 +1379,7 @@ CustomPropertiesEditButton::CustomPropertiesEditButton(vcl::Window* pParent, Win
     SetClickHdl( LINK( this, CustomPropertiesEditButton, ClickHdl ));
 }
 
-IMPL_LINK_NOARG_TYPED(CustomPropertiesEditButton, ClickHdl, Button*, void)
+IMPL_LINK_NOARG(CustomPropertiesEditButton, ClickHdl, Button*, void)
 {
     VclPtrInstance< DurationDialog_Impl > pDurationDlg( this, m_pLine->m_aDurationField->GetDuration() );
     if ( RET_OK == pDurationDlg->Execute() )
@@ -1388,37 +1388,67 @@ IMPL_LINK_NOARG_TYPED(CustomPropertiesEditButton, ClickHdl, Button*, void)
 
 void CustomPropertiesYesNoButton::Resize()
 {
-    const long nWidth = GetSizePixel().Width();
-    const long n3Width = LogicToPixel( Size( 3, 3 ), MAP_APPFONT ).Width();
-    const long nNewWidth = ( nWidth / 2 ) - n3Width - 2;
-    Size aSize = m_aYesButton->GetSizePixel();
-    const long nDelta = aSize.Width() - nNewWidth;
-    aSize.Width() = nNewWidth;
-    m_aYesButton->SetSizePixel( aSize );
-    Point aPos = m_aNoButton->GetPosPixel();
-    aPos.X() -= nDelta;
-    m_aNoButton->SetPosSizePixel( aPos, aSize );
+    Size aParentSize(GetSizePixel());
+    const long nWidth = aParentSize.Width();
+    Size a1Size = LogicToPixel(Size(1, 1), MapUnit::MapAppFont);
+    const long n3Width = LogicToPixel(Size(3, 3), MapUnit::MapAppFont).Width();
+    const long nNewWidth = (nWidth / 2) - n3Width - 2;
+    Size aSize(nNewWidth, aParentSize.Height() - 2 * a1Size.Height());
+    Point aPos(a1Size.Width(), a1Size.Height());
+    m_aYesButton->SetPosSizePixel(aPos, aSize);
+    aPos.X() += aSize.Width() + n3Width;
+    m_aNoButton->SetPosSizePixel(aPos, aSize);
+}
+
+namespace
+{
+    VclPtr<ComboBox> makeComboBox(vcl::Window *pParent)
+    {
+        VclPtr<ComboBox> aNameBox(VclPtr<ComboBox>::Create(pParent, WB_TABSTOP|WB_DROPDOWN|
+                                                                    WB_AUTOSIZE|WB_AUTOHSCROLL));
+        aNameBox->SetPosSizePixel(aNameBox->LogicToPixel(Point(0, 2), MapUnit::MapAppFont),
+                                  aNameBox->LogicToPixel(Size(60, 72), MapUnit::MapAppFont));
+        ResStringArray aStrArr(SfxResId(SFX_CB_PROPERTY_STRINGARRAY));
+        for (sal_uInt32 i = 0; i < aStrArr.Count(); ++i)
+            aNameBox->InsertEntry(aStrArr.GetString(i));
+        return aNameBox;
+    }
+}
+
+CustomPropertiesTypeBox::CustomPropertiesTypeBox(vcl::Window* pParent, CustomPropertyLine* pLine)
+    : ListBox(pParent, WB_BORDER|WB_DROPDOWN)
+    , m_pLine(pLine)
+{
+    SetPosSizePixel(LogicToPixel(Point(63, 2), MapUnit::MapAppFont),
+                    LogicToPixel(Size(60, 80), MapUnit::MapAppFont));
+    ResStringArray aStrArr(SfxResId(SFX_LB_PROPERTY_STRINGARRAY));
+    for (sal_uInt32 i = 0; i < aStrArr.Count(); ++i)
+    {
+        InsertEntry(aStrArr.GetString(i));
+        SetEntryData(i, reinterpret_cast<void*>(aStrArr.GetValue(i)));
+    }
+    SelectEntryPos(0);
 }
 
 // struct CustomPropertyLine ---------------------------------------------
 CustomPropertyLine::CustomPropertyLine( vcl::Window* pParent ) :
-    m_aNameBox      ( VclPtr<ComboBox>::Create(pParent, SfxResId( SFX_CB_PROPERTY_NAME )) ),
-    m_aTypeBox      ( VclPtr<CustomPropertiesTypeBox>::Create(pParent, SfxResId( SFX_LB_PROPERTY_TYPE ), this) ),
+    m_aNameBox      ( makeComboBox(pParent) ),
+    m_aTypeBox      ( VclPtr<CustomPropertiesTypeBox>::Create(pParent, this) ),
     m_aValueEdit    ( VclPtr<CustomPropertiesEdit>::Create(pParent, WB_BORDER|WB_TABSTOP|WB_LEFT, this ) ),
     m_aDateField    ( VclPtr<CustomPropertiesDateField>::Create(pParent, WB_BORDER|WB_TABSTOP|WB_SPIN|WB_LEFT ) ),
     m_aTimeField    ( VclPtr<CustomPropertiesTimeField>::Create(pParent, WB_BORDER|WB_TABSTOP|WB_SPIN|WB_LEFT ) ),
     m_sDurationFormat( SfxResId( SFX_ST_DURATION_FORMAT ).toString() ),
     m_aDurationField( VclPtr<CustomPropertiesDurationField>::Create(pParent, WB_BORDER|WB_TABSTOP|WB_READONLY, this ) ),
     m_aEditButton   ( VclPtr<CustomPropertiesEditButton>::Create(pParent, WB_TABSTOP, this) ),
-    m_aYesNoButton  ( VclPtr<CustomPropertiesYesNoButton>::Create(pParent, SfxResId( SFX_WIN_PROPERTY_YESNO )) ),
+    m_aYesNoButton  ( VclPtr<CustomPropertiesYesNoButton>::Create(pParent) ),
     m_aRemoveButton ( VclPtr<CustomPropertiesRemoveButton>::Create(pParent, 0, this) ),
     m_bIsDate       ( false ),
     m_bIsRemoved    ( false ),
     m_bTypeLostFocus( false )
 
 {
-    m_aTimeField->SetExtFormat( EXTTIMEF_24H_LONG );
-    m_aDateField->SetExtDateFormat( XTDATEF_SYSTEM_SHORT_YYYY );
+    m_aTimeField->SetExtFormat( ExtTimeFieldFormat::Long24H );
+    m_aDateField->SetExtDateFormat( ExtDateFieldFormat::SystemShortYYYY );
 
     m_aRemoveButton->SetModeImage(Image(SfxResId(SFX_IMG_PROPERTY_REMOVE)));
     m_aRemoveButton->SetQuickHelpText(SfxResId(STR_SFX_REMOVE_PROPERTY).toString());
@@ -1449,28 +1479,28 @@ CustomPropertiesWindow::CustomPropertiesWindow(vcl::Window* pParent,
     m_pHeaderAccName(pHeaderAccName),
     m_pHeaderAccType(pHeaderAccType),
     m_pHeaderAccValue(pHeaderAccValue),
-    m_aNameBox      ( VclPtr<ComboBox>::Create( this, SfxResId( SFX_CB_PROPERTY_NAME ) ) ),
-    m_aTypeBox      ( VclPtr<ListBox>::Create( this, SfxResId( SFX_LB_PROPERTY_TYPE ) ) ),
+    m_aNameBox      ( makeComboBox(this) ),
+    m_aTypeBox      ( VclPtr<CustomPropertiesTypeBox>::Create(pParent, nullptr) ),
     m_aValueEdit    ( VclPtr<Edit>::Create( this, WB_BORDER|WB_TABSTOP|WB_LEFT ) ),
     m_aDateField    ( VclPtr<DateField>::Create( this, WB_BORDER|WB_TABSTOP|WB_SPIN|WB_LEFT ) ),
     m_aTimeField    ( VclPtr<TimeField>::Create( this, WB_BORDER|WB_TABSTOP|WB_SPIN|WB_LEFT ) ),
     m_aDurationField( VclPtr<Edit>::Create( this, WB_BORDER|WB_TABSTOP|WB_READONLY ) ),
     m_aEditButton   ( VclPtr<PushButton>::Create( this, WB_TABSTOP ) ),
-    m_aYesNoButton  ( VclPtr<CustomPropertiesYesNoButton>::Create( this, SfxResId( SFX_WIN_PROPERTY_YESNO )) ),
+    m_aYesNoButton  ( VclPtr<CustomPropertiesYesNoButton>::Create(this) ),
     m_aRemoveButton ( VclPtr<ImageButton>::Create( this, 0 ) ),
     m_nScrollPos (0),
     m_pCurrentLine (nullptr),
     m_aNumberFormatter( ::comphelper::getProcessComponentContext(),
                         Application::GetSettings().GetLanguageTag().getLanguageType() )
 {
-    Point aPos(LogicToPixel(Point(159, 2), MAP_APPFONT));
+    Point aPos(LogicToPixel(Point(159, 2), MapUnit::MapAppFont));
 
     m_aEditButton->SetPosSizePixel(aPos,
-        LogicToPixel(Size(RSC_CD_TEXTBOX_HEIGHT, RSC_CD_TEXTBOX_HEIGHT), MAP_APPFONT));
+        LogicToPixel(Size(RSC_CD_TEXTBOX_HEIGHT, RSC_CD_TEXTBOX_HEIGHT), MapUnit::MapAppFont));
 
-    m_aRemoveButton->SetSizePixel(LogicToPixel(Size(RSC_CD_PUSHBUTTON_HEIGHT, RSC_CD_PUSHBUTTON_HEIGHT), MAP_APPFONT));
+    m_aRemoveButton->SetSizePixel(LogicToPixel(Size(RSC_CD_PUSHBUTTON_HEIGHT, RSC_CD_PUSHBUTTON_HEIGHT), MapUnit::MapAppFont));
 
-    Size aSize(LogicToPixel(Size(61, RSC_CD_TEXTBOX_HEIGHT), MAP_APPFONT));
+    Size aSize(LogicToPixel(Size(61, RSC_CD_TEXTBOX_HEIGHT), MapUnit::MapAppFont));
     m_aValueEdit->SetPosSizePixel(aPos, aSize);
     m_aDurationField->SetPosSizePixel(aPos, aSize);
     m_aDateField->SetPosSizePixel(aPos, aSize);
@@ -1527,7 +1557,7 @@ void CustomPropertiesWindow::dispose()
     vcl::Window::dispose();
 }
 
-IMPL_STATIC_LINK_TYPED(
+IMPL_STATIC_LINK(
     CustomPropertiesWindow, TypeHdl, ListBox&, rListBox, void )
 {
     CustomPropertiesTypeBox* pBox = static_cast<CustomPropertiesTypeBox*>(&rListBox);
@@ -1555,7 +1585,7 @@ IMPL_STATIC_LINK_TYPED(
     }
 }
 
-IMPL_LINK_TYPED( CustomPropertiesWindow, RemoveHdl, Button*, pBtn, void )
+IMPL_LINK( CustomPropertiesWindow, RemoveHdl, Button*, pBtn, void )
 {
     CustomPropertiesRemoveButton* pButton = static_cast<CustomPropertiesRemoveButton*>(pBtn);
     CustomPropertyLine* pLine = pButton->GetLine();
@@ -1591,7 +1621,7 @@ IMPL_LINK_TYPED( CustomPropertiesWindow, RemoveHdl, Button*, pBtn, void )
     m_aRemovedHdl.Call(nullptr);
 }
 
-IMPL_LINK_TYPED( CustomPropertiesWindow, EditLoseFocusHdl, Control&, rControl, void )
+IMPL_LINK( CustomPropertiesWindow, EditLoseFocusHdl, Control&, rControl, void )
 {
     CustomPropertiesEdit* pEdit = static_cast<CustomPropertiesEdit*>(&rControl);
     CustomPropertyLine* pLine = pEdit->GetLine();
@@ -1604,18 +1634,18 @@ IMPL_LINK_TYPED( CustomPropertiesWindow, EditLoseFocusHdl, Control&, rControl, v
         pLine->m_bTypeLostFocus = false;
 }
 
-IMPL_LINK_TYPED( CustomPropertiesWindow, BoxLoseFocusHdl, Control&, rControl, void )
+IMPL_LINK( CustomPropertiesWindow, BoxLoseFocusHdl, Control&, rControl, void )
 {
     m_pCurrentLine = static_cast<CustomPropertiesTypeBox*>(&rControl)->GetLine();
     m_aBoxLoseFocusIdle.Start();
 }
 
-IMPL_LINK_NOARG_TYPED(CustomPropertiesWindow, EditTimeoutHdl, Idle *, void)
+IMPL_LINK_NOARG(CustomPropertiesWindow, EditTimeoutHdl, Idle *, void)
 {
     ValidateLine( m_pCurrentLine, false );
 }
 
-IMPL_LINK_NOARG_TYPED(CustomPropertiesWindow, BoxTimeoutHdl, Idle *, void)
+IMPL_LINK_NOARG(CustomPropertiesWindow, BoxTimeoutHdl, Idle *, void)
 {
     ValidateLine( m_pCurrentLine, true );
 }
@@ -1659,7 +1689,7 @@ void CustomPropertiesWindow::ValidateLine( CustomPropertyLine* pLine, bool bIsFr
         if ( bIsFromTypeBox ) // LoseFocus of TypeBox
             pLine->m_bTypeLostFocus = true;
         vcl::Window* pParent = GetParent()->GetParent();
-        if (ScopedVclPtrInstance<MessageDialog>(pParent, SfxResId(STR_SFX_QUERY_WRONG_TYPE), VCL_MESSAGE_QUESTION, VCL_BUTTONS_OK_CANCEL)->Execute() == RET_OK)
+        if (ScopedVclPtrInstance<MessageDialog>(pParent, SfxResId(STR_SFX_QUERY_WRONG_TYPE), VclMessageType::Question, VCL_BUTTONS_OK_CANCEL)->Execute() == RET_OK)
             pLine->m_aTypeBox->SelectEntryPos( m_aTypeBox->GetEntryPos( reinterpret_cast<void*>(CUSTOM_TYPE_TEXT) ) );
         else
             pLine->m_aValueEdit->GrabFocus();
@@ -1986,12 +2016,12 @@ Sequence< beans::PropertyValue > CustomPropertiesWindow::GetCustomProperties() c
                 bool bIsNum = const_cast< SvNumberFormatter& >( m_aNumberFormatter ).
                     IsNumberFormat( pLine->m_aValueEdit->GetText(), nIndex, nValue );
                 if ( bIsNum )
-                    aPropertiesSeq[i].Value <<= makeAny( nValue );
+                    aPropertiesSeq[i].Value = makeAny( nValue );
             }
             else if ( CUSTOM_TYPE_BOOLEAN == nType )
             {
                 bool bValue = pLine->m_aYesNoButton->IsYesChecked();
-                aPropertiesSeq[i].Value <<= makeAny( bValue );
+                aPropertiesSeq[i].Value = makeAny( bValue );
             }
             else if ( CUSTOM_TYPE_DATETIME == nType )
             {
@@ -2033,7 +2063,7 @@ Sequence< beans::PropertyValue > CustomPropertiesWindow::GetCustomProperties() c
             else
             {
                 OUString sValue( pLine->m_aValueEdit->GetText() );
-                aPropertiesSeq[i].Value <<= makeAny( sValue );
+                aPropertiesSeq[i].Value = makeAny( sValue );
             }
         }
     }
@@ -2150,7 +2180,7 @@ void CustomPropertiesControl::dispose()
     vcl::Window::dispose();
 }
 
-IMPL_LINK_TYPED( CustomPropertiesControl, ScrollHdl, ScrollBar*, pScrollBar, void )
+IMPL_LINK( CustomPropertiesControl, ScrollHdl, ScrollBar*, pScrollBar, void )
 {
     sal_Int32 nOffset = m_pPropertiesWin->GetLineHeight();
     nOffset *= ( m_nThumbPos - pScrollBar->GetThumbPos() );
@@ -2158,12 +2188,12 @@ IMPL_LINK_TYPED( CustomPropertiesControl, ScrollHdl, ScrollBar*, pScrollBar, voi
     m_pPropertiesWin->DoScroll( nOffset );
 }
 
-IMPL_LINK_NOARG_TYPED(CustomPropertiesControl, RemovedHdl, void*, void)
+IMPL_LINK_NOARG(CustomPropertiesControl, RemovedHdl, void*, void)
 {
     long nLineCount = m_pPropertiesWin->GetVisibleLineCount();
     m_pVertScroll->SetRangeMax(nLineCount + 1);
     if ( m_pPropertiesWin->GetOutputSizePixel().Height() < nLineCount * m_pPropertiesWin->GetLineHeight() )
-        m_pVertScroll->DoScrollAction ( SCROLL_LINEUP );
+        m_pVertScroll->DoScrollAction ( ScrollType::LineUp );
 }
 
 void CustomPropertiesControl::AddLine( const OUString& sName, Any& rAny, bool bInteractive )
@@ -2195,7 +2225,7 @@ void SfxCustomPropertiesPage::dispose()
     SfxTabPage::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED(SfxCustomPropertiesPage, AddHdl, Button*, void)
+IMPL_LINK_NOARG(SfxCustomPropertiesPage, AddHdl, Button*, void)
 {
     Any aAny;
     m_pPropertiesCtrl->AddLine( OUString(), aAny, true );
@@ -2263,11 +2293,11 @@ void SfxCustomPropertiesPage::Reset( const SfxItemSet* rItemSet )
     }
 }
 
-SfxTabPage::sfxpg SfxCustomPropertiesPage::DeactivatePage( SfxItemSet* /*pSet*/ )
+DeactivateRC SfxCustomPropertiesPage::DeactivatePage( SfxItemSet* /*pSet*/ )
 {
-    sfxpg nRet = LEAVE_PAGE;
+    DeactivateRC nRet = DeactivateRC::LeavePage;
     if ( !m_pPropertiesCtrl->AreAllLinesValid() )
-        nRet = KEEP_PAGE;
+        nRet = DeactivateRC::KeepPage;
     return nRet;
 }
 
@@ -2521,7 +2551,7 @@ Sequence< document::CmisProperty > CmisPropertiesWindow::GetCmisProperties() con
                     if ( bIsNum )
                         seqValue[k] = dValue;
                 }
-                aPropertiesSeq[i].Value <<= makeAny( seqValue );
+                aPropertiesSeq[i].Value = makeAny( seqValue );
             }
             else if ( CMIS_TYPE_INTEGER == sType )
             {
@@ -2539,7 +2569,7 @@ Sequence< document::CmisProperty > CmisPropertiesWindow::GetCmisProperties() con
                     if ( bIsNum )
                         seqValue[k] = (sal_Int64) dValue;
                 }
-                aPropertiesSeq[i].Value <<= makeAny( seqValue );
+                aPropertiesSeq[i].Value = makeAny( seqValue );
             }
             else if ( CMIS_TYPE_BOOL == sType )
             {
@@ -2551,7 +2581,7 @@ Sequence< document::CmisProperty > CmisPropertiesWindow::GetCmisProperties() con
                     bool bValue = (*it)->m_aYesButton->IsChecked();
                     seqValue[k] = bValue;
                 }
-                aPropertiesSeq[i].Value <<= makeAny( seqValue );
+                aPropertiesSeq[i].Value = makeAny( seqValue );
 
             }
             else if ( CMIS_TYPE_DATETIME == sType )
@@ -2569,7 +2599,7 @@ Sequence< document::CmisProperty > CmisPropertiesWindow::GetCmisProperties() con
                                               aTmpDate.GetYear(), true );
                     seqValue[k] = aDateTime;
                 }
-                aPropertiesSeq[i].Value <<= makeAny( seqValue );
+                aPropertiesSeq[i].Value = makeAny( seqValue );
             }
             else
             {
@@ -2581,7 +2611,7 @@ Sequence< document::CmisProperty > CmisPropertiesWindow::GetCmisProperties() con
                     OUString sValue( (*it)->m_aValueEdit->GetText() );
                     seqValue[k] = sValue;
                 }
-                aPropertiesSeq[i].Value <<= makeAny( seqValue );
+                aPropertiesSeq[i].Value = makeAny( seqValue );
             }
         }
     }
@@ -2609,7 +2639,7 @@ void CmisPropertiesControl::ClearAllLines()
    m_pPropertiesWin.ClearAllLines();
 }
 
-IMPL_LINK_TYPED( CmisPropertiesControl, ScrollHdl, ScrollBar*, pScrollBar, void )
+IMPL_LINK( CmisPropertiesControl, ScrollHdl, ScrollBar*, pScrollBar, void )
 {
     sal_Int32 nOffset = m_pPropertiesWin.GetItemHeight();
     nOffset *= ( pScrollBar->GetThumbPos() );
@@ -2762,9 +2792,9 @@ void SfxCmisPropertiesPage::Reset( const SfxItemSet* rItemSet )
     m_pPropertiesCtrl.setScrollRange();
 }
 
-SfxTabPage::sfxpg SfxCmisPropertiesPage::DeactivatePage( SfxItemSet* /*pSet*/ )
+DeactivateRC SfxCmisPropertiesPage::DeactivatePage( SfxItemSet* /*pSet*/ )
 {
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 VclPtr<SfxTabPage> SfxCmisPropertiesPage::Create( vcl::Window* pParent, const SfxItemSet* rItemSet )

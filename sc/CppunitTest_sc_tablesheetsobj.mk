@@ -59,10 +59,7 @@ $(eval $(call gb_CppunitTest_set_include,sc_tablesheetsobj,\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_api,sc_tablesheetsobj,\
-    offapi \
-    udkapi \
-))
+$(eval $(call gb_CppunitTest_use_sdk_api,sc_tablesheetsobj))
 
 $(eval $(call gb_CppunitTest_use_ure,sc_tablesheetsobj))
 $(eval $(call gb_CppunitTest_use_vcl,sc_tablesheetsobj))
@@ -99,6 +96,7 @@ $(eval $(call gb_CppunitTest_use_components,sc_tablesheetsobj,\
     unotools/util/utl \
     unoxml/source/rdf/unordf \
     unoxml/source/service/unoxml \
+    uui/util/uui \
     xmloff/util/xo \
 	svtools/util/svt \
 ))

@@ -24,11 +24,11 @@
 #include <cppuhelper/weak.hxx>
 #include <rtl/ustring.hxx>
 #include <osl/mutex.hxx>
+#include <vcl/dllapi.h>
 
 namespace com { namespace sun { namespace star { namespace datatransfer { namespace clipboard {
     class XClipboard;
 } } } } }
-#include <vcl/dllapi.h>
 
 namespace vcl { namespace unohelper {
 
@@ -41,9 +41,7 @@ namespace vcl { namespace unohelper {
 
     public:
                         TextDataObject( const OUString& rText );
-                        virtual ~TextDataObject();
-
-        OUString&       GetString() { return maText; }
+                        virtual ~TextDataObject() override;
 
         // css::uno::XInterface
         css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception) override;

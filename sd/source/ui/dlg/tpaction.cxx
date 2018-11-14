@@ -167,7 +167,7 @@ void SdTPAction::SetView( const ::sd::View* pSdView )
     mpView = pSdView;
 
     // get ColorTable and fill ListBox
-    ::sd::DrawDocShell* pDocSh = static_cast<const ::sd::View*>(mpView)->GetDocSh();
+    ::sd::DrawDocShell* pDocSh = mpView->GetDocSh();
     if( pDocSh && pDocSh->GetViewShell() )
     {
         mpDoc = pDocSh->GetDoc();
@@ -202,14 +202,14 @@ void SdTPAction::Construct()
             SdrMark* pMark = rMarkList.GetMark(0);
             pObj = pMark->GetMarkedSdrObj();
 
-            sal_uInt32 nInv = pObj->GetObjInventor();
-            sal_uInt16 nSdrObjKind = pObj->GetObjIdentifier();
+            SdrInventor nInv        = pObj->GetObjInventor();
+            sal_uInt16  nSdrObjKind = pObj->GetObjIdentifier();
 
-            if (nInv == SdrInventor && nSdrObjKind == OBJ_OLE2)
+            if (nInv == SdrInventor::Default && nSdrObjKind == OBJ_OLE2)
             {
                 pOleObj = static_cast<SdrOle2Obj*>(pObj);
             }
-            else if (nInv == SdrInventor && nSdrObjKind == OBJ_GRAF)
+            else if (nInv == SdrInventor::Default && nSdrObjKind == OBJ_GRAF)
             {
                 pGrafObj = static_cast<SdrGrafObj*>(pObj);
             }
@@ -369,12 +369,12 @@ void SdTPAction::ActivatePage( const SfxItemSet& )
 {
 }
 
-SfxTabPage::sfxpg SdTPAction::DeactivatePage( SfxItemSet* pPageSet )
+DeactivateRC SdTPAction::DeactivatePage( SfxItemSet* pPageSet )
 {
     if( pPageSet )
         FillItemSet( pPageSet );
 
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 VclPtr<SfxTabPage> SdTPAction::Create( vcl::Window* pWindow,
@@ -417,7 +417,7 @@ void SdTPAction::OpenFileDialog()
             SdOpenSoundFileDialog   aFileDialog;
 
             if( aFile.isEmpty() )
-                aFile = SvtPathOptions().GetGraphicPath();
+                aFile = SvtPathOptions().GetWorkPath();
 
             aFileDialog.SetPath( aFile );
 
@@ -466,12 +466,12 @@ void SdTPAction::OpenFileDialog()
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SdTPAction, ClickSearchHdl, Button*, void)
+IMPL_LINK_NOARG(SdTPAction, ClickSearchHdl, Button*, void)
 {
     OpenFileDialog();
 }
 
-IMPL_LINK_NOARG_TYPED(SdTPAction, ClickActionHdl, ListBox&, void)
+IMPL_LINK_NOARG(SdTPAction, ClickActionHdl, ListBox&, void)
 {
     presentation::ClickAction eCA = GetActualClickAction();
 
@@ -643,12 +643,12 @@ IMPL_LINK_NOARG_TYPED(SdTPAction, ClickActionHdl, ListBox&, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SdTPAction, SelectTreeHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(SdTPAction, SelectTreeHdl, SvTreeListBox*, void)
 {
     m_pEdtBookmark->SetText( m_pLbTree->GetSelectEntry() );
 }
 
-IMPL_LINK_NOARG_TYPED(SdTPAction, CheckFileHdl, Control&, void)
+IMPL_LINK_NOARG(SdTPAction, CheckFileHdl, Control&, void)
 {
     OUString aFile( GetEditText() );
 
@@ -662,30 +662,39 @@ IMPL_LINK_NOARG_TYPED(SdTPAction, CheckFileHdl, Control&, void)
         {
             WaitObject aWait( GetParentDialog() );
 
+            bool bHideTreeDocument = true;
+
             // is it a draw file?
             // open with READ, otherwise the Storages might write into the file!
             uno::Reference < embed::XStorage > xStorage = aMedium.GetStorage();
             DBG_ASSERT( xStorage.is(), "No storage!" );
 
             uno::Reference < container::XNameAccess > xAccess( xStorage, uno::UNO_QUERY );
-            if( xAccess.is() &&
-                ( xAccess->hasByName( pStarDrawXMLContent ) ||
-                xAccess->hasByName( pStarDrawOldXMLContent ) ) )
+            if (xAccess.is())
             {
-                SdDrawDocument* pBookmarkDoc = mpDoc->OpenBookmarkDoc( aFile );
-                if( pBookmarkDoc )
+                try
                 {
-                    aLastFile = aFile;
+                    if (xAccess->hasByName(pStarDrawXMLContent) ||
+                        xAccess->hasByName(pStarDrawOldXMLContent))
+                    {
+                        if (SdDrawDocument* pBookmarkDoc = mpDoc->OpenBookmarkDoc(aFile))
+                        {
+                            aLastFile = aFile;
 
-                    m_pLbTreeDocument->Clear();
-                    m_pLbTreeDocument->Fill( pBookmarkDoc, true, aFile );
-                    mpDoc->CloseBookmarkDoc();
-                    m_pLbTreeDocument->Show();
+                            m_pLbTreeDocument->Clear();
+                            m_pLbTreeDocument->Fill(pBookmarkDoc, true, aFile);
+                            mpDoc->CloseBookmarkDoc();
+                            m_pLbTreeDocument->Show();
+                            bHideTreeDocument = false;
+                        }
+                    }
                 }
-                else
-                    m_pLbTreeDocument->Hide();
+                catch (...)
+                {
+                }
             }
-            else
+
+            if (bHideTreeDocument)
                 m_pLbTreeDocument->Hide();
 
         }
@@ -831,7 +840,7 @@ OUString SdTPAction::GetEditText( bool bFullDocDestination )
         OUString aTmpStr( m_pLbTreeDocument->GetSelectEntry() );
         if( !aTmpStr.isEmpty() )
         {
-            aStr += OUStringLiteral1<DOCUMENT_TOKEN>() + aTmpStr;
+            aStr += OUStringLiteral1(DOCUMENT_TOKEN) + aTmpStr;
         }
     }
 

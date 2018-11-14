@@ -4,7 +4,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
 "POT-Creation-Date: 2016-11-09 14:10+0100\n"
-"PO-Revision-Date: 2016-10-13 12:58+0000\n"
+"PO-Revision-Date: 2017-10-23 11:55+0000\n"
 "Last-Translator: Mihail Balabanov <m.balabanov@gmail.com>\n"
 "Language-Team: .\n"
 "Language: bg\n"
@@ -13,9 +13,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Accelerator-Marker: ~\n"
-"X-Generator: LibreOffice\n"
+"X-Generator: Pootle 2.8\n"
 "X-Project-Style: openoffice\n"
-"X-POOTLE-MTIME: 1476363522.000000\n"
+"X-POOTLE-MTIME: 1508759745.000000\n"
 
 #: 01110000.xhp
 msgctxt ""
@@ -7200,7 +7200,7 @@ msgctxt ""
 "9\n"
 "help.text"
 msgid "<ahelp hid=\"HID_EVT_ITEMSTATECHANGED\" visibility=\"hidden\">The<emph> Item status changed </emph>event takes place if the status of the control field has changed.</ahelp> The<emph> Item status changed</emph> event takes place if he status of the control field has changed."
-msgstr "<ahelp hid=\"HID_EVT_ITEMSTATECHANGED\" visibility=\"hidden\">Събитието <emph>При промяна в състоянието на обекта</emph> възниква, когато състоянието на елемента за управление бъде променено.</ahelp>Събитието <emph>При промяна на състоянието на обект</emph> възниква, когато състоянието на елемента за управление бъде променено."
+msgstr "<ahelp hid=\"HID_EVT_ITEMSTATECHANGED\" visibility=\"hidden\">Събитието <emph>При промяна в състоянието на обекта</emph> възниква, когато състоянието на елемента за управление бъде променено.</ahelp> Събитието <emph>При промяна в състоянието на обекта</emph> възниква, когато състоянието на елемента за управление бъде променено."
 
 #: 01170103.xhp
 msgctxt ""
@@ -9161,7 +9161,7 @@ msgctxt ""
 "20\n"
 "help.text"
 msgid "Drag and drop to copy controls within the same document or between documents. Open another form document and drag the hidden control from the <emph>Form Navigator</emph> into the <emph>Form Navigator</emph> of the target document. Click a visible control directly in the document, rest the mouse for a moment so that a copy of the control is added to the drag-and-drop clipboard, then drag the copy into the other document. If you want a copy in the same document, press <switchinline select=\"sys\"><caseinline select=\"MAC\">Command</caseinline><defaultinline>Ctrl</defaultinline></switchinline> while dragging."
-msgstr "Плъзгайте и пускайте, за да копирате елементи за управление в рамките на един документ или между различни документи. Отворете друг документ с формуляр и плъзнете скрития елемент за управление от прозореца <emph>Навигатор за формуляри</emph> в едноименния прозорец на документа – местоназначение. Щракнете върху видим елемент за управление направо в документа, задръжте за момент курсора на мишката, така че копие от елемента за управление да бъде поставено в клипборда за плъзгане и пускане, след което плъзнете копието в другия документ. Ако желаете да копирате в същия документ, задръжте <switchinline select=\"sys\"><caseinline select=\"MAC\">Command</caseinline><defaultinline>Ctrl</defaultinline></switchinline>, докато плъзгате."
+msgstr "Плъзгайте и пускайте, за да копирате елементи за управление в рамките на един документ или между различни документи. Отворете друг документ с формуляр и плъзнете скрития елемент за управление от прозореца <emph>Навигатор за формуляри</emph> в едноименния прозорец на документа местоназначение. Щракнете върху видим елемент за управление направо в документа, задръжте за момент курсора на мишката, така че копие от елемента за управление да бъде поставено в клипборда за плъзгане и пускане, след което плъзнете копието в другия документ. Ако желаете да копирате в същия документ, задръжте <switchinline select=\"sys\"><caseinline select=\"MAC\">Command</caseinline><defaultinline>Ctrl</defaultinline></switchinline>, докато плъзгате."
 
 #: 01170600.xhp
 msgctxt ""
@@ -9951,7 +9951,7 @@ msgctxt ""
 "6\n"
 "help.text"
 msgid "<ahelp hid=\"modules/sabpilot/ui/optiondbfieldpage/yesRadiobutton\">Specifies whether the user's entered or selected combination field value should be saved in a database field.</ahelp> Several database table fields are offered which can be accessed in the current form."
-msgstr ""
+msgstr "<ahelp hid=\"modules/sabpilot/ui/optiondbfieldpage/yesRadiobutton\">Указва дали въведената или избрана от потребителя стойност в комбинираното поле да бъде съхранена в поле на базата от данни.</ahelp> Предлагат се няколко полета за данни, достъпни от текущия формуляр."
 
 #: 01170904.xhp
 msgctxt ""
@@ -9978,7 +9978,7 @@ msgctxt ""
 "8\n"
 "help.text"
 msgid "<ahelp hid=\"modules/sabpilot/ui/optiondbfieldpage/storeInFieldCombobox\">Specifies the data field where the combination field value should be saved.</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\"modules/sabpilot/ui/optiondbfieldpage/storeInFieldCombobox\">Задава полето за данни, където да се съхранява стойността на комбинираното поле.</ahelp>"
 
 #: 01170904.xhp
 msgctxt ""
@@ -9996,7 +9996,7 @@ msgctxt ""
 "10\n"
 "help.text"
 msgid "<ahelp hid=\"modules/sabpilot/ui/optiondbfieldpage/noRadiobutton\">Specifies that the value of this combination field will not be written in the database and will only be saved in the form.</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\"modules/sabpilot/ui/optiondbfieldpage/noRadiobutton\">Указва, че стойността на това комбинирано поле няма да се записва в базата от данни и ще се запазва само във формуляра.</ahelp>"
 
 #: 01171000.xhp
 msgctxt ""
@@ -10423,7 +10423,7 @@ msgctxt ""
 "par_id3155941\n"
 "help.text"
 msgid "The last five font names that have been selected are shown in the top part of the combo box."
-msgstr ""
+msgstr "Имената на последните пет използвани шрифта се показват в началото на списъка на комбинираното поле."
 
 #: 02020000.xhp
 msgctxt ""
@@ -12464,7 +12464,7 @@ msgctxt ""
 "par_id9887081\n"
 "help.text"
 msgid "<ahelp hid=\".\">Enter a URL for the file that you want to open when you click the hyperlink. If you do not specify a target frame, the file opens in the current document or frame.</ahelp>"
-msgstr "<ahelp hid=\".\">Въведете URL адрес за файлът, който желаете да се отвори когато щракнете върху хипервръзката. Ако не зададете целева рамка, файлът ще се отвори в текущия документ или рамка.</ahelp>"
+msgstr "<ahelp hid=\".\">Въведете URL адрес за файла, който искате да се отвори при щракване върху хипервръзката. Ако не зададете рамка цел, файлът ще се отвори в текущия документ или рамка.</ahelp>"
 
 #: 09070100.xhp
 msgctxt ""
@@ -12800,7 +12800,7 @@ msgctxt ""
 "par_id9462263\n"
 "help.text"
 msgid "<ahelp hid=\".\">Enter a URL for the file that you want to open when you click the hyperlink. If you do not specify a target frame, the file opens in the current document or frame.</ahelp>"
-msgstr "<ahelp hid=\".\">Въведете URL адрес за файлът, който желаете да се отвори когато щракнете върху хипервръзката. Ако не зададете целева рамка, файлът ще се отвори в текущия документ или рамка.</ahelp>"
+msgstr "<ahelp hid=\".\">Въведете URL адрес за файла, който искате да се отвори при щракване върху хипервръзката. Ако не зададете рамка цел, файлът ще се отвори в текущия документ или рамка.</ahelp>"
 
 #: 09070300.xhp
 msgctxt ""
@@ -12845,7 +12845,7 @@ msgctxt ""
 "11\n"
 "help.text"
 msgid "<ahelp hid=\"SVX:EDIT:RID_SVXPAGE_HYPERLINK_DOCUMENT:ED_TARGET_DOC\">Specifies a target for the hyperlink into the document specified under <emph>Path</emph>.</ahelp>"
-msgstr "<ahelp hid=\"SVX:EDIT:RID_SVXPAGE_HYPERLINK_DOCUMENT:ED_TARGET_DOC\">Указва цел за хипервръзката в документа, зададе в <emph>Път</emph>.</ahelp>"
+msgstr "<ahelp hid=\"SVX:EDIT:RID_SVXPAGE_HYPERLINK_DOCUMENT:ED_TARGET_DOC\">Указва цел за хипервръзката в документа, зададен в <emph>Път</emph>.</ahelp>"
 
 #: 09070300.xhp
 msgctxt ""
@@ -12978,7 +12978,7 @@ msgctxt ""
 "par_id8894009\n"
 "help.text"
 msgid "<ahelp hid=\".\">Enter a URL for the file that you want to open when you click the hyperlink.</ahelp>"
-msgstr "<ahelp hid=\".\">Въведете URL адрес за файлът, който желаете да отворите като щракнете върху хипервръзката.</ahelp>"
+msgstr "<ahelp hid=\".\">Въведете URL адрес за файла, който искате да се отвори при щракване върху хипервръзката.</ahelp>"
 
 #: 09070400.xhp
 msgctxt ""
@@ -17399,7 +17399,7 @@ msgctxt ""
 "tit\n"
 "help.text"
 msgid "Image Filter Bar"
-msgstr ""
+msgstr "Лента „Филтър за изображения“"
 
 #: 24010000.xhp
 msgctxt ""
@@ -17407,7 +17407,7 @@ msgctxt ""
 "hd_id3151299\n"
 "help.text"
 msgid "<link href=\"text/shared/02/24010000.xhp\" name=\"Image Filter Bar\">Image Filter Bar</link>"
-msgstr ""
+msgstr "<link href=\"text/shared/02/24010000.xhp\" name=\"Image Filter Bar\">Лента „Филтър за изображения“</link>"
 
 #: 24010000.xhp
 msgctxt ""
@@ -17415,7 +17415,7 @@ msgctxt ""
 "par_id3156183\n"
 "help.text"
 msgid "<ahelp hid=\".uno:GraphicFilterToolbox\">This icon on the <emph>Image</emph> bar opens the <emph>Image Filter</emph> bar, where you can use various filters on the selected picture.</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\".uno:GraphicFilterToolbox\">Тази икона от лентата <emph>Изображение</emph> отваря лентата <emph>Филтър за изображения</emph>, чрез която можете да прилагате различни филтри върху избраното изображение.</ahelp>"
 
 #: 24010000.xhp
 msgctxt ""

@@ -69,9 +69,6 @@
 #include "document.hxx"
 #include "sc.hrc"
 
-#define SC_MAX_POOLREF      (SFX_ITEMS_OLD_MAXREF - 39)
-#define SC_SAFE_POOLREF     (SC_MAX_POOLREF + 20)
-
 sal_uInt16* ScDocumentPool::pVersionMap1 = nullptr;
 sal_uInt16* ScDocumentPool::pVersionMap2 = nullptr;
 sal_uInt16* ScDocumentPool::pVersionMap3 = nullptr;
@@ -186,12 +183,12 @@ static SfxItemInfo const  aItemInfos[] =
 static_assert(
     SAL_N_ELEMENTS(aItemInfos) == ATTR_ENDINDEX - ATTR_STARTINDEX + 1, "these must match");
 
-ScDocumentPool::ScDocumentPool( SfxItemPool* pSecPool)
+ScDocumentPool::ScDocumentPool()
 
     :   SfxItemPool ( OUString("ScDocumentPool"),
                         ATTR_STARTINDEX, ATTR_ENDINDEX,
                         aItemInfos, nullptr, false/*bLoadRefCounts*/ ),
-        pSecondary  ( pSecPool )
+    mnCurrentMaxKey(0)
 {
     //  latin font from GetDefaultFonts is not used, DEFAULTFONT_LATIN_SPREADSHEET instead
     vcl::Font aStdFont = OutputDevice::GetDefaultFont( DefaultFontType::LATIN_SPREADSHEET, LANGUAGE_ENGLISH_US,
@@ -250,16 +247,16 @@ ScDocumentPool::ScDocumentPool( SfxItemPool* pSecPool)
     ppPoolDefaults[ ATTR_FONT_EMPHASISMARK-ATTR_STARTINDEX ] = new SvxEmphasisMarkItem( FontEmphasisMark::NONE, ATTR_FONT_EMPHASISMARK );
     ppPoolDefaults[ ATTR_USERDEF         - ATTR_STARTINDEX ] = new SvXMLAttrContainerItem( ATTR_USERDEF );
     ppPoolDefaults[ ATTR_FONT_WORDLINE   - ATTR_STARTINDEX ] = new SvxWordLineModeItem(false, ATTR_FONT_WORDLINE );
-    ppPoolDefaults[ ATTR_FONT_RELIEF     - ATTR_STARTINDEX ] = new SvxCharReliefItem( RELIEF_NONE, ATTR_FONT_RELIEF );
+    ppPoolDefaults[ ATTR_FONT_RELIEF     - ATTR_STARTINDEX ] = new SvxCharReliefItem( FontRelief::NONE, ATTR_FONT_RELIEF );
     ppPoolDefaults[ ATTR_HYPHENATE       - ATTR_STARTINDEX ] = new SfxBoolItem( ATTR_HYPHENATE );
     ppPoolDefaults[ ATTR_SCRIPTSPACE     - ATTR_STARTINDEX ] = new SvxScriptSpaceItem( false, ATTR_SCRIPTSPACE);
     ppPoolDefaults[ ATTR_HANGPUNCTUATION - ATTR_STARTINDEX ] = new SvxHangingPunctuationItem( false, ATTR_HANGPUNCTUATION);
     ppPoolDefaults[ ATTR_FORBIDDEN_RULES - ATTR_STARTINDEX ] = new SvxForbiddenRuleItem( false, ATTR_FORBIDDEN_RULES);
     ppPoolDefaults[ ATTR_HOR_JUSTIFY     - ATTR_STARTINDEX ] = new SvxHorJustifyItem( SVX_HOR_JUSTIFY_STANDARD, ATTR_HOR_JUSTIFY);
-    ppPoolDefaults[ ATTR_HOR_JUSTIFY_METHOD - ATTR_STARTINDEX ] = new SvxJustifyMethodItem( SVX_JUSTIFY_METHOD_AUTO, ATTR_HOR_JUSTIFY_METHOD);
+    ppPoolDefaults[ ATTR_HOR_JUSTIFY_METHOD - ATTR_STARTINDEX ] = new SvxJustifyMethodItem( SvxCellJustifyMethod::Auto, ATTR_HOR_JUSTIFY_METHOD);
     ppPoolDefaults[ ATTR_INDENT          - ATTR_STARTINDEX ] = new SfxUInt16Item( ATTR_INDENT, 0 );
     ppPoolDefaults[ ATTR_VER_JUSTIFY     - ATTR_STARTINDEX ] = new SvxVerJustifyItem( SVX_VER_JUSTIFY_STANDARD, ATTR_VER_JUSTIFY);
-    ppPoolDefaults[ ATTR_VER_JUSTIFY_METHOD - ATTR_STARTINDEX ] = new SvxJustifyMethodItem( SVX_JUSTIFY_METHOD_AUTO, ATTR_VER_JUSTIFY_METHOD);
+    ppPoolDefaults[ ATTR_VER_JUSTIFY_METHOD - ATTR_STARTINDEX ] = new SvxJustifyMethodItem( SvxCellJustifyMethod::Auto, ATTR_VER_JUSTIFY_METHOD);
     ppPoolDefaults[ ATTR_STACKED         - ATTR_STARTINDEX ] = new SfxBoolItem( ATTR_STACKED, false );
     ppPoolDefaults[ ATTR_ROTATE_VALUE    - ATTR_STARTINDEX ] = new SfxInt32Item( ATTR_ROTATE_VALUE, 0 );
     ppPoolDefaults[ ATTR_ROTATE_MODE     - ATTR_STARTINDEX ] = new SvxRotateModeItem( SVX_ROTATE_MODE_BOTTOM, ATTR_ROTATE_MODE );
@@ -334,9 +331,6 @@ ScDocumentPool::ScDocumentPool( SfxItemPool* pSecPool)
 
     SetDefaults( ppPoolDefaults );
 
-    if ( pSecondary )
-        SetSecondaryPool( pSecondary );
-
     // ATTR_LANGUAGE_FORMAT from sv329 inserted, VersionMap in _ScGlobal__Init
     SetVersionMap( 1, 100, 157, pVersionMap1 );
 
@@ -387,7 +381,6 @@ ScDocumentPool::~ScDocumentPool()
     }
 
     delete[] ppPoolDefaults;
-    SfxItemPool::Free(pSecondary);
 }
 
 void ScDocumentPool::InitVersionMaps()
@@ -595,14 +588,6 @@ void ScDocumentPool::DeleteVersionMaps()
     pVersionMap1 = nullptr;
 }
 
-/**
- * The sal_uInt16 RefCount can overflow easily for the pattern attributes (SetItems):
- * E.g. Alternate formatting for 600 whole cells.
- * The RefCount is kept at SC_MAX_POOLREF and not increased/decreased anymore.
- * This RefCount is recalculated not until the next load.
- * The difference between SC_MAX_POOLREF and SC_SAFE_POOLREF is a little larger than it needs
- * to be, to allow for detecting accidental "normal" changes to the RefCount (assertions).
- */
 const SfxPoolItem& ScDocumentPool::Put( const SfxPoolItem& rItem, sal_uInt16 nWhich )
 {
     if ( rItem.Which() != ATTR_PATTERN ) // Only Pattern is special
@@ -614,39 +599,13 @@ const SfxPoolItem& ScDocumentPool::Put( const SfxPoolItem& rItem, sal_uInt16 nWh
 
     // Else Put must always happen, because it could be another Pool
     const SfxPoolItem& rNew = SfxItemPool::Put( rItem, nWhich );
-    CheckRef( rNew );
+    sal_uInt32 nRef = rNew.GetRefCount();
+    if (nRef == 1)
+    {
+        ++mnCurrentMaxKey;
+        const_cast<ScPatternAttr&>(static_cast<const ScPatternAttr&>(rNew)).SetKey(mnCurrentMaxKey);
+    }
     return rNew;
-}
-
-void ScDocumentPool::Remove( const SfxPoolItem& rItem )
-{
-    if ( rItem.Which() == ATTR_PATTERN ) // Only Pattern is special
-    {
-        sal_uLong nRef = rItem.GetRefCount();
-        if ( nRef >= (sal_uLong) SC_MAX_POOLREF && nRef <= (sal_uLong) SFX_ITEMS_OLD_MAXREF )
-        {
-            if ( nRef != (sal_uLong) SC_SAFE_POOLREF )
-            {
-                OSL_FAIL("Who fiddles with my ref counts?");
-                SetRefCount( (SfxPoolItem&)rItem, (sal_uLong) SC_SAFE_POOLREF );
-            }
-            return; // Do not decrement
-        }
-    }
-    SfxItemPool::Remove( rItem );
-}
-
-void ScDocumentPool::CheckRef( const SfxPoolItem& rItem )
-{
-    sal_uLong nRef = rItem.GetRefCount();
-    if ( nRef >= (sal_uLong) SC_MAX_POOLREF && nRef <= (sal_uLong) SFX_ITEMS_OLD_MAXREF )
-    {
-        // At the Apply of the Cache we might increase by 2 (to MAX+1 or SAFE+2)
-        // We only decrease by 1 (in LoadCompleted)
-        OSL_ENSURE( nRef<=(sal_uLong)SC_MAX_POOLREF+1 || (nRef>=(sal_uLong)SC_SAFE_POOLREF-1 && nRef<=(sal_uLong)SC_SAFE_POOLREF+2),
-                "ScDocumentPool::CheckRef" );
-        SetRefCount( (SfxPoolItem&)rItem, (sal_uLong) SC_SAFE_POOLREF );
-    }
 }
 
 void ScDocumentPool::StyleDeleted( ScStyleSheet* pStyle )
@@ -690,8 +649,8 @@ SfxItemPool* ScDocumentPool::Clone() const
 static bool lcl_HFPresentation
 (
     const SfxPoolItem&  rItem,
-    SfxMapUnit          eCoreMetric,
-    SfxMapUnit          ePresentationMetric,
+    MapUnit             eCoreMetric,
+    MapUnit             ePresentationMetric,
     OUString&           rText,
     const IntlWrapper* pIntl
 )
@@ -767,7 +726,7 @@ static bool lcl_HFPresentation
             default:
                 if ( !pIntl )
                     pIntl = ScGlobal::GetScIntlWrapper();
-                pItem->GetPresentation( SFX_ITEM_PRESENTATION_COMPLETE, eCoreMetric, ePresentationMetric, aText, pIntl );
+                pItem->GetPresentation( SfxItemPresentation::Complete, eCoreMetric, ePresentationMetric, aText, pIntl );
 
         }
 
@@ -787,7 +746,7 @@ static bool lcl_HFPresentation
 
 bool ScDocumentPool::GetPresentation(
     const SfxPoolItem&  rItem,
-    SfxMapUnit          ePresentationMetric,
+    MapUnit             ePresentationMetric,
     OUString&           rText,
     const IntlWrapper* pIntl ) const
 {
@@ -907,20 +866,20 @@ bool ScDocumentPool::GetPresentation(
         default:
             if ( !pIntl )
                 pIntl = ScGlobal::GetScIntlWrapper();
-            ePresentationRet = rItem.GetPresentation( SFX_ITEM_PRESENTATION_COMPLETE, GetMetric( nW ), ePresentationMetric, rText, pIntl );
+            ePresentationRet = rItem.GetPresentation( SfxItemPresentation::Complete, GetMetric( nW ), ePresentationMetric, rText, pIntl );
         break;
     }
 
     return ePresentationRet;
 }
 
-SfxMapUnit ScDocumentPool::GetMetric( sal_uInt16 nWhich ) const
+MapUnit ScDocumentPool::GetMetric( sal_uInt16 nWhich ) const
 {
     // Own attributes in Twips, everything else in 1/100 mm
     if ( nWhich >= ATTR_STARTINDEX && nWhich <= ATTR_ENDINDEX )
-        return SFX_MAPUNIT_TWIP;
+        return MapUnit::MapTwip;
     else
-        return SFX_MAPUNIT_100TH_MM;
+        return MapUnit::Map100thMM;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

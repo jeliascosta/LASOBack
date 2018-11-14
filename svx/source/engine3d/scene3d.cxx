@@ -333,8 +333,7 @@ void E3dScene::SetCamera(const Camera3D& rNewCamera)
     SetRectsDirty();
 
     // Turn off ratio
-    if(aCamera.GetAspectMapping() == AS_NO_MAPPING)
-        GetCameraSet().SetRatio(0.0);
+    GetCameraSet().SetRatio(0.0);
 
     // Set Imaging geometry
     basegfx::B3DPoint aVRP(aCamera.GetViewPoint());
@@ -346,7 +345,7 @@ void E3dScene::SetCamera(const Camera3D& rNewCamera)
     GetCameraSet().SetViewportValues(aVRP, aVPN, aVUV);
 
     // Set perspective
-    GetCameraSet().SetPerspective(aCamera.GetProjection() == PR_PERSPECTIVE);
+    GetCameraSet().SetPerspective(aCamera.GetProjection() == ProjectionType::Perspective);
     GetCameraSet().SetViewportRectangle((Rectangle&)aCamera.GetDeviceWindow());
 
     ImpCleanup3DDepthMapper();
@@ -475,7 +474,7 @@ void E3dScene::RebuildLists()
     // first delete
     SdrLayerID nCurrLayerID = GetLayer();
 
-    SdrObjListIter a3DIterator(maSubList, IM_FLAT);
+    SdrObjListIter a3DIterator(maSubList, SdrIterMode::Flat);
 
     // then examine all the objects in the scene
     while ( a3DIterator.IsMore() )
@@ -652,7 +651,7 @@ void E3dScene::RecalcSnapRect()
 bool E3dScene::IsBreakObjPossible()
 {
     // Break scene, if all members are able to break
-    SdrObjListIter a3DIterator(maSubList, IM_DEEPWITHGROUPS);
+    SdrObjListIter a3DIterator(maSubList, SdrIterMode::DeepWithGroups);
 
     while ( a3DIterator.IsMore() )
     {
@@ -699,7 +698,7 @@ bool E3dScene::EndCreate(SdrDragStat& rStat, SdrCreateCmd eCmd)
     aRect1.Justify();
     NbcSetSnapRect(aRect1);
     SetRectsDirty();
-    return (eCmd==SDRCREATE_FORCEEND || rStat.GetPointCount()>=2);
+    return (eCmd==SdrCreateCmd::ForceEnd || rStat.GetPointCount()>=2);
 }
 
 bool E3dScene::BckCreate(SdrDragStat& /*rStat*/)

@@ -65,7 +65,7 @@ namespace frm
         getPropertyDefaultByHandle( PROPERTY_ID_VSCROLL                 ) >>= m_bVScroll;
         getPropertyDefaultByHandle( PROPERTY_ID_READONLY                ) >>= m_bReadonly;
         getPropertyDefaultByHandle( PROPERTY_ID_PRINTABLE               ) >>= m_bPrintable;
-        getPropertyDefaultByHandle( PROPERTY_ID_ALIGN                   ) >>= m_aAlign;
+        m_aAlign = getPropertyDefaultByHandle( PROPERTY_ID_ALIGN );
         getPropertyDefaultByHandle( PROPERTY_ID_ECHO_CHAR               ) >>= m_nEchoChar;
         getPropertyDefaultByHandle( PROPERTY_ID_MAXTEXTLEN              ) >>= m_nMaxTextLength;
         getPropertyDefaultByHandle( PROPERTY_ID_MULTILINE               ) >>= m_bMultiLine;
@@ -329,7 +329,7 @@ namespace frm
     }
 
 
-    sal_Bool SAL_CALL ORichTextModel::convertFastPropertyValue( Any& _rConvertedValue, Any& _rOldValue, sal_Int32 _nHandle, const Any& _rValue ) throw( IllegalArgumentException )
+    sal_Bool SAL_CALL ORichTextModel::convertFastPropertyValue( Any& _rConvertedValue, Any& _rOldValue, sal_Int32 _nHandle, const Any& _rValue ) throw( IllegalArgumentException, RuntimeException, std::exception )
     {
         bool bModified = false;
 
@@ -500,20 +500,6 @@ namespace frm
     }
 
 
-    void SAL_CALL ORichTextModel::write(const Reference< XObjectOutputStream >& _rxOutStream) throw ( IOException, RuntimeException, std::exception)
-    {
-        OControlModel::write( _rxOutStream );
-        // TODO: place your code here
-    }
-
-
-    void SAL_CALL ORichTextModel::read(const Reference< XObjectInputStream >& _rxInStream) throw ( IOException, RuntimeException, std::exception)
-    {
-        OControlModel::read( _rxInStream );
-        // TODO: place your code here
-    }
-
-
     RichTextEngine* ORichTextModel::getEditEngine( const Reference< XControlModel >& _rxModel )
     {
         RichTextEngine* pEngine = nullptr;
@@ -551,7 +537,7 @@ namespace frm
     }
 
 
-    IMPL_LINK_NOARG_TYPED( ORichTextModel, OnEngineContentModified, LinkParamNone*, void )
+    IMPL_LINK_NOARG( ORichTextModel, OnEngineContentModified, LinkParamNone*, void )
     {
         if ( !m_bSettingEngineText )
         {

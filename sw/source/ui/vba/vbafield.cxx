@@ -28,7 +28,9 @@
 #include <comphelper/string.hxx>
 #include <ooo/vba/word/WdFieldType.hpp>
 #include <swtypes.hxx>
+#include <basic/sberrors.hxx>
 #include <cppuhelper/implbase.hxx>
+#include <osl/diagnose.h>
 
 using namespace ::ooo::vba;
 using namespace ::com::sun::star;
@@ -82,7 +84,7 @@ public:
 
     long SkipToNextToken();
 
-    sal_Int32 FindNextStringPiece( sal_Int32 _nStart = -1 );
+    sal_Int32 FindNextStringPiece( sal_Int32 _nStart );
 
     OUString GetResult() const;
     const OUString& GetFieldName()const { return aFieldName; }
@@ -433,7 +435,7 @@ uno::Reference< text::XTextField > SwVbaFields::Create_Field_DocProperty( const 
                 break;
         }
     }
-    aDocProperty = comphelper::string::remove(aDocProperty, '"');
+    aDocProperty = aDocProperty.replaceAll("\"", "");
     OSL_TRACE("SwVbaFields::Create_Field_DocProperty, the document property name is %s ",OUStringToOString( aDocProperty, RTL_TEXTENCODING_UTF8 ).getStr() );
     if( aDocProperty.isEmpty() )
     {

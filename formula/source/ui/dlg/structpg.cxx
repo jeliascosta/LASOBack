@@ -87,7 +87,7 @@ StructPage::StructPage(vcl::Window* pParent):
     pSelectedToken  ( nullptr )
 {
     get(m_pTlbStruct, "struct");
-    Size aSize(LogicToPixel(Size(86, 162), MAP_APPFONT));
+    Size aSize(LogicToPixel(Size(86, 162), MapUnit::MapAppFont));
     m_pTlbStruct->set_height_request(aSize.Height());
     m_pTlbStruct->set_width_request(aSize.Width());
     m_pTlbStruct->SetStyle(m_pTlbStruct->GetStyle()|WB_HASLINES|WB_CLIPCHILDREN|
@@ -170,7 +170,7 @@ IFormulaToken* StructPage::GetFunctionEntry(SvTreeListEntry* pEntry)
     return nullptr;
 }
 
-IMPL_LINK_TYPED( StructPage, SelectHdl, SvTreeListBox*, pTlb, void )
+IMPL_LINK( StructPage, SelectHdl, SvTreeListBox*, pTlb, void )
 {
     if(m_pTlbStruct->GetActiveFlag())
     {

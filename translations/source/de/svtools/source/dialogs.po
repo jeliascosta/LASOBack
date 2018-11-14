@@ -3,9 +3,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2015-08-25 12:33+0200\n"
-"PO-Revision-Date: 2017-01-14 10:10+0000\n"
-"Last-Translator: kuehl <kuehl@libreoffice.org>\n"
+"POT-Creation-Date: 2017-04-11 22:26+0200\n"
+"PO-Revision-Date: 2017-06-26 09:58+0000\n"
+"Last-Translator: Sophia Schröder <sophia.schroeder@outlook.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Accelerator-Marker: ~\n"
 "X-Generator: Pootle 2.8\n"
-"X-POOTLE-MTIME: 1484388648.000000\n"
+"X-POOTLE-MTIME: 1498471093.000000\n"
 
 #: addresstemplate.src
 msgctxt ""
@@ -334,6 +334,14 @@ msgctxt ""
 "STR_FORMAT_RTF\n"
 "string.text"
 msgid "Formatted text [RTF]"
+msgstr "Formatierter Text [RTF]"
+
+#: formats.src
+msgctxt ""
+"formats.src\n"
+"STR_FORMAT_ID_RICHTEXT\n"
+"string.text"
+msgid "Formatted text [Richtext]"
 msgstr "Formatierter Text [RTF]"
 
 #: formats.src
@@ -857,7 +865,7 @@ msgctxt ""
 "ERRCODE_SO_NOCACHE_UPDATED&S_MAX\n"
 "string.text"
 msgid "No cache files were updated."
-msgstr "Die Daten im Cache wurden nicht aktualisiert."
+msgstr "Die Daten im Zwischenspeicher wurden nicht aktualisiert."
 
 #: so3res.src
 msgctxt ""
@@ -866,7 +874,7 @@ msgctxt ""
 "ERRCODE_SO_SOMECACHES_NOTUPDATED&S_MAX\n"
 "string.text"
 msgid "Some cache files were not updated."
-msgstr "Einige Daten im Cache wurden nicht aktualisiert."
+msgstr "Einige Daten im Zwischenspeicher wurden nicht aktualisiert."
 
 #: so3res.src
 msgctxt ""
@@ -938,7 +946,7 @@ msgctxt ""
 "ERRCODE_SO_OUT_OF_MEMORY&S_MAX\n"
 "string.text"
 msgid "Insufficient memory."
-msgstr "Zu wenig Speicher."
+msgstr "Zu wenig Arbeitsspeicher."
 
 #: so3res.src
 msgctxt ""

@@ -45,7 +45,7 @@ protected:
 public:
     explicit WordPerfectImportFilter(const css::uno::Reference< css::uno::XComponentContext > &rxContext)
         : mxContext(rxContext) {}
-    virtual ~WordPerfectImportFilter() {}
+    virtual ~WordPerfectImportFilter() override {}
 
     // XFilter
     virtual sal_Bool SAL_CALL filter(const css::uno::Sequence< css::beans::PropertyValue > &aDescriptor)
@@ -75,18 +75,8 @@ public:
 
 };
 
-OUString WordPerfectImportFilter_getImplementationName()
-throw (css::uno::RuntimeException);
-
 bool SAL_CALL WordPerfectImportFilter_supportsService(const OUString &ServiceName)
 throw (css::uno::RuntimeException);
-
-css::uno::Sequence< OUString > SAL_CALL WordPerfectImportFilter_getSupportedServiceNames()
-throw (css::uno::RuntimeException);
-
-css::uno::Reference< css::uno::XInterface >
-SAL_CALL WordPerfectImportFilter_createInstance(const css::uno::Reference< css::uno::XComponentContext > &rContext)
-throw (css::uno::Exception);
 
 
 #endif

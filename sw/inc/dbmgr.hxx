@@ -209,7 +209,6 @@ struct SwMergeDescriptor
      * @defgroup print Mail merge to Printer
      * @addtogroup print
      * @{ */
-    bool                                                bPrintAsync;
     css::uno::Sequence<  css::beans::PropertyValue >    aPrintOptions;
     /** @} */
 
@@ -225,7 +224,6 @@ struct SwMergeDescriptor
         bPrefixIsFilename( false ),
         bSendAsHTML( true ),
         bSendAsAttachment( false ),
-        bPrintAsync( false ),
         pMailMergeConfigItem( nullptr )
     {
         if( nType == DBMGR_MERGE_SHELL || nType == DBMGR_MERGE_PRINTER )
@@ -241,6 +239,7 @@ class SwDoc;
 class SW_DLLPUBLIC SwDBManager
 {
 friend class SwConnectionDisposedListener_Impl;
+    class MailDispatcherListener_Impl;
 
     enum class MergeStatus
     {
@@ -265,7 +264,7 @@ friend class SwConnectionDisposedListener_Impl;
     SAL_DLLPRIVATE SwDSParam*          FindDSData(const SwDBData& rData, bool bCreate);
     SAL_DLLPRIVATE SwDSParam*          FindDSConnection(const OUString& rSource, bool bCreate);
 
-    DECL_DLLPRIVATE_LINK_TYPED( PrtCancelHdl, Button *, void );
+    DECL_DLLPRIVATE_LINK( PrtCancelHdl, Button *, void );
 
     /// Insert data record as text into document.
     SAL_DLLPRIVATE void ImportFromConnection( SwWrtShell* pSh);
@@ -275,8 +274,7 @@ friend class SwConnectionDisposedListener_Impl;
 
     /// Run the mail merge for defined modes, except DBMGR_MERGE
     SAL_DLLPRIVATE bool MergeMailFiles( SwWrtShell* pSh,
-                                        const SwMergeDescriptor& rMergeDescriptor,
-                                        vcl::Window* pParent );
+                                        const SwMergeDescriptor& rMergeDescriptor );
 
     SAL_DLLPRIVATE bool ToNextMergeRecord();
     SAL_DLLPRIVATE bool IsValidMergeRecord() const;
@@ -306,13 +304,13 @@ public:
     inline void     SetMergeSilent( bool bVal )     { bMergeSilent = bVal; }
 
     /// Merging of data records into fields.
-    bool            Merge( const SwMergeDescriptor& rMergeDesc, vcl::Window* pParent = nullptr );
+    bool            Merge( const SwMergeDescriptor& rMergeDesc );
     void            MergeCancel();
 
     inline bool     IsMergeOk()     { return MergeStatus::OK     == m_aMergeStatus; };
     inline bool     IsMergeError()  { return MergeStatus::ERROR  <= m_aMergeStatus; };
 
-    static SwMailMergeConfigItem* PerformMailMerge(SwView* pView);
+    static std::shared_ptr<SwMailMergeConfigItem> PerformMailMerge(SwView* pView);
 
     /// Initialize data fields that lack name of database.
     inline bool     IsInitDBFields() const  { return bInitDBFields; }
@@ -325,12 +323,12 @@ public:
     void            GetColumnNames(ListBox* pListBox,
                             const OUString& rDBName, const OUString& rTableName);
     static void GetColumnNames(ListBox* pListBox,
-                            css::uno::Reference< css::sdbc::XConnection> xConnection,
+                            css::uno::Reference< css::sdbc::XConnection> const & xConnection,
                             const OUString& rTableName);
 
-    static sal_uLong GetColumnFormat( css::uno::Reference< css::sdbc::XDataSource> xSource,
-                            css::uno::Reference< css::sdbc::XConnection> xConnection,
-                            css::uno::Reference< css::beans::XPropertySet> xColumn,
+    static sal_uLong GetColumnFormat( css::uno::Reference< css::sdbc::XDataSource> const & xSource,
+                            css::uno::Reference< css::sdbc::XConnection> const & xConnection,
+                            css::uno::Reference< css::beans::XPropertySet> const & xColumn,
                             SvNumberFormatter* pNFormatr,
                             long nLanguage );
 
@@ -363,7 +361,7 @@ public:
                             OUString& rResult, double* pNumber);
     /** create and store or find an already stored connection to a data source for use
     in SwFieldMgr and SwDBTreeList */
-    css::uno::Reference< css::sdbc::XConnection>
+    css::uno::Reference< css::sdbc::XConnection> const &
                     RegisterConnection(OUString const& rSource);
 
     void            CreateDSData(const SwDBData& rData)
@@ -385,7 +383,7 @@ public:
     static const SwDBData& GetAddressDBName();
 
     static OUString GetDBField(
-                    css::uno::Reference< css::beans::XPropertySet > xColumnProp,
+                    css::uno::Reference< css::beans::XPropertySet > const & xColumnProp,
                     const SwDBFormatData& rDBFormatData,
                     double *pNumber = nullptr);
 
@@ -394,7 +392,7 @@ public:
                 css::uno::Reference< css::sdbc::XDataSource>& rxSource);
 
     static css::uno::Reference< css::sdbcx::XColumnsSupplier>
-            GetColumnSupplier(css::uno::Reference< css::sdbc::XConnection>,
+            GetColumnSupplier(css::uno::Reference< css::sdbc::XConnection> const & xConnection,
                                     const OUString& rTableOrQuery,
                                     SwDBSelect eTableOrQuery = SwDBSelect::UNKNOWN);
 
@@ -419,7 +417,7 @@ public:
      */
     static OUString            LoadAndRegisterDataSource(const DBConnURITypes type, const css::uno::Any &rUnoURI,
                                                          const css::uno::Reference < css::beans::XPropertySet > *pSettings,
-                                                         const OUString &rURI, const OUString *pPrefix = nullptr, const OUString *pDestDir = nullptr,
+                                                         const OUString &rURI, const OUString *pPrefix, const OUString *pDestDir,
                                                          SwDocShell* pDocShell = nullptr);
     /**
      Loads a data source from file and registers it.
@@ -427,7 +425,7 @@ public:
      Convenience function, which calls GetDBunoURI and has just one mandatory parameter.
      In case of success it returns the registered name, otherwise an empty string.
      */
-    static OUString            LoadAndRegisterDataSource(const OUString& rURI, const OUString *pPrefix = nullptr, const OUString *pDestDir = nullptr,
+    static OUString            LoadAndRegisterDataSource(const OUString& rURI, const OUString *pPrefix, const OUString *pDestDir,
                                                          const css::uno::Reference < css::beans::XPropertySet > *pSettings = nullptr);
 
     /// Load the embedded data source of the document and also register it.

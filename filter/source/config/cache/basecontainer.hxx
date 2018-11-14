@@ -121,7 +121,7 @@ class BaseContainer : public BaseLock
 
         /** @short  standard dtor.
          */
-        virtual ~BaseContainer();
+        virtual ~BaseContainer() override;
 
 
         /** @short  initialize this generic intsnace with some specialized values
@@ -178,7 +178,7 @@ class BaseContainer : public BaseLock
 
         /** @short  returns a pointer to the current used cache member.
 
-            @descr  Its a point to the FilterCache instance behind m_pFlushCache
+            @descr  It's a point to the FilterCache instance behind m_pFlushCache
                     or m_rCache.
 
             @note   The lifetime of this pointer is restricted to the time, where

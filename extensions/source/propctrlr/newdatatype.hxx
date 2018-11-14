@@ -43,13 +43,13 @@ namespace pcr
     public:
         NewDataTypeDialog(vcl::Window* _pParent, const OUString& _rNameBase,
             const ::std::vector< OUString >& _rProhibitedNames );
-        virtual ~NewDataTypeDialog();
+        virtual ~NewDataTypeDialog() override;
         virtual void dispose() override;
 
         OUString GetName() const { return m_pName->GetText(); }
 
     private:
-        DECL_LINK_TYPED( OnNameModified, Edit&, void );
+        DECL_LINK( OnNameModified, Edit&, void );
     };
 
 

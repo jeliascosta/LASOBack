@@ -45,7 +45,7 @@
 using namespace ::com::sun::star;
 
 XOBitmap::XOBitmap( const Bitmap& rBmp ) :
-    eType           ( XBITMAP_IMPORT ),
+    eType           ( XBitmapType::Import ),
     aGraphicObject  ( rBmp ),
     pPixelArray     ( nullptr ),
     bGraphicDirty   ( false )
@@ -64,7 +64,7 @@ XOBitmap::XOBitmap( const XOBitmap& rXBmp ) :
 
     if( rXBmp.pPixelArray )
     {
-        if( eType == XBITMAP_8X8 )
+        if( eType == XBitmapType::N8x8 )
         {
             pPixelArray = new sal_uInt16[ 64 ];
 
@@ -90,7 +90,7 @@ XOBitmap& XOBitmap::operator=( const XOBitmap& rXBmp )
 
     if( rXBmp.pPixelArray )
     {
-        if( eType == XBITMAP_8X8 )
+        if( eType == XBitmapType::N8x8 )
         {
             pPixelArray = new sal_uInt16[ 64 ];
 
@@ -278,16 +278,16 @@ XFillBitmapItem::XFillBitmapItem(SvStream& rIn, sal_uInt16 nVer)
             sal_Int16 iTmp;
 
             rIn.ReadInt16( iTmp ); // former XBitmapStyle
-            rIn.ReadInt16( iTmp ); // former XBitmapType
+            rIn.ReadInt16( iTmp ); // XBitmapType
 
-            if(XBITMAP_IMPORT == iTmp)
+            if(XBitmapType::Import == (XBitmapType)iTmp)
             {
                 Bitmap aBmp;
 
                 ReadDIB(aBmp, rIn, true);
                 maGraphicObject = Graphic(aBmp);
             }
-            else if(XBITMAP_8X8 == iTmp)
+            else if(XBitmapType::N8x8 == (XBitmapType)iTmp)
             {
                 sal_uInt16 aArray[64];
 
@@ -357,6 +357,12 @@ void XFillBitmapItem::SetGraphicObject(const GraphicObject& rGraphicObject)
     maGraphicObject = rGraphicObject;
 }
 
+bool XFillBitmapItem::isPattern() const
+{
+    BitmapColor aBack, aFront;
+    return isHistorical8x8(GetGraphicObject().GetGraphic().GetBitmap(), aBack, aFront);
+}
+
 sal_uInt16 XFillBitmapItem::GetVersion(sal_uInt16 /*nFileFormatVersion*/) const
 {
     return 2;
@@ -364,8 +370,8 @@ sal_uInt16 XFillBitmapItem::GetVersion(sal_uInt16 /*nFileFormatVersion*/) const
 
 bool XFillBitmapItem::GetPresentation(
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit /*eCoreUnit*/,
-    SfxMapUnit /*ePresUnit*/,
+    MapUnit /*eCoreUnit*/,
+    MapUnit /*ePresUnit*/,
     OUString& rText,
     const IntlWrapper*) const
 {
@@ -481,11 +487,11 @@ bool XFillBitmapItem::PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId )
     if( bSetURL )
     {
         GraphicObject aGraphicObject  = GraphicObject::CreateGraphicObjectFromURL(aURL);
-        if( aGraphicObject.GetType() != GRAPHIC_NONE )
+        if( aGraphicObject.GetType() != GraphicType::NONE )
             maGraphicObject = aGraphicObject;
 
         // #121194# Prefer GraphicObject over bitmap object if both are provided
-        if(bSetBitmap && GRAPHIC_NONE != maGraphicObject.GetType())
+        if(bSetBitmap && GraphicType::NONE != maGraphicObject.GetType())
         {
             bSetBitmap = false;
         }
@@ -517,11 +523,14 @@ XFillBitmapItem* XFillBitmapItem::checkForUniqueItem( SdrModel* pModel ) const
 {
     if( pModel )
     {
+        XPropertyListType aListType = XPropertyListType::Bitmap;
+        if(isPattern())
+            aListType = XPropertyListType::Pattern;
         const OUString aUniqueName = NameOrIndex::CheckNamedItem(
                 this, XATTR_FILLBITMAP, &pModel->GetItemPool(),
                 pModel->GetStyleSheetPool() ? &pModel->GetStyleSheetPool()->GetPool() : nullptr,
                 XFillBitmapItem::CompareValueFunc, RID_SVXSTR_BMP21,
-                pModel->GetPropertyList( XBITMAP_LIST ) );
+                pModel->GetPropertyList( aListType ) );
 
         // if the given name is not valid, replace it!
         if( aUniqueName != GetName() )
@@ -535,7 +544,7 @@ XFillBitmapItem* XFillBitmapItem::checkForUniqueItem( SdrModel* pModel ) const
 
 void XFillBitmapItem::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("xFillBitmapItem"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("XFillBitmapItem"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("whichId"), BAD_CAST(OString::number(Which()).getStr()));
 
     NameOrIndex::dumpAsXml(pWriter);

@@ -169,7 +169,7 @@ public:
     virtual sal_uLong ReplaceCr( sal_uInt8 nChar ) override;
 
     /// Returns the relationd id
-    OString OutputChart( css::uno::Reference< css::frame::XModel >& xModel, sal_Int32 nCount, ::sax_fastparser::FSHelperPtr m_pSerializer );
+    OString OutputChart( css::uno::Reference< css::frame::XModel >& xModel, sal_Int32 nCount, ::sax_fastparser::FSHelperPtr const & m_pSerializer );
     OString WriteOLEObject(SwOLEObj& rObject, OUString & io_rProgID);
 
     /// Writes the shape using drawingML syntax.
@@ -199,8 +199,8 @@ protected:
     /// Get ready for a new section.
     virtual void PrepareNewPageDesc( const SfxItemSet* pSet,
                                      const SwNode& rNd,
-                                     const SwFormatPageDesc* pNewPgDescFormat = nullptr,
-                                     const SwPageDesc* pNewPgDesc = nullptr ) override;
+                                     const SwFormatPageDesc* pNewPgDescFormat,
+                                     const SwPageDesc* pNewPgDesc ) override;
 
 private:
     /// Setup pStyles and write styles.xml
@@ -257,7 +257,7 @@ public:
             SwPaM *pCurrentPam, SwPaM *pOriginalPam );
 
     /// Destructor.
-    virtual ~DocxExport();
+    virtual ~DocxExport() override;
 
     /// Reference to the VMLExport instance for the main document.
     oox::vml::VMLExport& VMLExporter() { return *m_pVMLExport; }
@@ -270,7 +270,7 @@ public:
 
     const ::sax_fastparser::FSHelperPtr& GetFS() { return mpFS; }
 
-    void SetFS(::sax_fastparser::FSHelperPtr mpFS);
+    void SetFS(::sax_fastparser::FSHelperPtr const & mpFS);
 
 private:
     DocxExport( const DocxExport& ) = delete;

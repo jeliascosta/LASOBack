@@ -69,7 +69,7 @@ public:
     explicit        WorkWindow( vcl::Window* pParent, WinBits nStyle = WB_STDWORK );
     explicit        WorkWindow( vcl::Window* pParent, const css::uno::Any& aSystemWorkWindowToken, WinBits nStyle = WB_STDWORK );
     explicit        WorkWindow( SystemParentData* pParent ); // Not in the REMOTE-Version
-    virtual         ~WorkWindow();
+    virtual         ~WorkWindow() override;
     virtual void    dispose() override;
 
     virtual bool    Close() override;
@@ -89,7 +89,7 @@ public:
     /**
      @overload void StartPresentationMode( PresentationFlags nFlags, sal_uInt32 nDisplayScreen)
     */
-    void            StartPresentationMode( PresentationFlags nFlags = PresentationFlags::NONE );
+    void            StartPresentationMode( PresentationFlags nFlags );
     bool            IsPresentationMode() const { return mbPresentationMode; }
 
     bool            IsMinimized() const;

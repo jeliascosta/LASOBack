@@ -28,7 +28,7 @@ FormulaGrammar::Grammar FormulaGrammar::mapAPItoGrammar( const bool bEnglish, co
     if (bEnglish && bXML)
         eGrammar = GRAM_PODF;
     else if (bEnglish && !bXML)
-        eGrammar = GRAM_PODF_A1;
+        eGrammar = GRAM_API;
     else if (!bEnglish && bXML)
         eGrammar = GRAM_NATIVE_ODF;
     else // (!bEnglish && !bXML)
@@ -56,6 +56,7 @@ bool FormulaGrammar::isSupported( const Grammar eGrammar )
         case GRAM_ENGLISH_XL_R1C1:
         case GRAM_ENGLISH_XL_OOX :
         case GRAM_OOXML          :
+        case GRAM_API            :
             return true;
         default:
             return extractFormulaLanguage( eGrammar) == GRAM_EXTERNAL;

@@ -73,7 +73,7 @@ CommandWheelData::CommandWheelData()
 {
     mnDelta         = 0;
     mnNotchDelta    = 0;
-    mnLines         = 0;
+    mnLines         = 0.0;
     mnWheelMode     = CommandWheelMode::NONE;
     mnCode          = 0;
     mbHorz          = false;
@@ -81,7 +81,7 @@ CommandWheelData::CommandWheelData()
 }
 
 CommandWheelData::CommandWheelData( long nWheelDelta, long nWheelNotchDelta,
-                                    sal_uLong nScrollLines,
+                                    double nScrollLines,
                                     CommandWheelMode nWheelMode, sal_uInt16 nKeyModifier,
                                     bool bHorz, bool bDeltaIsPixel )
 {
@@ -100,8 +100,9 @@ CommandScrollData::CommandScrollData( long nDeltaX, long nDeltaY )
     mnDeltaY    = nDeltaY;
 }
 
-CommandModKeyData::CommandModKeyData( sal_uInt16 nCode )
+CommandModKeyData::CommandModKeyData( sal_uInt16 nCode, bool bDown )
 {
+    mbDown = bDown;
     mnCode = nCode;
 }
 

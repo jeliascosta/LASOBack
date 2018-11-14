@@ -20,6 +20,7 @@
 #define INCLUDED_CUI_SOURCE_INC_TEXTATTR_HXX
 
 #include <svx/dlgctrl.hxx>
+#include <svx/svdobj.hxx>
 
 #include <vcl/group.hxx>
 
@@ -39,6 +40,9 @@ class SvxTextAttrPage : public SvxTabPage
 private:
     static const sal_uInt16 pRanges[];
 
+    VclPtr<VclContainer>        m_pDrawingText;
+    VclPtr<VclContainer>        m_pCustomShapeText;
+
     VclPtr<TriStateBox>         m_pTsbAutoGrowWidth;
     VclPtr<TriStateBox>         m_pTsbAutoGrowHeight;
     VclPtr<TriStateBox>         m_pTsbFitToSize;
@@ -57,7 +61,7 @@ private:
     VclPtr<TriStateBox>         m_pTsbFullWidth;
 
     const SfxItemSet&   rOutAttrs;
-    const SdrView*      pView;
+    SdrObjKind    m_eObjKind;
 
     bool                bAutoGrowSizeEnabled;
     bool                bContourEnabled;
@@ -66,8 +70,8 @@ private:
     bool                bWordWrapTextEnabled;
     bool                bFitToSizeEnabled;
 
-    DECL_LINK_TYPED( ClickFullWidthHdl_Impl, Button*, void );
-    DECL_LINK_TYPED( ClickHdl_Impl, Button*, void );
+    DECL_LINK( ClickFullWidthHdl_Impl, Button*, void );
+    DECL_LINK( ClickHdl_Impl, Button*, void );
 
     /** Return whether the text direction is from left to right (</sal_True>) or
         top to bottom (</sal_False>).
@@ -77,7 +81,7 @@ private:
 public:
 
     SvxTextAttrPage( vcl::Window* pWindow, const SfxItemSet& rInAttrs );
-    virtual ~SvxTextAttrPage();
+    virtual ~SvxTextAttrPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window*, const SfxItemSet* );
@@ -86,10 +90,10 @@ public:
     virtual bool        FillItemSet( SfxItemSet* ) override;
     virtual void        Reset( const SfxItemSet * ) override;
 
-    virtual void        PointChanged( vcl::Window* pWindow, RECT_POINT eRP ) override;
+    virtual void        PointChanged( vcl::Window* pWindow, RectPoint eRP ) override;
 
     void         Construct();
-    void         SetView( const SdrView* pSdrView ) { pView = pSdrView; }
+    void         SetObjKind(SdrObjKind eObjKind) { m_eObjKind = eObjKind; }
     virtual void PageCreated(const SfxAllItemSet& aSet) override;
 };
 

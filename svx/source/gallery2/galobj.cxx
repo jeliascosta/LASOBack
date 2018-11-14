@@ -55,7 +55,7 @@ BitmapEx SgaObject::createPreviewBitmapEx(const Size& rSizePixel) const
 
     if(rSizePixel.Width() && rSizePixel.Height())
     {
-        if(SGA_OBJ_SOUND == GetObjKind())
+        if(SgaObjKind::Sound == GetObjKind())
         {
             aRetval = GAL_RES(RID_SVXBMP_GALLERY_MEDIA);
         }
@@ -93,18 +93,18 @@ bool SgaObject::CreateThumb( const Graphic& rGraphic )
 {
     bool bRet = false;
 
-    if( rGraphic.GetType() == GRAPHIC_BITMAP )
+    if( rGraphic.GetType() == GraphicType::Bitmap )
     {
         BitmapEx    aBmpEx( rGraphic.GetBitmapEx() );
         Size        aBmpSize( aBmpEx.GetSizePixel() );
 
         if( aBmpSize.Width() && aBmpSize.Height() )
         {
-            if( aBmpEx.GetPrefMapMode().GetMapUnit() != MAP_PIXEL &&
+            if( aBmpEx.GetPrefMapMode().GetMapUnit() != MapUnit::MapPixel &&
                 aBmpEx.GetPrefSize().Width() > 0 &&
                 aBmpEx.GetPrefSize().Height() > 0 )
             {
-                Size aLogSize( OutputDevice::LogicToLogic( aBmpEx.GetPrefSize(), aBmpEx.GetPrefMapMode(), MAP_100TH_MM ) );
+                Size aLogSize( OutputDevice::LogicToLogic( aBmpEx.GetPrefSize(), aBmpEx.GetPrefMapMode(), MapUnit::Map100thMM ) );
 
                 if( aLogSize.Width() > 0 && aLogSize.Height() > 0 )
                 {
@@ -144,7 +144,7 @@ bool SgaObject::CreateThumb( const Graphic& rGraphic )
             }
         }
     }
-    else if( rGraphic.GetType() == GRAPHIC_GDIMETAFILE )
+    else if( rGraphic.GetType() == GraphicType::GdiMetafile )
     {
         const Size aPrefSize( rGraphic.GetPrefSize() );
         const double fFactor  = (double)aPrefSize.Width() / (double)aPrefSize.Height();
@@ -171,7 +171,7 @@ void SgaObject::WriteData( SvStream& rOut, const OUString& rDestDir ) const
 {
     static const sal_uInt32 nInventor = COMPAT_FORMAT( 'S', 'G', 'A', '3' );
 
-    rOut.WriteUInt32( nInventor ).WriteUInt16( 0x0004 ).WriteUInt16( GetVersion() ).WriteUInt16( GetObjKind() );
+    rOut.WriteUInt32( nInventor ).WriteUInt16( 0x0004 ).WriteUInt16( GetVersion() ).WriteUInt16( (sal_uInt16)GetObjKind() );
     rOut.WriteBool( bIsThumbBmp );
 
     if( bIsThumbBmp )
@@ -297,7 +297,7 @@ void SgaObjectBmp::WriteData( SvStream& rOut, const OUString& rDestDir ) const
     // Set version
     SgaObject::WriteData( rOut, rDestDir );
     char aDummy[ 10 ];
-    rOut.Write( aDummy, 10 );
+    rOut.WriteBytes(aDummy, 10);
     write_uInt16_lenPrefixed_uInt8s_FromOString(rOut, OString()); //dummy
     write_uInt16_lenPrefixed_uInt8s_FromOUString(rOut, aTitle, RTL_TEXTENCODING_UTF8);
 }

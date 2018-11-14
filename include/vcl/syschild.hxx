@@ -37,18 +37,24 @@ private:
                             SystemChildWindow & operator= (const SystemChildWindow &) = delete;
 
 public:
-    explicit                SystemChildWindow( vcl::Window* pParent, WinBits nStyle = 0 );
+    explicit                SystemChildWindow( vcl::Window* pParent, WinBits nStyle );
                             // create a SystemChildWindow using the given SystemWindowData
     explicit                SystemChildWindow( vcl::Window* pParent, WinBits nStyle, SystemWindowData *pData, bool bShow = true );
-    virtual                 ~SystemChildWindow();
+    virtual                 ~SystemChildWindow() override;
     virtual void            dispose() override;
 
     virtual const SystemEnvData* GetSystemData() const override;
 
     //  per default systemchildwindows erase their background for better plugin support
     //  however, this might not always be required
-    void                    EnableEraseBackground( bool bEnable = true );
+    void                    EnableEraseBackground( bool bEnable );
     void                    SetForwardKey( bool bEnable );
+    //To avoid annoying flashing under X entering and leaving slides with opengl effects set the leaving
+    //bitmap as the background pixmap of the opengl child window and the entering bitmap as the background
+    //pixmap of the non-opengl parent window. If any expose events occur around the start and end of
+    //the transition then those windows are default filled by X with the desired start/end image so there's
+    //no visible flash
+    void                    SetLeaveEnterBackgrounds(const css::uno::Sequence<css::uno::Any>& rLeaveArgs, const css::uno::Sequence<css::uno::Any>& rEnterArgs);
     // return the platform specific handle/id of this window;
     sal_IntPtr              GetParentWindowHandle();
 };

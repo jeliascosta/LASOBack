@@ -13,7 +13,7 @@ $(eval $(call gb_Module_add_targets,chart2,\
     Library_chartcontroller \
     Library_chartcore \
 ))
-ifeq ($(ENABLE_OPENGL),TRUE)
+ifeq ($(ENABLE_HEADLESS),)
 $(eval $(call gb_Module_add_targets,chart2,\
      Library_chartopengl \
      Package_opengl \
@@ -44,6 +44,11 @@ endif
 
 $(eval $(call gb_Module_add_subsequentcheck_targets,chart2,\
     JunitTest_chart2_unoapi \
+))
+
+# screenshots
+$(eval $(call gb_Module_add_screenshot_targets,chart2,\
+    CppunitTest_chart2_dialogs_test \
 ))
 
 # vim: set noet sw=4 ts=4:

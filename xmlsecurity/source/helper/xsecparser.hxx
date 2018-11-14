@@ -57,6 +57,8 @@ private:
     OUString m_ouX509IssuerName;
     OUString m_ouX509SerialNumber;
     OUString m_ouX509Certificate;
+    OUString m_ouCertDigest;
+    OUString m_ouEncapsulatedX509Certificate;
     OUString m_ouDigestValue;
     OUString m_ouSignatureValue;
     OUString m_ouDate;
@@ -69,6 +71,9 @@ private:
     bool m_bInX509IssuerName;
     bool m_bInX509SerialNumber;
     bool m_bInX509Certificate;
+    bool m_bInCertDigest;
+    bool m_bInEncapsulatedX509Certificate;
+    bool m_bInSigningTime;
     bool m_bInDigestValue;
     bool m_bInSignatureValue;
     bool m_bInDate;
@@ -95,6 +100,10 @@ private:
     OUString m_currentReferenceURI;
     bool m_bReferenceUnresolved;
 
+    // Relevant for ODF. The digest algorithm selected by the current DigestMethod element's
+    // Algorithm attribute in the current Reference element. From css::xml::crypto::DigestID.
+    sal_Int32 m_nReferenceDigestID;
+
 private:
     static OUString getIdAttr(const css::uno::Reference<
             css::xml::sax::XAttributeList >& xAttribs );
@@ -103,7 +112,7 @@ public:
     XSecParser( XSecController* pXSecController,
         const css::uno::Reference<
             css::xml::sax::XDocumentHandler >& xNextHandler );
-    virtual ~XSecParser(){};
+    virtual ~XSecParser() override {};
 
     /*
      * XDocumentHandler

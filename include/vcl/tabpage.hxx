@@ -24,11 +24,13 @@
 #include <vcl/dllapi.h>
 #include <vcl/builder.hxx>
 #include <vcl/window.hxx>
+#include <vcl/IContext.hxx>
 
 
 class VCL_DLLPUBLIC TabPage
     : public vcl::Window
     , public VclBuilderContainer
+    , public vcl::IContext
 {
 private:
     using Window::ImplInit;
@@ -38,7 +40,7 @@ private:
 public:
     explicit        TabPage( vcl::Window* pParent, WinBits nStyle = 0 );
     explicit        TabPage( vcl::Window *pParent, const OString& rID, const OUString& rUIXMLDescription );
-    virtual         ~TabPage();
+    virtual         ~TabPage() override;
     virtual void    dispose() override;
 
     virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;

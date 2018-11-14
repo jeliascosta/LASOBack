@@ -24,10 +24,10 @@
 #include <uno/data.h>
 #include <typelib/typedescription.hxx>
 
-#include "bridges/cpp_uno/shared/bridge.hxx"
-#include "bridges/cpp_uno/shared/cppinterfaceproxy.hxx"
-#include "bridges/cpp_uno/shared/types.hxx"
-#include "bridges/cpp_uno/shared/vtablefactory.hxx"
+#include "bridge.hxx"
+#include "cppinterfaceproxy.hxx"
+#include "types.hxx"
+#include "vtablefactory.hxx"
 
 #include "call.hxx"
 #include "share.hxx"
@@ -49,12 +49,12 @@ void cpp2uno_call(
     char * pCppStack = reinterpret_cast<char *>(pCallStack +1);
 
     // return
-    typelib_TypeDescription * pReturnTypeDescr = 0;
+    typelib_TypeDescription * pReturnTypeDescr = nullptr;
     if (pReturnTypeRef)
         TYPELIB_DANGER_GET( &pReturnTypeDescr, pReturnTypeRef );
 
-    void * pUnoReturn = 0;
-    void * pCppReturn = 0; // complex return ptr: if != 0 && != pUnoReturn, reconversion need
+    void * pUnoReturn = nullptr;
+    void * pCppReturn = nullptr; // complex return ptr: if != 0 && != pUnoReturn, reconversion need
 
     if (pReturnTypeDescr)
     {
@@ -91,7 +91,7 @@ void cpp2uno_call(
     for ( sal_Int32 nPos = 0; nPos < nParams; ++nPos )
     {
         const typelib_MethodParameter & rParam = pParams[nPos];
-        typelib_TypeDescription * pParamTypeDescr = 0;
+        typelib_TypeDescription * pParamTypeDescr = nullptr;
         TYPELIB_DANGER_GET( &pParamTypeDescr, rParam.pTypeRef );
 
         if (!rParam.bOut
@@ -163,7 +163,7 @@ void cpp2uno_call(
             sal_Int32 nIndex = pTempIndices[nTempIndices];
 
             if (pParams[nIndex].bIn) // is in/inout => was constructed
-                uno_destructData( pUnoArgs[nIndex], ppTempParamTypeDescr[nTempIndices], 0 );
+                uno_destructData( pUnoArgs[nIndex], ppTempParamTypeDescr[nTempIndices], nullptr );
             TYPELIB_DANGER_RELEASE( ppTempParamTypeDescr[nTempIndices] );
         }
         if (pReturnTypeDescr)
@@ -189,7 +189,7 @@ void cpp2uno_call(
                                         pThis->getBridge()->getUno2Cpp() );
             }
             // destroy temp uno param
-            uno_destructData( pUnoArgs[nIndex], pParamTypeDescr, 0 );
+            uno_destructData( pUnoArgs[nIndex], pParamTypeDescr, nullptr );
 
             TYPELIB_DANGER_RELEASE( pParamTypeDescr );
         }
@@ -201,7 +201,7 @@ void cpp2uno_call(
                 uno_copyAndConvertData( pCppReturn, pUnoReturn, pReturnTypeDescr,
                                         pThis->getBridge()->getUno2Cpp() );
                 // destroy temp uno return
-                uno_destructData( pUnoReturn, pReturnTypeDescr, 0 );
+                uno_destructData( pUnoReturn, pReturnTypeDescr, nullptr );
             }
             // complex return ptr is set to eax
             *static_cast< void ** >(pReturnValue) = pCppReturn;
@@ -268,7 +268,7 @@ extern "C" void cpp_vtable_call(
             cpp2uno_call(
                 pCppI, aMemberDescr.get(),
                 reinterpret_cast<typelib_InterfaceAttributeTypeDescription *>(aMemberDescr.get())->pAttributeTypeRef,
-                0, 0, // no params
+                0, nullptr, // no params
                 pCallStack, pReturnValue );
         }
         else
@@ -277,12 +277,12 @@ extern "C" void cpp_vtable_call(
             typelib_MethodParameter aParam;
             aParam.pTypeRef =
                 reinterpret_cast<typelib_InterfaceAttributeTypeDescription *>(aMemberDescr.get())->pAttributeTypeRef;
-            aParam.bIn      = sal_True;
-            aParam.bOut     = sal_False;
+            aParam.bIn      = true;
+            aParam.bOut     = false;
 
             cpp2uno_call(
                 pCppI, aMemberDescr.get(),
-                0, // indicates void return
+                nullptr, // indicates void return
                 1, &aParam,
                 pCallStack, pReturnValue );
         }
@@ -301,11 +301,11 @@ extern "C" void cpp_vtable_call(
             break;
         case 0: // queryInterface() opt
         {
-            typelib_TypeDescription * pTD = 0;
+            typelib_TypeDescription * pTD = nullptr;
             TYPELIB_DANGER_GET( &pTD, static_cast< Type * >( pCallStack[3] )->getTypeLibType() );
             if (pTD)
             {
-                XInterface * pInterface = 0;
+                XInterface * pInterface = nullptr;
                 (*pCppI->getBridge()->getCppEnv()->getRegisteredInterface)(
                     pCppI->getBridge()->getCppEnv(),
                     reinterpret_cast<void **>(&pInterface), pCppI->getOid().pData,
@@ -323,7 +323,8 @@ extern "C" void cpp_vtable_call(
                 }
                 TYPELIB_DANGER_RELEASE( pTD );
             }
-        } // else perform queryInterface()
+            SAL_FALLTHROUGH; // else perform queryInterface()
+        }
         default:
             cpp2uno_call(
                 pCppI, aMemberDescr.get(),
@@ -444,7 +445,7 @@ bridges::cpp_uno::shared::VtableFactory::mapBlockToVtable(void * block) {
     return static_cast< Slot * >(block) + 2;
 }
 
-sal_Size bridges::cpp_uno::shared::VtableFactory::getBlockSize(
+std::size_t bridges::cpp_uno::shared::VtableFactory::getBlockSize(
     sal_Int32 slotCount)
 {
     return (slotCount + 2) * sizeof (Slot) + slotCount * codeSnippetSize;
@@ -456,8 +457,8 @@ bridges::cpp_uno::shared::VtableFactory::initializeBlock(
     typelib_InterfaceTypeDescription *)
 {
     Slot * slots = mapBlockToVtable(block);
-    slots[-2].fn = 0;
-    slots[-1].fn = 0;
+    slots[-2].fn = nullptr;
+    slots[-1].fn = nullptr;
     return slots + slotCount;
 }
 
@@ -469,9 +470,9 @@ unsigned char * bridges::cpp_uno::shared::VtableFactory::addLocalFunctions(
     (*slots) -= functionCount;
     Slot * s = *slots;
     for (sal_Int32 i = 0; i < type->nMembers; ++i) {
-        typelib_TypeDescription * member = 0;
+        typelib_TypeDescription * member = nullptr;
         TYPELIB_DANGER_GET(&member, type->ppMembers[i]);
-        assert(member != 0);
+        assert(member != nullptr);
         switch (member->eTypeClass) {
         case typelib_TypeClass_INTERFACE_ATTRIBUTE:
             // Getter:
@@ -488,7 +489,7 @@ unsigned char * bridges::cpp_uno::shared::VtableFactory::addLocalFunctions(
                 (s++)->fn = code + writetoexecdiff;
                 code = codeSnippet(
                     code, writetoexecdiff, functionOffset++, vtableOffset,
-                    NULL);
+                    nullptr);
             }
             break;
 

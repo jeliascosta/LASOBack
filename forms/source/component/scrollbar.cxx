@@ -132,12 +132,6 @@ namespace frm
     IMPLEMENT_DEFAULT_CLONING( OScrollBarModel )
 
 
-    void SAL_CALL OScrollBarModel::disposing()
-    {
-        OBoundControlModel::disposing();
-    }
-
-
     void OScrollBarModel::describeFixedProperties( Sequence< Property >& _rProps ) const
     {
         BEGIN_DESCRIBE_PROPERTIES( 3, OControlModel )
@@ -179,7 +173,7 @@ namespace frm
 
     sal_Bool OScrollBarModel::convertFastPropertyValue(
                 Any& _rConvertedValue, Any& _rOldValue, sal_Int32 _nHandle, const Any& _rValue )
-                throw ( IllegalArgumentException )
+                throw ( IllegalArgumentException, RuntimeException, std::exception )
     {
         bool bModified( false );
         switch ( _nHandle )

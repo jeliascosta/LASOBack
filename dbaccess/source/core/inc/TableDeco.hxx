@@ -55,7 +55,7 @@ namespace dbaccess
     class ODBTableDecorator;
     typedef ::comphelper::OIdPropertyArrayUsageHelper< ODBTableDecorator >  ODBTableDecorator_PROP;
 
-    class ODBTableDecorator :public comphelper::OBaseMutex
+    class ODBTableDecorator :public cppu::BaseMutex
                             ,public OTableDescriptor_BASE
                             ,public ODataSettings //ODataSettings_Base
                             ,public IColumnFactory
@@ -102,7 +102,7 @@ namespace dbaccess
 
                                          throw (css::uno::Exception, std::exception) override;
 
-        virtual ~ODBTableDecorator();
+        virtual ~ODBTableDecorator() override;
     public:
         /** constructs a wrapper supporting the com.sun.star.sdb.Table service.
 
@@ -149,8 +149,6 @@ namespace dbaccess
         // css::lang::XUnoTunnel
         virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) throw(css::uno::RuntimeException, std::exception) override;
         static css::uno::Sequence< sal_Int8 > getUnoTunnelImplementationId();
-
-        const css::uno::Reference< css::sdbc::XDatabaseMetaData>& getMetaData() const { return m_xMetaData; }
 
         // XColumnsSupplier
         virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getColumns(  ) throw (css::uno::RuntimeException, std::exception) override;

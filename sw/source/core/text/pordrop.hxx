@@ -67,19 +67,17 @@ class SwDropPortion : public SwTextPortion
     sal_uInt16 nDropDescent;    // Distance to the next line
     sal_uInt16 nDistance;       // Distance to the text
     sal_uInt16 nFix;            // Fixed position
-    short nX;               // X PaintOffset
     short nY;               // Y Offset
 
     bool FormatText( SwTextFormatInfo &rInf );
     void PaintText( const SwTextPaintInfo &rInf ) const;
 
-    inline void Fix( const sal_uInt16 nNew ) { nFix = nNew; }
 public:
     SwDropPortion( const sal_uInt16 nLineCnt,
                    const sal_uInt16 nDropHeight,
                    const sal_uInt16 nDropDescent,
                    const sal_uInt16 nDistance );
-    virtual ~SwDropPortion();
+    virtual ~SwDropPortion() override;
 
     virtual void Paint( const SwTextPaintInfo &rInf ) const override;
             void PaintDrop( const SwTextPaintInfo &rInf ) const;

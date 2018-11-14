@@ -120,7 +120,7 @@ void ScSolverSuccessDialog::dispose()
     ModalDialog::dispose();
 }
 
-IMPL_LINK_TYPED( ScSolverSuccessDialog, ClickHdl, Button*, pBtn, void )
+IMPL_LINK( ScSolverSuccessDialog, ClickHdl, Button*, pBtn, void )
 {
     if (pBtn == m_pBtnOk)
         EndDialog(RET_OK);
@@ -282,16 +282,6 @@ ScOptSolverDlg::ScOptSolverDlg( SfxBindings* pB, SfxChildWindow* pCW, vcl::Windo
     mpRightButton[3] = m_pRBRight4;
     mpOperator[3]    = m_pLbOp4;
     mpDelButton[3]   = m_pBtnDel4;
-
-    m_pEdLeft2->SetAccessibleName(m_pFtCellRef->GetText());
-    m_pLbOp2->SetAccessibleName(m_pFtOperator->GetText());
-    m_pEdRight2->SetAccessibleName(m_pFtConstraint->GetText());
-    m_pEdLeft3->SetAccessibleName(m_pFtCellRef->GetText());
-    m_pLbOp3->SetAccessibleName(m_pFtOperator->GetText());
-    m_pEdRight3->SetAccessibleName(m_pFtConstraint->GetText());
-    m_pEdLeft4->SetAccessibleName(m_pFtCellRef->GetText());
-    m_pLbOp4->SetAccessibleName(m_pFtOperator->GetText());
-    m_pEdRight4->SetAccessibleName(m_pFtConstraint->GetText());
 
     Init( aCursorPos );
 }
@@ -599,7 +589,7 @@ bool ScOptSolverDlg::IsRefInputMode() const
 
 // Handler:
 
-IMPL_LINK_TYPED( ScOptSolverDlg, BtnHdl, Button*, pBtn, void )
+IMPL_LINK( ScOptSolverDlg, BtnHdl, Button*, pBtn, void )
 {
     if ( pBtn == m_pBtnSolve || pBtn == m_pBtnCancel )
     {
@@ -641,7 +631,7 @@ IMPL_LINK_TYPED( ScOptSolverDlg, BtnHdl, Button*, pBtn, void )
     }
 }
 
-IMPL_LINK_TYPED( ScOptSolverDlg, GetFocusHdl, Control&, rCtrl, void )
+IMPL_LINK( ScOptSolverDlg, GetFocusHdl, Control&, rCtrl, void )
 {
     Edit* pEdit = nullptr;
     mpEdActive = nullptr;
@@ -668,12 +658,12 @@ IMPL_LINK_TYPED( ScOptSolverDlg, GetFocusHdl, Control&, rCtrl, void )
         pEdit->SetSelection( Selection( 0, SELECTION_MAX ) );
 }
 
-IMPL_LINK_NOARG_TYPED(ScOptSolverDlg, LoseFocusHdl, Control&, void)
+IMPL_LINK_NOARG(ScOptSolverDlg, LoseFocusHdl, Control&, void)
 {
     mbDlgLostFocus = !IsActive();
 }
 
-IMPL_LINK_TYPED( ScOptSolverDlg, DelBtnHdl, Button*, pBtn, void )
+IMPL_LINK( ScOptSolverDlg, DelBtnHdl, Button*, pBtn, void )
 {
     for ( sal_uInt16 nRow = 0; nRow < EDIT_ROW_COUNT; ++nRow )
         if( pBtn == mpDelButton[nRow] )
@@ -699,7 +689,7 @@ IMPL_LINK_TYPED( ScOptSolverDlg, DelBtnHdl, Button*, pBtn, void )
         }
 }
 
-IMPL_LINK_NOARG_TYPED(ScOptSolverDlg, TargetModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(ScOptSolverDlg, TargetModifyHdl, Edit&, void)
 {
     // modify handler for the target edit:
     //  select "Value of" if something is input into the edit
@@ -707,21 +697,21 @@ IMPL_LINK_NOARG_TYPED(ScOptSolverDlg, TargetModifyHdl, Edit&, void)
         m_pRbValue->Check();
 }
 
-IMPL_LINK_NOARG_TYPED(ScOptSolverDlg, CondModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(ScOptSolverDlg, CondModifyHdl, Edit&, void)
 {
     // modify handler for the condition edits, just to enable/disable "delete" buttons
     ReadConditions();
     EnableButtons();
 }
 
-IMPL_LINK_NOARG_TYPED(ScOptSolverDlg, SelectHdl, ListBox&, void)
+IMPL_LINK_NOARG(ScOptSolverDlg, SelectHdl, ListBox&, void)
 {
     // select handler for operator list boxes, just to enable/disable "delete" buttons
     ReadConditions();
     EnableButtons();
 }
 
-IMPL_LINK_NOARG_TYPED(ScOptSolverDlg, ScrollHdl, ScrollBar*, void)
+IMPL_LINK_NOARG(ScOptSolverDlg, ScrollHdl, ScrollBar*, void)
 {
     ReadConditions();
     nScrollPos = m_pScrollBar->GetThumbPos();
@@ -730,7 +720,7 @@ IMPL_LINK_NOARG_TYPED(ScOptSolverDlg, ScrollHdl, ScrollBar*, void)
         mpEdActive->SetSelection( Selection( 0, SELECTION_MAX ) );
 }
 
-IMPL_LINK_TYPED( ScOptSolverDlg, CursorUpHdl, ScCursorRefEdit&, rEdit, void )
+IMPL_LINK( ScOptSolverDlg, CursorUpHdl, ScCursorRefEdit&, rEdit, void )
 {
     if ( &rEdit == mpLeftEdit[0] || &rEdit == mpRightEdit[0] )
     {
@@ -761,7 +751,7 @@ IMPL_LINK_TYPED( ScOptSolverDlg, CursorUpHdl, ScCursorRefEdit&, rEdit, void )
     }
 }
 
-IMPL_LINK_TYPED( ScOptSolverDlg, CursorDownHdl, ScCursorRefEdit&, rEdit, void )
+IMPL_LINK( ScOptSolverDlg, CursorDownHdl, ScCursorRefEdit&, rEdit, void )
 {
     if ( &rEdit == mpLeftEdit[EDIT_ROW_COUNT-1] || &rEdit == mpRightEdit[EDIT_ROW_COUNT-1] )
     {

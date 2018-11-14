@@ -84,10 +84,7 @@ namespace sfx2
         virtual Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (RuntimeException, std::exception) override;
 
     protected:
-        virtual ~SfxModelFactory();
-
-    private:
-        Reference< XInterface > impl_createInstance( const SfxModelFlags _nCreationFlags ) const;
+        virtual ~SfxModelFactory() override;
 
     private:
         const Reference< XMultiServiceFactory >     m_xServiceFactory;
@@ -113,12 +110,6 @@ namespace sfx2
 
     SfxModelFactory::~SfxModelFactory()
     {
-    }
-
-
-    Reference< XInterface > SfxModelFactory::impl_createInstance( const SfxModelFlags _nCreationFlags ) const
-    {
-        return (*m_pComponentFactoryFunc)( m_xServiceFactory, _nCreationFlags );
     }
 
 
@@ -163,7 +154,7 @@ namespace sfx2
             |   ( bScriptSupport ? SfxModelFlags::NONE : SfxModelFlags::DISABLE_EMBEDDED_SCRIPTS )
             |   ( bDocRecoverySupport ? SfxModelFlags::NONE : SfxModelFlags::DISABLE_DOCUMENT_RECOVERY );
 
-        Reference< XInterface > xInstance( impl_createInstance( nCreationFlags ) );
+        Reference< XInterface > xInstance( (*m_pComponentFactoryFunc)( m_xServiceFactory, nCreationFlags ) );
 
         // to mimic the bahaviour of the default factory's createInstanceWithArguments, we initialize
         // the object with the given arguments, stripped by the three special ones

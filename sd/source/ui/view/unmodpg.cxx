@@ -20,6 +20,8 @@
 #include <svx/svdlayer.hxx>
 #include <sfx2/dispatch.hxx>
 #include <sfx2/viewfrm.hxx>
+#include <svx/svdviter.hxx>
+#include <svx/svdview.hxx>
 
 #include "strings.hrc"
 #include "glob.hxx"
@@ -68,11 +70,9 @@ ModifyPageUndoAction::ModifyPageUndoAction(
         mbOldBckgrndObjsVisible = false;
     }
 
-    maComment = SD_RESSTR(STR_UNDO_MODIFY_PAGE);
+    SetComment( SD_RESSTR(STR_UNDO_MODIFY_PAGE) );
 }
 
-#include <svx/svdviter.hxx>
-#include <svx/svdview.hxx>
 void ModifyPageUndoAction::Undo()
 {
     // invalidate Selection, there could be objects deleted in this UNDO
@@ -95,7 +95,7 @@ void ModifyPageUndoAction::Undo()
         {
             mpPage->SetName(maOldName);
 
-            if (mpPage->GetPageKind() == PK_STANDARD)
+            if (mpPage->GetPageKind() == PageKind::Standard)
             {
                 SdPage* pNotesPage = static_cast<SdPage*>(mpDoc->GetPage(mpPage->GetPageNum() + 1));
                 pNotesPage->SetName(maOldName);
@@ -138,7 +138,7 @@ void ModifyPageUndoAction::Redo()
         {
             mpPage->SetName(maNewName);
 
-            if (mpPage->GetPageKind() == PK_STANDARD)
+            if (mpPage->GetPageKind() == PageKind::Standard)
             {
                 SdPage* pNotesPage = static_cast<SdPage*>(mpDoc->GetPage(mpPage->GetPageNum() + 1));
                 pNotesPage->SetName(maNewName);
@@ -161,11 +161,6 @@ void ModifyPageUndoAction::Redo()
 
 ModifyPageUndoAction::~ModifyPageUndoAction()
 {
-}
-
-OUString ModifyPageUndoAction::GetComment() const
-{
-    return maComment;
 }
 
 RenameLayoutTemplateUndoAction::RenameLayoutTemplateUndoAction(

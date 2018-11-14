@@ -36,10 +36,9 @@ public:
              , bool bNoArea
              , PlottingPositionHelper* pPlottingPositionHelper //takes ownership
              );
-    virtual ~NetChart();
+    virtual ~NetChart() override;
 
     virtual void createShapes() override;
-    virtual void addSeries( VDataSeries* pSeries, sal_Int32 zSlot = -1, sal_Int32 xSlot = -1,sal_Int32 ySlot = -1 ) override;
 
     virtual css::drawing::Direction3D  getPreferredDiagramAspectRatio() const override;
 
@@ -49,7 +48,7 @@ public:
     virtual bool isSeparateStackingForDifferentSigns( sal_Int32 nDimensionIndex ) override;
 
     virtual LegendSymbolStyle getLegendSymbolStyle() override;
-    virtual css::uno::Any getExplicitSymbol( const VDataSeries& rSeries, sal_Int32 nPointIndex=-1/*-1 for series symbol*/ ) override;
+    virtual css::uno::Any getExplicitSymbol( const VDataSeries& rSeries, sal_Int32 nPointIndex/*-1 for series symbol*/ ) override;
 
 private: //methods
     void impl_createSeriesShapes();

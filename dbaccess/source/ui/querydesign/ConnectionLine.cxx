@@ -49,7 +49,7 @@ namespace
     */
     Rectangle GetTextPos(const OTableWindow* _pWin, const Point& _aConnPos,const Point& _aDescrLinePos)
     {
-        OTableWindowListBox* pListBox = _pWin ? _pWin->GetListBox() : nullptr;
+        VclPtr<OTableWindowListBox> pListBox = _pWin ? _pWin->GetListBox() : nullptr;
         OSL_ENSURE(_pWin && pListBox, "OConnectionLine::GetSourceTextPos : invalid call !");
 
         Rectangle aReturn;
@@ -110,7 +110,7 @@ namespace
 }
 
 // class OConnectionLine
-OConnectionLine::OConnectionLine( OTableConnection* _pConn, OConnectionLineDataRef _pLineData )
+OConnectionLine::OConnectionLine( OTableConnection* _pConn, OConnectionLineDataRef const & _pLineData )
     : m_pTabConn( _pConn )
     , m_pData( _pLineData )
 {

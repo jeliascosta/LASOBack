@@ -213,14 +213,14 @@ double lclScaleValue( double nValue, double fScale, sal_uInt16 nMaxWidth )
 
     The functions regard the reference point handling mode of the passed border
     style.
-    REFMODE_CENTERED:
+    RefMode::Centered:
         All returned offsets are relative to the middle position of the frame
         border (offsets left of the middle are returned negative, offsets right
         of the middle are returned positive).
-    REFMODE_BEGIN:
+    RefMode::Begin:
         All returned offsets are relative to the begin of the frame border
         (lclGetBeg() always returns 0).
-    REFMODE_END:
+    RefMode::End:
         All returned offsets are relative to the end of the frame border
         (lclGetEnd() always returns 0).
 
@@ -264,9 +264,9 @@ long lclGetBeg( const Style& rBorder )
     long nPos = 0;
     switch( rBorder.GetRefMode() )
     {
-        case REFMODE_CENTERED:  if( rBorder.Prim() ) nPos = -128 * (rBorder.GetWidth() - 1); break;
-        case REFMODE_END:       if( rBorder.Prim() ) nPos = -256 * (rBorder.GetWidth() - 1); break;
-        case REFMODE_BEGIN:     break;
+        case RefMode::Centered:  if( rBorder.Prim() ) nPos = -128 * (rBorder.GetWidth() - 1); break;
+        case RefMode::End:       if( rBorder.Prim() ) nPos = -256 * (rBorder.GetWidth() - 1); break;
+        case RefMode::Begin:     break;
     }
     return nPos;
 }
@@ -281,9 +281,9 @@ long lclGetEnd( const Style& rBorder )
     long nPos = 0;
     switch( rBorder.GetRefMode() )
     {
-        case REFMODE_CENTERED:  if( rBorder.Prim() ) nPos = 128 * (rBorder.GetWidth() - 1); break;
-        case REFMODE_BEGIN:     if( rBorder.Prim() ) nPos = 256 * (rBorder.GetWidth() - 1); break;
-        case REFMODE_END:     break;
+        case RefMode::Centered:  if( rBorder.Prim() ) nPos = 128 * (rBorder.GetWidth() - 1); break;
+        case RefMode::Begin:     if( rBorder.Prim() ) nPos = 256 * (rBorder.GetWidth() - 1); break;
+        case RefMode::End:     break;
     }
     return nPos;
 }
@@ -1120,7 +1120,7 @@ void lclDrawDiagFrameBorders(
 #define SCALEVALUE( value ) lclScaleValue( value, fScale, nMaxWidth )
 
 Style::Style() :
-    meRefMode(REFMODE_CENTERED),
+    meRefMode(RefMode::Centered),
     mfPatternScale(1.0),
     mnType(table::BorderLineStyle::SOLID)
 {
@@ -1128,7 +1128,7 @@ Style::Style() :
 }
 
 Style::Style( double nP, double nD, double nS, editeng::SvxBorderStyle nType ) :
-    meRefMode(REFMODE_CENTERED),
+    meRefMode(RefMode::Centered),
     mfPatternScale(1.0),
     mnType(nType)
 {
@@ -1138,18 +1138,18 @@ Style::Style( double nP, double nD, double nS, editeng::SvxBorderStyle nType ) :
 
 Style::Style( const Color& rColorPrim, const Color& rColorSecn, const Color& rColorGap, bool bUseGapColor,
               double nP, double nD, double nS, editeng::SvxBorderStyle nType ) :
-    meRefMode(REFMODE_CENTERED),
+    meRefMode(RefMode::Centered),
     mfPatternScale(1.0),
     mnType(nType)
 {
     Set( rColorPrim, rColorSecn, rColorGap, bUseGapColor, nP, nD, nS );
 }
 
-Style::Style( const editeng::SvxBorderLine* pBorder, double fScale, sal_uInt16 nMaxWidth ) :
-    meRefMode(REFMODE_CENTERED),
+Style::Style( const editeng::SvxBorderLine* pBorder, double fScale ) :
+    meRefMode(RefMode::Centered),
     mfPatternScale(fScale)
 {
-    Set( pBorder, fScale, nMaxWidth );
+    Set( pBorder, fScale );
 }
 
 
@@ -1218,7 +1218,7 @@ void Style::Set( const SvxBorderLine& rBorder, double fScale, sal_uInt16 nMaxWid
             // Still too thick? Decrease the line widths.
             if( GetWidth() > nMaxWidth )
             {
-                if (!rtl::math::approxEqual(mfPrim, 0.0) && rtl::math::approxEqual(mfPrim, mfSecn))
+                if (mfPrim != 0.0 && rtl::math::approxEqual(mfPrim, mfSecn))
                 {
                     // Both lines equal - decrease both to keep symmetry.
                     --mfPrim;
@@ -1229,7 +1229,7 @@ void Style::Set( const SvxBorderLine& rBorder, double fScale, sal_uInt16 nMaxWid
                     // Decrease each line for itself
                     if (mfPrim)
                         --mfPrim;
-                    if ((GetWidth() > nMaxWidth) && !rtl::math::approxEqual(mfSecn, 0.0))
+                    if ((GetWidth() > nMaxWidth) && mfSecn != 0.0)
                         --mfSecn;
                 }
             }
@@ -1252,8 +1252,8 @@ Style& Style::MirrorSelf()
 {
     if (mfSecn)
         std::swap( mfPrim, mfSecn );
-    if( meRefMode != REFMODE_CENTERED )
-        meRefMode = (meRefMode == REFMODE_BEGIN) ? REFMODE_END : REFMODE_BEGIN;
+    if( meRefMode != RefMode::Centered )
+        meRefMode = (meRefMode == RefMode::Begin) ? RefMode::End : RefMode::Begin;
     return *this;
 }
 
@@ -1351,7 +1351,7 @@ bool CheckFrameBorderConnectable( const Style& rLBorder, const Style& rRBorder,
 
 
 double lcl_GetExtent( const Style& rBorder, const Style& rSide, const Style& rOpposite,
-                      long nAngleSide = 9000, long nAngleOpposite = 9000 )
+                      long nAngleSide, long nAngleOpposite )
 {
     Style aOtherBorder = rSide;
     long nOtherAngle = nAngleSide;

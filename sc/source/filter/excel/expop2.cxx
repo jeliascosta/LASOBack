@@ -98,8 +98,8 @@ FltError ExportBiff5::Write()
         VbaExport aExport(pDocShell->GetModel());
         if (aExport.containsVBAProject())
         {
-            SotStorage* pVBARoot = xRootStrg->OpenSotStorage("_VBA_PROJECT_CUR");
-            aExport.exportVBA(pVBARoot);
+            tools::SvRef<SotStorage> xVBARoot = xRootStrg->OpenSotStorage("_VBA_PROJECT_CUR");
+            aExport.exportVBA( xVBARoot.get() );
         }
     }
     else if( pDocShell && xRootStrg.Is() && eVbaExportMode == VBAExportMode::REEXPORT_STREAM )
@@ -126,10 +126,10 @@ FltError ExportBiff5::Write()
                 pDocShell->GetPreviewMetaFile();
             uno::Sequence<sal_Int8> metaFile(
                 sfx2::convertMetaFile(xMetaFile.get()));
-            sfx2::SaveOlePropertySet(xDocProps, xRootStrg, &metaFile);
+            sfx2::SaveOlePropertySet( xDocProps, xRootStrg.get(), &metaFile );
         }
         else
-            sfx2::SaveOlePropertySet(xDocProps, xRootStrg );
+            sfx2::SaveOlePropertySet( xDocProps, xRootStrg.get() );
     }
 
     const XclExpAddressConverter& rAddrConv = GetAddressConverter();

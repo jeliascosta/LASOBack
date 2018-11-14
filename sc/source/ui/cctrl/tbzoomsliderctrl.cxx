@@ -100,7 +100,6 @@ struct ScZoomSliderWnd::ScZoomSliderWnd_Impl
     Image                    maSliderButton;
     Image                    maIncreaseButton;
     Image                    maDecreaseButton;
-    bool                     mbValuesSet;
     bool                     mbOmitPaint;
 
     explicit ScZoomSliderWnd_Impl( sal_uInt16 nCurrentZoom ) :
@@ -113,10 +112,8 @@ struct ScZoomSliderWnd::ScZoomSliderWnd_Impl
         maSliderButton(),
         maIncreaseButton(),
         maDecreaseButton(),
-        mbValuesSet( true ),
         mbOmitPaint( false )
         {
-
         }
 };
 
@@ -227,7 +224,7 @@ ScZoomSliderWnd::ScZoomSliderWnd( vcl::Window* pParent,
     mpImpl->maSliderButton      = Image( SVX_RES( RID_SVXBMP_SLIDERBUTTON   ) );
     mpImpl->maIncreaseButton    = Image( SVX_RES( RID_SVXBMP_SLIDERINCREASE ) );
     mpImpl->maDecreaseButton    = Image( SVX_RES( RID_SVXBMP_SLIDERDECREASE ) );
-    Size  aSliderSize           = LogicToPixel( Size( aLogicalSize), MapMode( MAP_10TH_MM ) );
+    Size  aSliderSize           = LogicToPixel( Size( aLogicalSize), MapMode( MapUnit::Map10thMM ) );
     SetSizePixel( Size( aSliderSize.Width() * nSliderWidth-1, aSliderSize.Height() + nSliderHeight ) );
 }
 
@@ -244,8 +241,6 @@ void ScZoomSliderWnd::dispose()
 
 void ScZoomSliderWnd::MouseButtonDown( const MouseEvent& rMEvt )
 {
-    if ( !mpImpl->mbValuesSet )
-        return ;
     Size aSliderWindowSize = GetOutputSizePixel();
 
     const Point aPoint = rMEvt.GetPosPixel();
@@ -300,9 +295,6 @@ void ScZoomSliderWnd::MouseButtonDown( const MouseEvent& rMEvt )
 
 void ScZoomSliderWnd::MouseMove( const MouseEvent& rMEvt )
 {
-    if ( !mpImpl->mbValuesSet )
-        return ;
-
     Size aSliderWindowSize   = GetOutputSizePixel();
     const long nControlWidth = aSliderWindowSize.Width();
     const short nButtons     = rMEvt.GetButtons();
@@ -432,7 +424,7 @@ void ScZoomSliderWnd::DoPaint(vcl::RenderContext& rRenderContext, const Rectangl
 
     Gradient aGradient;
     aGradient.SetAngle(0);
-    aGradient.SetStyle(GradientStyle_LINEAR);
+    aGradient.SetStyle(GradientStyle::Linear);
 
     aGradient.SetStartColor(aStartColor);
     aGradient.SetEndColor(aEndColor);

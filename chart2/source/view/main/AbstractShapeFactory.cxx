@@ -97,14 +97,14 @@ AbstractShapeFactory* AbstractShapeFactory::getOrCreateShapeFactory(const uno::R
             {
 
                 pShapeFactory = reinterpret_cast<getOpenglShapeFactory_>(fn)();
-                pShapeFactory->setShapeFactory(xFactory);
+                pShapeFactory->m_xShapeFactory = xFactory;
             }
         }
 #elif defined(IOS) || defined(ANDROID) // Library_chartopengl is not portable enough yet
         pShapeFactory = NULL;
 #else
         pShapeFactory = getOpenglShapeFactory();
-        pShapeFactory->setShapeFactory(xFactory);
+        pShapeFactory->m_xShapeFactory = xFactory;
 #endif
     }
 
@@ -306,7 +306,7 @@ awt::Size AbstractShapeFactory::getSizeAfterRotation(
     {
         const awt::Size aSize( xShape->getSize() );
 
-        if( ::rtl::math::approxEqual( fRotationAngleDegree, 0.0 ) )
+        if( fRotationAngleDegree == 0.0 )
             aRet = aSize;
         else
         {

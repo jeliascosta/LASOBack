@@ -24,22 +24,19 @@
 #include <vcl/font.hxx>
 #include <vcl/outdev.hxx>
 
-#include <boost/intrusive_ptr.hpp>
-
 class ImplFontMetric;
 class ImplFontCharMap;
 class CmapResult;
 
 typedef sal_uInt32 sal_UCS4;
-typedef boost::intrusive_ptr< ImplFontCharMap > ImplFontCharMapPtr;
-typedef boost::intrusive_ptr< FontCharMap > FontCharMapPtr;
+typedef tools::SvRef<FontCharMap> FontCharMapRef;
 
 class VCL_DLLPUBLIC FontMetric : public vcl::Font
 {
 public:
     explicit            FontMetric();
                         FontMetric( const FontMetric& );  // TODO make this explicit
-    virtual             ~FontMetric();
+    virtual             ~FontMetric() override;
 
     FontType            GetType() const;
 
@@ -68,11 +65,12 @@ public:
     void                SetBuiltInFontFlag(bool);
 
     FontMetric&         operator=( const FontMetric& rMetric );
+    FontMetric&         operator=( FontMetric&& rMetric );
     bool                operator==( const FontMetric& rMetric ) const;
     bool                operator!=( const FontMetric& rMetric ) const
                             { return !operator==( rMetric ); }
 protected:
-    boost::intrusive_ptr<ImplFontMetric> mpImplMetric;    // Implementation
+    tools::SvRef<ImplFontMetric> mxImplMetric;    // Implementation
 };
 
 template< typename charT, typename traits >

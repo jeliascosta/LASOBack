@@ -24,7 +24,6 @@
 #include "dbustrings.hrc"
 #include "defaultobjectnamecheck.hxx"
 #include "dlgsave.hxx"
-#include "localresaccess.hxx"
 #include "uiservices.hxx"
 #include "QTableWindow.hxx"
 #include "QTableWindowData.hxx"
@@ -33,7 +32,6 @@
 #include "QueryDesignView.hxx"
 #include "QueryTableView.hxx"
 #include "QueryTextView.hxx"
-#include "queryview.hxx"
 #include "QueryViewSwitch.hxx"
 #include "sqlmessage.hxx"
 #include "TableConnectionData.hxx"
@@ -76,7 +74,7 @@
 #include <connectivity/dbtools.hxx>
 #include <cppuhelper/exc_hlp.hxx>
 #include <sfx2/sfxsids.hrc>
-#include <svtools/localresaccess.hxx>
+#include <tools/resary.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
 #include <tools/diagnose_ex.h>
 #include <osl/diagnose.h>
@@ -224,11 +222,9 @@ namespace dbaui
         OUString lcl_getObjectResourceString( sal_uInt16 _nResId, sal_Int32 _nCommandType )
         {
             OUString sMessageText = ModuleRes( _nResId );
-            OUString sObjectType;
-            {
-                LocalResourceAccess aLocalRes( RSC_QUERY_OBJECT_TYPE, RSC_RESOURCE );
-                sObjectType = ModuleRes( (sal_uInt16)( _nCommandType + 1 ) );
-            }
+            ModuleRes aResId(RSC_QUERY_OBJECT_TYPE);
+            ResStringArray aResList(aResId);
+            OUString sObjectType = aResList.GetString(_nCommandType);
             sMessageText = sMessageText.replaceFirst( "$object$", sObjectType );
             return sMessageText;
         }
@@ -283,13 +279,12 @@ namespace
      */
     void grabFocusFromLimitBox( OQueryController& _rController )
     {
-        static const char sResourceURL[] = "private:resource/toolbar/designobjectbar";
         Reference< XLayoutManager > xLayoutManager = OGenericUnoController::getLayoutManager( _rController.getFrame() );
-        Reference< XUIElement > xUIElement = xLayoutManager->getElement(sResourceURL);
+        Reference< XUIElement > xUIElement = xLayoutManager->getElement("private:resource/toolbar/designobjectbar");
         if (xUIElement.is())
         {
             Reference< XWindow > xWindow(xUIElement->getRealInterface(), css::uno::UNO_QUERY);
-            vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow );
+            VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
             if( pWindow && pWindow->HasChildPathFocus() )
             {
                 pWindow->GrabFocusToDocument();
@@ -364,16 +359,6 @@ Reference< XPropertySetInfo > SAL_CALL OQueryController::getPropertySetInfo() th
 {
     Reference< XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
-}
-
-sal_Bool SAL_CALL OQueryController::convertFastPropertyValue( Any& o_rConvertedValue, Any& o_rOldValue, sal_Int32 i_nHandle, const Any& i_rValue ) throw (IllegalArgumentException)
-{
-    return OPropertyContainer::convertFastPropertyValue( o_rConvertedValue, o_rOldValue, i_nHandle, i_rValue );
-}
-
-void SAL_CALL OQueryController::setFastPropertyValue_NoBroadcast( sal_Int32 i_nHandle, const Any& i_rValue ) throw ( Exception, std::exception )
-{
-    OPropertyContainer::setFastPropertyValue_NoBroadcast( i_nHandle, i_rValue );
 }
 
 void SAL_CALL OQueryController::getFastPropertyValue( Any& o_rValue, sal_Int32 i_nHandle ) const
@@ -493,7 +478,7 @@ FeatureState OQueryController::GetState(sal_uInt16 _nId) const
             aReturn.bEnabled = isEditable() && m_bGraphicalDesign && m_vTableData.size() > 1;
             break;
         case ID_BROWSER_SAVEASDOC:
-            aReturn.bEnabled = !editingCommand() && !editingView() && (!m_bGraphicalDesign || !(m_vTableFieldDesc.empty() || m_vTableData.empty()));
+            aReturn.bEnabled = !editingCommand() && (!m_bGraphicalDesign || !(m_vTableFieldDesc.empty() || m_vTableData.empty()));
             break;
         case ID_BROWSER_SAVEDOC:
             aReturn.bEnabled = isEditable() && (!m_bGraphicalDesign || !(m_vTableFieldDesc.empty() || m_vTableData.empty()));
@@ -684,7 +669,7 @@ void OQueryController::Execute(sal_uInt16 _nId, const Sequence< PropertyValue >&
         break;
         case SID_BROWSER_CLEAR_QUERY:
             {
-                GetUndoManager().EnterListAction( OUString( ModuleRes(STR_QUERY_UNDO_TABWINDELETE) ), OUString() );
+                GetUndoManager().EnterListAction( OUString( ModuleRes(STR_QUERY_UNDO_TABWINDELETE) ), OUString(), 0, -1 );
                 getContainer()->clear();
                 GetUndoManager().LeaveListAction();
 
@@ -1100,7 +1085,7 @@ void OQueryController::setQueryComposer()
             OSL_ENSURE(m_xComposer.is(),"No querycomposer available!");
             Reference<XTablesSupplier> xTablesSup(getConnection(), UNO_QUERY);
             deleteIterator();
-            m_pSqlIterator = new ::connectivity::OSQLParseTreeIterator( getConnection(), xTablesSup->getTables(), m_aSqlParser, nullptr );
+            m_pSqlIterator = new ::connectivity::OSQLParseTreeIterator( getConnection(), xTablesSup->getTables(), m_aSqlParser );
         }
     }
 }
@@ -1167,7 +1152,7 @@ void SAL_CALL OQueryController::disposing( const EventObject& Source ) throw(Run
         }
     }
 
-    OJoinController::disposing(Source);
+    OJoinController_BASE::disposing(Source);
 }
 
 void OQueryController::reconnect(bool _bUI)
@@ -1917,7 +1902,7 @@ void OQueryController::impl_reset( const bool i_bForceCurrentControllerSettings 
 void OQueryController::reset()
 {
     impl_reset();
-    getContainer()->reset( nullptr );
+    getContainer()->reset();
     ClearUndoManager();
 }
 
@@ -1945,7 +1930,7 @@ void OQueryController::setEscapeProcessing_fireEvent( const bool _bEscapeProcess
     fire( &nHandle, &aNewValue, &aOldValue, 1, false );
 }
 
-IMPL_LINK_NOARG_TYPED( OQueryController, OnExecuteAddTable, void*, void )
+IMPL_LINK_NOARG( OQueryController, OnExecuteAddTable, void*, void )
 {
     Execute( ID_BROWSER_ADDTABLE,Sequence<PropertyValue>() );
 }

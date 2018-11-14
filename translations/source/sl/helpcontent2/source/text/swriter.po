@@ -1,16 +1,16 @@
 #. extracted from helpcontent2/source/text/swriter
 msgid ""
 msgstr ""
-"Project-Id-Version: LibreOffice 5.4\n"
+"Project-Id-Version: LibreOffice 5.3\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2017-04-10 17:20+0200\n"
-"PO-Revision-Date: 2017-04-11 14:22+0200\n"
+"POT-Creation-Date: 2017-01-06 11:51+0100\n"
+"PO-Revision-Date: 2016-12-26 21:06+0200\n"
 "Last-Translator: Martin Srebotnjak <miles@filmsi.net>\n"
 "Language-Team: sl.libreoffice.org\n"
-"Language: sl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Language: sl\n"
 "Plural-Forms: nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3);\n"
 "X-Generator: Virtaal 0.7.1\n"
 "X-Accelerator-Marker: ~\n"
@@ -254,7 +254,7 @@ msgctxt ""
 "classificationbar.xhp\n"
 "bm_id030820161851045883\n"
 "help.text"
-msgid "<bookmark_value>custom;classification levels</bookmark_value>  <bookmark_value>classification levels;customizing</bookmark_value>"
+msgid "<bookmark_value>custom;classifcation levels</bookmark_value>  <bookmark_value>classifcation levels;customizing</bookmark_value>"
 msgstr "<bookmark_value>prilagajanje;stopnje zaupnosti</bookmark_value><bookmark_value>stopnje zaupnosti;prilagajanje</bookmark_value>"
 
 #: classificationbar.xhp
@@ -262,7 +262,7 @@ msgctxt ""
 "classificationbar.xhp\n"
 "par_id030820161747133280\n"
 "help.text"
-msgid "%PRODUCTNAME allows customization of the levels of classification for your business. To customize the number and the name of the levels, copy the file <item type=\"literal\">example.xml</item> located in <item type=\"menuitem\">Tools - Options - LibreOffice - Paths - Classification</item> into a local folder and edit the contents."
+msgid "%PRODUCTNAME allows customization of the levels of classification for your business. To customize the number and the name of the levels, copy the file <item type=\"literal\">example.xml</item> located in <item type=\"menuitem\">Tools -> Options -> LibreOffice -> Paths -> Classification</item> into a local folder and edit the contents."
 msgstr "%PRODUCTNAME omogoča prilagoditev stopnje zaupnosti vašemu poslovanju oz. pravilom. Če želite prilagoditi število in imena ravni, kopirajte datoteko <item type=\"literal\">example.xml</item>, katere pot je določena v <item type=\"menuitem\">Orodja – Možnosti – LibreOffice – Poti – Stopnja zaupnosti</item>, v krajevno mapo in uredite njeno vsebino."
 
 #: classificationbar.xhp
@@ -274,13 +274,12 @@ msgid "Use the file with your %PRODUCTNAME locale in the name as example."
 msgstr "Za primer uporabite datoteko z okrajšavo vaših krajevnih nastavitev %PRODUCTNAME v imenu."
 
 #: classificationbar.xhp
-#, fuzzy
 msgctxt ""
 "classificationbar.xhp\n"
 "par_id030820161747137522\n"
 "help.text"
-msgid "Save the file and make the adequate changes to the classification path above to access the file."
-msgstr "Shranite datoteko in ustrezno spremenite zgornjo pot stopnje zaupnosti za dostop do datoteke."
+msgid "Save the file and make the classification path above access the file."
+msgstr "Shranite datoteko in spremenite zgornjo nastavitev, da pot za stopnjo zaupnosti lahko dostopa do datoteke."
 
 #: classificationbar.xhp
 msgctxt ""
@@ -343,7 +342,7 @@ msgctxt ""
 "classificationbar.xhp\n"
 "par_id030820161754171423\n"
 "help.text"
-msgid "The Classification toolbar contains listboxes to help in selecting the security of the document, according to the <item type=\"acronym\">BAF</item> category policy and <item type=\"acronym\">BAILS</item> levels. %PRODUCTNAME will add custom fields in the document properties (<item type=\"menuitem\">File - Properties</item>, Custom fields tab) to store the classification policy as document metadata."
+msgid "The Classification toolbar contains listboxes to help in selecting the security of the document, according to the <item type=\"acronym\">BAF</item> category policy and <item type=\"acronym\">BAILS</item> levels. %PRODUCTNAME will add custom fields in the document properties (<item type=\"menuitem\">File -> Properties</item>, Custom fields tab) to store the classification policy as document metadata."
 msgstr "Orodna vrstica Stopnja zaupnosti vsebuje seznamska polja za pomoč pri izbiranju varnosti dokumenta v skladu s kategorijami <item type=\"acronym\">BAF</item> in ravnmi <item type=\"acronym\">BAILS</item>. %PRODUCTNAME doda polja po meri v lastnosti dokumenta (<item type=\"menuitem\">Datoteka – Lastnosti</item>, zavihek Polja po meri), v katera shrani stopnjo zaupnosti kot metapodatke dokumenta."
 
 #: classificationbar.xhp
@@ -351,7 +350,7 @@ msgctxt ""
 "classificationbar.xhp\n"
 "par_id030820161754175408\n"
 "help.text"
-msgid "Go to menu <item type=\"menuitem\">View - Toolbars </item>and select <item type=\"menuitem\">Classification</item>"
+msgid "Go to menu <item type=\"menuitem\">View -> Toolbars </item>and select <item type=\"menuitem\">Classification</item>"
 msgstr "Izberite <item type=\"menuitem\">Pogled – Orodne vrstice</item> in nato orodno vrstico <item type=\"menuitem\">Stopnja zaupnosti</item>."
 
 #: classificationbar.xhp
@@ -377,105 +376,6 @@ msgctxt ""
 "help.text"
 msgid "<link href=\"http://www.tscp.org/wp-content/uploads/2013/08/TSCP_BAILSv1.pdf\">Business Authorization Identification and Labeling Scheme (<item type=\"acronym\">BAILS</item>) document (PDF)</link>"
 msgstr "<link href=\"http://www.tscp.org/wp-content/uploads/2013/08/TSCP_BAILSv1.pdf\">Dokument Business Authorization Identification and Labeling Scheme (<item type=\"acronym\">BAILS</item>)</link> (PDF, v angl.)"
-
-#: mailmergetoolbar.xhp
-#, fuzzy
-msgctxt ""
-"mailmergetoolbar.xhp\n"
-"tit\n"
-"help.text"
-msgid "Mail Merge Toolbar"
-msgstr "Vrstica Spajanje dokumentov"
-
-#: mailmergetoolbar.xhp
-#, fuzzy
-msgctxt ""
-"mailmergetoolbar.xhp\n"
-"hd_id201703240024554113\n"
-"help.text"
-msgid "<link href=\"text/swriter/mailmergetoolbar.xhp\">Mail Merge Toolbar</link>"
-msgstr "<link href=\"text/swriter/mailmergetoolbar.xhp\">Vrstica Spajanje dokumentov</link>"
-
-#: mailmergetoolbar.xhp
-#, fuzzy
-msgctxt ""
-"mailmergetoolbar.xhp\n"
-"par_id201703240025596148\n"
-"help.text"
-msgid "The Mail Merge Toolbar contains commands for the final steps of the mail merge process."
-msgstr "Vrstica Spajanje dokumentov vsebuje ukaze za zaključne korake postopka spajanja dokumentov."
-
-#: mailmergetoolbar.xhp
-#, fuzzy
-msgctxt ""
-"mailmergetoolbar.xhp\n"
-"par_id030820161754175468\n"
-"help.text"
-msgid "Go to menu <item type=\"menuitem\">View - Toolbars</item> and select <item type=\"menuitem\">Mail Merge</item>"
-msgstr "Izberite <item type=\"menuitem\">Pogled – Orodne vrstice</item> in nato orodno vrstico <item type=\"menuitem\">Spajanje dokumentov</item>."
-
-#: mailmergetoolbar.xhp
-#, fuzzy
-msgctxt ""
-"mailmergetoolbar.xhp\n"
-"par_idN10559\n"
-"help.text"
-msgid "(Recipient number)"
-msgstr "(Številka prejemnika)"
-
-#: mailmergetoolbar.xhp
-#, fuzzy
-msgctxt ""
-"mailmergetoolbar.xhp\n"
-"par_idN1055A\n"
-"help.text"
-msgid "<ahelp hid=\".\">Enter the address record number of a recipient to preview the mail merge document for the recipient.</ahelp>"
-msgstr "<ahelp hid=\".\">Vnesite prejemnikovo številko zapisa naslova, da si predogledate spojeni dokument za prejemnika.</ahelp>"
-
-#: mailmergetoolbar.xhp
-#, fuzzy
-msgctxt ""
-"mailmergetoolbar.xhp\n"
-"par_idN10604\n"
-"help.text"
-msgid "<ahelp hid=\".\">Use the browse buttons to scroll through the address records.</ahelp>"
-msgstr "<ahelp hid=\".\">Uporabite gumbe za brskanje, da drsite skozi zapise naslovov.</ahelp>"
-
-#: mailmergetoolbar.xhp
-#, fuzzy
-msgctxt ""
-"mailmergetoolbar.xhp\n"
-"par_idN1055D\n"
-"help.text"
-msgid "Exclude recipient"
-msgstr "Izloči prejemnika"
-
-#: mailmergetoolbar.xhp
-#, fuzzy
-msgctxt ""
-"mailmergetoolbar.xhp\n"
-"par_idN10561\n"
-"help.text"
-msgid "<ahelp hid=\".\">Excludes the current recipient from this mail merge.</ahelp>"
-msgstr "<ahelp hid=\".\">Izloči trenutnega prejemnika iz tega spojenega dokumenta.</ahelp>"
-
-#: mailmergetoolbar.xhp
-#, fuzzy
-msgctxt ""
-"mailmergetoolbar.xhp\n"
-"par_idN10564\n"
-"help.text"
-msgid "Edit Individual Documents"
-msgstr "Uredi posamezne dokumente"
-
-#: mailmergetoolbar.xhp
-#, fuzzy
-msgctxt ""
-"mailmergetoolbar.xhp\n"
-"par_idN10556\n"
-"help.text"
-msgid "<ahelp hid=\".\">Creates a single merged document with page breaks between each recipient.</ahelp> The names and the addresses of the recipients are contained in the document, which can be customized as needed."
-msgstr "<ahelp hid=\".\">Ustvari posamezen spojen dokument s prelomi strani med vsakim prejemnikom.</ahelp> Imena in naslovi prejemnikov so vsebovani v dokumentu, ki ga lahko prilagodite po meri."
 
 #: main0000.xhp
 msgctxt ""
@@ -750,6 +650,22 @@ msgstr "Pokaže ali skrije vodoravni in navpični drsnik, ki sta namenjena sprem
 #: main0103.xhp
 msgctxt ""
 "main0103.xhp\n"
+"hd_id102720150854018740\n"
+"help.text"
+msgid "Hide Whitespace"
+msgstr "Skrij presledke"
+
+#: main0103.xhp
+msgctxt ""
+"main0103.xhp\n"
+"par_id102720150854012820\n"
+"help.text"
+msgid "View documents with the white space found at the end and beginning of pages hidden."
+msgstr "Pokaže dokumente s skritimi presledki na koncu in začetku strani."
+
+#: main0103.xhp
+msgctxt ""
+"main0103.xhp\n"
 "par_idN10613\n"
 "help.text"
 msgid "Table Boundaries"
@@ -798,35 +714,9 @@ msgstr "Pokaže ali skrije komentarje in odgovore na zapisane komentarje dokumen
 #: main0103.xhp
 msgctxt ""
 "main0103.xhp\n"
-"hd_id102720150854018740\n"
-"help.text"
-msgid "Hide Whitespace"
-msgstr "Skrij presledke"
-
-#: main0103.xhp
-msgctxt ""
-"main0103.xhp\n"
-"par_id102720150854012820\n"
-"help.text"
-msgid "View documents with the white space found at the end and beginning of pages hidden."
-msgstr "Pokaže dokumente s skritimi presledki na koncu in začetku strani."
-
-#: main0103.xhp
-#, fuzzy
-msgctxt ""
-"main0103.xhp\n"
-"hd_id03302017034826145\n"
-"help.text"
-msgid "Track Changes"
-msgstr "Sledi spremembam"
-
-#: main0103.xhp
-#, fuzzy
-msgctxt ""
-"main0103.xhp\n"
 "hd_id102720150908397549\n"
 "help.text"
-msgid "<link href=\"text/shared/01/gallery.xhp\">Gallery</link>"
+msgid "<link href=\"text/shared/01/gallery.xhp\">Clip Art Gallery</link>"
 msgstr "<link href=\"text/shared/01/gallery.xhp\">Galerija izrezkov</link>"
 
 #: main0103.xhp
@@ -1244,8 +1134,8 @@ msgctxt ""
 "main0110.xhp\n"
 "par_idN1060A\n"
 "help.text"
-msgid "<ahelp hid=\".\">Deletes the current table.</ahelp>"
-msgstr "<ahelp hid=\".\">Izbriše trenutno tabelo.</ahelp>"
+msgid "<ahelp hid=\"20529\">Deletes the current table.</ahelp>"
+msgstr "<ahelp hid=\"20529\">Izbriše trenutno tabelo.</ahelp>"
 
 #: main0110.xhp
 msgctxt ""
@@ -1348,8 +1238,8 @@ msgctxt ""
 "main0110.xhp\n"
 "par_idN10638\n"
 "help.text"
-msgid "<ahelp hid=\".\">Selects the current cell.</ahelp>"
-msgstr "<ahelp hid=\".\">Izbere trenutno celico.</ahelp>"
+msgid "<ahelp hid=\"20530\">Selects the current cell.</ahelp>"
+msgstr "<ahelp hid=\"20530\">Izbere trenutno celico.</ahelp>"
 
 #: main0110.xhp
 msgctxt ""
@@ -1452,32 +1342,32 @@ msgctxt ""
 "main0110.xhp\n"
 "par_idN1071D\n"
 "help.text"
-msgid "Break Across Pages"
-msgstr "Prelomi čez strani"
+msgid "Allow Row to Break Across Pages and Columns"
+msgstr "Dovoli prelom vrstice čez strani in stolpce"
 
 #: main0110.xhp
 msgctxt ""
 "main0110.xhp\n"
 "par_idN10720\n"
 "help.text"
-msgid "Allows a page break within the current row."
-msgstr "Dovoli prelom strani znotraj trenutne vrstice."
+msgid "<ahelp hid=\"21753\">Allows a page break within the current row.</ahelp>"
+msgstr "<ahelp hid=\"21753\">Dovoli prelom vrstice znotraj trenutne vrstice.</ahelp>"
 
 #: main0110.xhp
 msgctxt ""
 "main0110.xhp\n"
 "par_idN105FF\n"
 "help.text"
-msgid "Repeat Heading Rows"
-msgstr "Ponovi naslovne vrstice"
+msgid "Heading Rows Repeat"
+msgstr "Ponovi vrstico z naslovi"
 
 #: main0110.xhp
 msgctxt ""
 "main0110.xhp\n"
 "par_idN1072D\n"
 "help.text"
-msgid "<ahelp hid=\".\">Repeats the table headers on subsequent pages if the table spans one or more pages.</ahelp>"
-msgstr "<ahelp hid=\".\">Ponovi glave tabele na naslednjih straneh, če se tabela razteza čez več strani.</ahelp>"
+msgid "<ahelp hid=\"20520\">Repeats the table headers on subsequent pages if the table spans one or more pages.</ahelp>"
+msgstr "<ahelp hid=\"20520\">Ponovi glave tabele na naslednjih straneh, če se tabela razteza čez več strani.</ahelp>"
 
 #: main0110.xhp
 msgctxt ""

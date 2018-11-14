@@ -70,7 +70,7 @@ public:
 
     virtual void SAL_CALL release() throw () override;
 
-    OUString getAbsolutePathRepresentation();
+    OUString const & getAbsolutePathRepresentation();
 
     const OUString& getLocale() const { return locale_;}
 
@@ -101,7 +101,7 @@ public:
         throw (css::uno::RuntimeException, std::exception) override;
 
 private:
-    virtual ~RootAccess();
+    virtual ~RootAccess() override;
 
     virtual std::vector<OUString> getRelativePath() override;
 

@@ -22,6 +22,7 @@
 #include <vcl/settings.hxx>
 #include <textdoc.hxx>
 #include <vcl/textdata.hxx>
+#include <vcl/xtextedt.hxx>
 #include <textdat2.hxx>
 
 #include <svl/undo.hxx>
@@ -33,22 +34,21 @@
 #include <sot/formats.hxx>
 #include <svl/urlbmk.hxx>
 
-#include <com/sun/star/i18n/XBreakIterator.hpp>
-
-#include <com/sun/star/i18n/CharacterIteratorMode.hpp>
-
-#include <com/sun/star/i18n/WordType.hpp>
 #include <cppuhelper/weak.hxx>
 #include <cppuhelper/queryinterface.hxx>
 #include <vcl/unohelp.hxx>
+#include <com/sun/star/i18n/XBreakIterator.hpp>
+#include <com/sun/star/i18n/CharacterIteratorMode.hpp>
+#include <com/sun/star/i18n/WordType.hpp>
 #include <com/sun/star/datatransfer/XTransferable.hpp>
 #include <com/sun/star/datatransfer/clipboard/XClipboard.hpp>
 #include <com/sun/star/datatransfer/clipboard/XFlushableClipboard.hpp>
-#include <com/sun/star/lang/XMultiServiceFactory.hpp>
-
 #include <com/sun/star/datatransfer/dnd/DNDConstants.hpp>
 #include <com/sun/star/datatransfer/dnd/XDragGestureRecognizer.hpp>
 #include <com/sun/star/datatransfer/dnd/XDropTarget.hpp>
+#include <com/sun/star/lang/XMultiServiceFactory.hpp>
+#include <com/sun/star/util/SearchOptions.hpp>
+#include <com/sun/star/util/SearchFlags.hpp>
 
 #include <vcl/edit.hxx>
 
@@ -68,7 +68,7 @@ private:
 
 public:
     explicit TETextDataObject( const OUString& rText );
-    virtual ~TETextDataObject();
+    virtual ~TETextDataObject() override;
 
     OUString&        GetText() { return maText; }
     SvMemoryStream& GetHTMLStream() { return maHTMLStream; }
@@ -145,7 +145,7 @@ sal_Bool TETextDataObject::isDataFlavorSupported( const css::datatransfer::DataF
 
 struct ImpTextView
 {
-    TextEngine*         mpTextEngine;
+    ExtTextEngine*      mpTextEngine;
 
     VclPtr<vcl::Window> mpWindow;
     TextSelection       maSelection;
@@ -177,7 +177,7 @@ struct ImpTextView
     bool                mbCursorAtEndOfLine;
 };
 
-TextView::TextView( TextEngine* pEng, vcl::Window* pWindow ) :
+TextView::TextView( ExtTextEngine* pEng, vcl::Window* pWindow ) :
     mpImpl(new ImpTextView)
 {
     pWindow->EnableRTL( false );
@@ -202,7 +202,7 @@ TextView::TextView( TextEngine* pEng, vcl::Window* pWindow ) :
 
     mpImpl->mpSelFuncSet = new TextSelFunctionSet( this );
     mpImpl->mpSelEngine = new SelectionEngine( mpImpl->mpWindow, mpImpl->mpSelFuncSet );
-    mpImpl->mpSelEngine->SetSelectionMode( RANGE_SELECTION );
+    mpImpl->mpSelEngine->SetSelectionMode( SelectionMode::Range );
     mpImpl->mpSelEngine->EnableDrag( true );
 
     mpImpl->mpCursor = new vcl::Cursor;
@@ -292,7 +292,7 @@ void TextView::DeleteSelected()
     ShowCursor();
 }
 
-void TextView::ImpPaint(vcl::RenderContext& rRenderContext, const Point& rStartPos, Rectangle const* pPaintArea, TextSelection const* pPaintRange, TextSelection const* pSelection)
+void TextView::ImpPaint(vcl::RenderContext& rRenderContext, const Point& rStartPos, Rectangle const* pPaintArea, TextSelection const* pSelection)
 {
     if (!mpImpl->mbPaintSelection)
     {
@@ -314,7 +314,7 @@ void TextView::ImpPaint(vcl::RenderContext& rRenderContext, const Point& rStartP
         }
     }
 
-    mpImpl->mpTextEngine->ImpPaint(&rRenderContext, rStartPos, pPaintArea, pPaintRange, pSelection);
+    mpImpl->mpTextEngine->ImpPaint(&rRenderContext, rStartPos, pPaintArea, pSelection);
 }
 
 void TextView::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
@@ -332,7 +332,7 @@ void TextView::ImpPaint(vcl::RenderContext& rRenderContext, const Rectangle& rRe
         pDrawSelection = &mpImpl->maSelection;
 
     Point aStartPos = ImpGetOutputStartPos(mpImpl->maStartDocPos);
-    ImpPaint(rRenderContext, aStartPos, &rRect, nullptr, pDrawSelection);
+    ImpPaint(rRenderContext, aStartPos, &rRect, pDrawSelection);
     if (mpImpl->mbHighlightSelection)
         ImpHighlight(mpImpl->maSelection);
 }
@@ -345,7 +345,7 @@ void TextView::ImpHighlight( const TextSelection& rSel )
     {
         mpImpl->mpCursor->Hide();
 
-        DBG_ASSERT( !mpImpl->mpTextEngine->mpIdleFormatter->IsActive(), "ImpHighlight: Not formatted!" );
+        SAL_WARN_IF( mpImpl->mpTextEngine->mpIdleFormatter->IsActive(), "vcl", "ImpHighlight: Not formatted!" );
 
         Rectangle aVisArea( mpImpl->maStartDocPos, mpImpl->mpWindow->GetOutputSizePixel() );
         long nY = 0;
@@ -859,7 +859,7 @@ void TextView::Command( const CommandEvent& rCEvt )
     }
     else if ( rCEvt.GetCommand() == CommandEventId::EndExtTextInput )
     {
-        DBG_ASSERT( mpImpl->mpTextEngine->mpIMEInfos, "CommandEventId::EndExtTextInput => No Start ?" );
+        SAL_WARN_IF( !mpImpl->mpTextEngine->mpIMEInfos, "vcl", "CommandEventId::EndExtTextInput => No Start ?" );
         if( mpImpl->mpTextEngine->mpIMEInfos )
         {
             TEParaPortion* pPortion = mpImpl->mpTextEngine->mpTEParaPortions->GetObject( mpImpl->mpTextEngine->mpIMEInfos->aPos.GetPara() );
@@ -881,7 +881,7 @@ void TextView::Command( const CommandEvent& rCEvt )
     }
     else if ( rCEvt.GetCommand() == CommandEventId::ExtTextInput )
     {
-        DBG_ASSERT( mpImpl->mpTextEngine->mpIMEInfos, "CommandEventId::ExtTextInput => No Start ?" );
+        SAL_WARN_IF( !mpImpl->mpTextEngine->mpIMEInfos, "vcl", "CommandEventId::ExtTextInput => No Start ?" );
         if( mpImpl->mpTextEngine->mpIMEInfos )
         {
             const CommandExtTextInputData* pData = rCEvt.GetExtTextInputData();
@@ -912,7 +912,7 @@ void TextView::Command( const CommandEvent& rCEvt )
                     {
                         // overwrite
                         const sal_Int32 nOverwrite = std::min( nNewIMETextLen, mpImpl->mpTextEngine->mpIMEInfos->aOldTextAfterStartPos.getLength() ) - nOldIMETextLen;
-                        DBG_ASSERT( nOverwrite && (nOverwrite < 0xFF00), "IME Overwrite?!" );
+                        SAL_WARN_IF( !nOverwrite || (nOverwrite >= 0xFF00), "vcl", "IME Overwrite?!" );
                         TextPaM aPaM( mpImpl->mpTextEngine->mpIMEInfos->aPos );
                         aPaM.GetIndex() += nNewIMETextLen;
                         TextSelection aSel( aPaM );
@@ -995,7 +995,7 @@ void TextView::HideCursor()
 
 void TextView::Scroll( long ndX, long ndY )
 {
-    DBG_ASSERT( mpImpl->mpTextEngine->IsFormatted(), "Scroll: Not formatted!" );
+    SAL_WARN_IF( !mpImpl->mpTextEngine->IsFormatted(), "vcl", "Scroll: Not formatted!" );
 
     if ( !ndX && !ndY )
         return;
@@ -1175,9 +1175,9 @@ TextSelection TextView::ImpMoveCursor( const KeyEvent& rKeyEvent )
     TextPaM aPaM( mpImpl->maSelection.GetEnd() );
     TextPaM aOldEnd( aPaM );
 
-    TextDirectionality eTextDirection = TextDirectionality_LeftToRight_TopToBottom;
+    TextDirectionality eTextDirection = TextDirectionality::LeftToRight_TopToBottom;
     if ( mpImpl->mpTextEngine->IsRightToLeft() )
-        eTextDirection = TextDirectionality_RightToLeft_TopToBottom;
+        eTextDirection = TextDirectionality::RightToLeft_TopToBottom;
 
     KeyEvent aTranslatedKeyEvent = rKeyEvent.LogicalTextDirectionality( eTextDirection );
 
@@ -1901,7 +1901,7 @@ void TextView::dragGestureRecognized( const css::datatransfer::dnd::DragGestureE
     {
         SolarMutexGuard aVclGuard;
 
-        DBG_ASSERT( mpImpl->maSelection.HasRange(), "TextView::dragGestureRecognized: mpImpl->mbClickedInSelection, but no selection?" );
+        SAL_WARN_IF( !mpImpl->maSelection.HasRange(), "vcl", "TextView::dragGestureRecognized: mpImpl->mbClickedInSelection, but no selection?" );
 
         delete mpImpl->mpDDInfo;
         mpImpl->mpDDInfo = new TextDDInfo;
@@ -2246,5 +2246,176 @@ bool                TextView::IsInsertMode() const
 { return mpImpl->mbInsertMode; }
 void                TextView::SupportProtectAttribute(bool bSupport)
 { mpImpl->mbSupportProtectAttribute = bSupport;}
+
+bool TextView::MatchGroup()
+{
+    TextSelection aTmpSel( GetSelection() );
+    aTmpSel.Justify();
+    if ( ( aTmpSel.GetStart().GetPara() != aTmpSel.GetEnd().GetPara() ) ||
+         ( ( aTmpSel.GetEnd().GetIndex() - aTmpSel.GetStart().GetIndex() ) > 1 ) )
+    {
+        return false;
+    }
+
+    TextSelection aMatchSel = static_cast<ExtTextEngine*>(GetTextEngine())->MatchGroup( aTmpSel.GetStart() );
+    if ( aMatchSel.HasRange() )
+        SetSelection( aMatchSel );
+
+    return aMatchSel.HasRange();
+}
+
+bool TextView::Search( const css::util::SearchOptions& rSearchOptions, bool bForward )
+{
+    bool bFound = false;
+    TextSelection aSel( GetSelection() );
+    if ( static_cast<ExtTextEngine*>(GetTextEngine())->Search( aSel, rSearchOptions, bForward ) )
+    {
+        bFound = true;
+        // First add the beginning of the word to the selection,
+        // so that the whole word is in the visible region.
+        SetSelection( aSel.GetStart() );
+        ShowCursor( true, false );
+    }
+    else
+    {
+        aSel = GetSelection().GetEnd();
+    }
+
+    SetSelection( aSel );
+    ShowCursor();
+
+    return bFound;
+}
+
+sal_uInt16 TextView::Replace( const css::util::SearchOptions& rSearchOptions, bool bAll, bool bForward )
+{
+    sal_uInt16 nFound = 0;
+
+    if ( !bAll )
+    {
+        if ( GetSelection().HasRange() )
+        {
+            InsertText( rSearchOptions.replaceString );
+            nFound = 1;
+            Search( rSearchOptions, bForward ); // right away to the next
+        }
+        else
+        {
+            if( Search( rSearchOptions, bForward ) )
+                nFound = 1;
+        }
+    }
+    else
+    {
+        // the writer replaces all, from beginning to end
+
+        ExtTextEngine* pTextEngine = static_cast<ExtTextEngine*>(GetTextEngine());
+
+        // HideSelection();
+        TextSelection aSel;
+
+        bool bSearchInSelection = (0 != (rSearchOptions.searchFlag & css::util::SearchFlags::REG_NOT_BEGINOFLINE) );
+        if ( bSearchInSelection )
+        {
+            aSel = GetSelection();
+            aSel.Justify();
+        }
+
+        TextSelection aSearchSel( aSel );
+
+        bool bFound = pTextEngine->Search( aSel, rSearchOptions );
+        if ( bFound )
+            pTextEngine->UndoActionStart();
+        while ( bFound )
+        {
+            nFound++;
+
+            TextPaM aNewStart = pTextEngine->ImpInsertText( aSel, rSearchOptions.replaceString );
+            aSel = aSearchSel;
+            aSel.GetStart() = aNewStart;
+            bFound = pTextEngine->Search( aSel, rSearchOptions );
+        }
+        if ( nFound )
+        {
+            SetSelection( aSel.GetStart() );
+            pTextEngine->FormatAndUpdate( this );
+            pTextEngine->UndoActionEnd();
+        }
+    }
+    return nFound;
+}
+
+bool TextView::ImpIndentBlock( bool bRight )
+{
+    bool bDone = false;
+
+    TextSelection aSel = GetSelection();
+    aSel.Justify();
+
+    HideSelection();
+    GetTextEngine()->UndoActionStart();
+
+    const sal_uInt32 nStartPara = aSel.GetStart().GetPara();
+    sal_uInt32 nEndPara = aSel.GetEnd().GetPara();
+    if ( aSel.HasRange() && !aSel.GetEnd().GetIndex() )
+    {
+        nEndPara--; // do not indent
+    }
+
+    for ( sal_uInt32 nPara = nStartPara; nPara <= nEndPara; ++nPara )
+    {
+        if ( bRight )
+        {
+            // add tabs
+            GetTextEngine()->ImpInsertText( TextPaM( nPara, 0 ), '\t' );
+            bDone = true;
+        }
+        else
+        {
+            // remove Tabs/Blanks
+            OUString aText = GetTextEngine()->GetText( nPara );
+            if ( !aText.isEmpty() && (
+                    ( aText[ 0 ] == '\t' ) ||
+                    ( aText[ 0 ] == ' ' ) ) )
+            {
+                GetTextEngine()->ImpDeleteText( TextSelection( TextPaM( nPara, 0 ), TextPaM( nPara, 1 ) ) );
+                bDone = true;
+            }
+        }
+    }
+
+    GetTextEngine()->UndoActionEnd();
+
+    bool bRange = aSel.HasRange();
+    if ( bRight )
+    {
+        ++aSel.GetStart().GetIndex();
+        if ( bRange && ( aSel.GetEnd().GetPara() == nEndPara ) )
+            ++aSel.GetEnd().GetIndex();
+    }
+    else
+    {
+        if ( aSel.GetStart().GetIndex() )
+            --aSel.GetStart().GetIndex();
+        if ( bRange && aSel.GetEnd().GetIndex() )
+            --aSel.GetEnd().GetIndex();
+    }
+
+    ImpSetSelection( aSel );
+    GetTextEngine()->FormatAndUpdate( this );
+
+    return bDone;
+}
+
+bool TextView::IndentBlock()
+{
+    return ImpIndentBlock( true );
+}
+
+bool TextView::UnindentBlock()
+{
+    return ImpIndentBlock( false );
+}
+
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

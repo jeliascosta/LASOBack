@@ -49,7 +49,7 @@ public:
     virtual void setValueToSeries( const css::uno::Reference< css::beans::XPropertySet >& xSeriesPropertySet, const PROPERTYTYPE & aNewValue ) const =0;
 
     explicit WrappedSeriesOrDiagramProperty( const OUString& rName, const css::uno::Any& rDefaulValue
-        , std::shared_ptr< Chart2ModelContact > spChart2ModelContact
+        , const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact
         , tSeriesOrDiagramPropertyType ePropertyType )
             : WrappedProperty(rName,OUString())
             , m_spChart2ModelContact(spChart2ModelContact)
@@ -58,7 +58,7 @@ public:
             , m_ePropertyType( ePropertyType )
     {
     }
-    virtual ~WrappedSeriesOrDiagramProperty() {};
+    virtual ~WrappedSeriesOrDiagramProperty() override {};
 
     bool detectInnerValue( PROPERTYTYPE& rValue, bool& rHasAmbiguousValue ) const
     {
@@ -145,7 +145,7 @@ public:
             if( detectInnerValue( aValue, bHasAmbiguousValue ) )
             {
                 if(bHasAmbiguousValue)
-                    m_aOuterValue <<= m_aDefaultValue;
+                    m_aOuterValue = m_aDefaultValue;
                 else
                     m_aOuterValue <<= aValue;
             }

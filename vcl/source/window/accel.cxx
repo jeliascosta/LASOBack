@@ -123,30 +123,10 @@ static void ImplAccelEntryInsert( ImplAccelList* pList, ImplAccelEntry* pEntry )
     }
 }
 
-static sal_uInt16 ImplAccelEntryGetFirstPos( ImplAccelList* pList, sal_uInt16 nId )
-{
-    sal_uInt16 nIndex = ImplAccelEntryGetIndex( pList, nId );
-    if ( nIndex != ACCELENTRY_NOTFOUND )
-    {
-        while ( nIndex )
-        {
-            nIndex--;
-            if ( (*pList)[ nIndex ]->mnId != nId )
-                break;
-        }
-
-        if ( (*pList)[ nIndex ]->mnId != nId )
-            nIndex++;
-    }
-
-    return nIndex;
-}
-
 void Accelerator::ImplInit()
 {
     mnCurId             = 0;
     mnCurRepeat         = 0;
-    mbIsCancel          = false;
     mpDel               = nullptr;
 }
 
@@ -195,7 +175,7 @@ void Accelerator::ImplDeleteData()
 void Accelerator::ImplInsertAccel( sal_uInt16 nItemId, const vcl::KeyCode& rKeyCode,
                                    bool bEnable, Accelerator* pAutoAccel )
 {
-    DBG_ASSERT( nItemId, "Accelerator::InsertItem(): ItemId == 0" );
+    SAL_WARN_IF( !nItemId, "vcl", "Accelerator::InsertItem(): ItemId == 0" );
 
     if ( rKeyCode.IsFunction() )
     {
@@ -254,7 +234,6 @@ Accelerator::Accelerator()
 
 Accelerator::Accelerator( const Accelerator& rAccel ) :
     Resource(),
-    maHelpStr( rAccel.maHelpStr ),
     maCurKeyCode( rAccel.maCurKeyCode )
 {
 
@@ -295,16 +274,6 @@ sal_uInt16 Accelerator::GetItemCount() const
     return (sal_uInt16)mpData->maIdList.size();
 }
 
-vcl::KeyCode Accelerator::GetKeyCode( sal_uInt16 nItemId ) const
-{
-
-    sal_uInt16 nIndex = ImplAccelEntryGetFirstPos( &(mpData->maIdList), nItemId );
-    if ( nIndex != ACCELENTRY_NOTFOUND )
-        return mpData->maIdList[ nIndex ]->maKeyCode;
-    else
-        return vcl::KeyCode();
-}
-
 sal_uInt16 Accelerator::GetItemId( sal_uInt16 nPos ) const
 {
 
@@ -329,11 +298,9 @@ Accelerator& Accelerator::operator=( const Accelerator& rAccel )
 {
 
     // assign new data
-    maHelpStr       = rAccel.maHelpStr;
     maCurKeyCode    = vcl::KeyCode();
     mnCurId         = 0;
     mnCurRepeat     = 0;
-    mbIsCancel      = false;
 
     // delete and copy tables
     ImplDeleteData();

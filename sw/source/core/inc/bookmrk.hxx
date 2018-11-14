@@ -95,11 +95,11 @@ namespace sw {
                     m_pPos1.swap(m_pPos2);
             }
 
-            virtual void InitDoc(SwDoc* const)
+            virtual void InitDoc(SwDoc* const, sw::mark::InsertMode)
             {
             }
 
-            virtual ~MarkBase();
+            virtual ~MarkBase() override;
 
             const css::uno::WeakReference< css::text::XTextContent> & GetXBookmark() const
                     { return m_wXBookmark; }
@@ -139,18 +139,15 @@ namespace sw {
         public:
             DdeBookmark(const SwPaM& rPaM);
 
-            const SwServerObject* GetRefObject() const
-                { return &m_aRefObj; }
-            SwServerObject* GetRefObject()
-                { return &m_aRefObj; }
+            const SwServerObject* GetRefObject() const { return m_aRefObj.get(); }
+            SwServerObject* GetRefObject() { return m_aRefObj.get(); }
 
-            bool IsServer() const
-                { return m_aRefObj.Is(); }
+            bool IsServer() const { return m_aRefObj.Is(); }
 
             void SetRefObject( SwServerObject* pObj );
 
             virtual void DeregisterFromDoc(SwDoc* const pDoc);
-            virtual ~DdeBookmark();
+            virtual ~DdeBookmark() override;
 
         private:
             tools::SvRef<SwServerObject> m_aRefObj;
@@ -166,7 +163,7 @@ namespace sw {
                 const vcl::KeyCode& rCode,
                 const OUString& rName,
                 const OUString& rShortName);
-            virtual void InitDoc(SwDoc* const io_Doc) override;
+            virtual void InitDoc(SwDoc* const io_Doc, sw::mark::InsertMode eMode) override;
 
             virtual void DeregisterFromDoc(SwDoc* const io_pDoc) override;
 
@@ -234,7 +231,7 @@ namespace sw {
         {
         public:
             TextFieldmark(const SwPaM& rPaM);
-            virtual void InitDoc(SwDoc* const io_pDoc) override;
+            virtual void InitDoc(SwDoc* const io_pDoc, sw::mark::InsertMode eMode) override;
             virtual void ReleaseDoc(SwDoc* const pDoc) override;
         };
 
@@ -244,7 +241,7 @@ namespace sw {
         {
         public:
             CheckboxFieldmark(const SwPaM& rPaM);
-            virtual void InitDoc(SwDoc* const io_pDoc) override;
+            virtual void InitDoc(SwDoc* const io_pDoc, sw::mark::InsertMode eMode) override;
             virtual void ReleaseDoc(SwDoc* const pDoc) override;
             bool IsChecked() const override;
             void SetChecked(bool checked) override;

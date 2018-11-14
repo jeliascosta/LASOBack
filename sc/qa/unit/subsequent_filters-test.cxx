@@ -31,11 +31,14 @@
 #include <editeng/udlnitem.hxx>
 #include <editeng/editobj.hxx>
 #include <editeng/borderline.hxx>
+#include <editeng/boxitem.hxx>
 #include <editeng/fhgtitem.hxx>
 #include <editeng/brushitem.hxx>
 #include <editeng/fontitem.hxx>
 #include <editeng/flditem.hxx>
 #include <editeng/justifyitem.hxx>
+#include <editeng/lineitem.hxx>
+#include <editeng/colritem.hxx>
 #include <dbdata.hxx>
 #include "validat.hxx"
 #include "formulacell.hxx"
@@ -61,6 +64,16 @@
 #include <tokenstringcontext.hxx>
 #include <formula/errorcodes.hxx>
 #include "externalrefmgr.hxx"
+#include <stlpool.hxx>
+#include <config_orcus.h>
+#include <attrib.hxx>
+
+#if ENABLE_ORCUS
+#include <orcusfiltersimpl.hxx>
+#include "orcusfilters.hxx"
+#include "filter.hxx"
+#include "orcusinterface.hxx"
+#endif
 
 
 #include <com/sun/star/drawing/XDrawPageSupplier.hpp>
@@ -68,7 +81,7 @@
 #include <com/sun/star/sheet/XSpreadsheetDocument.hpp>
 #include <com/sun/star/sheet/DataPilotFieldOrientation.hpp>
 #include <com/sun/star/sheet/DataPilotFieldGroupBy.hpp>
-#include <com/sun/star/sheet/GeneralFunction.hpp>
+#include <com/sun/star/sheet/GeneralFunction2.hpp>
 #include <com/sun/star/container/XIndexAccess.hpp>
 #include <com/sun/star/frame/Desktop.hpp>
 #include <com/sun/star/frame/XModel.hpp>
@@ -150,6 +163,10 @@ public:
     void testCondFormatParentXLSX();
     void testColorScaleNumWithRefXLSX();
 
+    #if ENABLE_ORCUS
+    void testOrcusODSStyleInterface();
+    #endif
+
     void testLiteralInFormulaXLS();
 
     //change this test file only in excel and not in calc
@@ -163,11 +180,9 @@ public:
     void testErrorOnExternalReferences();
 
     //misc tests unrelated to the import filters
-#if !defined(MACOSX) && !defined(DRAGONFLY) && !defined(_WIN32)
     void testPasswordNew();
     void testPasswordOld();
     void testPasswordWrongSHA();
-#endif
 
     //test shape import
     void testControlImport();
@@ -206,6 +221,8 @@ public:
     void testSharedFormulaBIFF5();
     void testSharedFormulaXLSB();
     void testSharedFormulaXLS();
+    void testSharedFormulaColumnLabelsODS();
+    void testSharedFormulaColumnRowLabelsODS();
     void testExternalRefCacheXLSX();
     void testExternalRefCacheODS();
     void testHybridSharedStringODS();
@@ -219,6 +236,11 @@ public:
     void testColumnStyle2XLSX();
 
     void testBnc762542();
+
+    void testTdf100458();
+    void testTdf100709XLSX();
+    void testTdf97598XLSX();
+    void testTdf111974XLSM();
 
     CPPUNIT_TEST_SUITE(ScFiltersTest);
     CPPUNIT_TEST(testBooleanFormatXLSX);
@@ -274,6 +296,11 @@ public:
     CPPUNIT_TEST(testComplexIconSetsXLSX);
     CPPUNIT_TEST(testCondFormatParentXLSX);
     CPPUNIT_TEST(testColorScaleNumWithRefXLSX);
+
+    #if ENABLE_ORCUS
+    CPPUNIT_TEST(testOrcusODSStyleInterface);
+    #endif
+
     CPPUNIT_TEST(testLiteralInFormulaXLS);
 
     CPPUNIT_TEST(testNumberFormatHTML);
@@ -296,11 +323,9 @@ public:
 
     //disable testPassword on MacOSX due to problems with libsqlite3
     //also crashes on DragonFly due to problems with nss/nspr headers
-#if !defined(MACOSX) && !defined(DRAGONFLY) && !defined(_WIN32)
     CPPUNIT_TEST(testPasswordWrongSHA);
     CPPUNIT_TEST(testPasswordOld);
     CPPUNIT_TEST(testPasswordNew);
-#endif
 
     CPPUNIT_TEST(testMiscRowHeights);
     CPPUNIT_TEST(testOptimalHeightReset);
@@ -312,6 +337,8 @@ public:
     CPPUNIT_TEST(testSharedFormulaBIFF5);
     CPPUNIT_TEST(testSharedFormulaXLSB);
     CPPUNIT_TEST(testSharedFormulaXLS);
+    CPPUNIT_TEST(testSharedFormulaColumnLabelsODS);
+    CPPUNIT_TEST(testSharedFormulaColumnRowLabelsODS);
     CPPUNIT_TEST(testExternalRefCacheXLSX);
     CPPUNIT_TEST(testExternalRefCacheODS);
     CPPUNIT_TEST(testHybridSharedStringODS);
@@ -328,12 +355,15 @@ public:
 
     CPPUNIT_TEST(testHiddenSheetsXLSX);
 
+    CPPUNIT_TEST(testTdf100458);
+    CPPUNIT_TEST(testTdf100709XLSX);
+    CPPUNIT_TEST(testTdf97598XLSX);
+    CPPUNIT_TEST(testTdf111974XLSM);
+
     CPPUNIT_TEST_SUITE_END();
 
 private:
-#if !defined(MACOSX) && !defined(DRAGONFLY) && !defined(_WIN32)
     void testPassword_Impl(const OUString& rFileNameBase);
-#endif
 
     uno::Reference<uno::XInterface> m_xCalcComponent;
 };
@@ -949,7 +979,7 @@ void ScFiltersTest::testBorderODS()
     CPPUNIT_ASSERT_EQUAL(
         table::BorderLineStyle::SOLID, pRight->GetBorderLineStyle());
     CPPUNIT_ASSERT_EQUAL(5L, pRight->GetWidth());
-    CPPUNIT_ASSERT(pRight->GetColor() == Color(COL_BLUE));
+    CPPUNIT_ASSERT_EQUAL(Color(COL_BLUE), pRight->GetColor());
 
     xDocSh->DoClose();
 }
@@ -1545,7 +1575,6 @@ void ScFiltersTest::testRowIndex1BasedXLSX()
     xDocSh->DoClose();
 }
 
-#if !defined(MACOSX) && !defined(DRAGONFLY) && !defined(_WIN32)
 void ScFiltersTest::testPassword_Impl(const OUString& aFileNameBase)
 {
     OUString aFileExtension(getFileFormats()[0].pName, strlen(getFileFormats()[0].pName), RTL_TEXTENCODING_UTF8 );
@@ -1562,7 +1591,7 @@ void ScFiltersTest::testPassword_Impl(const OUString& aFileNameBase)
     const_cast<SfxFilter*>(pFilter.get())->SetVersion(SOFFICE_FILEFORMAT_CURRENT);
 
     ScDocShellRef xDocSh = new ScDocShell;
-    SfxMedium* pMedium = new SfxMedium(aFileName, STREAM_STD_READWRITE);
+    SfxMedium* pMedium = new SfxMedium(aFileName, StreamMode::STD_READWRITE);
     SfxItemSet* pSet = pMedium->GetItemSet();
     pSet->Put(SfxStringItem(SID_PASSWORD, OUString("test")));
     pMedium->SetFilter(pFilter);
@@ -1599,7 +1628,6 @@ void ScFiltersTest::testPasswordWrongSHA()
     const OUString aFileNameBase("passwordWrongSHA.");
     testPassword_Impl(aFileNameBase);
 }
-#endif
 
 void ScFiltersTest::testControlImport()
 {
@@ -1852,7 +1880,7 @@ void ScFiltersTest::testPivotTableBasicODS()
     const ScDPSaveDimension* pDim = aDims.back();
     CPPUNIT_ASSERT_EQUAL_MESSAGE(
         "Function for the data field should be COUNT.",
-        sal_uInt16(sheet::GeneralFunction_COUNT), pDim->GetFunction());
+        sal_uInt16(sheet::GeneralFunction2::COUNT), pDim->GetFunction());
 
     xDocSh->DoClose();
 }
@@ -2066,13 +2094,13 @@ void ScFiltersTest::testGetPivotDataXLS()
 
 void ScFiltersTest::testPivotTableSharedGroupXLSX()
 {
-    ScDocShellRef xDocSh = loadDoc("pivot-table/shared_group.", FORMAT_XLSX);
+    ScDocShellRef xDocSh = loadDoc("pivot-table/shared-group-field.", FORMAT_XLSX);
     CPPUNIT_ASSERT_MESSAGE("Failed to load file", xDocSh.Is());
     ScDocument& rDoc = xDocSh->GetDocument();
-    rDoc.CalcAll();
 
     // Check whether right group names are imported for both tables
     // First table
+    CPPUNIT_ASSERT_EQUAL(OUString("a2"), rDoc.GetString(ScAddress(0,1,0)));
     CPPUNIT_ASSERT_EQUAL(OUString("Csoport1"), rDoc.GetString(ScAddress(0,2,0)));
     CPPUNIT_ASSERT_EQUAL(OUString("Csoport2"), rDoc.GetString(ScAddress(0,3,0)));
     CPPUNIT_ASSERT_EQUAL(OUString("Csoport3"), rDoc.GetString(ScAddress(0,4,0)));
@@ -2081,12 +2109,25 @@ void ScFiltersTest::testPivotTableSharedGroupXLSX()
     CPPUNIT_ASSERT_EQUAL(OUString("18"), rDoc.GetString(ScAddress(0,7,0)));
 
     // Second table
+    CPPUNIT_ASSERT_EQUAL(OUString("a2"), rDoc.GetString(ScAddress(0,11,0)));
     CPPUNIT_ASSERT_EQUAL(OUString("Csoport1"), rDoc.GetString(ScAddress(0,12,0)));
     CPPUNIT_ASSERT_EQUAL(OUString("Csoport2"), rDoc.GetString(ScAddress(0,13,0)));
     CPPUNIT_ASSERT_EQUAL(OUString("Csoport3"), rDoc.GetString(ScAddress(0,14,0)));
     CPPUNIT_ASSERT_EQUAL(OUString("16"), rDoc.GetString(ScAddress(0,15,0)));
     CPPUNIT_ASSERT_EQUAL(OUString("17"), rDoc.GetString(ScAddress(0,16,0)));
     CPPUNIT_ASSERT_EQUAL(OUString("18"), rDoc.GetString(ScAddress(0,17,0)));
+
+    // There should be exactly 2 pivot tables and 1 cache.
+    ScDPCollection* pDPs = rDoc.GetDPCollection();
+    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(2), pDPs->GetCount());
+
+    ScDPCollection::SheetCaches& rSheetCaches = pDPs->GetSheetCaches();
+    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(1), rSheetCaches.size());
+
+    const ScDPCache* pCache = rSheetCaches.getExistingCache(ScRange(0,0,1,13,18,1));
+    CPPUNIT_ASSERT_MESSAGE("Pivot cache is expected for A1:N19 on the second sheet.", pCache);
+    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(14), pCache->GetFieldCount());
+    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(1), pCache->GetGroupFieldCount());
 
     xDocSh->DoClose();
 }
@@ -2099,6 +2140,7 @@ void ScFiltersTest::testPivotTableSharedDateGroupXLSX()
 
     // Check whether right date labels are imported for both tables
     // First table
+    CPPUNIT_ASSERT_EQUAL(OUString("a"), rDoc.GetString(ScAddress(0,3,1)));
     CPPUNIT_ASSERT_EQUAL(OUString("1965"), rDoc.GetString(ScAddress(0,4,1)));
     CPPUNIT_ASSERT_EQUAL(OUString("1989"), rDoc.GetString(ScAddress(0,5,1)));
     CPPUNIT_ASSERT_EQUAL(OUString("2000"), rDoc.GetString(ScAddress(0,6,1)));
@@ -2107,6 +2149,7 @@ void ScFiltersTest::testPivotTableSharedDateGroupXLSX()
     // CPPUNIT_ASSERT_EQUAL(OUString("2007"), rDoc.GetString(ScAddress(0,8,1)));
 
     // Second table
+    CPPUNIT_ASSERT_EQUAL(OUString("a"), rDoc.GetString(ScAddress(5,3,1)));
     CPPUNIT_ASSERT_EQUAL(OUString("1965"), rDoc.GetString(ScAddress(5,4,1)));
     CPPUNIT_ASSERT_EQUAL(OUString("1989"), rDoc.GetString(ScAddress(5,5,1)));
     CPPUNIT_ASSERT_EQUAL(OUString("2000"), rDoc.GetString(ScAddress(5,6,1)));
@@ -2144,6 +2187,7 @@ void ScFiltersTest::testPivotTableSharedNestedDateGroupXLSX()
     // TODO: check why this fails with the empty string
     //CPPUNIT_ASSERT_EQUAL(OUString("2007"), rDoc.GetString(ScAddress(0,32,1)));
     CPPUNIT_ASSERT_EQUAL(OUString("Quarters"), rDoc.GetString(ScAddress(1,3,1)));
+    CPPUNIT_ASSERT_EQUAL(OUString("a"), rDoc.GetString(ScAddress(2,3,1)));
 
     // Second table
     CPPUNIT_ASSERT_EQUAL(OUString("Years"), rDoc.GetString(ScAddress(6,3,1)));
@@ -2154,6 +2198,7 @@ void ScFiltersTest::testPivotTableSharedNestedDateGroupXLSX()
     // TODO: check why this fails with the empty string
     //CPPUNIT_ASSERT_EQUAL(OUString("2007"), rDoc.GetString(ScAddress(6,31,1)));
     CPPUNIT_ASSERT_EQUAL(OUString("Quarters"), rDoc.GetString(ScAddress(7,3,1)));
+    CPPUNIT_ASSERT_EQUAL(OUString("a"), rDoc.GetString(ScAddress(8,3,1)));
 
     // There should be exactly 2 pivot tables and 1 cache.
     ScDPCollection* pDPs = rDoc.GetDPCollection();
@@ -2179,6 +2224,7 @@ void ScFiltersTest::testPivotTableSharedNumGroupXLSX()
 
     // Check whether right number groups are imported for both tables
     // First table
+    CPPUNIT_ASSERT_EQUAL(OUString("f"), rDoc.GetString(ScAddress(0,3,1)));
     CPPUNIT_ASSERT_EQUAL(OUString("32674-47673"), rDoc.GetString(ScAddress(0,4,1)));
     CPPUNIT_ASSERT_EQUAL(OUString("47674-62673"), rDoc.GetString(ScAddress(0,5,1)));
     CPPUNIT_ASSERT_EQUAL(OUString("62674-77673"), rDoc.GetString(ScAddress(0,6,1)));
@@ -2186,6 +2232,7 @@ void ScFiltersTest::testPivotTableSharedNumGroupXLSX()
     CPPUNIT_ASSERT_EQUAL(OUString("92674-107673"), rDoc.GetString(ScAddress(0,8,1)));
 
     // Second table
+    CPPUNIT_ASSERT_EQUAL(OUString("f"), rDoc.GetString(ScAddress(5,3,1)));
     CPPUNIT_ASSERT_EQUAL(OUString("32674-47673"), rDoc.GetString(ScAddress(5,4,1)));
     CPPUNIT_ASSERT_EQUAL(OUString("47674-62673"), rDoc.GetString(ScAddress(5,5,1)));
     CPPUNIT_ASSERT_EQUAL(OUString("62674-77673"), rDoc.GetString(ScAddress(5,6,1)));
@@ -2811,6 +2858,223 @@ void ScFiltersTest::testColorScaleNumWithRefXLSX()
     xDocSh->DoClose();
 }
 
+#if ENABLE_ORCUS
+void ScFiltersTest::testOrcusODSStyleInterface()
+{
+    ScDocument aDoc;
+    OUString aFullUrl = m_directories.getURLFromSrc("sc/qa/unit/data/xml/styles.xml");
+
+    /* This loop below trims file:// from the start because orcus doesn't accept such a url */
+    OUString aValidPath;
+    osl::FileBase::getSystemPathFromFileURL(aFullUrl, aValidPath);
+
+    ScOrcusFilters* pOrcus = ScFormatFilter::Get().GetOrcusFilters();
+    CPPUNIT_ASSERT(pOrcus);
+
+    pOrcus->importODS_Styles(aDoc, aValidPath);
+    ScStyleSheetPool* pStyleSheetPool = aDoc.GetStyleSheetPool();
+
+    /* Test cases for Style "Name1"
+     * Has Border and Fill.
+     */
+    ScStyleSheet* pStyleSheet = pStyleSheetPool->FindCaseIns("Name1", SfxStyleFamily::Para);
+    const SfxPoolItem* pItem = nullptr;
+
+    CPPUNIT_ASSERT_MESSAGE("Style Name1 : Doesn't have Attribute background, but it should have.",
+        pStyleSheet->GetItemSet().HasItem(ATTR_BACKGROUND, &pItem));
+    const SvxBrushItem* pBackground = static_cast<const SvxBrushItem*>(pItem);
+    CPPUNIT_ASSERT_EQUAL(Color(254, 255, 204), pBackground->GetColor());
+
+    CPPUNIT_ASSERT_MESSAGE("Style Name1 : Doesn't have Attribute border, but it should have.",
+        pStyleSheet->GetItemSet().HasItem(ATTR_BORDER, &pItem));
+    const SvxBoxItem* pBoxItem = static_cast<const SvxBoxItem*>(pItem);
+    CPPUNIT_ASSERT_EQUAL(Color(255, 204, 18), pBoxItem->GetLeft()->GetColor());
+    CPPUNIT_ASSERT_EQUAL(Color(255, 204, 18), pBoxItem->GetRight()->GetColor());
+    CPPUNIT_ASSERT_EQUAL(Color(255, 204, 18), pBoxItem->GetTop()->GetColor());
+    CPPUNIT_ASSERT_EQUAL(Color(255, 204, 18), pBoxItem->GetBottom()->GetColor());
+    CPPUNIT_ASSERT_EQUAL(pBoxItem->GetLeft()->GetBorderLineStyle(), ::com::sun::star::table::BorderLineStyle::DOTTED);
+    CPPUNIT_ASSERT_EQUAL(pBoxItem->GetRight()->GetBorderLineStyle(), ::com::sun::star::table::BorderLineStyle::DOTTED);
+    CPPUNIT_ASSERT_EQUAL(pBoxItem->GetTop()->GetBorderLineStyle(), ::com::sun::star::table::BorderLineStyle::DOTTED);
+    CPPUNIT_ASSERT_EQUAL(pBoxItem->GetBottom()->GetBorderLineStyle(), ::com::sun::star::table::BorderLineStyle::DOTTED);
+    ASSERT_DOUBLES_EQUAL_MESSAGE("Error with left width", 1, pBoxItem->GetLeft()->GetWidth());
+    ASSERT_DOUBLES_EQUAL_MESSAGE("Error with right width", 1, pBoxItem->GetRight()->GetWidth());
+    ASSERT_DOUBLES_EQUAL_MESSAGE("Error with top width", 1, pBoxItem->GetTop()->GetWidth());
+    ASSERT_DOUBLES_EQUAL_MESSAGE("Error with bottom width", 1, pBoxItem->GetBottom()->GetWidth());
+
+    CPPUNIT_ASSERT_MESSAGE("Style Name1 : Has Attribute Protection, but it shouldn't.",
+        !pStyleSheet->GetItemSet().HasItem(ATTR_PROTECTION, &pItem));
+    CPPUNIT_ASSERT_MESSAGE("Style Name1 : Has Attribute font, but it shouldn't.",
+        !pStyleSheet->GetItemSet().HasItem(ATTR_FONT, &pItem));
+    CPPUNIT_ASSERT_MESSAGE("Style Name1 : Has Attribute number format, but it shouldn't.",
+        !pStyleSheet->GetItemSet().HasItem(ATTR_VALUE_FORMAT, &pItem));
+
+    /* Test for Style "Name2"
+     * Has 4 sided borders + Diagonal borders.
+     */
+    pStyleSheet = pStyleSheetPool->FindCaseIns("Name2", SfxStyleFamily::Para);
+
+    CPPUNIT_ASSERT_MESSAGE("Style Name2 : Doesn't have Attribute background, but it should have.",
+        pStyleSheet->GetItemSet().HasItem(ATTR_BORDER, &pItem));
+
+    pBoxItem = static_cast<const SvxBoxItem*>(pItem);
+    CPPUNIT_ASSERT_EQUAL(Color(0, 0, 0), pBoxItem->GetLeft()->GetColor());
+    CPPUNIT_ASSERT_EQUAL(Color(255, 0, 0), pBoxItem->GetRight()->GetColor());
+    CPPUNIT_ASSERT_EQUAL(pBoxItem->GetLeft()->GetBorderLineStyle(), ::com::sun::star::table::BorderLineStyle::SOLID);
+    CPPUNIT_ASSERT_EQUAL(pBoxItem->GetRight()->GetBorderLineStyle(), ::com::sun::star::table::BorderLineStyle::DOTTED);
+    ASSERT_DOUBLES_EQUAL_MESSAGE("Error with left width", 0, pBoxItem->GetLeft()->GetWidth());
+    ASSERT_DOUBLES_EQUAL_MESSAGE("Error with right width", 14, pBoxItem->GetRight()->GetWidth());
+
+    CPPUNIT_ASSERT_MESSAGE("Style Name2 : Doesn't have Attribute diagonal(tl-br) border, but it should have.",
+        pStyleSheet->GetItemSet().HasItem(ATTR_BORDER_TLBR, &pItem));
+
+    const SvxLineItem* pTLBR= static_cast<const SvxLineItem*>(pItem);
+    CPPUNIT_ASSERT_EQUAL(Color(18, 0, 0), pTLBR->GetLine()->GetColor());
+    CPPUNIT_ASSERT_EQUAL(pTLBR->GetLine()->GetBorderLineStyle(), ::com::sun::star::table::BorderLineStyle::DASH_DOT);
+    ASSERT_DOUBLES_EQUAL_MESSAGE("Error with diagonal tl-br width", 14, pTLBR->GetLine()->GetWidth());
+
+    CPPUNIT_ASSERT_MESSAGE("Style Name2 : Doesn't have Attribute diagonal(bl-tr) border, but it should have.",
+        pStyleSheet->GetItemSet().HasItem(ATTR_BORDER_BLTR, &pItem));
+
+    const SvxLineItem* pBLTR= static_cast<const SvxLineItem*>(pItem);
+    CPPUNIT_ASSERT_EQUAL(Color(255, 204, 238), pBLTR->GetLine()->GetColor());
+    CPPUNIT_ASSERT_EQUAL(pBLTR->GetLine()->GetBorderLineStyle(), ::com::sun::star::table::BorderLineStyle::DASHED);
+    ASSERT_DOUBLES_EQUAL_MESSAGE("Error with diagonal tl-br width", 34, pBLTR->GetLine()->GetWidth());
+
+    CPPUNIT_ASSERT_MESSAGE("Style Name2 : Has Attribute background, but it shouldn't.",
+        !pStyleSheet->GetItemSet().HasItem(ATTR_BACKGROUND, &pItem));
+    CPPUNIT_ASSERT_MESSAGE("Style Name2 : Has Attribute font, but it shouldn't.",
+        !pStyleSheet->GetItemSet().HasItem(ATTR_FONT, &pItem));
+    CPPUNIT_ASSERT_MESSAGE("Style Name2 : Has Attribute number format, but it shouldn't.",
+        !pStyleSheet->GetItemSet().HasItem(ATTR_VALUE_FORMAT, &pItem));
+
+    /* Test for Style "Name3"
+     * Hidden, protected and content is printed.
+     */
+    pStyleSheet = pStyleSheetPool->FindCaseIns("Name3", SfxStyleFamily::Para);
+    CPPUNIT_ASSERT_MESSAGE("Style Name3 : Doesn't have Attribute Protection, but it should have.",
+        pStyleSheet->GetItemSet().HasItem(ATTR_PROTECTION, &pItem));
+
+    CPPUNIT_ASSERT_MESSAGE("Style Name 3 : Error with Protection attribute." ,ScProtectionAttr(true, false, true, true) == *pItem);
+
+    /* Test for Style "Name4"
+     * Hidden, protected and content is printed.
+     */
+    pStyleSheet = pStyleSheetPool->FindCaseIns("Name4", SfxStyleFamily::Para);
+    CPPUNIT_ASSERT_MESSAGE("Style Name4 : Doesn't have Attribute Protection, but it should have.",
+        pStyleSheet->GetItemSet().HasItem(ATTR_PROTECTION, &pItem));
+
+    CPPUNIT_ASSERT_MESSAGE("Style Name 4 : Error with Protection attribute." ,ScProtectionAttr(true, true, false, false) == *pItem);
+
+    /* Test for Style "Name3"
+     * Hidden, protected and content is printed.
+     */
+    pStyleSheet = pStyleSheetPool->FindCaseIns("Name5", SfxStyleFamily::Para);
+    CPPUNIT_ASSERT_MESSAGE("Style Name5 : Doesn't have Attribute Protection, but it should have.",
+        pStyleSheet->GetItemSet().HasItem(ATTR_PROTECTION, &pItem));
+
+    CPPUNIT_ASSERT_MESSAGE("Style Name 5 : Error with Protection attribute." ,ScProtectionAttr(false, false, false, true) == *pItem);
+
+    CPPUNIT_ASSERT_MESSAGE("Style Name5 : Has Attribute Border, but it shouldn't.",
+        !pStyleSheet->GetItemSet().HasItem(ATTR_BORDER, &pItem));
+    CPPUNIT_ASSERT_MESSAGE("Style Name5: Has Attribute background, but it shouldn't.",
+        !pStyleSheet->GetItemSet().HasItem(ATTR_BACKGROUND, &pItem));
+    CPPUNIT_ASSERT_MESSAGE("Style Name5 : Has Attribute font, but it shouldn't.",
+        !pStyleSheet->GetItemSet().HasItem(ATTR_FONT, &pItem));
+    CPPUNIT_ASSERT_MESSAGE("Style Name5 : Has Attribute number format, but it shouldn't.",
+        !pStyleSheet->GetItemSet().HasItem(ATTR_VALUE_FORMAT, &pItem));
+
+    /* Test for Style "Name6"
+     * Has Font name, posture, weight, color, height
+     */
+    pStyleSheet = pStyleSheetPool->FindCaseIns("Name6", SfxStyleFamily::Para);
+    CPPUNIT_ASSERT_MESSAGE("Style Name6 : Doesn't have Attribute Font, but it should have.",
+        pStyleSheet->GetItemSet().HasItem(ATTR_FONT, &pItem));
+
+    const SvxFontItem* pFontItem= static_cast<const SvxFontItem*>(pItem);
+    CPPUNIT_ASSERT_MESSAGE("Style Name6 :Error with Font name", pFontItem->GetStyleName() == "Liberation Sans");
+
+    CPPUNIT_ASSERT_MESSAGE("Style Name6 : Doesn't have Attribute Font Height, but it should have.",
+        pStyleSheet->GetItemSet().HasItem(ATTR_FONT_HEIGHT, &pItem));
+
+    const SvxFontHeightItem* pFontHeightItem= static_cast<const SvxFontHeightItem*>(pItem);
+    CPPUNIT_ASSERT_MESSAGE("Style Name6 :Error with Font Height", pFontHeightItem->GetHeight() == 480);
+
+    CPPUNIT_ASSERT_MESSAGE("Style Name6 : Doesn't have Attribute Font Posture, but it should have.",
+        pStyleSheet->GetItemSet().HasItem(ATTR_FONT_POSTURE, &pItem));
+
+    const SvxPostureItem* pFontPostureItem= static_cast<const SvxPostureItem*>(pItem);
+    CPPUNIT_ASSERT_MESSAGE("Style Name6 :Error with Font Posture", pFontPostureItem->GetPosture() == ITALIC_NORMAL);
+
+    CPPUNIT_ASSERT_MESSAGE("Style Name6 : Doesn't have Attribute Font Weight, but it should have.",
+        pStyleSheet->GetItemSet().HasItem(ATTR_FONT_WEIGHT, &pItem));
+
+    const SvxWeightItem* pFontWeightItem= static_cast<const SvxWeightItem*>(pItem);
+    CPPUNIT_ASSERT_MESSAGE("Style Name6 :Error with Font Weight", pFontWeightItem->GetWeight() == WEIGHT_BOLD);
+
+    CPPUNIT_ASSERT_MESSAGE("Style Name6 : Doesn't have Attribute Font Color, but it should have.",
+        pStyleSheet->GetItemSet().HasItem(ATTR_FONT_COLOR, &pItem));
+
+    const SvxColorItem* pFontColorItem= static_cast<const SvxColorItem*>(pItem);
+    CPPUNIT_ASSERT_MESSAGE("Style Name6 :Error with Font Color", pFontColorItem->GetValue() == Color(128, 128, 128));
+
+    CPPUNIT_ASSERT_MESSAGE("Style Name6 : Doesn't have Attribute Underline, but it should have.",
+        pStyleSheet->GetItemSet().HasItem(ATTR_FONT_UNDERLINE, &pItem));
+
+    const SvxUnderlineItem* pUnderlineItem= static_cast<const SvxUnderlineItem*>(pItem);
+    CPPUNIT_ASSERT_MESSAGE("Style Name6 :Error with Font Underline Style", pUnderlineItem->GetLineStyle() == LINESTYLE_SINGLE);
+    CPPUNIT_ASSERT_MESSAGE("Style Name6 :Error with Font Underline Color", pUnderlineItem->GetColor() == Color(128, 128, 128));
+
+    /* Test for Style Name "7"
+     * Has strikethrough single
+     */
+    pStyleSheet = pStyleSheetPool->FindCaseIns("Name7", SfxStyleFamily::Para);
+    CPPUNIT_ASSERT_MESSAGE("Style Name7 : Doesn't have Attribute Strikeout, but it should have.",
+        pStyleSheet->GetItemSet().HasItem(ATTR_FONT_CROSSEDOUT, &pItem));
+
+    const SvxCrossedOutItem* pCrossedOutItem = static_cast<const SvxCrossedOutItem*>(pItem);
+    CPPUNIT_ASSERT_MESSAGE("Style Name7 :Error with Strikeout", pCrossedOutItem->GetStrikeout() == STRIKEOUT_SINGLE);
+
+    /* Test for Style Name "8"
+     * Has strikethrough bold
+     */
+    pStyleSheet = pStyleSheetPool->FindCaseIns("Name8", SfxStyleFamily::Para);
+    CPPUNIT_ASSERT_MESSAGE("Style Name8 : Doesn't have Attribute Strikeout, but it should have.",
+        pStyleSheet->GetItemSet().HasItem(ATTR_FONT_CROSSEDOUT, &pItem));
+
+    pCrossedOutItem = static_cast<const SvxCrossedOutItem*>(pItem);
+    CPPUNIT_ASSERT_MESSAGE("Style Name7 :Error with Strikeout", pCrossedOutItem->GetStrikeout() == STRIKEOUT_BOLD);
+
+    /* Test for Style Name "9"
+     * Has strikethrough slash
+     */
+    pStyleSheet = pStyleSheetPool->FindCaseIns("Name9", SfxStyleFamily::Para);
+    CPPUNIT_ASSERT_MESSAGE("Style Name9 : Doesn't have Attribute Strikeout, but it should have.",
+        pStyleSheet->GetItemSet().HasItem(ATTR_FONT_CROSSEDOUT, &pItem));
+
+    pCrossedOutItem = static_cast<const SvxCrossedOutItem*>(pItem);
+    CPPUNIT_ASSERT_MESSAGE("Style Name9 :Error with Strikeout", pCrossedOutItem->GetStrikeout() == STRIKEOUT_SLASH);
+
+    /* Test for Style Name "10"
+     * Has ver align, and hor align
+     */
+
+    pStyleSheet = pStyleSheetPool->FindCaseIns("Name10", SfxStyleFamily::Para);
+    CPPUNIT_ASSERT_MESSAGE("Style Name10 : Doesn't have Attribute hor justify, but it should have.",
+        pStyleSheet->GetItemSet().HasItem(ATTR_HOR_JUSTIFY, &pItem));
+
+    const SvxHorJustifyItem* pHorJustify = static_cast<const SvxHorJustifyItem*>(pItem);
+    CPPUNIT_ASSERT_MESSAGE("Style Name10 :Error with hor justify", pHorJustify->GetValue() == SVX_HOR_JUSTIFY_RIGHT);
+
+    pStyleSheet = pStyleSheetPool->FindCaseIns("Name10", SfxStyleFamily::Para);
+    CPPUNIT_ASSERT_MESSAGE("Style Name10 : Doesn't have Attribute ver justify, but it should have.",
+        pStyleSheet->GetItemSet().HasItem(ATTR_VER_JUSTIFY, &pItem));
+
+    const SvxVerJustifyItem* pVerJustify = static_cast<const SvxVerJustifyItem*>(pItem);
+    CPPUNIT_ASSERT_MESSAGE("Style Name10 :Error with ver justify", pVerJustify->GetValue() == SVX_VER_JUSTIFY_CENTER);
+
+}
+#endif
+
 void ScFiltersTest::testLiteralInFormulaXLS()
 {
     ScDocShellRef xDocSh = loadDoc("shared-string/literal-in-formula.", FORMAT_XLS);
@@ -3204,6 +3468,74 @@ void ScFiltersTest::testSharedFormulaXLS()
     }
 }
 
+void ScFiltersTest::testSharedFormulaColumnLabelsODS()
+{
+    ScDocShellRef xDocSh = loadDoc("shared-formula/column-labels.", FORMAT_ODS);
+
+    CPPUNIT_ASSERT(xDocSh.Is());
+    ScDocument& rDoc = xDocSh->GetDocument();
+    rDoc.CalcAll();
+
+    CPPUNIT_ASSERT_EQUAL( 5.0, rDoc.GetValue(ScAddress(2,1,0)));
+    CPPUNIT_ASSERT_EQUAL(15.0, rDoc.GetValue(ScAddress(2,2,0)));
+    CPPUNIT_ASSERT_EQUAL(30.0, rDoc.GetValue(ScAddress(2,3,0)));
+    CPPUNIT_ASSERT_EQUAL(28.0, rDoc.GetValue(ScAddress(2,4,0)));
+    CPPUNIT_ASSERT_EQUAL(48.0, rDoc.GetValue(ScAddress(2,5,0)));
+
+    CPPUNIT_ASSERT_EQUAL(  0.0, rDoc.GetValue(ScAddress(3,1,0)));
+    CPPUNIT_ASSERT_EQUAL( 50.0, rDoc.GetValue(ScAddress(3,2,0)));
+    CPPUNIT_ASSERT_EQUAL(144.0, rDoc.GetValue(ScAddress(3,3,0)));
+    CPPUNIT_ASSERT_EQUAL(147.0, rDoc.GetValue(ScAddress(3,4,0)));
+    CPPUNIT_ASSERT_EQUAL(320.0, rDoc.GetValue(ScAddress(3,5,0)));
+
+    CPPUNIT_ASSERT_EQUAL(0.0, rDoc.GetValue(ScAddress(4,1,0)));
+    CPPUNIT_ASSERT_EQUAL(2.0, rDoc.GetValue(ScAddress(4,2,0)));
+    CPPUNIT_ASSERT_EQUAL(4.0, rDoc.GetValue(ScAddress(4,3,0)));
+    CPPUNIT_ASSERT_EQUAL(3.0, rDoc.GetValue(ScAddress(4,4,0)));
+    CPPUNIT_ASSERT_EQUAL(5.0, rDoc.GetValue(ScAddress(4,5,0)));
+
+    xDocSh->DoClose();
+}
+
+void ScFiltersTest::testSharedFormulaColumnRowLabelsODS()
+{
+    ScDocShellRef xDocSh = loadDoc("shared-formula/column-row-labels.", FORMAT_ODS);
+
+    CPPUNIT_ASSERT(xDocSh.Is());
+    ScDocument& rDoc = xDocSh->GetDocument();
+    rDoc.CalcAll();
+
+    // Expected output in each of the three ranges.
+    //
+    // +---+---+---+
+    // | 1 | 4 | 7 |
+    // +---+---+---+
+    // | 2 | 5 | 8 |
+    // +---+---+---+
+    // | 3 | 6 | 9 |
+    // +---+---+---+
+
+    auto aCheckFunc = [&](SCCOL nStartCol, SCROW nStartRow)
+    {
+        double fExpected = 1.0;
+        for (SCCOL nCol = 0; nCol <= 2; ++nCol)
+        {
+            for (SCROW nRow = 0; nRow <= 2; ++nRow)
+            {
+                ScAddress aPos(nStartCol+nCol, nStartRow+nRow, 0);
+                CPPUNIT_ASSERT_EQUAL(fExpected, rDoc.GetValue(aPos));
+                fExpected += 1.0;
+            }
+        }
+    };
+
+    aCheckFunc(5, 1); // F2:H4
+    aCheckFunc(9, 1); // J2:L4
+    aCheckFunc(1, 6); // B7:D9
+
+    xDocSh->DoClose();
+}
+
 void ScFiltersTest::testExternalRefCacheXLSX()
 {
     ScDocShellRef xDocSh = loadDoc("external-refs.", FORMAT_XLSX);
@@ -3290,8 +3622,8 @@ void ScFiltersTest::testVBAUserFunctionXLSM()
     CPPUNIT_ASSERT_EQUAL(OUString("=MYFUNC()"), aFormula);
 
     // Check the formula state after the load.
-    sal_uInt16 nErrCode = pFC->GetErrCode();
-    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(0), nErrCode);
+    FormulaError nErrCode = pFC->GetErrCode();
+    CPPUNIT_ASSERT_EQUAL(0, (int)nErrCode);
 
     // Check the result.
     CPPUNIT_ASSERT_EQUAL(42.0, rDoc.GetValue(ScAddress(0,0,0)));
@@ -3335,7 +3667,7 @@ void ScFiltersTest::testErrorOnExternalReferences()
 
     ScFormulaCell* pFC = rDoc.GetFormulaCell(ScAddress(0,0,0));
     CPPUNIT_ASSERT(pFC);
-    CPPUNIT_ASSERT_EQUAL(formula::errNoName, pFC->GetErrCode());
+    CPPUNIT_ASSERT_EQUAL((int)FormulaError::NoName, (int)pFC->GetErrCode());
 
     if (!checkFormula(rDoc, ScAddress(0,0,0), "'file:///Path/To/FileA.ods'#$Sheet1.A1A"))
         CPPUNIT_FAIL("Formula changed");
@@ -3431,6 +3763,14 @@ void ScFiltersTest::testColumnStyle2XLSX()
     xDocSh->DoClose();
 }
 
+void ScFiltersTest::testTdf111974XLSM()
+{
+    // Would crash without the fix on loading
+    ScDocShellRef xDocSh = loadDoc("tdf111974.", FORMAT_XLSM);
+    CPPUNIT_ASSERT_MESSAGE("Failed to open doc", xDocSh.Is());
+    xDocSh->DoClose();
+}
+
 void ScFiltersTest::testBnc762542()
 {
     ScDocShellRef xDocSh = loadDoc("bnc762542.", FORMAT_XLSX);
@@ -3498,6 +3838,41 @@ void ScFiltersTest::testRelFormulaValidationXLS()
 
     xDocSh->DoClose();
 }
+
+void ScFiltersTest::testTdf100458()
+{
+    ScDocShellRef xDocSh = loadDoc("tdf100458_lost_zero_value.", FORMAT_ODS);
+    CPPUNIT_ASSERT_MESSAGE("Failed to open doc", xDocSh.Is());
+    ScDocument& rDoc = xDocSh->GetDocument();
+    CPPUNIT_ASSERT(rDoc.HasValueData(0, 0, 0));
+    CPPUNIT_ASSERT_EQUAL(double(0.0), rDoc.GetValue(0,0,0));
+    CPPUNIT_ASSERT(!rDoc.HasStringData(0, 0, 0));
+}
+
+void ScFiltersTest::testTdf100709XLSX()
+{
+    ScDocShellRef xDocSh = ScBootstrapFixture::loadDoc("tdf100709.", FORMAT_XLSX);
+    CPPUNIT_ASSERT_MESSAGE("Failed to load tdf100709.xlsx", xDocSh.Is());
+
+    ScDocument& rDoc = xDocSh->GetDocument();
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Cell B52 should not be formatted with a $", OUString("218"), rDoc.GetString(1, 51, 0));
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Cell A75 should not be formatted as a date", OUString("218"), rDoc.GetString(0, 74, 0));
+
+    xDocSh->DoClose();
+}
+
+void ScFiltersTest::testTdf97598XLSX()
+{
+    ScDocShellRef xDocSh = loadDoc("tdf97598_scenarios.", FORMAT_XLSX);
+    CPPUNIT_ASSERT_MESSAGE("Failed to load tdf97598_secenarios.xlsx", xDocSh.Is());
+
+    ScDocument& rDoc = xDocSh->GetDocument();
+    OUString aStr = rDoc.GetString(0, 0, 0); // A1
+    CPPUNIT_ASSERT_EQUAL(OUString("Cell A1"), aStr);
+
+    xDocSh->DoClose();
+}
+
 
 ScFiltersTest::ScFiltersTest()
       : ScBootstrapFixture( "sc/qa/unit/data" )

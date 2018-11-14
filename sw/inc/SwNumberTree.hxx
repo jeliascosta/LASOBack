@@ -129,7 +129,7 @@ public:
        @param nDepth   depth in which to add the child
      */
     void AddChild( SwNumberTreeNode* pChild,
-                   const int nDepth = 0 );
+                   const int nDepth );
 
     /**
        Remove a child.
@@ -480,13 +480,6 @@ protected:
                       bool bValidating = false) const;
 
     /**
-       Set this node as last valid child of its parent.
-
-       @param bValidation    see above
-     */
-    void SetLastValid(bool bValidating) const;
-
-    /**
        Return if this node is notifiable.
 
        @attention If a not is not notifiable a notify request is *not*
@@ -576,11 +569,6 @@ protected:
        @return the created phantom
      */
     SwNumberTreeNode * CreatePhantom();
-
-    /**
-       Set if this node is a phantom.
-     */
-    void SetPhantom();
 
     /**
        Return if phantoms are counted.

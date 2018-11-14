@@ -84,18 +84,14 @@ void LocaleNode::addChild ( LocaleNode * node) {
         children = arrN;
     }
     children[nChildren++] = node;
-    node->setParent (this);
-}
-
-void LocaleNode::setParent ( LocaleNode * node) {
-    parent = node;
+    node->parent = this;
 }
 
 const LocaleNode* LocaleNode::getRoot() const
 {
     const LocaleNode* pRoot = nullptr;
     const LocaleNode* pParent = this;
-    while ( (pParent = pParent->getParent()) != nullptr )
+    while ( (pParent = pParent->parent) != nullptr )
         pRoot = pParent;
     return pRoot;
 }
@@ -176,7 +172,7 @@ void print_color( int color )
      printf("\033[%dm", color);
 }
 
-void print_node( const LocaleNode* p, int depth=0 )
+void print_node( const LocaleNode* p, int depth )
 {
      if( !p ) return;
 
@@ -723,13 +719,7 @@ void LCFormatNode::generateCode (const OFileWriter &of) const
             OUString aKey( aUsage + "," + aType);
             if (!aDefaultsSet.insert( aKey).second)
             {
-                OUString aStr(  "Duplicated default for usage=\"");
-                aStr += aUsage;
-                aStr += "\" type=\"";
-                aStr += aType;
-                aStr += "\": formatindex=\"";
-                aStr += aFormatIndex;
-                aStr += "\".";
+                OUString aStr = "Duplicated default for usage=\"" + aUsage + "\" type=\"" + aType + "\": formatindex=\"" + aFormatIndex + "\".";
                 incError( aStr);
             }
         }

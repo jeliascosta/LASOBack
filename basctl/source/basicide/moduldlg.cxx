@@ -53,14 +53,7 @@ ExtTreeListBox::ExtTreeListBox(vcl::Window* pParent, WinBits nStyle)
 {
 }
 
-VCL_BUILDER_DECL_FACTORY(ExtTreeListBox)
-{
-    WinBits nWinBits = WB_TABSTOP;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-       nWinBits |= WB_BORDER;
-    rRet = VclPtr<ExtTreeListBox>::Create(pParent, nWinBits);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(ExtTreeListBox, WB_TABSTOP)
 
 bool ExtTreeListBox::EditingEntry( SvTreeListEntry* pEntry, Selection& )
 {
@@ -503,12 +496,7 @@ void OrganizeDialog::dispose()
     TabDialog::dispose();
 };
 
-short OrganizeDialog::Execute()
-{
-    return TabDialog::Execute();
-}
-
-IMPL_LINK_TYPED( OrganizeDialog, ActivatePageHdl, TabControl *, pTabCtrl, void )
+IMPL_LINK( OrganizeDialog, ActivatePageHdl, TabControl *, pTabCtrl, void )
 {
     sal_uInt16 nId = pTabCtrl->GetCurPageId();
 
@@ -538,9 +526,9 @@ IMPL_LINK_TYPED( OrganizeDialog, ActivatePageHdl, TabControl *, pTabCtrl, void )
         }
         else
         {
-            OSL_FAIL( "PageHdl: Unbekannte ID!" );
+            OSL_FAIL( "PageHdl: Unknown ID" );
         }
-        DBG_ASSERT( pNewTabPage, "Keine Page!" );
+        DBG_ASSERT( pNewTabPage, "No page" );
         pTabCtrl->SetTabPage( nId, pNewTabPage );
     }
 }
@@ -555,7 +543,7 @@ ObjectPage::ObjectPage(vcl::Window *pParent, const OString &rName, sal_uInt16 nM
         ".ui")
 {
     get(m_pBasicBox, "library");
-    Size aSize(m_pBasicBox->LogicToPixel(Size(130, 117), MAP_APPFONT));
+    Size aSize(m_pBasicBox->LogicToPixel(Size(130, 117), MapUnit::MapAppFont));
     m_pBasicBox->set_height_request(aSize.Height());
     m_pBasicBox->set_width_request(aSize.Width());
     get(m_pEditButton, "edit");
@@ -681,7 +669,7 @@ void ObjectPage::CheckButtons()
         m_pDelButton->Disable();
 }
 
-IMPL_LINK_TYPED( ObjectPage, BasicBoxHighlightHdl, SvTreeListBox*, pBox, void )
+IMPL_LINK( ObjectPage, BasicBoxHighlightHdl, SvTreeListBox*, pBox, void )
 {
     if ( !pBox->IsSelected( pBox->GetHdlEntry() ) )
         return;
@@ -689,7 +677,7 @@ IMPL_LINK_TYPED( ObjectPage, BasicBoxHighlightHdl, SvTreeListBox*, pBox, void )
     CheckButtons();
 }
 
-IMPL_LINK_TYPED( ObjectPage, ButtonHdl, Button *, pButton, void )
+IMPL_LINK( ObjectPage, ButtonHdl, Button *, pButton, void )
 {
     if (pButton == m_pEditButton)
     {
@@ -955,8 +943,7 @@ void LibDialog::dispose()
 
 void LibDialog::SetStorageName( const OUString& rName )
 {
-    OUString aName( IDE_RESSTR(RID_STR_FILENAME) );
-    aName += rName;
+    OUString aName = IDE_RESSTR(RID_STR_FILENAME) + rName;
     m_pStorageFrame->set_label(aName);
 }
 

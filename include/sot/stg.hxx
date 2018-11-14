@@ -51,7 +51,7 @@ protected:
     StreamMode      m_nMode;                    // open mode
     bool            m_bAutoCommit;
                     StorageBase();
-    virtual         ~StorageBase();
+    virtual         ~StorageBase() override;
 public:
     virtual bool    Validate( bool=false ) const = 0;
     virtual bool    ValidateMode( StreamMode ) const = 0;
@@ -100,16 +100,16 @@ public:
     virtual bool                Commit() = 0;
     virtual bool                Revert() = 0;
     virtual BaseStorageStream*  OpenStream( const OUString & rEleName,
-                                            StreamMode = STREAM_STD_READWRITE,
-                                            bool bDirect = true, const OString* pKey=nullptr ) = 0;
+                                            StreamMode = StreamMode::STD_READWRITE,
+                                            bool bDirect = true ) = 0;
     virtual BaseStorage*        OpenStorage( const OUString & rEleName,
-                                             StreamMode = STREAM_STD_READWRITE,
+                                             StreamMode = StreamMode::STD_READWRITE,
                                              bool bDirect = false ) = 0;
     virtual BaseStorage*        OpenUCBStorage( const OUString & rEleName,
-                                                StreamMode = STREAM_STD_READWRITE,
+                                                StreamMode = StreamMode::STD_READWRITE,
                                                 bool bDirect = false ) = 0;
     virtual BaseStorage*        OpenOLEStorage( const OUString & rEleName,
-                                                StreamMode = STREAM_STD_READWRITE,
+                                                StreamMode = StreamMode::STD_READWRITE,
                                                 bool bDirect = false ) = 0;
     virtual bool                IsStream( const OUString& rEleName ) const = 0;
     virtual bool                IsStorage( const OUString& rEleName ) const = 0;
@@ -128,7 +128,7 @@ protected:
     StgDirEntry*    pEntry;                   // the dir entry
                     OLEStorageBase( StgIo*, StgDirEntry*, StreamMode& );
                     ~OLEStorageBase();
-    bool            Validate_Impl( bool=false ) const;
+    bool            Validate_Impl( bool ) const;
     static bool     ValidateMode_Impl( StreamMode, StgDirEntry* p = nullptr );
 };
 
@@ -137,7 +137,7 @@ class StorageStream : public BaseStorageStream, public OLEStorageBase
 //friend class Storage;
     sal_uLong           nPos;                             // current position
 protected:
-                        virtual ~StorageStream();
+                        virtual ~StorageStream() override;
 public:
                         StorageStream( StgIo*, StgDirEntry*, StreamMode );
     virtual sal_uLong   Read( void * pData, sal_uLong nSize ) override;
@@ -148,7 +148,7 @@ public:
     virtual bool        SetSize( sal_uLong nNewSize ) override;
     virtual sal_uLong   GetSize() const override;
     virtual void        CopyTo( BaseStorageStream * pDestStm ) override;
-    virtual bool        Commit() override;
+    virtual bool        Commit() final override;
     virtual bool        Validate( bool=false ) const override;
     virtual bool        ValidateMode( StreamMode ) const override;
     virtual bool        Equals( const BaseStorageStream& rStream ) const override;
@@ -163,16 +163,16 @@ class SOT_DLLPUBLIC Storage : public BaseStorage, public OLEStorageBase
     void                        Init( bool bCreate );
                                 Storage( StgIo*, StgDirEntry*, StreamMode );
 protected:
-                                virtual ~Storage();
+                                virtual ~Storage() override;
 public:
-                                Storage( const OUString &, StreamMode = STREAM_STD_READWRITE, bool bDirect = true );
-                                Storage( SvStream& rStrm, bool bDirect = true );
-                                Storage( UCBStorageStream& rStrm, bool bDirect = true );
+                                Storage( const OUString &, StreamMode, bool bDirect );
+                                Storage( SvStream& rStrm, bool bDirect );
+                                Storage( UCBStorageStream& rStrm, bool bDirect );
 
     static bool                 IsStorageFile( const OUString & rFileName );
     static bool                 IsStorageFile( SvStream* );
 
-    virtual const OUString&     GetName() const override;
+    virtual const OUString&     GetName() const final override;
     virtual bool                IsRoot() const override { return bIsRoot; }
     virtual void                SetClassId( const ClsId& ) override;
     virtual const ClsId&        GetClassId() const override;
@@ -185,19 +185,19 @@ public:
     virtual OUString            GetUserName() override;
     virtual void                FillInfoList( SvStorageInfoList* ) const override;
     virtual bool                CopyTo( BaseStorage* pDestStg ) const override;
-    virtual bool                Commit() override;
+    virtual bool                Commit() final override;
     virtual bool                Revert() override;
     virtual BaseStorageStream*  OpenStream( const OUString & rEleName,
-                                            StreamMode = STREAM_STD_READWRITE,
-                                            bool bDirect = true, const OString* pKey=nullptr ) override;
+                                            StreamMode = StreamMode::STD_READWRITE,
+                                            bool bDirect = true ) override;
     virtual BaseStorage*        OpenStorage( const OUString & rEleName,
-                                             StreamMode = STREAM_STD_READWRITE,
+                                             StreamMode = StreamMode::STD_READWRITE,
                                              bool bDirect = false ) override;
     virtual BaseStorage*        OpenUCBStorage( const OUString & rEleName,
-                                                StreamMode = STREAM_STD_READWRITE,
+                                                StreamMode = StreamMode::STD_READWRITE,
                                                 bool bDirect = false ) override;
     virtual BaseStorage*        OpenOLEStorage( const OUString & rEleName,
-                                                StreamMode = STREAM_STD_READWRITE,
+                                                StreamMode = StreamMode::STD_READWRITE,
                                                 bool bDirect = false ) override;
     virtual bool                IsStream( const OUString& rEleName ) const override;
     virtual bool                IsStorage( const OUString& rEleName ) const override;
@@ -219,9 +219,9 @@ friend class UCBStorage;
     UCBStorageStream_Impl*
             pImp;
 protected:
-                                virtual ~UCBStorageStream();
+                                virtual ~UCBStorageStream() override;
 public:
-                                UCBStorageStream( const OUString& rName, StreamMode nMode, bool bDirect, const OString* pKey, bool bRepair, css::uno::Reference< css::ucb::XProgressHandler > xProgress );
+                                UCBStorageStream( const OUString& rName, StreamMode nMode, bool bDirect, bool bRepair, css::uno::Reference< css::ucb::XProgressHandler > const & xProgress );
                                 UCBStorageStream( UCBStorageStream_Impl* );
 
     virtual sal_uLong           Read( void * pData, sal_uLong nSize ) override;
@@ -253,27 +253,33 @@ class SOT_DLLPUBLIC UCBStorage : public BaseStorage
     UCBStorage_Impl*            pImp;
 
 protected:
-                                virtual ~UCBStorage();
+                                virtual ~UCBStorage() override;
 public:
     static bool                 IsStorageFile( SvStream* );
     static OUString             GetLinkedFile( SvStream& );
 
-                                UCBStorage( const ::ucbhelper::Content& rContent, const OUString& rName, StreamMode nMode, bool bDirect = true, bool bIsRoot = true );
+                                UCBStorage( const ::ucbhelper::Content& rContent,
+                                            const OUString& rName,
+                                            StreamMode nMode,
+                                            bool bDirect,
+                                            bool bIsRoot );
+
                                 UCBStorage( const OUString& rName,
                                             StreamMode nMode,
-                                            bool bDirect = true,
-                                            bool bIsRoot = true );
+                                            bool bDirect,
+                                            bool bIsRoot );
 
                                 UCBStorage( const OUString& rName,
                                             StreamMode nMode,
                                             bool bDirect,
                                             bool bIsRoot,
                                             bool bIsRepair,
-                                            css::uno::Reference< css::ucb::XProgressHandler >
+                                            css::uno::Reference< css::ucb::XProgressHandler > const &
                                             xProgressHandler );
 
                                 UCBStorage( UCBStorage_Impl* );
-                                UCBStorage( SvStream& rStrm, bool bDirect = true );
+
+                                UCBStorage( SvStream& rStrm, bool bDirect );
 
     virtual const OUString&     GetName() const override;
     virtual bool                IsRoot() const override;
@@ -288,19 +294,19 @@ public:
     virtual OUString            GetUserName() override;
     virtual void                FillInfoList( SvStorageInfoList* ) const override;
     virtual bool                CopyTo( BaseStorage* pDestStg ) const override;
-    virtual bool                Commit() override;
+    virtual bool                Commit() final override;
     virtual bool                Revert() override;
     virtual BaseStorageStream*  OpenStream( const OUString & rEleName,
-                                            StreamMode = STREAM_STD_READWRITE,
-                                            bool bDirect = true, const OString* pKey=nullptr ) override;
+                                            StreamMode = StreamMode::STD_READWRITE,
+                                            bool bDirect = true ) override;
     virtual BaseStorage*        OpenStorage( const OUString & rEleName,
-                                             StreamMode = STREAM_STD_READWRITE,
+                                             StreamMode = StreamMode::STD_READWRITE,
                                              bool bDirect = false ) override;
     virtual BaseStorage*        OpenUCBStorage( const OUString & rEleName,
-                                                StreamMode = STREAM_STD_READWRITE,
+                                                StreamMode = StreamMode::STD_READWRITE,
                                                 bool bDirect = false ) override;
     virtual BaseStorage*        OpenOLEStorage( const OUString & rEleName,
-                                                StreamMode = STREAM_STD_READWRITE,
+                                                StreamMode = StreamMode::STD_READWRITE,
                                                 bool bDirect = false ) override;
     virtual bool                IsStream( const OUString& rEleName ) const override;
     virtual bool                IsStorage( const OUString& rEleName ) const override;

@@ -31,8 +31,6 @@ class ONumericModel
 {
 private:
     css::uno::Any          m_aSaveValue;
-protected:
-    virtual css::uno::Sequence< css::uno::Type> _getTypes() override;
 
 public:
     DECLARE_DEFAULT_LEAF_XTOR( ONumericModel );
@@ -68,9 +66,6 @@ protected:
 
 class ONumericControl: public OBoundControl
 {
-protected:
-    virtual css::uno::Sequence< css::uno::Type> _getTypes() override;
-
 public:
     explicit ONumericControl(const css::uno::Reference< css::uno::XComponentContext>& _rxFactory);
 

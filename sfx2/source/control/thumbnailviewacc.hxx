@@ -23,7 +23,7 @@
 #include <osl/mutex.hxx>
 #include <cppuhelper/implbase.hxx>
 #include <cppuhelper/compbase.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 
 #include <com/sun/star/lang/XUnoTunnel.hpp>
 #include <com/sun/star/accessibility/XAccessible.hpp>
@@ -49,13 +49,13 @@ typedef ::cppu::WeakComponentImplHelper<
     ValueSetAccComponentBase;
 
 class ThumbnailViewAcc :
-    public ::comphelper::OBaseMutex,
+    public ::cppu::BaseMutex,
     public ValueSetAccComponentBase
 {
 public:
 
     ThumbnailViewAcc( ThumbnailView* pParent, bool bIsTransientChildrenDisabled );
-    virtual ~ThumbnailViewAcc();
+    virtual ~ThumbnailViewAcc() override;
 
     void FireAccessibleEvent( short nEventId,
                               const css::uno::Any& rOldValue,
@@ -177,7 +177,7 @@ private:
 public:
 
     ThumbnailViewItemAcc( ThumbnailViewItem* pParent, bool bIsTransientChildrenDisabled );
-    virtual ~ThumbnailViewItemAcc();
+    virtual ~ThumbnailViewItemAcc() override;
 
     void FireAccessibleEvent( short nEventId,
                               const css::uno::Any& rOldValue,

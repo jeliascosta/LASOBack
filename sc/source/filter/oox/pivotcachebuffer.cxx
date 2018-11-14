@@ -36,7 +36,6 @@
 #include <oox/token/namespaces.hxx>
 #include <oox/token/properties.hxx>
 #include <oox/token/tokens.hxx>
-#include "biffinputstream.hxx"
 #include "defnamesbuffer.hxx"
 #include "excelhandlers.hxx"
 #include "pivotcachefragment.hxx"
@@ -102,28 +101,6 @@ const sal_uInt8 BIFF12_PCDEFINITION_SUPPORTDRILL    = 0x08;
 const sal_uInt8 BIFF12_PCDWBSOURCE_HASRELID         = 0x01;
 const sal_uInt8 BIFF12_PCDWBSOURCE_HASSHEET         = 0x02;
 
-const sal_uInt16 BIFF_PC_NOSTRING                   = 0xFFFF;
-
-const sal_uInt16 BIFF_PCDFIELD_HASITEMS             = 0x0001;
-const sal_uInt16 BIFF_PCDFIELD_HASPARENT            = 0x0008;
-const sal_uInt16 BIFF_PCDFIELD_RANGEGROUP           = 0x0010;
-const sal_uInt16 BIFF_PCDFIELD_ISNUMERIC            = 0x0020;
-const sal_uInt16 BIFF_PCDFIELD_HASSEMIMIXED         = 0x0080;
-const sal_uInt16 BIFF_PCDFIELD_HASLONGINDEX         = 0x0200;
-const sal_uInt16 BIFF_PCDFIELD_HASNONDATE           = 0x0400;
-const sal_uInt16 BIFF_PCDFIELD_HASDATE              = 0x0800;
-const sal_uInt16 BIFF_PCDFIELD_SERVERFIELD          = 0x2000;
-const sal_uInt16 BIFF_PCDFIELD_NOUNIQUEITEMS        = 0x4000;
-
-const sal_uInt16 BIFF_PCDFRANGEPR_AUTOSTART         = 0x0001;
-const sal_uInt16 BIFF_PCDFRANGEPR_AUTOEND           = 0x0002;
-
-const sal_uInt16 BIFF_PCDEFINITION_SAVEDATA         = 0x0001;
-const sal_uInt16 BIFF_PCDEFINITION_INVALID          = 0x0002;
-const sal_uInt16 BIFF_PCDEFINITION_REFRESHONLOAD    = 0x0004;
-const sal_uInt16 BIFF_PCDEFINITION_OPTIMIZEMEMORY   = 0x0008;
-const sal_uInt16 BIFF_PCDEFINITION_BACKGROUNDQUERY  = 0x0010;
-const sal_uInt16 BIFF_PCDEFINITION_ENABLEREFRESH    = 0x0020;
 
 /** Adjusts the weird date format read from binary streams.
 
@@ -233,50 +210,6 @@ void PivotCacheItem::readIndex( SequenceInputStream& rStrm )
     mnType = XML_x;
 }
 
-void PivotCacheItem::readString( BiffInputStream& rStrm, const WorkbookHelper& rHelper )
-{
-    maValue <<= (rHelper.getBiff() == BIFF8) ? rStrm.readUniString() : rStrm.readByteStringUC( true, rHelper.getTextEncoding() );
-    mnType = XML_s;
-}
-
-void PivotCacheItem::readDouble( BiffInputStream& rStrm )
-{
-    maValue <<= rStrm.readDouble();
-    mnType = XML_n;
-}
-
-void PivotCacheItem::readInteger( BiffInputStream& rStrm )
-{
-    maValue <<= rStrm.readInt16();
-    mnType = XML_i;                 // fake, used for BIFF only
-}
-
-void PivotCacheItem::readDate( BiffInputStream& rStrm )
-{
-    css::util::DateTime aDateTime;
-    aDateTime.Year = rStrm.readuInt16();
-    aDateTime.Month = rStrm.readuInt16();
-    aDateTime.Day = rStrm.readuInt8();
-    aDateTime.Hours = rStrm.readuInt8();
-    aDateTime.Minutes = rStrm.readuInt8();
-    aDateTime.Seconds = rStrm.readuInt8();
-    lclAdjustBinDateTime( aDateTime );
-    maValue <<= aDateTime;
-    mnType = XML_d;
-}
-
-void PivotCacheItem::readBool( BiffInputStream& rStrm )
-{
-    maValue <<= (rStrm.readuInt8() != 0);
-    mnType = XML_b;
-}
-
-void PivotCacheItem::readError( BiffInputStream& rStrm )
-{
-    maValue <<= static_cast< sal_Int32 >( rStrm.readuInt8() );
-    mnType = XML_e;
-}
-
 void PivotCacheItem::setStringValue( const OUString& sString )
 {
     mnType = XML_s;
@@ -344,27 +277,6 @@ void PivotCacheItemList::importItem( sal_Int32 nRecId, SequenceInputStream& rStr
         case BIFF12_ID_PCITEMA_ERROR:   rItem.readError( rStrm );   break;
         default:    OSL_FAIL( "PivotCacheItemList::importItem - unknown record type" );
     }
-}
-
-void PivotCacheItemList::importItemList( BiffInputStream& rStrm, sal_uInt16 nCount )
-{
-    bool bLoop = true;
-    for( sal_uInt16 nItemIdx = 0; bLoop && (nItemIdx < nCount); ++nItemIdx )
-    {
-        bLoop = rStrm.startNextRecord();
-        if( bLoop ) switch( rStrm.getRecId() )
-        {
-            case BIFF_ID_PCITEM_MISSING:    createItem();                               break;
-            case BIFF_ID_PCITEM_STRING:     createItem().readString( rStrm, *this );    break;
-            case BIFF_ID_PCITEM_DOUBLE:     createItem().readDouble( rStrm );           break;
-            case BIFF_ID_PCITEM_INTEGER:    createItem().readInteger( rStrm );          break;
-            case BIFF_ID_PCITEM_DATE:       createItem().readDate( rStrm );             break;
-            case BIFF_ID_PCITEM_BOOL:       createItem().readBool( rStrm );             break;
-            case BIFF_ID_PCITEM_ERROR:      createItem().readError( rStrm );            break;
-            default:                        rStrm.rewindRecord(); bLoop = false;
-        }
-    }
-    OSL_ENSURE( bLoop, "PivotCacheItemList::importItemList - could not read all cache item records" );
 }
 
 const PivotCacheItem* PivotCacheItemList::getCacheItem( sal_Int32 nItemIdx ) const
@@ -438,8 +350,7 @@ PCSharedItemsModel::PCSharedItemsModel() :
     mbHasMixed( false ),
     mbIsNumeric( false ),
     mbIsInteger( false ),
-    mbHasLongText( false ),
-    mbHasLongIndexes( false )
+    mbHasLongText( false )
 {
 }
 
@@ -626,117 +537,6 @@ void PivotCacheField::importPCDFGroupItem( sal_Int32 nRecId, SequenceInputStream
     maGroupItems.importItem( nRecId, rStrm );
 }
 
-void PivotCacheField::importPCDField( BiffInputStream& rStrm )
-{
-    sal_uInt16 nFlags, nGroupItems, nBaseItems, nSharedItems;
-    rStrm >> nFlags;
-    maFieldGroupModel.mnParentField  = rStrm.readuInt16();
-    maFieldGroupModel.mnBaseField    = rStrm.readuInt16();
-    rStrm.skip( 2 );    // number of unique items (either shared or group)
-    rStrm >> nGroupItems >> nBaseItems >> nSharedItems;
-    maFieldModel.maName = (getBiff() == BIFF8) ? rStrm.readUniString() : rStrm.readByteStringUC( true, getTextEncoding() );
-
-    maFieldModel.mbServerField          = getFlag( nFlags, BIFF_PCDFIELD_SERVERFIELD );
-    maFieldModel.mbUniqueList           = !getFlag( nFlags, BIFF_PCDFIELD_NOUNIQUEITEMS );
-    maSharedItemsModel.mbHasSemiMixed   = getFlag( nFlags, BIFF_PCDFIELD_HASSEMIMIXED );
-    maSharedItemsModel.mbHasNonDate     = getFlag( nFlags, BIFF_PCDFIELD_HASNONDATE );
-    maSharedItemsModel.mbHasDate        = getFlag( nFlags, BIFF_PCDFIELD_HASDATE );
-    maSharedItemsModel.mbIsNumeric      = getFlag( nFlags, BIFF_PCDFIELD_ISNUMERIC );
-    maSharedItemsModel.mbHasLongIndexes = getFlag( nFlags, BIFF_PCDFIELD_HASLONGINDEX );
-    maFieldGroupModel.mbRangeGroup      = getFlag( nFlags, BIFF_PCDFIELD_RANGEGROUP );
-
-    // in BIFF, presence of parent group field is denoted by a flag
-    if( !getFlag( nFlags, BIFF_PCDFIELD_HASPARENT ) )
-        maFieldGroupModel.mnParentField = -1;
-
-    // following PCDFSQLTYPE record contains SQL type
-    if( (rStrm.getNextRecId() == BIFF_ID_PCDFSQLTYPE) && rStrm.startNextRecord() )
-        maFieldModel.mnSqlType = rStrm.readInt16();
-
-    // read group items, if any
-    if( nGroupItems > 0 )
-    {
-        SAL_WARN_IF(
-            !getFlag(nFlags, BIFF_PCDFIELD_HASITEMS), "sc.filter",
-            "PivotCacheField::importPCDField - missing items flag");
-        maGroupItems.importItemList( rStrm, nGroupItems );
-
-        sal_uInt16 nNextRecId = rStrm.getNextRecId();
-        bool bHasRangePr = nNextRecId == BIFF_ID_PCDFRANGEPR;
-        bool bHasDiscretePr = nNextRecId == BIFF_ID_PCDFDISCRETEPR;
-
-        OSL_ENSURE( bHasRangePr || bHasDiscretePr, "PivotCacheField::importPCDField - missing group properties record" );
-        OSL_ENSURE( bHasRangePr == maFieldGroupModel.mbRangeGroup, "PivotCacheField::importPCDField - invalid range grouping flag" );
-        if( bHasRangePr && rStrm.startNextRecord() )
-            importPCDFRangePr( rStrm );
-        else if( bHasDiscretePr && rStrm.startNextRecord() )
-            importPCDFDiscretePr( rStrm );
-    }
-
-    // read the shared items, if any
-    if( nSharedItems > 0 )
-    {
-        SAL_WARN_IF(
-            !getFlag(nFlags, BIFF_PCDFIELD_HASITEMS), "sc.filter",
-            "PivotCacheField::importPCDField - missing items flag");
-        maSharedItems.importItemList( rStrm, nSharedItems );
-    }
-}
-
-void PivotCacheField::importPCDFRangePr( BiffInputStream& rStrm )
-{
-    sal_uInt16 nFlags;
-    rStrm >> nFlags;
-    maFieldGroupModel.setBiffGroupBy( extractValue< sal_uInt8 >( nFlags, 2, 3 ) );
-    maFieldGroupModel.mbRangeGroup = true;
-    maFieldGroupModel.mbDateGroup  = maFieldGroupModel.mnGroupBy != XML_range;
-    maFieldGroupModel.mbAutoStart  = getFlag( nFlags, BIFF_PCDFRANGEPR_AUTOSTART );
-    maFieldGroupModel.mbAutoEnd    = getFlag( nFlags, BIFF_PCDFRANGEPR_AUTOEND );
-
-    /*  Start, end, and interval are stored in 3 separate item records. Type of
-        the items is dependent on numeric/date mode. Numeric groups expect
-        three PCITEM_DOUBLE records, date groups expect two PCITEM_DATE records
-        and one PCITEM_INT record. */
-    PivotCacheItemList aLimits( *this );
-    aLimits.importItemList( rStrm, 3 );
-    OSL_ENSURE( aLimits.size() == 3, "PivotCacheField::importPCDFRangePr - missing grouping records" );
-    const PivotCacheItem* pStartValue = aLimits.getCacheItem( 0 );
-    const PivotCacheItem* pEndValue = aLimits.getCacheItem( 1 );
-    const PivotCacheItem* pInterval = aLimits.getCacheItem( 2 );
-    if( pStartValue && pEndValue && pInterval )
-    {
-        if( maFieldGroupModel.mbDateGroup )
-        {
-            bool bHasTypes = (pStartValue->getType() == XML_d) && (pEndValue->getType() == XML_d) && (pInterval->getType() == XML_i);
-            OSL_ENSURE( bHasTypes, "PivotCacheField::importPCDFRangePr - wrong data types in grouping items" );
-            if( bHasTypes )
-            {
-                maFieldGroupModel.maStartDate = pStartValue->getValue().get< css::util::DateTime >();
-                maFieldGroupModel.maEndDate   = pEndValue->getValue().get< css::util::DateTime >();
-                maFieldGroupModel.mfInterval  = pInterval->getValue().get< sal_Int16 >();
-            }
-        }
-        else
-        {
-            bool bHasTypes = (pStartValue->getType() == XML_n) && (pEndValue->getType() == XML_n) && (pInterval->getType() == XML_n);
-            OSL_ENSURE( bHasTypes, "PivotCacheField::importPCDFRangePr - wrong data types in grouping items" );
-            if( bHasTypes )
-            {
-                maFieldGroupModel.mfStartValue = pStartValue->getValue().get< double >();
-                maFieldGroupModel.mfEndValue   = pEndValue->getValue().get< double >();
-                maFieldGroupModel.mfInterval   = pInterval->getValue().get< double >();
-            }
-        }
-    }
-}
-
-void PivotCacheField::importPCDFDiscretePr( BiffInputStream& rStrm )
-{
-    sal_Int32 nCount = static_cast< sal_Int32 >( rStrm.size() / 2 );
-    for( sal_Int32 nIndex = 0; !rStrm.isEof() && (nIndex < nCount); ++nIndex )
-        maDiscreteItems.push_back( rStrm.readuInt16() );
-}
-
 const PivotCacheItem* PivotCacheField::getCacheItem( sal_Int32 nItemIdx ) const
 {
     if( hasGroupItems() )
@@ -833,8 +633,8 @@ OUString PivotCacheField::createDateGroupField( const Reference< XDataPilotField
 
 OUString PivotCacheField::createParentGroupField( const Reference< XDataPilotField >& rxBaseDPField, const PivotCacheField& rBaseCacheField, PivotCacheGroupItemVector& orItemNames ) const
 {
-    OSL_ENSURE( hasGroupItems() && !maDiscreteItems.empty(), "PivotCacheField::createParentGroupField - not a group field" );
-    OSL_ENSURE( maDiscreteItems.size() == orItemNames.size(), "PivotCacheField::createParentGroupField - number of item names does not match grouping info" );
+    SAL_WARN_IF( !hasGroupItems() || maDiscreteItems.empty(), "sc", "PivotCacheField::createParentGroupField - not a group field" );
+    SAL_WARN_IF( maDiscreteItems.size() != orItemNames.size(), "sc", "PivotCacheField::createParentGroupField - number of item names does not match grouping info" );
     Reference< XDataPilotFieldGrouping > xDPGrouping( rxBaseDPField, UNO_QUERY );
     if( !xDPGrouping.is() ) return OUString();
 
@@ -860,7 +660,7 @@ OUString PivotCacheField::createParentGroupField( const Reference< XDataPilotFie
     Reference< XDataPilotField > xDPGroupField;
     for( GroupItemMap::iterator aBeg = aItemMap.begin(), aIt = aBeg, aEnd = aItemMap.end(); aIt != aEnd; ++aIt )
     {
-        OSL_ENSURE( !aIt->empty(), "PivotCacheField::createParentGroupField - item/group should not be empty" );
+        SAL_WARN_IF( aIt->empty(), "sc", "PivotCacheField::createParentGroupField - item/group should not be empty" );
         if( !aIt->empty() )
         {
             /*  Insert the names of the items that are part of this group. Calc
@@ -882,7 +682,7 @@ OUString PivotCacheField::createParentGroupField( const Reference< XDataPilotFie
             {
                 // only the first call of createNameGroup() returns the new field
                 Reference< XDataPilotField > xDPNewField = xDPGrouping->createNameGroup( ContainerHelper::vectorToSequence( aMembers ) );
-                OSL_ENSURE( xDPGroupField.is() != xDPNewField.is(), "PivotCacheField::createParentGroupField - missing group field" );
+                SAL_WARN_IF( xDPGroupField.is() == xDPNewField.is(), "sc", "PivotCacheField::createParentGroupField - missing group field" );
                 if( !xDPGroupField.is() )
                     xDPGroupField = xDPNewField;
 
@@ -918,14 +718,15 @@ OUString PivotCacheField::createParentGroupField( const Reference< XDataPilotFie
                 }
                 catch( Exception& )
                 {
+                    SAL_WARN("sc", "PivotCacheField::createParentGroupField - exception was thrown" );
                 }
-                OSL_ENSURE( !aAutoName.isEmpty(), "PivotCacheField::createParentGroupField - cannot find auto-generated group name" );
+                SAL_WARN_IF( aAutoName.isEmpty(), "sc", "PivotCacheField::createParentGroupField - cannot find auto-generated group name" );
 
                 // get the real group name from the list of group items
                 OUString aGroupName;
                 if( const PivotCacheItem* pGroupItem = maGroupItems.getCacheItem( static_cast< sal_Int32 >( aIt - aBeg ) ) )
                     aGroupName = pGroupItem->getName();
-                OSL_ENSURE( !aGroupName.isEmpty(), "PivotCacheField::createParentGroupField - cannot find group name" );
+                SAL_WARN_IF( aGroupName.isEmpty(), "sc", "PivotCacheField::createParentGroupField - cannot find group name" );
                 if( aGroupName.isEmpty() )
                     aGroupName = aAutoName;
 
@@ -945,6 +746,7 @@ OUString PivotCacheField::createParentGroupField( const Reference< XDataPilotFie
             }
             catch( Exception& )
             {
+                SAL_WARN("sc", "PivotCacheField::createParentGroupField - exception was thrown" );
             }
         }
     }
@@ -989,13 +791,6 @@ void PivotCacheField::importPCRecordItem( SequenceInputStream& rStrm, WorksheetH
     }
 }
 
-void PivotCacheField::importPCItemIndex( BiffInputStream& rStrm, WorksheetHelper& rSheetHelper, sal_Int32 nCol, sal_Int32 nRow ) const
-{
-    OSL_ENSURE( hasSharedItems(), "PivotCacheField::importPCItemIndex - invalid call, no shared items found" );
-    sal_Int32 nIndex = maSharedItemsModel.mbHasLongIndexes ? rStrm.readuInt16() : rStrm.readuInt8();
-    writeSharedItemToSourceDataCell( rSheetHelper, nCol, nRow, nIndex );
-}
-
 // private --------------------------------------------------------------------
 
 void PivotCacheField::writeItemToSourceDataCell( WorksheetHelper& rSheetHelper,
@@ -1030,7 +825,6 @@ PCDefinitionModel::PCDefinitionModel() :
     mfRefreshedDate( 0.0 ),
     mnRecords( 0 ),
     mnMissItemsLimit( 0 ),
-    mnDatabaseFields( 0 ),
     mbInvalid( false ),
     mbSaveData( true ),
     mbRefreshOnLoad( false ),
@@ -1165,35 +959,9 @@ void PivotCache::importPCDSheetSource( SequenceInputStream& rStrm, const Relatio
     maTargetUrl = rRelations.getExternalTargetFromRelId( maSheetSrcModel.maRelId );
 }
 
-void PivotCache::importPCDefinition( BiffInputStream& rStrm )
-{
-    sal_uInt16 nFlags, nUserNameLen;
-    rStrm >> maDefModel.mnRecords;
-    rStrm.skip( 2 );    // repeated cache ID
-    rStrm >> nFlags;
-    rStrm.skip( 2 );    // unused
-    rStrm >> maDefModel.mnDatabaseFields;
-    rStrm.skip( 6 );    // total field count, report record count, (repeated) cache type
-    rStrm >> nUserNameLen;
-    if( nUserNameLen != BIFF_PC_NOSTRING )
-        maDefModel.maRefreshedBy = (getBiff() == BIFF8) ?
-            rStrm.readUniString( nUserNameLen ) :
-            rStrm.readCharArrayUC( nUserNameLen, getTextEncoding() );
-
-    maDefModel.mbInvalid          = getFlag( nFlags, BIFF_PCDEFINITION_INVALID );
-    maDefModel.mbSaveData         = getFlag( nFlags, BIFF_PCDEFINITION_SAVEDATA );
-    maDefModel.mbRefreshOnLoad    = getFlag( nFlags, BIFF_PCDEFINITION_REFRESHONLOAD );
-    maDefModel.mbOptimizeMemory   = getFlag( nFlags, BIFF_PCDEFINITION_OPTIMIZEMEMORY );
-    maDefModel.mbEnableRefresh    = getFlag( nFlags, BIFF_PCDEFINITION_ENABLEREFRESH );
-    maDefModel.mbBackgroundQuery  = getFlag( nFlags, BIFF_PCDEFINITION_BACKGROUNDQUERY );
-
-    if( (rStrm.getNextRecId() == BIFF_ID_PCDEFINITION2) && rStrm.startNextRecord() )
-        rStrm >> maDefModel.mfRefreshedDate;
-}
-
 PivotCacheField& PivotCache::createCacheField( bool bInitDatabaseField )
 {
-    bool bIsDatabaseField = !bInitDatabaseField || (maFields.size() < maDefModel.mnDatabaseFields);
+    bool bIsDatabaseField = !bInitDatabaseField;
     PivotCacheFieldVector::value_type xCacheField( new PivotCacheField( *this, bIsDatabaseField ) );
     maFields.push_back( xCacheField );
     return *xCacheField;
@@ -1299,17 +1067,6 @@ void PivotCache::importPCRecord( SequenceInputStream& rStrm, WorksheetHelper& rS
         (*aIt)->importPCRecordItem( rStrm, rSheetHelper, nCol, nRow );
 }
 
-void PivotCache::importPCItemIndexList( BiffInputStream& rStrm, WorksheetHelper& rSheetHelper, sal_Int32 nRowIdx ) const
-{
-    sal_Int32 nRow = maSheetSrcModel.maRange.StartRow + nRowIdx;
-    OSL_ENSURE( (maSheetSrcModel.maRange.StartRow < nRow) && (nRow <= maSheetSrcModel.maRange.EndRow), "PivotCache::importPCItemIndexList - invalid row index" );
-    sal_Int32 nCol = maSheetSrcModel.maRange.StartColumn;
-    sal_Int32 nMaxCol = getAddressConverter().getMaxApiAddress().Col();
-    for( PivotCacheFieldVector::const_iterator aIt = maDatabaseFields.begin(), aEnd = maDatabaseFields.end(); !rStrm.isEof() && (aIt != aEnd) && (nCol <= nMaxCol); ++aIt, ++nCol )
-        if( (*aIt)->hasSharedItems() )
-            (*aIt)->importPCItemIndex( rStrm, rSheetHelper, nCol, nRow );
-}
-
 // private --------------------------------------------------------------------
 
 void PivotCache::finalizeInternalSheetSource()
@@ -1361,7 +1118,7 @@ void PivotCache::finalizeExternalSheetSource()
     /*  If pivot cache is based on external sheet data, try to restore sheet
         data from cache records. No support for external defined names or tables,
         sheet name and path to cache records fragment (OOXML only) are required. */
-    bool bHasRelation = (getFilterType() == FILTER_BIFF) || !maDefModel.maRelId.isEmpty();
+    bool bHasRelation = !maDefModel.maRelId.isEmpty();
     if( bHasRelation && maSheetSrcModel.maDefName.isEmpty() && !maSheetSrcModel.maSheet.isEmpty() )
         prepareSourceDataSheet();
 }
@@ -1408,67 +1165,25 @@ void PivotCacheBuffer::registerPivotCacheFragment( sal_Int32 nCacheId, const OUS
 
 PivotCache* PivotCacheBuffer::importPivotCacheFragment( sal_Int32 nCacheId )
 {
-    switch( getFilterType() )
-    {
-        /*  OOXML/BIFF12 filter: On first call for the cache ID, the pivot
-            cache object is created and inserted into maCaches. Then, the cache
-            definition fragment is read and the cache is returned. On
-            subsequent calls, the created cache will be found in maCaches and
-            returned immediately. */
-        case FILTER_OOXML:
-        {
-            // try to find an imported pivot cache
-            if( PivotCache* pCache = maCaches.get( nCacheId ).get() )
-                return pCache;
+    /*  OOXML/BIFF12 filter: On first call for the cache ID, the pivot
+        cache object is created and inserted into maCaches. Then, the cache
+        definition fragment is read and the cache is returned. On
+        subsequent calls, the created cache will be found in maCaches and
+        returned immediately. */
+    // try to find an imported pivot cache
+    if( PivotCache* pCache = maCaches.get( nCacheId ).get() )
+        return pCache;
 
-            // check if a fragment path exists for the passed cache identifier
-            FragmentPathMap::iterator aIt = maFragmentPaths.find( nCacheId );
-            if( aIt == maFragmentPaths.end() )
-                return nullptr;
+    // check if a fragment path exists for the passed cache identifier
+    FragmentPathMap::iterator aIt = maFragmentPaths.find( nCacheId );
+    if( aIt == maFragmentPaths.end() )
+        return nullptr;
 
-            /*  Import the cache fragment. This may create a dummy data sheet
-                for external sheet sources. */
-            PivotCache& rCache = createPivotCache( nCacheId );
-            importOoxFragment( new PivotCacheDefinitionFragment( *this, aIt->second, rCache ) );
-            return &rCache;
-        }
-
-        /*  BIFF filter: Pivot table provides 0-based index into list of pivot
-            cache source links (PIVOTCACHE/PCDSOURCE/... record blocks in
-            workbook stream). First, this index has to be resolved to the cache
-            identifier that is used to manage the cache stream names (the
-            maFragmentPaths member). The cache object itself exists already
-            before the first call for the cache source index, because source data
-            link is part of workbook data, not of the cache stream. To detect
-            subsequent calls with an already initialized cache, the entry in
-            maFragmentPaths will be removed after reading the cache stream. */
-        case FILTER_BIFF:
-        {
-            /*  Resolve cache index to cache identifier and try to find pivot
-                cache. Cache must exist already for a valid cache index. */
-            nCacheId = ContainerHelper::getVectorElement( maCacheIds, nCacheId, -1 );
-            PivotCache* pCache = maCaches.get( nCacheId ).get();
-            if( !pCache )
-                return nullptr;
-
-            /*  Try to find fragment path entry (stream name). If missing, the
-                stream has been read already, and the cache can be returned. */
-            FragmentPathMap::iterator aIt = maFragmentPaths.find( nCacheId );
-            if( aIt != maFragmentPaths.end() )
-            {
-                /*  Import the cache stream. This may create a dummy data sheet
-                    for external sheet sources. */
-                BiffPivotCacheFragment( *this, aIt->second, *pCache ).importFragment();
-                // remove the fragment entry to mark that the cache is initialized
-                maFragmentPaths.erase( aIt );
-            }
-            return pCache;
-        }
-
-        case FILTER_UNKNOWN:
-            OSL_FAIL( "PivotCacheBuffer::importPivotCacheFragment - unknown filter type" );
-    }
-    return nullptr;
+    /*  Import the cache fragment. This may create a dummy data sheet
+        for external sheet sources. */
+    PivotCache& rCache = createPivotCache( nCacheId );
+    importOoxFragment( new PivotCacheDefinitionFragment( *this, aIt->second, rCache ) );
+    return &rCache;
 }
 
 PivotCache& PivotCacheBuffer::createPivotCache( sal_Int32 nCacheId )

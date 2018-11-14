@@ -72,8 +72,6 @@ public:
     //  XTypeProvider
     virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  )
         throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< ::sal_Int8 > SAL_CALL getImplementationId(  )
-        throw (css::uno::RuntimeException, std::exception) override;
 
     //  XTempFile
     virtual sal_Bool SAL_CALL getRemoveFile()
@@ -119,7 +117,7 @@ public:
     virtual void SAL_CALL truncate()
         throw (css::io::IOException, css::uno::RuntimeException, std::exception) override;
 
-    virtual ~OTempFileService ();
+    virtual ~OTempFileService () override;
 };
 #endif
 

@@ -71,7 +71,7 @@ class RemoteFilesDialog : public SvtFileDialog_Base
 {
 public:
     RemoteFilesDialog( vcl::Window* pParent, PickerFlags nBits );
-    virtual ~RemoteFilesDialog();
+    virtual ~RemoteFilesDialog() override;
 
     virtual void dispose() override;
     virtual void Resize() override;
@@ -108,7 +108,7 @@ public:
     virtual void onAsyncOperationFinished() override;
     virtual void UpdateControls( const OUString& rURL ) override;
 
-    virtual void EnableAutocompletion( bool ) override;
+    virtual void EnableAutocompletion( bool = true) override;
 
     virtual sal_Int32 getTargetColorDepth() override;
     virtual sal_Int32 getAvailableWidth() override;
@@ -162,7 +162,7 @@ private:
     VclPtr< FileViewContainer > m_pContainer;
     VclPtr< ListBox > m_pFilter_lb;
     VclPtr< AutocompleteEdit > m_pName_ed;
-    PopupMenu* m_pAddMenu;
+    VclPtr<PopupMenu> m_pAddMenu;
 
     ImageList m_aImages;
 
@@ -186,30 +186,30 @@ private:
     void SavePassword( const OUString& rURL, const OUString& rUser
                     , const OUString& rPassword, bool bPersistent );
 
-    DECL_LINK_TYPED ( AddServiceHdl, Button*, void );
-    DECL_LINK_TYPED ( SelectServiceHdl, ListBox&, void );
-    DECL_LINK_TYPED ( EditServiceMenuHdl, MenuButton *, void );
+    DECL_LINK ( AddServiceHdl, Button*, void );
+    DECL_LINK ( SelectServiceHdl, ListBox&, void );
+    DECL_LINK ( EditServiceMenuHdl, MenuButton *, void );
 
-    DECL_LINK_TYPED( DoubleClickHdl, SvTreeListBox*, bool );
-    DECL_LINK_TYPED( SelectHdl, SvTreeListBox*, void );
+    DECL_LINK( DoubleClickHdl, SvTreeListBox*, bool );
+    DECL_LINK( SelectHdl, SvTreeListBox*, void );
 
-    DECL_LINK_TYPED( FileNameGetFocusHdl, Control&, void );
-    DECL_LINK_TYPED( FileNameModifyHdl, Edit&, void );
+    DECL_LINK( FileNameGetFocusHdl, Control&, void );
+    DECL_LINK( FileNameModifyHdl, Edit&, void );
 
-    DECL_LINK_TYPED( SplitHdl, Splitter*, void );
+    DECL_LINK( SplitHdl, Splitter*, void );
 
-    DECL_LINK_TYPED( SelectFilterHdl, ListBox&, void );
+    DECL_LINK( SelectFilterHdl, ListBox&, void );
 
-    DECL_LINK_TYPED( TreeSelectHdl, SvTreeListBox*, void );
+    DECL_LINK( TreeSelectHdl, SvTreeListBox*, void );
 
-    DECL_LINK_TYPED( SelectBreadcrumbHdl, Breadcrumb *, void );
+    DECL_LINK( SelectBreadcrumbHdl, Breadcrumb *, void );
 
-    DECL_LINK_TYPED( NewFolderHdl, Button*, void );
-    DECL_LINK_TYPED( IconViewHdl, Button*, void );
-    DECL_LINK_TYPED( ListViewHdl, Button*, void );
+    DECL_LINK( NewFolderHdl, Button*, void );
+    DECL_LINK( IconViewHdl, Button*, void );
+    DECL_LINK( ListViewHdl, Button*, void );
 
-    DECL_LINK_TYPED( OkHdl, Button*, void );
-    DECL_LINK_TYPED( CancelHdl, Button*, void );
+    DECL_LINK( OkHdl, Button*, void );
+    DECL_LINK( CancelHdl, Button*, void );
 };
 
 #endif // INCLUDED_SVTOOLS_REMOTEFILESDIALOG_HXX

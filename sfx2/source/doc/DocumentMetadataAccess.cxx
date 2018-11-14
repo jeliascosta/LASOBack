@@ -45,6 +45,7 @@
 
 #include <sfx2/docfile.hxx>
 #include <sfx2/XmlIdRegistry.hxx>
+#include <sfx2/objsh.hxx>
 
 #include <libxml/tree.h>
 
@@ -83,10 +84,7 @@ bool isValidNCName(OUString const & i_rIdref)
 
 static const char s_content [] = "content.xml";
 static const char s_styles  [] = "styles.xml";
-static const char s_meta    [] = "meta.xml";
-static const char s_settings[] = "settings.xml";
 static const char s_manifest[] = "manifest.rdf";
-static const char s_rdfxml  [] = "application/rdf+xml";
 static const char s_odfmime [] = "application/vnd.oasis.opendocument.";
 
 
@@ -109,7 +107,7 @@ bool isValidXmlId(OUString const & i_rStreamName,
 
 static bool isReservedFile(OUString const & i_rPath)
 {
-    return isContentFile(i_rPath) || isStylesFile(i_rPath) || i_rPath == s_meta || i_rPath == s_settings;
+    return isContentFile(i_rPath) || isStylesFile(i_rPath) || i_rPath == "meta.xml" || i_rPath == "settings.xml";
 }
 
 
@@ -188,13 +186,13 @@ struct DocumentMetadataAccess_Impl
 {
     // note: these are all initialized in constructor, and loadFromStorage
     const uno::Reference<uno::XComponentContext> m_xContext;
-    const IXmlIdRegistrySupplier & m_rXmlIdRegistrySupplier;
+    const SfxObjectShell & m_rXmlIdRegistrySupplier;
     uno::Reference<rdf::XURI> m_xBaseURI;
     uno::Reference<rdf::XRepository> m_xRepository;
     uno::Reference<rdf::XNamedGraph> m_xManifest;
     DocumentMetadataAccess_Impl(
             uno::Reference<uno::XComponentContext> const& i_xContext,
-            IXmlIdRegistrySupplier const & i_rRegistrySupplier)
+            SfxObjectShell const & i_rRegistrySupplier)
       : m_xContext(i_xContext)
       , m_rXmlIdRegistrySupplier(i_rRegistrySupplier)
       , m_xBaseURI()
@@ -207,7 +205,7 @@ struct DocumentMetadataAccess_Impl
 
 // this is... a hack.
 template<sal_Int16 Constant>
-/*static*/ uno::Reference<rdf::XURI>
+/*static*/ uno::Reference<rdf::XURI> const &
 getURI(uno::Reference< uno::XComponentContext > const & i_xContext)
 {
     static uno::Reference< rdf::XURI > xURI(
@@ -287,7 +285,7 @@ static void
 addFile(struct DocumentMetadataAccess_Impl & i_rImpl,
     uno::Reference<rdf::XURI> const& i_xType,
     OUString const & i_rPath,
-    const uno::Sequence < uno::Reference< rdf::XURI > > * i_pTypes = nullptr)
+    const uno::Sequence < uno::Reference< rdf::XURI > > * i_pTypes)
 {
     try {
         const uno::Reference<rdf::XURI> xURI( getURIForStream(
@@ -327,7 +325,7 @@ addContentOrStylesFileImpl(struct DocumentMetadataAccess_Impl & i_rImpl,
     } else {
         return false;
     }
-    addFile(i_rImpl, xType.get(), i_rPath);
+    addFile(i_rImpl, xType.get(), i_rPath, nullptr);
     return true;
 }
 
@@ -610,7 +608,7 @@ exportStream(struct DocumentMetadataAccess_Impl & i_rImpl,
     if (xStreamProps.is()) { // this is NOT supported in FileSystemStorage
         xStreamProps->setPropertyValue(
             "MediaType",
-            uno::makeAny(OUString(s_rdfxml)));
+            uno::makeAny(OUString("application/rdf+xml")));
     }
     const uno::Reference<io::XOutputStream> xOutStream(
         xStream->getOutputStream(), uno::UNO_SET_THROW );
@@ -768,7 +766,7 @@ static void init(struct DocumentMetadataAccess_Impl & i_rImpl)
 
 DocumentMetadataAccess::DocumentMetadataAccess(
         uno::Reference< uno::XComponentContext > const & i_xContext,
-        const IXmlIdRegistrySupplier & i_rRegistrySupplier)
+        const SfxObjectShell & i_rRegistrySupplier)
     : m_pImpl(new DocumentMetadataAccess_Impl(i_xContext, i_rRegistrySupplier))
 {
     // no initialization: must call loadFrom...
@@ -776,7 +774,7 @@ DocumentMetadataAccess::DocumentMetadataAccess(
 
 DocumentMetadataAccess::DocumentMetadataAccess(
         uno::Reference< uno::XComponentContext > const & i_xContext,
-        const IXmlIdRegistrySupplier & i_rRegistrySupplier,
+        const SfxObjectShell & i_rRegistrySupplier,
         OUString const & i_rURI)
     : m_pImpl(new DocumentMetadataAccess_Impl(i_xContext, i_rRegistrySupplier))
 {

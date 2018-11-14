@@ -21,7 +21,6 @@
 #include "AxisHelper.hxx"
 #include "TitleHelper.hxx"
 #include "Chart2ModelContact.hxx"
-#include "ContainerHelper.hxx"
 #include "macros.hxx"
 #include "WrappedDirectStateProperty.hxx"
 #include "GridWrapper.hxx"
@@ -53,7 +52,6 @@
 
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::chart2;
-using namespace ::chart::ContainerHelper;
 
 using ::com::sun::star::beans::Property;
 using ::com::sun::star::uno::Reference;
@@ -62,7 +60,6 @@ using ::com::sun::star::uno::Any;
 
 namespace
 {
-static const char lcl_aServiceName[] = "com.sun.star.comp.chart.Axis";
 
 enum
 {
@@ -403,7 +400,7 @@ namespace wrapper
 {
 
 AxisWrapper::AxisWrapper(
-    tAxisType eType, std::shared_ptr< Chart2ModelContact > spChart2ModelContact ) :
+    tAxisType eType, const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact) :
         m_spChart2ModelContact( spChart2ModelContact ),
         m_aEventListenerContainer( m_aMutex ),
         m_eType( eType )
@@ -693,26 +690,10 @@ const std::vector< WrappedProperty* > AxisWrapper::createWrappedProperties()
     return aWrappedProperties;
 }
 
-Sequence< OUString > AxisWrapper::getSupportedServiceNames_Static()
-{
-    Sequence< OUString > aServices( 3 );
-    aServices[ 0 ] = "com.sun.star.chart.ChartAxis";
-    aServices[ 1 ] = "com.sun.star.xml.UserDefinedAttributesSupplier";
-    aServices[ 2 ] = "com.sun.star.style.CharacterProperties";
-
-    return aServices;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL AxisWrapper::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString AxisWrapper::getImplementationName_Static()
-{
-    return OUString(lcl_aServiceName);
+    return OUString("com.sun.star.comp.chart.Axis");
 }
 
 sal_Bool SAL_CALL AxisWrapper::supportsService( const OUString& rServiceName )
@@ -724,7 +705,11 @@ sal_Bool SAL_CALL AxisWrapper::supportsService( const OUString& rServiceName )
 css::uno::Sequence< OUString > SAL_CALL AxisWrapper::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return {
+        "com.sun.star.chart.ChartAxis",
+        "com.sun.star.xml.UserDefinedAttributesSupplier",
+        "com.sun.star.style.CharacterProperties"
+    };
 }
 
 } //  namespace wrapper

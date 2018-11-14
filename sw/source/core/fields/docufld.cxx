@@ -41,6 +41,7 @@
 #include <com/sun/star/document/XDocumentProperties.hpp>
 #include <com/sun/star/util/Date.hpp>
 #include <com/sun/star/util/Duration.hpp>
+#include <o3tl/any.hxx>
 #include <unotools/localedatawrapper.hxx>
 #include <editeng/unolingu.hxx>
 #include <comphelper/processfactory.hxx>
@@ -258,7 +259,7 @@ bool SwPageNumberField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
                 eType = text::PageNumberType_PREV;
             else if(nSubType == PG_NEXT)
                 eType = text::PageNumberType_NEXT;
-            rAny.setValue(&eType, cppu::UnoType<text::PageNumberType>::get());
+            rAny <<= eType;
         }
         break;
     case FIELD_PROP_PAR1:
@@ -266,7 +267,7 @@ bool SwPageNumberField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         break;
 
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -311,7 +312,7 @@ bool SwPageNumberField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         break;
 
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return bRet;
 }
@@ -371,11 +372,11 @@ bool SwAuthorField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         break;
 
     case FIELD_PROP_PAR1:
-        rAny <<= GetContent();
+        rAny <<= aContent;
         break;
 
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -385,11 +386,11 @@ bool SwAuthorField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
     switch( nWhichId )
     {
     case FIELD_PROP_BOOL1:
-        SetFormat( *static_cast<sal_Bool const *>(rAny.getValue()) ? AF_NAME : AF_SHORTCUT );
+        SetFormat( *o3tl::doAccess<bool>(rAny) ? AF_NAME : AF_SHORTCUT );
         break;
 
     case FIELD_PROP_BOOL2:
-        if( *static_cast<sal_Bool const *>(rAny.getValue()) )
+        if( *o3tl::doAccess<bool>(rAny) )
             SetFormat( GetFormat() | AF_FIXED);
         else
             SetFormat( GetFormat() & ~AF_FIXED);
@@ -400,7 +401,7 @@ bool SwAuthorField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         break;
 
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -521,10 +522,11 @@ bool SwFileNameField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         break;
 
     case FIELD_PROP_PAR3:
-        rAny <<= GetContent();
+        rAny <<= aContent;
         break;
+
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -561,7 +563,7 @@ bool SwFileNameField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         break;
 
     case FIELD_PROP_BOOL2:
-        if( *static_cast<sal_Bool const *>(rAny.getValue()) )
+        if( *o3tl::doAccess<bool>(rAny) )
             SetFormat( GetFormat() | FF_FIXED);
         else
             SetFormat( GetFormat() & ~FF_FIXED);
@@ -572,7 +574,7 @@ bool SwFileNameField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         break;
 
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -675,8 +677,9 @@ bool SwTemplNameField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
             rAny <<= nRet;
         }
         break;
+
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -713,8 +716,9 @@ bool SwTemplNameField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
             }
         }
         break;
+
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -806,8 +810,9 @@ bool SwDocStatField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
     case FIELD_PROP_USHORT2:
         rAny <<= (sal_Int16)GetFormat();
         break;
+
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -832,7 +837,7 @@ bool SwDocStatField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         break;
 
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return bRet;
 }
@@ -1192,7 +1197,7 @@ bool SwDocInfoField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
     case FIELD_PROP_DOUBLE:
         {
             double fVal = GetValue();
-            rAny.setValue(&fVal, cppu::UnoType<decltype(fVal)>::get());
+            rAny <<= fVal;
         }
         break;
     case FIELD_PROP_PAR3:
@@ -1229,7 +1234,7 @@ bool SwDocInfoField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         break;
 
     case FIELD_PROP_BOOL1:
-        if(*static_cast<sal_Bool const *>(rAny.getValue()))
+        if(*o3tl::doAccess<bool>(rAny))
             nSubType |= DI_SUB_FIXED;
         else
             nSubType &= ~DI_SUB_FIXED;
@@ -1247,7 +1252,7 @@ bool SwDocInfoField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         break;
     case FIELD_PROP_BOOL2:
         nSubType &= 0xf0ff;
-        if(*static_cast<sal_Bool const *>(rAny.getValue()))
+        if(*o3tl::doAccess<bool>(rAny))
             nSubType |= DI_SUB_DATE;
         else
             nSubType |= DI_SUB_TIME;
@@ -1483,7 +1488,7 @@ bool SwHiddenTextField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         rAny <<= bIsHidden;
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -1506,14 +1511,14 @@ bool SwHiddenTextField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         rAny >>= aFALSEText;
         break;
     case FIELD_PROP_BOOL1:
-        bIsHidden = *static_cast<sal_Bool const *>(rAny.getValue());
+        bIsHidden = *o3tl::doAccess<bool>(rAny);
         break;
     case FIELD_PROP_PAR4:
         rAny >>= aContent;
         bValid = true;
-    break;
+        break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -1543,7 +1548,7 @@ OUString SwHiddenTextField::GetDBName(const OUString& rName, SwDoc *pDoc)
     }
 
     SwDBData aData = pDoc->GetDBData();
-    return aData.sDataSource + OUString(DB_DELIM) + aData.sCommand;
+    return aData.sDataSource + OUStringLiteral1(DB_DELIM) + aData.sCommand;
 }
 
 // field type for line height 0
@@ -1592,7 +1597,7 @@ bool SwHiddenParaField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         break;
 
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -1605,11 +1610,11 @@ bool SwHiddenParaField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         rAny >>= aCond;
         break;
     case FIELD_PROP_BOOL1:
-        bIsHidden = *static_cast<sal_Bool const *>(rAny.getValue());
+        bIsHidden = *o3tl::doAccess<bool>(rAny);
         break;
 
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -1771,8 +1776,7 @@ bool SwPostItField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         }
     case FIELD_PROP_DATE:
         {
-            css::util::Date aSetDate = aDateTime.GetUNODate();
-            rAny.setValue(&aSetDate, ::cppu::UnoType<util::Date>::get());
+            rAny <<= aDateTime.GetUNODate();
         }
         break;
     case FIELD_PROP_DATE_TIME:
@@ -1781,7 +1785,7 @@ bool SwPostItField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         }
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -1812,10 +1816,9 @@ bool SwPostItField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         OSL_FAIL("Not implemented!");
         break;
     case FIELD_PROP_DATE:
-        if( rAny.getValueType() == ::cppu::UnoType<util::Date>::get() )
+        if( auto aSetDate = o3tl::tryAccess<util::Date>(rAny) )
         {
-            util::Date aSetDate = *static_cast<util::Date const *>(rAny.getValue());
-            aDateTime = Date(aSetDate.Day, aSetDate.Month, aSetDate.Year);
+            aDateTime = Date(aSetDate->Day, aSetDate->Month, aSetDate->Year);
         }
         break;
     case FIELD_PROP_DATE_TIME:
@@ -1827,14 +1830,14 @@ bool SwPostItField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
     }
     break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
 
 void SwPostItField::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swPostItField"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwPostItField"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("name"), BAD_CAST(GetName().toUtf8().getStr()));
 
     SwField::dumpAsXml(pWriter);
@@ -1946,7 +1949,7 @@ bool SwExtUserField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         rAny <<= IsFixed();
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -1967,13 +1970,13 @@ bool SwExtUserField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         }
         break;
     case FIELD_PROP_BOOL1:
-        if( *static_cast<sal_Bool const *>(rAny.getValue()) )
+        if( *o3tl::doAccess<bool>(rAny) )
             SetFormat(GetFormat() | AF_FIXED);
         else
             SetFormat(GetFormat() & ~AF_FIXED);
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -2034,7 +2037,7 @@ bool SwRefPageSetField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         rAny <<= (sal_Int16)nOffset;
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -2044,13 +2047,13 @@ bool SwRefPageSetField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
     switch( nWhichId )
     {
     case FIELD_PROP_BOOL1:
-        bOn = *static_cast<sal_Bool const *>(rAny.getValue());
+        bOn = *o3tl::doAccess<bool>(rAny);
         break;
     case FIELD_PROP_USHORT1:
         rAny >>=nOffset;
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -2273,7 +2276,7 @@ bool SwRefPageGetField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
             rAny <<= sText;
         break;
         default:
-            OSL_FAIL("illegal property");
+            assert(false);
     }
     return true;
 }
@@ -2296,7 +2299,7 @@ bool SwRefPageGetField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
             rAny >>= sText;
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -2391,7 +2394,7 @@ bool SwJumpEditField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
          rAny <<= sText;
          break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -2424,7 +2427,7 @@ bool SwJumpEditField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
          rAny >>= sText;
          break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -2480,7 +2483,7 @@ bool SwCombinedCharField::QueryValue( uno::Any& rAny,
         rAny <<= sCharacters;
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -2498,7 +2501,7 @@ bool SwCombinedCharField::PutValue( const uno::Any& rAny,
         }
         break;
         default:
-            OSL_FAIL("illegal property");
+            assert(false);
     }
     return true;
 }

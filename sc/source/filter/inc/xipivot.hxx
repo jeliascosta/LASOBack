@@ -68,7 +68,7 @@ public:
     /** Creates a pivot cache field by reading an SXFIELD record. */
     explicit            XclImpPCField( const XclImpRoot& rRoot,
                             XclImpPivotCache& rPCache, sal_uInt16 nFieldIdx );
-    virtual             ~XclImpPCField();
+    virtual             ~XclImpPCField() override;
 
     // general field/item access ----------------------------------------------
 
@@ -144,7 +144,7 @@ class XclImpPivotCache : protected XclImpRoot
 {
 public:
     explicit            XclImpPivotCache( const XclImpRoot& rRoot );
-    virtual             ~XclImpPivotCache();
+    virtual             ~XclImpPivotCache() override;
 
     // data access ------------------------------------------------------------
 
@@ -153,8 +153,6 @@ public:
 
     const OUString& GetSourceRangeName() const { return maSrcRangeName; }
 
-    /** Returns the number of pivot cache fields. */
-    sal_uInt16          GetFieldCount() const;
     /** Returns read-only access to a pivot cache field. */
     const XclImpPCField* GetField( sal_uInt16 nFieldIdx ) const;
 
@@ -174,7 +172,6 @@ public:
     /** Reads the entire pivot cache stream. Uses decrypter from passed stream. */
     void                ReadPivotCacheStream( XclImpStream& rStrm );
 
-    bool                HasCacheRecords() const;
     bool                IsRefreshOnLoad() const;
     bool                IsValid() const;
 
@@ -277,7 +274,6 @@ private:
 
     void                ConvertDataField( ScDPSaveDimension& rSaveDim, const XclPTDataFieldInfo& rDataInfo ) const;
     void                ConvertDataFieldInfo( ScDPSaveDimension& rSaveDim, const XclPTDataFieldInfo& rDataInfo ) const;
-    void                ConvertItems( ScDPSaveDimension& rSaveDim ) const;
 
 private:
     typedef ::std::list< XclPTDataFieldInfo >   XclPTDataFieldInfoList;
@@ -297,7 +293,7 @@ class XclImpPivotTable : protected XclImpRoot
 {
 public:
     explicit            XclImpPivotTable( const XclImpRoot& rRoot );
-    virtual             ~XclImpPivotTable();
+    virtual             ~XclImpPivotTable() override;
 
     // cache/field access, misc. ----------------------------------------------
 
@@ -372,7 +368,7 @@ class XclImpPivotTableManager : protected XclImpRoot
 {
 public:
     explicit            XclImpPivotTableManager( const XclImpRoot& rRoot );
-    virtual             ~XclImpPivotTableManager();
+    virtual             ~XclImpPivotTableManager() override;
 
     // pivot cache records ----------------------------------------------------
 

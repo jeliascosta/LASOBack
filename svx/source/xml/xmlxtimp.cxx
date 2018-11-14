@@ -73,7 +73,7 @@ class SvxXMLTableImportContext : public SvXMLImportContext
 public:
     SvxXMLTableImportContext( SvXMLImport& rImport, sal_uInt16 nPrfx, const OUString& rLName, const uno::Reference< XAttributeList >& xAttrList, SvxXMLTableImportContextEnum eContext, const uno::Reference< XNameContainer >& xTable,
         bool bOOoFormat );
-    virtual ~SvxXMLTableImportContext();
+    virtual ~SvxXMLTableImportContext() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix, const OUString& rLocalName, const uno::Reference< XAttributeList >& xAttrList ) override;
 
@@ -301,7 +301,7 @@ void SvxXMLTableImportContext::importBitmap( sal_uInt16 nPrfx, const OUString& r
     try
     {
         XMLImageStyle aImageStyle;
-        aImageStyle.importXML( xAttrList, rAny, rName, GetImport() );
+        XMLImageStyle::importXML( xAttrList, rAny, rName, GetImport() );
     }
     catch (const Exception&)
     {
@@ -349,7 +349,7 @@ static void openStorageStream( xml::sax::InputSource *pParserInput,
         return;
     }
     pParserInput->aInputStream = xIStm->getInputStream();
-    *ppGraphicHelper = SvXMLGraphicHelper::Create( xStorage, GRAPHICHELPER_MODE_READ );
+    *ppGraphicHelper = SvXMLGraphicHelper::Create( xStorage, SvXMLGraphicHelperMode::Read );
 }
 
 bool SvxXMLXTableImport::load( const OUString &rPath, const OUString &rReferer,

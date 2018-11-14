@@ -51,17 +51,12 @@ using namespace framework;
 
 namespace {
 
-static const char GENERIC_MODULE_NAME[]                     = "generic";
-static const char CONFIGURATION_ROOT_ACCESS[]               = "/org.openoffice.Office.UI.";
-static const char CONFIGURATION_CATEGORY_ELEMENT_ACCESS[]   = "/Commands/Categories";
-static const char CONFIGURATION_PROPERTY_NAME[]             = "Name";
-
 class ConfigurationAccess_UICategory : public ::cppu::WeakImplHelper<XNameAccess,XContainerListener>
 {
     osl::Mutex aMutex;
     public:
                                   ConfigurationAccess_UICategory( const OUString& aModuleName, const Reference< XNameAccess >& xGenericUICommands, const Reference< XComponentContext >& rxContext );
-        virtual                   ~ConfigurationAccess_UICategory();
+        virtual                   ~ConfigurationAccess_UICategory() override;
 
         // XNameAccess
         virtual css::uno::Any SAL_CALL getByName( const OUString& aName )
@@ -115,15 +110,14 @@ class ConfigurationAccess_UICategory : public ::cppu::WeakImplHelper<XNameAccess
 //  XInterface, XTypeProvider
 
 ConfigurationAccess_UICategory::ConfigurationAccess_UICategory( const OUString& aModuleName, const Reference< XNameAccess >& rGenericUICategories, const Reference< XComponentContext >& rxContext ) :
-    m_aConfigCategoryAccess( CONFIGURATION_ROOT_ACCESS ),
-    m_aPropUIName( CONFIGURATION_PROPERTY_NAME ),
+    m_aConfigCategoryAccess( "/org.openoffice.Office.UI." ),
+    m_aPropUIName( "Name" ),
     m_xGenericUICategories( rGenericUICategories ),
     m_bConfigAccessInitialized( false ),
     m_bCacheFilled( false )
 {
     // Create configuration hierarchical access name
-    m_aConfigCategoryAccess += aModuleName;
-    m_aConfigCategoryAccess += CONFIGURATION_CATEGORY_ELEMENT_ACCESS;
+    m_aConfigCategoryAccess += aModuleName + "/Commands/Categories";
 
     m_xConfigProvider = theDefaultProvider::get( rxContext );
 }
@@ -373,7 +367,7 @@ class UICategoryDescription :  public UICommandDescription
 {
 public:
     explicit UICategoryDescription( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-    virtual ~UICategoryDescription();
+    virtual ~UICategoryDescription() override;
 
     virtual OUString SAL_CALL getImplementationName()
         throw (css::uno::RuntimeException, std::exception) override
@@ -390,8 +384,7 @@ public:
     virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
         throw (css::uno::RuntimeException, std::exception) override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.ui.UICategoryDescription" };
-        return aSeq;
+        return {"com.sun.star.ui.UICategoryDescription"};
     }
 
 };
@@ -405,7 +398,7 @@ UICategoryDescription::UICategoryDescription( const Reference< XComponentContext
 
     // insert generic categories mappings
     m_aModuleToCommandFileMap.insert( ModuleToCommandFileMap::value_type(
-        OUString(GENERIC_MODULE_NAME ), aGenericCategories ));
+        OUString("generic"), aGenericCategories ));
 
     UICommandsHashMap::iterator pCatIter = m_aUICommandsHashMap.find( aGenericCategories );
     if ( pCatIter != m_aUICommandsHashMap.end() )

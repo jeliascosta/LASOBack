@@ -26,9 +26,8 @@
 #include <callnk.hxx>
 #include <pamtyp.hxx>
 #include <section.hxx>
-#include <trvlreg.hxx>
 
-bool GotoPrevRegion( SwPaM& rCurrentCursor, SwPosRegion fnPosRegion,
+bool GotoPrevRegion( SwPaM& rCurrentCursor, SwMoveFnCollection const & fnPosRegion,
                         bool bInReadOnly )
 {
     SwNodeIndex aIdx( rCurrentCursor.GetPoint()->nNode );
@@ -50,7 +49,7 @@ bool GotoPrevRegion( SwPaM& rCurrentCursor, SwPosRegion fnPosRegion,
                 // skip protected or hidden ones
                 aIdx.Assign( *pNd, - 1 );
             }
-            else if( fnPosRegion == fnMoveForward )
+            else if( &fnPosRegion == &fnMoveForward )
             {
                 aIdx = *pNd;
                 SwContentNode* pCNd = pNd->GetNodes().GoNextSection( &aIdx,
@@ -81,7 +80,7 @@ bool GotoPrevRegion( SwPaM& rCurrentCursor, SwPosRegion fnPosRegion,
     return false;
 }
 
-bool GotoNextRegion( SwPaM& rCurrentCursor, SwPosRegion fnPosRegion,
+bool GotoNextRegion( SwPaM& rCurrentCursor, SwMoveFnCollection const & fnPosRegion,
                         bool bInReadOnly )
 {
     SwNodeIndex aIdx( rCurrentCursor.GetPoint()->nNode );
@@ -104,7 +103,7 @@ bool GotoNextRegion( SwPaM& rCurrentCursor, SwPosRegion fnPosRegion,
                 // skip protected or hidden ones
                 aIdx.Assign( *pNd->EndOfSectionNode(), +1 );
             }
-            else if( fnPosRegion == fnMoveForward )
+            else if( &fnPosRegion == &fnMoveForward )
             {
                 aIdx = *pNd;
                 SwContentNode* pCNd = pNd->GetNodes().GoNextSection( &aIdx,
@@ -135,37 +134,7 @@ bool GotoNextRegion( SwPaM& rCurrentCursor, SwPosRegion fnPosRegion,
     return false;
 }
 
-bool GotoCurrRegion( SwPaM& rCurrentCursor, SwPosRegion fnPosRegion,
-                        bool bInReadOnly )
-{
-    SwSectionNode* pNd = rCurrentCursor.GetNode().FindSectionNode();
-    if( !pNd )
-        return false;
-
-    SwPosition* pPos = rCurrentCursor.GetPoint();
-    bool bMoveBackward = fnPosRegion == fnMoveBackward;
-
-    SwContentNode* pCNd;
-    if( bMoveBackward )
-    {
-        SwNodeIndex aIdx( *pNd->EndOfSectionNode() );
-        pCNd = SwNodes::GoPrevSection( &aIdx, true, !bInReadOnly );
-    }
-    else
-    {
-        SwNodeIndex aIdx( *pNd );
-        pCNd = pNd->GetNodes().GoNextSection( &aIdx, true, !bInReadOnly );
-    }
-
-    if( pCNd )
-    {
-        pPos->nNode = *pCNd;
-        pPos->nContent.Assign( pCNd, bMoveBackward ? pCNd->Len() : 0 );
-    }
-    return nullptr != pCNd;
-}
-
-bool GotoCurrRegionAndSkip( SwPaM& rCurrentCursor, SwPosRegion fnPosRegion,
+bool GotoCurrRegionAndSkip( SwPaM& rCurrentCursor, SwMoveFnCollection const & fnPosRegion,
                                 bool bInReadOnly )
 {
     SwNode& rCurrNd = rCurrentCursor.GetNode();
@@ -175,7 +144,7 @@ bool GotoCurrRegionAndSkip( SwPaM& rCurrentCursor, SwPosRegion fnPosRegion,
 
     SwPosition* pPos = rCurrentCursor.GetPoint();
     const sal_Int32 nCurrCnt = pPos->nContent.GetIndex();
-    bool bMoveBackward = fnPosRegion == fnMoveBackward;
+    bool bMoveBackward = &fnPosRegion == &fnMoveBackward;
 
     do {
         SwContentNode* pCNd;
@@ -210,7 +179,7 @@ bool GotoCurrRegionAndSkip( SwPaM& rCurrentCursor, SwPosRegion fnPosRegion,
     return false;
 }
 
-bool SwCursor::MoveRegion( SwWhichRegion fnWhichRegion, SwPosRegion fnPosRegion )
+bool SwCursor::MoveRegion( SwWhichRegion fnWhichRegion, SwMoveFnCollection const & fnPosRegion )
 {
     SwCursorSaveState aSaveState( *this );
     return !dynamic_cast<SwTableCursor*>(this) &&
@@ -220,7 +189,7 @@ bool SwCursor::MoveRegion( SwWhichRegion fnWhichRegion, SwPosRegion fnPosRegion 
              GetPoint()->nContent.GetIndex() != m_pSavePos->nContent);
 }
 
-bool SwCursorShell::MoveRegion( SwWhichRegion fnWhichRegion, SwPosRegion fnPosRegion )
+bool SwCursorShell::MoveRegion( SwWhichRegion fnWhichRegion, SwMoveFnCollection const & fnPosRegion )
 {
     SwCallLink aLk( *this ); // watch Cursor-Moves;call Link if needed
     bool bRet = !m_pTableCursor && m_pCurrentCursor->MoveRegion( fnWhichRegion, fnPosRegion );
@@ -247,7 +216,7 @@ bool SwCursor::GotoRegion( const OUString& rName )
             SwCursorSaveState aSaveState( *this );
 
             GetPoint()->nNode = *pIdx;
-            Move( fnMoveForward, fnGoContent );
+            Move( fnMoveForward, GoInContent );
             bRet = !IsSelOvr();
         }
     }

@@ -43,6 +43,8 @@ namespace drawinglayer { namespace attribute {
 /// Base class for various Writer styles.
 class SW_DLLPUBLIC SwFormat : public SwModify
 {
+    friend class SwFrameFormat;
+
     OUString m_aFormatName;
     SwAttrSet m_aSet;
 
@@ -71,14 +73,11 @@ protected:
 
 public:
 
-    virtual ~SwFormat();
+    virtual ~SwFormat() override;
     SwFormat &operator=(const SwFormat&);
 
     /// for Querying of Writer-functions.
     sal_uInt16 Which() const { return m_nWhichId; }
-
-    /// Query format information.
-    virtual bool GetInfo( SfxPoolItem& ) const override;
 
     /// Copy attributes even among documents.
     void CopyAttrs( const SwFormat& );
@@ -111,7 +110,7 @@ public:
 
     const OUString& GetName() const                  { return m_aFormatName; }
     inline bool HasName(const OUString &rName) const { return m_aFormatName == rName; }
-    void SetName( const OUString& rNewName, bool bBroadcast=false );
+    virtual void SetName( const OUString& rNewName, bool bBroadcast=false );
 
     /// For querying the attribute array.
     inline const SwAttrSet& GetAttrSet() const { return m_aSet; }
@@ -153,11 +152,8 @@ public:
 
     /// Get attribute-description. Returns passed string.
     void GetPresentation( SfxItemPresentation ePres,
-        SfxMapUnit eCoreMetric, SfxMapUnit ePresMetric, OUString &rText ) const
+        MapUnit eCoreMetric, MapUnit ePresMetric, OUString &rText ) const
         { m_aSet.GetPresentation( ePres, eCoreMetric, ePresMetric, rText ); }
-
-    /// Format-ID for reading/writing:
-    void   ResetWritten()    { m_bWritten = false; }
 
     /// Query / set AutoFormat-flag.
     bool IsAuto() const                 { return m_bAutoFormat; }

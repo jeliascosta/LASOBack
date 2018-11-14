@@ -35,10 +35,10 @@ class ZipOutputStream
 {
     css::uno::Reference< css::io::XOutputStream > m_xStream;
     ::std::vector < ZipEntry * > m_aZipList;
+    std::shared_ptr<comphelper::ThreadTaskTag> mpThreadTaskTag;
 
     ByteChucker         m_aChucker;
     ZipEntry            *m_pCurrentEntry;
-    comphelper::ThreadPool &m_rSharedThreadPool;
     std::vector< ZipOutputEntry* > m_aEntries;
     ::css::uno::Any m_aDeflateException;
 
@@ -57,7 +57,7 @@ public:
         throw(css::io::IOException, css::uno::RuntimeException);
 
     void finish()
-        throw(css::io::IOException, css::uno::RuntimeException);
+        throw(css::io::IOException, css::uno::RuntimeException, std::exception);
     const css::uno::Reference< css::io::XOutputStream >& getStream();
 
     static sal_uInt32 getCurrentDosTime();
@@ -74,12 +74,12 @@ private:
     // ScheduledThread handling helpers
     void consumeScheduledThreadEntry(ZipOutputEntry* pCandidate);
     void consumeFinishedScheduledThreadEntries();
-    void consumeAllScheduledThreadEntries();
 
 public:
     void reduceScheduledThreadsToGivenNumberOrLess(
-        sal_Int32 nThreads,
-        sal_Int32 nWaitTimeInTenthSeconds);
+        sal_Int32 nThreads);
+
+    const std::shared_ptr<comphelper::ThreadTaskTag>& getThreadTaskTag() { return mpThreadTaskTag; }
 };
 
 #endif

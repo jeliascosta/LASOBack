@@ -22,7 +22,6 @@
 
 #include "anyrefdg.hxx"
 #include "global.hxx"
-#include <svtools/stdctrl.hxx>
 #include <vcl/lstbox.hxx>
 #include <vcl/group.hxx>
 #include <svtools/svmedit.hxx>
@@ -53,7 +52,7 @@ class ScFormulaDlg : public formula::FormulaDlg,
 public:
                     ScFormulaDlg( SfxBindings* pB, SfxChildWindow* pCW,
                         vcl::Window* pParent, ScViewData* pViewData ,formula::IFunctionManager* _pFunctionMgr);
-                    virtual ~ScFormulaDlg();
+                    virtual ~ScFormulaDlg() override;
     virtual void dispose() override;
 
     // IFormulaEditorHelper
@@ -65,7 +64,6 @@ public:
     virtual void showReference(const OUString& _sFormula) override;
     virtual void dispatch(bool _bOK, bool _bMatrixChecked) override;
     virtual void setDispatcherLock( bool bLock ) override;
-    virtual void setReferenceInput(const formula::FormEditData* _pData) override;
     virtual void deleteFormData() override;
     virtual void clear() override;
     virtual void switchBack() override;
@@ -89,7 +87,7 @@ public:
     virtual void SetReference( const ScRange& rRef, ScDocument* pD ) override;
 
     virtual void ReleaseFocus( formula::RefEdit* pEdit ) override;
-    virtual void ToggleCollapsed( formula::RefEdit* pEdit, formula::RefButton* pButton = nullptr ) override;
+    virtual void ToggleCollapsed( formula::RefEdit* pEdit, formula::RefButton* pButton ) override;
     virtual void RefInputDone( bool bForced = false ) override;
     virtual bool IsTableLocked() const override;
     virtual bool IsRefInputMode() const override;

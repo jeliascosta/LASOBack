@@ -103,7 +103,7 @@ ChartModel::ChartModel(uno::Reference<uno::XComponentContext > const & xContext)
     , m_aVisualAreaSize( ChartModelHelper::getDefaultPageSize() )
     , m_xDataProvider( nullptr )
     , m_xInternalDataProvider( nullptr )
-    , m_xPageBackground( new PageBackground( m_xContext ) )
+    , m_xPageBackground( new PageBackground )
     , m_xXMLNamespaceMap( createNameContainer( ::cppu::UnoType<OUString>::get(),
                 "com.sun.star.xml.NamespaceMap", "com.sun.star.comp.chart.XMLNameSpaceMap" ), uno::UNO_QUERY)
     , mnStart(0)
@@ -318,11 +318,6 @@ void ChartModel::impl_adjustAdditionalShapesPositionAndSize( const awt::Size& aV
 OUString SAL_CALL ChartModel::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString ChartModel::getImplementationName_Static()
-{
     return OUString(CHART_MODEL_SERVICE_IMPLEMENTATION_NAME);
 }
 
@@ -335,17 +330,11 @@ sal_Bool SAL_CALL ChartModel::supportsService( const OUString& rServiceName )
 css::uno::Sequence< OUString > SAL_CALL ChartModel::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
-}
-
-uno::Sequence< OUString > ChartModel::getSupportedServiceNames_Static()
-{
-    uno::Sequence< OUString > aSNS( 3 );
-    aSNS[0] = CHART_MODEL_SERVICE_NAME;
-    aSNS[1] = "com.sun.star.document.OfficeDocument";
-    aSNS[2] = "com.sun.star.chart.ChartDocument";
-    //// @todo : add additional services if you support any further
-    return aSNS;
+    return {
+        CHART_MODEL_SERVICE_NAME,
+        "com.sun.star.document.OfficeDocument",
+        "com.sun.star.chart.ChartDocument"
+    };
 }
 
 // frame::XModel (required interface)
@@ -1301,7 +1290,7 @@ Sequence< OUString > SAL_CALL ChartModel::getAvailableServiceNames()
     return aResult;
 }
 
-Reference< util::XNumberFormatsSupplier > ChartModel::getNumberFormatsSupplier()
+Reference< util::XNumberFormatsSupplier > const & ChartModel::getNumberFormatsSupplier()
 {
     if( !m_xNumberFormatsSupplier.is() )
     {

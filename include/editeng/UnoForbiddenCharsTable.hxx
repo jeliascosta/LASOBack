@@ -40,8 +40,8 @@ protected:
     rtl::Reference<SvxForbiddenCharactersTable> mxForbiddenChars;
 
 public:
-    SvxUnoForbiddenCharsTable(rtl::Reference<SvxForbiddenCharactersTable> xForbiddenChars);
-    virtual ~SvxUnoForbiddenCharsTable();
+    SvxUnoForbiddenCharsTable(rtl::Reference<SvxForbiddenCharactersTable> const & xForbiddenChars);
+    virtual ~SvxUnoForbiddenCharsTable() override;
 
     // XForbiddenCharacters
     virtual css::i18n::ForbiddenCharacters SAL_CALL getForbiddenCharacters( const css::lang::Locale& rLocale ) throw(css::container::NoSuchElementException, css::uno::RuntimeException, std::exception) override;

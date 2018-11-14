@@ -27,7 +27,7 @@
 namespace basctl
 {
 
-IMPL_LINK_TYPED( DlgEdFunc, ScrollTimeout, Timer *, pTimer, void )
+IMPL_LINK( DlgEdFunc, ScrollTimeout, Timer *, pTimer, void )
 {
     (void)pTimer;
     vcl::Window& rWindow = rParent.GetWindow();
@@ -390,7 +390,7 @@ bool DlgEdFuncInsert::MouseButtonUp( const MouseEvent& rMEvt )
     // object creation active?
     if ( rView.IsCreateObj() )
     {
-        rView.EndCreateObj(SDRCREATE_FORCEEND);
+        rView.EndCreateObj(SdrCreateCmd::ForceEnd);
 
         if ( !rView.AreObjectsMarked() )
         {
@@ -464,9 +464,9 @@ void DlgEdFuncSelect::MouseButtonDown( const MouseEvent& rMEvt )
                 rView.UnmarkAll();
             else
             {
-                SdrObject* pObj;
                 SdrPageView* pPV;
-                if( rView.PickObj( aMDPos, nHitLog, pObj, pPV ) )
+                SdrObject* pObj = rView.PickObj(aMDPos, nHitLog, pPV);
+                if (pObj)
                 {
                     //if (dynamic_cast<DlgEdForm*>(pObj))
                     //  rView.UnmarkAll();

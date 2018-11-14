@@ -103,6 +103,10 @@ std::vector<css::datatransfer::DataFlavor> GtkTransferable::getTransferDataFlavo
         const char* pFinalName = pName;
         css::datatransfer::DataFlavor aFlavor;
 
+        // omit text/plain;charset=unicode since it is not well defined
+        if (rtl_str_compare(pName, "text/plain;charset=unicode") == 0)
+            continue;
+
         for (size_t j = 0; j < SAL_N_ELEMENTS(aConversionTab); ++j)
         {
             if (rtl_str_compare(pName, aConversionTab[j].pNativeType) == 0)
@@ -256,7 +260,7 @@ class VclGtkClipboard :
 public:
 
     explicit VclGtkClipboard(GdkAtom nSelection);
-    virtual ~VclGtkClipboard();
+    virtual ~VclGtkClipboard() override;
 
     /*
      * XServiceInfo
@@ -743,7 +747,7 @@ void GtkDropTarget::initialize(const Sequence<Any>& rArguments) throw( Exception
                                static_cast<OWeakObject*>(this));
     }
 
-    sal_Size nFrame = 0;
+    sal_IntPtr nFrame = 0;
     rArguments.getConstArray()[1] >>= nFrame;
 
     if (!nFrame)
@@ -879,7 +883,7 @@ void GtkDragSource::initialize(const css::uno::Sequence<css::uno::Any >& rArgume
                                static_cast<OWeakObject*>(this));
     }
 
-    sal_Size nFrame = 0;
+    sal_IntPtr nFrame = 0;
     rArguments.getConstArray()[1] >>= nFrame;
 
     if (!nFrame)

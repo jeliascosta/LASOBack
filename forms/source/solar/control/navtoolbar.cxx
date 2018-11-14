@@ -171,12 +171,7 @@ namespace frm
         if ( pPositionWindow )
             pPositionWindow->setDispatcher( _pDispatcher );
 
-        updateFeatureStates( );
-    }
-
-
-    void NavigationToolBar::updateFeatureStates( )
-    {
+        // update feature states
         for ( sal_uInt16 nPos = 0; nPos < m_pToolbar->GetItemCount(); ++nPos )
         {
             sal_uInt16 nItemId = m_pToolbar->GetItemId( nPos );
@@ -337,7 +332,7 @@ namespace frm
             }
         }
 
-        forEachItemWindow( &NavigationToolBar::adjustItemWindowWidth, nullptr );
+        forEachItemWindow( &NavigationToolBar::adjustItemWindowWidth );
 
         implUpdateImages();
     }
@@ -486,12 +481,12 @@ namespace frm
                 break;
 
             case StateChangedType::ControlFont:
-                forEachItemWindow( &NavigationToolBar::setItemControlFont, nullptr );
-                forEachItemWindow( &NavigationToolBar::adjustItemWindowWidth, nullptr );
+                forEachItemWindow( &NavigationToolBar::setItemControlFont );
+                forEachItemWindow( &NavigationToolBar::adjustItemWindowWidth );
                 break;
 
             case StateChangedType::ControlForeground:
-                forEachItemWindow( &NavigationToolBar::setItemControlForeground, nullptr );
+                forEachItemWindow( &NavigationToolBar::setItemControlForeground );
                 break;
 
             case StateChangedType::Mirroring:
@@ -556,14 +551,14 @@ namespace frm
     }
 
 
-    void NavigationToolBar::forEachItemWindow( ItemWindowHandler _handler, const void* _pParam )
+    void NavigationToolBar::forEachItemWindow( ItemWindowHandler _handler )
     {
         for ( sal_uInt16 item = 0; item < m_pToolbar->GetItemCount(); ++item )
         {
             sal_uInt16 nItemId = m_pToolbar->GetItemId( item );
             vcl::Window* pItemWindow = m_pToolbar->GetItemWindow( nItemId );
             if ( pItemWindow )
-                (this->*_handler)( nItemId, pItemWindow, _pParam );
+                (this->*_handler)( nItemId, pItemWindow );
         }
     }
 
@@ -603,7 +598,7 @@ namespace frm
     }
 #endif
 
-    void NavigationToolBar::setItemControlFont( sal_uInt16 /* _nItemId */, vcl::Window* _pItemWindow, const void* /* _pParam */ ) const
+    void NavigationToolBar::setItemControlFont( sal_uInt16 /* _nItemId */, vcl::Window* _pItemWindow ) const
     {
         if ( IsControlFont() )
             _pItemWindow->SetControlFont( GetControlFont() );
@@ -612,7 +607,7 @@ namespace frm
     }
 
 
-    void NavigationToolBar::setItemControlForeground( sal_uInt16 /* _nItemId */, vcl::Window* _pItemWindow, const void* /* _pParam */ ) const
+    void NavigationToolBar::setItemControlForeground( sal_uInt16 /* _nItemId */, vcl::Window* _pItemWindow ) const
     {
         if ( IsControlForeground() )
             _pItemWindow->SetControlForeground( GetControlForeground() );
@@ -622,7 +617,7 @@ namespace frm
     }
 
 
-    void NavigationToolBar::adjustItemWindowWidth( sal_uInt16 _nItemId, vcl::Window* _pItemWindow, const void* /* _pParam */ ) const
+    void NavigationToolBar::adjustItemWindowWidth( sal_uInt16 _nItemId, vcl::Window* _pItemWindow ) const
     {
         OUString sItemText;
         switch ( _nItemId )

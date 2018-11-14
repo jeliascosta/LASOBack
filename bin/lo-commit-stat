@@ -4,9 +4,13 @@
 #!/usr/bin/perl
 
 use strict;
+use warnings;
 use LWP::UserAgent;
 use utf8;
 use File::Temp;
+use Encode;
+use open ':encoding(utf8)';
+use open ':std' => ':encoding(utf8)';
 
 my %module_dirname = (
     "core"              => "",
@@ -68,7 +72,6 @@ sub search_bugs($$$$)
         # someone mistyped fdo as fd0
         $bug =~ s/^fd0\#/fdo#/;
         # save the bug number
-        %{$pdata->{$module}{$commit_id}{'bugs'}} = () if (! defined %{$pdata->{$module}{$commit_id}{'bugs'}});
         $pdata->{$module}{$commit_id}{'bugs'}{$bug} = 1;
     }
 
@@ -155,26 +158,24 @@ sub load_git_log($$$$$$$)
 #    }
 
     open (GIT, "$cmd 2>&1|") || die "Can't run $cmd: $!";
-    %{$pdata->{$module}} = ();
 
     while (my $line = <GIT>) {
         chomp $line;
 
         if ( $line =~ m/^commit ([0-9a-z]{20})/ ) {
-            $commit_id = "$1";
+            $commit_id = $1;
             $summary=undef;
-            %{$pdata->{$module}{"$commit_id"}} = ();
             next;
         }
 
         if ( $line =~ /^Author:\s*([^\<]*)\<([^\>]*)>/ ) {
             # get rid of extra empty spaces;
-            my $name = "$1";
+            my $name = $1;
+            my $email = $2;
             $name =~ s/\s+$//;
             die "Error: Author already defined for the commit {$commit_id}\n" if defined ($pdata->{$module}{$commit_id}{'author'});
-            %{$pdata->{$module}{$commit_id}{'author'}} = ();
-            $pdata->{$module}{$commit_id}{'author'}{'name'} = "$name";
-            $pdata->{$module}{$commit_id}{'author'}{'email'} = "$2";
+            $pdata->{$module}{$commit_id}{'author'}{'name'} = $name;
+            $pdata->{$module}{$commit_id}{'author'}{'email'} = $email;
             next;
         }
 
@@ -262,7 +263,6 @@ sub get_bug_list($$$)
     foreach my $module ( keys %{$pdata}) {
         foreach my $id ( keys %{$pdata->{$module}}) {
             foreach my $bug (keys %{$pdata->{$module}{$id}{'bugs'}}) {
-                %{$pbugs->{$bug}} = () if (! defined %{$pbugs->{$bug}});
                 my $author = $pdata->{$module}{$id}{'author'}{'name'};
                 my $summary = $pdata->{$module}{$id}{'summary'};
                 $pbugs->{$bug}{'summary'} = $summary;
@@ -383,19 +383,16 @@ sub get_bug_name($$)
         $ua->env_proxy;
         my $response = $ua->get($url);
         if ($response->is_success) {
-            my $title = $response->title;
-            if ( $title =~ s/^Bug \d+ \S+ // ) {
+            my $title = decode('utf8', $response->title);
+            if ( $title =~ s/^(?:Bug $bug_number \S+|$bug_number –) // ) {
                 print "$title\n";
                 return $title;
             } else {
-                print "warning: not found; using commit message (only got $title)\n";
+                print "warning: not found; using commit message (only got $title)";
             }
-        } else {
-            print "\n";
         }
-    } else {
-        print "\n";
     }
+    print "\n";
 
     return $summary;
 }
@@ -404,7 +401,9 @@ sub print_bugs($$$$)
 {
     my ($pbugs, $log, $wiki) = @_;
 
-    foreach my $bug ( sort { $a cmp $b } keys %{$pbugs}) {
+    # sort alphabetically by bugzilla-type, but whithin that numerically
+    foreach my $bug ( sort { ($a =~ /(\D+)/)[0] cmp ($b =~ /(\D+)/)[0] ||
+                             ($a =~ /(\d+)/)[0] <=> ($b =~ /(\d+)/)[0] } keys %{$pbugs}) {
         my $summary = $pbugs->{$bug}{'summary'};
 
         my $authors = "";
@@ -506,7 +505,6 @@ my $branch_name;
 my $git_command = "git log";
 my $git_cherry;
 my $git_args = "";
-my $branch_name;
 my %data;
 my %bugs = ();
 
@@ -555,7 +553,7 @@ foreach my $arg (@ARGV) {
 }
 
 # default log
-if (%generate_log == 0) {
+unless (%generate_log) {
     $generate_log{"commits"} = 1;
 }
 

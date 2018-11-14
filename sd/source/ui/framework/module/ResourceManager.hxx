@@ -51,7 +51,7 @@ public:
     ResourceManager (
         const css::uno::Reference<css::frame::XController>& rxController,
         const css::uno::Reference<css::drawing::framework::XResourceId>& rxResourceId);
-    virtual ~ResourceManager();
+    virtual ~ResourceManager() override;
 
     /** Remember the given URL as one of a center pane view for which to
         activate the resource managed by the called object.
@@ -97,7 +97,6 @@ private:
     void HandleResourceRequest(
         bool bActivation,
         const css::uno::Reference<css::drawing::framework::XConfiguration>& rxConfiguration);
-    void UpdateForMainViewShell();
 };
 
 } } // end of namespace sd::framework

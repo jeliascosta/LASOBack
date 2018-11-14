@@ -410,7 +410,7 @@ public:
             bool const bProgress = false, bool const bBlockMode = false,
             bool const bOrganizerMode = false);
 
-    virtual ~XMLTextImportHelper();
+    virtual ~XMLTextImportHelper() override;
 
     void SetCursor(
             const css::uno::Reference< css::text::XTextCursor >& rCursor );
@@ -496,7 +496,7 @@ public:
             const OUString& rTargetFrameName,
             const OUString& rStyleName,
             const OUString& rVisitedStyleName,
-            XMLEventsImportContext* pEvents = nullptr);
+            XMLEventsImportContext* pEvents);
     void SetRuby(
             SvXMLImport& rImport,
             const css::uno::Reference< css::text::XTextCursor >& rCursor,
@@ -530,10 +530,17 @@ public:
 
     const css::uno::Reference< css::container::XNameContainer> & GetPageStyles() const;
 
+    const css::uno::Reference< css::container::XNameContainer> & GetCellStyles() const;
+
     const css::uno::Reference< css::container::XIndexReplace > &
         GetChapterNumbering() const;
 
     bool HasFrameByName( const OUString& rName ) const;
+
+    bool IsDuplicateFrame(const OUString& sName, sal_Int32 nX, sal_Int32 nY, sal_Int32 nWidth, sal_Int32 nHeight) const;
+    void StoreLastImportedFrameName(const OUString& rName);
+    void ClearLastImportedTextFrameName();
+
     void ConnectFrameChains( const OUString& rFrmName,
         const OUString& rNextFrmName,
         const css::uno::Reference< css::beans::XPropertySet >& rFrmPropSet );
@@ -552,6 +559,7 @@ public:
     static SvXMLImportPropertyMapper* CreateParaDefaultExtPropMapper(SvXMLImport&);
     static SvXMLImportPropertyMapper* CreateTableDefaultExtPropMapper(SvXMLImport&);
     static SvXMLImportPropertyMapper* CreateTableRowDefaultExtPropMapper(SvXMLImport&);
+    static SvXMLImportPropertyMapper* CreateTableCellExtPropMapper(SvXMLImport&);
 
     SvI18NMap& GetRenameMap();
 

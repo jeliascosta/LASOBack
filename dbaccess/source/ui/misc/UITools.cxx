@@ -436,8 +436,6 @@ void fillTypeInfo(  const Reference< css::sdbc::XConnection>& _rxConnection,
     // Information for a single SQL type
     if(xRs.is())
     {
-        static const char aB1[] = " [ ";
-        static const char aB2[] = " ]";
         Reference<XResultSetMetaData> xResultSetMetaData = Reference<XResultSetMetaDataSupplier>(xRs,UNO_QUERY)->getMetaData();
         ::connectivity::ORowSetValue aValue;
         ::std::vector<sal_Int32> aTypes;
@@ -620,11 +618,11 @@ void fillTypeInfo(  const Reference< css::sdbc::XConnection>& _rxConnection,
             if ( !aName.isEmpty() )
             {
                 pInfo->aUIName = aName;
-                pInfo->aUIName += aB1;
+                pInfo->aUIName += " [ ";
             }
             pInfo->aUIName += pInfo->aTypeName;
             if ( !aName.isEmpty() )
-                pInfo->aUIName += aB2;
+                pInfo->aUIName += " ]";
             // Now that we have the type info, save it in the multimap
             _rTypeInfoMap.insert(OTypeInfoMap::value_type(pInfo->nType,pInfo));
         }
@@ -821,7 +819,7 @@ bool callColumnFormatDialog(vcl::Window* _pParent,
     };
 
     SfxItemPool* pPool = new SfxItemPool(OUString("GridBrowserProperties"), SBA_DEF_RANGEFORMAT, SBA_ATTR_ALIGN_HOR_JUSTIFY, aItemInfos, pDefaults);
-    pPool->SetDefaultMetric( SFX_MAPUNIT_TWIP );    // ripped, don't understand why
+    pPool->SetDefaultMetric( MapUnit::MapTwip );    // ripped, don't understand why
     pPool->FreezeIdRanges();                        // the same
 
     std::unique_ptr<SfxItemSet> pFormatDescriptor(new SfxItemSet(*pPool, aAttrMap));
@@ -990,11 +988,11 @@ void adjustBrowseBoxColumnWidth( ::svt::EditBrowseBox* _pBox, sal_uInt16 _nColId
     sal_uInt32 nDefaultWidth = _pBox->GetDefaultColumnWidth( _pBox->GetColumnTitle( _nColId ) );
     if ( nDefaultWidth != _pBox->GetColumnWidth( _nColId ) )
     {
-        Size aSizeMM = _pBox->PixelToLogic( Size( _pBox->GetColumnWidth( _nColId ), 0 ), MapMode( MAP_MM ) );
+        Size aSizeMM = _pBox->PixelToLogic( Size( _pBox->GetColumnWidth( _nColId ), 0 ), MapMode( MapUnit::MapMM ) );
         nColSize = aSizeMM.Width() * 10;
     }
 
-    Size aDefaultMM = _pBox->PixelToLogic( Size( nDefaultWidth, 0 ), MapMode( MAP_MM ) );
+    Size aDefaultMM = _pBox->PixelToLogic( Size( nDefaultWidth, 0 ), MapMode( MapUnit::MapMM ) );
 
     ScopedVclPtrInstance< DlgSize > aColumnSizeDlg( _pBox, nColSize, false, aDefaultMM.Width() * 10 );
     if ( aColumnSizeDlg->Execute() )
@@ -1007,7 +1005,7 @@ void adjustBrowseBoxColumnWidth( ::svt::EditBrowseBox* _pBox, sal_uInt16 _nColId
         else
         {
             Size aSizeMM( nValue / 10, 0 );
-            nValue = _pBox->LogicToPixel( aSizeMM, MapMode( MAP_MM ) ).Width();
+            nValue = _pBox->LogicToPixel( aSizeMM, MapMode( MapUnit::MapMM ) ).Width();
         }
         _pBox->SetColumnWidth( _nColId, nValue );
     }

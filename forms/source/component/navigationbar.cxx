@@ -145,21 +145,11 @@ namespace frm
 
     OUString SAL_CALL ONavigationBarModel::getImplementationName()  throw(RuntimeException, std::exception)
     {
-        return getImplementationName_Static();
+        return OUString( "com.sun.star.comp.form.ONavigationBarModel" );
     }
 
 
     Sequence< OUString > SAL_CALL ONavigationBarModel::getSupportedServiceNames()  throw(RuntimeException, std::exception)
-    {
-        return getSupportedServiceNames_Static();
-    }
-
-    OUString SAL_CALL ONavigationBarModel::getImplementationName_Static()
-    {
-        return OUString( "com.sun.star.comp.form.ONavigationBarModel" );
-    }
-
-    Sequence< OUString > SAL_CALL ONavigationBarModel::getSupportedServiceNames_Static()
     {
         Sequence< OUString > aSupported = OControlModel::getSupportedServiceNames_Static();
         aSupported.realloc( aSupported.getLength() + 2 );
@@ -168,11 +158,6 @@ namespace frm
         pArray[ aSupported.getLength() - 2 ] = "com.sun.star.awt.UnoControlModel";
         pArray[ aSupported.getLength() - 1 ] = FRM_SUN_COMPONENT_NAVTOOLBAR;
         return aSupported;
-    }
-
-    void SAL_CALL ONavigationBarModel::disposing()
-    {
-        OControlModel::disposing( );
     }
 
     OUString SAL_CALL ONavigationBarModel::getServiceName() throw ( RuntimeException, std::exception )
@@ -346,7 +331,7 @@ namespace frm
 
 
     sal_Bool SAL_CALL ONavigationBarModel::convertFastPropertyValue( Any& _rConvertedValue, Any& _rOldValue,
-        sal_Int32 _nHandle, const Any& _rValue ) throw( IllegalArgumentException )
+        sal_Int32 _nHandle, const Any& _rValue ) throw( IllegalArgumentException, RuntimeException, std::exception )
     {
         bool bModified = false;
 

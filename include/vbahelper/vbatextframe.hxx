@@ -18,10 +18,29 @@
  */
 #ifndef INCLUDED_VBAHELPER_VBATEXTFRAME_HXX
 #define INCLUDED_VBAHELPER_VBATEXTFRAME_HXX
+
+#include <exception>
+
+#include <com/sun/star/uno/Any.hxx>
+#include <com/sun/star/uno/Reference.hxx>
+#include <com/sun/star/uno/RuntimeException.hpp>
+#include <com/sun/star/uno/Sequence.hxx>
 #include <ooo/vba/msforms/XTextFrame.hpp>
-#include <com/sun/star/drawing/XShape.hpp>
-#include <com/sun/star/beans/XPropertySet.hpp>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
+#include <vbahelper/vbadllapi.h>
+#include <vbahelper/vbahelper.hxx>
 #include <vbahelper/vbahelperinterface.hxx>
+
+namespace com { namespace sun { namespace star {
+    namespace beans { class XPropertySet; }
+    namespace drawing { class XShape; }
+    namespace uno { class XComponentContext; }
+} } }
+
+namespace ooo { namespace vba {
+    class XHelperInterface;
+} }
 
 typedef InheritedHelperInterfaceWeakImpl< ov::msforms::XTextFrame > VbaTextFrame_BASE;
 
@@ -37,8 +56,8 @@ protected:
     sal_Int32 getMargin( const OUString& sMarginType );
     void setMargin( const OUString& sMarginType, float fMargin );
 public:
-    VbaTextFrame( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext >& xContext , css::uno::Reference< css::drawing::XShape > xShape);
-    virtual ~VbaTextFrame() {}
+    VbaTextFrame( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext >& xContext , css::uno::Reference< css::drawing::XShape > const & xShape);
+    virtual ~VbaTextFrame() override {}
     // Attributes
     virtual sal_Bool SAL_CALL getAutoSize() throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setAutoSize( sal_Bool _autosize ) throw (css::uno::RuntimeException, std::exception) override;

@@ -34,7 +34,6 @@
 
 
 #include <editeng/editview.hxx>
-#include <svl/smplhint.hxx>
 #include <svl/whiter.hxx>
 #include <editeng/outlobj.hxx>
 #include <editeng/outliner.hxx>
@@ -85,8 +84,8 @@ bool SdrTextObj::AdjustTextFrameWidthAndHeight( Rectangle& rR, bool bHgt, bool b
     SdrTextAniDirection eAniDir = GetTextAniDirection();
 
     bool bScroll = eAniKind == SDRTEXTANI_SCROLL || eAniKind == SDRTEXTANI_ALTERNATE || eAniKind == SDRTEXTANI_SLIDE;
-    bool bHScroll = bScroll && (eAniDir == SDRTEXTANI_LEFT || eAniDir == SDRTEXTANI_RIGHT);
-    bool bVScroll = bScroll && (eAniDir == SDRTEXTANI_UP || eAniDir == SDRTEXTANI_DOWN);
+    bool bHScroll = bScroll && (eAniDir == SdrTextAniDirection::Left || eAniDir == SdrTextAniDirection::Right);
+    bool bVScroll = bScroll && (eAniDir == SdrTextAniDirection::Up || eAniDir == SdrTextAniDirection::Down);
 
     Rectangle aOldRect = rR;
     long nHgt = 0, nMinHgt = 0, nMaxHgt = 0;
@@ -290,7 +289,7 @@ bool SdrTextObj::AdjustTextFrameWidthAndHeight()
         }
         SetChanged();
         BroadcastObjectChange();
-        SendUserCall(SDRUSERCALL_RESIZE,aBoundRect0);
+        SendUserCall(SdrUserCallType::Resize,aBoundRect0);
     }
     return bRet;
 }
@@ -420,7 +419,7 @@ void SdrTextObj::RemoveOutlinerCharacterAttribs( const std::vector<sal_uInt16>& 
 bool SdrTextObj::HasText() const
 {
     if( pEdtOutl )
-        return HasEditText();
+        return HasTextImpl(pEdtOutl);
 
     OutlinerParaObject* pOPO = GetOutlinerParaObject();
 

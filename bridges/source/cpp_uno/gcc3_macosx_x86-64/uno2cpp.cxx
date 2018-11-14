@@ -29,10 +29,10 @@
 #include "com/sun/star/uno/RuntimeException.hpp"
 #include <uno/data.h>
 
-#include <bridges/cpp_uno/shared/bridge.hxx>
-#include <bridges/cpp_uno/shared/types.hxx>
-#include "bridges/cpp_uno/shared/unointerfaceproxy.hxx"
-#include "bridges/cpp_uno/shared/vtables.hxx"
+#include <bridge.hxx>
+#include <types.hxx>
+#include "unointerfaceproxy.hxx"
+#include "vtables.hxx"
 
 #include "abi.hxx"
 #include "callvirtualmethod.hxx"
@@ -242,8 +242,7 @@ static void cpp_call(
                 pAdjustedThisPtr, aVtableSlot.index,
                 pCppReturn, pReturnTypeRef, bSimpleReturn,
                 pStackStart, ( pStack - pStackStart ),
-                pGPR, nGPR,
-                pFPR, nFPR );
+                pGPR, pFPR );
         } catch (const Exception &) {
             throw;
         } catch (const std::exception & e) {

@@ -105,7 +105,7 @@ Any SAL_CALL OPreparedStatement::queryInterface( const Type & rType ) throw(Runt
     return aRet.hasValue() ? aRet : OPreparedStatement_BASE::queryInterface(rType);
 }
 
-::com::sun::star::uno::Sequence< ::com::sun::star::uno::Type > SAL_CALL OPreparedStatement::getTypes(  ) throw(::com::sun::star::uno::RuntimeException, std::exception)
+css::uno::Sequence< css::uno::Type > SAL_CALL OPreparedStatement::getTypes(  ) throw(css::uno::RuntimeException, std::exception)
 {
     return ::comphelper::concatSequences(OPreparedStatement_BASE::getTypes(),OStatement_BASE2::getTypes());
 }
@@ -171,7 +171,7 @@ sal_Bool SAL_CALL OPreparedStatement::execute(  ) throw(SQLException, RuntimeExc
     {
         SQLRETURN nReturn = N3SQLExecute(m_aStatementHandle);
 
-        OTools::ThrowException(m_pConnection,nReturn,m_aStatementHandle,SQL_HANDLE_STMT,*this);
+        OTools::ThrowException(m_pConnection.get(),nReturn,m_aStatementHandle,SQL_HANDLE_STMT,*this);
         bool needData = nReturn == SQL_NEED_DATA;
 
         // Now loop while more data is needed (i.e. a data-at-
@@ -247,7 +247,7 @@ Reference< XConnection > SAL_CALL OPreparedStatement::getConnection(  ) throw(SQ
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OStatement_BASE::rBHelper.bDisposed);
 
-    return Reference< XConnection >(m_pConnection);
+    return Reference< XConnection >(m_pConnection.get());
 }
 
 
@@ -409,7 +409,7 @@ void OPreparedStatement::setParameter(const sal_Int32 parameterIndex, const sal_
                   _nDataAllocLen,
                   &rDataLen);
 
-    OTools::ThrowException(m_pConnection, nRetcode, m_aStatementHandle, SQL_HANDLE_STMT, *this);
+    OTools::ThrowException(m_pConnection.get(), nRetcode, m_aStatementHandle, SQL_HANDLE_STMT, *this);
 }
 
 void SAL_CALL OPreparedStatement::setByte( const sal_Int32 parameterIndex, const sal_Int8 x ) throw(SQLException, RuntimeException, std::exception)
@@ -546,7 +546,7 @@ void SAL_CALL OPreparedStatement::setNull( sal_Int32 parameterIndex, const sal_I
                                             0,
                                             lenBuf
                                             );
-    OTools::ThrowException(m_pConnection,nReturn,m_aStatementHandle,SQL_HANDLE_STMT,*this);
+    OTools::ThrowException(m_pConnection.get(),nReturn,m_aStatementHandle,SQL_HANDLE_STMT,*this);
 }
 
 
@@ -643,7 +643,7 @@ void SAL_CALL OPreparedStatement::setBytes( sal_Int32 parameterIndex, const Sequ
 }
 
 
-void SAL_CALL OPreparedStatement::setCharacterStream( sal_Int32 parameterIndex, const Reference< ::com::sun::star::io::XInputStream >& x, sal_Int32 length ) throw(SQLException, RuntimeException, std::exception)
+void SAL_CALL OPreparedStatement::setCharacterStream( sal_Int32 parameterIndex, const Reference< css::io::XInputStream >& x, sal_Int32 length ) throw(SQLException, RuntimeException, std::exception)
 {
     // LEM: It is quite unclear to me what the interface here is.
     // The XInputStream provides *bytes*, not characters.
@@ -651,7 +651,7 @@ void SAL_CALL OPreparedStatement::setCharacterStream( sal_Int32 parameterIndex, 
 }
 
 
-void SAL_CALL OPreparedStatement::setBinaryStream( sal_Int32 parameterIndex, const Reference< ::com::sun::star::io::XInputStream >& x, sal_Int32 length ) throw(SQLException, RuntimeException, std::exception)
+void SAL_CALL OPreparedStatement::setBinaryStream( sal_Int32 parameterIndex, const Reference< css::io::XInputStream >& x, sal_Int32 length ) throw(SQLException, RuntimeException, std::exception)
 {
     setStream(parameterIndex, x, length, DataType::LONGVARBINARY);
 }
@@ -917,7 +917,7 @@ void OPreparedStatement::prepareStatement()
         OSL_ENSURE(m_aStatementHandle,"StatementHandle is null!");
         OString aSql(OUStringToOString(m_sSqlStatement,getOwnConnection()->getTextEncoding()));
         SQLRETURN nReturn = N3SQLPrepare(m_aStatementHandle, reinterpret_cast<SDB_ODBC_CHAR *>(const_cast<char *>(aSql.getStr())), aSql.getLength());
-        OTools::ThrowException(m_pConnection,nReturn,m_aStatementHandle,SQL_HANDLE_STMT,*this);
+        OTools::ThrowException(m_pConnection.get(),nReturn,m_aStatementHandle,SQL_HANDLE_STMT,*this);
         m_bPrepared = true;
         initBoundParam();
     }

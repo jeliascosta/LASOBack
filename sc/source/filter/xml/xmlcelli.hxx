@@ -96,6 +96,7 @@ class ScXMLTableRowCellContext : public ScXMLImportContext
     bool mbEditEngineHasText;
     bool mbHasFormatRuns;
     bool mbHasStyle;
+    bool mbPossibleEmptyDisplay;
 
     void DoMerge(const ScAddress& rScCellPos, const SCCOL nCols, const SCROW nRows);
 
@@ -103,9 +104,7 @@ class ScXMLTableRowCellContext : public ScXMLImportContext
     void SetContentValidation( const ScAddress& rScCellPos );
 
     void LockSolarMutex();
-    void UnlockSolarMutex();
 
-    bool HasSpecialContent() const;
     bool CellsAreRepeated() const;
 
     void SetFormulaCell             ( ScFormulaCell* pFCell ) const;
@@ -135,7 +134,7 @@ public:
                        const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                        const bool bIsCovered, const sal_Int32 nRepeatedRows );
 
-    virtual ~ScXMLTableRowCellContext();
+    virtual ~ScXMLTableRowCellContext() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,

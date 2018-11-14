@@ -132,7 +132,7 @@ bool PCXReader::ReadPCX(Graphic & rGraphic)
     /*
         // set resolution:
         if (nResX!=0 && nResY!=0) {
-            MapMode aMapMode(MAP_INCH,Point(0,0),Fraction(1,nResX),Fraction(1,nResY));
+            MapMode aMapMode(MapUnit::MapInch,Point(0,0),Fraction(1,nResX),Fraction(1,nResY));
             rBitmap.SetPrefMapMode(aMapMode);
             rBitmap.SetPrefSize(Size(nWidth,nHeight));
         }
@@ -237,7 +237,7 @@ void PCXReader::ImplReadBody(BitmapWriteAccess * pAcc)
         for ( np = 0; np < nPlanes; np++)
         {
             if ( nEncoding == 0)
-                m_rPCX.Read( static_cast<void *>(pPlane[ np ]), nBytesPerPlaneLin );
+                m_rPCX.ReadBytes( static_cast<void *>(pPlane[ np ]), nBytesPerPlaneLin );
             else
             {
                 pDest = pPlane[ np ];

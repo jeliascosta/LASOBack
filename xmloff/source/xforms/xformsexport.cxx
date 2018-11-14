@@ -256,7 +256,7 @@ static const ExportTable aXFormsBindingTable[] =
     TABLE_ENTRY( "RequiredExpression",   NONE, REQUIRED,   xforms_string ),
     TABLE_ENTRY( "ConstraintExpression", NONE, CONSTRAINT, xforms_string ),
     TABLE_ENTRY( "CalculateExpression",  NONE, CALCULATE,  xforms_string ),
-    // type handled separatly, for type name <-> XSD type conversion
+    // type handled separately, for type name <-> XSD type conversion
     // TABLE_ENTRY( "Type",                 NONE, TYPE,       xforms_string ),
     TABLE_END
 };
@@ -562,7 +562,7 @@ void exportXFormsSchemas( SvXMLExport& rExport,
         if( xTypes.is() )
         {
             Reference<XEnumeration> xEnum = xTypes->createEnumeration();
-            DBG_ASSERT( xEnum.is(), "no enum?" );
+            SAL_WARN_IF( !xEnum.is(), "xmloff", "no enum?" );
             while( xEnum->hasMoreElements() )
             {
                 Reference<XPropertySet> xType( xEnum->nextElement(), UNO_QUERY );

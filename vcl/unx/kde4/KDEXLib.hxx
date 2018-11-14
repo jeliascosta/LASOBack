@@ -56,7 +56,7 @@ class KDEXLib : public QObject, public SalXLib
         int m_frameWidth;
         bool m_isGlibEventLoopType;
         bool m_allowKdeDialogs;
-        bool blockIdleTimeout;
+        bool m_blockIdleTimeout;
 
     private:
         void setupEventLoop();
@@ -78,7 +78,7 @@ class KDEXLib : public QObject, public SalXLib
 
     public:
         KDEXLib();
-        virtual ~KDEXLib();
+        virtual ~KDEXLib() override;
 
         virtual void Init() override;
         virtual SalYieldResult Yield( bool bWait, bool bHandleAllCurrentEvents ) override;

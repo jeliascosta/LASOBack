@@ -95,9 +95,7 @@ SfxManageStyleSheetPage::SfxManageStyleSheetPage(vcl::Window* pParent, const Sfx
     else
         m_pEditLinkStyleBtn->Enable();
 
-    ResMgr* pResMgr = SfxGetpApp()->GetModule_Impl()->GetResMgr();
-    OSL_ENSURE( pResMgr, "No ResMgr in Module" );
-    pFamilies = new SfxStyleFamilies( ResId( DLG_STYLE_DESIGNER, *pResMgr ) );
+    pFamilies = SfxApplication::GetModule_Impl()->CreateStyleFamilies();
 
     SfxStyleSheetBasePool* pPool = nullptr;
     SfxObjectShell* pDocShell = SfxObjectShell::Current();
@@ -181,7 +179,7 @@ SfxManageStyleSheetPage::SfxManageStyleSheetPage(vcl::Window* pParent, const Sfx
     size_t i;
     for ( i = 0; i < nCount; ++i )
     {
-        pItem = pFamilies->at( i );
+        pItem = &(pFamilies->at(i));
 
         if ( pItem->GetFamily() == pStyle->GetFamily() )
             break;
@@ -201,17 +199,17 @@ SfxManageStyleSheetPage::SfxManageStyleSheetPage(vcl::Window* pParent, const Sfx
 
         for ( i = 0; i < nCount; ++i )
         {
-            SfxFilterTupel* pTupel = rList[ i ];
+            const SfxFilterTupel& rTupel = rList[ i ];
 
-            if ( pTupel->nFlags != SFXSTYLEBIT_AUTO     &&
-                 pTupel->nFlags != SFXSTYLEBIT_USED     &&
-                 pTupel->nFlags != SFXSTYLEBIT_ALL_VISIBLE &&
-                 pTupel->nFlags != SFXSTYLEBIT_ALL )
+            if ( rTupel.nFlags != SFXSTYLEBIT_AUTO     &&
+                 rTupel.nFlags != SFXSTYLEBIT_USED     &&
+                 rTupel.nFlags != SFXSTYLEBIT_ALL_VISIBLE &&
+                 rTupel.nFlags != SFXSTYLEBIT_ALL )
             {
-                m_pFilterLb->InsertEntry( pTupel->aName, nIdx );
+                m_pFilterLb->InsertEntry( rTupel.aName, nIdx );
                 m_pFilterLb->SetEntryData(nIdx, reinterpret_cast<void*>(i));
 
-                if ( ( pTupel->nFlags & nMask ) == nMask )
+                if ( ( rTupel.nFlags & nMask ) == nMask )
                     nStyleFilterIdx = nIdx;
                 ++nIdx;
             }
@@ -311,7 +309,7 @@ void SfxManageStyleSheetPage::SetDescriptionText_Impl()
 */
 
 {
-    SfxMapUnit eUnit = SFX_MAPUNIT_CM;
+    MapUnit eUnit = MapUnit::MapCM;
     FieldUnit eFieldUnit( FUNIT_CM );
     SfxModule* pModule = SfxModule::GetActiveModule();
     if ( pModule )
@@ -323,15 +321,15 @@ void SfxManageStyleSheetPage::SetDescriptionText_Impl()
 
     switch ( eFieldUnit )
     {
-        case FUNIT_MM:      eUnit = SFX_MAPUNIT_MM; break;
+        case FUNIT_MM:      eUnit = MapUnit::MapMM; break;
         case FUNIT_CM:
         case FUNIT_M:
-        case FUNIT_KM:      eUnit = SFX_MAPUNIT_CM; break;
+        case FUNIT_KM:      eUnit = MapUnit::MapCM; break;
         case FUNIT_POINT:
-        case FUNIT_PICA:    eUnit = SFX_MAPUNIT_POINT; break;
+        case FUNIT_PICA:    eUnit = MapUnit::MapPoint; break;
         case FUNIT_INCH:
         case FUNIT_FOOT:
-        case FUNIT_MILE:    eUnit = SFX_MAPUNIT_INCH; break;
+        case FUNIT_MILE:    eUnit = MapUnit::MapInch; break;
 
         default:
             OSL_FAIL( "non supported field unit" );
@@ -339,7 +337,7 @@ void SfxManageStyleSheetPage::SetDescriptionText_Impl()
     m_pDescFt->SetText( pStyle->GetDescription( eUnit ) );
 }
 
-IMPL_LINK_NOARG_TYPED( SfxManageStyleSheetPage, EditStyleSelectHdl_Impl, ListBox&, void )
+IMPL_LINK_NOARG( SfxManageStyleSheetPage, EditStyleSelectHdl_Impl, ListBox&, void )
 {
     OUString aTemplName(m_pFollowLb->GetSelectEntry());
     OUString aEditTemplName(m_pNameRo->GetText());
@@ -349,7 +347,7 @@ IMPL_LINK_NOARG_TYPED( SfxManageStyleSheetPage, EditStyleSelectHdl_Impl, ListBox
         m_pEditStyleBtn->Disable();
 }
 
-IMPL_LINK_NOARG_TYPED( SfxManageStyleSheetPage, EditStyleHdl_Impl, Button*, void )
+IMPL_LINK_NOARG( SfxManageStyleSheetPage, EditStyleHdl_Impl, Button*, void )
 {
     OUString aTemplName(m_pFollowLb->GetSelectEntry());
     if (Execute_Impl( SID_STYLE_EDIT, aTemplName, OUString(),(sal_uInt16)pStyle->GetFamily() ))
@@ -357,7 +355,7 @@ IMPL_LINK_NOARG_TYPED( SfxManageStyleSheetPage, EditStyleHdl_Impl, Button*, void
     }
 }
 
-IMPL_LINK_NOARG_TYPED( SfxManageStyleSheetPage, EditLinkStyleSelectHdl_Impl, ListBox&, void )
+IMPL_LINK_NOARG( SfxManageStyleSheetPage, EditLinkStyleSelectHdl_Impl, ListBox&, void )
 {
     sal_Int32 linkSelectPos = m_pBaseLb->GetSelectEntryPos();
     if ( linkSelectPos == 0 )
@@ -366,7 +364,7 @@ IMPL_LINK_NOARG_TYPED( SfxManageStyleSheetPage, EditLinkStyleSelectHdl_Impl, Lis
         m_pEditLinkStyleBtn->Enable();
 }
 
-IMPL_LINK_NOARG_TYPED( SfxManageStyleSheetPage, EditLinkStyleHdl_Impl, Button*, void )
+IMPL_LINK_NOARG( SfxManageStyleSheetPage, EditLinkStyleHdl_Impl, Button*, void )
 {
     OUString aTemplName(m_pBaseLb->GetSelectEntry());
     if (aTemplName != SfxResId(STR_NONE))
@@ -408,7 +406,7 @@ bool SfxManageStyleSheetPage::Execute_Impl(
 
 }
 
-IMPL_LINK_TYPED( SfxManageStyleSheetPage, GetFocusHdl, Control&, rControl, void )
+IMPL_LINK( SfxManageStyleSheetPage, GetFocusHdl, Control&, rControl, void )
 
 /*  [Description]
 
@@ -420,7 +418,7 @@ IMPL_LINK_TYPED( SfxManageStyleSheetPage, GetFocusHdl, Control&, rControl, void 
     aBuf = comphelper::string::stripStart(pEdit->GetText(), ' ');
 }
 
-IMPL_LINK_TYPED( SfxManageStyleSheetPage, LoseFocusHdl, Control&, rControl, void )
+IMPL_LINK( SfxManageStyleSheetPage, LoseFocusHdl, Control&, rControl, void )
 
 /*  [Description]
 
@@ -471,7 +469,7 @@ bool SfxManageStyleSheetPage::FillItemSet( SfxItemSet* rSet )
         bModified = true;
         OSL_ENSURE( pItem, "No Item" );
         // is only possibly for user templates
-        sal_uInt16 nMask = pItem->GetFilterList()[ reinterpret_cast<size_t>(m_pFilterLb->GetEntryData( nFilterIdx )) ]->nFlags | SFXSTYLEBIT_USERDEF;
+        sal_uInt16 nMask = pItem->GetFilterList()[ reinterpret_cast<size_t>(m_pFilterLb->GetEntryData( nFilterIdx )) ].nFlags | SFXSTYLEBIT_USERDEF;
         pStyle->SetMask( nMask );
     }
     if(m_pAutoCB->IsVisible() &&
@@ -589,7 +587,7 @@ void SfxManageStyleSheetPage::ActivatePage( const SfxItemSet& rSet)
 }
 
 
-SfxTabPage::sfxpg SfxManageStyleSheetPage::DeactivatePage( SfxItemSet* pItemSet )
+DeactivateRC SfxManageStyleSheetPage::DeactivatePage( SfxItemSet* pItemSet )
 
 /*  [Description]
 
@@ -606,7 +604,7 @@ SfxTabPage::sfxpg SfxManageStyleSheetPage::DeactivatePage( SfxItemSet* pItemSet 
 */
 
 {
-    sfxpg nRet = SfxTabPage::LEAVE_PAGE;
+    DeactivateRC nRet = DeactivateRC::LeavePage;
 
     if ( m_pNameRw->IsModified() )
     {
@@ -616,11 +614,11 @@ SfxTabPage::sfxpg SfxManageStyleSheetPage::DeactivatePage( SfxItemSet* pItemSet 
 
         if (!pStyle->SetName(comphelper::string::stripStart(m_pNameRw->GetText(), ' ')))
         {
-            ScopedVclPtrInstance< MessageDialog > aBox(this, SfxResId( STR_TABPAGE_INVALIDNAME ), VCL_MESSAGE_INFO);
+            ScopedVclPtrInstance< MessageDialog > aBox(this, SfxResId( STR_TABPAGE_INVALIDNAME ), VclMessageType::Info);
             aBox->Execute();
             m_pNameRw->GrabFocus();
             m_pNameRw->SetSelection( Selection( SELECTION_MIN, SELECTION_MAX ) );
-            return SfxTabPage::KEEP_PAGE;
+            return DeactivateRC::KeepPage;
         }
         bModified = true;
     }
@@ -633,10 +631,10 @@ SfxTabPage::sfxpg SfxManageStyleSheetPage::DeactivatePage( SfxItemSet* pItemSet 
         {
             if ( !pStyle->SetFollow( aFollowEntry ) )
             {
-                ScopedVclPtrInstance< MessageDialog > aBox(this, SfxResId( STR_TABPAGE_INVALIDSTYLE ), VCL_MESSAGE_INFO);
+                ScopedVclPtrInstance< MessageDialog > aBox(this, SfxResId( STR_TABPAGE_INVALIDSTYLE ), VclMessageType::Info);
                 aBox->Execute();
                 m_pFollowLb->GrabFocus();
-                return SfxTabPage::KEEP_PAGE;
+                return DeactivateRC::KeepPage;
             }
             bModified = true;
         }
@@ -653,13 +651,13 @@ SfxTabPage::sfxpg SfxManageStyleSheetPage::DeactivatePage( SfxItemSet* pItemSet 
         {
             if ( !pStyle->SetParent( aParentEntry ) )
             {
-                ScopedVclPtrInstance< MessageDialog > aBox(this, SfxResId( STR_TABPAGE_INVALIDPARENT ), VCL_MESSAGE_INFO);
+                ScopedVclPtrInstance< MessageDialog > aBox(this, SfxResId( STR_TABPAGE_INVALIDPARENT ), VclMessageType::Info);
                 aBox->Execute();
                 m_pBaseLb->GrabFocus();
-                return SfxTabPage::KEEP_PAGE;
+                return DeactivateRC::KeepPage;
             }
             bModified = true;
-            nRet = sfxpg(nRet | SfxTabPage::REFRESH_SET);
+            nRet = nRet | DeactivateRC::RefreshSet;
         }
     }
 

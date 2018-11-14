@@ -38,7 +38,7 @@ namespace cppcanvas
                         const css::uno::Reference<
                                   css::rendering::XSprite >&                          rSprite,
                         const ImplSpriteCanvas::TransformationArbiterSharedPtr&       rTransformArbiter );
-            virtual ~ImplSprite();
+            virtual ~ImplSprite() override;
 
             virtual void setAlpha( const double& rAlpha ) override;
             virtual void movePixel( const ::basegfx::B2DPoint& rNewPos ) override;
@@ -52,9 +52,6 @@ namespace cppcanvas
             virtual void hide() override;
 
             virtual void setPriority( double fPriority ) override;
-
-            virtual css::uno::Reference<
-                css::rendering::XSprite >  getUNOSprite() const override;
 
         private:
             ImplSprite(const ImplSprite&) = delete;

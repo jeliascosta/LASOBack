@@ -99,8 +99,7 @@ SfxPrinter* DrawDocShell::GetPrinter(bool bCreate)
                             ATTR_OPTIONS_PRINT,         ATTR_OPTIONS_PRINT,
                             0 );
         // set PrintOptionsSet
-        SdOptionsPrintItem aPrintItem( ATTR_OPTIONS_PRINT,
-                            SD_MOD()->GetSdOptions(mpDoc->GetDocumentType()));
+        SdOptionsPrintItem aPrintItem( SD_MOD()->GetSdOptions(mpDoc->GetDocumentType()) );
         SfxFlagItem aFlagItem( SID_PRINTER_CHANGESTODOC );
         SfxPrinterChangeFlags nFlags =
                 (aPrintItem.GetOptionsPrint().IsWarningSize() ? SfxPrinterChangeFlags::CHG_SIZE : SfxPrinterChangeFlags::NONE) |
@@ -127,7 +126,7 @@ SfxPrinter* DrawDocShell::GetPrinter(bool bCreate)
         mpPrinter->SetDrawMode( nMode );
 
         MapMode aMM (mpPrinter->GetMapMode());
-        aMM.SetMapUnit(MAP_100TH_MM);
+        aMM.SetMapUnit(MapUnit::Map100thMM);
         mpPrinter->SetMapMode(aMM);
         UpdateRefDevice();
     }
@@ -176,14 +175,14 @@ Printer* DrawDocShell::GetDocumentPrinter()
 
 void DrawDocShell::OnDocumentPrinterChanged(Printer* pNewPrinter)
 {
-    // if we already have a printer, see if its the same
+    // if we already have a printer, see if it's the same
     if( mpPrinter )
     {
         // easy case
         if( mpPrinter == pNewPrinter )
             return;
 
-        // compare if its the same printer with the same job setup
+        // compare if it's the same printer with the same job setup
         if( (mpPrinter->GetName() == pNewPrinter->GetName()) &&
             (mpPrinter->GetJobSetup() == pNewPrinter->GetJobSetup()))
             return;
@@ -219,19 +218,19 @@ void DrawDocShell::UpdateRefDevice()
                 // We are confronted with an invalid or un-implemented
                 // layout mode.  Use the printer as formatting device
                 // as a fall-back.
-                DBG_ASSERT(false, "DrawDocShell::UpdateRefDevice(): Unexpected printer layout mode");
+                SAL_WARN( "sd", "DrawDocShell::UpdateRefDevice(): Unexpected printer layout mode");
 
                 pRefDevice = mpPrinter.get();
                 break;
         }
         mpDoc->SetRefDevice( pRefDevice.get() );
 
-        ::sd::Outliner* pOutl = mpDoc->GetOutliner( false );
+        SdOutliner* pOutl = mpDoc->GetOutliner( false );
 
         if( pOutl )
             pOutl->SetRefDevice( pRefDevice );
 
-        ::sd::Outliner* pInternalOutl = mpDoc->GetInternalOutliner( false );
+        SdOutliner* pInternalOutl = mpDoc->GetInternalOutliner( false );
 
         if( pInternalOutl )
             pInternalOutl->SetRefDevice( pRefDevice );
@@ -264,6 +263,13 @@ bool DrawDocShell::InitNew( const css::uno::Reference< css::embed::XStorage >& x
 bool DrawDocShell::Load( SfxMedium& rMedium )
 {
     mbNewDocument = false;
+
+    // If this is an ODF file being loaded, then by default, use legacy processing
+    // for tdf#99729 (if required, it will be overriden in *::ReadUserDataSequence())
+    if (IsOwnStorageFormat(rMedium))
+    {
+        mpDoc->SetAnchoredTextOverflowLegacy(true);
+    }
 
     bool       bRet = false;
     bool       bStartPresentation = false;
@@ -307,7 +313,7 @@ bool DrawDocShell::Load( SfxMedium& rMedium )
         //TODO/LATER: looks a little bit strange!
         if( ( GetCreateMode() == SfxObjectCreateMode::EMBEDDED ) && SfxObjectShell::GetVisArea( ASPECT_CONTENT ).IsEmpty() )
         {
-            SdPage* pPage = mpDoc->GetSdPage( 0, PK_STANDARD );
+            SdPage* pPage = mpDoc->GetSdPage( 0, PageKind::Standard );
 
             if( pPage )
                 SetVisArea( Rectangle( pPage->GetAllObjBoundRect() ) );
@@ -762,7 +768,7 @@ bool DrawDocShell::GotoBookmark(const OUString& rBookmark)
             // or the handout view.
             PageKind eNewPageKind = pPage->GetPageKind();
 
-            if( (eNewPageKind != PK_STANDARD) && (mpDoc->GetDocumentType() == DOCUMENT_TYPE_DRAW) )
+            if( (eNewPageKind != PageKind::Standard) && (mpDoc->GetDocumentType() == DocumentType::Draw) )
                 return false;
 
             if (eNewPageKind != pDrawViewShell->GetPageKind())
@@ -772,13 +778,13 @@ bool DrawDocShell::GotoBookmark(const OUString& rBookmark)
                 OUString sViewURL;
                 switch (eNewPageKind)
                 {
-                    case PK_STANDARD:
+                    case PageKind::Standard:
                         sViewURL = FrameworkHelper::msImpressViewURL;
                         break;
-                    case PK_NOTES:
+                    case PageKind::Notes:
                         sViewURL = FrameworkHelper::msNotesViewURL;
                         break;
-                    case PK_HANDOUT:
+                    case PageKind::Handout:
                         sViewURL = FrameworkHelper::msHandoutViewURL;
                         break;
                     default:
@@ -988,12 +994,12 @@ bool DrawDocShell::SaveAsOwnFormat( SfxMedium& rMedium )
             aLayoutName = aURL.getName();
         }
 
-        if (!aLayoutName.isEmpty())
+        if (aLayoutName.isEmpty())
         {
-            sal_uInt32 nCount = mpDoc->GetMasterSdPageCount(PK_STANDARD);
+            sal_uInt32 nCount = mpDoc->GetMasterSdPageCount(PageKind::Standard);
             for (sal_uInt32 i = 0; i < nCount; ++i)
             {
-                OUString aOldPageLayoutName = mpDoc->GetMasterSdPage(i, PK_STANDARD)->GetLayoutName();
+                OUString aOldPageLayoutName = mpDoc->GetMasterSdPage(i, PageKind::Standard)->GetLayoutName();
                 OUString aNewLayoutName = aLayoutName;
                 // Don't add suffix for the first master page
                 if( i > 0 )
@@ -1017,7 +1023,7 @@ void DrawDocShell::FillClass(SvGlobalName* pClassName,
 {
     if (nFileFormat == SOFFICE_FILEFORMAT_60)
     {
-        if ( meDocType == DOCUMENT_TYPE_DRAW )
+        if ( meDocType == DocumentType::Draw )
         {
             *pClassName = SvGlobalName(SO3_SDRAW_CLASSID_60);
             *pFormat = SotClipboardFormatId::STARDRAW_60;
@@ -1032,7 +1038,7 @@ void DrawDocShell::FillClass(SvGlobalName* pClassName,
     }
     else if (nFileFormat == SOFFICE_FILEFORMAT_8)
     {
-        if ( meDocType == DOCUMENT_TYPE_DRAW )
+        if ( meDocType == DocumentType::Draw )
         {
             *pClassName = SvGlobalName(SO3_SDRAW_CLASSID_60);
             *pFormat = bTemplate ? SotClipboardFormatId::STARDRAW_8_TEMPLATE : SotClipboardFormatId::STARDRAW_8;
@@ -1046,7 +1052,7 @@ void DrawDocShell::FillClass(SvGlobalName* pClassName,
         }
     }
 
-    *pShortTypeName = OUString(SdResId( (meDocType == DOCUMENT_TYPE_DRAW) ?
+    *pShortTypeName = OUString(SdResId( (meDocType == DocumentType::Draw) ?
                                       STR_GRAPHIC_DOCUMENT : STR_IMPRESS_DOCUMENT ));
 }
 
@@ -1086,10 +1092,10 @@ void DrawDocShell::setEditMode(DrawViewShell* pDrawViewShell, bool isMasterPage)
 {
     // Set the edit mode to either the normal edit mode or the
     // master page mode.
-    EditMode eNewEditMode = EM_PAGE;
+    EditMode eNewEditMode = EditMode::Page;
     if (isMasterPage)
     {
-        eNewEditMode = EM_MASTERPAGE;
+        eNewEditMode = EditMode::MasterPage;
     }
 
     if (eNewEditMode != pDrawViewShell->GetEditMode())

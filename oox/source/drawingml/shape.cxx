@@ -61,6 +61,7 @@
 #include <com/sun/star/drawing/HomogenMatrix3.hpp>
 #include <com/sun/star/drawing/TextVerticalAdjust.hpp>
 #include <com/sun/star/drawing/GraphicExportFilter.hpp>
+#include <com/sun/star/drawing/XShapes.hpp>
 #include <com/sun/star/embed/XEmbeddedObject.hpp>
 #include <com/sun/star/text/XText.hpp>
 #include <com/sun/star/table/BorderLine2.hpp>
@@ -115,6 +116,7 @@ Shape::Shape( const sal_Char* pServiceName, bool bDefaultHeight )
 , mnRotation( 0 )
 , mbFlipH( false )
 , mbFlipV( false )
+, mbInheritedTextFlipV(false)
 , mbHidden( false )
 , mbHiddenMasterShape( false )
 , mbLockedCanvas( false )
@@ -156,6 +158,7 @@ Shape::Shape( const ShapePtr& pSourceShape )
 , mnRotation( pSourceShape->mnRotation )
 , mbFlipH( pSourceShape->mbFlipH )
 , mbFlipV( pSourceShape->mbFlipV )
+, mbInheritedTextFlipV(pSourceShape->mbInheritedTextFlipV)
 , mbHidden( pSourceShape->mbHidden )
 , mbHiddenMasterShape( pSourceShape->mbHiddenMasterShape )
 , mbLockedCanvas( pSourceShape->mbLockedCanvas )
@@ -170,7 +173,7 @@ Shape::~Shape()
 {
 }
 
-table::TablePropertiesPtr Shape::getTableProperties()
+table::TablePropertiesPtr const & Shape::getTableProperties()
 {
     if ( !mpTablePropertiesPtr.get() )
         mpTablePropertiesPtr.reset( new table::TableProperties() );
@@ -313,6 +316,7 @@ void Shape::applyShapeReference( const Shape& rReferencedShape, bool bUseText )
     mnRotation = rReferencedShape.mnRotation;
     mbFlipH = rReferencedShape.mbFlipH;
     mbFlipV = rReferencedShape.mbFlipV;
+    mbInheritedTextFlipV = rReferencedShape.mbInheritedTextFlipV;
     mbHidden = rReferencedShape.mbHidden;
 }
 
@@ -320,14 +324,13 @@ void Shape::addChildren( ::oox::core::XmlFilterBase& rFilterBase,
                          const Theme* pTheme,
                          const Reference< XShapes >& rxShapes,
                          basegfx::B2DHomMatrix& aTransformation,
-                         const awt::Rectangle* pShapeRect,
-                         ShapeIdMap* pShapeMap )
+                         const awt::Rectangle* pShapeRect )
 {
     addChildren(rFilterBase, *this, pTheme, rxShapes,
                 pShapeRect ?
                  *pShapeRect :
                  awt::Rectangle( maPosition.X, maPosition.Y, maSize.Width, maSize.Height ),
-                pShapeMap, aTransformation);
+                nullptr, aTransformation);
 }
 
 struct ActionLockGuard
@@ -393,11 +396,12 @@ void Shape::addChildren(
     std::vector< ShapePtr >::iterator aIter( rMaster.maChildren.begin() );
     while( aIter != rMaster.maChildren.end() ) {
         (*aIter)->setMasterTextListStyle( mpMasterTextListStyle );
+        (*aIter)->applyParentTextFlipV(mbInheritedTextFlipV != mbFlipV);
         (*aIter++)->addShape( rFilterBase, pTheme, rxShapes, aChildTransformation, getFillProperties(), nullptr, pShapeMap );
     }
 }
 
-Reference< XShape > Shape::createAndInsert(
+Reference< XShape > const & Shape::createAndInsert(
         ::oox::core::XmlFilterBase& rFilterBase,
         const OUString& rServiceName,
         const Theme* pTheme,
@@ -788,19 +792,19 @@ Reference< XShape > Shape::createAndInsert(
                 // TextFrames have BackColor, not FillColor
                 if (aShapeProps.hasProperty(PROP_FillColor))
                 {
-                    aShapeProps.setProperty(PROP_BackColor, aShapeProps.getProperty(PROP_FillColor));
+                    aShapeProps.setAnyProperty(PROP_BackColor, aShapeProps.getProperty(PROP_FillColor));
                     aShapeProps.erase(PROP_FillColor);
                 }
                 // TextFrames have BackColorTransparency, not FillTransparence
                 if (aShapeProps.hasProperty(PROP_FillTransparence))
                 {
-                    aShapeProps.setProperty(PROP_BackColorTransparency, aShapeProps.getProperty(PROP_FillTransparence));
+                    aShapeProps.setAnyProperty(PROP_BackColorTransparency, aShapeProps.getProperty(PROP_FillTransparence));
                     aShapeProps.erase(PROP_FillTransparence);
                 }
                 // TextFrames have BackGrahicURL, not FillBitmapURL
                 if (aShapeProps.hasProperty(PROP_FillBitmapURL))
                 {
-                    aShapeProps.setProperty(PROP_BackGraphicURL, aShapeProps.getProperty(PROP_FillBitmapURL));
+                    aShapeProps.setAnyProperty(PROP_BackGraphicURL, aShapeProps.getProperty(PROP_FillBitmapURL));
                     aShapeProps.erase(PROP_FillBitmapURL);
                 }
                 if (aShapeProps.hasProperty(PROP_FillBitmapName))
@@ -823,7 +827,7 @@ Reference< XShape > Shape::createAndInsert(
                         aBorderLine.Color = aShapeProps.getProperty(PROP_LineColor).get<sal_Int32>();
                         if (aLineProperties.moLineWidth.has())
                             aBorderLine.LineWidth = convertEmuToHmm(aLineProperties.moLineWidth.get());
-                        aShapeProps.setProperty(nBorder, uno::makeAny(aBorderLine));
+                        aShapeProps.setProperty(nBorder, aBorderLine);
                     }
                     aShapeProps.erase(PROP_LineColor);
                 }
@@ -896,12 +900,12 @@ Reference< XShape > Shape::createAndInsert(
                         aFormat.Location = nLocation;
                     }
                     aFormat.ShadowWidth = *oShadowDistance;
-                    aShapeProps.setProperty(PROP_ShadowFormat, uno::makeAny(aFormat));
+                    aShapeProps.setProperty(PROP_ShadowFormat, aFormat);
                 }
             }
             else if (mbTextBox)
             {
-                aShapeProps.setProperty(PROP_TextBox, uno::makeAny(true));
+                aShapeProps.setProperty(PROP_TextBox, true);
             }
 
             if (aServiceName != "com.sun.star.text.TextFrame" && isLinkedTxbx())
@@ -1079,6 +1083,8 @@ Reference< XShape > Shape::createAndInsert(
             if( getTextBody() )
             {
                 sal_Int32 nTextRotateAngle = static_cast< sal_Int32 >( getTextBody()->getTextProperties().moRotation.get( 0 ) );
+                if(mbInheritedTextFlipV)
+                    nTextRotateAngle -= 180 * 60000;
                 /* OOX measures text rotation clockwise in 1/60000th degrees,
                    relative to the containing shape. setTextRotateAngle wants
                    degrees anticlockwise. */
@@ -1119,7 +1125,7 @@ Reference< XShape > Shape::createAndInsert(
                         if ( pFontRef->maPhClr.isUsed() )
                         {
                             aCharStyleProperties.maFillProperties.maFillColor = pFontRef->maPhClr;
-                            aCharStyleProperties.maFillProperties.moFillType.set(XML_solidFill);;
+                            aCharStyleProperties.maFillProperties.moFillType.set(XML_solidFill);
                         }
                     }
                 }
@@ -1214,7 +1220,7 @@ Reference < XShape > Shape::renderDiagramToGraphic( XmlFilterBase& rFilterBase )
 
         // Size of the rendering
         awt::Size aActualSize = mxShape->getSize();
-        Size aResolution( Application::GetDefaultDevice()->LogicToPixel( Size( 100, 100 ), MAP_CM ) );
+        Size aResolution( Application::GetDefaultDevice()->LogicToPixel( Size( 100, 100 ), MapUnit::MapCM ) );
         double fPixelsPer100thmm = static_cast < double > ( aResolution.Width() ) / 100000.0;
         awt::Size aSize = awt::Size( static_cast < sal_Int32 > ( ( fPixelsPer100thmm * aActualSize.Width ) + 0.5 ),
                                      static_cast < sal_Int32 > ( ( fPixelsPer100thmm * aActualSize.Height ) + 0.5 ) );

@@ -88,8 +88,8 @@ void ScDBDocFunc::ShowInBeamer( const ScImportParam& rParam, SfxViewFrame* pFram
 
             svx::ODataAccessDescriptor aSelection;
             aSelection.setDataSource(rParam.aDBName);
-            aSelection[svx::daCommand]      <<= rParam.aStatement;
-            aSelection[svx::daCommandType]  <<= nType;
+            aSelection[svx::DataAccessDescriptorProperty::Command]      <<= rParam.aStatement;
+            aSelection[svx::DataAccessDescriptorProperty::CommandType]  <<= nType;
 
             xControllerSelection->select(uno::makeAny(aSelection.createPropertyValueSequence()));
         }
@@ -158,15 +158,15 @@ bool ScDBDocFunc::DoImport( SCTAB nTab, const ScImportParam& rParam,
     sal_Int32 nListCount = 0;
 
     uno::Sequence<uno::Any> aSelection;
-    if ( pDescriptor && pDescriptor->has(svx::daSelection) )
+    if ( pDescriptor && pDescriptor->has(svx::DataAccessDescriptorProperty::Selection) )
     {
-        (*pDescriptor)[svx::daSelection] >>= aSelection;
+        (*pDescriptor)[svx::DataAccessDescriptorProperty::Selection] >>= aSelection;
         nListCount = aSelection.getLength();
         if ( nListCount > 0 )
         {
             bDoSelection = true;
-            if ( pDescriptor->has(svx::daBookmarkSelection) )
-                bBookmarkSelection = ScUnoHelpFunctions::GetBoolFromAny( (*pDescriptor)[svx::daBookmarkSelection] );
+            if ( pDescriptor->has(svx::DataAccessDescriptorProperty::BookmarkSelection) )
+                bBookmarkSelection = ScUnoHelpFunctions::GetBoolFromAny( (*pDescriptor)[svx::DataAccessDescriptorProperty::BookmarkSelection] );
             if ( bBookmarkSelection )
             {
                 // From bookmarks, there's no way to detect if all records are selected.
@@ -177,8 +177,8 @@ bool ScDBDocFunc::DoImport( SCTAB nTab, const ScImportParam& rParam,
     }
 
     uno::Reference<sdbc::XResultSet> xResultSet;
-    if ( pDescriptor && pDescriptor->has(svx::daCursor) )
-        xResultSet.set((*pDescriptor)[svx::daCursor], uno::UNO_QUERY);
+    if ( pDescriptor && pDescriptor->has(svx::DataAccessDescriptorProperty::Cursor) )
+        xResultSet.set((*pDescriptor)[svx::DataAccessDescriptorProperty::Cursor], uno::UNO_QUERY);
 
     // ImportDoc - also used for Redo
     ScDocument* pImportDoc = new ScDocument( SCDOCMODE_UNDO );
@@ -346,12 +346,7 @@ bool ScDBDocFunc::DoImport( SCTAB nTab, const ScImportParam& rParam,
                                 aText += OUString::number( nInserted );
                                 aText += aPict.getToken(1,'#');
 
-                                if (!aProgress.SetStateText( 0, aText ))    // stopped by user?
-                                {
-                                    bEnd = true;
-                                    bSuccess = false;
-                                    nErrStringId = STR_DATABASE_ABORTED;
-                                }
+                                aProgress.SetStateText( 0, aText );
                             }
                         }
                         else        // past the end of the spreadsheet
@@ -439,9 +434,9 @@ bool ScDBDocFunc::DoImport( SCTAB nTab, const ScImportParam& rParam,
             SCCOL nMinEndCol = std::min( rParam.nCol2, nEndCol );    // not too much
             nMinEndCol = sal::static_int_cast<SCCOL>( nMinEndCol + nFormulaCols );  // only if column count unchanged
             pImportDoc->DeleteAreaTab( 0,0, MAXCOL,MAXROW, nTab, InsertDeleteFlags::ATTRIB );
-            rDoc.CopyToDocument( rParam.nCol1, rParam.nRow1, nTab,
-                                    nMinEndCol, rParam.nRow1, nTab,
-                                    InsertDeleteFlags::ATTRIB, false, pImportDoc );
+            rDoc.CopyToDocument(rParam.nCol1, rParam.nRow1, nTab,
+                                nMinEndCol, rParam.nRow1, nTab,
+                                InsertDeleteFlags::ATTRIB, false, *pImportDoc);
 
             SCROW nDataStartRow = rParam.nRow1+1;
             for (SCCOL nCopyCol=rParam.nCol1; nCopyCol<=nMinEndCol; nCopyCol++)
@@ -489,17 +484,17 @@ bool ScDBDocFunc::DoImport( SCTAB nTab, const ScImportParam& rParam,
             InsertDeleteFlags nCopyFlags = InsertDeleteFlags::ALL & ~InsertDeleteFlags::NOTE;
 
             //  nFormulaCols is set only if column count is unchanged
-            rDoc.CopyToDocument( rParam.nCol1, rParam.nRow1, nTab,
-                                    nEndCol+nFormulaCols, nEndRow, nTab,
-                                    nCopyFlags, false, pUndoDoc );
+            rDoc.CopyToDocument(rParam.nCol1, rParam.nRow1, nTab,
+                                nEndCol+nFormulaCols, nEndRow, nTab,
+                                nCopyFlags, false, *pUndoDoc);
             if ( rParam.nCol2 > nEndCol )
-                rDoc.CopyToDocument( nEndCol+1, rParam.nRow1, nTab,
-                                        nUndoEndCol, nUndoEndRow, nTab,
-                                        nCopyFlags, false, pUndoDoc );
+                rDoc.CopyToDocument(nEndCol+1, rParam.nRow1, nTab,
+                                    nUndoEndCol, nUndoEndRow, nTab,
+                                    nCopyFlags, false, *pUndoDoc);
             if ( rParam.nRow2 > nEndRow )
-                rDoc.CopyToDocument( rParam.nCol1, nEndRow+1, nTab,
-                                        nUndoEndCol+nFormulaCols, nUndoEndRow, nTab,
-                                        nCopyFlags, false, pUndoDoc );
+                rDoc.CopyToDocument(rParam.nCol1, nEndRow+1, nTab,
+                                    nUndoEndCol+nFormulaCols, nUndoEndRow, nTab,
+                                    nCopyFlags, false, *pUndoDoc);
         }
 
         //  move new data
@@ -531,8 +526,8 @@ bool ScDBDocFunc::DoImport( SCTAB nTab, const ScImportParam& rParam,
         rDoc.SetAutoCalc( false );             // outside of the loop
         for (SCCOL nCopyCol = rParam.nCol1; nCopyCol <= nEndCol; nCopyCol++)
         {
-            pImportDoc->CopyToDocument( nCopyCol, rParam.nRow1, nTab, nCopyCol, nEndRow, nTab,
-                                        InsertDeleteFlags::ALL, false, &rDoc );
+            pImportDoc->CopyToDocument(nCopyCol, rParam.nRow1, nTab, nCopyCol, nEndRow, nTab,
+                                       InsertDeleteFlags::ALL, false, rDoc);
             pImportDoc->DeleteAreaTab( nCopyCol, rParam.nRow1, nCopyCol, nEndRow, nTab, InsertDeleteFlags::CONTENTS );
         }
         rDoc.SetAutoCalc( bOldAutoCalc );
@@ -540,9 +535,9 @@ bool ScDBDocFunc::DoImport( SCTAB nTab, const ScImportParam& rParam,
         if (nFormulaCols > 0)               // copy formulas
         {
             if (bKeepFormat)            // formats for formulas
-                pImportDoc->CopyToDocument( nEndCol+1, rParam.nRow1, nTab,
-                                            nEndCol+nFormulaCols, nEndRow, nTab,
-                                            InsertDeleteFlags::ATTRIB, false, &rDoc );
+                pImportDoc->CopyToDocument(nEndCol+1, rParam.nRow1, nTab,
+                                           nEndCol+nFormulaCols, nEndRow, nTab,
+                                           InsertDeleteFlags::ATTRIB, false, rDoc);
             // fill formulas
             ScMarkData aMark;
             aMark.SelectOneTable(nTab);
@@ -582,9 +577,9 @@ bool ScDBDocFunc::DoImport( SCTAB nTab, const ScImportParam& rParam,
             pImportDoc = nullptr;
 
             if (nFormulaCols > 0)                   // include filled formulas for redo
-                rDoc.CopyToDocument( rParam.nCol1, rParam.nRow1, nTab,
-                                        nEndCol+nFormulaCols, nEndRow, nTab,
-                                        InsertDeleteFlags::ALL & ~InsertDeleteFlags::NOTE, false, pRedoDoc );
+                rDoc.CopyToDocument(rParam.nCol1, rParam.nRow1, nTab,
+                                    nEndCol+nFormulaCols, nEndRow, nTab,
+                                    InsertDeleteFlags::ALL & ~InsertDeleteFlags::NOTE, false, *pRedoDoc);
 
             ScDBData* pRedoDBData = pDBData ? new ScDBData( *pDBData ) : nullptr;
 
@@ -597,7 +592,7 @@ bool ScDBDocFunc::DoImport( SCTAB nTab, const ScImportParam& rParam,
 
         sc::SetFormulaDirtyContext aCxt;
         rDoc.SetAllFormulasDirty(aCxt);
-        rDocShell.PostPaint(ScRange(0, 0, nTab, MAXCOL, MAXROW, nTab), PAINT_GRID);
+        rDocShell.PostPaint(ScRange(0, 0, nTab, MAXCOL, MAXROW, nTab), PaintPartFlags::Grid);
         aModificator.SetDocumentModified();
 
         ScDBRangeRefreshedHint aHint( rParam );

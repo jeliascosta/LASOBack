@@ -48,7 +48,7 @@ public:
 
 public:
     SdrMeasureObjGeoData();
-    virtual ~SdrMeasureObjGeoData();
+    virtual ~SdrMeasureObjGeoData() override;
 };
 
 
@@ -87,7 +87,7 @@ protected:
 public:
     SdrMeasureObj();
     SdrMeasureObj(const Point& rPt1, const Point& rPt2);
-    virtual ~SdrMeasureObj();
+    virtual ~SdrMeasureObj() override;
 
     virtual void TakeObjInfo(SdrObjTransformInfoRec& rInfo) const override;
     virtual sal_uInt16 GetObjIdentifier() const override;
@@ -135,8 +135,8 @@ public:
 
     virtual bool BegTextEdit(SdrOutliner& rOutl) override;
     virtual const Size& GetTextSize() const override;
-    virtual void TakeTextRect( SdrOutliner& rOutliner, Rectangle& rTextRect, bool bNoEditText = false,
-        Rectangle* pAnchorRect=nullptr, bool bLineWidth = true ) const override;
+    virtual void TakeTextRect( SdrOutliner& rOutliner, Rectangle& rTextRect, bool bNoEditText,
+        Rectangle* pAnchorRect, bool bLineWidth = true ) const override;
     virtual void TakeTextAnchorRect(Rectangle& rAnchorRect) const override;
     virtual void TakeTextEditArea(Size* pPaperMin, Size* pPaperMax, Rectangle* pViewInit, Rectangle* pViewMin) const override;
     virtual sal_uInt16 GetOutlinerViewAnchorMode() const override;

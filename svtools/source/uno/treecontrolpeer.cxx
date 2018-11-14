@@ -22,6 +22,7 @@
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/lang/DisposedException.hpp>
 #include <com/sun/star/view/SelectionType.hpp>
+#include <o3tl/any.hxx>
 #include <toolkit/helper/property.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
 
@@ -83,19 +84,19 @@ class UnoTreeListBoxImpl : public SvTreeListBox
 {
 public:
     UnoTreeListBoxImpl( TreeControlPeer* pPeer, vcl::Window* pParent, WinBits nWinStyle );
-    virtual ~UnoTreeListBoxImpl();
+    virtual ~UnoTreeListBoxImpl() override;
     virtual void dispose() override;
 
-    void            insert( SvTreeListEntry* pEntry,SvTreeListEntry* pParent,sal_uLong nPos=TREELIST_APPEND );
+    void            insert( SvTreeListEntry* pEntry, SvTreeListEntry* pParent, sal_uLong nPos );
 
     virtual void    RequestingChildren( SvTreeListEntry* pParent ) override;
 
     virtual bool    EditingEntry( SvTreeListEntry* pEntry, Selection& ) override;
     virtual bool    EditedEntry( SvTreeListEntry* pEntry, const OUString& rNewText ) override;
 
-    DECL_LINK_TYPED(OnSelectionChangeHdl, SvTreeListBox*, void);
-    DECL_LINK_TYPED(OnExpandingHdl, SvTreeListBox*, bool);
-    DECL_LINK_TYPED(OnExpandedHdl, SvTreeListBox*, void);
+    DECL_LINK(OnSelectionChangeHdl, SvTreeListBox*, void);
+    DECL_LINK(OnExpandingHdl, SvTreeListBox*, bool);
+    DECL_LINK(OnExpandedHdl, SvTreeListBox*, void);
 
 private:
     rtl::Reference< TreeControlPeer > mxPeer;
@@ -106,8 +107,8 @@ class UnoTreeListItem : public SvLBoxString
 {
 public:
                     UnoTreeListItem();
-    virtual         ~UnoTreeListItem();
-    void            InitViewData( SvTreeListBox*,SvTreeListEntry*,SvViewDataItem* ) override;
+    virtual         ~UnoTreeListItem() override;
+    void            InitViewData( SvTreeListBox*,SvTreeListEntry*,SvViewDataItem * = nullptr ) override;
     void            SetImage( const Image& rImage );
     const OUString& GetGraphicURL() const { return maGraphicURL;}
     void            SetGraphicURL( const OUString& rGraphicURL );
@@ -126,7 +127,7 @@ class UnoTreeListEntry : public SvTreeListEntry
 {
 public:
     UnoTreeListEntry( const Reference< XTreeNode >& xNode, TreeControlPeer* pPeer );
-    virtual ~UnoTreeListEntry();
+    virtual ~UnoTreeListEntry() override;
 
     Reference< XTreeNode > mxNode;
     TreeControlPeer* mpPeer;
@@ -208,12 +209,6 @@ void TreeControlPeer::disposeControl()
     delete mpTreeNodeMap;
     mpTreeNodeMap = nullptr;
     mpTreeImpl = nullptr;
-}
-
-
-void TreeControlPeer::SetWindow( const VclPtr< vcl::Window > &pWindow )
-{
-    VCLXWindow::SetWindow( pWindow );
 }
 
 
@@ -413,7 +408,7 @@ void TreeControlPeer::addNode( UnoTreeListBoxImpl& rTree, const Reference< XTree
 {
     if( xNode.is() )
     {
-        UnoTreeListEntry* pEntry = createEntry( xNode, pParentEntry );
+        UnoTreeListEntry* pEntry = createEntry( xNode, pParentEntry, TREELIST_APPEND );
         const sal_Int32 nChildCount = xNode->getChildCount();
         for( sal_Int32 nChild = 0; nChild < nChildCount; nChild++ )
             addNode( rTree, xNode->getChildAt( nChild ), pEntry );
@@ -437,7 +432,7 @@ void TreeControlPeer::ChangeNodesSelection( const Any& rSelection, bool bSelect,
 
     Reference< XTreeNode > xTempNode;
 
-    const Reference< XTreeNode > *pNodes = nullptr;
+    Sequence<Reference<XTreeNode>> pNodes;
     sal_Int32 nCount = 0;
 
     if( rSelection.hasValue() )
@@ -450,18 +445,17 @@ void TreeControlPeer::ChangeNodesSelection( const Any& rSelection, bool bSelect,
                 if( xTempNode.is() )
                 {
                     nCount = 1;
-                    pNodes = &xTempNode;
+                    pNodes = {xTempNode};
                 }
                 break;
             }
         case TypeClass_SEQUENCE:
             {
-                if( rSelection.getValueType() == cppu::UnoType<Sequence< Reference< XTreeNode > >>::get() )
+                if( auto rSeq = o3tl::tryAccess<Sequence<Reference<XTreeNode>>>(
+                        rSelection) )
                 {
-                    const Sequence< Reference< XTreeNode > >& rSeq( *static_cast<const Sequence< Reference< XTreeNode > > *>(rSelection.getValue()) );
-                    nCount = rSeq.getLength();
-                    if( nCount )
-                        pNodes = rSeq.getConstArray();
+                    nCount = rSeq->getLength();
+                    pNodes = *rSeq;
                 }
                 break;
             }
@@ -476,13 +470,10 @@ void TreeControlPeer::ChangeNodesSelection( const Any& rSelection, bool bSelect,
     if( bSetSelection )
         rTree.SelectAll( false );
 
-    if( pNodes && nCount )
+    for( sal_Int32 i = 0; i != nCount; ++i )
     {
-        while( nCount-- )
-        {
-            UnoTreeListEntry* pEntry = getEntry( *pNodes++ );
-            rTree.Select( pEntry, bSelect );
-        }
+        UnoTreeListEntry* pEntry = getEntry( pNodes[i] );
+        rTree.Select( pEntry, bSelect );
     }
 }
 
@@ -1247,11 +1238,11 @@ void TreeControlPeer::setProperty( const OUString& PropertyName, const Any& aVal
                 SelectionMode eSelMode;
                 switch( eSelectionType )
                 {
-                case SelectionType_SINGLE:  eSelMode = SINGLE_SELECTION; break;
-                case SelectionType_RANGE:   eSelMode = RANGE_SELECTION; break;
-                case SelectionType_MULTI:   eSelMode = MULTIPLE_SELECTION; break;
+                case SelectionType_SINGLE:  eSelMode = SelectionMode::Single; break;
+                case SelectionType_RANGE:   eSelMode = SelectionMode::Range; break;
+                case SelectionType_MULTI:   eSelMode = SelectionMode::Multiple; break;
     //          case SelectionType_NONE:
-                default:                    eSelMode = NO_SELECTION; break;
+                default:                    eSelMode = SelectionMode::NONE; break;
                 }
                 if( rTree.GetSelectionMode() != eSelMode )
                     rTree.SetSelectionMode( eSelMode );
@@ -1336,10 +1327,10 @@ Any TreeControlPeer::getProperty( const OUString& PropertyName ) throw(RuntimeEx
             SelectionMode eSelMode = rTree.GetSelectionMode();
             switch( eSelMode )
             {
-            case SINGLE_SELECTION:  eSelectionType = SelectionType_SINGLE; break;
-            case RANGE_SELECTION:   eSelectionType = SelectionType_RANGE; break;
-            case MULTIPLE_SELECTION:eSelectionType = SelectionType_MULTI; break;
-//          case NO_SELECTION:
+            case SelectionMode::Single:  eSelectionType = SelectionType_SINGLE; break;
+            case SelectionMode::Range:   eSelectionType = SelectionType_RANGE; break;
+            case SelectionMode::Multiple:eSelectionType = SelectionType_MULTI; break;
+//          case SelectionMode::NONE:
             default:                eSelectionType = SelectionType_NONE; break;
             }
             return Any( eSelectionType );
@@ -1438,14 +1429,14 @@ void UnoTreeListBoxImpl::dispose()
 }
 
 
-IMPL_LINK_NOARG_TYPED(UnoTreeListBoxImpl, OnSelectionChangeHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(UnoTreeListBoxImpl, OnSelectionChangeHdl, SvTreeListBox*, void)
 {
     if( mxPeer.is() )
         mxPeer->onSelectionChanged();
 }
 
 
-IMPL_LINK_NOARG_TYPED(UnoTreeListBoxImpl, OnExpandingHdl, SvTreeListBox*, bool)
+IMPL_LINK_NOARG(UnoTreeListBoxImpl, OnExpandingHdl, SvTreeListBox*, bool)
 {
     UnoTreeListEntry* pEntry = dynamic_cast< UnoTreeListEntry* >( GetHdlEntry() );
 
@@ -1457,7 +1448,7 @@ IMPL_LINK_NOARG_TYPED(UnoTreeListBoxImpl, OnExpandingHdl, SvTreeListBox*, bool)
 }
 
 
-IMPL_LINK_NOARG_TYPED(UnoTreeListBoxImpl, OnExpandedHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(UnoTreeListBoxImpl, OnExpandedHdl, SvTreeListBox*, void)
 {
     UnoTreeListEntry* pEntry = dynamic_cast< UnoTreeListEntry* >( GetHdlEntry() );
     if( pEntry && mxPeer.is() )

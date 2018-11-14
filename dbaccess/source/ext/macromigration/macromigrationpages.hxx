@@ -56,7 +56,7 @@ namespace dbmm
     {
     public:
         explicit PreparationPage(vcl::Window *pParent);
-        virtual ~PreparationPage();
+        virtual ~PreparationPage() override;
         virtual void dispose() override;
 
         static VclPtr<TabPage> Create( ::svt::RoadmapWizard& _rParentDialog );
@@ -73,7 +73,7 @@ namespace dbmm
     {
     public:
         explicit SaveDBDocPage(MacroMigrationDialog& _rParentDialog);
-        virtual ~SaveDBDocPage();
+        virtual ~SaveDBDocPage() override;
         virtual void dispose() override;
         static VclPtr<TabPage> Create( ::svt::RoadmapWizard& _rParentDialog );
 
@@ -94,7 +94,7 @@ namespace dbmm
         virtual bool        canAdvance() const override;
 
     private:
-        DECL_LINK_TYPED( OnLocationModified, Edit&, void );
+        DECL_LINK( OnLocationModified, Edit&, void );
         void impl_updateLocationDependentItems();
     };
 
@@ -103,7 +103,7 @@ namespace dbmm
     {
     public:
         explicit ProgressPage(vcl::Window *pParent);
-        virtual ~ProgressPage();
+        virtual ~ProgressPage() override;
         virtual void dispose() override;
 
         static VclPtr<TabPage> Create( ::svt::RoadmapWizard& _rParentDialog );
@@ -136,7 +136,7 @@ namespace dbmm
     {
     public:
         explicit ResultPage(vcl::Window *pParent);
-        virtual ~ResultPage();
+        virtual ~ResultPage() override;
         virtual void dispose() override;
 
         static VclPtr<TabPage> Create( ::svt::RoadmapWizard& _rParentDialog );

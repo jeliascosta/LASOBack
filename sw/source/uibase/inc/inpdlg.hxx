@@ -49,11 +49,11 @@ class SwFieldInputDlg: public SvxStandardDialog
     VclPtr<OKButton>         m_pOKBT;
     VclPtr<PushButton>       m_pNextBT;
 
-    DECL_LINK_TYPED(NextHdl, Button*, void);
+    DECL_LINK(NextHdl, Button*, void);
 public:
     SwFieldInputDlg(  vcl::Window *pParent, SwWrtShell &rSh,
-                    SwField* pField, bool bNextButton = false );
-    virtual ~SwFieldInputDlg();
+                    SwField* pField, bool bNextButton );
+    virtual ~SwFieldInputDlg() override;
     virtual void dispose() override;
 };
 

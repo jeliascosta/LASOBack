@@ -142,12 +142,6 @@ public:
     /** Attaches VBA macros to objects registered via registerMacroAttacher(). */
     void                attachMacros();
 
-    /** Returns true, if the document contains at least one code module. */
-    bool                hasModules() const;
-
-    /** Returns true, if the document contains at least one dialog. */
-    bool                hasDialogs() const;
-
     void                setOleOverridesSink( css::uno::Reference< css::container::XNameContainer >&  rxOleOverridesSink ){ mxOleOverridesSink = rxOleOverridesSink; }
 
 protected:
@@ -169,17 +163,16 @@ private:
     css::uno::Reference< css::container::XNameContainer >
                         openLibrary( sal_Int32 nPropId, bool bCreateMissing );
     /** Creates and returns the Basic library of the document used for import. */
-    css::uno::Reference< css::container::XNameContainer >
+    css::uno::Reference< css::container::XNameContainer > const &
                         createBasicLibrary();
     /** Creates and returns the dialog library of the document used for import. */
-    css::uno::Reference< css::container::XNameContainer >
+    css::uno::Reference< css::container::XNameContainer > const &
                         createDialogLibrary();
 
     /** Imports the VBA code modules and forms. */
     void                importVba(
                             StorageBase& rVbaPrjStrg,
-                            const GraphicHelper& rGraphicHelper,
-                            bool bDefaultColorBgr );
+                            const GraphicHelper& rGraphicHelper );
 
     /** Copies the entire VBA project storage to the passed document model. */
     void                copyStorage( StorageBase& rVbaPrjStrg );

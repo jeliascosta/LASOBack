@@ -131,7 +131,7 @@ double ScrollTextAnimNode::GetStateAtRelativeTime(
 class ActivityImpl : public Activity
 {
 public:
-    virtual ~ActivityImpl();
+    virtual ~ActivityImpl() override;
 
     ActivityImpl(
         SlideShowContext const& rContext,
@@ -155,10 +155,6 @@ public:
 private:
     void updateShapeAttributes( double fTime,
                                 basegfx::B2DRectangle const& parentBounds );
-
-    // Access to VisibleWhenSTarted flags
-    bool IsVisibleWhenStarted() const { return mbVisibleWhenStarted; }
-    bool IsVisibleWhenStopped() const { return mbVisibleWhenStopped; }
 
     // scroll horizontal? if sal_False, scroll is vertical.
     bool ScrollHorizontal() const {
@@ -221,9 +217,6 @@ private:
 
     // Flag to remember if this is a simple scrolling text
     bool                                        mbScrollIn;
-
-    // start time for this animation
-    sal_uInt32                                  mnStartTime;
 
     // The AnimationDirection
     drawing::TextAnimationDirection             meDirection;
@@ -421,15 +414,7 @@ void ActivityImpl::ImpForceScrollTextAnimNodes()
             fOneRelative = 1.0;
         }
 
-        if(mnStartTime)
-        {
-            // Start time loop
-            ScrollTextAnimNode aStartNode(
-                mnStartTime, 1L, 0.0, 0.0, mnStartTime, false);
-            maVector.push_back(aStartNode);
-        }
-
-        if(IsVisibleWhenStarted())
+        if(mbVisibleWhenStarted)
         {
             double fRelativeStartValue, fRelativeEndValue,fRelativeDistance;
 
@@ -507,7 +492,7 @@ void ActivityImpl::ImpForceScrollTextAnimNodes()
             }
         }
 
-        if(IsVisibleWhenStopped())
+        if(mbVisibleWhenStopped)
         {
             double fRelativeStartValue, fRelativeEndValue, fRelativeDistance;
 
@@ -751,7 +736,6 @@ ActivityImpl::ActivityImpl(
       meAnimKind(drawing::TextAnimationKind_NONE),
       mbVisibleWhenStopped(false),
       mbVisibleWhenStarted(false),
-      mnStartTime(0L),
       mnStepWidth(0)
 {
     // get doctreenode:

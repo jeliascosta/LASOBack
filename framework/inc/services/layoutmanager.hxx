@@ -81,7 +81,7 @@ namespace framework
             enum { DOCKINGAREAS_COUNT = 4 };
 
             LayoutManager( const css::uno::Reference< css::uno::XComponentContext >& xContext );
-            virtual ~LayoutManager();
+            virtual ~LayoutManager() override;
 
             /** declaration of XInterface, XTypeProvider, XServiceInfo */
             FWK_DECLARE_XINTERFACE
@@ -110,7 +110,7 @@ namespace framework
             virtual void SAL_CALL reset() throw (css::uno::RuntimeException, std::exception) override;
             virtual css::awt::Rectangle SAL_CALL getCurrentDockingArea(  ) throw (css::uno::RuntimeException, std::exception) override;
             virtual css::uno::Reference< css::ui::XDockingAreaAcceptor > SAL_CALL getDockingAreaAcceptor() throw (css::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL setDockingAreaAcceptor( const css::uno::Reference< css::ui::XDockingAreaAcceptor >& xDockingAreaAcceptor ) throw (css::uno::RuntimeException, std::exception) override;
+            virtual void SAL_CALL setDockingAreaAcceptor( const css::uno::Reference< css::ui::XDockingAreaAcceptor >& xDockingAreaAcceptor ) throw (css::uno::RuntimeException, std::exception) final override;
             virtual void SAL_CALL createElement( const OUString& aName ) throw (css::uno::RuntimeException, std::exception) override;
             virtual void SAL_CALL destroyElement( const OUString& aName ) throw (css::uno::RuntimeException, std::exception) override;
             virtual sal_Bool SAL_CALL requestElement( const OUString& ResourceURL ) throw (css::uno::RuntimeException, std::exception) override;
@@ -166,8 +166,8 @@ namespace framework
             virtual void SAL_CALL addLayoutManagerEventListener( const css::uno::Reference< css::frame::XLayoutManagerListener >& aLayoutManagerListener ) throw (css::uno::RuntimeException, std::exception) override;
             virtual void SAL_CALL removeLayoutManagerEventListener( const css::uno::Reference< css::frame::XLayoutManagerListener >& aLayoutManagerListener ) throw (css::uno::RuntimeException, std::exception) override;
 
-            DECL_LINK_TYPED( MenuBarClose, void *, void);
-            DECL_LINK_TYPED( WindowEventListener, VclWindowEvent&, void );
+            DECL_LINK( MenuBarClose, void *, void);
+            DECL_LINK( WindowEventListener, VclWindowEvent&, void );
 
             //  called from ToolbarLayoutManager
             void requestLayout();
@@ -179,7 +179,7 @@ namespace framework
                     const css::uno::Reference< css::uno::XComponentContext > &rComponentContext );
 
         protected:
-            DECL_LINK_TYPED(AsyncLayoutHdl, Timer *, void);
+            DECL_LINK(AsyncLayoutHdl, Timer *, void);
 
         private:
 
@@ -248,15 +248,8 @@ namespace framework
 
             //  OPropertySetHelper
 
-            virtual sal_Bool                                            SAL_CALL convertFastPropertyValue        ( css::uno::Any&        aConvertedValue ,
-                                                                                                                css::uno::Any&        aOldValue       ,
-                                                                                                                sal_Int32                        nHandle         ,
-                                                                                                                const css::uno::Any&  aValue          ) throw( css::lang::IllegalArgumentException ) override;
             virtual void                                                SAL_CALL setFastPropertyValue_NoBroadcast( sal_Int32                        nHandle         ,
                                                                                                                 const css::uno::Any&  aValue          ) throw( css::uno::Exception, std::exception                 ) override;
-            using cppu::OPropertySetHelper::getFastPropertyValue;
-            virtual void                                                SAL_CALL getFastPropertyValue( css::uno::Any&    aValue          ,
-                                                                                                    sal_Int32                    nHandle         ) const override;
             virtual ::cppu::IPropertyArrayHelper&                       SAL_CALL getInfoHelper() override;
             virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo() throw (css::uno::RuntimeException, std::exception) override;
 

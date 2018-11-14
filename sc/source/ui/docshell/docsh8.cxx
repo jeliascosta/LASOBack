@@ -299,10 +299,6 @@ sal_uLong ScDocShell::DBaseImport( const OUString& rFullFileName, rtl_TextEncodi
 
     sal_uLong nErr = eERR_OK;
 
-    // Try to get the Text Encoding from the driver
-    if( eCharSet == RTL_TEXTENCODING_IBM_850 )
-        eCharSet = RTL_TEXTENCODING_DONTKNOW;
-
     try
     {
         long i;
@@ -461,16 +457,6 @@ sal_uLong ScDocShell::DBaseImport( const OUString& rFullFileName, rtl_TextEncodi
 
 namespace {
 
-inline bool IsAsciiDigit( sal_Unicode c )
-{
-    return 0x30 <= c && c <= 0x39;
-}
-
-inline bool IsAsciiAlpha( sal_Unicode c )
-{
-    return (0x41 <= c && c <= 0x5a) || (0x61 <= c && c <= 0x7a);
-}
-
 void lcl_GetColumnTypes(
     ScDocShell& rDocShell, const ScRange& rDataRange, bool bHasFieldNames,
     OUString* pColNames, sal_Int32* pColTypes, sal_Int32* pColLengths,
@@ -510,7 +496,7 @@ void lcl_GetColumnTypes(
             if ( nToken > 1 )
             {
                 aFieldName = aString.getToken( 0, ',' );
-                aString = comphelper::string::remove(aString, ' ');
+                aString = aString.replaceAll(" ", "");
                 switch ( aString.getToken( 1, ',' )[0] )
                 {
                     case 'L' :
@@ -567,14 +553,14 @@ void lcl_GetColumnTypes(
             // "_DBASELOCK" is reserved (obsolete because first character is
             // not alphabetical).
             // No duplicated names.
-            if ( !IsAsciiAlpha( aFieldName[0] ) )
+            if ( !rtl::isAsciiAlpha(aFieldName[0]) )
                 aFieldName = "N" + aFieldName;
             OUString aTmpStr;
             sal_Unicode c;
             for ( const sal_Unicode* p = aFieldName.getStr(); ( c = *p ) != 0; p++ )
             {
-                if ( IsAsciiAlpha( c ) || IsAsciiDigit( c ) || c == '_' )
-                    aTmpStr += OUString(c);
+                if ( rtl::isAsciiAlpha(c) || rtl::isAsciiDigit(c) || c == '_' )
+                    aTmpStr += OUStringLiteral1(c);
                 else
                     aTmpStr += "_";
             }
@@ -1013,11 +999,7 @@ sal_uLong ScDocShell::DBaseExport( const OUString& rFullFileName, rtl_TextEncodi
             //! error handling and recovery of old
             //! ScDocShell::SbaSdbExport is still missing!
 
-            if ( !aProgress.SetStateOnPercent( nDocRow - nFirstRow ) )
-            {   // UserBreak
-                nErr = SCERR_EXPORT_DATA;
-                break;
-            }
+            aProgress.SetStateOnPercent( nDocRow - nFirstRow );
         }
 
         comphelper::disposeComponent( xRowSet );

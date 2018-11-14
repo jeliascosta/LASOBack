@@ -19,7 +19,6 @@
 
 #include <swtypes.hxx>
 #include <mailmergehelper.hxx>
-#include <svtools/stdctrl.hxx>
 #include <mmconfigitem.hxx>
 #include <docsh.hxx>
 #include <sfx2/filedlghelper.hxx>
@@ -165,7 +164,7 @@ uno::Reference< mail::XSmtpService > ConnectToSmtpServer(
 
 struct  SwAddressPreview_Impl
 {
-    ::std::vector< OUString >    aAddresses;
+    std::vector< OUString >      aAddresses;
     sal_uInt16                          nRows;
     sal_uInt16                          nColumns;
     sal_uInt16                          nSelectedAddress;
@@ -201,14 +200,7 @@ void SwAddressPreview::dispose()
     vcl::Window::dispose();
 }
 
-VCL_BUILDER_DECL_FACTORY(SwAddressPreview)
-{
-    WinBits nWinStyle = WB_TABSTOP;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-        nWinStyle |= WB_BORDER;
-    rRet = VclPtr<SwAddressPreview>::Create(pParent, nWinStyle);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(SwAddressPreview, WB_TABSTOP)
 
 void SwAddressPreview::positionScrollBar()
 {
@@ -225,7 +217,7 @@ void SwAddressPreview::Resize()
     positionScrollBar();
 }
 
-IMPL_LINK_NOARG_TYPED(SwAddressPreview, ScrollHdl, ScrollBar*, void)
+IMPL_LINK_NOARG(SwAddressPreview, ScrollHdl, ScrollBar*, void)
 {
     Invalidate();
 }
@@ -598,7 +590,7 @@ SwMergeAddressItem   SwAddressIterator::Next()
                     nOpen = sAddress.getLength();
                 if (nReturn == -1)
                     nReturn = sAddress.getLength();
-                sal_Int32 nTarget = ::std::min(nOpen, nReturn);
+                sal_Int32 nTarget = std::min(nOpen, nReturn);
                 aRet.sText = sAddress.copy(0, nTarget);
                 sAddress = sAddress.copy(nTarget);
             }
@@ -621,8 +613,7 @@ OUString SwAuthenticator::getPassword(  ) throw (RuntimeException, std::exceptio
 {
     if(!m_aUserName.isEmpty() && m_aPassword.isEmpty() && m_pParentWindow)
     {
-       SfxPasswordDialog* pPasswdDlg =
-                VclPtr<SfxPasswordDialog>::Create( m_pParentWindow );
+       ScopedVclPtrInstance<SfxPasswordDialog> pPasswdDlg( m_pParentWindow );
        pPasswdDlg->SetMinLen( 0 );
        if(RET_OK == pPasswdDlg->Execute())
             m_aPassword = pPasswdDlg->GetPassword();
@@ -707,7 +698,7 @@ uno::Any SwMailTransferable::getTransferData( const datatransfer::DataFlavor& /*
     else
     {
         Sequence<sal_Int8> aData;
-        SfxMedium aMedium( m_aURL, STREAM_STD_READ );
+        SfxMedium aMedium( m_aURL, StreamMode::STD_READ );
         SvStream* pStream = aMedium.GetInStream();
         if ( aMedium.GetErrorCode() == ERRCODE_NONE && pStream)
         {
@@ -715,7 +706,7 @@ uno::Any SwMailTransferable::getTransferData( const datatransfer::DataFlavor& /*
             aData.realloc(pStream->Tell());
             pStream->Seek(0);
             sal_Int8 * pData = aData.getArray();
-            pStream->Read( pData, aData.getLength() );
+            pStream->ReadBytes( pData, aData.getLength() );
         }
         aRet <<= aData;
     }

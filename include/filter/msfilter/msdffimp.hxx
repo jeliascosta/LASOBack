@@ -20,41 +20,39 @@
 #ifndef INCLUDED_FILTER_MSFILTER_MSDFFIMP_HXX
 #define INCLUDED_FILTER_MSFILTER_MSDFFIMP_HXX
 
-#include <string.h>
-
+#include <cstring>
 #include <map>
 #include <memory>
 #include <set>
+#include <utility>
 #include <vector>
 
-#include <com/sun/star/uno/Reference.h>
-#include <com/sun/star/embed/XEmbeddedObject.hpp>
-#include <com/sun/star/beans/XPropertySet.hpp>
-
+#include <com/sun/star/uno/Any.hxx>
+#include <com/sun/star/uno/Reference.hxx>
 #include <comphelper/stl_types.hxx>
-
-#include <tools/solar.h>
-#include <tools/color.hxx>
-#include <tools/gen.hxx>
-
-#include <vcl/graph.hxx>
-
-#include <svx/msdffdef.hxx>
 #include <filter/msfilter/dffpropset.hxx>
 #include <filter/msfilter/dffrecordheader.hxx>
-
 #include <filter/msfilter/msfilterdllapi.h>
+#include <rtl/string.hxx>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
+#include <svx/msdffdef.hxx>
+#include <tools/color.hxx>
+#include <tools/colordata.hxx>
+#include <tools/errcode.hxx>
+#include <tools/gen.hxx>
+#include <tools/ref.hxx>
+#include <tools/solar.h>
+#include <vcl/graph.hxx>
 
-class Graphic;
+class GDIMetaFile;
 class SotStorage;
 class SvStream;
 class SdrObject;
 class SdrOle2Obj;
 namespace tools {
     class Polygon;
-    class PolyPolygon;
 }
-class FmFormModel;
 class SdrModel;
 class SwFlyFrameFormat;
 
@@ -64,13 +62,13 @@ struct SvxMSDffShapeOrder;
 
 class SvxMSDffManager;
 class SfxItemSet;
-class SdrObject;
-class SdrTextObj;
 struct DffObjData;
 
-namespace com { namespace sun { namespace star { namespace embed {
-    class XStorage;
-} } } }
+namespace com { namespace sun { namespace star {
+    namespace beans { class XPropertySet; }
+    namespace embed { class XEmbeddedObject; }
+    namespace embed { class XStorage; }
+} } }
 
 class MSFILTER_DLLPUBLIC DffPropertyReader : public DffPropSet
 {
@@ -102,7 +100,7 @@ public:
     void SetDefaultPropSet( SvStream& rIn, sal_uInt32 nOffDgg ) const;
     void ApplyAttributes( SvStream& rIn, SfxItemSet& rSet ) const;
     void ApplyAttributes( SvStream& rIn, SfxItemSet& rSet, DffObjData& rObjData ) const;
-    void ImportGradientColor( SfxItemSet& aSet, MSO_FillType eMSO_FillType, double dTrans = 1.0 , double dBackTrans = 1.0 ) const;
+    void ImportGradientColor( SfxItemSet& aSet, MSO_FillType eMSO_FillType, double dTrans, double dBackTrans = 1.0 ) const;
 };
 
 #define COL_DEFAULT RGB_COLORDATA( 0xFA, 0xFB, 0xFC )
@@ -226,7 +224,6 @@ struct MSFILTER_DLLPUBLIC SvxMSDffImportRec
     sal_uInt32      *pYRelTo;
     sal_uInt32      nLayoutInTableCell;
     sal_uInt32      nFlags;
-    sal_Int32       nTextRotationAngle;
     sal_Int32       nDxTextLeft;    ///< distance of text box from surrounding shape
     sal_Int32       nDyTextTop;
     sal_Int32       nDxTextRight;
@@ -370,7 +367,6 @@ public:
 
         void             Clear();
         void             Consume( SvStream& rIn,
-                                  bool bAppend = false,
                                   sal_uInt32 nStOfs = 0 );
 
         bool             SeekToContent( SvStream& rIn,
@@ -504,13 +500,13 @@ protected:
                                    DffObjData& rData,
                                    void* pData,
                                    Rectangle& rTextRect,
-                                   SdrObject* pObj = nullptr);
+                                   SdrObject* pObj);
 
     /** Object finalization, used by the Excel filter to correctly
         compute the object anchoring after nested objects have been imported.
     */
     virtual SdrObject* FinalizeObj(DffObjData& rData,
-                                   SdrObject* pObj = nullptr);
+                                   SdrObject* pObj);
 
     virtual bool GetColorFromPalette(sal_uInt16 nNum, Color& rColor) const;
 
@@ -558,7 +554,7 @@ public:
 
     static OUString MSDFFReadZString( SvStream& rIn,
                                            sal_uInt32 nMaxLen,
-                                           bool bUniCode = false);
+                                           bool bUniCode);
 
     static bool ReadCommonRecordHeader( SvStream& rSt,
                                         sal_uInt8& rVer,
@@ -664,14 +660,14 @@ public:
                             void* pData,
                             Rectangle& rClientRect,
                             const Rectangle& rGlobalChildRect,
-                            int nCalledByGroup = 0,
+                            int nCalledByGroup,
                             sal_Int32* pShapeId = nullptr );
     SdrObject* ImportShape( const DffRecordHeader& rHd,
                             SvStream& rSt,
                             void* pData,
                             Rectangle& rClientRect,
                             const Rectangle& rGlobalChildRect,
-                            int nCalledByGroup = 0,
+                            int nCalledByGroup,
                             sal_Int32* pShapeId = nullptr);
 
     Rectangle GetGlobalChildAnchor( const DffRecordHeader& rHd,
@@ -698,7 +694,6 @@ public:
 
     void ExchangeInShapeOrder(SdrObject*    pOldObject,
                               sal_uLong     nTxBx,
-                              SwFlyFrameFormat*  pFly,
                               SdrObject*    pObject) const;
 
     void RemoveFromShapeOrder( SdrObject* pObject ) const;
@@ -727,7 +722,7 @@ public:
         const css::uno::Any& rAny,
         const css::uno::Reference< css::beans::XPropertySet > & rXPropSet,
         const OUString& rPropertyName,
-        bool bTestPropertyAvailability = false
+        bool bTestPropertyAvailability
     );
 
     void insertShapeId( sal_Int32 nShapeId, SdrObject* pShape );

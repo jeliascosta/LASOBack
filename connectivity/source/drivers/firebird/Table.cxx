@@ -133,17 +133,6 @@ void SAL_CALL Table::alterColumnByName(const OUString& rColName,
     bool bDefaultChanged = xColumn->getPropertyValue("DefaultValue")
                                      != rDescriptor->getPropertyValue("DefaultValue");
 
-    // TODO: quote identifiers as needed.
-    if (bNameChanged)
-    {
-        OUString sNewTableName;
-        rDescriptor->getPropertyValue("Name") >>= sNewTableName;
-        OUString sSql(getAlterTableColumn(rColName)
-                                            + " TO \"" + sNewTableName + "\"");
-
-        getConnection()->createStatement()->execute(sSql);
-    }
-
     if (bTypeChanged || bTypeNameChanged || bPrecisionChanged || bScaleChanged)
     {
         // If bPrecisionChanged this will only succeed if we have increased the
@@ -196,7 +185,11 @@ void SAL_CALL Table::alterColumnByName(const OUString& rColName,
 
     if (bIsAutoIncrementChanged)
     {
-        // TODO: changeType
+       ::dbtools::throwSQLException(
+            "Changing autoincrement property of existing column is not supported",
+            ::dbtools::StandardSQLState::FUNCTION_NOT_SUPPORTED,
+            *this);
+
     }
 
     if (bDefaultChanged)
@@ -213,6 +206,17 @@ void SAL_CALL Table::alterColumnByName(const OUString& rColName,
 
         getConnection()->createStatement()->execute(sSql);
     }
+    // TODO: quote identifiers as needed.
+    if (bNameChanged)
+    {
+        OUString sNewTableName;
+        rDescriptor->getPropertyValue("Name") >>= sNewTableName;
+        OUString sSql(getAlterTableColumn(rColName)
+                                            + " TO \"" + sNewTableName + "\"");
+
+        getConnection()->createStatement()->execute(sSql);
+    }
+
 
     m_pColumns->refresh();
 }

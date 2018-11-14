@@ -19,7 +19,6 @@
 
 #include "objectnames.hxx"
 
-#include "module_sdbt.hxx"
 #include "sdbt_resource.hrc"
 
 #include <com/sun/star/sdb/CommandType.hpp>
@@ -207,7 +206,7 @@ namespace sdbtools
         PNameValidation  m_pSecondary;
 
     public:
-        CombinedNameCheck( PNameValidation _pPrimary, PNameValidation _pSecondary )
+        CombinedNameCheck(const PNameValidation& _pPrimary, const PNameValidation& _pSecondary)
             :m_pPrimary( _pPrimary )
             ,m_pSecondary( _pSecondary )
         {
@@ -354,16 +353,9 @@ namespace sdbtools
         return PNameValidation( new QueryValidityCheck( _rContext, _rxConnection ) );
     }
 
-    // ObjectNames_Impl
-    struct ObjectNames_Impl
-    {
-        SdbtClient  m_aModuleClient;    // keep the module alive as long as this instance lives
-    };
-
     // ObjectNames
     ObjectNames::ObjectNames( const Reference<XComponentContext>& _rContext, const Reference< XConnection >& _rxConnection )
         :ConnectionDependentComponent( _rContext )
-        ,m_pImpl( new ObjectNames_Impl )
     {
         setWeakConnection( _rxConnection );
     }

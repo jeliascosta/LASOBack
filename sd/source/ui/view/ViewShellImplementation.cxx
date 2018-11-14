@@ -41,7 +41,6 @@
 #include "FrameView.hxx"
 #include "DrawViewShell.hxx"
 #include "ViewShellHint.hxx"
-#include "SidebarPanelId.hxx"
 
 #include <sfx2/bindings.hxx>
 #include <sfx2/dispatch.hxx>
@@ -147,10 +146,10 @@ void ViewShell::Implementation::ProcessModifyPageSlot (
                 rRequest.Ignore ();
                 break;
             }
-            if (ePageKind == PK_HANDOUT)
+            if (ePageKind == PageKind::Handout)
             {
                 bHandoutMode = true;
-                pHandoutMPage = pDocument->GetMasterSdPage(0, PK_HANDOUT);
+                pHandoutMPage = pDocument->GetMasterSdPage(0, PageKind::Handout);
             }
         }
         else
@@ -171,7 +170,7 @@ void ViewShell::Implementation::ProcessModifyPageSlot (
         if( pUndoManager )
         {
             OUString aComment( SdResId(STR_UNDO_MODIFY_PAGE) );
-            pUndoManager->EnterListAction(aComment, aComment);
+            pUndoManager->EnterListAction(aComment, aComment, 0, mrViewShell.GetViewShellBase().GetViewShellId());
             ModifyPageUndoAction* pAction = new ModifyPageUndoAction(
                 pDocument, pUndoPage, aNewName, aNewAutoLayout, bBVisible, bBObjsVisible);
             pUndoManager->AddUndoAction(pAction);
@@ -186,10 +185,10 @@ void ViewShell::Implementation::ProcessModifyPageSlot (
                 {
                     pCurrentPage->SetName(aNewName);
 
-                    if (ePageKind == PK_STANDARD)
+                    if (ePageKind == PageKind::Standard)
                     {
                         sal_uInt16 nPage = (pCurrentPage->GetPageNum()-1) / 2;
-                        SdPage* pNotesPage = pDocument->GetSdPage(nPage, PK_NOTES);
+                        SdPage* pNotesPage = pDocument->GetSdPage(nPage, PageKind::Notes);
                         if (pNotesPage != nullptr)
                             pNotesPage->SetName(aNewName);
                     }
@@ -263,7 +262,7 @@ void ViewShell::Implementation::AssignLayout ( SfxRequest& rRequest, PageKind eP
 
         SetOfByte aVisibleLayers;
 
-        if( pPage->GetPageKind() == PK_HANDOUT )
+        if( pPage->GetPageKind() == PageKind::Handout )
             aVisibleLayers.SetAll();
         else
             aVisibleLayers = pPage->TRG_GetMasterPageVisibleLayers();
@@ -349,7 +348,7 @@ ViewShell::Implementation::ToolBarManagerLock::ToolBarManagerLock (
     maTimer.Start();
 }
 
-IMPL_LINK_NOARG_TYPED(ViewShell::Implementation::ToolBarManagerLock, TimeoutCallback, Timer *, void)
+IMPL_LINK_NOARG(ViewShell::Implementation::ToolBarManagerLock, TimeoutCallback, Timer *, void)
 {
     // If possible then release the lock now.  Otherwise start the timer
     // and try again later.

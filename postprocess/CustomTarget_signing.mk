@@ -23,7 +23,8 @@ $(call gb_CustomTarget_get_workdir,postprocess/signing)/signing.done: \
 	$(call gb_Postprocess_get_target,AllLibraries) \
 	$(call gb_Postprocess_get_target,AllExecutables) \
 	$(call gb_Postprocess_get_target,AllModuleTests) \
-	$(call gb_Postprocess_get_target,AllModuleSlowtests)
+	$(call gb_Postprocess_get_target,AllModuleSlowtests) \
+	$(call gb_Postprocess_get_target,AllModuleScreenshots)
 
 $(call gb_CustomTarget_get_workdir,postprocess/signing)/signing.done:
 	$(call gb_Output_announce,$(subst $(WORKDIR)/,,$@),$(true),PRL,2)
@@ -42,6 +43,7 @@ ifneq ($(ENABLE_DBGUTIL),TRUE)
 			$(INSTDIR)/URE/bin/*.exe \
 			$(INSTDIR)/program/*.dll \
 			$(INSTDIR)/program/*.exe \
+			$(INSTDIR)/program/soffice.bin \
 			$(INSTDIR)/program/shlxthdl/*.dll \
 			$(INSTDIR)/sdk/cli/*.dll \
 			$(INSTDIR)/sdk/bin/*.exe \

@@ -34,10 +34,10 @@ namespace sfx2
     public:
         TitledDockingWindow(
             SfxBindings* i_pBindings, SfxChildWindow* i_pChildWindow,
-            vcl::Window* i_pParent, WinBits i_nStyle = 0
+            vcl::Window* i_pParent
         );
 
-        virtual ~TitledDockingWindow();
+        virtual ~TitledDockingWindow() override;
         virtual void dispose() override;
 
         /** sets a title to be displayed in the docking window
@@ -72,14 +72,8 @@ namespace sfx2
         */
         void    impl_resetToolBox();
 
-        /** returns the current title.
-
-            If no title has been set via SetTitle, then the window text (Window::GetText) is returned.
-        */
-        OUString  impl_getTitle() const;
-
     private:
-        DECL_LINK_TYPED( OnToolboxItemSelected, ToolBox*, void );
+        DECL_LINK( OnToolboxItemSelected, ToolBox*, void );
 
         void    impl_construct();
         void    impl_layout();

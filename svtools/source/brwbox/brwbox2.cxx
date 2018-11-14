@@ -191,11 +191,6 @@ void BrowseBox::ImplStartTracking()
 }
 
 
-void BrowseBox::ImplTracking()
-{
-}
-
-
 void BrowseBox::ImplEndTracking()
 {
 }
@@ -687,8 +682,8 @@ void BrowseBox::Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, 
     // (as it is based on the settings of our data window, not the foreign device)
     if (!nDataRowHeight)
         ImpGetDataRowHeight();
-    long nHeightLogic = PixelToLogic(Size(0, nDataRowHeight), MAP_10TH_MM).Height();
-    long nForeignHeightPixel = pDev->LogicToPixel(Size(0, nHeightLogic), MAP_10TH_MM).Height();
+    long nHeightLogic = PixelToLogic(Size(0, nDataRowHeight), MapUnit::Map10thMM).Height();
+    long nForeignHeightPixel = pDev->LogicToPixel(Size(0, nHeightLogic), MapUnit::Map10thMM).Height();
 
     long nOriginalHeight = nDataRowHeight;
     nDataRowHeight = nForeignHeightPixel;
@@ -699,8 +694,8 @@ void BrowseBox::Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, 
     {
         BrowserColumn* pCurrent = (*pCols)[ nPos ];
 
-        long nWidthLogic = PixelToLogic(Size(pCurrent->Width(), 0), MAP_10TH_MM).Width();
-        long nForeignWidthPixel = pDev->LogicToPixel(Size(nWidthLogic, 0), MAP_10TH_MM).Width();
+        long nWidthLogic = PixelToLogic(Size(pCurrent->Width(), 0), MapUnit::Map10thMM).Width();
+        long nForeignWidthPixel = pDev->LogicToPixel(Size(nWidthLogic, 0), MapUnit::Map10thMM).Width();
 
         pCurrent->SetWidth(nForeignWidthPixel, GetZoom());
         if ( pBar )
@@ -717,8 +712,8 @@ void BrowseBox::Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, 
     if ( pBar )
     {
         // the title height with respect to the font set for the given device
-        long nTitleHeight = PixelToLogic(Size(0, GetTitleHeight()), MAP_10TH_MM).Height();
-        nTitleHeight = pDev->LogicToPixel(Size(0, nTitleHeight), MAP_10TH_MM).Height();
+        long nTitleHeight = PixelToLogic(Size(0, GetTitleHeight()), MapUnit::Map10thMM).Height();
+        nTitleHeight = pDev->LogicToPixel(Size(0, nTitleHeight), MapUnit::Map10thMM).Height();
 
         BrowserColumn* pFirstCol = !pCols->empty() ? (*pCols)[ 0 ] : nullptr;
 
@@ -778,8 +773,8 @@ void BrowseBox::Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, 
     {
         BrowserColumn* pCurrent = (*pCols)[ nPos ];
 
-        long nForeignWidthLogic = pDev->PixelToLogic(Size(pCurrent->Width(), 0), MAP_10TH_MM).Width();
-        long nWidthPixel = LogicToPixel(Size(nForeignWidthLogic, 0), MAP_10TH_MM).Width();
+        long nForeignWidthLogic = pDev->PixelToLogic(Size(pCurrent->Width(), 0), MapUnit::Map10thMM).Width();
+        long nWidthPixel = LogicToPixel(Size(nForeignWidthLogic, 0), MapUnit::Map10thMM).Width();
 
         pCurrent->SetWidth(nWidthPixel, GetZoom());
         if ( pBar )
@@ -1290,7 +1285,7 @@ sal_uInt16 BrowseBox::FrozenColCount() const
 }
 
 
-IMPL_LINK_TYPED(BrowseBox, ScrollHdl, ScrollBar*, pBar, void)
+IMPL_LINK(BrowseBox, ScrollHdl, ScrollBar*, pBar, void)
 {
 
     if ( pBar->GetDelta() == 0 )
@@ -1309,7 +1304,7 @@ IMPL_LINK_TYPED(BrowseBox, ScrollHdl, ScrollBar*, pBar, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(BrowseBox, EndScrollHdl, ScrollBar*, void)
+IMPL_LINK_NOARG(BrowseBox, EndScrollHdl, ScrollBar*, void)
 {
 
     if ( getDataWindow()->bNoScrollBack )
@@ -1320,7 +1315,7 @@ IMPL_LINK_NOARG_TYPED(BrowseBox, EndScrollHdl, ScrollBar*, void)
 }
 
 
-IMPL_LINK_TYPED( BrowseBox, StartDragHdl, HeaderBar*, pBar, void )
+IMPL_LINK( BrowseBox, StartDragHdl, HeaderBar*, pBar, void )
 {
     pBar->SetDragSize( pDataWin->GetOutputSizePixel().Height() );
 }
@@ -1605,7 +1600,7 @@ void BrowseBox::MouseButtonDown( const BrowserMouseEvent& rEvt )
                         SelectAll();
                 }
                 else
-                    SelectColumnId( rEvt.GetColumnId(), true, false );
+                    SelectColumnPos( GetColumnPos(rEvt.GetColumnId()), true, false);
             }
 
             // turn cursor on again, if necessary

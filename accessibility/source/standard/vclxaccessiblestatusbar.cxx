@@ -17,8 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/standard/vclxaccessiblestatusbar.hxx>
-#include <accessibility/standard/vclxaccessiblestatusbaritem.hxx>
+#include <standard/vclxaccessiblestatusbar.hxx>
+#include <standard/vclxaccessiblestatusbaritem.hxx>
 #include <toolkit/helper/convert.hxx>
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 #include <vcl/status.hxx>
@@ -281,8 +281,7 @@ OUString VCLXAccessibleStatusBar::getImplementationName() throw (RuntimeExceptio
 
 Sequence< OUString > VCLXAccessibleStatusBar::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    Sequence< OUString > aNames { "com.sun.star.awt.AccessibleStatusBar" };
-    return aNames;
+    return { "com.sun.star.awt.AccessibleStatusBar" };
 }
 
 

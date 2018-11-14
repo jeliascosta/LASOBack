@@ -11,7 +11,6 @@
 #include <osl/file.hxx>
 #include <osl/security.hxx>
 #include <osl/thread.h>
-#include <svtools/stdctrl.hxx>
 #include "svtools/treelistentry.hxx"
 #include <unotools/securityoptions.hxx>
 #include <cuires.hrc>
@@ -31,7 +30,7 @@ CertPathDialog::CertPathDialog(vcl::Window* pParent)
     get(m_pOKBtn, "ok");
     get(m_pAddBtn, "add");
     get(m_pCertPathListContainer, "paths");
-    Size aSize(LogicToPixel(Size(210, 60), MAP_APPFONT));
+    Size aSize(LogicToPixel(Size(210, 60), MapUnit::MapAppFont));
     m_pCertPathListContainer->set_width_request(aSize.Width());
     m_pCertPathListContainer->set_height_request(aSize.Height());
     m_pCertPathList =
@@ -115,7 +114,7 @@ CertPathDialog::CertPathDialog(vcl::Window* pParent)
         AddCertPath("$MOZILLA_CERTIFICATE_FOLDER", OUString(pEnv, strlen(pEnv), osl_getThreadTextEncoding()));
 }
 
-IMPL_LINK_NOARG_TYPED(CertPathDialog, OKHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(CertPathDialog, OKHdl_Impl, Button*, void)
 {
     try
     {
@@ -161,7 +160,7 @@ void CertPathDialog::dispose()
     ModalDialog::dispose();
 }
 
-IMPL_LINK_TYPED( CertPathDialog, CheckHdl_Impl, SvTreeListBox*, pList, void )
+IMPL_LINK( CertPathDialog, CheckHdl_Impl, SvTreeListBox*, pList, void )
 {
     SvTreeListEntry* pEntry = pList ? m_pCertPathList->GetEntry(m_pCertPathList->GetCurMousePoint())
                                 : m_pCertPathList->FirstSelected();
@@ -205,16 +204,15 @@ void CertPathDialog::AddCertPath(const OUString &rProfile, const OUString &rPath
         pEntry = m_pCertPathList->Next(pEntry);
     }
 
-    OUStringBuffer sEntry;
-    sEntry.append('\t').append(rProfile).append('\t').append(rPath);
-    pEntry = m_pCertPathList->InsertEntry(sEntry.makeStringAndClear());
+    OUString sEntry( "\t" + rProfile + "\t" + rPath );
+    pEntry = m_pCertPathList->InsertEntry(sEntry);
     OUString* pCertPath = new OUString(rPath);
     pEntry->SetUserData(pCertPath);
     m_pCertPathList->SetCheckButtonState(pEntry, SvButtonState::Checked);
     HandleCheckEntry(pEntry);
 }
 
-IMPL_LINK_NOARG_TYPED(CertPathDialog, AddHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(CertPathDialog, AddHdl_Impl, Button*, void)
 {
     try
     {

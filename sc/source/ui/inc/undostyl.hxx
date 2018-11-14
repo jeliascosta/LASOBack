@@ -31,19 +31,18 @@ class ScStyleSaveData
 private:
     OUString        aName;
     OUString        aParent;
-    SfxItemSet*     pItems;
+    std::unique_ptr<SfxItemSet>  xItems;
 
 public:
-                        ScStyleSaveData();
-                        ScStyleSaveData( const ScStyleSaveData& rOther );
-                        ~ScStyleSaveData();
+    ScStyleSaveData();
+    ScStyleSaveData( const ScStyleSaveData& rOther );
     ScStyleSaveData&    operator=( const ScStyleSaveData& rOther );
 
     void                InitFromStyle( const SfxStyleSheetBase* pSource );
 
     const OUString&     GetName() const     { return aName; }
     const OUString&     GetParent() const   { return aParent; }
-    const SfxItemSet*   GetItems() const    { return pItems; }
+    const SfxItemSet*   GetItems() const    { return xItems.get(); }
 };
 
 class ScUndoModifyStyle: public ScSimpleUndo
@@ -62,7 +61,7 @@ public:
                                         SfxStyleFamily eFam,
                                         const ScStyleSaveData& rOld,
                                         const ScStyleSaveData& rNew );
-    virtual         ~ScUndoModifyStyle();
+    virtual         ~ScUndoModifyStyle() override;
 
     virtual void    Undo() override;
     virtual void    Redo() override;
@@ -76,7 +75,7 @@ class ScUndoApplyPageStyle: public ScSimpleUndo
 {
 public:
                     ScUndoApplyPageStyle( ScDocShell* pDocSh, const OUString& rNewStyle );
-    virtual         ~ScUndoApplyPageStyle();
+    virtual         ~ScUndoApplyPageStyle() override;
 
     void            AddSheetAction( SCTAB nTab, const OUString& rOld );
 

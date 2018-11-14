@@ -7,15 +7,15 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-gb_Top_MODULE_CHECK_TARGETS := slowcheck unitcheck subsequentcheck perfcheck
+gb_Top_MODULE_CHECK_TARGETS := slowcheck unitcheck subsequentcheck perfcheck uicheck screenshot
 
-.PHONY : all check-if-root bootstrap gbuild build build-non-l10n-only build-l10n-only check clean clean-build clean-host test-install distclean distro-pack-install docs download etags fetch findunusedcode get-submodules id install install-strip tags debugrun help showmodules translations packageinfo internal.clean $(gb_Top_MODULE_CHECK_TARGETS)
+.PHONY : all check-if-root bootstrap gbuild build build-non-l10n-only build-l10n-only check clean clean-build clean-host test-install distclean distro-pack-install distro-pack-install-strip docs download etags fetch findunusedcode get-submodules id install install-strip tags debugrun help showmodules translations packageinfo internal.clean $(gb_Top_MODULE_CHECK_TARGETS)
 
 MAKECMDGOALS?=all
 build_goal:=$(if $(filter build check,$(MAKECMDGOALS)),all)\
  $(if $(filter build-nocheck,$(MAKECMDGOALS)),build)\
  $(if $(filter check,$(MAKECMDGOALS)),subsequentcheck)\
- $(filter all build-l10n-only build-non-l10n-only debugrun help showmodules translations $(gb_Top_MODULE_CHECK_TARGETS) check packageinfo,$(MAKECMDGOALS))
+ $(filter all build-l10n-only build-non-l10n-only debugrun help showmodules translations $(gb_Top_MODULE_CHECK_TARGETS) check packageinfo gbuildtoide,$(MAKECMDGOALS))
 
 SRCDIR := @SRC_ROOT@
 BUILDDIR := @BUILDDIR@
@@ -52,7 +52,7 @@ $(BUILDDIR)/config_host.mk : $(wildcard \
 
 else # MAKE_RESTARTS
 
-all: check-if-root build
+all: build
 
 check-if-root:
 	@if test `id -u` = 0; then \
@@ -90,7 +90,10 @@ define gb_Top_GbuildModuleRules
 $(1): bootstrap fetch
 	cd $(SRCDIR)/$(2) && $$(MAKE) $(IWYU_OPTION) $(PARALLELISM_OPTION) $(GMAKE_OPTIONS)
 
-$(1).build $(1).check $(1).clean $(1).showdeliverables $(foreach target,$(gb_Top_MODULE_CHECK_TARGETS),$(1).$(target)):
+$(1).build $(1).check $(foreach target,$(gb_Top_MODULE_CHECK_TARGETS),$(1).$(target)): bootstrap fetch
+	cd $(SRCDIR)/$(2) && $$(MAKE) $(PARALLELISM_OPTION) $(GMAKE_OPTIONS) $$(patsubst $(1).%,%,$$@)
+
+$(1).clean $(1).showdeliverables:
 	cd $(SRCDIR)/$(2) && $$(MAKE) $(PARALLELISM_OPTION) $(GMAKE_OPTIONS) $$(patsubst $(1).%,%,$$@)
 
 $(1).all: bootstrap fetch
@@ -146,6 +149,7 @@ gbuild_TARGETS := AllLangHelp \
 	Rdb \
 	StaticLibrary \
 	UIConfig \
+	UITest \
 	UnoApi \
 	UnpackedTarball \
 	WinResTarget \
@@ -181,6 +185,9 @@ distclean : clean compilerplugins-clean
         $(BUILDDIR)/Makefile \
         $(BUILDDIR)/aclocal.m4 \
         $(BUILDDIR)/autom4te.cache \
+        $(BUILDDIR)/bin/bffvalidator.sh \
+        $(BUILDDIR)/bin/odfvalidator.sh \
+        $(BUILDDIR)/bin/officeotron.sh \
         $(BUILDDIR)/config.log \
         $(BUILDDIR)/config.Build.log \
         $(BUILDDIR)/config.status \
@@ -241,9 +248,9 @@ fetch:
 endif
 
 #
-# Bootstap
+# Bootstrap
 #
-bootstrap: compilerplugins
+bootstrap: check-if-root compilerplugins
 
 #
 # Build
@@ -263,7 +270,7 @@ endif
 
 build-non-l10n-only build-l10n-only build-nocheck check debugrun translations packageinfo $(gb_Top_MODULE_CHECK_TARGETS): build
 
-help showmodules:
+help showmodules gbuildtoide:
 	$(MAKE) $(PARALLELISM_OPTION) $(GMAKE_OPTIONS) -f $(SRCDIR)/Makefile.gbuild $@
 
 cross-toolset: bootstrap fetch
@@ -319,47 +326,54 @@ ifneq ($(MACOSX_CODESIGNING_IDENTITY),)
 #
 # Create Resources/*.lproj directories for languages supported by OS X
 	set -x; for lang in ca cs da de el en es fi fr hr hu id it ja ko ms nl no pl pt pt_PT ro ru sk sv th tr uk vi zh_CN zh_TW; do \
-		lproj=$(TESTINSTALLDIR)/LibreOffice$(if $(ENABLE_RELEASE_BUILD),,Dev).app/Contents/Resources/$$lang.lproj; \
-		mkdir $$lproj; \
+		lproj=$(TESTINSTALLDIR)/$(PRODUCTNAME_WITHOUT_SPACES).app/Contents/Resources/$$lang.lproj; \
+		mkdir "$$lproj"; \
 	done
 #
 # And remove the "bin" folder which should not be there
-	rm -rf $(TESTINSTALLDIR)/LibreOffice$(if $(ENABLE_RELEASE_BUILD),,Dev).app/Contents/bin
+	rm -rf $(TESTINSTALLDIR)/$(PRODUCTNAME_WITHOUT_SPACES).app/Contents/bin
 #
 # Remove unnecessary executables in the LibreOfficePython framework
-	rm -rf $(TESTINSTALLDIR)/LibreOffice$(if $(ENABLE_RELEASE_BUILD),,Dev).app/Contents/Frameworks/LibreOfficePython.framework/Versions/[1-9]*/bin
+	rm -rf $(TESTINSTALLDIR)/$(PRODUCTNAME_WITHOUT_SPACES).app/Contents/Frameworks/LibreOfficePython.framework/Versions/[1-9]*/bin
 #
 # Remove the python.o object file which is weird and interferes with app store uploading
 # And with it removed, presumably the other stuff in the Python lib/python3.3/config-3.3m probably does not make sense either.
-	rm -rf $(TESTINSTALLDIR)/LibreOffice$(if $(ENABLE_RELEASE_BUILD),,Dev).app/Contents/Frameworks/LibreOfficePython.framework/Versions/[1-9]*/lib/python[1-9]*/config-[1-9]*
+	rm -rf $(TESTINSTALLDIR)/$(PRODUCTNAME_WITHOUT_SPACES).app/Contents/Frameworks/LibreOfficePython.framework/Versions/[1-9]*/lib/python[1-9]*/config-[1-9]*
 #
 ifneq ($ENABLE_MACOSX_SANDBOX),)
-# Remove the gengal.bin binary and unopkg script that we don't want
-	rm $(TESTINSTALLDIR)/LibreOffice$(if $(ENABLE_RELEASE_BUILD),,Dev).app/Contents/MacOS/gengal.bin
-	rm $(TESTINSTALLDIR)/LibreOffice$(if $(ENABLE_RELEASE_BUILD),,Dev).app/Contents/MacOS/unopkg
+# Remove the gengal binary and unopkg script that we don't want
+	rm $(TESTINSTALLDIR)/$(PRODUCTNAME_WITHOUT_SPACES).app/Contents/MacOS/gengal
+	rm $(TESTINSTALLDIR)/$(PRODUCTNAME_WITHOUT_SPACES).app/Contents/MacOS/unopkg
 endif
 #
 # Then use the macosx-codesign-app-bundle script
-	@$(SRCDIR)/solenv/bin/macosx-codesign-app-bundle $(TESTINSTALLDIR)/LibreOffice$(if $(ENABLE_RELEASE_BUILD),,Dev).app
+	@$(SRCDIR)/solenv/bin/macosx-codesign-app-bundle $(TESTINSTALLDIR)/$(PRODUCTNAME_WITHOUT_SPACES).app
 endif
 endif
 	@$(call gb_Top_InstallFinished,Test Installation,$(TESTINSTALLDIR))
 
 mac-app-store-package: test-install
 ifneq ($(MACOSX_PACKAGE_SIGNING_IDENTITY),)
-	rm -rf "$(MACOSX_APP_NAME).app"
-	mv "$(TESTINSTALLDIR)/$(PRODUCTNAME).app" "$(MACOSX_APP_NAME).app"
-	productbuild --component "$(MACOSX_APP_NAME).app" /Applications --sign $(MACOSX_PACKAGE_SIGNING_IDENTITY) $(shell echo "$(MACOSX_APP_NAME)" | tr ' ' '-').pkg
+	rm -rf "$(PRODUCTNAME).app"
+	mv "$(TESTINSTALLDIR)/$(PRODUCTNAME_WITHOUT_SPACES).app" "$(PRODUCTNAME).app"
+	productbuild --component "$(PRODUCTNAME).app" /Applications --sign $(MACOSX_PACKAGE_SIGNING_IDENTITY) $(PRODUCTNAME_WITHOUT_SPACES).pkg
 else
 	@echo You did not provide an installer signing identity with --enable-macosx-package-signing
 	@exit 1
 endif
 
+define gb_Top_DistroPackInstall
+$(SRCDIR)/bin/distro-install-clean-up
+$(SRCDIR)/bin/distro-install-desktop-integration
+$(SRCDIR)/bin/distro-install-sdk
+$(SRCDIR)/bin/distro-install-file-lists
+endef
+
 distro-pack-install: install
-	$(SRCDIR)/bin/distro-install-clean-up
-	$(SRCDIR)/bin/distro-install-desktop-integration
-	$(SRCDIR)/bin/distro-install-sdk
-	$(SRCDIR)/bin/distro-install-file-lists
+	$(gb_Top_DistroPackInstall)
+
+distro-pack-install-strip: install-strip
+	$(gb_Top_DistroPackInstall)
 
 install-package-%:
 	$(MAKE) $(GMAKE_OPTIONS) -f $(SRCDIR)/Makefile.gbuild $@
@@ -414,8 +428,8 @@ endef
 $(foreach ide,\
 	debug \
 	kdevelop \
-	vs2012 \
 	vs2013 \
+	vs2015 \
 	vim \
 	xcode \
 	qtcreator \

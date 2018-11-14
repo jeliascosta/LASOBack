@@ -46,10 +46,6 @@ class XMLOFF_DLLPUBLIC XMLTextMasterPageContext : public SvXMLStyleContext
     bool bInsertFooterFirst;
     bool bHeaderInserted;
     bool bFooterInserted;
-    bool bHeaderLeftInserted;
-    bool bFooterLeftInserted;
-    bool bHeaderFirstInserted;
-    bool bFooterFirstInserted;
 
     SAL_DLLPRIVATE css::uno::Reference< css::style::XStyle > Create();
 protected:
@@ -61,7 +57,7 @@ public:
             const OUString& rLName,
             const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
             bool bOverwrite );
-    virtual ~XMLTextMasterPageContext();
+    virtual ~XMLTextMasterPageContext() override;
 
     virtual SvXMLImportContext *CreateChildContext(
             sal_uInt16 nPrefix,

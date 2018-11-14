@@ -48,7 +48,7 @@ class SmartTag : public SimpleReferenceComponent
 
 public:
     explicit SmartTag( ::sd::View& rView );
-    virtual ~SmartTag();
+    virtual ~SmartTag() override;
 
     /** returns true if the SmartTag consumes this event. */
     virtual bool MouseButtonDown( const MouseEvent&, SmartHdl& );
@@ -70,7 +70,7 @@ public:
 protected:
     virtual sal_uLong GetMarkablePointCount() const;
     virtual sal_uLong GetMarkedPointCount() const;
-    virtual bool MarkPoint(SdrHdl& rHdl, bool bUnmark=false);
+    virtual bool MarkPoint(SdrHdl& rHdl, bool bUnmark);
     virtual void CheckPossibilities();
     virtual bool MarkPoints(const Rectangle* pRect, bool bUnmark);
 
@@ -136,7 +136,7 @@ public:
     bool HasMarkedPoints() const;
     sal_uLong GetMarkedPointCount() const;
     static bool IsPointMarkable(const SdrHdl& rHdl);
-    bool MarkPoint(SdrHdl& rHdl, bool bUnmark=false);
+    bool MarkPoint(SdrHdl& rHdl, bool bUnmark);
     bool MarkPoints(const Rectangle* pRect, bool bUnmark);
 
     void CheckPossibilities();
@@ -164,8 +164,8 @@ private:
 class SmartHdl : public SdrHdl
 {
 public:
-    SmartHdl( const SmartTagReference& xTag, SdrObject* pObject, const Point& rPnt, SdrHdlKind eNewKind=HDL_SMARTTAG );
-    SmartHdl( const SmartTagReference& xTag, const Point& rPnt, SdrHdlKind eNewKind=HDL_SMARTTAG );
+    SmartHdl( const SmartTagReference& xTag, SdrObject* pObject, const Point& rPnt, SdrHdlKind eNewKind=SdrHdlKind::SmartTag );
+    SmartHdl( const SmartTagReference& xTag, const Point& rPnt, SdrHdlKind eNewKind=SdrHdlKind::SmartTag );
 
     const SmartTagReference& getTag() const { return mxTag; }
 

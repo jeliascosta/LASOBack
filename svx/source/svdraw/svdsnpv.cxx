@@ -181,7 +181,7 @@ SdrSnapView::SdrSnapView(SdrModel* pModel1, OutputDevice* pOut)
     , nMagnSizPix(4)
     , nSnapAngle(1500)
     , nEliminatePolyPointLimitAngle(0)
-    , eCrookMode(SDRCROOK_ROTATE)
+    , eCrookMode(SdrCrookMode::Rotate)
     , bSnapEnab(true)
     , bGridSnap(true)
     , bBordSnap(true)
@@ -196,7 +196,6 @@ SdrSnapView::SdrSnapView(SdrModel* pModel1, OutputDevice* pOut)
     , bMoveOnlyDragging(false)
     , bSlantButShear(false)
     , bCrookNoContortion(false)
-    , bHlplFixed(false)
     , bEliminatePolyPoints(false)
 {
 }
@@ -291,15 +290,15 @@ SdrSnap SdrSnapView::SnapPos(Point& rPnt, const SdrPageView* pPV) const
             const SdrHelpLine& rHL=rHLL[i];
             const Point& rPos=rHL.GetPos();
             switch (rHL.GetKind()) {
-                case SDRHELPLINE_VERTICAL: {
+                case SdrHelpLineKind::Vertical: {
                     long a=x-rPos.X();
                     if (std::abs(a)<=mx) { dx1=-a; if (std::abs(dx1)<std::abs(dx)) dx=dx1; }
                 } break;
-                case SDRHELPLINE_HORIZONTAL: {
+                case SdrHelpLineKind::Horizontal: {
                     long b=y-rPos.Y();
                     if (std::abs(b)<=my) { dy1=-b; if (std::abs(dy1)<std::abs(dy)) dy=dy1; }
                 } break;
-                case SDRHELPLINE_POINT: {
+                case SdrHelpLineKind::Point: {
                     long a=x-rPos.X();
                     long b=y-rPos.Y();
                     if (std::abs(a)<=mx && std::abs(b)<=my) {
@@ -332,8 +331,8 @@ SdrSnap SdrSnapView::SnapPos(Point& rPnt, const SdrPageView* pPV) const
         sal_uIntPtr nMaxPointSnapCount=200;
         sal_uIntPtr nMaxFrameSnapCount=200;
 
-        // go back to IM_DEEPNOGROUPS runthrough for snap to object comparisons
-        SdrObjListIter aIter(*pPV->GetPage(),IM_DEEPNOGROUPS,true);
+        // go back to SdrIterMode::DeepNoGroups runthrough for snap to object comparisons
+        SdrObjListIter aIter(*pPV->GetPage(),SdrIterMode::DeepNoGroups,true);
 
         while (aIter.IsMore() && (nMaxPointSnapCount>0 || nMaxFrameSnapCount>0)) {
             SdrObject* pO=aIter.Next();
@@ -417,10 +416,10 @@ SdrSnap SdrSnapView::SnapPos(Point& rPnt, const SdrPageView* pPV) const
     return bRet;
 }
 
-void SdrSnapView::CheckSnap(const Point& rPt, const SdrPageView* pPV, long& nBestXSnap, long& nBestYSnap, bool& bXSnapped, bool& bYSnapped) const
+void SdrSnapView::CheckSnap(const Point& rPt, long& nBestXSnap, long& nBestYSnap, bool& bXSnapped, bool& bYSnapped) const
 {
     Point aPt(rPt);
-    SdrSnap nRet=SnapPos(aPt,pPV);
+    SdrSnap nRet=SnapPos(aPt,nullptr);
     aPt-=rPt;
     if (nRet & SdrSnap::XSNAPPED) {
         if (bXSnapped) {
@@ -518,25 +517,22 @@ bool SdrSnapView::BegDragHelpLine(sal_uInt16 nHelpLineNum, SdrPageView* pPV)
 {
     bool bRet(false);
 
-    if(!bHlplFixed)
+    BrkAction();
+
+    if(pPV && nHelpLineNum < pPV->GetHelpLines().GetCount())
     {
-        BrkAction();
+        const SdrHelpLineList& rHelpLines = pPV->GetHelpLines();
+        const SdrHelpLine& rHelpLine = rHelpLines[nHelpLineNum];
+        Point aHelpLinePos = rHelpLine.GetPos();
+        basegfx::B2DPoint aStartPos(aHelpLinePos.X(), aHelpLinePos.Y());
 
-        if(pPV && nHelpLineNum < pPV->GetHelpLines().GetCount())
-        {
-            const SdrHelpLineList& rHelpLines = pPV->GetHelpLines();
-            const SdrHelpLine& rHelpLine = rHelpLines[nHelpLineNum];
-            Point aHelpLinePos = rHelpLine.GetPos();
-            basegfx::B2DPoint aStartPos(aHelpLinePos.X(), aHelpLinePos.Y());
+        DBG_ASSERT(nullptr == mpHelpLineOverlay, "SdrSnapView::BegDragHelpLine: There exists a ImplHelpLineOverlay (!)");
+        mpHelpLineOverlay = new ImplHelpLineOverlay(*this, aStartPos, pPV, nHelpLineNum, rHelpLine.GetKind());
 
-            DBG_ASSERT(nullptr == mpHelpLineOverlay, "SdrSnapView::BegDragHelpLine: There exists a ImplHelpLineOverlay (!)");
-            mpHelpLineOverlay = new ImplHelpLineOverlay(*this, aStartPos, pPV, nHelpLineNum, rHelpLine.GetKind());
+        maDragStat.Reset(GetSnapPos(aHelpLinePos, pPV));
+        maDragStat.SetMinMove(ImpGetMinMovLogic(-3, nullptr));
 
-            maDragStat.Reset(GetSnapPos(aHelpLinePos, pPV));
-            maDragStat.SetMinMove(ImpGetMinMovLogic(-3, nullptr));
-
-            bRet = true;
-        }
+        bRet = true;
     }
 
     return bRet;
@@ -562,8 +558,8 @@ Pointer SdrSnapView::GetDraggedHelpLinePointer() const
     {
         switch(mpHelpLineOverlay->GetHelpLineKind())
         {
-            case SDRHELPLINE_VERTICAL  : return Pointer(PointerStyle::ESize);
-            case SDRHELPLINE_HORIZONTAL: return Pointer(PointerStyle::SSize);
+            case SdrHelpLineKind::Vertical  : return Pointer(PointerStyle::ESize);
+            case SdrHelpLineKind::Horizontal: return Pointer(PointerStyle::SSize);
             default                    : return Pointer(PointerStyle::Move);
         }
     }

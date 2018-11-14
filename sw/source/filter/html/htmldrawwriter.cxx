@@ -179,8 +179,8 @@ Writer& OutHTML_DrawFrameFormatAsMarquee( Writer& rWrt,
     SdrTextAniDirection eAniDir = pTextObj->GetTextAniDirection();
     switch( eAniDir )
     {
-    case SDRTEXTANI_LEFT:       pStr = OOO_STRING_SVTOOLS_HTML_AL_left;     break;
-    case SDRTEXTANI_RIGHT:      pStr = OOO_STRING_SVTOOLS_HTML_AL_right;        break;
+    case SdrTextAniDirection::Left:       pStr = OOO_STRING_SVTOOLS_HTML_AL_left;     break;
+    case SdrTextAniDirection::Right:      pStr = OOO_STRING_SVTOOLS_HTML_AL_right;        break;
     default:
         ;
     }
@@ -219,7 +219,7 @@ Writer& OutHTML_DrawFrameFormatAsMarquee( Writer& rWrt,
     {
         nAmount = Application::GetDefaultDevice()
                             ->LogicToPixel( Size(nAmount,0),
-                                            MapMode(MAP_TWIP) ).Width();
+                                            MapMode(MapUnit::MapTwip) ).Width();
     }
     if( nAmount )
     {
@@ -247,7 +247,7 @@ Writer& OutHTML_DrawFrameFormatAsMarquee( Writer& rWrt,
     {
         Size aPixelSz =
             Application::GetDefaultDevice()->LogicToPixel( aTwipSz,
-                                                MapMode(MAP_TWIP) );
+                                                MapMode(MapUnit::MapTwip) );
         if( !aPixelSz.Width() && aTwipSz.Width() )
             aPixelSz.Width() = 1;
         if( !aPixelSz.Height() && aTwipSz.Height() )

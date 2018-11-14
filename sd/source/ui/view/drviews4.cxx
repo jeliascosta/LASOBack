@@ -20,7 +20,6 @@
 #include <com/sun/star/drawing/XDrawPagesSupplier.hpp>
 
 #include "DrawViewShell.hxx"
-#include <comphelper/lok.hxx>
 #include <vcl/msgbox.hxx>
 #include <svl/urlbmk.hxx>
 #include <svx/svdpagv.hxx>
@@ -147,7 +146,7 @@ bool DrawViewShell::KeyInput (const KeyEvent& rKEvt, ::sd::Window* pWin)
                 GetView()->SdrEndTextEdit();
 
                 // look for a new candidate, a successor of pOldObj
-                SdrObjListIter aIter(*pActualPage, IM_DEEPNOGROUPS);
+                SdrObjListIter aIter(*pActualPage, SdrIterMode::DeepNoGroups);
                 bool bDidVisitOldObject(false);
 
                 while(aIter.IsMore() && !pCandidate)
@@ -156,10 +155,10 @@ bool DrawViewShell::KeyInput (const KeyEvent& rKEvt, ::sd::Window* pWin)
 
                     if(pObj && dynamic_cast< const SdrTextObj *>( pObj ) !=  nullptr)
                     {
-                        sal_uInt32 nInv(pObj->GetObjInventor());
-                        sal_uInt16 nKnd(pObj->GetObjIdentifier());
+                        SdrInventor nInv(pObj->GetObjInventor());
+                        sal_uInt16  nKnd(pObj->GetObjIdentifier());
 
-                        if(SdrInventor == nInv &&
+                        if(SdrInventor::Default == nInv &&
                             (OBJ_TITLETEXT == nKnd || OBJ_OUTLINETEXT == nKnd || OBJ_TEXT == nKnd)
                             && bDidVisitOldObject)
                         {
@@ -230,11 +229,11 @@ void DrawViewShell::StartRulerDrag (
         SdrHelpLineKind eKind;
 
         if ( rMEvt.IsMod1() )
-            eKind = SDRHELPLINE_POINT;
+            eKind = SdrHelpLineKind::Point;
         else if ( rRuler.IsHorizontal() )
-            eKind = SDRHELPLINE_HORIZONTAL;
+            eKind = SdrHelpLineKind::Horizontal;
         else
-            eKind = SDRHELPLINE_VERTICAL;
+            eKind = SdrHelpLineKind::Vertical;
 
         mpDrawView->BegDragHelpLine(aWPos, eKind);
         mbIsRulerDrag = true;
@@ -342,14 +341,8 @@ void DrawViewShell::MouseMove(const MouseEvent& rMEvt, ::sd::Window* pWin)
         // is needed it is necessary to set it here.
         if (GetDoc())
         {
-            svtools::ColorConfig aColorConfig;
-            Color aFillColor;
-
-            aFillColor = Color( aColorConfig.GetColorValue( svtools::APPBACKGROUND ).nColor );
-            if (comphelper::LibreOfficeKit::isActive())
-                aFillColor = COL_TRANSPARENT;
-
-            mpDrawView->SetApplicationBackgroundColor(aFillColor);
+            ConfigureAppBackgroundColor();
+            mpDrawView->SetApplicationBackgroundColor( mnAppBackgroundColor );
         }
 
         ViewShell::MouseMove(rMEvt, pWin);
@@ -501,7 +494,7 @@ void DrawViewShell::Command(const CommandEvent& rCEvt, ::sd::Window* pWin)
                         ( aDataHelper.HasFormat( SotClipboardFormatId::UNIFORMRESOURCELOCATOR ) &&
                           aDataHelper.GetINetBookmark( SotClipboardFormatId::UNIFORMRESOURCELOCATOR, aINetBookmark ) ) )
                     {
-                        InsertURLField( aINetBookmark.GetURL(), aINetBookmark.GetDescription(), "", nullptr );
+                        InsertURLField( aINetBookmark.GetURL(), aINetBookmark.GetDescription(), "" );
                     }
                 }
             }
@@ -556,15 +549,15 @@ void DrawViewShell::Command(const CommandEvent& rCEvt, ::sd::Window* pWin)
                 //fdo#44998 if the outliner has captured the mouse events release the lock
                 //so the SdFieldPopup can get them
                 pOLV->ReleaseMouse();
-                SdFieldPopup aFieldPopup( pFldItem->GetField(), eLanguage );
+                ScopedVclPtrInstance<SdFieldPopup> aFieldPopup( pFldItem->GetField(), eLanguage );
 
                 if ( rCEvt.IsMouseEvent() )
                     aMPos = rCEvt.GetMousePosPixel();
                 else
                     aMPos = Point( 20, 20 );
-                aFieldPopup.Execute( pWin, aMPos );
+                aFieldPopup->Execute( pWin, aMPos );
 
-                std::unique_ptr<SvxFieldData> pField(aFieldPopup.GetField());
+                std::unique_ptr<SvxFieldData> pField(aFieldPopup->GetField());
                 if( pField )
                 {
                     SvxFieldItem aFieldItem( *pField, EE_FEATURE_FIELD );
@@ -629,7 +622,7 @@ void DrawViewShell::Command(const CommandEvent& rCEvt, ::sd::Window* pWin)
                                 }
                                 else
                                 {
-                                    if( (pObj->GetObjInventor() == SdrInventor) && (pObj->GetObjIdentifier() == OBJ_TABLE) )
+                                    if( (pObj->GetObjInventor() == SdrInventor::Default) && (pObj->GetObjIdentifier() == OBJ_TABLE) )
                                     {
                                         aPopupId = "tabletext";
                                     }
@@ -642,10 +635,10 @@ void DrawViewShell::Command(const CommandEvent& rCEvt, ::sd::Window* pWin)
                         }
                         else
                         {
-                            sal_uInt32 nInv = pObj->GetObjInventor();
-                            sal_uInt16 nId = pObj->GetObjIdentifier();
+                            SdrInventor nInv = pObj->GetObjInventor();
+                            sal_uInt16  nId  = pObj->GetObjIdentifier();
 
-                            if (nInv == SdrInventor)
+                            if (nInv == SdrInventor::Default)
                             {
                                 switch ( nId )
                                 {
@@ -708,7 +701,7 @@ void DrawViewShell::Command(const CommandEvent& rCEvt, ::sd::Window* pWin)
                                         break;
                                 }
                             }
-                            else if( nInv == E3dInventor )
+                            else if( nInv == SdrInventor::E3d )
                             {
                                 if( nId == E3D_POLYSCENE_ID || nId == E3D_SCENE_ID )
                                 {
@@ -720,7 +713,7 @@ void DrawViewShell::Command(const CommandEvent& rCEvt, ::sd::Window* pWin)
                                 else
                                     aPopupId = "3dobject";
                             }
-                            else if( nInv == FmFormInventor )
+                            else if( nInv == SdrInventor::FmForm )
                             {
                                 aPopupId = "form";
                             }
@@ -876,9 +869,9 @@ void DrawViewShell::ShowSnapLineContextMenu (
     const Point& rMouseLocation)
 {
     const SdrHelpLine& rHelpLine (rPageView.GetHelpLines()[nSnapLineIndex]);
-    std::unique_ptr<PopupMenu> pMenu (new PopupMenu ());
+    ScopedVclPtrInstance<PopupMenu> pMenu;
 
-    if (rHelpLine.GetKind() == SDRHELPLINE_POINT)
+    if (rHelpLine.GetKind() == SdrHelpLineKind::Point)
     {
         pMenu->InsertItem(
             SID_SET_SNAPITEM,

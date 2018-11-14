@@ -34,14 +34,13 @@ namespace dbaccess
     public:
         explicit OBookmarkSet(sal_Int32 i_nMaxRows) : OCacheSet(i_nMaxRows)
         {}
-        virtual ~OBookmarkSet()
+        virtual ~OBookmarkSet() override
         {
             m_xRowLocate = nullptr;
         }
 
         virtual void construct(const css::uno::Reference< css::sdbc::XResultSet>& _xDriverSet,const OUString& i_sRowSetFilter) override;
         virtual void reset(const css::uno::Reference< css::sdbc::XResultSet>& _xDriverSet) override;
-        virtual void fillValueRow(ORowSetRow& _rRow,sal_Int32 _nPosition) override;
         // css::sdbcx::XRowLocate
         virtual css::uno::Any SAL_CALL getBookmark() throw(css::sdbc::SQLException, css::uno::RuntimeException) override;
         virtual bool SAL_CALL moveToBookmark( const css::uno::Any& bookmark ) throw(css::sdbc::SQLException, css::uno::RuntimeException) override;

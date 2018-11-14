@@ -50,9 +50,9 @@
 #include <com/sun/star/sheet/DataPilotTablePositionData.hpp>
 #include <com/sun/star/sheet/DataPilotTableResultData.hpp>
 #include <com/sun/star/sheet/MemberResultFlags.hpp>
-#include <com/sun/star/sheet/TableFilterField.hpp>
 #include <com/sun/star/sheet/DataResultFlags.hpp>
 #include <com/sun/star/sheet/DataPilotTablePositionType.hpp>
+#include <com/sun/star/sheet/GeneralFunction2.hpp>
 
 #include <vector>
 
@@ -81,15 +81,19 @@ struct ScDPOutLevelData
     long                                nDimPos;
     sal_uInt32 mnSrcNumFmt; /// Prevailing number format used in the source data.
     uno::Sequence<sheet::MemberResult>  aResult;
-    OUString                       maName;   /// Name is the internal field name.
-    OUString                       maCaption; /// Caption is the name visible in the output table.
+    OUString                            maName;     /// Name is the internal field name.
+    OUString                            maCaption;  /// Caption is the name visible in the output table.
+    double                              mfValue;    /// Value is the underlying numeric value, if any, or NaN
     bool                                mbHasHiddenMember:1;
     bool                                mbDataLayout:1;
     bool                                mbPageDim:1;
 
     ScDPOutLevelData() :
-        nDim(-1), nHier(-1), nLevel(-1), nDimPos(-1), mnSrcNumFmt(0), mbHasHiddenMember(false), mbDataLayout(false), mbPageDim(false)
-    {}
+        nDim(-1), nHier(-1), nLevel(-1), nDimPos(-1), mnSrcNumFmt(0), mbHasHiddenMember(false), mbDataLayout(false),
+        mbPageDim(false)
+    {
+        rtl::math::setNan(&mfValue);
+    }
 
     bool operator<(const ScDPOutLevelData& r) const
         { return nDimPos<r.nDimPos || ( nDimPos==r.nDimPos && nHier<r.nHier ) ||
@@ -102,9 +106,6 @@ struct ScDPOutLevelData
 };
 
 namespace {
-
-bool lcl_compareColfuc ( SCCOL i,  SCCOL j) { return (i<j); }
-bool lcl_compareRowfuc ( SCROW i,  SCROW j) { return (i<j); }
 
 class ScDPOutputImpl
 {
@@ -150,8 +151,8 @@ void ScDPOutputImpl::OutputDataArea()
 
     bool bAllRows = ( ( mnTabEndRow - mnDataStartRow + 2 ) == (SCROW) mnRows.size() );
 
-    std::sort( mnCols.begin(), mnCols.end(), lcl_compareColfuc );
-    std::sort( mnRows.begin(), mnRows.end(), lcl_compareRowfuc );
+    std::sort( mnCols.begin(), mnCols.end() );
+    std::sort( mnRows.begin(), mnRows.end() );
 
     for( SCCOL nCol = 0; nCol < (SCCOL)mnCols.size()-1; nCol ++ )
     {
@@ -474,7 +475,7 @@ uno::Sequence<sheet::MemberResult> getVisiblePageMembersAsResults( const uno::Re
     if (!xMSupplier.is())
         return uno::Sequence<sheet::MemberResult>();
 
-    uno::Reference<container::XNameAccess> xNA = xMSupplier->getMembers();
+    uno::Reference<sheet::XMembersAccess> xNA = xMSupplier->getMembers();
     if (!xNA.is())
         return uno::Sequence<sheet::MemberResult>();
 
@@ -496,7 +497,12 @@ uno::Sequence<sheet::MemberResult> getVisiblePageMembersAsResults( const uno::Re
         bool bVisible = ScUnoHelpFunctions::GetBoolProperty(xMemPS, SC_UNO_DP_ISVISIBLE);
 
         if (bVisible)
-            aRes.push_back(sheet::MemberResult(rName, aCaption, 0));
+        {
+            /* TODO: any numeric value to obtain? */
+            double fValue;
+            rtl::math::setNan(&fValue);
+            aRes.push_back(sheet::MemberResult(rName, aCaption, 0, fValue));
+        }
     }
 
     if (aNames.getLength() == static_cast<sal_Int32>(aRes.size()))
@@ -604,6 +610,10 @@ ScDPOutput::ScDPOutput( ScDocument* pD, const uno::Reference<sheet::XDimensionsS
                                 OUString aCaption = ScUnoHelpFunctions::GetStringProperty( xPropSet,
                                     SC_UNO_DP_LAYOUTNAME, aName );
 
+                                /* TODO: any numeric value to obtain? */
+                                double fValue;
+                                rtl::math::setNan(&fValue);
+
                                 bool bRowFieldHasMember = false;
                                 switch ( eDimOrient )
                                 {
@@ -618,6 +628,7 @@ ScDPOutput::ScDPOutput( ScDocument* pD, const uno::Reference<sheet::XDimensionsS
                                             pColFields[nColFieldCount].mnSrcNumFmt = nNumFmt;
                                             pColFields[nColFieldCount].maName  = aName;
                                             pColFields[nColFieldCount].maCaption= aCaption;
+                                            pColFields[nColFieldCount].mfValue = fValue;
                                             pColFields[nColFieldCount].mbHasHiddenMember = bHasHiddenMember;
                                             pColFields[nColFieldCount].mbDataLayout = bIsDataLayout;
                                             if (!lcl_MemberEmpty(pColFields[nColFieldCount].aResult))
@@ -639,6 +650,7 @@ ScDPOutput::ScDPOutput( ScDocument* pD, const uno::Reference<sheet::XDimensionsS
                                             pRowFields[nRowFieldCount].mnSrcNumFmt = nNumFmt;
                                             pRowFields[nRowFieldCount].maName  = aName;
                                             pRowFields[nRowFieldCount].maCaption= aCaption;
+                                            pRowFields[nRowFieldCount].mfValue = fValue;
                                             pRowFields[nRowFieldCount].mbHasHiddenMember = bHasHiddenMember;
                                             pRowFields[nRowFieldCount].mbDataLayout = bIsDataLayout;
                                             if (!lcl_MemberEmpty(pRowFields[nRowFieldCount].aResult))
@@ -663,6 +675,7 @@ ScDPOutput::ScDPOutput( ScDocument* pD, const uno::Reference<sheet::XDimensionsS
                                             pPageFields[nPageFieldCount].mnSrcNumFmt = nNumFmt;
                                             pPageFields[nPageFieldCount].maName  = aName;
                                             pPageFields[nPageFieldCount].maCaption= aCaption;
+                                            pPageFields[nPageFieldCount].mfValue = fValue;
                                             pPageFields[nPageFieldCount].mbHasHiddenMember = bHasHiddenMember;
                                             pPageFields[nPageFieldCount].mbPageDim = true;
                                             // no check on results for page fields
@@ -759,7 +772,7 @@ void ScDPOutput::DataCell( SCCOL nCol, SCROW nRow, SCTAB nTab, const sheet::Data
     long nFlags = rData.Flags;
     if ( nFlags & sheet::DataResultFlags::ERROR )
     {
-        pDoc->SetError( nCol, nRow, nTab, formula::errNoValue );
+        pDoc->SetError( nCol, nRow, nTab, FormulaError::NoValue );
     }
     else if ( nFlags & sheet::DataResultFlags::HASDATA )
     {
@@ -814,13 +827,20 @@ void ScDPOutput::HeaderCell( SCCOL nCol, SCROW nRow, SCTAB nTab,
     if ( nFlags & sheet::MemberResultFlags::HASMEMBER )
     {
         bool bNumeric = (nFlags & sheet::MemberResultFlags::NUMERIC) != 0;
-        ScSetStringParam aParam;
-        if (bNumeric)
-            aParam.setNumericInput();
+        if (bNumeric && rtl::math::isFinite( rData.Value))
+        {
+            pDoc->SetValue( nCol, nRow, nTab, rData.Value);
+        }
         else
-            aParam.setTextInput();
+        {
+            ScSetStringParam aParam;
+            if (bNumeric)
+                aParam.setNumericInput();
+            else
+                aParam.setTextInput();
 
-        pDoc->SetString(nCol, nRow, nTab, rData.Caption, &aParam);
+            pDoc->SetString(nCol, nRow, nTab, rData.Caption, &aParam);
+        }
     }
 
     if ( nFlags & sheet::MemberResultFlags::SUBTOTAL )
@@ -1510,7 +1530,7 @@ bool ScDPOutput::GetDataResultPositionData(vector<sheet::DataPilotFieldFilter>& 
         while ( nItem > 0 && (pArray[nItem].Flags & sheet::MemberResultFlags::CONTINUE) )
             --nItem;
 
-        filter.MatchValue = pArray[nItem].Name;
+        filter.MatchValueName = pArray[nItem].Name;
         rFilters.push_back(filter);
     }
 
@@ -1534,7 +1554,7 @@ bool ScDPOutput::GetDataResultPositionData(vector<sheet::DataPilotFieldFilter>& 
         while ( nItem > 0 && (pArray[nItem].Flags & sheet::MemberResultFlags::CONTINUE) )
             --nItem;
 
-        filter.MatchValue = pArray[nItem].Name;
+        filter.MatchValueName = pArray[nItem].Name;
         rFilters.push_back(filter);
     }
 
@@ -1543,27 +1563,28 @@ bool ScDPOutput::GetDataResultPositionData(vector<sheet::DataPilotFieldFilter>& 
 
 namespace {
 
-OUString lcl_GetDataFieldName( const OUString& rSourceName, sheet::GeneralFunction eFunc )
+OUString lcl_GetDataFieldName( const OUString& rSourceName, sal_Int16 eFunc )
 {
     sal_uInt16 nStrId = 0;
     switch ( eFunc )
     {
-        case sheet::GeneralFunction_SUM:        nStrId = STR_FUN_TEXT_SUM;      break;
-        case sheet::GeneralFunction_COUNT:
-        case sheet::GeneralFunction_COUNTNUMS:  nStrId = STR_FUN_TEXT_COUNT;    break;
-        case sheet::GeneralFunction_AVERAGE:    nStrId = STR_FUN_TEXT_AVG;      break;
-        case sheet::GeneralFunction_MAX:        nStrId = STR_FUN_TEXT_MAX;      break;
-        case sheet::GeneralFunction_MIN:        nStrId = STR_FUN_TEXT_MIN;      break;
-        case sheet::GeneralFunction_PRODUCT:    nStrId = STR_FUN_TEXT_PRODUCT;  break;
-        case sheet::GeneralFunction_STDEV:
-        case sheet::GeneralFunction_STDEVP:     nStrId = STR_FUN_TEXT_STDDEV;   break;
-        case sheet::GeneralFunction_VAR:
-        case sheet::GeneralFunction_VARP:       nStrId = STR_FUN_TEXT_VAR;      break;
-        case sheet::GeneralFunction_NONE:
-        case sheet::GeneralFunction_AUTO:
+        case sheet::GeneralFunction2::SUM:        nStrId = STR_FUN_TEXT_SUM;      break;
+        case sheet::GeneralFunction2::COUNT:
+        case sheet::GeneralFunction2::COUNTNUMS:  nStrId = STR_FUN_TEXT_COUNT;    break;
+        case sheet::GeneralFunction2::AVERAGE:    nStrId = STR_FUN_TEXT_AVG;      break;
+        case sheet::GeneralFunction2::MEDIAN:     nStrId = STR_FUN_TEXT_MEDIAN;   break;
+        case sheet::GeneralFunction2::MAX:        nStrId = STR_FUN_TEXT_MAX;      break;
+        case sheet::GeneralFunction2::MIN:        nStrId = STR_FUN_TEXT_MIN;      break;
+        case sheet::GeneralFunction2::PRODUCT:    nStrId = STR_FUN_TEXT_PRODUCT;  break;
+        case sheet::GeneralFunction2::STDEV:
+        case sheet::GeneralFunction2::STDEVP:     nStrId = STR_FUN_TEXT_STDDEV;   break;
+        case sheet::GeneralFunction2::VAR:
+        case sheet::GeneralFunction2::VARP:       nStrId = STR_FUN_TEXT_VAR;      break;
+        case sheet::GeneralFunction2::NONE:
+        case sheet::GeneralFunction2::AUTO:                                       break;
         default:
         {
-            OSL_FAIL("wrong function");
+            assert(false);
         }
     }
     if ( !nStrId )
@@ -1591,9 +1612,9 @@ void ScDPOutput::GetDataDimensionNames(
         // Generate "given name" the same way as in dptabres.
         //TODO: Should use a stored name when available
 
-        sheet::GeneralFunction eFunc = (sheet::GeneralFunction)ScUnoHelpFunctions::GetEnumProperty(
-                                xDimProp, SC_UNO_DP_FUNCTION,
-                                sheet::GeneralFunction_NONE );
+        sal_Int16 eFunc = ScUnoHelpFunctions::GetShortProperty(
+                          xDimProp, SC_UNO_DP_FUNCTION2,
+                          sheet::GeneralFunction2::NONE );
         rGivenName = lcl_GetDataFieldName( rSourceName, eFunc );
     }
 }

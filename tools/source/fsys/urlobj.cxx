@@ -626,10 +626,10 @@ INetURLObject::FSysStyle guessFSysStyleByCounting(sal_Unicode const * pBegin,
                && pEnd - pBegin <= std::numeric_limits< sal_Int32 >::max(),
                "guessFSysStyleByCounting(): Too big");
     sal_Int32 nSlashCount
-        = eStyle & INetURLObject::FSYS_UNX ?
+        = (eStyle & INetURLObject::FSYS_UNX) ?
               0 : std::numeric_limits< sal_Int32 >::min();
     sal_Int32 nBackslashCount
-        = eStyle & INetURLObject::FSYS_DOS ?
+        = (eStyle & INetURLObject::FSYS_DOS) ?
               0 : std::numeric_limits< sal_Int32 >::min();
     while (pBegin != pEnd)
         switch (*pBegin++)
@@ -3147,9 +3147,9 @@ bool INetURLObject::checkHierarchical() const {
     }
 }
 
-bool INetURLObject::appendSegment(OUString const & rTheSegment,
-                                  EncodeMechanism eMechanism,
-                                  rtl_TextEncoding eCharset)
+bool INetURLObject::Append(OUString const & rTheSegment,
+                           EncodeMechanism eMechanism,
+                           rtl_TextEncoding eCharset)
 {
     return insertName(rTheSegment, false, LAST_SEGMENT, eMechanism, eCharset);
 }
@@ -3651,8 +3651,7 @@ bool INetURLObject::operator ==(INetURLObject const & rObject) const
             rObject.GetHost(NO_DECODE))
         || GetPort() != rObject.GetPort()
         || HasParam() != rObject.HasParam()
-        || GetParam() != rObject.GetParam()
-        || GetMsgId() != INetURLObject::GetMsgId(NO_DECODE))
+        || GetParam() != rObject.GetParam())
         return false;
     OUString aPath1(GetURLPath(NO_DECODE));
     OUString aPath2(rObject.GetURLPath(NO_DECODE));
@@ -4262,9 +4261,9 @@ bool INetURLObject::setFSysPath(OUString const & rFSysPath,
     sal_Unicode const * pFSysBegin = rFSysPath.getStr();
     sal_Unicode const * pFSysEnd = pFSysBegin + rFSysPath.getLength();
 
-    switch ((eStyle & FSYS_VOS ? 1 : 0)
-                + (eStyle & FSYS_UNX ? 1 : 0)
-                + (eStyle & FSYS_DOS ? 1 : 0))
+    switch (((eStyle & FSYS_VOS) ? 1 : 0)
+                + ((eStyle & FSYS_UNX) ? 1 : 0)
+                + ((eStyle & FSYS_DOS) ? 1 : 0))
     {
         case 0:
             return false;
@@ -4433,9 +4432,9 @@ OUString INetURLObject::getFSysPath(FSysStyle eStyle,
     if (m_eScheme != INetProtocol::File)
         return OUString();
 
-    if ((eStyle & FSYS_VOS ? 1 : 0)
-                + (eStyle & FSYS_UNX ? 1 : 0)
-                + (eStyle & FSYS_DOS ? 1 : 0)
+    if (((eStyle & FSYS_VOS) ? 1 : 0)
+                + ((eStyle & FSYS_UNX) ? 1 : 0)
+                + ((eStyle & FSYS_DOS) ? 1 : 0)
             > 1)
     {
         eStyle = eStyle & FSYS_VOS
@@ -4519,11 +4518,6 @@ OUString INetURLObject::getFSysPath(FSysStyle eStyle,
         default:
             return OUString();
     }
-}
-
-OUString INetURLObject::GetMsgId(rtl_TextEncoding)
-{
-    return OUString();
 }
 
 // static

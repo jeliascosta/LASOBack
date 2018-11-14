@@ -50,10 +50,9 @@ protected:
 
 protected:
     ODatabaseAdministrationDialog(const css::uno::Reference< css::uno::XComponentContext >& _rxORB);
-    virtual ~ODatabaseAdministrationDialog();
+    virtual ~ODatabaseAdministrationDialog() override;
 protected:
 // OGenericUnoDialog overridables
-    virtual void destroyDialog() override;
     virtual void implInitialize(const css::uno::Any& _rValue) override;
 };
 

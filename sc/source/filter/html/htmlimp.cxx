@@ -84,13 +84,13 @@ ScHTMLImport::ScHTMLImport( ScDocument* pDocP, const OUString& rBaseURL, const S
         }
         aPageSize.Width() -= nLeftMargin + nRightMargin;
         aPageSize.Height() -= nTopMargin + nBottomMargin;
-        aPageSize = pDefaultDev->LogicToPixel( aPageSize, MapMode( MAP_TWIP ) );
+        aPageSize = pDefaultDev->LogicToPixel( aPageSize, MapMode( MapUnit::MapTwip ) );
     }
     else
     {
         OSL_FAIL("no StyleSheet?!?");
         aPageSize = pDefaultDev->LogicToPixel(
-            SvxPaperInfo::GetPaperSize( PAPER_A4 ), MapMode( MAP_TWIP ) );
+            SvxPaperInfo::GetPaperSize( PAPER_A4 ), MapMode( MapUnit::MapTwip ) );
     }
     if( bCalcWidthHeight )
         mpParser = new ScHTMLLayoutParser( mpEngine, rBaseURL, aPageSize, pDocP );
@@ -120,7 +120,7 @@ void ScHTMLImport::WriteToDocument(
 {
     ScEEImport::WriteToDocument( bSizeColsRows, nOutputFactor, pFormatter, bConvertDate );
 
-    const ScHTMLParser* pParser = GetParser();
+    const ScHTMLParser* pParser = static_cast<ScHTMLParser*>(mpParser);
     const ScHTMLTable* pGlobTable = pParser->GetGlobalTable();
     if( !pGlobTable )
         return;

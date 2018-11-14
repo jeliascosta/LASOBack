@@ -63,7 +63,7 @@ class SwXMLImportTableItemMapper_Impl: public SvXMLImportItemMapper
 public:
 
     explicit SwXMLImportTableItemMapper_Impl(SvXMLItemMapEntriesRef rMapEntries);
-    virtual ~SwXMLImportTableItemMapper_Impl();
+    virtual ~SwXMLImportTableItemMapper_Impl() override;
 
     virtual bool handleSpecialItem( const SvXMLItemMapEntry& rEntry,
                                 SfxPoolItem& rItem,
@@ -94,7 +94,7 @@ private:
 
 SwXMLImportTableItemMapper_Impl::SwXMLImportTableItemMapper_Impl(
                                         SvXMLItemMapEntriesRef rMapEntries ) :
-    SvXMLImportItemMapper( rMapEntries, RES_UNKNOWNATR_CONTAINER)
+    SvXMLImportItemMapper( rMapEntries )
 {
     Reset();
 }
@@ -217,7 +217,7 @@ void SwXMLImportTableItemMapper_Impl::finished(
                 rSet.GetItemState(Ids[i][0], true, &pItem);
 
             // if not set, try the pool
-            if ((SfxItemState::SET != eState) && (SFX_WHICH_MAX > Ids[i][0]))
+            if ((SfxItemState::SET != eState) && SfxItemPool::IsWhich(Ids[i][0]))
             {
                 pItem = &rSet.GetPool()->GetDefaultItem(Ids[i][0]);
             }
@@ -254,7 +254,7 @@ public:
                   SfxItemSet&  rItemSet,
                   SvXMLImportItemMapper & rIMapper,
                   const SvXMLUnitConverter& rUnitConv );
-    virtual ~SwXMLItemSetContext_Impl();
+    virtual ~SwXMLItemSetContext_Impl() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                    const OUString& rLocalName,
@@ -278,10 +278,10 @@ SwXMLItemSetContext_Impl::SwXMLItemSetContext_Impl(
 
 SwXMLItemSetContext_Impl::~SwXMLItemSetContext_Impl()
 {
-    if( xBackground.Is() )
+    if( xBackground.is() )
     {
         const SvxBrushItem& rItem =
-            static_cast<SwXMLBrushItemImportContext*>(&xBackground)->GetItem();
+            static_cast<SwXMLBrushItemImportContext*>(xBackground.get())->GetItem();
         rItemSet.Put( rItem );
     }
 }
@@ -376,7 +376,7 @@ SvXMLImportContext *SwXMLImport::CreateTableItemImportContext(
     return new SwXMLItemSetContext_Impl( *this, nPrefix, rLocalName,
                                             xAttrList, rItemSet,
                                             GetTableItemMapper(),
-                                            GetTwipUnitConverter() );
+                                            *m_pTwipUnitConv );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

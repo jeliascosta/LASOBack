@@ -75,7 +75,7 @@ MasterPagesSelector::MasterPagesSelector (
       mpContainer(rpContainer),
       mrDocument(rDocument),
       mrBase(rBase),
-      mnDefaultClickAction(SID_TP_APPLY_TO_ALL_SLIDES),
+      mnDefaultClickAction(SID_TP_APPLY_TO_SELECTED_SLIDES),
       maCurrentItemList(),
       maTokenToValueSetIndex(),
       maLockedMasterPages(),
@@ -112,6 +112,7 @@ void MasterPagesSelector::dispose()
 
     Link<MasterPageContainerChangeEvent&,void> aChangeListener (LINK(this,MasterPagesSelector,ContainerChangeListener));
     mpContainer->RemoveChangeListener(aChangeListener);
+    mpContainer.reset();
     PreviewValueSet::dispose();
 }
 
@@ -168,7 +169,7 @@ ResId MasterPagesSelector::GetContextMenuResId() const
     return SdResId(RID_TASKPANE_MASTERPAGESSELECTOR_POPUP);
 }
 
-IMPL_LINK_NOARG_TYPED(MasterPagesSelector, ClickHandler, ValueSet*, void)
+IMPL_LINK_NOARG(MasterPagesSelector, ClickHandler, ValueSet*, void)
 {
     // We use the framework to assign the clicked-on master page because we
     // so use the same mechanism as the context menu does (where we do not
@@ -176,7 +177,7 @@ IMPL_LINK_NOARG_TYPED(MasterPagesSelector, ClickHandler, ValueSet*, void)
     ExecuteCommand(mnDefaultClickAction);
 }
 
-IMPL_LINK_TYPED(MasterPagesSelector, RightClickHandler, const MouseEvent&, rEvent, void)
+IMPL_LINK(MasterPagesSelector, RightClickHandler, const MouseEvent&, rEvent, void)
 {
     // Here we only prepare the display of the context menu: the item under
     // the mouse is selected.  The actual display of the context menu is
@@ -220,7 +221,7 @@ void MasterPagesSelector::Command (const CommandEvent& rEvent)
                 }
 
                 // Setup the menu.
-                std::unique_ptr<PopupMenu> pMenu (new PopupMenu(GetContextMenuResId()));
+                ScopedVclPtrInstance<PopupMenu> pMenu(GetContextMenuResId());
                 FloatingWindow* pMenuWindow = dynamic_cast<FloatingWindow*>(pMenu->GetWindow());
                 if (pMenuWindow != nullptr)
                     pMenuWindow->SetPopupModeFlags(
@@ -247,7 +248,7 @@ void MasterPagesSelector::ProcessPopupMenu (Menu& rMenu)
         rMenu.EnableItem(SID_TP_SHOW_LARGE_PREVIEW, false);
 }
 
-IMPL_LINK_TYPED(MasterPagesSelector, OnMenuItemSelected, Menu*, pMenu, bool)
+IMPL_LINK(MasterPagesSelector, OnMenuItemSelected, Menu*, pMenu, bool)
 {
     if (pMenu == nullptr)
     {
@@ -277,7 +278,7 @@ void MasterPagesSelector::ExecuteCommand (const sal_Int32 nCommandId)
             break;
 
         case SID_TP_USE_FOR_NEW_PRESENTATIONS:
-            DBG_ASSERT (false,
+            SAL_WARN ( "sd",
                 "Using slides as default for new presentations"
                 " is not yet implemented");
             break;
@@ -327,7 +328,7 @@ void MasterPagesSelector::ExecuteCommand (const sal_Int32 nCommandId)
     }
 }
 
-IMPL_LINK_TYPED(MasterPagesSelector, ContainerChangeListener, MasterPageContainerChangeEvent&, rEvent, void)
+IMPL_LINK(MasterPagesSelector, ContainerChangeListener, MasterPageContainerChangeEvent&, rEvent, void)
 {
     NotifyContainerChangeEvent(rEvent);
 }
@@ -341,7 +342,7 @@ SdPage* MasterPagesSelector::GetSelectedMasterPage()
     UserData* pData = GetUserData(nIndex);
     if (pData != nullptr)
     {
-        pMasterPage = mpContainer->GetPageObjectForToken(pData->second);
+        pMasterPage = mpContainer->GetPageObjectForToken(pData->second, true);
     }
     return pMasterPage;
 }
@@ -354,7 +355,7 @@ void MasterPagesSelector::AssignMasterPageToAllSlides (SdPage* pMasterPage)
     if (pMasterPage == nullptr)
         return;
 
-    sal_uInt16 nPageCount = mrDocument.GetSdPageCount(PK_STANDARD);
+    sal_uInt16 nPageCount = mrDocument.GetSdPageCount(PageKind::Standard);
     if (nPageCount == 0)
         return;
 
@@ -366,7 +367,7 @@ void MasterPagesSelector::AssignMasterPageToAllSlides (SdPage* pMasterPage)
         new ::sd::slidesorter::SlideSorterViewShell::PageSelection());
     for (sal_uInt16 nPageIndex=0; nPageIndex<nPageCount; nPageIndex++)
     {
-        SdPage* pPage = mrDocument.GetSdPage (nPageIndex, PK_STANDARD);
+        SdPage* pPage = mrDocument.GetSdPage (nPageIndex, PageKind::Standard);
         if (pPage != nullptr && pPage->GetLayoutName() != sFullLayoutName)
         {
             pPageList->push_back (pPage);
@@ -454,13 +455,6 @@ void MasterPagesSelector::NotifyContainerChangeEvent (const MasterPageContainerC
    }
 }
 
-MasterPagesSelector::UserData* MasterPagesSelector::CreateUserData (
-    int nIndex,
-    MasterPageContainer::Token aToken)
-{
-    return new UserData(nIndex,aToken);
-}
-
 MasterPagesSelector::UserData* MasterPagesSelector::GetUserData (int nIndex) const
 {
     const ::osl::MutexGuard aGuard (maMutex);
@@ -518,7 +512,7 @@ void MasterPagesSelector::SetItem (
                         mpContainer->GetPageNameForToken(aToken),
                         nIndex);
                 }
-                SetUserData(nIndex, CreateUserData(nIndex,aToken));
+                SetUserData(nIndex, new UserData(nIndex,aToken));
 
                 AddTokenToIndexEntry(nIndex,aToken);
             }

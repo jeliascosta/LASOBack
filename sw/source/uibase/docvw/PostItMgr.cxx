@@ -64,7 +64,7 @@
 
 #include <svl/languageoptions.hxx>
 #include <svtools/langtab.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 
 #include <svx/svdview.hxx>
 #include <editeng/eeitem.hxx>
@@ -267,51 +267,6 @@ void SwPostItMgr::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
             }
         }
     }
-    else if ( dynamic_cast<const SfxSimpleHint*>(&rHint) )
-    {
-        sal_uInt32 nId = static_cast<const SfxSimpleHint&>(rHint).GetId();
-        switch ( nId )
-        {
-            case SFX_HINT_MODECHANGED:
-            {
-                if ( mbReadOnly != !!(mpView->GetDocShell()->IsReadOnly()) )
-                {
-                    mbReadOnly = !mbReadOnly;
-                    SetReadOnlyState();
-                    mbLayout = true;
-                }
-                break;
-            }
-            case SFX_HINT_DOCCHANGED:
-            {
-                if ( mpView->GetDocShell() == &rBC )
-                {
-                    if ( !mbWaitingForCalcRects && !mvPostItFields.empty())
-                    {
-                        mbWaitingForCalcRects = true;
-                        mnEventId = Application::PostUserEvent( LINK( this, SwPostItMgr, CalcHdl) );
-                    }
-                }
-                break;
-            }
-            case SFX_HINT_USER04:
-            {
-                // if we are in a SplitNode/Cut operation, do not delete note and then add again, as this will flicker
-                mbDeleteNote = !mbDeleteNote;
-                break;
-            }
-            case SFX_HINT_DYING:
-            {
-                if ( mpView->GetDocShell() != &rBC )
-                {
-                    // field to be removed is the broadcaster
-                    OSL_FAIL("Notification for removed SwFormatField was not sent!");
-                    RemoveItem(&rBC);
-                }
-                break;
-            }
-        }
-    }
     else if ( dynamic_cast<const SwFormatFieldHint*>(&rHint) )
     {
         const SwFormatFieldHint& rFormatHint = static_cast<const SwFormatFieldHint&>(rHint);
@@ -406,6 +361,51 @@ void SwPostItMgr::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
             }
         }
     }
+    else
+    {
+        sal_uInt32 nId = rHint.GetId();
+        switch ( nId )
+        {
+            case SFX_HINT_MODECHANGED:
+            {
+                if ( mbReadOnly != !!(mpView->GetDocShell()->IsReadOnly()) )
+                {
+                    mbReadOnly = !mbReadOnly;
+                    SetReadOnlyState();
+                    mbLayout = true;
+                }
+                break;
+            }
+            case SFX_HINT_DOCCHANGED:
+            {
+                if ( mpView->GetDocShell() == &rBC )
+                {
+                    if ( !mbWaitingForCalcRects && !mvPostItFields.empty())
+                    {
+                        mbWaitingForCalcRects = true;
+                        mnEventId = Application::PostUserEvent( LINK( this, SwPostItMgr, CalcHdl) );
+                    }
+                }
+                break;
+            }
+            case SFX_HINT_USER04:
+            {
+                // if we are in a SplitNode/Cut operation, do not delete note and then add again, as this will flicker
+                mbDeleteNote = !mbDeleteNote;
+                break;
+            }
+            case SFX_HINT_DYING:
+            {
+                if ( mpView->GetDocShell() != &rBC )
+                {
+                    // field to be removed is the broadcaster
+                    OSL_FAIL("Notification for removed SwFormatField was not sent!");
+                    RemoveItem(&rBC);
+                }
+                break;
+            }
+        }
+    }
 }
 
 void SwPostItMgr::Focus(SfxBroadcaster& rBC)
@@ -493,7 +493,8 @@ bool SwPostItMgr::CalcRects()
 
         // show notes in right order in navigator
         //prevent Anchors during layout to overlap, e.g. when moving a frame
-        Sort();
+        if (mvPostItFields.size()>1 )
+            mvPostItFields.sort(comp_pos);
 
         // sort the items into the right page vector, so layout can be done by page
         for(std::list<SwSidebarItem*>::iterator i = mvPostItFields.begin(); i != mvPostItFields.end() ; ++i)
@@ -649,7 +650,6 @@ void SwPostItMgr::LayoutPostIts()
                         if (!pPostIt)
                         {
                             pPostIt = (*i)->GetSidebarWindow( mpView->GetEditWin(),
-                                                              WB_DIALOGCONTROL,
                                                               *this );
                             pPostIt->InitControls();
                             pPostIt->SetReadonly(mbReadOnly);
@@ -674,7 +674,7 @@ void SwPostItMgr::LayoutPostIts()
                                         + pPostIt->GetMetaHeight();
                         pPostIt->SetPosSizePixelRect( mlPageBorder ,
                                                       Y - GetInitialAnchorDistance(),
-                                                      GetNoteWidth() ,
+                                                      GetSidebarWidth(true),
                                                       aPostItHeight,
                                                       pItem->maLayoutInfo.mPosition,
                                                       mlPageEnd );
@@ -732,7 +732,17 @@ void SwPostItMgr::LayoutPostIts()
                         bool bTop = mpEditWin->PixelToLogic(Point(0,(*i)->VirtualPos().Y())).Y() >= (pPage->mPageRect.Top()+aSidebarheight);
                         if ( bBottom && bTop )
                         {
+                            // When tiled rendering, make sure that only the
+                            // view that has the comment focus emits callbacks,
+                            // so the editing view jumps to the comment, but
+                            // not the others.
+                            bool bTiledPainting = comphelper::LibreOfficeKit::isTiledPainting();
+                            if (!bTiledPainting)
+                                // No focus -> disable callbacks.
+                                comphelper::LibreOfficeKit::setTiledPainting(!(*i)->HasChildPathFocus());
                             (*i)->ShowNote();
+                            if (!bTiledPainting)
+                                comphelper::LibreOfficeKit::setTiledPainting(bTiledPainting);
                         }
                         else
                         {
@@ -880,18 +890,6 @@ void SwPostItMgr::PaintTile(OutputDevice& rRenderContext, const Rectangle& /*rRe
     }
 }
 
-void SwPostItMgr::registerLibreOfficeKitCallback(OutlinerSearchable* pSearchable)
-{
-    for (SwSidebarItem* pItem : mvPostItFields)
-    {
-        SwSidebarWin* pPostIt = pItem->pPostIt;
-        if (!pPostIt)
-            continue;
-
-        pPostIt->GetOutlinerView()->registerLibreOfficeKitCallback(pSearchable);
-    }
-}
-
 void SwPostItMgr::Scroll(const long lScroll,const unsigned long aPage)
 {
     OSL_ENSURE((lScroll % GetScrollSize() )==0,"SwPostItMgr::Scroll: scrolling by wrong value");
@@ -968,7 +966,7 @@ void SwPostItMgr::MakeVisible(const SwSidebarWin* pPostIt )
 {
     long aPage = -1;
     // we don't know the page yet, lets find it ourselves
-    for (unsigned long n=0;n<mPages.size();n++)
+    for (std::vector<SwPostItPageItem*>::size_type n=0;n<mPages.size();n++)
     {
         if (mPages[n]->mList->size()>0)
         {
@@ -1343,7 +1341,7 @@ public:
             EndListening(const_cast<SwFormatField&>(*pField));
         }
     }
-    virtual ~FieldDocWatchingStack()
+    virtual ~FieldDocWatchingStack() override
     {
         EndListeningToAllFields();
         EndListening(m_rDocShell);
@@ -1437,14 +1435,14 @@ void SwPostItMgr::ExecuteFormatAllDialog(SwView& rView)
     SfxItemSet aDlgAttr(*pPool, EE_ITEMS_START, EE_ITEMS_END);
     aDlgAttr.Put(aEditAttr);
     SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
-    std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateSwCharDlg(rView.GetWindow(), rView, aDlgAttr, SwCharDlgMode::Ann));
+    ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateSwCharDlg(rView.GetWindow(), rView, aDlgAttr, SwCharDlgMode::Ann));
     sal_uInt16 nRet = pDlg->Execute();
     if (RET_OK == nRet)
     {
         aDlgAttr.Put(*pDlg->GetOutputItemSet());
         FormatAll(aDlgAttr);
     }
-    pDlg.reset();
+    pDlg.disposeAndClear();
     SetActiveSidebarWin(pOrigActiveWin);
 }
 
@@ -1516,14 +1514,6 @@ void SwPostItMgr::Show()
         (*i)->bShow = true;
     }
     LayoutPostIts();
-}
-
-void SwPostItMgr::Sort()
-{
-    if (mvPostItFields.size()>1 )
-    {
-        mvPostItFields.sort(comp_pos);
-    }
 }
 
 SwSidebarWin* SwPostItMgr::GetSidebarWin( const SfxBroadcaster* pBroadcaster) const
@@ -1804,21 +1794,21 @@ bool SwPostItMgr::ScrollbarHit(const unsigned long aPage,const Point &aPoint)
 
 void SwPostItMgr::CorrectPositions()
 {
-   if ( mbWaitingForCalcRects || mbLayouting || mvPostItFields.empty() )
-       return;
+    if ( mbWaitingForCalcRects || mbLayouting || mvPostItFields.empty() )
+        return;
 
-   // find first valid note
-   SwSidebarWin *pFirstPostIt = nullptr;
-   for(SwSidebarItem_iterator i = mvPostItFields.begin(); i != mvPostItFields.end() ; ++i)
-   {
-       pFirstPostIt = (*i)->pPostIt;
-       if (pFirstPostIt)
-           break;
-   }
+    // find first valid note
+    SwSidebarWin *pFirstPostIt = nullptr;
+    for(SwSidebarItem_iterator i = mvPostItFields.begin(); i != mvPostItFields.end() ; ++i)
+    {
+        pFirstPostIt = (*i)->pPostIt;
+        if (pFirstPostIt)
+            break;
+    }
 
-   //if we have not found a valid note, forget about it and leave
-   if (!pFirstPostIt)
-       return;
+    //if we have not found a valid note, forget about it and leave
+    if (!pFirstPostIt)
+        return;
 
     // yeah, I know,    if this is a left page it could be wrong, but finding the page and the note is probably not even faster than just doing it
     // check, if anchor overlay object exists.
@@ -1895,11 +1885,6 @@ unsigned long SwPostItMgr::GetSidebarBorderWidth(bool bPx) const
         return mpWrtShell->GetOut()->PixelToLogic(Size(2,0)).Width();
 }
 
-unsigned long SwPostItMgr::GetNoteWidth()
-{
-    return GetSidebarWidth(true);
-}
-
 Color SwPostItMgr::GetColorDark(sal_uInt16 aAuthorIndex)
 {
     if (!Application::GetSettings().GetStyleSettings().GetHighContrastMode())
@@ -1970,7 +1955,7 @@ void SwPostItMgr::SetActiveSidebarWin( SwSidebarWin* p)
     }
 }
 
-IMPL_LINK_NOARG_TYPED( SwPostItMgr, CalcHdl, void*, void )
+IMPL_LINK_NOARG( SwPostItMgr, CalcHdl, void*, void )
 {
     mnEventId = nullptr;
     if ( mbLayouting )
@@ -2196,7 +2181,7 @@ void SwPostItMgr::DisconnectSidebarWinFromFrame( const SwFrame& rFrame,
         if ( bRemoved &&
              mpWrtShell->GetAccessibleMap() )
         {
-            mpWrtShell->GetAccessibleMap()->Dispose( nullptr, nullptr, &rSidebarWin );
+            mpWrtShell->GetAccessibleMap()->A11yDispose( nullptr, nullptr, &rSidebarWin );
         }
     }
 }

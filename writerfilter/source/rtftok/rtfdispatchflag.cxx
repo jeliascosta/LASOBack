@@ -457,7 +457,7 @@ RTFError RTFDocumentImpl::dispatchFlag(RTFKeyword nKeyword)
         m_aStates.top().aCharacterAttributes = getDefaultState().aCharacterAttributes;
         m_aStates.top().nCurrentCharacterStyleIndex = -1;
         m_aStates.top().isRightToLeft = false;
-        m_aStates.top().eRunType = RTFParserState::LOCH;
+        m_aStates.top().eRunType = RTFParserState::RunType::LOCH;
     }
     break;
     case RTF_PARD:
@@ -726,13 +726,13 @@ RTFError RTFDocumentImpl::dispatchFlag(RTFKeyword nKeyword)
         // These should be mapped to NS_ooxml::LN_EG_SectPrContents_pgNumType, but dmapper has no API for that at the moment.
         break;
     case RTF_LOCH:
-        m_aStates.top().eRunType = RTFParserState::LOCH;
+        m_aStates.top().eRunType = RTFParserState::RunType::LOCH;
         break;
     case RTF_HICH:
-        m_aStates.top().eRunType = RTFParserState::HICH;
+        m_aStates.top().eRunType = RTFParserState::RunType::HICH;
         break;
     case RTF_DBCH:
-        m_aStates.top().eRunType = RTFParserState::DBCH;
+        m_aStates.top().eRunType = RTFParserState::RunType::DBCH;
         break;
     case RTF_TITLEPG:
     {
@@ -1068,6 +1068,9 @@ RTFError RTFDocumentImpl::dispatchFlag(RTFKeyword nKeyword)
         auto pIntValue = std::make_shared<RTFValue>(NS_ooxml::LN_Value_ST_NumberFormat_decimal);
         putNestedAttribute(m_aStates.top().aSectionSprms, NS_ooxml::LN_EG_SectPrContents_pgNumType, NS_ooxml::LN_CT_PageNumber_fmt, pIntValue);
     }
+    break;
+    case RTF_HTMAUTSP:
+        m_aSettingsTableSprms.set(NS_ooxml::LN_CT_Compat_doNotUseHTMLParagraphAutoSpacing, std::make_shared<RTFValue>(0));
     break;
     default:
     {

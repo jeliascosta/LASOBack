@@ -21,7 +21,6 @@
 #include "dlg_CreationWizard.hxx"
 #include "macros.hxx"
 #include "servicenames.hxx"
-#include "ContainerHelper.hxx"
 #include "TimerTriggeredControllerLock.hxx"
 #include <osl/mutex.hxx>
 #include <vcl/svapp.hxx>
@@ -61,11 +60,6 @@ CreationWizardUnoDlg::~CreationWizardUnoDlg()
 OUString SAL_CALL CreationWizardUnoDlg::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString CreationWizardUnoDlg::getImplementationName_Static()
-{
     return OUString(CHART_WIZARD_DIALOG_SERVICE_IMPLEMENTATION_NAME);
 }
 
@@ -78,13 +72,7 @@ sal_Bool SAL_CALL CreationWizardUnoDlg::supportsService( const OUString& rServic
 css::uno::Sequence< OUString > SAL_CALL CreationWizardUnoDlg::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
-}
-
-uno::Sequence< OUString > CreationWizardUnoDlg::getSupportedServiceNames_Static()
-{
-    uno::Sequence<OUString> aSNS { CHART_WIZARD_DIALOG_SERVICE_NAME };
-    return aSNS;
+    return { CHART_WIZARD_DIALOG_SERVICE_NAME };
 }
 
 // XInterface
@@ -109,7 +97,7 @@ uno::Any SAL_CALL CreationWizardUnoDlg::queryAggregation( uno::Type const & rTyp
     }
     else if (rType == cppu::UnoType<lang::XServiceInfo>::get())
     {
-        void * p = static_cast< lang::XTypeProvider * >( this );
+        void * p = static_cast< lang::XServiceInfo * >( this );
         return uno::Any( &p, rType );
     }
     else if (rType == cppu::UnoType<lang::XInitialization>::get())
@@ -161,14 +149,6 @@ uno::Sequence< sal_Int8 > SAL_CALL CreationWizardUnoDlg::getImplementationId() t
 // XTerminateListener
 void SAL_CALL CreationWizardUnoDlg::queryTermination( const lang::EventObject& /*Event*/ ) throw( frame::TerminationVetoException, uno::RuntimeException, std::exception)
 {
-    SolarMutexGuard aSolarGuard;
-
-    // we will never give a veto here
-    if( m_pDialog && !m_pDialog->isClosable() )
-    {
-        m_pDialog->ToTop();
-        throw frame::TerminationVetoException();
-    }
 }
 
 void SAL_CALL CreationWizardUnoDlg::notifyTermination( const lang::EventObject& /*Event*/ ) throw (uno::RuntimeException, std::exception)
@@ -217,7 +197,7 @@ void CreationWizardUnoDlg::createDialogOnDemand()
         }
     }
 }
-IMPL_LINK_TYPED( CreationWizardUnoDlg, DialogEventHdl, VclWindowEvent&, rEvent, void )
+IMPL_LINK( CreationWizardUnoDlg, DialogEventHdl, VclWindowEvent&, rEvent, void )
 {
     if(rEvent.GetId() == VCLEVENT_OBJECT_DYING)
         m_pDialog = nullptr;//avoid duplicate destruction of m_pDialog

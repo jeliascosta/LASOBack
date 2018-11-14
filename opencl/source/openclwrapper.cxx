@@ -55,7 +55,7 @@
 #define CHECK_OPENCL(status,name) \
 if( status != CL_SUCCESS )  \
 { \
-    SAL_WARN( "opencl", "OpenCL error code " << status << " at " SAL_DETAIL_WHERE " from " name ); \
+    SAL_WARN( "opencl", "OpenCL error code " << status << " at " SAL_DETAIL_WHERE "from " name ); \
     return false; \
 }
 
@@ -88,7 +88,7 @@ OString generateMD5(const void* pData, size_t length)
     return aBuffer.makeStringAndClear();
 }
 
-OString getCacheFolder()
+OString const & getCacheFolder()
 {
     static OString aCacheFolder;
 
@@ -522,15 +522,17 @@ bool initOpenCLRunEnv( GPUEnv *gpuInfo )
 
     clGetDeviceInfo(gpuInfo->mpDevID, CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT, sizeof(cl_uint),
                     &nPreferredVectorWidthFloat, nullptr);
+    SAL_INFO("opencl", "CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT=" << nPreferredVectorWidthFloat);
+
     clGetPlatformInfo(gpuInfo->mpPlatformID, CL_PLATFORM_NAME, 64,
              pName, nullptr);
 
-    bool bIsNotWinOrIsWin8OrGreater = true;
-
+#if defined (_WIN32)
 // the Win32 SDK 8.1 deprecates GetVersionEx()
-#ifdef _WIN32_WINNT_WINBLUE
-    bIsNotWinOrIsWin8OrGreater = IsWindows8OrGreater();
-#elif defined (_WIN32)
+# ifdef _WIN32_WINNT_WINBLUE
+    const bool bIsNotWinOrIsWin8OrGreater = IsWindows8OrGreater();
+# else
+    bool bIsNotWinOrIsWin8OrGreater = true;
     OSVERSIONINFO aVersionInfo;
     memset( &aVersionInfo, 0, sizeof(aVersionInfo) );
     aVersionInfo.dwOSVersionInfoSize = sizeof( aVersionInfo );
@@ -541,6 +543,9 @@ bool initOpenCLRunEnv( GPUEnv *gpuInfo )
            (aVersionInfo.dwMajorVersion == 6 && aVersionInfo.dwMinorVersion < 2))
             bIsNotWinOrIsWin8OrGreater = false;
     }
+# endif
+#else
+    const bool bIsNotWinOrIsWin8OrGreater = true;
 #endif
 
     // Heuristic: Certain old low-end OpenCL implementations don't
@@ -550,6 +555,12 @@ bool initOpenCLRunEnv( GPUEnv *gpuInfo )
     gpuInfo->mbNeedsTDRAvoidance = ( nPreferredVectorWidthFloat == 4 ) ||
         ( !bIsNotWinOrIsWin8OrGreater &&
           OUString::createFromAscii(pName).indexOf("NVIDIA") > -1 );
+
+    size_t nMaxParameterSize;
+    clGetDeviceInfo(gpuInfo->mpDevID, CL_DEVICE_MAX_PARAMETER_SIZE, sizeof(size_t),
+                    &nMaxParameterSize, nullptr);
+    SAL_INFO("opencl", "CL_DEVICE_MAX_PARAMETER_SIZE=" << nMaxParameterSize);
+
     return false;
 }
 
@@ -733,16 +744,14 @@ namespace {
 
 cl_device_id findDeviceIdByDeviceString(const OUString& rString, const std::vector<OpenCLPlatformInfo>& rPlatforms)
 {
-    std::vector<OpenCLPlatformInfo>::const_iterator it = rPlatforms.begin(), itEnd = rPlatforms.end();
-    for(; it != itEnd; ++it)
+    for (const OpenCLPlatformInfo& rPlatform : rPlatforms)
     {
-        std::vector<OpenCLDeviceInfo>::const_iterator itr = it->maDevices.begin(), itrEnd = it->maDevices.end();
-        for(; itr != itrEnd; ++itr)
+        for (const OpenCLDeviceInfo& rDeviceInfo : rPlatform.maDevices)
         {
-            OUString aDeviceId = it->maVendor + " " + itr->maName;
-            if(rString == aDeviceId)
+            OUString aDeviceId = rDeviceInfo.maVendor + " " + rDeviceInfo.maName;
+            if (rString == aDeviceId)
             {
-                return static_cast<cl_device_id>(itr->device);
+                return rDeviceInfo.device;
             }
         }
     }

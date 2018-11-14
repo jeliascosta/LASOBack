@@ -72,7 +72,7 @@ public:
         const OUString& rsName);
     void LateInitialization();
 
-    virtual ~AccessibleObject();
+    virtual ~AccessibleObject() override;
 
     virtual void SetWindow (
         const css::uno::Reference<css::awt::XWindow>& rxContentWindow,
@@ -217,8 +217,6 @@ protected:
 
     void UpdateState (const sal_Int16 aState, const bool bValue);
 
-    bool IsDisposed() const;
-
     void ThrowIfDisposed() const
         throw (css::lang::DisposedException);
 };
@@ -237,7 +235,7 @@ class AccessibleStateSet
 {
 public:
     explicit AccessibleStateSet (const sal_Int32 nStateSet);
-    virtual ~AccessibleStateSet();
+    virtual ~AccessibleStateSet() override;
 
     static sal_uInt32 GetStateMask (const sal_Int16 nType);
 
@@ -273,7 +271,7 @@ class AccessibleRelationSet
 {
 public:
     AccessibleRelationSet();
-    virtual ~AccessibleRelationSet();
+    virtual ~AccessibleRelationSet() override;
 
     void AddRelation (
         const sal_Int16 nRelationType,
@@ -312,12 +310,11 @@ class PresenterAccessible::AccessibleParagraph
 public:
     AccessibleParagraph (
         const css::lang::Locale& rLocale,
-        const sal_Int16 nRole,
         const OUString& rsName,
         const SharedPresenterTextParagraph& rpParagraph,
         const sal_Int32 nParagraphIndex);
 
-    virtual ~AccessibleParagraph();
+    virtual ~AccessibleParagraph() override;
 
     //----- XAccessibleContext ------------------------------------------------
 
@@ -474,7 +471,6 @@ class AccessibleNotes : public PresenterAccessible::AccessibleObject
 public:
     AccessibleNotes (
         const css::lang::Locale& rLocale,
-        const sal_Int16 nRole,
         const OUString& rsName);
 
     static rtl::Reference<PresenterAccessible::AccessibleObject> Create (
@@ -498,7 +494,6 @@ private:
         const sal_Int32 nOldCharacterIndex,
         const sal_Int32 nNewParagraphIndex,
         const sal_Int32 nNewCharacterIndex);
-    void HandleTextChange();
 };
 
 //===== AccessibleFocusManager ================================================
@@ -509,7 +504,7 @@ private:
 class AccessibleFocusManager
 {
 public:
-    static std::shared_ptr<AccessibleFocusManager> Instance();
+    static std::shared_ptr<AccessibleFocusManager> const & Instance();
 
     void AddFocusableObject (const ::rtl::Reference<PresenterAccessible::AccessibleObject>& rpObject);
     void RemoveFocusableObject (const ::rtl::Reference<PresenterAccessible::AccessibleObject>& rpObject);
@@ -1093,7 +1088,7 @@ void SAL_CALL PresenterAccessible::AccessibleObject::addAccessibleEventListener 
     {
         const osl::MutexGuard aGuard(m_aMutex);
 
-        if (IsDisposed())
+        if (rBHelper.bDisposed || rBHelper.bInDispose)
         {
             uno::Reference<uno::XInterface> xThis (static_cast<XWeak*>(this), UNO_QUERY);
             rxListener->disposing (lang::EventObject(xThis));
@@ -1114,7 +1109,11 @@ void SAL_CALL PresenterAccessible::AccessibleObject::removeAccessibleEventListen
     {
         const osl::MutexGuard aGuard(m_aMutex);
 
-        maListeners.erase(std::remove(maListeners.begin(), maListeners.end(), rxListener));
+        auto const it(std::remove(maListeners.begin(), maListeners.end(), rxListener));
+        if (it != maListeners.end())
+        {
+            maListeners.erase(it);
+        }
     }
 }
 
@@ -1339,11 +1338,6 @@ awt::Point PresenterAccessible::AccessibleObject::GetAbsoluteParentLocation()
         return awt::Point();
 }
 
-bool PresenterAccessible::AccessibleObject::IsDisposed() const
-{
-    return (rBHelper.bDisposed || rBHelper.bInDispose);
-}
-
 void PresenterAccessible::AccessibleObject::ThrowIfDisposed() const
     throw (lang::DisposedException)
 {
@@ -1478,11 +1472,10 @@ AccessibleRelation SAL_CALL AccessibleRelationSet::getRelationByType (sal_Int16 
 
 PresenterAccessible::AccessibleParagraph::AccessibleParagraph (
     const lang::Locale& rLocale,
-    const sal_Int16 nRole,
     const OUString& rsName,
     const SharedPresenterTextParagraph& rpParagraph,
     const sal_Int32 nParagraphIndex)
-    : PresenterAccessibleParagraphInterfaceBase(rLocale, nRole, rsName),
+    : PresenterAccessibleParagraphInterfaceBase(rLocale, AccessibleRole::PARAGRAPH, rsName),
       mpParagraph(rpParagraph),
       mnParagraphIndex(nParagraphIndex)
 {
@@ -1822,9 +1815,8 @@ bool PresenterAccessible::AccessibleParagraph::GetWindowState (const sal_Int16 n
 
 AccessibleNotes::AccessibleNotes (
     const css::lang::Locale& rLocale,
-    const sal_Int16 nRole,
     const OUString& rsName)
-    : AccessibleObject(rLocale,nRole,rsName),
+    : AccessibleObject(rLocale,AccessibleRole::PANEL,rsName),
       mpTextView()
 {
 }
@@ -1849,7 +1841,6 @@ rtl::Reference<PresenterAccessible::AccessibleObject> AccessibleNotes::Create (
     rtl::Reference<AccessibleNotes> pObject (
         new AccessibleNotes(
             rLocale,
-            AccessibleRole::PANEL,
             sName));
     pObject->LateInitialization();
     pObject->SetTextView(rpTextView);
@@ -1884,7 +1875,6 @@ void AccessibleNotes::SetTextView (
             rtl::Reference<PresenterAccessible::AccessibleParagraph> pParagraph (
                 new PresenterAccessible::AccessibleParagraph(
                     css::lang::Locale(),
-                    AccessibleRole::PARAGRAPH,
                     "Paragraph"+OUString::number(nIndex),
                     rpTextView->GetParagraph(nIndex),
                     nIndex));
@@ -1918,7 +1908,7 @@ void AccessibleNotes::SetTextView (
             [this](sal_Int32 a, sal_Int32 b, sal_Int32 c, sal_Int32 d)
                 { return this->NotifyCaretChange(a, b, c, d); });
         mpTextView->SetTextChangeBroadcaster(
-            [this]() { return this->HandleTextChange(); });
+            [this]() { return SetTextView(mpTextView); });
     }
 }
 
@@ -1981,16 +1971,12 @@ void AccessibleNotes::NotifyCaretChange (
     }
 }
 
-void AccessibleNotes::HandleTextChange()
-{
-    SetTextView(mpTextView);
-}
 
 //===== AccessibleFocusManager ================================================
 
 std::shared_ptr<AccessibleFocusManager> AccessibleFocusManager::mpInstance;
 
-std::shared_ptr<AccessibleFocusManager> AccessibleFocusManager::Instance()
+std::shared_ptr<AccessibleFocusManager> const & AccessibleFocusManager::Instance()
 {
     if ( ! mpInstance)
     {

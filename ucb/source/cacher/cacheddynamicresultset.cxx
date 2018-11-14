@@ -31,7 +31,7 @@ using namespace com::sun::star::uno;
 
 
 CachedDynamicResultSet::CachedDynamicResultSet(
-        Reference< XDynamicResultSet > xOrigin
+        Reference< XDynamicResultSet > const & xOrigin
         , const Reference< XContentIdentifierMapping > & xContentMapping
         , const Reference< XComponentContext > & xContext )
         : DynamicResultSetWrapper( xOrigin, xContext )
@@ -118,10 +118,23 @@ XTYPEPROVIDER_IMPL_4( CachedDynamicResultSet
 
 // XServiceInfo methods.
 
+OUString SAL_CALL CachedDynamicResultSet::getImplementationName()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return OUString( "com.sun.star.comp.ucb.CachedDynamicResultSet" );
+}
 
-XSERVICEINFO_NOFACTORY_IMPL_1( CachedDynamicResultSet,
-                            OUString( "com.sun.star.comp.ucb.CachedDynamicResultSet" ),
-                            CACHED_DRS_SERVICE_NAME );
+sal_Bool SAL_CALL CachedDynamicResultSet::supportsService( const OUString& ServiceName )
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return cppu::supportsService( this, ServiceName );
+}
+
+css::uno::Sequence< OUString > SAL_CALL CachedDynamicResultSet::getSupportedServiceNames()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return { CACHED_DRS_SERVICE_NAME };
+}
 
 
 // own methods. ( inherited )

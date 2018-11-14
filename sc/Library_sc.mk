@@ -380,6 +380,7 @@ $(eval $(call gb_Library_add_exception_objects,sc,\
     sc/source/ui/app/typemap \
     sc/source/ui/app/uiitems \
     sc/source/ui/attrdlg/scabstdlg \
+    sc/source/ui/cctrl/cbnumberformat \
     sc/source/ui/cctrl/cbuttonw \
     sc/source/ui/cctrl/checklistmenu \
     sc/source/ui/cctrl/dpcontrol \
@@ -426,6 +427,7 @@ $(eval $(call gb_Library_add_exception_objects,sc,\
     sc/source/ui/docshell/docsh8 \
     sc/source/ui/docshell/documentlinkmgr \
     sc/source/ui/docshell/editable \
+    sc/source/ui/docshell/dataprovider \
     sc/source/ui/docshell/externalrefmgr \
     sc/source/ui/docshell/impex \
     sc/source/ui/docshell/macromgr \
@@ -465,7 +467,6 @@ $(eval $(call gb_Library_add_exception_objects,sc,\
     sc/source/ui/formdlg/dwfunctr \
     sc/source/ui/formdlg/formdata \
     sc/source/ui/formdlg/formula \
-    sc/source/ui/formdlg/privsplt \
     sc/source/ui/miscdlgs/acredlin \
     sc/source/ui/miscdlgs/anyrefdg \
     sc/source/ui/miscdlgs/autofmt \
@@ -473,6 +474,7 @@ $(eval $(call gb_Library_add_exception_objects,sc,\
     sc/source/ui/miscdlgs/crnrdlg \
     sc/source/ui/miscdlgs/datastreamdlg \
     sc/source/ui/miscdlgs/highred \
+    sc/source/ui/miscdlgs/mergecellsdialog \
     sc/source/ui/miscdlgs/optsolver \
     sc/source/ui/miscdlgs/protectiondlg \
     sc/source/ui/miscdlgs/redcom \
@@ -495,12 +497,11 @@ $(eval $(call gb_Library_add_exception_objects,sc,\
     sc/source/ui/pagedlg/tphfedit \
     sc/source/ui/sidebar/AlignmentPropertyPanel \
     sc/source/ui/sidebar/CellLineStyleControl \
-    sc/source/ui/sidebar/CellLineStylePopup \
     sc/source/ui/sidebar/CellLineStyleValueSet \
     sc/source/ui/sidebar/CellBorderUpdater \
     sc/source/ui/sidebar/CellAppearancePropertyPanel \
     sc/source/ui/sidebar/CellBorderStyleControl \
-    sc/source/ui/sidebar/CellBorderStylePopup \
+    sc/source/ui/sidebar/NumberFormatControl \
     sc/source/ui/sidebar/NumberFormatPropertyPanel \
     sc/source/ui/sidebar/ScPanelFactory \
     sc/source/ui/StatisticsDialogs/AnalysisOfVarianceDialog \
@@ -520,6 +521,7 @@ $(eval $(call gb_Library_add_exception_objects,sc,\
     sc/source/ui/StatisticsDialogs/TableFillingAndNavigationTools \
     sc/source/ui/StatisticsDialogs/TTestDialog \
     sc/source/ui/StatisticsDialogs/ZTestDialog \
+    sc/source/ui/uitest/uiobject \
     sc/source/ui/undo/areasave \
     sc/source/ui/undo/refundo \
     sc/source/ui/undo/target \
@@ -668,6 +670,12 @@ $(eval $(call gb_Library_add_exception_objects,sc,\
     sc/source/ui/view/waitoff \
     sc/source/ui/xmlsource/xmlsourcedlg \
 ))
+
+ifeq ($(ENABLE_FORMULA_LOGGER),TRUE)
+$(eval $(call gb_Library_add_exception_objects,sc,\
+    sc/source/core/tool/formulalogger \
+))
+endif
 
 ifneq (,$(gb_ENABLE_DBGUTIL))
 $(eval $(call gb_Library_add_exception_objects,sc,\

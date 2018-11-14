@@ -38,7 +38,7 @@ SvxWritingModeItem::~SvxWritingModeItem()
 
 bool SvxWritingModeItem::operator==( const SfxPoolItem& rCmp ) const
 {
-    DBG_ASSERT( SfxPoolItem::operator==(rCmp), "unequal types" );
+    assert(SfxPoolItem::operator==(rCmp));
 
     return GetValue() == static_cast<const SvxWritingModeItem&>(rCmp).GetValue();
 }
@@ -66,8 +66,8 @@ sal_uInt16 SvxWritingModeItem::GetVersion( sal_uInt16 /*nFVer*/ ) const
 }
 
 bool SvxWritingModeItem::GetPresentation( SfxItemPresentation /*ePres*/,
-        SfxMapUnit /*eCoreMetric*/,
-        SfxMapUnit /*ePresMetric*/,
+        MapUnit /*eCoreMetric*/,
+        MapUnit /*ePresMetric*/,
         OUString &rText,
         const IntlWrapper *  ) const
 {

@@ -80,12 +80,6 @@ private:
     sal_uInt16 nZoom;
 
 protected:
-    void SetFormulaDrawPos(const Point &rPos)
-    {
-        aFormulaDrawPos = rPos;
-    }
-
-    virtual void DataChanged( const DataChangedEvent& ) override;
     virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle&) override;
     virtual void KeyInput(const KeyEvent& rKEvt) override;
     virtual void Command(const CommandEvent& rCEvt) override;
@@ -93,13 +87,13 @@ protected:
 
 private:
     void RepaintViewShellDoc();
-    DECL_LINK_TYPED(CaretBlinkTimerHdl, Timer *, void);
+    DECL_LINK(CaretBlinkTimerHdl, Timer *, void);
     void CaretBlinkInit();
     void CaretBlinkStart();
     void CaretBlinkStop();
 public:
-    SmGraphicWindow(SmViewShell* pShell);
-    virtual ~SmGraphicWindow();
+    explicit SmGraphicWindow(SmViewShell* pShell);
+    virtual ~SmGraphicWindow() override;
     virtual void dispose() override;
 
     // Window
@@ -172,7 +166,7 @@ class SmCmdBoxWindow : public SfxDockingWindow
 
     Timer               aInitialFocusTimer;
 
-    DECL_LINK_TYPED(InitialFocusTimerHdl, Timer *, void);
+    DECL_LINK(InitialFocusTimerHdl, Timer *, void);
 
 protected:
 
@@ -193,7 +187,7 @@ public:
                    SfxChildWindow *pChildWindow,
                    Window         *pParent);
 
-    virtual ~SmCmdBoxWindow ();
+    virtual ~SmCmdBoxWindow () override;
     virtual void dispose() override;
 
     void AdjustPosition();
@@ -233,7 +227,7 @@ class SmViewShell: public SfxViewShell
 
     bool bPasteState;
 
-    DECL_LINK_TYPED( DialogClosedHdl, sfx2::FileDialogHelper*, void );
+    DECL_LINK( DialogClosedHdl, sfx2::FileDialogHelper*, void );
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
     /** Used to determine whether insertions using SID_INSERTSYMBOL and SID_INSERTCOMMAND
@@ -269,7 +263,7 @@ protected:
     virtual void Deactivate(bool IsMDIActivate) override;
     virtual void Activate(bool IsMDIActivate) override;
     virtual void AdjustPosSizePixel(const Point &rPos, const Size &rSize) override;
-    virtual void InnerResizePixel(const Point &rOfs, const Size  &rSize) override;
+    virtual void InnerResizePixel(const Point &rOfs, const Size  &rSize, bool inplaceEditModeChange) override;
     virtual void OuterResizePixel(const Point &rOfs, const Size  &rSize) override;
     virtual void QueryObjAreaPixel( Rectangle& rRect ) const override;
     virtual void SetZoomFactor( const Fraction &rX, const Fraction &rY ) override;
@@ -277,7 +271,7 @@ protected:
 public:
 
     SmViewShell(SfxViewFrame *pFrame, SfxViewShell *pOldSh);
-    virtual ~SmViewShell();
+    virtual ~SmViewShell() override;
 
     SmDocShell * GetDoc()
     {
@@ -321,10 +315,13 @@ public:
      * so that when text is inserted from catalog or elsewhere we know whether to
      * insert for the visual editor, or the text editor.
      */
-    void SetInsertIntoEditWindow(bool bEditWindowHadFocusLast = true){
+    void SetInsertIntoEditWindow(bool bEditWindowHadFocusLast){
         bInsertIntoEditWindow = bEditWindowHadFocusLast;
     }
     bool IsInlineEditEnabled() const;
+
+private:
+    void ZoomByItemSet(const SfxItemSet *pSet);
 };
 
 #endif

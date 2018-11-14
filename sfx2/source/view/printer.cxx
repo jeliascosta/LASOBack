@@ -136,6 +136,7 @@ SfxPrinter::SfxPrinter( SfxItemSet* pTheOptions,
 
 
 SfxPrinter::SfxPrinter( const SfxPrinter& rPrinter ) :
+    VclReferenceBase(),
     Printer( rPrinter.GetName() ),
     pOptions( rPrinter.GetOptions().Clone() ),
     pImpl( new SfxPrinter_Impl ),
@@ -222,7 +223,7 @@ SfxPrintOptionsDialog::~SfxPrintOptionsDialog()
 
 void SfxPrintOptionsDialog::dispose()
 {
-    delete pDlgImpl;
+    pDlgImpl.reset();
     pPage.disposeAndClear();
     delete pOptions;
     ModalDialog::dispose();

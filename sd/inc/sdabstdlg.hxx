@@ -31,6 +31,7 @@
 #include "prlayout.hxx"
 #include "sdenumdef.hxx"
 #include "pres.hxx"
+#include "sddllapi.h"
 
 namespace sd {
     class View;
@@ -61,32 +62,25 @@ class SdCustomShowList;
 
 class AbstractCopyDlg : public VclAbstractDialog
 {
+protected:
+    virtual ~AbstractCopyDlg() override = default;
 public:
     virtual void    GetAttr( SfxItemSet& rOutAttrs ) = 0;
 };
 
 class AbstractSdCustomShowDlg : public VclAbstractDialog
 {
+protected:
+    virtual ~AbstractSdCustomShowDlg() override = default;
 public:
     virtual bool        IsModified() const = 0;
     virtual bool        IsCustomShow() const = 0;
 };
 
-class AbstractAssistentDlg : public VclAbstractDialog
-{
-public:
-    virtual SfxObjectShellLock GetDocument() = 0;
-    virtual OutputType GetOutputMedium() const = 0;
-    virtual bool IsSummary() const = 0;
-    virtual StartType GetStartType() const = 0;
-    virtual OUString GetDocPath() const = 0;
-    virtual bool GetStartWithFlag() const = 0;
-    virtual bool IsDocEmpty() const = 0;
-    virtual css::uno::Sequence< css::beans::NamedValue > GetPassword() = 0;
-};
-
 class AbstractSdModifyFieldDlg : public VclAbstractDialog
 {
+protected:
+    virtual ~AbstractSdModifyFieldDlg() override = default;
 public:
     virtual SvxFieldData*       GetField() = 0;
     virtual SfxItemSet          GetItemSet() = 0;
@@ -94,6 +88,8 @@ public:
 
 class AbstractSdSnapLineDlg : public VclAbstractDialog
 {
+protected:
+    virtual ~AbstractSdSnapLineDlg() override = default;
 public:
     virtual void GetAttr(SfxItemSet& rOutAttrs) = 0;
     virtual void HideRadioGroup() = 0;
@@ -105,6 +101,8 @@ public:
 
 class AbstractSdInsertLayerDlg : public VclAbstractDialog
 {
+protected:
+    virtual ~AbstractSdInsertLayerDlg() override = default;
 public:
     virtual void    GetAttr( SfxItemSet& rOutAttrs ) = 0;
     //from class vcl::Window
@@ -113,10 +111,14 @@ public:
 
 class AbstractSdInsertPasteDlg : public VclAbstractDialog
 {
+protected:
+    virtual ~AbstractSdInsertPasteDlg() override = default;
 };
 
 class AbstractSdInsertPagesObjsDlg : public VclAbstractDialog
 {
+protected:
+    virtual ~AbstractSdInsertPagesObjsDlg() override = default;
 public:
     virtual std::vector<OUString> GetList ( const sal_uInt16 nType ) = 0;
     virtual bool        IsLink() = 0;
@@ -125,6 +127,8 @@ public:
 
 class AbstractMorphDlg : public VclAbstractDialog
 {
+protected:
+    virtual ~AbstractMorphDlg() override = default;
 public:
     virtual void            SaveSettings() const = 0;
     virtual sal_uInt16          GetFadeSteps() const = 0;
@@ -134,65 +138,74 @@ public:
 
 class AbstractSdStartPresDlg : public VclAbstractDialog
 {
+protected:
+    virtual ~AbstractSdStartPresDlg() override = default;
 public:
     virtual void    GetAttr( SfxItemSet& rOutAttrs ) = 0;
 };
 
 class AbstractSdPresLayoutDlg : public VclAbstractDialog
 {
+protected:
+    virtual ~AbstractSdPresLayoutDlg() override = default;
 public:
     virtual void    GetAttr(SfxItemSet& rOutAttrs) = 0;
 };
 
 class AbstractSdVectorizeDlg : public VclAbstractDialog
 {
+protected:
+    virtual ~AbstractSdVectorizeDlg() override = default;
 public:
     virtual const GDIMetaFile&  GetGDIMetaFile() const = 0;
 };
 
 class AbstractSdPublishingDlg : public VclAbstractDialog
 {
+protected:
+    virtual ~AbstractSdPublishingDlg() override = default;
 public:
     virtual void GetParameterSequence( css::uno::Sequence< css::beans::PropertyValue >& rParams ) = 0;
 };
 
 class AbstractHeaderFooterDialog : public VclAbstractDialog
 {
+protected:
+    virtual ~AbstractHeaderFooterDialog() override = default;
 };
 
 class SdAbstractDialogFactory
 {
 public:
-    static SdAbstractDialogFactory*     Create();
+    SD_DLLPUBLIC static SdAbstractDialogFactory*     Create();
 
-    virtual VclAbstractDialog*          CreateBreakDlg(vcl::Window* pWindow, ::sd::DrawView* pDrView, ::sd::DrawDocShell* pShell, sal_uLong nSumActionCount, sal_uLong nObjCount ) = 0;
-    virtual AbstractCopyDlg*            CreateCopyDlg(vcl::Window* pWindow, const SfxItemSet& rInAttrs, const rtl::Reference<XColorList> &pColTab, ::sd::View* pView ) = 0;
-    virtual AbstractSdCustomShowDlg*    CreateSdCustomShowDlg(vcl::Window* pWindow, SdDrawDocument& rDrawDoc) = 0;
-    virtual SfxAbstractTabDialog*       CreateSdTabCharDialog(vcl::Window* pWindow, const SfxItemSet* pAttr, SfxObjectShell* pDocShell) = 0;
-    virtual SfxAbstractTabDialog*       CreateSdTabPageDialog(vcl::Window* pWindow, const SfxItemSet* pAttr, SfxObjectShell* pDocShell, bool bAreaPage = true) = 0;
-    virtual AbstractAssistentDlg*       CreateAssistentDlg(bool bAutoPilot) = 0;
-    virtual AbstractSdModifyFieldDlg*   CreateSdModifyFieldDlg(vcl::Window* pWindow, const SvxFieldData* pInField, const SfxItemSet& rSet) = 0;
-    virtual AbstractSdSnapLineDlg*      CreateSdSnapLineDlg(vcl::Window* pParent, const SfxItemSet& rInAttrs, ::sd::View* pView) = 0;
-    virtual AbstractSdInsertLayerDlg*   CreateSdInsertLayerDlg(vcl::Window* pParent, const SfxItemSet& rInAttrs, bool bDeletable, const OUString& aStr) = 0;
-    virtual AbstractSdInsertPagesObjsDlg* CreateSdInsertPagesObjsDlg(vcl::Window* pParent, const SdDrawDocument* pDoc, SfxMedium* pSfxMedium, const OUString& rFileName) = 0;
-    virtual AbstractMorphDlg*           CreateMorphDlg(vcl::Window* pParent, const SdrObject* pObj1, const SdrObject* pObj2) = 0;
-    virtual SfxAbstractTabDialog*       CreateSdOutlineBulletTabDlg(vcl::Window* pParent, const SfxItemSet* pAttr, ::sd::View* pView = nullptr) = 0;
-    virtual SfxAbstractTabDialog*       CreateSdParagraphTabDlg(vcl::Window* pWindow, const SfxItemSet* pAttr) = 0;
-    virtual AbstractSdStartPresDlg*     CreateSdStartPresentationDlg( vcl::Window* pWindow, const SfxItemSet& rInAttrs,
+    virtual VclPtr<VclAbstractDialog>          CreateBreakDlg(vcl::Window* pWindow, ::sd::DrawView* pDrView, ::sd::DrawDocShell* pShell, sal_uLong nSumActionCount, sal_uLong nObjCount ) = 0;
+    virtual VclPtr<AbstractCopyDlg>            CreateCopyDlg(vcl::Window* pWindow, const SfxItemSet& rInAttrs, ::sd::View* pView ) = 0;
+    virtual VclPtr<AbstractSdCustomShowDlg>    CreateSdCustomShowDlg(vcl::Window* pWindow, SdDrawDocument& rDrawDoc) = 0;
+    virtual VclPtr<SfxAbstractTabDialog>       CreateSdTabCharDialog(vcl::Window* pWindow, const SfxItemSet* pAttr, SfxObjectShell* pDocShell) = 0;
+    virtual VclPtr<SfxAbstractTabDialog>       CreateSdTabPageDialog(vcl::Window* pWindow, const SfxItemSet* pAttr, SfxObjectShell* pDocShell, bool bAreaPage) = 0;
+    virtual VclPtr<AbstractSdModifyFieldDlg>   CreateSdModifyFieldDlg(vcl::Window* pWindow, const SvxFieldData* pInField, const SfxItemSet& rSet) = 0;
+    virtual VclPtr<AbstractSdSnapLineDlg>      CreateSdSnapLineDlg(vcl::Window* pParent, const SfxItemSet& rInAttrs, ::sd::View* pView) = 0;
+    virtual VclPtr<AbstractSdInsertLayerDlg>   CreateSdInsertLayerDlg(vcl::Window* pParent, const SfxItemSet& rInAttrs, bool bDeletable, const OUString& aStr) = 0;
+    virtual VclPtr<AbstractSdInsertPagesObjsDlg> CreateSdInsertPagesObjsDlg(vcl::Window* pParent, const SdDrawDocument* pDoc, SfxMedium* pSfxMedium, const OUString& rFileName) = 0;
+    virtual VclPtr<AbstractMorphDlg>           CreateMorphDlg(vcl::Window* pParent, const SdrObject* pObj1, const SdrObject* pObj2) = 0;
+    virtual VclPtr<SfxAbstractTabDialog>       CreateSdOutlineBulletTabDlg(vcl::Window* pParent, const SfxItemSet* pAttr, ::sd::View* pView) = 0;
+    virtual VclPtr<SfxAbstractTabDialog>       CreateSdParagraphTabDlg(vcl::Window* pWindow, const SfxItemSet* pAttr) = 0;
+    virtual VclPtr<AbstractSdStartPresDlg>     CreateSdStartPresentationDlg( vcl::Window* pWindow, const SfxItemSet& rInAttrs,
                                                                      const std::vector<OUString> &rPageNames, SdCustomShowList* pCSList ) = 0;
-    virtual VclAbstractDialog*          CreateRemoteDialog( vcl::Window* pWindow ) = 0;
-    virtual SfxAbstractTabDialog*       CreateSdPresLayoutTemplateDlg( SfxObjectShell* pDocSh, vcl::Window* pParent, const SdResId& DlgId, SfxStyleSheetBase& rStyleBase, PresentationObjects ePO, SfxStyleSheetBasePool* pSSPool ) = 0;
-    virtual AbstractSdPresLayoutDlg*    CreateSdPresLayoutDlg( ::sd::DrawDocShell* pDocShell, vcl::Window* pWindow, const SfxItemSet& rInAttrs) = 0;
-    virtual SfxAbstractTabDialog*       CreateSdTabTemplateDlg(vcl::Window* pParent, const SfxObjectShell* pDocShell, SfxStyleSheetBase& rStyleBase, SdrModel* pModel, SdrView* pView) = 0;
-    virtual SfxAbstractDialog*          CreatSdActionDialog(vcl::Window* pParent, const SfxItemSet* pAttr, ::sd::View* pView) = 0;
-    virtual AbstractSdVectorizeDlg*     CreateSdVectorizeDlg( vcl::Window* pParent, const Bitmap& rBmp, ::sd::DrawDocShell* pDocShell ) = 0;
-    virtual AbstractSdPublishingDlg*    CreateSdPublishingDlg( vcl::Window* pWindow, DocumentType eDocType) = 0;
+    virtual VclPtr<VclAbstractDialog>          CreateRemoteDialog( vcl::Window* pWindow ) = 0;
+    virtual VclPtr<SfxAbstractTabDialog>       CreateSdPresLayoutTemplateDlg( SfxObjectShell* pDocSh, vcl::Window* pParent, const SdResId& DlgId, SfxStyleSheetBase& rStyleBase, PresentationObjects ePO, SfxStyleSheetBasePool* pSSPool ) = 0;
+    virtual VclPtr<AbstractSdPresLayoutDlg>    CreateSdPresLayoutDlg( ::sd::DrawDocShell* pDocShell, const SfxItemSet& rInAttrs) = 0;
+    virtual VclPtr<SfxAbstractTabDialog>       CreateSdTabTemplateDlg(vcl::Window* pParent, const SfxObjectShell* pDocShell, SfxStyleSheetBase& rStyleBase, SdrModel* pModel, SdrView* pView) = 0;
+    virtual VclPtr<SfxAbstractDialog>          CreatSdActionDialog(vcl::Window* pParent, const SfxItemSet* pAttr, ::sd::View* pView) = 0;
+    virtual VclPtr<AbstractSdVectorizeDlg>     CreateSdVectorizeDlg( vcl::Window* pParent, const Bitmap& rBmp, ::sd::DrawDocShell* pDocShell ) = 0;
+    virtual VclPtr<AbstractSdPublishingDlg>    CreateSdPublishingDlg( vcl::Window* pWindow, DocumentType eDocType) = 0;
 
-    virtual VclAbstractDialog*          CreateMasterLayoutDialog( vcl::Window* pParent,
+    virtual VclPtr<VclAbstractDialog>          CreateMasterLayoutDialog( vcl::Window* pParent,
                                                                   SdDrawDocument* pDoc,
                                                                   SdPage* ) = 0;
 
-    virtual AbstractHeaderFooterDialog* CreateHeaderFooterDialog( sd::ViewShell* pViewShell,
+    virtual VclPtr<AbstractHeaderFooterDialog> CreateHeaderFooterDialog( sd::ViewShell* pViewShell,
                                                                   vcl::Window* pParent,
                                                                   SdDrawDocument* pDoc,
                                                                   SdPage* pCurrentPage ) = 0;
@@ -202,7 +215,7 @@ public:
     virtual CreateTabPage               GetSdOptionsMiscTabPageCreatorFunc() = 0;
     virtual CreateTabPage               GetSdOptionsSnapTabPageCreatorFunc() = 0;
 
-    virtual VclAbstractDialog* CreateSdPhotoAlbumDialog( vcl::Window* pWindow, SdDrawDocument* pDoc) = 0;
+    virtual VclPtr<VclAbstractDialog> CreateSdPhotoAlbumDialog( vcl::Window* pWindow, SdDrawDocument* pDoc) = 0;
 
 protected:
     ~SdAbstractDialogFactory() {}

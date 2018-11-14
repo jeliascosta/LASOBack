@@ -24,6 +24,7 @@
 #include <com/sun/star/graphic/SvgTools.hpp>
 #include <com/sun/star/graphic/Primitive2DTools.hpp>
 #include <com/sun/star/rendering/XIntegerReadOnlyBitmap.hpp>
+#include <com/sun/star/util/XAccounting.hpp>
 #include <vcl/canvastools.hxx>
 #include <comphelper/seqstream.hxx>
 #include <comphelper/sequence.hxx>
@@ -33,7 +34,7 @@
 using namespace ::com::sun::star;
 
 BitmapEx convertPrimitive2DSequenceToBitmapEx(
-    const std::vector< css::uno::Reference< css::graphic::XPrimitive2D > >& rSequence,
+    const std::deque< css::uno::Reference< css::graphic::XPrimitive2D > >& rSequence,
     const basegfx::B2DRange& rTargetRange,
     const sal_uInt32 nMaximumQuadraticPixels)
 {
@@ -58,7 +59,7 @@ BitmapEx convertPrimitive2DSequenceToBitmapEx(
             aRealRect.Y2 = rTargetRange.getMaxY();
 
             // get system DPI
-            const Size aDPI(Application::GetDefaultDevice()->LogicToPixel(Size(1, 1), MAP_INCH));
+            const Size aDPI(Application::GetDefaultDevice()->LogicToPixel(Size(1, 1), MapUnit::MapInch));
 
             const uno::Reference< rendering::XBitmap > xBitmap(
                 xPrimitive2DRenderer->rasterize(
@@ -86,6 +87,19 @@ BitmapEx convertPrimitive2DSequenceToBitmapEx(
     }
 
     return aRetval;
+}
+
+size_t estimateSize(
+    std::deque<uno::Reference<graphic::XPrimitive2D>> const& rSequence)
+{
+    size_t nRet(0);
+    for (auto& it : rSequence)
+    {
+        uno::Reference<util::XAccounting> const xAcc(it, uno::UNO_QUERY);
+        assert(xAcc.is()); // we expect only BasePrimitive2D from SVG parser
+        nRet += xAcc->estimateUsage();
+    }
+    return nRet;
 }
 
 void SvgData::ensureReplacement()
@@ -117,7 +131,7 @@ void SvgData::ensureSequenceAndRange()
             {
                 const uno::Reference< graphic::XSvgParser > xSvgParser = graphic::SvgTools::create(xContext);
 
-                maSequence = comphelper::sequenceToContainer< std::vector< css::uno::Reference< css::graphic::XPrimitive2D > > >(xSvgParser->getDecomposition(myInputStream, maPath));
+                maSequence = comphelper::sequenceToContainer<std::deque<css::uno::Reference< css::graphic::XPrimitive2D >>>(xSvgParser->getDecomposition(myInputStream, maPath));
             }
             catch(const uno::Exception&)
             {
@@ -131,7 +145,7 @@ void SvgData::ensureSequenceAndRange()
             geometry::RealRectangle2D aRealRect;
             uno::Sequence< beans::PropertyValue > aViewParameters;
 
-            for(sal_Int32 a(0L); a < nCount; a++)
+            for(sal_Int32 a(0); a < nCount; a++)
             {
                 // get reference
                 const css::uno::Reference< css::graphic::XPrimitive2D > xReference(maSequence[a]);
@@ -149,6 +163,19 @@ void SvgData::ensureSequenceAndRange()
                 }
             }
         }
+        mNestedBitmapSize = estimateSize(maSequence);
+    }
+}
+
+auto SvgData::getSizeBytes() -> std::pair<State, size_t>
+{
+    if (maSequence.empty() && maSvgDataArray.hasElements())
+    {
+        return std::make_pair(State::UNPARSED, maSvgDataArray.getLength());
+    }
+    else
+    {
+        return std::make_pair(State::PARSED, maSvgDataArray.getLength() + mNestedBitmapSize);
     }
 }
 
@@ -158,6 +185,7 @@ SvgData::SvgData(const SvgDataArray& rSvgDataArray, const OUString& rPath)
     maRange(),
     maSequence(),
     maReplacement()
+,   mNestedBitmapSize(0)
 {
 }
 
@@ -167,15 +195,16 @@ SvgData::SvgData(const OUString& rPath):
     maRange(),
     maSequence(),
     maReplacement()
+,   mNestedBitmapSize(0)
 {
-    SvFileStream rIStm(rPath, STREAM_STD_READ);
+    SvFileStream rIStm(rPath, StreamMode::STD_READ);
     if(rIStm.GetError())
         return;
     const sal_uInt32 nStmLen(rIStm.remainingSize());
     if (nStmLen)
     {
         maSvgDataArray.realloc(nStmLen);
-        rIStm.Read(maSvgDataArray.begin(), nStmLen);
+        rIStm.ReadBytes(maSvgDataArray.begin(), nStmLen);
 
         if (rIStm.GetError())
         {
@@ -191,7 +220,7 @@ const basegfx::B2DRange& SvgData::getRange() const
     return maRange;
 }
 
-const std::vector< css::uno::Reference< css::graphic::XPrimitive2D > >& SvgData::getPrimitive2DSequence() const
+const std::deque< css::uno::Reference< css::graphic::XPrimitive2D > >& SvgData::getPrimitive2DSequence() const
 {
     const_cast< SvgData* >(this)->ensureSequenceAndRange();
 

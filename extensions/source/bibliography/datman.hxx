@@ -56,10 +56,10 @@ private:
     css::uno::Reference< css::frame::XDispatchProviderInterception > xInterception;
 
 protected:
-    virtual ~BibInterceptorHelper( );
+    virtual ~BibInterceptorHelper( ) override;
 
 public:
-    BibInterceptorHelper( ::bib::BibBeamer* pBibBeamer, css::uno::Reference< css::frame::XDispatch > xDispatch);
+    BibInterceptorHelper( ::bib::BibBeamer* pBibBeamer, css::uno::Reference< css::frame::XDispatch > const & xDispatch);
 
     void ReleaseInterceptor();
 
@@ -106,7 +106,7 @@ protected:
         void                        SetMeAsUidListener();
         void                        RemoveMeAsUidListener();
 
-        css::uno::Reference< css::awt::XControlModel >
+        css::uno::Reference< css::awt::XControlModel > const &
                                     updateGridModel(const css::uno::Reference< css::form::XForm > & xDbForm);
         static css::uno::Reference< css::awt::XControlModel >
                                     createGridModel( const OUString& rName );
@@ -124,7 +124,7 @@ protected:
 public:
 
         BibDataManager();
-        virtual ~BibDataManager();
+        virtual ~BibDataManager() override;
 
         virtual void                SAL_CALL propertyChange(const css::beans::PropertyChangeEvent& evt)
                                                                 throw( css::uno::RuntimeException, std::exception ) override;
@@ -158,7 +158,7 @@ public:
         static OUString             getControlName(sal_Int32 nFormatKey );
 
         css::uno::Reference< css::awt::XControlModel > loadControlModel(const OUString& rName,
-                                                        bool bForceListBox = false);
+                                                        bool bForceListBox);
 
         void                        CreateMappingDialog(vcl::Window* pParent);
         OUString                    CreateDBChangeDialog(vcl::Window* pParent);
@@ -172,7 +172,7 @@ public:
         const OUString&             GetIdentifierMapping();
         void                        ResetIdentifierMapping() {sIdentifierMapping.clear();}
 
-        css::uno::Reference< css::form::runtime::XFormController > GetFormController();
+        css::uno::Reference< css::form::runtime::XFormController > const & GetFormController();
         void                        RegisterInterceptor( ::bib::BibBeamer* pBibBeamer);
 
         bool                        HasActiveConnection();

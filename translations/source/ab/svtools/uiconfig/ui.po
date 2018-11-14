@@ -3,17 +3,26 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2015-06-24 17:06+0200\n"
-"PO-Revision-Date: 2015-04-23 18:29+0000\n"
-"Last-Translator: system user <>\n"
+"POT-Creation-Date: 2016-11-09 14:10+0100\n"
+"PO-Revision-Date: 2017-08-13 19:53+0000\n"
+"Last-Translator: Андрей Абухба <aabuchba@mail.ru>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: ab\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Pootle 2.7\n"
 "X-Accelerator-Marker: ~\n"
-"X-POOTLE-MTIME: 1429813776.000000\n"
+"X-Generator: Pootle 2.8\n"
+"X-POOTLE-MTIME: 1502654023.000000\n"
+
+#: GraphicExportOptionsDialog.ui
+msgctxt ""
+"GraphicExportOptionsDialog.ui\n"
+"GraphicExporter\n"
+"title\n"
+"string.text"
+msgid "Image Options"
+msgstr "Асахьа апараметрқәа"
 
 #: GraphicExportOptionsDialog.ui
 msgctxt ""
@@ -22,7 +31,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Width:"
-msgstr ""
+msgstr "Аҭбаара:"
 
 #: GraphicExportOptionsDialog.ui
 msgctxt ""
@@ -31,7 +40,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Height:"
-msgstr ""
+msgstr "Аҳаракыра:"
 
 #: GraphicExportOptionsDialog.ui
 msgctxt ""
@@ -49,7 +58,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "px"
-msgstr ""
+msgstr "пикс."
 
 #: GraphicExportOptionsDialog.ui
 msgctxt ""
@@ -58,7 +67,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "px"
-msgstr ""
+msgstr "пикс."
 
 #: GraphicExportOptionsDialog.ui
 msgctxt ""
@@ -67,7 +76,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "DPI"
-msgstr ""
+msgstr "DPI"
 
 #: GraphicExportOptionsDialog.ui
 msgctxt ""
@@ -76,7 +85,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Size"
-msgstr ""
+msgstr "Ашәагаа"
 
 #: addresstemplatedialog.ui
 msgctxt ""
@@ -94,7 +103,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Data source:"
-msgstr ""
+msgstr "Адырқәа рхыҵхырҭа:"
 
 #: addresstemplatedialog.ui
 msgctxt ""
@@ -103,7 +112,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Table:"
-msgstr ""
+msgstr "Атаблица:"
 
 #: addresstemplatedialog.ui
 msgctxt ""
@@ -139,7 +148,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "%1 Options"
-msgstr ""
+msgstr "%1 апараметрқәа"
 
 #: graphicexport.ui
 msgctxt ""
@@ -148,7 +157,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Width:"
-msgstr ""
+msgstr "Аҭбаара:"
 
 #: graphicexport.ui
 msgctxt ""
@@ -157,7 +166,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Height:"
-msgstr ""
+msgstr "Аҳаракыра:"
 
 #: graphicexport.ui
 msgctxt ""
@@ -175,7 +184,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Size"
-msgstr ""
+msgstr "Ашәагаа"
 
 #: graphicexport.ui
 msgctxt ""
@@ -184,7 +193,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Color Depth"
-msgstr ""
+msgstr "Аҧштәы аҵаулара"
 
 #: graphicexport.ui
 msgctxt ""
@@ -193,7 +202,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Quality"
-msgstr ""
+msgstr "Ахаҭабзиара"
 
 #: graphicexport.ui
 msgctxt ""
@@ -202,7 +211,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Compression"
-msgstr ""
+msgstr "Аиҵацалара"
 
 #: graphicexport.ui
 msgctxt ""
@@ -211,7 +220,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "RLE encoding"
-msgstr ""
+msgstr "RLE акодркра"
 
 #: graphicexport.ui
 msgctxt ""
@@ -220,7 +229,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Compression"
-msgstr ""
+msgstr "Аиҵацалара"
 
 #: graphicexport.ui
 msgctxt ""
@@ -238,7 +247,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Mode"
-msgstr ""
+msgstr "Арежим"
 
 #: graphicexport.ui
 msgctxt ""
@@ -256,7 +265,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Drawing Objects"
-msgstr ""
+msgstr "Асахьақәа"
 
 #: graphicexport.ui
 msgctxt ""
@@ -265,7 +274,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Binary"
-msgstr ""
+msgstr "Иҩба-шьаҭатәу"
 
 #: graphicexport.ui
 msgctxt ""
@@ -274,7 +283,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Text"
-msgstr ""
+msgstr "Атеқст"
 
 #: graphicexport.ui
 msgctxt ""
@@ -283,7 +292,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Encoding"
-msgstr ""
+msgstr "Акодркра "
 
 #: graphicexport.ui
 msgctxt ""
@@ -319,7 +328,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Color"
-msgstr ""
+msgstr "Аҧштәы"
 
 #: graphicexport.ui
 msgctxt ""
@@ -337,7 +346,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Color Format"
-msgstr ""
+msgstr "Аҧштәы Аформат"
 
 #: graphicexport.ui
 msgctxt ""
@@ -364,7 +373,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Version"
-msgstr ""
+msgstr "Аверсиа"
 
 #: graphicexport.ui
 msgctxt ""
@@ -373,7 +382,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "LZW encoding"
-msgstr ""
+msgstr "LZW акодркра "
 
 #: graphicexport.ui
 msgctxt ""
@@ -382,7 +391,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "None"
-msgstr ""
+msgstr "Мап"
 
 #: graphicexport.ui
 msgctxt ""
@@ -391,7 +400,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Compression"
-msgstr ""
+msgstr "Аиҵацалара"
 
 #: graphicexport.ui
 msgctxt ""
@@ -400,7 +409,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Information"
-msgstr ""
+msgstr "Аинформациа"
 
 #: graphicexport.ui
 msgctxt ""
@@ -409,7 +418,7 @@ msgctxt ""
 "0\n"
 "stringlist.text"
 msgid "pixels/cm"
-msgstr ""
+msgstr "пикс./см"
 
 #: graphicexport.ui
 msgctxt ""
@@ -418,7 +427,7 @@ msgctxt ""
 "1\n"
 "stringlist.text"
 msgid "pixels/inch"
-msgstr ""
+msgstr "пикс./диуим"
 
 #: graphicexport.ui
 msgctxt ""
@@ -427,7 +436,7 @@ msgctxt ""
 "2\n"
 "stringlist.text"
 msgid "pixels/meter"
-msgstr ""
+msgstr "пикс./метр"
 
 #: graphicexport.ui
 msgctxt ""
@@ -436,7 +445,7 @@ msgctxt ""
 "0\n"
 "stringlist.text"
 msgid "inches"
-msgstr ""
+msgstr "Адиуимқәа"
 
 #: graphicexport.ui
 msgctxt ""
@@ -445,7 +454,7 @@ msgctxt ""
 "1\n"
 "stringlist.text"
 msgid "cm"
-msgstr ""
+msgstr "см"
 
 #: graphicexport.ui
 msgctxt ""
@@ -454,7 +463,7 @@ msgctxt ""
 "2\n"
 "stringlist.text"
 msgid "mm"
-msgstr ""
+msgstr "мм"
 
 #: graphicexport.ui
 msgctxt ""
@@ -463,7 +472,7 @@ msgctxt ""
 "3\n"
 "stringlist.text"
 msgid "points"
-msgstr ""
+msgstr "кәаҧк"
 
 #: graphicexport.ui
 msgctxt ""
@@ -472,7 +481,7 @@ msgctxt ""
 "4\n"
 "stringlist.text"
 msgid "pixels"
-msgstr ""
+msgstr "пикс."
 
 #: javadisableddialog.ui
 msgctxt ""
@@ -504,29 +513,11 @@ msgstr ""
 #: placeedit.ui
 msgctxt ""
 "placeedit.ui\n"
-"label2\n"
-"label\n"
-"string.text"
-msgid "Name:"
-msgstr ""
-
-#: placeedit.ui
-msgctxt ""
-"placeedit.ui\n"
-"label6\n"
+"typeLabel\n"
 "label\n"
 "string.text"
 msgid "Type:"
-msgstr ""
-
-#: placeedit.ui
-msgctxt ""
-"placeedit.ui\n"
-"label1\n"
-"label\n"
-"string.text"
-msgid "File Service"
-msgstr ""
+msgstr "Атип:"
 
 #: placeedit.ui
 msgctxt ""
@@ -543,44 +534,17 @@ msgctxt ""
 "pathLabel\n"
 "label\n"
 "string.text"
-msgid "Path:"
+msgid "Root:"
 msgstr ""
 
 #: placeedit.ui
 msgctxt ""
 "placeedit.ui\n"
-"portLabel\n"
+"shareLabel\n"
 "label\n"
 "string.text"
-msgid "Port:"
-msgstr ""
-
-#: placeedit.ui
-msgctxt ""
-"placeedit.ui\n"
-"webdavs\n"
-"label\n"
-"string.text"
-msgid "Secured WebDAV (HTTPS)"
-msgstr ""
-
-#: placeedit.ui
-msgctxt ""
-"placeedit.ui\n"
-"label4\n"
-"label\n"
-"string.text"
-msgid "Server Details"
-msgstr ""
-
-#: placeedit.ui
-msgctxt ""
-"placeedit.ui\n"
-"bindingLabel\n"
-"label\n"
-"string.text"
-msgid "Binding URL:"
-msgstr ""
+msgid "Share:"
+msgstr "Аресурс:"
 
 #: placeedit.ui
 msgctxt ""
@@ -589,88 +553,61 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Repository:"
-msgstr ""
+msgstr "Аҵәахырҭа:"
 
 #: placeedit.ui
 msgctxt ""
 "placeedit.ui\n"
-"label3\n"
+"webdavs\n"
 "label\n"
 "string.text"
-msgid "Server type:"
-msgstr ""
+msgid "Secure connection"
+msgstr "Ишәарҭадатәу аимадара"
 
 #: placeedit.ui
 msgctxt ""
 "placeedit.ui\n"
-"label5\n"
+"loginLabel\n"
 "label\n"
 "string.text"
-msgid "Path:"
-msgstr ""
+msgid "User:"
+msgstr "Ахархәаҩ:"
 
 #: placeedit.ui
 msgctxt ""
 "placeedit.ui\n"
-"label12\n"
+"nameLabel\n"
 "label\n"
 "string.text"
-msgid "Server Details"
-msgstr ""
+msgid "Label:"
+msgstr "Ахьӡ:"
 
 #: placeedit.ui
 msgctxt ""
 "placeedit.ui\n"
-"label9\n"
+"portLabel\n"
 "label\n"
 "string.text"
-msgid "Host:"
-msgstr ""
+msgid "Port:"
+msgstr "Апорт:"
 
 #: placeedit.ui
 msgctxt ""
 "placeedit.ui\n"
-"label10\n"
+"passwordLabel\n"
 "label\n"
 "string.text"
-msgid "Share:"
-msgstr ""
+msgid "Password:"
+msgstr "Ажәамаӡа:"
 
 #: placeedit.ui
 msgctxt ""
 "placeedit.ui\n"
-"label11\n"
+"rememberPassword\n"
 "label\n"
 "string.text"
-msgid "Path:"
-msgstr ""
-
-#: placeedit.ui
-msgctxt ""
-"placeedit.ui\n"
-"label8\n"
-"label\n"
-"string.text"
-msgid "Server Details"
-msgstr ""
-
-#: placeedit.ui
-msgctxt ""
-"placeedit.ui\n"
-"label16\n"
-"label\n"
-"string.text"
-msgid "Login:"
-msgstr ""
-
-#: placeedit.ui
-msgctxt ""
-"placeedit.ui\n"
-"label15\n"
-"label\n"
-"string.text"
-msgid "User Details"
-msgstr ""
+msgid "Remember password"
+msgstr "Ажәамаӡа гәынкылатәуп"
 
 #: placeedit.ui
 msgctxt ""
@@ -679,7 +616,7 @@ msgctxt ""
 "0\n"
 "stringlist.text"
 msgid "WebDAV"
-msgstr ""
+msgstr "WebDAV"
 
 #: placeedit.ui
 msgctxt ""
@@ -688,7 +625,7 @@ msgctxt ""
 "1\n"
 "stringlist.text"
 msgid "FTP"
-msgstr ""
+msgstr "FTP"
 
 #: placeedit.ui
 msgctxt ""
@@ -697,7 +634,7 @@ msgctxt ""
 "2\n"
 "stringlist.text"
 msgid "SSH"
-msgstr ""
+msgstr "SSH"
 
 #: placeedit.ui
 msgctxt ""
@@ -708,15 +645,6 @@ msgctxt ""
 msgid "Windows Share"
 msgstr ""
 
-#: placeedit.ui
-msgctxt ""
-"placeedit.ui\n"
-"liststore1\n"
-"4\n"
-"stringlist.text"
-msgid "CMIS"
-msgstr ""
-
 #: printersetupdialog.ui
 msgctxt ""
 "printersetupdialog.ui\n"
@@ -724,7 +652,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Printer Setup"
-msgstr ""
+msgstr "Апринтер архиарақәа"
 
 #: printersetupdialog.ui
 msgctxt ""
@@ -733,7 +661,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Options..."
-msgstr ""
+msgstr "Апараметрқәа..."
 
 #: printersetupdialog.ui
 msgctxt ""
@@ -742,7 +670,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Name:"
-msgstr ""
+msgstr "Ахьӡ:"
 
 #: printersetupdialog.ui
 msgctxt ""
@@ -751,7 +679,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Status:"
-msgstr ""
+msgstr "Аҭагылазаашьа:"
 
 #: printersetupdialog.ui
 msgctxt ""
@@ -760,7 +688,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Type:"
-msgstr ""
+msgstr "Атип:"
 
 #: printersetupdialog.ui
 msgctxt ""
@@ -778,7 +706,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Comment:"
-msgstr ""
+msgstr "Акомментари:"
 
 #: printersetupdialog.ui
 msgctxt ""
@@ -787,7 +715,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Properties..."
-msgstr ""
+msgstr "Аҷыдаҟазшьақәа..."
 
 #: printersetupdialog.ui
 msgctxt ""
@@ -796,7 +724,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Printer"
-msgstr ""
+msgstr "Апринтер"
 
 #: querydeletedialog.ui
 msgctxt ""
@@ -805,7 +733,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Confirm Delete"
-msgstr ""
+msgstr "Ишьақәырӷәӷәатәуп аныхра"
 
 #: querydeletedialog.ui
 msgctxt ""
@@ -814,7 +742,7 @@ msgctxt ""
 "text\n"
 "string.text"
 msgid "Are you sure you want to delete the selected data?"
-msgstr ""
+msgstr "Ианыхтәума иалху адырқәа?"
 
 #: querydeletedialog.ui
 msgctxt ""
@@ -832,7 +760,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Delete"
-msgstr ""
+msgstr "_Ианыхтәуп"
 
 #: querydeletedialog.ui
 msgctxt ""
@@ -841,7 +769,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Delete _All"
-msgstr ""
+msgstr "Ианыхтәуп_зегьы"
 
 #: querydeletedialog.ui
 msgctxt ""
@@ -850,7 +778,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Do _Not Delete"
-msgstr ""
+msgstr "Ианыхтәӡам"
 
 #: restartdialog.ui
 msgctxt ""
@@ -891,6 +819,15 @@ msgstr ""
 #: restartdialog.ui
 msgctxt ""
 "restartdialog.ui\n"
+"reason_mailmerge_install\n"
+"label\n"
+"string.text"
+msgid "For mail merge to work properly, %PRODUCTNAME must be restarted."
+msgstr ""
+
+#: restartdialog.ui
+msgctxt ""
+"restartdialog.ui\n"
 "reason_pdf\n"
 "label\n"
 "string.text"
@@ -909,10 +846,64 @@ msgstr ""
 #: restartdialog.ui
 msgctxt ""
 "restartdialog.ui\n"
-"reason_mailmerge_install\n"
+"reason_assigning_folders\n"
 "label\n"
 "string.text"
-msgid "For the mail merge to work properly, %PRODUCTNAME must be restarted."
+msgid "For the assigned folders and archives to take effect, %PRODUCTNAME must be restarted."
+msgstr ""
+
+#: restartdialog.ui
+msgctxt ""
+"restartdialog.ui\n"
+"reason_assigning_javaparameters\n"
+"label\n"
+"string.text"
+msgid "For the assigned Java parameters to take effect, %PRODUCTNAME must be restarted."
+msgstr ""
+
+#: restartdialog.ui
+msgctxt ""
+"restartdialog.ui\n"
+"reason_adding_path\n"
+"label\n"
+"string.text"
+msgid "For the added path to take effect, %PRODUCTNAME must be restarted."
+msgstr ""
+
+#: restartdialog.ui
+msgctxt ""
+"restartdialog.ui\n"
+"reason_language_change\n"
+"label\n"
+"string.text"
+msgid "For the updated language settings to take effect, %PRODUCTNAME must be restarted."
+msgstr ""
+
+#: restartdialog.ui
+msgctxt ""
+"restartdialog.ui\n"
+"reason_exp_features\n"
+"label\n"
+"string.text"
+msgid "For the modified experimental features to take effect, %PRODUCTNAME must be restarted."
+msgstr ""
+
+#: restartdialog.ui
+msgctxt ""
+"restartdialog.ui\n"
+"reason_extension_install\n"
+"label\n"
+"string.text"
+msgid "For the extension to work properly, %PRODUCTNAME must be restarted."
+msgstr ""
+
+#: restartdialog.ui
+msgctxt ""
+"restartdialog.ui\n"
+"reason_opengl\n"
+"label\n"
+"string.text"
+msgid "For the OpenGL changes to take effect, %PRODUCTNAME must be restarted."
 msgstr ""
 
 #: restartdialog.ui

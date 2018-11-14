@@ -418,7 +418,7 @@ void EnhWMFReader::ReadEMFPlusComment(sal_uInt32 length, bool& bHaveDC)
 
 #if OSL_DEBUG_LEVEL > 1
         // debug code - write the stream to debug file /tmp/emf-stream.emf
-        int pos = pWMF->Tell();
+        sal_uInt64 const pos = pWMF->Tell();
         pWMF->Seek(0);
         SvFileStream file( OUString( "/tmp/emf-stream.emf" ), StreamMode::WRITE | StreamMode::TRUNC );
 
@@ -432,9 +432,9 @@ void EnhWMFReader::ReadEMFPlusComment(sal_uInt32 length, bool& bHaveDC)
     }
     bEMFPlus = true;
 
-    sal_Size pos = pWMF->Tell();
+    sal_uInt64 const pos = pWMF->Tell();
     void *buffer = malloc( length );
-    pOut->PassEMFPlus( buffer, pWMF->Read( buffer, length ) );
+    pOut->PassEMFPlus( buffer, pWMF->ReadBytes(buffer, length) );
     free( buffer );
     pWMF->Seek( pos );
 
@@ -808,7 +808,7 @@ bool EnhWMFReader::ReadEnhWMF()
                 case EMR_SETROP2 :
                 {
                     pWMF->ReadUInt32( nDat32 );
-                    pOut->SetRasterOp( nDat32 );
+                    pOut->SetRasterOp( (WMFRasterOp)nDat32 );
                 }
                 break;
 
@@ -918,33 +918,33 @@ bool EnhWMFReader::ReadEnhWMF()
                         switch( nStyle & PS_STYLE_MASK )
                         {
                             case PS_DASHDOTDOT :
-                                aLineInfo.SetStyle( LINE_DASH );
+                                aLineInfo.SetStyle( LineStyle::Dash );
                                 aLineInfo.SetDashCount( 1 );
                                 aLineInfo.SetDotCount( 2 );
                             break;
                             case PS_DASHDOT :
-                                aLineInfo.SetStyle( LINE_DASH );
+                                aLineInfo.SetStyle( LineStyle::Dash );
                                 aLineInfo.SetDashCount( 1 );
                                 aLineInfo.SetDotCount( 1 );
                             break;
                             case PS_DOT :
-                                aLineInfo.SetStyle( LINE_DASH );
+                                aLineInfo.SetStyle( LineStyle::Dash );
                                 aLineInfo.SetDashCount( 0 );
                                 aLineInfo.SetDotCount( 1 );
                             break;
                             case PS_DASH :
-                                aLineInfo.SetStyle( LINE_DASH );
+                                aLineInfo.SetStyle( LineStyle::Dash );
                                 aLineInfo.SetDashCount( 1 );
                                 aLineInfo.SetDotCount( 0 );
                             break;
                             case PS_NULL :
                                 bTransparent = true;
-                                aLineInfo.SetStyle( LINE_NONE );
+                                aLineInfo.SetStyle( LineStyle::NONE );
                             break;
                             case PS_INSIDEFRAME :
                             case PS_SOLID :
                             default :
-                                aLineInfo.SetStyle( LINE_SOLID );
+                                aLineInfo.SetStyle( LineStyle::Solid );
                         }
                         switch( nStyle & PS_ENDCAP_STYLE_MASK )
                         {
@@ -1007,34 +1007,34 @@ bool EnhWMFReader::ReadEnhWMF()
                         switch( nStyle & PS_STYLE_MASK )
                         {
                             case PS_DASHDOTDOT :
-                                aLineInfo.SetStyle( LINE_DASH );
+                                aLineInfo.SetStyle( LineStyle::Dash );
                                 aLineInfo.SetDashCount( 1 );
                                 aLineInfo.SetDotCount( 2 );
                             break;
                             case PS_DASHDOT :
-                                aLineInfo.SetStyle( LINE_DASH );
+                                aLineInfo.SetStyle( LineStyle::Dash );
                                 aLineInfo.SetDashCount( 1 );
                                 aLineInfo.SetDotCount( 1 );
                             break;
                             case PS_DOT :
-                                aLineInfo.SetStyle( LINE_DASH );
+                                aLineInfo.SetStyle( LineStyle::Dash );
                                 aLineInfo.SetDashCount( 0 );
                                 aLineInfo.SetDotCount( 1 );
                             break;
                             case PS_DASH :
-                                aLineInfo.SetStyle( LINE_DASH );
+                                aLineInfo.SetStyle( LineStyle::Dash );
                                 aLineInfo.SetDashCount( 1 );
                                 aLineInfo.SetDotCount( 0 );
                             break;
                             case PS_NULL :
                                 bTransparent = true;
-                                aLineInfo.SetStyle( LINE_NONE );
+                                aLineInfo.SetStyle( LineStyle::NONE );
                             break;
 
                             case PS_INSIDEFRAME :
                             case PS_SOLID :
                             default :
-                                aLineInfo.SetStyle( LINE_SOLID );
+                                aLineInfo.SetStyle( LineStyle::Solid );
                         }
                         switch( nStyle & PS_ENDCAP_STYLE_MASK )
                         {
@@ -1284,7 +1284,7 @@ bool EnhWMFReader::ReadEnhWMF()
 
                             // copy DIBInfoHeader from source (cbBmiSrc bytes)
                             pWMF->Seek( nStart + offBmiSrc );
-                            pWMF->Read( pBuf + 14, cbBmiSrc );
+                            pWMF->ReadBytes(pBuf + 14, cbBmiSrc);
 
                             if (bReadAlpha)
                             {
@@ -1296,7 +1296,7 @@ bool EnhWMFReader::ReadEnhWMF()
 
                             // copy bitmap data from source (offBitsSrc bytes)
                             pWMF->Seek( nStart + offBitsSrc );
-                            pWMF->Read( pBuf + 14 + nDeltaToDIB5HeaderSize + cbBmiSrc, cbBitsSrc );
+                            pWMF->ReadBytes(pBuf + 14 + nDeltaToDIB5HeaderSize + cbBmiSrc, cbBitsSrc);
                             aTmp.Seek( 0 );
 
                             // prepare to read and fill BitmapEx
@@ -1403,9 +1403,9 @@ bool EnhWMFReader::ReadEnhWMF()
                                 .WriteUInt16( 0 )
                                 .WriteUInt32( cbBmiSrc + 14 );
                             pWMF->Seek( nStart + offBmiSrc );
-                            pWMF->Read( pBuf + 14, cbBmiSrc );
+                            pWMF->ReadBytes(pBuf + 14, cbBmiSrc);
                             pWMF->Seek( nStart + offBitsSrc );
-                            pWMF->Read( pBuf + 14 + cbBmiSrc, cbBitsSrc );
+                            pWMF->ReadBytes(pBuf + 14 + cbBmiSrc, cbBitsSrc);
                             aTmp.Seek( 0 );
                             ReadDIB(aBitmap, aTmp, true);
 
@@ -1470,9 +1470,9 @@ bool EnhWMFReader::ReadEnhWMF()
                                .WriteUInt16( 0 )
                                .WriteUInt32( cbBmiSrc + 14 );
                             pWMF->Seek( nStart + offBmiSrc );
-                            pWMF->Read( pBuf + 14, cbBmiSrc );
+                            pWMF->ReadBytes(pBuf + 14, cbBmiSrc);
                             pWMF->Seek( nStart + offBitsSrc );
-                            pWMF->Read( pBuf + 14 + cbBmiSrc, cbBitsSrc );
+                            pWMF->ReadBytes(pBuf + 14 + cbBmiSrc, cbBitsSrc);
                             aTmp.Seek( 0 );
                             ReadDIB(aBitmap, aTmp, true);
 
@@ -1557,11 +1557,11 @@ bool EnhWMFReader::ReadEnhWMF()
                     pWMF->SeekRel( 0x10 );
                     pWMF->ReadUInt32( offDx );
 
-                    ComplexTextLayoutMode nTextLayoutMode = TEXT_LAYOUT_DEFAULT;
+                    ComplexTextLayoutFlags nTextLayoutMode = ComplexTextLayoutFlags::Default;
                     if ( nOptions & ETO_RTLREADING )
-                        nTextLayoutMode = TEXT_LAYOUT_BIDI_RTL | TEXT_LAYOUT_TEXTORIGIN_LEFT;
+                        nTextLayoutMode = ComplexTextLayoutFlags::BiDiRtl | ComplexTextLayoutFlags::TextOriginLeft;
                     pOut->SetTextLayoutMode( nTextLayoutMode );
-                    DBG_ASSERT( ( nOptions & ( ETO_PDY | ETO_GLYPH_INDEX ) ) == 0, "SJ: ETO_PDY || ETO_GLYPH_INDEX in EMF" );
+                    SAL_WARN_IF( ( nOptions & ( ETO_PDY | ETO_GLYPH_INDEX ) ) != 0, "vcl", "SJ: ETO_PDY || ETO_GLYPH_INDEX in EMF" );
 
                     Point aPos( ptlReferenceX, ptlReferenceY );
                     bool bLenSane = nLen > 0 && nLen < static_cast<sal_Int32>( SAL_MAX_UINT32 / sizeof(sal_Int32) );
@@ -1589,7 +1589,7 @@ bool EnhWMFReader::ReadEnhWMF()
                             if ( nLen <= static_cast<sal_Int32>( nEndPos - pWMF->Tell() ) )
                             {
                                 std::unique_ptr<sal_Char[]> pBuf(new sal_Char[ nLen ]);
-                                pWMF->Read( pBuf.get(), nLen );
+                                pWMF->ReadBytes(pBuf.get(), nLen);
                                 aText = OUString(pBuf.get(), nLen, pOut->GetCharSet());
                                 pBuf.reset();
 
@@ -1614,7 +1614,7 @@ bool EnhWMFReader::ReadEnhWMF()
                             if ( ( nLen * sizeof(sal_Unicode) ) <= ( nEndPos - pWMF->Tell() ) )
                             {
                                 std::unique_ptr<sal_Unicode[]> pBuf(new sal_Unicode[ nLen ]);
-                                pWMF->Read( pBuf.get(), nLen << 1 );
+                                pWMF->ReadBytes(pBuf.get(), nLen << 1);
 #ifdef OSL_BIGENDIAN
                                 sal_Char nTmp, *pTmp = (sal_Char*)( pBuf.get() + nLen );
                                 while ( pTmp-- != (sal_Char*)pBuf.get() )
@@ -1717,9 +1717,9 @@ bool EnhWMFReader::ReadEnhWMF()
                                     .WriteUInt16( 0 )
                                     .WriteUInt32( cbBmi + 14 );
                                 pWMF->Seek( nStart + offBmi );
-                                pWMF->Read( pBuf + 14, cbBmi );
+                                pWMF->ReadBytes(pBuf + 14, cbBmi);
                                 pWMF->Seek( nStart + offBits );
-                                pWMF->Read( pBuf + 14 + cbBmi, cbBits );
+                                pWMF->ReadBytes(pBuf + 14 + cbBmi, cbBits);
                                 aTmp.Seek( 0 );
                                 ReadDIB(aBitmap, aTmp, true);
                             }

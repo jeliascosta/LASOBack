@@ -90,9 +90,7 @@ namespace data {
 enum DatabaseCursorType
 {
     DatabaseCursorType_FORWARD = 0,
-    DatabaseCursorType_SNAPSHOT = 1,
     DatabaseCursorType_KEYSET = 2,
-    DatabaseCursorType_DYNAMIC = 3,
     DatabaseCursorType_MAKE_FIXED_SIZE = SAL_MAX_ENUM
 };
 
@@ -261,11 +259,9 @@ ODatabaseForm::ODatabaseForm(const Reference<XComponentContext>& _rxContext)
     ,m_aResetListeners( *this, m_aMutex )
     ,m_aPropertyBagHelper( *this )
     ,m_pAggregatePropertyMultiplexer(nullptr)
-    ,m_pGroupManager( nullptr )
     ,m_aParameterManager( m_aMutex, _rxContext )
     ,m_aFilterManager()
     ,m_pLoadTimer(nullptr)
-    ,m_pThread(nullptr)
     ,m_nResetsPending(0)
     ,m_nPrivileges(0)
     ,m_bInsertOnly( false )
@@ -299,11 +295,9 @@ ODatabaseForm::ODatabaseForm( const ODatabaseForm& _cloneSource )
     ,m_aResetListeners( *this, m_aMutex )
     ,m_aPropertyBagHelper( *this )
     ,m_pAggregatePropertyMultiplexer( nullptr )
-    ,m_pGroupManager( nullptr )
     ,m_aParameterManager( m_aMutex, _cloneSource.m_xContext )
     ,m_aFilterManager()
     ,m_pLoadTimer( nullptr )
-    ,m_pThread( nullptr )
     ,m_nResetsPending( 0 )
     ,m_nPrivileges( 0 )
     ,m_bInsertOnly( _cloneSource.m_bInsertOnly )
@@ -423,15 +417,12 @@ void ODatabaseForm::impl_construct()
     osl_atomic_decrement( &m_refCount );
 
     m_pGroupManager = new OGroupManager( this );
-    m_pGroupManager->acquire();
 }
 
 
 ODatabaseForm::~ODatabaseForm()
 {
-
-    m_pGroupManager->release();
-    m_pGroupManager = nullptr;
+    m_pGroupManager.clear();
 
     if (m_xAggregate.is())
         m_xAggregate->setDelegator( nullptr );
@@ -448,11 +439,6 @@ ODatabaseForm::~ODatabaseForm()
 
 
 // html tools
-
-OUString ODatabaseForm::GetDataURLEncoded(const Reference<XControl>& SubmitButton, const css::awt::MouseEvent& MouseEvt)
-{
-    return GetDataEncoded(true,SubmitButton,MouseEvt);
-}
 
 OUString ODatabaseForm::GetDataEncoded(bool _bURLEncoded,const Reference<XControl>& SubmitButton, const css::awt::MouseEvent& MouseEvt)
 {
@@ -507,12 +493,6 @@ OUString ODatabaseForm::GetDataEncoded(bool _bURLEncoded,const Reference<XContro
 
 // html tools
 
-OUString ODatabaseForm::GetDataTextEncoded(const Reference<XControl>& SubmitButton, const css::awt::MouseEvent& MouseEvt)
-{
-    return GetDataEncoded(false,SubmitButton,MouseEvt);
-}
-
-
 Sequence<sal_Int8> ODatabaseForm::GetDataMultiPartEncoded(const Reference<XControl>& SubmitButton, const css::awt::MouseEvent& MouseEvt, OUString& rContentType)
 {
 
@@ -550,7 +530,9 @@ Sequence<sal_Int8> ODatabaseForm::GetDataMultiPartEncoded(const Reference<XContr
     char* pBuf = new char[1025];
     int nRead;
     while( (nRead = aMessStream.Read(pBuf, 1024)) > 0 )
-        aMemStream.Write( pBuf, nRead );
+    {
+        aMemStream.WriteBytes(pBuf, nRead);
+    }
     delete[] pBuf;
 
     aMemStream.Flush();
@@ -1279,11 +1261,7 @@ void ODatabaseForm::disposing()
     // cancel the submit/reset-thread
     {
         ::osl::MutexGuard aGuard( m_aMutex );
-        if (m_pThread)
-        {
-            m_pThread->release();
-            m_pThread = nullptr;
-        }
+        m_pThread.clear();
     }
 
     EventObject aEvt(static_cast<XWeak*>(this));
@@ -1577,9 +1555,9 @@ void ODatabaseForm::getFastPropertyValue( Any& rValue, sal_Int32 nHandle ) const
     }
 }
 
-
 sal_Bool ODatabaseForm::convertFastPropertyValue( Any& rConvertedValue, Any& rOldValue,
-                                                sal_Int32 nHandle, const Any& rValue ) throw( IllegalArgumentException )
+                                                sal_Int32 nHandle, const Any& rValue )
+    throw (IllegalArgumentException, RuntimeException, std::exception)
 {
     bool bModified(false);
     switch (nHandle)
@@ -1660,7 +1638,6 @@ sal_Bool ODatabaseForm::convertFastPropertyValue( Any& rConvertedValue, Any& rOl
     }
     return bModified;
 }
-
 
 void ODatabaseForm::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const Any& rValue ) throw( Exception, std::exception )
 {
@@ -1935,10 +1912,9 @@ void SAL_CALL ODatabaseForm::reset() throw( RuntimeException, std::exception )
         ++m_nResetsPending;
         // create an own thread if we have (approve-)reset-listeners (so the listeners can't do that much damage
         // to this thread which is probably the main one)
-        if (!m_pThread)
+        if (!m_pThread.is())
         {
             m_pThread = new OFormSubmitResetThread(this);
-            m_pThread->acquire();
             m_pThread->create();
         }
         EventObject aEvt;
@@ -2106,10 +2082,9 @@ void SAL_CALL ODatabaseForm::submit( const Reference<XControl>& Control,
     {
         // create an own thread if we have (approve-)submit-listeners (so the listeners can't do that much damage
         // to this thread which is probably the main one)
-        if (!m_pThread)
+        if (!m_pThread.is())
         {
             m_pThread = new OFormSubmitResetThread(this);
-            m_pThread->acquire();
             m_pThread->create();
         }
         m_pThread->addEvent(&MouseEvt, Control, true);
@@ -2207,7 +2182,7 @@ void ODatabaseForm::submit_impl(const Reference<XControl>& Control, const css::a
         OUString aData;
         {
             SolarMutexGuard aGuard;
-            aData = GetDataURLEncoded( Control, MouseEvt );
+            aData = GetDataEncoded(true, Control, MouseEvt);
         }
 
         URL aURL;
@@ -2279,7 +2254,7 @@ void ODatabaseForm::submit_impl(const Reference<XControl>& Control, const css::a
         OUString aData;
         {
             SolarMutexGuard aGuard;
-            aData = GetDataTextEncoded( Reference<XControl> (), MouseEvt );
+            aData = GetDataEncoded(false, Reference<XControl> (), MouseEvt);
         }
 
         lcl_dispatch(xFrame,xTransformer,aURLStr,aReferer,aTargetName,aData,osl_getThreadTextEncoding());
@@ -2632,7 +2607,7 @@ void SAL_CALL ODatabaseForm::reloaded(const EventObject& /*aEvent*/) throw( Runt
 }
 
 
-IMPL_LINK_NOARG_TYPED(ODatabaseForm, OnTimeout, Timer *, void)
+IMPL_LINK_NOARG(ODatabaseForm, OnTimeout, Timer *, void)
 {
     reload_impl(true);
 }
@@ -3744,23 +3719,9 @@ void SAL_CALL ODatabaseForm::propertyChange( const PropertyChangeEvent& evt ) th
 
 // css::lang::XServiceInfo
 
-OUString SAL_CALL ODatabaseForm::getImplementationName_Static()
-{
-    return OUString( "com.sun.star.comp.forms.ODatabaseForm" );
-}
-
-Sequence< OUString > SAL_CALL ODatabaseForm::getSupportedServiceNames_Static()
-{
-    return css::uno::Sequence<OUString>{
-        FRM_SUN_FORMCOMPONENT, "com.sun.star.form.FormComponents",
-        FRM_SUN_COMPONENT_FORM, FRM_SUN_COMPONENT_HTMLFORM,
-        FRM_SUN_COMPONENT_DATAFORM, FRM_COMPONENT_FORM};
-}
-
-
 OUString SAL_CALL ODatabaseForm::getImplementationName() throw( RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
+    return OUString( "com.sun.star.comp.forms.ODatabaseForm" );
 }
 
 
@@ -3774,7 +3735,10 @@ Sequence< OUString > SAL_CALL ODatabaseForm::getSupportedServiceNames() throw( R
 
     // concat with out own services
     return ::comphelper::concatSequences(
-        getSupportedServiceNames_Static(),
+        css::uno::Sequence<OUString> {
+            FRM_SUN_FORMCOMPONENT, "com.sun.star.form.FormComponents",
+            FRM_SUN_COMPONENT_FORM, FRM_SUN_COMPONENT_HTMLFORM,
+            FRM_SUN_COMPONENT_DATAFORM, FRM_COMPONENT_FORM },
         aServices
     );
 }
@@ -3977,7 +3941,7 @@ void SAL_CALL ODatabaseForm::read(const Reference<XObjectInputStream>& _rxInStre
     if (nVersion > 1)
     {
         sal_Int32 nCycle = _rxInStream->readShort();
-        m_aCycle = ::cppu::int2enum(nCycle, cppu::UnoType<TabulatorCycle>::get());
+        m_aCycle <<= TabulatorCycle(nCycle);
         m_eNavigation = (NavigationBarMode)_rxInStream->readShort();
 
         _rxInStream >> sAggregateProp;
@@ -3995,7 +3959,7 @@ void SAL_CALL ODatabaseForm::read(const Reference<XObjectInputStream>& _rxInStre
         if (nAnyMask & CYCLE)
         {
             sal_Int32 nCycle = _rxInStream->readShort();
-            m_aCycle = ::cppu::int2enum(nCycle, cppu::UnoType<TabulatorCycle>::get());
+            m_aCycle <<= TabulatorCycle(nCycle);
         }
         else
             m_aCycle.clear();

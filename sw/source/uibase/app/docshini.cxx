@@ -88,6 +88,7 @@
 #include <swerror.h>
 #include <globals.hrc>
 #include <unochart.hxx>
+#include <drawdoc.hxx>
 
 #include <svx/CommonStyleManager.hxx>
 
@@ -104,7 +105,7 @@ using namespace ::com::sun::star;
 bool SwDocShell::InitNew( const uno::Reference < embed::XStorage >& xStor )
 {
     bool bRet = SfxObjectShell::InitNew( xStor );
-    OSL_ENSURE( GetMapUnit() == MAP_TWIP, "map unit is not twip!" );
+    OSL_ENSURE( GetMapUnit() == MapUnit::MapTwip, "map unit is not twip!" );
     bool bHTMLTemplSet = false;
     if( bRet )
     {
@@ -412,7 +413,7 @@ void  SwDocShell::Init_Impl()
     SetAutoStyleFilterIndex(3);
 
     // set map unit to twip
-    SetMapUnit( MAP_TWIP );
+    SetMapUnit( MapUnit::MapTwip );
 }
 
 void SwDocShell::AddLink()
@@ -490,7 +491,16 @@ void SwDocShell::ReactivateModel()
 bool  SwDocShell::Load( SfxMedium& rMedium )
 {
     bool bRet = false;
-    if( SfxObjectShell::Load( rMedium ))
+
+    // If this is an ODF file being loaded, then by default, use legacy processing
+    // for tdf#99729 (if required, it will be overriden in *::ReadUserDataSequence())
+    if (IsOwnStorageFormat(rMedium))
+    {
+        if (m_pDoc && m_pDoc->getIDocumentDrawModelAccess().GetDrawModel())
+            m_pDoc->getIDocumentDrawModelAccess().GetDrawModel()->SetAnchoredTextOverflowLegacy(true);
+    }
+
+    if (SfxObjectShell::Load(rMedium))
     {
         comphelper::EmbeddedObjectContainer& rEmbeddedObjectContainer = getEmbeddedObjectContainer();
         rEmbeddedObjectContainer.setUserAllowsLinkUpdate(false);
@@ -682,7 +692,7 @@ void SwDocShell::SubInitNew()
         sal_uInt16 nNewPos = static_cast< sal_uInt16 >(SW_MOD()->GetUsrPref(false)->GetDefTab());
         if( nNewPos )
             aDfltSet.Put( SvxTabStopItem( 1, nNewPos,
-                                          SVX_TAB_ADJUST_DEFAULT, RES_PARATR_TABSTOP ) );
+                                          SvxTabAdjust::Default, RES_PARATR_TABSTOP ) );
     }
     aDfltSet.Put( SvxColorItem( Color( COL_AUTO ), RES_CHRATR_COLOR ) );
 

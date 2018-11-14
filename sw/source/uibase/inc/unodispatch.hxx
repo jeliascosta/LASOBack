@@ -24,6 +24,7 @@
 #include <com/sun/star/view/XSelectionChangeListener.hpp>
 #include <com/sun/star/lang/XUnoTunnel.hpp>
 #include <com/sun/star/frame/XDispatch.hpp>
+#include <com/sun/star/frame/XInterceptorInfo.hpp>
 #include <cppuhelper/implbase.hxx>
 #include <list>
 #include <vcl/svapp.hxx>
@@ -35,14 +36,14 @@ class SwXDispatchProviderInterceptor : public cppu::WeakImplHelper
 <
     css::frame::XDispatchProviderInterceptor,
     css::lang::XEventListener,
-    css::lang::XUnoTunnel
+    css::lang::XUnoTunnel,
+    css::frame::XInterceptorInfo
 >
 {
     class DispatchMutexLock_Impl
     {
         //::osl::MutexGuard   aGuard; #102295# solar mutex has to be used currently
         SolarMutexGuard aGuard;
-        DispatchMutexLock_Impl();
     public:
         DispatchMutexLock_Impl(SwXDispatchProviderInterceptor&);
         ~DispatchMutexLock_Impl();
@@ -64,7 +65,7 @@ class SwXDispatchProviderInterceptor : public cppu::WeakImplHelper
 
 public:
     SwXDispatchProviderInterceptor(SwView& rView);
-    virtual ~SwXDispatchProviderInterceptor();
+    virtual ~SwXDispatchProviderInterceptor() override;
 
     //XDispatchProvider
     virtual css::uno::Reference< css::frame::XDispatch > SAL_CALL queryDispatch( const css::util::URL& aURL, const OUString& aTargetFrameName, sal_Int32 nSearchFlags ) throw(css::uno::RuntimeException, std::exception) override;
@@ -82,6 +83,9 @@ public:
     //XUnoTunnel
     static const css::uno::Sequence< sal_Int8 > & getUnoTunnelId();
     virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) throw(css::uno::RuntimeException, std::exception) override;
+
+    // XInterceptorInfo
+    virtual css::uno::Sequence<OUString> SAL_CALL getInterceptedURLs() throw (css::uno::RuntimeException, std::exception) override;
 
     // view destroyed
     void    Invalidate();
@@ -105,7 +109,7 @@ class SwXDispatch : public cppu::WeakImplHelper
     bool            m_bListenerAdded;
 public:
     SwXDispatch(SwView& rView);
-    virtual ~SwXDispatch();
+    virtual ~SwXDispatch() override;
 
     virtual void SAL_CALL dispatch( const css::util::URL& aURL, const css::uno::Sequence< css::beans::PropertyValue >& aArgs )
         throw (css::uno::RuntimeException,

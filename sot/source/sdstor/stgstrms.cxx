@@ -1149,9 +1149,9 @@ bool StgTmpStrm::Copy( StgTmpStrm& rSrc )
         while( n )
         {
             const sal_uInt64 nn = std::min<sal_uInt64>(n, 4096);
-            if( rSrc.Read( p.get(), nn ) != nn )
+            if (rSrc.ReadBytes( p.get(), nn ) != nn)
                 break;
-            if( Write( p.get(), nn ) != nn )
+            if (WriteBytes( p.get(), nn ) != nn)
                 break;
             n -= nn;
         }
@@ -1197,7 +1197,7 @@ void StgTmpStrm::SetSize(sal_uInt64 n)
         if( n > THRESHOLD )
         {
             m_aName = utl::TempFile(nullptr, false).GetURL();
-            SvFileStream* s = new SvFileStream( m_aName, STREAM_READWRITE );
+            SvFileStream* s = new SvFileStream( m_aName, StreamMode::READWRITE );
             const sal_uInt64 nCur = Tell();
             sal_uInt64 i = nEndOfData;
             std::unique_ptr<sal_uInt8[]> p(new sal_uInt8[ 4096 ]);
@@ -1207,8 +1207,8 @@ void StgTmpStrm::SetSize(sal_uInt64 n)
                 while( i )
                 {
                     const sal_uInt64 nb = std::min<sal_uInt64>(i, 4096);
-                    if( Read( p.get(), nb ) == nb
-                        && s->Write( p.get(), nb ) == nb )
+                    if (ReadBytes(p.get(), nb) == nb
+                        && s->WriteBytes(p.get(), nb) == nb)
                         i -= nb;
                     else
                         break;
@@ -1225,7 +1225,7 @@ void StgTmpStrm::SetSize(sal_uInt64 n)
                 while (i)
                 {
                     const sal_uInt64 nb = std::min<sal_uInt64>(i, 4096);
-                    if (s->Write(p.get(), nb) == nb)
+                    if (s->WriteBytes(p.get(), nb) == nb)
                         i -= nb;
                     else
                         break; // error
@@ -1258,11 +1258,11 @@ void StgTmpStrm::SetSize(sal_uInt64 n)
     }
 }
 
-sal_Size StgTmpStrm::GetData( void* pData, sal_Size n )
+std::size_t StgTmpStrm::GetData( void* pData, std::size_t n )
 {
     if( m_pStrm )
     {
-        n = m_pStrm->Read( pData, n );
+        n = m_pStrm->ReadBytes( pData, n );
         SetError( m_pStrm->GetError() );
         return n;
     }
@@ -1270,7 +1270,7 @@ sal_Size StgTmpStrm::GetData( void* pData, sal_Size n )
         return SvMemoryStream::GetData( pData, n );
 }
 
-sal_Size StgTmpStrm::PutData( const void* pData, sal_Size n )
+std::size_t StgTmpStrm::PutData( const void* pData, std::size_t n )
 {
     sal_uInt32 nCur = Tell();
     sal_uInt32 nNew = nCur + n;
@@ -1282,7 +1282,7 @@ sal_Size StgTmpStrm::PutData( const void* pData, sal_Size n )
     }
     if( m_pStrm )
     {
-        nNew = m_pStrm->Write( pData, n );
+        nNew = m_pStrm->WriteBytes( pData, n );
         SetError( m_pStrm->GetError() );
     }
     else

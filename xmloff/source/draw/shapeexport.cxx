@@ -85,6 +85,8 @@
 #include <comphelper/processfactory.hxx>
 #include <comphelper/storagehelper.hxx>
 
+#include <o3tl/any.hxx>
+
 #include <rtl/math.hxx>
 #include <rtl/ustrbuf.hxx>
 
@@ -153,7 +155,6 @@ XMLShapeExport::XMLShapeExport(SvXMLExport& rExp,
     msZIndex( "ZOrder" ),
     msPrintable( "Printable" ),
     msVisible( "Visible" ),
-    msEmptyPres( "IsEmptyPresentationObject" ),
     msModel( "Model" ),
     msStartShape( "StartShape" ),
     msEndShape( "EndShape" ),
@@ -321,9 +322,9 @@ void XMLShapeExport::collectShapeAutoStyles(const uno::Reference< drawing::XShap
         {
             uno::Reference< beans::XPropertySetInfo > xPropSetInfo( xPropSet->getPropertySetInfo() );
 
-            if( xPropSetInfo.is() && xPropSetInfo->hasPropertyByName(msEmptyPres) )
+            if( xPropSetInfo.is() && xPropSetInfo->hasPropertyByName("IsEmptyPresentationObject") )
             {
-                uno::Any aAny = xPropSet->getPropertyValue(msEmptyPres);
+                uno::Any aAny = xPropSet->getPropertyValue("IsEmptyPresentationObject");
                 aAny >>= bIsEmptyPresObj;
             }
 
@@ -351,7 +352,7 @@ void XMLShapeExport::collectShapeAutoStyles(const uno::Reference< drawing::XShap
             {
                 // get family ID
                 uno::Reference< beans::XPropertySet > xStylePropSet(xStyle, uno::UNO_QUERY);
-                DBG_ASSERT( xStylePropSet.is(), "style without a XPropertySet?" );
+                SAL_WARN_IF( !xStylePropSet.is(), "xmloff", "style without a XPropertySet?" );
                 try
                 {
                     if(xStylePropSet.is())
@@ -365,7 +366,7 @@ void XMLShapeExport::collectShapeAutoStyles(const uno::Reference< drawing::XShap
                 catch(const beans::UnknownPropertyException&)
                 {
                     // Ignored.
-                    DBG_ASSERT(false,
+                    SAL_WARN( "xmloff",
                         "XMLShapeExport::collectShapeAutoStyles: style has no 'Family' property");
                 }
 
@@ -384,11 +385,16 @@ void XMLShapeExport::collectShapeAutoStyles(const uno::Reference< drawing::XShap
             // Shapes with a Writer TextBox always have a parent style.
             // If there would be none, then just assign the first available.
             uno::Reference<style::XStyleFamiliesSupplier> xStyleFamiliesSupplier(GetExport().GetModel(), uno::UNO_QUERY);
-            uno::Reference<container::XNameAccess> xStyleFamilies = xStyleFamiliesSupplier->getStyleFamilies();
-            uno::Reference<container::XNameAccess> xFrameStyles = xStyleFamilies->getByName("FrameStyles").get< uno::Reference<container::XNameAccess> >();
-            uno::Sequence<OUString> aFrameStyles = xFrameStyles->getElementNames();
-            if (aFrameStyles.hasElements())
-                aParentName = aFrameStyles[0];
+            if (xStyleFamiliesSupplier.is()) // tdf#108231
+            {
+                uno::Reference<container::XNameAccess> xStyleFamilies = xStyleFamiliesSupplier->getStyleFamilies();
+                uno::Reference<container::XNameAccess> xFrameStyles = xStyleFamilies->getByName("FrameStyles").get< uno::Reference<container::XNameAccess> >();
+                uno::Sequence<OUString> aFrameStyles = xFrameStyles->getElementNames();
+                if (aFrameStyles.hasElements())
+                {
+                    aParentName = aFrameStyles[0];
+                }
+            }
         }
 
         // filter propset
@@ -451,7 +457,7 @@ void XMLShapeExport::collectShapeAutoStyles(const uno::Reference< drawing::XShap
             }
         }
 
-        // optionaly generate auto style for text attributes
+        // optionally generate auto style for text attributes
         if( (!bIsEmptyPresObj || (aShapeInfo.meShapeType != XmlShapeTypePresPageShape)) && bObjSupportsText )
         {
             aPropStates = GetExport().GetTextParagraphExport()->GetParagraphPropertyMapper()->Filter( xPropSet );
@@ -650,7 +656,7 @@ void XMLShapeExport::exportShape(const uno::Reference< drawing::XShape >& xShape
     if( xChild.is() )
     {
         uno::Reference< drawing::XShapes > xParent( xChild->getParent(), uno::UNO_QUERY );
-        DBG_ASSERT( xParent.is() && xParent.get() == (*maCurrentShapesIter).first.get(), "XMLShapeExport::exportShape(): Wrong call to XMLShapeExport::seekShapes()" );
+        SAL_WARN_IF( !xParent.is() && xParent.get() == (*maCurrentShapesIter).first.get(), "xmloff", "XMLShapeExport::exportShape(): Wrong call to XMLShapeExport::seekShapes()" );
     }
 
     // first compute the shapes type
@@ -717,7 +723,7 @@ void XMLShapeExport::exportShape(const uno::Reference< drawing::XShape >& xShape
     }
 
     // export layer information
-    if( IsLayerExportEnabled() )
+    if( mbExportLayer )
     {
         // check for group or scene shape and not export layer if this is one
         uno::Reference< drawing::XShapes > xShapes( xShape, uno::UNO_QUERY );
@@ -1017,10 +1023,10 @@ void XMLShapeExport::seekShapes( const uno::Reference< drawing::XShapes >& xShap
 
             maCurrentShapesIter = maShapesInfos.find( xShapes );
 
-            DBG_ASSERT( maCurrentShapesIter != maShapesInfos.end(), "XMLShapeExport::seekShapes(): insert into stl::map failed" );
+            SAL_WARN_IF( maCurrentShapesIter == maShapesInfos.end(), "xmloff", "XMLShapeExport::seekShapes(): insert into stl::map failed" );
         }
 
-        DBG_ASSERT( (*maCurrentShapesIter).second.size() == (ShapesInfos::size_type)xShapes->getCount(), "XMLShapeExport::seekShapes(): XShapes size varied between calls" );
+        SAL_WARN_IF( (*maCurrentShapesIter).second.size() != (ShapesInfos::size_type)xShapes->getCount(), "xmloff", "XMLShapeExport::seekShapes(): XShapes size varied between calls" );
 
     }
     else
@@ -1128,11 +1134,11 @@ void XMLShapeExport::ImpCalcShapeType(const uno::Reference< drawing::XShape >& x
                         if(xPropSet->getPropertyValue("CLSID") >>= sCLSID)
                         {
                             if (sCLSID.equals(mrExport.GetChartExport()->getChartCLSID()) ||
-                                sCLSID.equals(OUString( SvGlobalName( SO3_RPTCH_CLASSID ).GetHexName())))
+                                sCLSID.equals( SvGlobalName( SO3_RPTCH_CLASSID ).GetHexName() ))
                             {
                                 eShapeType = XmlShapeTypeDrawChartShape;
                             }
-                            else if (sCLSID.equals(OUString( SvGlobalName( SO3_SC_CLASSID ).GetHexName())))
+                            else if (sCLSID.equals( SvGlobalName( SO3_SC_CLASSID ).GetHexName() ))
                             {
                                 eShapeType = XmlShapeTypeDrawSheetShape;
                             }
@@ -1178,7 +1184,7 @@ void XMLShapeExport::ImpCalcShapeType(const uno::Reference< drawing::XShape >& x
                         OUString sCLSID;
                         if(xPropSet->getPropertyValue("CLSID") >>= sCLSID)
                         {
-                            if( sCLSID.equals(OUString( SvGlobalName( SO3_SC_CLASSID ).GetHexName())) )
+                            if( sCLSID.equals( SvGlobalName( SO3_SC_CLASSID ).GetHexName() ) )
                             {
                                 eShapeType = XmlShapeTypePresSheetShape;
                             }
@@ -1485,7 +1491,7 @@ bool XMLShapeExport::ImpExportPresentationAttributes( const uno::Reference< bean
         uno::Reference< beans::XPropertySetInfo > xPropSetInfo( xPropSet->getPropertySetInfo() );
 
 
-        // is empty pes shape?
+        // is empty pres. shape?
         if( xPropSetInfo.is() && xPropSetInfo->hasPropertyByName("IsEmptyPresentationObject"))
         {
             xPropSet->getPropertyValue("IsEmptyPresentationObject") >>= bIsEmpty;
@@ -1508,6 +1514,13 @@ bool XMLShapeExport::ImpExportPresentationAttributes( const uno::Reference< bean
 
 void XMLShapeExport::ImpExportText( const uno::Reference< drawing::XShape >& xShape, TextPNS eExtensionNS )
 {
+    if (eExtensionNS == TextPNS::EXTENSION)
+    {
+        if (mrExport.getDefaultVersion() <= SvtSaveOptions::ODFVER_012)
+        {
+            return; // do not export to ODF 1.1/1.2
+        }
+    }
     uno::Reference< text::XText > xText( xShape, uno::UNO_QUERY );
     if( xText.is() )
     {
@@ -1540,7 +1553,7 @@ void XMLShapeExport::ImpExportEvents( const uno::Reference< drawing::XShape >& x
         return;
 
     uno::Reference< container::XNameAccess > xEvents( xEventsSupplier->getEvents(), uno::UNO_QUERY );
-    DBG_ASSERT( xEvents.is(), "XEventsSupplier::getEvents() returned NULL" );
+    SAL_WARN_IF( !xEvents.is(), "xmloff", "XEventsSupplier::getEvents() returned NULL" );
     if( !xEvents.is() )
         return;
 
@@ -2010,9 +2023,8 @@ void XMLShapeExport::ImpExportLineShape(
 
         // get the two points
         uno::Any aAny(xPropSet->getPropertyValue("Geometry"));
-        drawing::PointSequenceSequence const * pSourcePolyPolygon = static_cast<drawing::PointSequenceSequence const *>(aAny.getValue());
-
-        if(pSourcePolyPolygon)
+        if (auto pSourcePolyPolygon
+                = o3tl::tryAccess<drawing::PointSequenceSequence>(aAny))
         {
             drawing::PointSequence* pOuterSequence = const_cast<css::drawing::PointSequenceSequence *>(pSourcePolyPolygon)->getArray();
             if(pOuterSequence)
@@ -2187,7 +2199,7 @@ void XMLShapeExport::ImpExportPolygonShape(
             // get PolygonBezier
             uno::Any aAny( xPropSet->getPropertyValue("Geometry") );
             const basegfx::B2DPolyPolygon aPolyPolygon(
-                basegfx::tools::UnoPolyPolygonBezierCoordsToB2DPolyPolygon(*static_cast<drawing::PolyPolygonBezierCoords const *>(aAny.getValue())));
+                basegfx::tools::UnoPolyPolygonBezierCoordsToB2DPolyPolygon(*o3tl::doAccess<drawing::PolyPolygonBezierCoords>(aAny)));
 
             if(aPolyPolygon.count())
             {
@@ -2208,7 +2220,7 @@ void XMLShapeExport::ImpExportPolygonShape(
             // get non-bezier polygon
             uno::Any aAny( xPropSet->getPropertyValue("Geometry") );
             const basegfx::B2DPolyPolygon aPolyPolygon(
-                basegfx::tools::UnoPointSequenceSequenceToB2DPolyPolygon(*static_cast<drawing::PointSequenceSequence const *>(aAny.getValue())));
+                basegfx::tools::UnoPointSequenceSequenceToB2DPolyPolygon(*o3tl::doAccess<drawing::PointSequenceSequence>(aAny)));
 
             if(!aPolyPolygon.areControlPointsUsed() && 1 == aPolyPolygon.count())
             {
@@ -2318,17 +2330,20 @@ void XMLShapeExport::ImpExportGraphicObjectShape(
                     // apply possible changed stream URL to embedded image object
                     if ( bIsEmbeddedImageWithExistingStreamInPackage )
                     {
-                        aStreamURL = sPackageURL;
+                        OUString newStreamURL = sPackageURL;
                         if ( aStr[0] == '#' )
                         {
-                            aStreamURL = aStreamURL.concat( aStr.copy( 1, aStr.getLength() - 1 ) );
+                            newStreamURL = newStreamURL.concat( aStr.copy( 1, aStr.getLength() - 1 ) );
                         }
                         else
                         {
-                            aStreamURL = aStreamURL.concat( aStr );
+                            newStreamURL = newStreamURL.concat( aStr );
                         }
 
-                        xPropSet->setPropertyValue( "GraphicStreamURL", uno::Any(aStreamURL) );
+                        if (newStreamURL != aStreamURL)
+                        {
+                            xPropSet->setPropertyValue("GraphicStreamURL", uno::Any(newStreamURL));
+                        }
                     }
 
                     mrExport.AddAttribute(XML_NAMESPACE_XLINK, XML_TYPE, XML_SIMPLE );
@@ -2415,11 +2430,11 @@ void XMLShapeExport::ImpExportControlShape(
     }
 
     uno::Reference< drawing::XControlShape > xControl( xShape, uno::UNO_QUERY );
-    DBG_ASSERT( xControl.is(), "Control shape is not supporting XControlShape" );
+    SAL_WARN_IF( !xControl.is(), "xmloff", "Control shape is not supporting XControlShape" );
     if( xControl.is() )
     {
         uno::Reference< beans::XPropertySet > xControlModel( xControl->getControl(), uno::UNO_QUERY );
-        DBG_ASSERT( xControlModel.is(), "Control shape has not XControlModel" );
+        SAL_WARN_IF( !xControlModel.is(), "xmloff", "Control shape has not XControlModel" );
         if( xControlModel.is() )
         {
             mrExport.AddAttribute( XML_NAMESPACE_DRAW, XML_CONTROL, mrExport.GetFormExport()->getControlId( xControlModel ) );
@@ -2597,26 +2612,23 @@ void XMLShapeExport::ImpExportConnectorShape(
         }
     }
 
-    if( xProps->getPropertyValue("PolyPolygonBezier") >>= aAny )
+    // get PolygonBezier
+    aAny = xProps->getPropertyValue("PolyPolygonBezier");
+    auto pSourcePolyPolygon = o3tl::tryAccess<drawing::PolyPolygonBezierCoords>(aAny);
+    if(pSourcePolyPolygon && pSourcePolyPolygon->Coordinates.getLength())
     {
-        // get PolygonBezier
-        drawing::PolyPolygonBezierCoords const * pSourcePolyPolygon = static_cast<drawing::PolyPolygonBezierCoords const *>(aAny.getValue());
+        const basegfx::B2DPolyPolygon aPolyPolygon(
+            basegfx::tools::UnoPolyPolygonBezierCoordsToB2DPolyPolygon(
+                *pSourcePolyPolygon));
+        const OUString aPolygonString(
+            basegfx::tools::exportToSvgD(
+                aPolyPolygon,
+                true,           // bUseRelativeCoordinates
+                false,          // bDetectQuadraticBeziers: not used in old, but maybe activated now
+                true));         // bHandleRelativeNextPointCompatible
 
-        if(pSourcePolyPolygon && pSourcePolyPolygon->Coordinates.getLength())
-        {
-            const basegfx::B2DPolyPolygon aPolyPolygon(
-                basegfx::tools::UnoPolyPolygonBezierCoordsToB2DPolyPolygon(
-                    *pSourcePolyPolygon));
-            const OUString aPolygonString(
-                basegfx::tools::exportToSvgD(
-                    aPolyPolygon,
-                    true,           // bUseRelativeCoordinates
-                    false,          // bDetectQuadraticBeziers: not used in old, but maybe activated now
-                    true));         // bHandleRelativeNextPointCompatible
-
-            // write point array
-            mrExport.AddAttribute(XML_NAMESPACE_SVG, XML_D, aPolygonString);
-        }
+        // write point array
+        mrExport.AddAttribute(XML_NAMESPACE_SVG, XML_D, aPolygonString);
     }
 
     // get matrix
@@ -2749,7 +2761,7 @@ void XMLShapeExport::ImpExportOLE2Shape(
     uno::Reference< beans::XPropertySet > xPropSet(xShape, uno::UNO_QUERY);
     uno::Reference< container::XNamed > xNamed(xShape, uno::UNO_QUERY);
 
-    DBG_ASSERT( xPropSet.is() && xNamed.is(), "ole shape is not implementing needed interfaces");
+    SAL_WARN_IF( !xPropSet.is() || !xNamed.is(), "xmloff", "ole shape is not implementing needed interfaces");
     if(xPropSet.is() && xNamed.is())
     {
         // Transformation
@@ -2775,6 +2787,14 @@ void XMLShapeExport::ImpExportOLE2Shape(
 
         if( !bIsEmptyPresObj || bSaveBackwardsCompatible )
         {
+            // tdf#112005 export text *before* adding any attributes
+            if (!bIsEmptyPresObj && supportsText(eShapeType))
+            {
+                // #i118485# Add text export, the draw OLE shape allows text now
+                // fdo#58571 chart objects don't allow text:p
+                ImpExportText( xShape, TextPNS::EXTENSION );
+            }
+
             if (pAttrList)
             {
                 mrExport.AddAttributeList(pAttrList);
@@ -2809,13 +2829,6 @@ void XMLShapeExport::ImpExportOLE2Shape(
 
                 if( !sClassId.isEmpty() )
                     mrExport.AddAttribute(XML_NAMESPACE_DRAW, XML_CLASS_ID, sClassId );
-
-                if(supportsText(eShapeType))
-                {
-                    // #i118485# Add text export, the draw OLE shape allows text now
-                    // fdo#58571 chart objects don't allow text:p
-                    ImpExportText( xShape, TextPNS::EXTENSION );
-                }
 
                 if(!bExportEmbedded)
                 {
@@ -2853,7 +2866,7 @@ void XMLShapeExport::ImpExportOLE2Shape(
                     // embedded XML
                     uno::Reference< lang::XComponent > xComp;
                     xPropSet->getPropertyValue("Model") >>= xComp;
-                    DBG_ASSERT( xComp.is(), "no xModel for own OLE format" );
+                    SAL_WARN_IF( !xComp.is(), "xmloff", "no xModel for own OLE format" );
                     mrExport.ExportEmbeddedOwnObject( xComp );
                 }
                 else
@@ -3423,7 +3436,7 @@ void XMLShapeExport::ImpExport3DSceneShape( const uno::Reference< drawing::XShap
     if(xShapes.is() && xShapes->getCount())
     {
         uno::Reference< beans::XPropertySet > xPropSet( xShape, uno::UNO_QUERY );
-        DBG_ASSERT( xPropSet.is(), "XMLShapeExport::ImpExport3DSceneShape can't export a scene without a propertyset" );
+        SAL_WARN_IF( !xPropSet.is(), "xmloff", "XMLShapeExport::ImpExport3DSceneShape can't export a scene without a propertyset" );
         if( xPropSet.is() )
         {
             // Transformation
@@ -4888,7 +4901,7 @@ void XMLShapeExport::ImpExportTableShape( const uno::Reference< drawing::XShape 
     uno::Reference< beans::XPropertySet > xPropSet(xShape, uno::UNO_QUERY);
     uno::Reference< container::XNamed > xNamed(xShape, uno::UNO_QUERY);
 
-    DBG_ASSERT( xPropSet.is() && xNamed.is(), "xmloff::XMLShapeExport::ImpExportTableShape(), tabe shape is not implementing needed interfaces");
+    SAL_WARN_IF( !xPropSet.is() || !xNamed.is(), "xmloff", "xmloff::XMLShapeExport::ImpExportTableShape(), table shape is not implementing needed interfaces");
     if(xPropSet.is() && xNamed.is()) try
     {
         // Transformation

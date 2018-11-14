@@ -320,7 +320,6 @@ public:
 
     static void         appendToken( OUStringBuffer& rStr, const OUString& rToken, sal_Unicode cSep = OOX_DUMP_LISTSEP );
 
-    static void         appendIndex( OUStringBuffer& rStr, const OUString& rIdx );
     static void         appendIndex( OUStringBuffer& rStr, sal_Int64 nIdx );
 
     static OUString getToken( const OUString& rData, sal_Int32& rnPos, sal_Unicode cSep = OOX_DUMP_LISTSEP );
@@ -512,7 +511,7 @@ public:
     typedef OUStringMap::const_iterator                 const_iterator;
 
 public:
-    virtual             ~NameListBase();
+    virtual             ~NameListBase() override;
 
     /** Sets a name for the specified key. */
     void                setName( sal_Int64 nKey, const String& rName );
@@ -585,8 +584,6 @@ class ConstList : public NameListBase
 public:
     explicit            ConstList( const SharedConfigData& rCfgData );
 
-    /** Sets a default name for unknown keys. */
-    void                setDefaultName( const String& rDefName ) { maDefName = rDefName; }
     /** Enables or disables automatic quotation of returned names. */
     void                setQuoteNames( bool bQuoteNames ) { mbQuoteNames = bQuoteNames; }
 
@@ -764,13 +761,12 @@ public:
                             const StorageRef& rxRootStrg,
                             const OUString& rSysFileName );
 
-    virtual             ~SharedConfigData();
+    virtual             ~SharedConfigData() override;
 
     const css::uno::Reference< css::uno::XComponentContext >& getContext() const { return mxContext; }
     const StorageRef& getRootStorage() const { return mxRootStrg; }
     const OUString& getSysFileName() const { return maSysFileName; }
 
-    void                setOption( const OUString& rKey, const OUString& rData );
     const OUString*      getOption( const OUString& rKey ) const;
 
     template< typename ListType >
@@ -778,8 +774,6 @@ public:
     void                setNameList( const OUString& rListName, const NameListRef& rxList );
     void                eraseNameList( const OUString& rListName );
     NameListRef         getNameList( const OUString& rListName ) const;
-
-    bool                isPasswordCancelled() const { return mbPwCancelled; }
 
 protected:
     virtual bool        implIsValid() const override;
@@ -808,7 +802,6 @@ private:
     NameListMap         maNameLists;
     OUString            maConfigPath;
     bool                mbLoaded;
-    bool                mbPwCancelled;
 };
 
 
@@ -846,7 +839,7 @@ public:
                             const StorageRef& rxRootStrg,
                             const OUString& rSysFileName );
 
-    virtual             ~Config();
+    virtual             ~Config() override;
 
     const css::uno::Reference< css::uno::XComponentContext >& getContext() const { return mxCfgData->getContext(); }
     const StorageRef& getRootStorage() const { return mxCfgData->getRootStorage(); }
@@ -872,11 +865,8 @@ public:
     template< typename Type >
     bool                hasName( const NameListWrapper& rListWrp, Type nKey ) const;
 
-    bool                isPasswordCancelled() const;
-
 protected:
                         Config() {}
-    void                construct( const Config& rParent );
     void                construct(
                             const sal_Char* pcEnvVar,
                             const ::oox::core::FilterBase& rFilter );
@@ -888,7 +878,6 @@ protected:
 
     virtual bool        implIsValid() const override;
     const OUString*     implGetOption( const OUString& rKey ) const;
-    NameListRef         implGetNameList( const OUString& rListName ) const;
 
 private:
     typedef std::shared_ptr< SharedConfigData > SharedConfigDataRef;
@@ -961,7 +950,7 @@ public:
     void                writeChar( sal_Unicode cChar, sal_Int32 nCount = 1 );
     void                writeAscii( const sal_Char* pcStr );
     void                writeString( const OUString& rStr );
-    void                writeArray( const sal_uInt8* pnData, sal_Size nSize, sal_Unicode cSep = OOX_DUMP_LISTSEP );
+    void                writeArray( const sal_uInt8* pnData, std::size_t nSize, sal_Unicode cSep = OOX_DUMP_LISTSEP );
     void                writeBool( bool bData );
     void                writeDateTime( const css::util::DateTime& rDateTime );
 
@@ -1079,7 +1068,7 @@ class StorageIterator : public Base
 {
 public:
     explicit            StorageIterator( const StorageRef& rxStrg );
-    virtual             ~StorageIterator();
+    virtual             ~StorageIterator() override;
 
     StorageIterator&    operator++();
 
@@ -1100,7 +1089,7 @@ private:
 class ObjectBase : public Base
 {
 public:
-    virtual             ~ObjectBase();
+    virtual             ~ObjectBase() override;
 
     const css::uno::Reference< css::uno::XComponentContext >&
                         getContext() const { return mxConfig->getContext(); }
@@ -1200,7 +1189,7 @@ private:
 class OutputObjectBase : public ObjectBase
 {
 public:
-    virtual             ~OutputObjectBase();
+    virtual             ~OutputObjectBase() override;
 
 
 protected:
@@ -1217,7 +1206,7 @@ protected:
     void                writeInfoItem( const String& rName, const String& rData );
     void                writeCharItem( const String& rName, sal_Unicode cData );
     void                writeStringItem( const String& rName, const OUString& rData );
-    void                writeArrayItem( const String& rName, const sal_uInt8* pnData, sal_Size nSize, sal_Unicode cSep = OOX_DUMP_LISTSEP );
+    void                writeArrayItem( const String& rName, const sal_uInt8* pnData, std::size_t nSize, sal_Unicode cSep = OOX_DUMP_LISTSEP );
     void                writeDateTimeItem( const String& rName, const css::util::DateTime& rDateTime );
     void                writeGuidItem( const String& rName, const OUString& rGuid );
 
@@ -1364,7 +1353,7 @@ void OutputObjectBase::writeHexPairItem( const String& rName, Type nData1, Type 
 class InputObjectBase : public OutputObjectBase
 {
 public:
-    virtual             ~InputObjectBase();
+    virtual             ~InputObjectBase() override;
 
 
 protected:
@@ -1647,7 +1636,6 @@ protected:
 
     sal_Int64           getRecId() const { return mnRecId; }
     sal_Int64           getRecSize() const { return mnRecSize; }
-    NameListRef         getRecNames() const { return maRecNames.getNameList( cfg() ); }
 
     virtual bool        implIsValid() const override;
     virtual void        implDump() override;
@@ -1704,10 +1692,9 @@ private:
 class DumperBase : public ObjectBase
 {
 public:
-    virtual             ~DumperBase();
+    virtual             ~DumperBase() override;
 
     bool                isImportEnabled() const;
-    bool                isImportCancelled() const;
 
 protected:
                         DumperBase() {}
@@ -1724,9 +1711,8 @@ protected:
 do {                                                \
     DumperClassName aDumper( *this );               \
     aDumper.dump();                                 \
-    bool bCancelled = aDumper.isImportCancelled();  \
-    if( !aDumper.isImportEnabled() || bCancelled )  \
-        return aDumper.isValid() && !bCancelled;    \
+    if( !aDumper.isImportEnabled() )                \
+        return aDumper.isValid();                   \
 } while( false )
 
 #else   // OOX_INCLUDE_DUMPER

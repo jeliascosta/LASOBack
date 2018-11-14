@@ -83,7 +83,7 @@ OPoolCollection::OPoolCollection(const Reference< XComponentContext >& _rxContex
     osl_atomic_increment( &m_refCount );
     {
 
-        m_xDesktop = ::com::sun::star::frame::Desktop::create( m_xContext );
+        m_xDesktop = css::frame::Desktop::create( m_xContext );
         m_xDesktop->addTerminateListener(this);
 
     }
@@ -249,10 +249,12 @@ bool OPoolCollection::isPoolingEnabled()
     return bEnabled;
 }
 
-Reference<XInterface> OPoolCollection::getConfigPoolRoot()
+Reference<XInterface> const & OPoolCollection::getConfigPoolRoot()
 {
     if(!m_xConfigNode.is())
-        m_xConfigNode = createWithServiceFactory(getConnectionPoolNodeName());
+        m_xConfigNode = createWithProvider(
+            css::configuration::theDefaultProvider::get(m_xContext),
+            getConnectionPoolNodeName());
     return m_xConfigNode;
 }
 
@@ -284,11 +286,9 @@ void OPoolCollection::clearConnectionPools(bool _bDispose)
     while(aIter != m_aPools.end())
     {
         aIter->second->clear(_bDispose);
-        aIter->second->release();
-        OUString sKeyValue = aIter->first;
         ++aIter;
-        m_aPools.erase(sKeyValue);
     }
+    m_aPools.clear();
 }
 
 OConnectionPool* OPoolCollection::getConnectionPool(const OUString& _sImplName,
@@ -298,28 +298,20 @@ OConnectionPool* OPoolCollection::getConnectionPool(const OUString& _sImplName,
     OConnectionPool *pRet = nullptr;
     OConnectionPools::const_iterator aFind = m_aPools.find(_sImplName);
     if (aFind != m_aPools.end())
-        pRet = aFind->second;
+        pRet = aFind->second.get();
     else if (_xDriver.is() && _xDriverNode.is())
     {
         Reference<XPropertySet> xProp(_xDriverNode,UNO_QUERY);
         if(xProp.is())
             xProp->addPropertyChangeListener(getEnableNodeName(),this);
         OConnectionPool* pConnectionPool = new OConnectionPool(_xDriver,_xDriverNode,m_xProxyFactory);
-        pConnectionPool->acquire();
         aFind = m_aPools.insert(OConnectionPools::value_type(_sImplName,pConnectionPool)).first;
-        pRet = aFind->second;
+        pRet = aFind->second.get();
     }
 
     OSL_ENSURE(pRet, "Could not query DriverManager from ConnectionPool!");
 
     return pRet;
-}
-
-Reference< XInterface > OPoolCollection::createWithServiceFactory(const OUString& _rPath) const
-{
-    return createWithProvider(
-        com::sun::star::configuration::theDefaultProvider::get(m_xContext),
-        _rPath);
 }
 
 Reference< XInterface > OPoolCollection::createWithProvider(const Reference< XMultiServiceFactory >& _rxConfProvider,
@@ -404,7 +396,7 @@ Any OPoolCollection::getNodeValue(const OUString& _rPath,const Reference<XInterf
     return aReturn;
 }
 
-void SAL_CALL OPoolCollection::queryTermination( const EventObject& /*Event*/ ) throw (::com::sun::star::frame::TerminationVetoException, RuntimeException, std::exception)
+void SAL_CALL OPoolCollection::queryTermination( const EventObject& /*Event*/ ) throw (css::frame::TerminationVetoException, RuntimeException, std::exception)
 {
 }
 
@@ -441,7 +433,7 @@ void SAL_CALL OPoolCollection::disposing( const EventObject& Source ) throw (Run
     }
 }
 
-void SAL_CALL OPoolCollection::propertyChange( const ::com::sun::star::beans::PropertyChangeEvent& evt ) throw (RuntimeException, std::exception)
+void SAL_CALL OPoolCollection::propertyChange( const css::beans::PropertyChangeEvent& evt ) throw (RuntimeException, std::exception)
 {
     MutexGuard aGuard(m_aMutex);
     if(evt.Source == m_xConfigNode)
@@ -456,10 +448,8 @@ void SAL_CALL OPoolCollection::propertyChange( const ::com::sun::star::beans::Pr
             for(;aIter != m_aPools.end();++aIter)
             {
                 aIter->second->clear(false);
-                aIter->second->release();
             }
             m_aPools.clear();
-            m_aPools         = OConnectionPools();
         }
     }
     else if(evt.Source.is())
@@ -470,7 +460,7 @@ void SAL_CALL OPoolCollection::propertyChange( const ::com::sun::star::beans::Pr
         {
             OUString sThisDriverName;
             getNodeValue(getDriverNameNodeName(),evt.Source) >>= sThisDriverName;
-            // 1nd relase the driver
+            // 1st release the driver
             // look if we already have a proxy for this driver
             MapDriver2DriverRef::iterator aLookup = m_aDriverProxies.begin();
             while(  aLookup != m_aDriverProxies.end())
@@ -484,10 +474,9 @@ void SAL_CALL OPoolCollection::propertyChange( const ::com::sun::star::beans::Pr
 
             // 2nd clear the connectionpool
             OConnectionPools::iterator aFind = m_aPools.find(sThisDriverName);
-            if(aFind != m_aPools.end() && aFind->second)
+            if(aFind != m_aPools.end())
             {
                 aFind->second->clear(false);
-                aFind->second->release();
                 m_aPools.erase(aFind);
             }
         }

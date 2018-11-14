@@ -140,9 +140,9 @@ void TabWindow::implts_LayoutWindows() const
 
 TabControl* TabWindow::impl_GetTabControl( const css::uno::Reference< css::awt::XWindow >& rTabControlWindow ) const
 {
-    vcl::Window* pWindow = VCLUnoHelper::GetWindow( rTabControlWindow );
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( rTabControlWindow );
     if ( pWindow )
-        return static_cast<TabControl *>(pWindow);
+        return static_cast<TabControl *>(pWindow.get());
     else
         return nullptr;
 }
@@ -151,7 +151,7 @@ void TabWindow::impl_SetTitle( const OUString& rTitle )
 {
     if ( m_xTopWindow.is() )
     {
-        vcl::Window* pWindow = VCLUnoHelper::GetWindow(
+        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow(
                             css::uno::Reference< css::awt::XWindow >(
                                 m_xTopWindow, css::uno::UNO_QUERY ));
         if ( pWindow )
@@ -226,7 +226,7 @@ void TabWindow::implts_SendNotification( Notification eNotify, sal_Int32 ID, con
 
 // Links
 
-IMPL_LINK_TYPED( TabWindow, Activate, TabControl*, pTabControl, void )
+IMPL_LINK( TabWindow, Activate, TabControl*, pTabControl, void )
 {
     /* SAFE AREA ----------------------------------------------------------------------------------------------- */
     SolarMutexClearableGuard aLock;
@@ -241,7 +241,7 @@ IMPL_LINK_TYPED( TabWindow, Activate, TabControl*, pTabControl, void )
     implts_SendNotification( NOTIFY_ACTIVATED, nPageId );
 }
 
-IMPL_LINK_TYPED( TabWindow, Deactivate, TabControl*, pTabControl, bool )
+IMPL_LINK( TabWindow, Deactivate, TabControl*, pTabControl, bool )
 {
     /* SAFE AREA ----------------------------------------------------------------------------------------------- */
     SolarMutexClearableGuard aLock;
@@ -385,7 +385,7 @@ throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
                     xWindow->setPosSize( 0, 0, aSize.Width, aSize.Height, css::awt::PosSize::POSSIZE );
 
                     SolarMutexGuard aGuard;
-                    vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow );
+                    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
                     if( pWindow )
                         pWindow->Show();
 
@@ -397,7 +397,7 @@ throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
                     if ( pWindow )
                     {
                         pWindow->Show( true, ShowFlags::NoFocusChange | ShowFlags::NoActivate  );
-                        TabControl* pTabControl = static_cast<TabControl *>(pWindow);
+                        TabControl* pTabControl = static_cast<TabControl *>(pWindow.get());
                         pTabControl->SetActivatePageHdl( LINK( this, TabWindow, Activate ));
                         pTabControl->SetDeactivatePageHdl( LINK( this, TabWindow, Deactivate ));
                     }
@@ -507,7 +507,7 @@ throw( css::uno::RuntimeException, std::exception )
 
     if ( m_xContainerWindow.is() )
     {
-        vcl::Window* pWindow = VCLUnoHelper::GetWindow( m_xContainerWindow );
+        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( m_xContainerWindow );
         if ( pWindow )
             pWindow->Show();
     }
@@ -519,7 +519,7 @@ throw( css::uno::RuntimeException, std::exception )
     SolarMutexGuard g;
     if ( m_xContainerWindow.is() )
     {
-        vcl::Window* pWindow = VCLUnoHelper::GetWindow( m_xContainerWindow );
+        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( m_xContainerWindow );
         if ( pWindow )
             pWindow->Hide();
     }

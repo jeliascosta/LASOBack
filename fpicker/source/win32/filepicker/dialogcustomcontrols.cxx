@@ -30,11 +30,11 @@ CDialogCustomControlBase::CDialogCustomControlBase(HWND aControlHandle, HWND aPa
 
 void SAL_CALL CDialogCustomControlBase::SetFont(HFONT hFont)
 {
-    SendMessage(
+    SendMessageW(
         m_CustomControlHandle,
         WM_SETFONT,
-        (WPARAM)hFont,
-        (LPARAM)sal_True);
+        reinterpret_cast<WPARAM>(hFont),
+        (LPARAM)true);
 }
 
 

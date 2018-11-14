@@ -67,10 +67,6 @@ namespace frm
     public:
         DECLARE_DEFAULT_LEAF_XTOR( ONavigationBarModel );
 
-        // XServiceInfo - static version
-        static  OUString SAL_CALL getImplementationName_Static();
-        static  css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames_Static();
-
     protected:
         // UNO
         DECLARE_UNO3_AGG_DEFAULTS( ONavigationBarModel, OControlModel )
@@ -83,9 +79,6 @@ namespace frm
         // XTypeProvider
         DECLARE_XTYPEPROVIDER()
 
-        // OComponentHelper
-        virtual void SAL_CALL disposing() override;
-
         // XPersistObject
         virtual OUString SAL_CALL getServiceName() throw ( css::uno::RuntimeException, std::exception) override;
         virtual void SAL_CALL write(const css::uno::Reference< css::io::XObjectOutputStream>& _rxOutStream) throw ( css::io::IOException, css::uno::RuntimeException, std::exception) override;
@@ -95,7 +88,7 @@ namespace frm
         virtual void SAL_CALL getFastPropertyValue(css::uno::Any& rValue, sal_Int32 nHandle ) const override;
         virtual sal_Bool SAL_CALL convertFastPropertyValue(css::uno::Any& rConvertedValue, css::uno::Any& rOldValue,
                                               sal_Int32 nHandle, const css::uno::Any& rValue )
-                                            throw(css::lang::IllegalArgumentException) override;
+                                            throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
         virtual void SAL_CALL setFastPropertyValue_NoBroadcast(sal_Int32 nHandle, const css::uno::Any& rValue) throw ( css::uno::Exception, std::exception) override;
 
         // XPropertyState

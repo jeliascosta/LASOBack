@@ -110,7 +110,6 @@ void BrowseBox::ConstructImpl( BrowserMode nMode )
                 ( bHasFocus ? 0 : 1 ) + ( GetUpdateMode() ? 0 : 1 );
 }
 
-
 BrowseBox::BrowseBox( vcl::Window* pParent, WinBits nBits, BrowserMode nMode )
     :Control( pParent, nBits | WB_3DLOOK )
     ,DragSourceHelper( this )
@@ -119,17 +118,6 @@ BrowseBox::BrowseBox( vcl::Window* pParent, WinBits nBits, BrowserMode nMode )
 {
     ConstructImpl( nMode );
 }
-
-
-BrowseBox::BrowseBox( vcl::Window* pParent, const ResId& rId, BrowserMode nMode )
-    :Control( pParent, rId )
-    ,DragSourceHelper( this )
-    ,DropTargetHelper( this )
-    ,aHScroll( VclPtr<ScrollBar>::Create(this, WinBits(WB_HSCROLL)) )
-{
-    ConstructImpl(nMode);
-}
-
 
 BrowseBox::~BrowseBox()
 {
@@ -162,6 +150,8 @@ void BrowseBox::dispose()
     delete pColSel;
     if ( bMultiSelection )
         delete uRow.pSel;
+    DragSourceHelper::dispose();
+    DropTargetHelper::dispose();
     Control::dispose();
 }
 
@@ -2101,18 +2091,17 @@ sal_uInt16 BrowseBox::GetColumnAtXPosPixel( long nX, bool ) const
     return BROWSER_INVALIDID;
 }
 
-
-void BrowseBox::ReserveControlArea( sal_uInt16 nWidth )
+bool BrowseBox::ReserveControlArea(sal_uInt16 nWidth)
 {
-
-    if ( nWidth != nControlAreaWidth )
+    if (nWidth != nControlAreaWidth)
     {
         OSL_ENSURE(nWidth,"Control area of 0 is not allowed, Use USHRT_MAX instead!");
         nControlAreaWidth = nWidth;
         UpdateScrollbars();
+        return true;
     }
+    return false;
 }
-
 
 Rectangle BrowseBox::GetControlArea() const
 {
@@ -2122,7 +2111,6 @@ Rectangle BrowseBox::GetControlArea() const
         Size( GetOutputSizePixel().Width() - aHScroll->GetSizePixel().Width(),
              aHScroll->GetSizePixel().Height() ) );
 }
-
 
 void BrowseBox::SetMode( BrowserMode nMode )
 {

@@ -306,7 +306,7 @@ bool ScViewFunc::PasteDataFormat( SotClipboardFormatId nFormatId,
                     // this for html pasting only, but in the future it may
                     // make sense to do it for other data types too.
                     ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
-                    std::unique_ptr<AbstractScTextImportOptionsDlg> pDlg(
+                    ScopedVclPtr<AbstractScTextImportOptionsDlg> pDlg(
                         pFact->CreateScTextImportOptionsDlg());
 
                     if (pDlg->Execute() == RET_OK)
@@ -335,7 +335,7 @@ bool ScViewFunc::PasteDataFormat( SotClipboardFormatId nFormatId,
                     ScImportStringStream aStrm( aStr);
                     ScAbstractDialogFactory* pFact =
                         ScAbstractDialogFactory::Create();
-                    std::unique_ptr<AbstractScImportAsciiDlg> pDlg(
+                    ScopedVclPtr<AbstractScImportAsciiDlg> pDlg(
                         pFact->CreateScImportAsciiDlg( OUString(), &aStrm, SC_PASTETEXT));
 
                     if (pDlg->Execute() == RET_OK)
@@ -438,7 +438,7 @@ bool ScViewFunc::PasteDataFormat( SotClipboardFormatId nFormatId,
                     pObj->NbcSetLayer(SC_LAYER_FRONT);
                 if (dynamic_cast<const SdrObjGroup*>( pObj) !=  nullptr)
                 {
-                    SdrObjListIter aIter( *pObj, IM_DEEPWITHGROUPS );
+                    SdrObjListIter aIter( *pObj, SdrIterMode::DeepWithGroups );
                     SdrObject* pSubObj = aIter.Next();
                     while (pSubObj)
                     {
@@ -491,7 +491,7 @@ bool ScViewFunc::PasteDataFormat( SotClipboardFormatId nFormatId,
 
             ScDocShellRef aDragShellRef( new ScDocShell );
             aDragShellRef->DoInitNew();
-            std::unique_ptr<FmFormModel> pModel(new FmFormModel( aPath, nullptr, aDragShellRef ));
+            std::unique_ptr<FmFormModel> pModel(new FmFormModel( aPath, nullptr, aDragShellRef.get() ));
 
             pModel->GetItemPool().FreezeIdRanges();
             xStm->Seek(0);
@@ -505,7 +505,7 @@ bool ScViewFunc::PasteDataFormat( SotClipboardFormatId nFormatId,
             for (sal_uInt16 i=0; i<nPages; i++)
             {
                 SdrPage* pPage = pModel->GetPage(i);
-                SdrObjListIter aIter( *pPage, IM_DEEPWITHGROUPS );
+                SdrObjListIter aIter( *pPage, SdrIterMode::DeepWithGroups );
                 SdrObject* pObject = aIter.Next();
                 while (pObject)
                 {

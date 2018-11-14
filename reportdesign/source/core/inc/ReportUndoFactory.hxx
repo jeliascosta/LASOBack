@@ -34,7 +34,7 @@ namespace rptui
         OReportUndoFactory& operator=(const OReportUndoFactory&) = delete;
     public:
         OReportUndoFactory();
-        virtual ~OReportUndoFactory();
+        virtual ~OReportUndoFactory() override;
 
            // shapes
         virtual SdrUndoAction* CreateUndoMoveObject( SdrObject& rObject ) override;
@@ -59,7 +59,7 @@ namespace rptui
         virtual SdrUndoAction* CreateUndoMoveLayer(sal_uInt16 nLayerNum, SdrLayerAdmin& rNewLayerAdmin, SdrModel& rNewModel, sal_uInt16 nNeuPos1) override;
 
         // page
-        virtual SdrUndoAction*  CreateUndoDeletePage(SdrPage& rPage) override;
+        virtual SdrUndoAction* CreateUndoDeletePage(SdrPage& rPage) override;
         virtual SdrUndoAction* CreateUndoNewPage(SdrPage& rPage) override;
         virtual SdrUndoAction* CreateUndoCopyPage(SdrPage& rPage) override;
         virtual SdrUndoAction* CreateUndoSetPageNum(SdrPage& rNewPg, sal_uInt16 nOldPageNum1, sal_uInt16 nNewPageNum1) override;

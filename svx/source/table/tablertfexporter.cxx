@@ -79,7 +79,7 @@ SdrTableRtfExporter::SdrTableRtfExporter( SvStream& rStrm, SdrTableObj& rObj )
 
 long HundMMToTwips( long nIn )
 {
-    long nRet = OutputDevice::LogicToLogic( nIn, MAP_100TH_MM, MAP_TWIP );
+    long nRet = OutputDevice::LogicToLogic( nIn, MapUnit::Map100thMM, MapUnit::MapTwip );
     return nRet;
 }
 
@@ -146,7 +146,7 @@ void SdrTableRtfExporter::WriteRow( const Reference< XPropertySet >& xRowSet, sa
 
         mrStrm.WriteCharPtr( OOO_STRING_SVTOOLS_RTF_CELLX ).WriteCharPtr( OString::number(aColumnStart[nCol]).getStr() );
         if ( (nCol & 0x0F) == 0x0F )
-            mrStrm.WriteCharPtr( SAL_NEWLINE_STRING );        // Zeilen nicht zu lang werden lassen
+            mrStrm.WriteCharPtr( SAL_NEWLINE_STRING );        // prevent long lines
     }
     mrStrm.WriteCharPtr( OOO_STRING_SVTOOLS_RTF_PARD ).WriteCharPtr( OOO_STRING_SVTOOLS_RTF_PLAIN ).WriteCharPtr( OOO_STRING_SVTOOLS_RTF_INTBL ).WriteCharPtr( SAL_NEWLINE_STRING );
 

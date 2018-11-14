@@ -125,12 +125,7 @@ protected:
 
 public:
 
-    virtual void SAL_CALL suspend() override
-        {
-            ::osl::Thread::suspend();
-        }
-
-    virtual ~OGetThread()
+    virtual ~OGetThread() override
         {
             if (isRunning())
             {

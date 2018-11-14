@@ -41,7 +41,6 @@
 #include <com/sun/star/sheet/DataPilotFieldOrientation.hpp>
 #include <com/sun/star/sheet/DataPilotFieldReference.hpp>
 #include <com/sun/star/sheet/DataPilotFieldSortInfo.hpp>
-#include <com/sun/star/sheet/GeneralFunction.hpp>
 #include <com/sun/star/sheet/XDataPilotDataLayoutFieldSupplier.hpp>
 #include <com/sun/star/sheet/XDataPilotDescriptor.hpp>
 #include <com/sun/star/sheet/XDataPilotField.hpp>
@@ -70,8 +69,8 @@ class ScDataPilotItemObj;
 class ScDataPilotConversion
 {
 public:
-    static css::sheet::GeneralFunction   FirstFunc( PivotFunc nBits );
-    static PivotFunc           FunctionBit( css::sheet::GeneralFunction eFunc );
+    static sal_Int16   FirstFunc( PivotFunc nBits );
+    static PivotFunc           FunctionBit( sal_Int16 eFunc );
 
     static void         FillGroupInfo(
                             css::sheet::DataPilotFieldGroupInfo& rInfo,
@@ -95,7 +94,7 @@ private:
 
 public:
                             ScDataPilotTablesObj(ScDocShell* pDocSh, SCTAB nT);
-    virtual                 ~ScDataPilotTablesObj();
+    virtual                 ~ScDataPilotTablesObj() override;
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
@@ -161,7 +160,7 @@ private:
 
 public:
                             ScDataPilotDescriptorBase(ScDocShell* pDocSh);
-    virtual                 ~ScDataPilotDescriptorBase();
+    virtual                 ~ScDataPilotDescriptorBase() override;
 
     virtual css::uno::Any SAL_CALL queryInterface(
                                 const css::uno::Type & rType )
@@ -267,7 +266,7 @@ private:
 
 public:
                             ScDataPilotDescriptor(ScDocShell* pDocSh);
-    virtual                 ~ScDataPilotDescriptor();
+    virtual                 ~ScDataPilotDescriptor() override;
 
     virtual ScDPObject* GetDPObject() const override;
     virtual void SetDPObject(ScDPObject* pDPObj) override;
@@ -302,7 +301,7 @@ private:
 
 public:
                             ScDataPilotTableObj(ScDocShell* pDocSh, SCTAB nT, const OUString& rN);
-    virtual                 ~ScDataPilotTableObj();
+    virtual                 ~ScDataPilotTableObj() override;
 
     virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
                                     throw(css::uno::RuntimeException, std::exception) override;
@@ -367,15 +366,15 @@ public:
 
 struct ScFieldIdentifier
 {
-    OUString     maFieldName;    /// Source field name.
+    OUString            maFieldName;    /// Source field name.
     sal_Int32           mnFieldIdx;     /// Field index (if several fields with same name exist).
     bool                mbDataLayout;   /// True = data layout field collecting all data fields as items.
 
     inline explicit     ScFieldIdentifier() :
                             mnFieldIdx( 0 ), mbDataLayout( false ) {}
 
-    inline explicit     ScFieldIdentifier( const OUString& rFieldName, sal_Int32 nFieldIdx, bool bDataLayout ) :
-                            maFieldName( rFieldName ), mnFieldIdx( nFieldIdx ), mbDataLayout( bDataLayout ) {}
+    inline explicit     ScFieldIdentifier( const OUString& rFieldName, bool bDataLayout ) :
+                            maFieldName( rFieldName ), mnFieldIdx( 0 ), mbDataLayout( bDataLayout ) {}
 };
 
 /** Base class of all implementation objects based on a DataPilot descriptor
@@ -398,8 +397,7 @@ protected:
     /** Returns the number of members for the field described by maFieldId. */
     sal_Int32           GetMemberCount() const;
     /** Returns the collection of members for the field described by maFieldId. */
-    css::uno::Reference< css::container::XNameAccess >
-                        GetMembers() const;
+    css::uno::Reference< css::sheet::XMembersAccess > GetMembers() const;
 
     ScDocShell* GetDocShell() const;
 protected:
@@ -430,7 +428,7 @@ public:
                             ScDataPilotDescriptorBase& rParent,
                             css::sheet::DataPilotFieldOrientation eOrient );
 
-    virtual             ~ScDataPilotFieldsObj();
+    virtual             ~ScDataPilotFieldsObj() override;
 
                             // XNameAccess
     virtual css::uno::Any SAL_CALL getByName( const OUString& aName )
@@ -497,7 +495,7 @@ public:
                             const ScFieldIdentifier& rIdent,
                             const css::uno::Any& rOrient );
 
-    virtual             ~ScDataPilotFieldObj();
+    virtual             ~ScDataPilotFieldObj() override;
 
                             // XNamed
     virtual OUString SAL_CALL getName()
@@ -552,11 +550,10 @@ public:
                             // only called from property-functions:
     css::sheet::DataPilotFieldOrientation getOrientation() const;
     void setOrientation(css::sheet::DataPilotFieldOrientation Orientation);
-    css::sheet::GeneralFunction getFunction() const;
-    void setFunction(css::sheet::GeneralFunction Function);
-    css::uno::Sequence< css::sheet::GeneralFunction > getSubtotals() const;
-    void setSubtotals(const css::uno::Sequence< css::sheet::GeneralFunction >& rFunctions);
-    static OUString getCurrentPage();
+    sal_Int16 getFunction() const;
+    void setFunction(sal_Int16 Function);
+    css::uno::Sequence< sal_Int16 > getSubtotals() const;
+    void setSubtotals(const css::uno::Sequence< sal_Int16 >& rFunctions);
     void setCurrentPage(const OUString& sPage);
     void setUseCurrentPage(bool bUse);
     const css::sheet::DataPilotFieldAutoShowInfo* getAutoShowInfo();
@@ -633,7 +630,7 @@ class ScDataPilotFieldGroupsObj : public ScDataPilotFieldGroupsObjImpl
 {
 public:
     explicit            ScDataPilotFieldGroupsObj( const ScFieldGroups& rGroups );
-    virtual             ~ScDataPilotFieldGroupsObj();
+    virtual             ~ScDataPilotFieldGroupsObj() override;
 
                             // XNameAccess
     virtual css::uno::Any SAL_CALL getByName( const OUString& aName )
@@ -714,7 +711,7 @@ class ScDataPilotFieldGroupObj : public ScDataPilotFieldGroupObjImpl
 {
 public:
     explicit            ScDataPilotFieldGroupObj( ScDataPilotFieldGroupsObj& rParent, const OUString& rGroupName );
-    virtual             ~ScDataPilotFieldGroupObj();
+    virtual             ~ScDataPilotFieldGroupObj() override;
 
                             // XNameAccess
     virtual css::uno::Any SAL_CALL getByName( const OUString& aName )
@@ -791,7 +788,7 @@ class ScDataPilotFieldGroupItemObj : public ScDataPilotFieldGroupItemObjImpl
 {
 public:
     explicit            ScDataPilotFieldGroupItemObj( ScDataPilotFieldGroupObj& rParent, const OUString& rName );
-    virtual             ~ScDataPilotFieldGroupItemObj();
+    virtual             ~ScDataPilotFieldGroupItemObj() override;
 
                             // XNamed
     virtual OUString SAL_CALL getName() throw(css::uno::RuntimeException, std::exception) override;
@@ -824,7 +821,7 @@ class ScDataPilotItemsObj : public ScDataPilotChildObjBase, public ScDataPilotIt
 {
 public:
     explicit            ScDataPilotItemsObj( ScDataPilotDescriptorBase& rParent, const ScFieldIdentifier& rFieldId );
-    virtual             ~ScDataPilotItemsObj();
+    virtual             ~ScDataPilotItemsObj() override;
 
                             // XNameAccess
     virtual css::uno::Any SAL_CALL getByName( const OUString& aName )
@@ -880,7 +877,7 @@ public:
                             const ScFieldIdentifier& rFieldId,
                             sal_Int32 nIndex );
 
-    virtual             ~ScDataPilotItemObj();
+    virtual             ~ScDataPilotItemObj() override;
 
                             // XNamed
     virtual OUString SAL_CALL getName() throw(css::uno::RuntimeException, std::exception) override;

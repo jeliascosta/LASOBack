@@ -102,7 +102,7 @@ public:
 private:
     void processQueue();
 
-    DECL_STATIC_LINK_TYPED(MissingPluginInstaller, launchUi, void*, void);
+    DECL_STATIC_LINK(MissingPluginInstaller, launchUi, void*, void);
 
     osl::Mutex mutex_;
     std::set<OString> reported_;
@@ -235,7 +235,7 @@ void MissingPluginInstaller::processQueue() {
 }
 
 
-IMPL_STATIC_LINK_TYPED(MissingPluginInstaller, launchUi, void *, p, void)
+IMPL_STATIC_LINK(MissingPluginInstaller, launchUi, void *, p, void)
 {
     MissingPluginInstallerThread* thread = static_cast<MissingPluginInstallerThread*>(p);
     rtl::Reference<MissingPluginInstallerThread> ref(thread, SAL_NO_ACQUIRE);
@@ -934,6 +934,8 @@ uno::Reference< ::media::XPlayerWindow > SAL_CALL Player::createPlayerWindow( co
                 {
                     mbUseGtkSink = true;
                     g_object_get(pVideosink, "widget", &mpGtkWidget, nullptr);
+                    gtk_widget_set_vexpand(mpGtkWidget, true);
+                    gtk_widget_set_hexpand(mpGtkWidget, true);
                     GtkWidget *pParent = static_cast<GtkWidget*>(pEnvData->pWidget);
                     gtk_container_add (GTK_CONTAINER(pParent), mpGtkWidget);
 
@@ -993,9 +995,7 @@ sal_Bool SAL_CALL Player::supportsService( const OUString& ServiceName )
 uno::Sequence< OUString > SAL_CALL Player::getSupportedServiceNames()
     throw (uno::RuntimeException, std::exception)
 {
-    uno::Sequence<OUString> aRet { AVMEDIA_GST_PLAYER_SERVICENAME };
-
-    return aRet;
+    return { AVMEDIA_GST_PLAYER_SERVICENAME };
 }
 
 } // namespace gstreamer

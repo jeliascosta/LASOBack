@@ -27,6 +27,7 @@
 class SwRewriter;
 class SwNodes;
 class SwUndo;
+class SwView;
 
 namespace sw {
     class RepeatContext;
@@ -62,6 +63,11 @@ public:
         for Draw-Undo: writer wants to handle actions on Flys on its own.
      */
     virtual bool DoesDrawUndo() const = 0;
+
+    /// Enable repair mode.
+    virtual void DoRepair(bool bRepair) = 0;
+    /// Is repair mode active?
+    virtual bool DoesRepair() const = 0;
 
     /** Set the position at which the document is in the "unmodified" state
         to the current position in the Undo stack.
@@ -135,10 +141,12 @@ public:
     /** Get Id and comment of last Undo action.
         @param o_pStr       if not 0, receives comment of last Undo action.
         @param o_pId        if not 0, receives Id of last Undo action.
+        @param pView        if not nullptr, get the info for this view
         @return     true if there is a Undo action, false if none
     */
     virtual bool GetLastUndoInfo(OUString *const o_pStr,
-                SwUndoId *const o_pId) const = 0;
+                SwUndoId *const o_pId,
+                const SwView* pView = nullptr) const = 0;
 
     /** Get comments of Undo actions.
         @return     comments of all top-level Undo actions.
@@ -154,10 +162,12 @@ public:
     /** Get Id and comment of first Redo action.
         @param o_pStr       if not 0, receives comment of first Redo action.
         @param o_pId        if not 0, receives Id of first Redo action.
+        @param pView        if not nullptr, get the info for this view
         @return     true if there is a Redo action, false if none
     */
     virtual bool GetFirstRedoInfo(OUString *const o_pStr,
-                                  SwUndoId *const o_pId = nullptr) const = 0;
+                                  SwUndoId *const o_pId,
+                                  const SwView* pView = nullptr) const = 0;
 
     /** Get comments of Redo actions.
         @return     comments of all top-level Redo actions.
@@ -196,6 +206,10 @@ public:
     /** Get the number of Undo actions.
     */
     virtual size_t GetUndoActionCount(const bool bCurrentLevel = true) const = 0;
+
+    /** Return undo/redo info for this view.
+     */
+    virtual void SetView(SwView* pView) = 0;
 
 protected:
     virtual ~IDocumentUndoRedo() {};

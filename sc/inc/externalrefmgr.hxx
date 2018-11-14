@@ -65,7 +65,7 @@ class ScExternalRefLink : public ::sfx2::SvBaseLink
 {
 public:
     ScExternalRefLink(ScDocument* pDoc, sal_uInt16 nFileId, const OUString& rFilter);
-    virtual ~ScExternalRefLink();
+    virtual ~ScExternalRefLink() override;
 
     virtual void Closed() override;
     virtual ::sfx2::SvBaseLink::UpdateResult DataChanged(
@@ -153,7 +153,7 @@ public:
          *                       false _only when_ adding a range of cell
          *                       values, for performance reasons.
          */
-        SC_DLLPUBLIC void setCell(SCCOL nCol, SCROW nRow, TokenRef pToken, sal_uLong nFmtIndex = 0, bool bSetCacheRange = true);
+        SC_DLLPUBLIC void setCell(SCCOL nCol, SCROW nRow, TokenRef const & pToken, sal_uLong nFmtIndex = 0, bool bSetCacheRange = true);
         SC_DLLPUBLIC TokenRef getCell(SCCOL nCol, SCROW nRow, sal_uInt32* pnFmtIndex = nullptr) const;
         bool hasRow( SCROW nRow ) const;
         /** Set/clear referenced status flag only if current status is not
@@ -237,7 +237,7 @@ public:
     void setRangeName(sal_uInt16 nFileId, const OUString& rName);
 
     void setCellData(sal_uInt16 nFileId, const OUString& rTabName,
-                     SCCOL nCol, SCROW nRow, TokenRef pToken, sal_uLong nFmtIndex);
+                     SCCOL nCol, SCROW nRow, TokenRef const & pToken, sal_uLong nFmtIndex);
 
     struct SingleRangeData
     {
@@ -448,7 +448,7 @@ public:
 
 public:
     explicit ScExternalRefManager(ScDocument* pDoc);
-    virtual ~ScExternalRefManager();
+    virtual ~ScExternalRefManager() override;
 
     virtual OUString getCacheTableName(sal_uInt16 nFileId, size_t nTabIndex) const override;
 
@@ -782,7 +782,7 @@ private:
      */
     ScDocument& cacheNewDocShell( sal_uInt16 nFileId, SrcShell& rSrcShell );
 
-    void maybeLinkExternalFile(sal_uInt16 nFileId);
+    void maybeLinkExternalFile( sal_uInt16 nFileId, bool bDeferFilterDetection = false );
 
     /**
      * Try to create a "real" file name from the relative path.  The original
@@ -864,7 +864,7 @@ private:
     bool mbDocTimerEnabled:1;
 
     AutoTimer maSrcDocTimer;
-    DECL_LINK_TYPED(TimeOutHdl, Timer*, void);
+    DECL_LINK(TimeOutHdl, Timer*, void);
 };
 
 #endif

@@ -87,6 +87,16 @@ void SalInstance::DestroyMenuItem( SalMenuItem* pItem )
     OSL_ENSURE( pItem == nullptr, "DestroyMenu called with non-native menus" );
 }
 
+bool SalInstance::CallEventCallback( void* pEvent, int nBytes )
+{
+    return m_pEventInst.is() && m_pEventInst->dispatchEvent( pEvent, nBytes );
+}
+
+SalI18NImeStatus* SalInstance::CreateI18NImeStatus()
+{
+    return new SalI18NImeStatus;
+}
+
 SalTimer::~SalTimer()
 {
 }

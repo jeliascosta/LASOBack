@@ -36,8 +36,6 @@ class SwDoc;
 class SwAttrSet;
 class SdrObject;
 class SvxBrushItem;
-class XFillStyleItem;
-class XFillGradientItem;
 class SdrMarkList;
 class SwNodeIndex;
 class OutputDevice;
@@ -103,7 +101,7 @@ void PaintCharacterBorder(
 SwFlyFrame *GetFlyFromMarked( const SdrMarkList *pLst, SwViewShell *pSh );
 
 SwFrame *SaveContent( SwLayoutFrame *pLay, SwFrame *pStart = nullptr );
-void RestoreContent( SwFrame *pSav, SwLayoutFrame *pParent, SwFrame *pSibling, bool bGrow );
+void RestoreContent( SwFrame *pSav, SwLayoutFrame *pParent, SwFrame *pSibling );
 
 // Get ContentNodes, create ContentFrames, and add them to LayFrame.
 void InsertCnt_( SwLayoutFrame *pLay, SwDoc *pDoc, sal_uLong nIndex,
@@ -164,9 +162,7 @@ SwFrame* GetFrameOfModify( const SwRootFrame* pLayout,
 bool IsExtraData( const SwDoc *pDoc );
 
 // #i11760# - method declaration <CalcContent(..)>
-void CalcContent( SwLayoutFrame *pLay,
-                bool bNoColl = false,
-                bool bNoCalcFollow = false );
+void CalcContent( SwLayoutFrame *pLay, bool bNoColl = false );
 
 // Notify classes memorize the current sizes in their constructor and do
 // the necessary notifications in their destructor if needed
@@ -181,8 +177,6 @@ protected:
     bool     mbHadFollow;
     bool     mbInvaKeep;
     bool     mbValidSize;
-    // #i49383#
-    bool mbFrameDeleted;
 
 public:
     SwFrameNotify( SwFrame *pFrame );
@@ -196,8 +190,6 @@ class SwLayNotify : public SwFrameNotify
 {
     bool bLowersComplete;
 
-    SwLayoutFrame *GetLay() { return static_cast<SwLayoutFrame*>(mpFrame); }
-
 public:
     SwLayNotify( SwLayoutFrame *pLayFrame );
     ~SwLayNotify();
@@ -210,7 +202,6 @@ class SwFlyNotify : public SwLayNotify
 {
     SwPageFrame *pOldPage;
     const SwRect aFrameAndSpace;
-    SwFlyFrame *GetFly() { return static_cast<SwFlyFrame*>(mpFrame); }
 
 public:
     SwFlyNotify( SwFlyFrame *pFlyFrame );
@@ -227,8 +218,6 @@ private:
     // #i25029#
     bool        mbInvalidatePrevPrtArea;
     bool        mbBordersJoinedWithPrev;
-
-    SwContentFrame *GetCnt();
 
 public:
     SwContentNotify( SwContentFrame *pContentFrame );
@@ -313,14 +302,14 @@ class SwBorderAttrs : public SwCacheObj
     // #i25029# - If <_pPrevFrame> is set, its value is taken for testing, if
     // borders/shadow have to be joined with previous frame.
     void GetTopLine_   ( const SwFrame& _rFrame,
-                         const SwFrame* _pPrevFrame = nullptr );
+                         const SwFrame* _pPrevFrame );
     void GetBottomLine_( const SwFrame& _rFrame );
 
     // calculate cached values <m_bJoinedWithPrev> and <m_bJoinedWithNext>
     // #i25029# - If <_pPrevFrame> is set, its value is taken for testing, if
     // borders/shadow have to be joined with previous frame.
     void CalcJoinedWithPrev( const SwFrame& _rFrame,
-                              const SwFrame* _pPrevFrame = nullptr );
+                              const SwFrame* _pPrevFrame );
     void CalcJoinedWithNext( const SwFrame& _rFrame );
 
     // internal helper method for CalcJoinedWithPrev and CalcJoinedWithNext
@@ -336,7 +325,7 @@ public:
     DECL_FIXEDMEMPOOL_NEWDEL(SwBorderAttrs)
 
     SwBorderAttrs( const SwModify *pOwner, const SwFrame *pConstructor );
-    virtual ~SwBorderAttrs();
+    virtual ~SwBorderAttrs() override;
 
     inline const SwAttrSet      &GetAttrSet() const { return m_rAttrSet;  }
     inline const SvxULSpaceItem &GetULSpace() const { return m_rUL;       }

@@ -54,7 +54,7 @@ namespace dbaui
 
     public:
         explicit OTableFieldDescWin( vcl::Window* pParent);
-        virtual ~OTableFieldDescWin();
+        virtual ~OTableFieldDescWin() override;
         virtual void dispose() override;
 
         void Init();
@@ -87,7 +87,6 @@ namespace dbaui
         virtual void paste() override;
 
         inline OFieldDescGenWin* getGenPage() const { return m_pGenPage; }
-        inline OTableDesignHelpBar* getHelpBar() const { return m_pHelpBar; }
 
     };
 }

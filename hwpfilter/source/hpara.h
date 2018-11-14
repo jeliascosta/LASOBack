@@ -104,7 +104,7 @@ class DLLEXPORT HWPPara
         unsigned long     ctrlflag;
         unsigned char     pstyno;
         std::shared_ptr<CharShape> cshape;                     /* When characters are all the same shape */
-        ParaShape     pshape;                     /* if reuse flag is 0, */
+        std::shared_ptr<ParaShape> pshape;                     /* if reuse flag is 0, */
 
         LineInfo      *linfo;
         std::vector<std::shared_ptr<CharShape>>   cshapep;
@@ -116,7 +116,7 @@ class DLLEXPORT HWPPara
         HWPPara(void);
         ~HWPPara(void);
 
-        bool  Read(HWPFile &hwpf, unsigned char flag = 0);
+        bool  Read(HWPFile &hwpf, unsigned char flag);
 
         void  SetNext(HWPPara *n) { _next = n; };
 
@@ -128,7 +128,7 @@ class DLLEXPORT HWPPara
 /**
  * Returns the style of paragraph.
  */
-        ParaShape& GetParaShape(void) { return pshape;}
+        ParaShape& GetParaShape(void) { return *pshape; }
 
 /**
  * Returns next paragraph.

@@ -19,6 +19,7 @@
 
 struct ScDataBarFormatData;
 class ScDocument;
+class SvxColorListBox;
 
 class ScDataBarSettingsDlg : public ModalDialog
 {
@@ -26,9 +27,9 @@ private:
     VclPtr<OKButton> mpBtnOk;
     VclPtr<CancelButton> mpBtnCancel;
 
-    VclPtr<ColorListBox> mpLbPos;
-    VclPtr<ColorListBox> mpLbNeg;
-    VclPtr<ColorListBox> mpLbAxisCol;
+    VclPtr<SvxColorListBox> mpLbPos;
+    VclPtr<SvxColorListBox> mpLbNeg;
+    VclPtr<SvxColorListBox> mpLbAxisCol;
 
     VclPtr<ListBox> mpLbFillType;
     VclPtr<ListBox> mpLbTypeMin;
@@ -43,21 +44,20 @@ private:
     VclPtr<CheckBox> mpCbOnlyBar;
 
     OUString maStrWarnSameValue;
-    OUString maCustomColor;
     SvNumberFormatter* mpNumberFormatter;
 
     ScDocument* mpDoc;
     ScAddress   maPos;
 
-    DECL_LINK_TYPED(OkBtnHdl, Button*, void);
-    DECL_LINK_TYPED(TypeSelectHdl, ListBox&, void);
-    DECL_LINK_TYPED(PosSelectHdl, ListBox&, void);
+    DECL_LINK(OkBtnHdl, Button*, void);
+    DECL_LINK(TypeSelectHdl, ListBox&, void);
+    DECL_LINK(PosSelectHdl, ListBox&, void);
 
     void Init();
 
 public:
     ScDataBarSettingsDlg(vcl::Window* pParent, const ScDataBarFormatData& rData, ScDocument* pDoc, const ScAddress& rPos);
-    virtual ~ScDataBarSettingsDlg();
+    virtual ~ScDataBarSettingsDlg() override;
     virtual void dispose() override;
 
     ScDataBarFormatData* GetData();

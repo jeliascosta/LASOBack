@@ -84,7 +84,7 @@ void BreakDlg::dispose()
 }
 
 // Control-Handler for cancel button
-IMPL_LINK_NOARG_TYPED(BreakDlg, CancelButtonHdl, Button*, void)
+IMPL_LINK_NOARG(BreakDlg, CancelButtonHdl, Button*, void)
 {
     bCancel = true;
     m_pBtnCancel->Disable();
@@ -96,7 +96,7 @@ IMPL_LINK_NOARG_TYPED(BreakDlg, CancelButtonHdl, Button*, void)
  * Every following call should contain the finished actions since the
  * last call of UpDate.
  */
-IMPL_LINK_TYPED( BreakDlg, UpDate, void*, nInit, bool )
+IMPL_LINK( BreakDlg, UpDate, void*, nInit, bool )
 {
     if(pProgrInfo == nullptr)
       return true;
@@ -145,8 +145,13 @@ IMPL_LINK_TYPED( BreakDlg, UpDate, void*, nInit, bool )
         m_pFiInsInfo->SetText(info);
     }
 
-    Application::Reschedule();
-    return bCancel;
+    // make sure dialog gets painted, it is intended to
+    // show the progress to the user. Also necessary to
+    // provide a clickable cancel button
+    ensureRepaint();
+
+    // return okay-value (-> !cancel)
+    return !bCancel;
 }
 
 /**
@@ -165,7 +170,7 @@ short BreakDlg::Execute()
 /**
  * link-method which starts the working function
  */
-IMPL_LINK_NOARG_TYPED(BreakDlg, InitialUpdate, Idle *, void)
+IMPL_LINK_NOARG(BreakDlg, InitialUpdate, Idle *, void)
 {
     pDrView->DoImportMarkedMtf(pProgrInfo);
     EndDialog(RET_OK);

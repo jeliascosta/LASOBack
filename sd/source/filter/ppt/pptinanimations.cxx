@@ -178,7 +178,8 @@ int AnimationImporter::import( const Reference< XDrawPage >& xPage, const DffRec
                 nNodes = importAnimationContainer( pAtom.get(), xParent );
             }
 
-            processAfterEffectNodes();
+            std::for_each( maAfterEffectNodes.begin(), maAfterEffectNodes.end(),
+                           sd::stl_process_after_effect_node_func );
         }
     }
 
@@ -187,11 +188,6 @@ int AnimationImporter::import( const Reference< XDrawPage >& xPage, const DffRec
 #endif
 
     return nNodes;
-}
-
-void AnimationImporter::processAfterEffectNodes()
-{
-    std::for_each( maAfterEffectNodes.begin(), maAfterEffectNodes.end(), sd::stl_process_after_effect_node_func );
 }
 
 Reference< XAnimationNode > AnimationImporter::createNode( const Atom* pAtom, const AnimationNode& rNode )
@@ -319,7 +315,7 @@ int AnimationImporter::importAnimationContainer( const Atom* pAtom, const Refere
             xNode = mxRootNode;
         }
 
-        // import if we have a node and its not random
+        // import if we have a node and it's not random
         if( xNode.is() )
         {
             fillNode( xNode, aNode, aSet );
@@ -622,7 +618,7 @@ bool AnimationImporter::convertAnimationNode( const Reference< XAnimationNode >&
         xNode->setUserData( aUserData );
     }
 
-    // if its an after effect node, add it to the list for
+    // if it's an after effect node, add it to the list for
     // later processing
     // after effect nodes are not inserted at their import
     // position, so return false in this case

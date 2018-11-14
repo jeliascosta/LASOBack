@@ -30,6 +30,7 @@
 #include <com/sun/star/lang/XEventListener.hpp>
 #include <com/sun/star/scanner/XScannerManager2.hpp>
 #include <unotools/caserotate.hxx>
+#include <unotools/options.hxx>
 
 class Outliner;
 class SdPage;
@@ -65,7 +66,8 @@ class ViewOverlayManager;
 */
 class DrawViewShell
     : public ViewShell,
-      public SfxListener
+      public SfxListener,
+      public utl::ConfigurationListener
 {
 public:
     SFX_DECL_INTERFACE(SD_IF_SDDRAWVIEWSHELL)
@@ -88,10 +90,10 @@ public:
         SfxViewFrame* pFrame,
         ViewShellBase& rViewShellBase,
         vcl::Window* pParentWindow,
-        PageKind ePageKind = PK_STANDARD,
-        FrameView* pFrameView = nullptr);
+        PageKind ePageKind,
+        FrameView* pFrameView);
 
-    virtual ~DrawViewShell();
+    virtual ~DrawViewShell() override;
 
     virtual void Init (bool bIsMainViewShell) override;
 
@@ -124,12 +126,9 @@ public:
     virtual void    SetZoom( long nZoom ) override;
     virtual void    SetZoomRect( const Rectangle& rZoomRect ) override;
 
-    void            InsertURLField(const OUString& rURL, const OUString& rText, const OUString& rTarget,
-                                   const Point* pPos);
+    void            InsertURLField(const OUString& rURL, const OUString& rText, const OUString& rTarget);
     void            InsertURLButton(const OUString& rURL, const OUString& rText, const OUString& rTarget,
                                     const Point* pPos);
-
-    virtual void    SetUIUnit(FieldUnit eUnit) override;
 
     void            SelectionHasChanged();
     void            ModelHasChanged();
@@ -137,8 +136,8 @@ public:
     virtual void    Deactivate(bool IsMDIActivate) override;
     virtual void    UIActivating( SfxInPlaceClient* ) override;
     virtual void    UIDeactivated( SfxInPlaceClient* ) override;
-    OUString        GetSelectionText( bool bCompleteWords = false );
-    bool            HasSelection( bool bText = true ) const;
+    OUString        GetSelectionText( bool bCompleteWords );
+    bool            HasSelection( bool bText ) const;
 
     //If we are editing an PRESOBJ_OUTLINE return the Outliner and fill rSel
     //with the current selection
@@ -259,7 +258,7 @@ public:
     virtual ErrCode DoVerb(long nVerb) override;
     virtual bool    ActivateObject(SdrOle2Obj* pObj, long nVerb) override;
 
-    void            SetZoomOnPage( bool bZoom = true ) { mbZoomOnPage = bZoom; }
+    void            SetZoomOnPage( bool bZoom ) { mbZoomOnPage = bZoom; }
     bool            IsZoomOnPage() { return mbZoomOnPage; }
     static void     CheckLineTo (SfxRequest& rReq);
     void            SetChildWindowState( SfxItemSet& rSet );
@@ -276,7 +275,7 @@ public:
         Do not call this method directly.  Call the method at ViewShellBase
         instead.
     */
-    virtual void    ShowUIControls (bool bVisible = true) override;
+    virtual void    ShowUIControls (bool bVisible) override;
 
     void            ScannerEvent( const css::lang::EventObject& rEventObject );
 
@@ -287,8 +286,8 @@ public:
     virtual sal_Int8    ExecuteDrop( const ExecuteDropEvent& rEvt, DropTargetHelper& rTargetHelper,
                                     ::sd::Window* pTargetWindow, sal_uInt16 nPage, sal_uInt16 nLayer ) override;
 
-    virtual void    WriteUserDataSequence ( css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse = false ) override;
-    virtual void    ReadUserDataSequence ( const css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse = false ) override;
+    virtual void    WriteUserDataSequence ( css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse ) override;
+    virtual void    ReadUserDataSequence ( const css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse ) override;
 
     virtual void    VisAreaChanged(const Rectangle& rRect) override;
 
@@ -364,8 +363,6 @@ public:
 
     OUString GetSidebarContextName() const;
 
-    const Color& GetAppBackgroundColor() const { return mnAppBackgroundColor; }
-    void SetAppBackgroundColor( Color nNewColor )  { mnAppBackgroundColor = nNewColor; }
     bool IsInSwitchPage() { return mbIsInSwitchPage; }
 
     //move this method to ViewShell.
@@ -385,10 +382,10 @@ protected:
     bool                mbReadOnly;
     static bool         mbPipette;
 
-                    DECL_LINK_TYPED( ClipboardChanged, TransferableDataHelper*, void );
-                    DECL_LINK_TYPED( TabSplitHdl, TabBar *, void );
-                    DECL_LINK_TYPED( NameObjectHdl, AbstractSvxObjectNameDialog&, bool );
-                    DECL_LINK_TYPED( RenameSlideHdl, AbstractSvxNameDialog&, bool );
+                    DECL_LINK( ClipboardChanged, TransferableDataHelper*, void );
+                    DECL_LINK( TabSplitHdl, TabBar *, void );
+                    DECL_LINK( NameObjectHdl, AbstractSvxObjectNameDialog&, bool );
+                    DECL_LINK( RenameSlideHdl, AbstractSvxNameDialog&, bool );
 
     void            DeleteActualPage();
     void            DeleteActualLayer();
@@ -405,7 +402,6 @@ protected:
     void            GetMenuStateSel(SfxItemSet& rSet);
 
 private:
-    void ShowSlideShow(SfxRequest& rReq);
     /** This flag controls whether the layer mode is active, i.e. the layer
         dialog is visible.
     */
@@ -446,7 +442,7 @@ private:
 
     css::uno::Reference< css::scanner::XScannerManager2 > mxScannerManager;
     css::uno::Reference< css::lang::XEventListener >      mxScannerListener;
-    TransferableClipboardListener*                        mpClipEvtLstnr;
+    rtl::Reference<TransferableClipboardListener>         mxClipEvtLstnr;
     bool                                                  mbPastePossible;
 
     virtual void Notify (SfxBroadcaster& rBC, const SfxHint& rHint) override;
@@ -491,6 +487,10 @@ private:
     ::std::unique_ptr< ViewOverlayManager > mpViewOverlayManager;
 
     std::vector<std::unique_ptr<SdrExternalToolEdit>> m_ExternalEdits;
+
+    virtual void ConfigurationChanged( utl::ConfigurationBroadcaster* pCb, sal_uInt32 ) override;
+
+    void ConfigureAppBackgroundColor( svtools::ColorConfig* pColorConfig = nullptr );
 
     // The colour of the area behind the slide (used to be called "Wiese")
     Color mnAppBackgroundColor;

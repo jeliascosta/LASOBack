@@ -20,11 +20,6 @@
 #ifndef INCLUDED_VCL_INC_FONTMANAGER_HXX
 #define INCLUDED_VCL_INC_FONTMANAGER_HXX
 
-#include <list>
-#include <map>
-#include <set>
-#include <unordered_map>
-
 #include <vcl/dllapi.h>
 #include <vcl/helper.hxx>
 #include <vcl/timer.hxx>
@@ -33,7 +28,11 @@
 #include "salglyphid.hxx"
 #include "unx/fc_fontoptions.hxx"
 
+#include <list>
+#include <map>
+#include <set>
 #include <vector>
+#include <unordered_map>
 
 #include "config_dbus.h"
 
@@ -181,9 +180,9 @@ class VCL_PLUGIN_PUBLIC PrintFontManager
 
         // font attributes
         int                                         m_nFamilyName;  // atom
-        std::list< int >                            m_aAliases;
+        std::vector< int >                          m_aAliases;
         int                                         m_nPSName;      // atom
-        OUString                               m_aStyleName;
+        OUString                                    m_aStyleName;
         FontItalic                                  m_eItalic;
         FontWidth                                   m_eWidth;
         FontWeight                                  m_eWeight;
@@ -228,7 +227,7 @@ class VCL_PLUGIN_PUBLIC PrintFontManager
            because they should be fairly unique */
 
         Type1FontFile() : PrintFont( fonttype::Type1 ), m_nDirectory( 0 ) {}
-        virtual ~Type1FontFile();
+        virtual ~Type1FontFile() override;
         virtual bool queryMetricPage( int nPage, utl::MultiAtomProvider* pProvider ) override;
     };
 
@@ -240,7 +239,7 @@ class VCL_PLUGIN_PUBLIC PrintFontManager
         unsigned int  m_nTypeFlags;       // copyright bits and PS-OpenType flag
 
         TrueTypeFontFile();
-        virtual ~TrueTypeFontFile();
+        virtual ~TrueTypeFontFile() override;
         virtual bool queryMetricPage( int nPage, utl::MultiAtomProvider* pProvider ) override;
     };
 
@@ -248,7 +247,7 @@ class VCL_PLUGIN_PUBLIC PrintFontManager
     std::unordered_map< fontID, PrintFont* >    m_aFonts;
     std::unordered_map< int, FontFamily >       m_aFamilyTypes;
     std::list< OString >                        m_aFontDirectories;
-    std::list< int >                            m_aPrivateFontDirectories;
+    std::vector< int >                          m_aPrivateFontDirectories;
     utl::MultiAtomProvider*                     m_pAtoms;
     // for speeding up findFontFileID
     std::unordered_map< OString, std::set< fontID >, OStringHash >
@@ -323,7 +322,7 @@ class VCL_PLUGIN_PUBLIC PrintFontManager
     Timer m_aFontInstallerTimer;
 
 #if ENABLE_DBUS
-    DECL_LINK_TYPED( autoInstallFontLangSupport, Timer*, void );
+    DECL_LINK( autoInstallFontLangSupport, Timer*, void );
 #endif
     PrintFontManager();
     ~PrintFontManager();
@@ -428,7 +427,7 @@ public:
     // helper for type 1 fonts
     std::list< OString > getAdobeNameFromUnicode( sal_Unicode aChar ) const;
 
-    std::list< sal_Unicode >  getUnicodeFromAdobeName( const OString& rName ) const;
+    std::vector< sal_Unicode >  getUnicodeFromAdobeName( const OString& rName ) const;
     std::pair< std::unordered_multimap< sal_uInt8, sal_Unicode >::const_iterator,
                  std::unordered_multimap< sal_uInt8, sal_Unicode >::const_iterator >
     getUnicodeFromAdobeCode( sal_uInt8 aChar ) const
@@ -463,7 +462,7 @@ public:
 
     // font administration functions
 
-    /*  system dependendent font matching
+    /*  system dependent font matching
 
     <p>
     <code>matchFont</code> matches a pattern of font characteristics
@@ -493,7 +492,7 @@ public:
     in different fonts in e.g. english and japanese
      */
     void matchFont( FastPrintFontInfo& rInfo, const css::lang::Locale& rLocale );
-    static FontConfigFontOptions* getFontOptions( const FastPrintFontInfo&, int nSize, void (*subcallback)(void*));
+    static FontConfigFontOptions* getFontOptions( const FastPrintFontInfo&, int nSize);
 
     void Substitute( FontSelectPattern &rPattern, OUString& rMissingCodes );
 

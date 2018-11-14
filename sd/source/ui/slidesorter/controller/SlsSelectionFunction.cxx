@@ -195,7 +195,7 @@ public:
     NormalModeHandler (
         SlideSorter& rSlideSorter,
         SelectionFunction& rSelectionFunction);
-    virtual ~NormalModeHandler();
+    virtual ~NormalModeHandler() override;
 
     virtual SelectionFunction::Mode GetMode() const override;
     virtual void Abort() override;
@@ -234,7 +234,7 @@ public:
         const Point& rMouseModelPosition,
         const sal_uInt32 nEventCode);
 #endif
-    virtual ~MultiSelectionModeHandler();
+    virtual ~MultiSelectionModeHandler() override;
 
 #ifndef MACOSX
     void Initialize(const sal_uInt32 nEventCode);
@@ -291,7 +291,7 @@ public:
         const Point& rMousePosition,
         vcl::Window* pWindow);
 #endif
-    virtual ~DragAndDropModeHandler();
+    virtual ~DragAndDropModeHandler() override;
 
 #ifndef MACOSX
     void Initialize(const Point& rMousePosition, vcl::Window* pWindow);
@@ -583,16 +583,6 @@ void SelectionFunction::MoveFocus (
         // Without shift just select the focused page.
         mpModeHandler->SelectOnePage(pFocusedDescriptor);
     }
-}
-
-void SelectionFunction::Activate()
-{
-    FuPoor::Activate();
-}
-
-void SelectionFunction::Deactivate()
-{
-    FuPoor::Deactivate();
 }
 
 void SelectionFunction::DoCut()
@@ -1527,7 +1517,7 @@ DragAndDropModeHandler::~DragAndDropModeHandler()
     if (mpDragAndDropContext)
     {
         // Disconnect the substitution handler from this selection function.
-        mpDragAndDropContext->SetTargetSlideSorter();
+        mpDragAndDropContext->SetTargetSlideSorter(Point(0,0));
         mpDragAndDropContext.reset();
     }
     mrSlideSorter.GetController().GetInsertionIndicatorHandler()->End(Animator::AM_Animated);
@@ -1573,7 +1563,7 @@ bool DragAndDropModeHandler::ProcessDragEvent (SelectionFunction::EventDescripto
     {
         mpDragAndDropContext->UpdatePosition(
             rDescriptor.maMousePosition,
-            rDescriptor.meDragMode);
+            rDescriptor.meDragMode, true);
     }
 
     return true;

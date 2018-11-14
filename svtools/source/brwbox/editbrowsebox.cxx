@@ -66,9 +66,7 @@ namespace svt
     {
     }
 
-
     //= EditBrowserHeader
-
 
     void EditBrowserHeader::DoubleClick()
     {
@@ -84,15 +82,12 @@ namespace svt
         }
     }
 
-
     //= EditBrowseBox
-
 
     void EditBrowseBox::BrowserMouseEventPtr::Clear()
     {
         DELETEZ(pEvent);
     }
-
 
     void EditBrowseBox::BrowserMouseEventPtr::Set(const BrowserMouseEvent* pEvt, bool bIsDown)
     {
@@ -114,7 +109,6 @@ namespace svt
         }
     }
 
-
     void EditBrowseBox::impl_construct()
     {
         m_aImpl.reset(new EditBrowseBoxImpl());
@@ -128,28 +122,6 @@ namespace svt
         pCheckBoxPaint->SetPaintTransparent( true );
         pCheckBoxPaint->SetBackground();
     }
-
-
-    EditBrowseBox::EditBrowseBox(vcl::Window* pParent, const ResId& rId, EditBrowseBoxFlags nBrowserFlags, BrowserMode _nMode )
-                  :BrowseBox( pParent, rId, _nMode )
-                  ,nStartEvent(nullptr)
-                  ,nEndEvent(nullptr)
-                  ,nCellModifiedEvent(nullptr)
-                  ,m_pFocusWhileRequest(nullptr)
-                  ,nPaintRow(-1)
-                  ,nEditRow(-1)
-                  ,nOldEditRow(-1)
-                  ,nEditCol(0)
-                  ,nOldEditCol(0)
-                  ,bHasFocus(false)
-                  ,bPaintStatus(true)
-                  ,bActiveBeforeTracking( false )
-                  ,m_nBrowserFlags(nBrowserFlags)
-                  ,pHeader(nullptr)
-    {
-        impl_construct();
-    }
-
 
     EditBrowseBox::EditBrowseBox( vcl::Window* pParent, EditBrowseBoxFlags nBrowserFlags, WinBits nBits, BrowserMode _nMode )
                   :BrowseBox( pParent, nBits, _nMode )
@@ -171,12 +143,10 @@ namespace svt
         impl_construct();
     }
 
-
     void EditBrowseBox::Init()
     {
         // late construction
     }
-
 
     EditBrowseBox::~EditBrowseBox()
     {
@@ -249,7 +219,7 @@ namespace svt
     }
 
 
-    IMPL_LINK_NOARG_TYPED(EditBrowseBox, StartEditHdl, void*, void)
+    IMPL_LINK_NOARG(EditBrowseBox, StartEditHdl, void*, void)
     {
         nStartEvent = nullptr;
         if (IsEditing())
@@ -393,12 +363,6 @@ namespace svt
         }
 
         BrowseBox::ImplStartTracking();
-    }
-
-
-    void EditBrowseBox::ImplTracking()
-    {
-        BrowseBox::ImplTracking();
     }
 
 
@@ -1046,7 +1010,7 @@ namespace svt
             if (bHasFocus)
                 GrabFocus(); // ensure that we have (and keep) the focus
 
-            HideAndDisable(aOldController);
+            aOldController->suspend();
 
             // update if requested
             if (bUpdate)
@@ -1075,7 +1039,7 @@ namespace svt
     }
 
 
-    IMPL_LINK_NOARG_TYPED(EditBrowseBox, EndEditHdl, void*, void)
+    IMPL_LINK_NOARG(EditBrowseBox, EndEditHdl, void*, void)
     {
         nEndEvent = nullptr;
 
@@ -1085,7 +1049,7 @@ namespace svt
     }
 
 
-    IMPL_LINK_NOARG_TYPED(EditBrowseBox, ModifyHdl, LinkParamNone*, void)
+    IMPL_LINK_NOARG(EditBrowseBox, ModifyHdl, LinkParamNone*, void)
     {
         if (nCellModifiedEvent)
             Application::RemoveUserEvent(nCellModifiedEvent);
@@ -1093,7 +1057,7 @@ namespace svt
     }
 
 
-    IMPL_LINK_NOARG_TYPED(EditBrowseBox, CellModifiedHdl, void*, void)
+    IMPL_LINK_NOARG(EditBrowseBox, CellModifiedHdl, void*, void)
     {
         nCellModifiedEvent = nullptr;
         CellModified();
@@ -1139,7 +1103,6 @@ namespace svt
         return nId;
     }
 
-
     void EditBrowseBox::Resize()
     {
         BrowseBox::Resize();
@@ -1158,14 +1121,21 @@ namespace svt
 
         if (!nX)
             nX = USHRT_MAX;
-        ReserveControlArea((sal_uInt16)nX);
-    }
 
+        bool bChanged = ReserveControlArea(nX);
+
+        //tdf#97731 if the reserved area changed size, give the controls a
+        //chance to adapt to the new size
+        if (bChanged)
+        {
+            nX = (sal_uInt16)aPoint.X();
+            ArrangeControls(nX, (sal_uInt16)aPoint.Y());
+        }
+    }
 
     void EditBrowseBox::ArrangeControls(sal_uInt16&, sal_uInt16)
     {
     }
-
 
     CellController* EditBrowseBox::GetController(long, sal_uInt16)
     {
@@ -1283,11 +1253,6 @@ namespace svt
 
         if (RowPicturesChanges)
             InvalidateStatusCell(GetCurRow());
-    }
-
-    inline void EditBrowseBox::HideAndDisable(CellControllerRef& rController)
-    {
-        rController->suspend();
     }
 
     inline void EditBrowseBox::EnableAndShow() const

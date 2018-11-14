@@ -40,14 +40,12 @@ enum FactoryId
 {
     SdDrawingDocumentFactoryId,
     SdPresentationDocumentFactoryId,
-
-    ModuleControllerFactoryId,
 };
 typedef std::unordered_map<OUString, FactoryId, OUStringHash> FactoryMap;
 
 namespace {
 static std::shared_ptr<FactoryMap> spFactoryMap;
-std::shared_ptr<FactoryMap> GetFactoryMap()
+std::shared_ptr<FactoryMap> const & GetFactoryMap()
 {
     if (spFactoryMap.get() == nullptr)
     {

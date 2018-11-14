@@ -41,30 +41,11 @@
 
 bool    IsConvDic( const OUString &rFileURL, sal_Int16 &nLang, sal_Int16 &nConvType );
 
-struct StrLT
-{
-    bool operator()( const OUString &rTxt1, const OUString &rTxt2 ) const
-    {
-        return rTxt1 < rTxt2;
-    }
-};
+typedef std::unordered_multimap<OUString, OUString, const OUStringHash> ConvMap;
 
-struct StrEQ
-{
-    bool operator()( const OUString &rTxt1, const OUString &rTxt2 ) const
-    {
-        return rTxt1 == rTxt2;
-    }
-};
+typedef std::set<OUString> ConvMapKeySet;
 
-typedef std::unordered_multimap< OUString, OUString,
-                       const OUStringHash, StrEQ > ConvMap;
-
-typedef std::set< OUString, StrLT > ConvMapKeySet;
-
-typedef std::unordered_multimap< OUString, sal_Int16,
-                       OUStringHash, StrEQ > PropTypeMap;
-
+typedef std::unordered_multimap<OUString, sal_Int16, OUStringHash> PropTypeMap;
 
 class ConvDic :
     public ::cppu::WeakImplHelper
@@ -112,7 +93,7 @@ public:
              sal_Int16 nConversionType,
              bool bBiDirectional,
              const OUString &rMainURL);
-    virtual ~ConvDic();
+    virtual ~ConvDic() override;
 
     // XConversionDictionary
     virtual OUString SAL_CALL getName(  ) throw (css::uno::RuntimeException, std::exception) override;
@@ -141,22 +122,10 @@ public:
     virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override;
 
-
-    static inline OUString
-        getImplementationName_Static() throw();
-    static css::uno::Sequence< OUString >
-        getSupportedServiceNames_Static() throw();
-
     bool    HasEntry( const OUString &rLeftText, const OUString &rRightText );
     void    AddEntry( const OUString &rLeftText, const OUString &rRightText );
     void    RemoveEntry( const OUString &rLeftText, const OUString &rRightText );
 };
-
-inline OUString ConvDic::getImplementationName_Static() throw()
-{
-    return OUString( "com.sun.star.lingu2.ConvDic" );
-}
-
 
 #endif
 

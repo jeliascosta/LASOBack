@@ -49,7 +49,7 @@ namespace offapp
 
     public:
         ConnectionPoolOptionsPage(vcl::Window* _pParent, const SfxItemSet& _rAttrSet);
-        virtual ~ConnectionPoolOptionsPage();
+        virtual ~ConnectionPoolOptionsPage() override;
         virtual void dispose() override;
         static VclPtr<SfxTabPage>  Create(vcl::Window* _pParent, const SfxItemSet* _rAttrSet);
 
@@ -61,8 +61,8 @@ namespace offapp
         virtual void        ActivatePage( const SfxItemSet& _rSet) override;
 
     protected:
-        DECL_LINK_TYPED( OnEnabledDisabled, Button*, void );
-        DECL_LINK_TYPED( OnDriverRowChanged, const DriverPooling*, void );
+        DECL_LINK( OnEnabledDisabled, Button*, void );
+        DECL_LINK( OnDriverRowChanged, const DriverPooling*, void );
 
         void implInitControls(const SfxItemSet& _rSet, bool _bFromReset);
 

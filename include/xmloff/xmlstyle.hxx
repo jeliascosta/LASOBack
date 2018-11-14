@@ -67,9 +67,6 @@ class XMLOFF_DLLPUBLIC SvXMLStyleContext : public SvXMLImportContext
     OUString     maFollow;    // Will be moved to XMLPropStyle soon!!!!
     bool         mbHidden;
 
-    OUString     maHelpFile;  // Will be removed very soon!!!!
-
-    sal_uInt32   mnHelpId;    // Will be removed very soon!!!!
     sal_uInt16   mnFamily;
 
     bool         mbValid : 1; // Set this to false in CreateAndInsert
@@ -97,7 +94,7 @@ public:
               sal_uInt16 nFamily=0,
               bool bDefaultStyle = false );
 
-    virtual ~SvXMLStyleContext();
+    virtual ~SvXMLStyleContext() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
         const OUString& rLocalName,
@@ -206,7 +203,7 @@ public:
         const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
         bool bAutomatic = false );
 
-    virtual ~SvXMLStylesContext();
+    virtual ~SvXMLStylesContext() override;
 
     // Create child element.
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,

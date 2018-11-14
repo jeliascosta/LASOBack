@@ -115,7 +115,7 @@ class Desktop : private cppu::BaseMutex,
 
         //  constructor / destructor
                  Desktop( const css::uno::Reference< css::uno::XComponentContext >& xContext );
-        virtual ~Desktop(                                                                    );
+        virtual ~Desktop(                                                                    ) override;
 
         void constructorInit();
 
@@ -177,7 +177,7 @@ class Desktop : private cppu::BaseMutex,
 
             @descr      Additional to adding normal listener these method was implemented special.
                         Every listener will be asked for its uno implementation name.
-                        Some of them are well known... and the corresponding listener wont be added
+                        Some of them are well known... and the corresponding listener won't be added
                         to the container of "normal listener". Those listener will be set as special
                         member.
                         see e.g. member m_xSfxTerminator
@@ -386,21 +386,10 @@ class Desktop : private cppu::BaseMutex,
          */
         bool impl_closeFrames(bool bAllowUI);
 
-    //  debug methods
-    //  (should be private every time!)
-
     private:
-
-        static bool implcp_addEventListener         ( const css::uno::Reference< css::lang::XEventListener >&           xListener        );
-        static bool implcp_removeEventListener      ( const css::uno::Reference< css::lang::XEventListener >&           xListener        );
 
         bool m_bIsTerminated;  /// check flag to protect us against dispose before terminate!
                                     /// see dispose() for further information!
-
-    //  variables
-    //  (should be private every time!)
-
-    private:
 
         css::uno::Reference< css::uno::XComponentContext >              m_xContext;               /// reference to factory, which has create this instance
         FrameContainer                                                  m_aChildTaskContainer;    /// array of child tasks (children of desktop are tasks; and tasks are also frames - But pure frames are not accepted!)
@@ -427,6 +416,18 @@ class Desktop : private cppu::BaseMutex,
           * it has to be handled special .-)
           */
         css::uno::Reference< css::frame::XTerminateListener > m_xQuickLauncher;
+
+        /** special terminate listener active when a macro is executing.
+          * Because basic runs Application::Yield internally the application may quit
+          * while running inside the internal basic event loop. So all the basic
+          * infrastructure may be deleted while the call is executing, leading to
+          * a variant of crashes. So this special terminate listener will
+          * veto the current quit attempt, stop basic execution, which will
+          * cause the inner event loop to quit, and on return to the outer normal
+          * application event loop then resend the quit attempt.
+          * So these implementation must be a special terminate listener too .-(
+          */
+        css::uno::Reference< css::frame::XTerminateListener > m_xStarBasicQuitGuard;
 
         /** special terminate listener which loads images asynchronous for current open documents.
           * Because internally it uses blocking system APIs... it can't be guaranteed that

@@ -33,12 +33,9 @@
 #include <xmloff/xmlnmspe.hxx>
 #include <xmloff/families.hxx>
 #include <xmloff/xmltoken.hxx>
-#include <com/sun/star/sheet/XSpreadsheetDocument.hpp>
 #include <com/sun/star/sheet/XSpreadsheet.hpp>
 #include <com/sun/star/table/XColumnRowRange.hpp>
 #include <com/sun/star/sheet/XPrintAreas.hpp>
-
-#include <com/sun/star/table/CellAddress.hpp>
 
 #define SC_ISFILTERED "IsFiltered"
 
@@ -49,7 +46,7 @@ ScXMLTableRowContext::ScXMLTableRowContext( ScXMLImport& rImport,
                                       sal_uInt16 nPrfx,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList ) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     sVisibility(GetXMLToken(XML_VISIBLE)),
     nRepeatedRows(1),
     bHasCell(false)
@@ -217,7 +214,7 @@ ScXMLTableRowsContext::ScXMLTableRowsContext( ScXMLImport& rImport,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                                       const bool bTempHeader,
                                       const bool bTempGroup ) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     nHeaderStartRow(0),
     nGroupStartRow(0),
     bHeader(bTempHeader),

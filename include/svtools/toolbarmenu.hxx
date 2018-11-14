@@ -36,22 +36,46 @@
 #include <vcl/dockwin.hxx>
 
 class ValueSet;
+namespace svt { class FrameStatusListener; }
 
 namespace svtools {
 
 class ToolbarMenuEntry;
 struct ToolbarMenu_Impl;
 
-class SVT_DLLPUBLIC ToolbarMenu : public DockingWindow
+class SVT_DLLPUBLIC ToolbarPopup : public DockingWindow
 {
-    friend class ToolbarMenuStatusListener;
+    friend class ToolbarPopupStatusListener;
+public:
+    ToolbarPopup(const css::uno::Reference<css::frame::XFrame>& rFrame,
+                 vcl::Window* pParentWindow,
+                 WinBits nBits );
+    virtual ~ToolbarPopup() override;
+    virtual void dispose() override;
+
+protected:
+    void AddStatusListener( const OUString& rCommandURL );
+
+    bool IsInPopupMode();
+    void EndPopupMode();
+
+    // Forwarded from XStatusListener (subclasses must override this one to get the status updates):
+    virtual void statusChanged(const css::frame::FeatureStateEvent& Event ) throw (css::uno::RuntimeException, std::exception);
+
+private:
+    css::uno::Reference< css::frame::XFrame >  mxFrame;
+    rtl::Reference< svt::FrameStatusListener > mxStatusListener;
+};
+
+class SVT_DLLPUBLIC ToolbarMenu : public ToolbarPopup
+{
     friend struct ToolbarMenu_Impl;
 public:
     ToolbarMenu(const css::uno::Reference<css::frame::XFrame>& rFrame,
                 vcl::Window* pParentWindow,
                 WinBits nBits );
 
-    virtual ~ToolbarMenu();
+    virtual ~ToolbarMenu() override;
     virtual void dispose() override;
 
     virtual void    MouseMove( const MouseEvent& rMEvt ) override;
@@ -60,7 +84,6 @@ public:
     virtual void    KeyInput( const KeyEvent& rKEvent ) override;
     virtual void    Command( const CommandEvent& rCEvt ) override;
     virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
-    virtual void    RequestHelp( const HelpEvent& rHEvt ) override;
     virtual void    GetFocus() override;
     virtual void    LoseFocus() override;
 
@@ -72,9 +95,9 @@ public:
     /** creates an empty ValueSet that is initialized and can be inserted with appendEntry. */
     VclPtr<ValueSet> createEmptyValueSetControl();
 
-    void            checkEntry( int nEntryId, bool bCheck = true );
+    void            checkEntry( int nEntryId, bool bCheck );
 
-    void            enableEntry( int nEntryId, bool bEnable = true );
+    void            enableEntry( int nEntryId, bool bEnable );
 
     void            setEntryText( int nEntryId, const OUString& rStr );
 
@@ -87,30 +110,15 @@ public:
     int             getSelectedEntryId() const;
     int             getHighlightedEntryId() const;
 
-    void            highlightFirstEntry();
-
 protected:
     virtual css::uno::Reference<css::accessibility::XAccessible> CreateAccessible() override;
-
-    // todo: move to new base class that will replace SfxPopupWindow
-    void AddStatusListener( const OUString& rCommandURL );
-
-    bool IsInPopupMode();
-    void EndPopupMode();
-
-    // Forwarded from XStatusListener (subclasses must override this one to get
-    // the status updates):
-    virtual void statusChanged(const css::frame::FeatureStateEvent& Event ) throw (css::uno::RuntimeException, std::exception);
 
     void            StateChanged( StateChangedType nType ) override;
     void            DataChanged( const DataChangedEvent& rDCEvt ) override;
 
 private:
-    DECL_LINK_TYPED( HighlightHdl, ValueSet*, void );
+    DECL_LINK( HighlightHdl, ValueSet*, void );
 
-    void initStatusListener();
-
-    void            implInit(const css::uno::Reference<css::frame::XFrame>& rFrame);
     void            initWindow();
 
     Size            implCalcSize();
@@ -129,7 +137,7 @@ private:
     ToolbarMenuEntry*   implGetEntry( int nEntry ) const;
     ToolbarMenuEntry*   implSearchEntry( int nEntryId ) const;
 
-    ToolbarMenu_Impl*   mpImpl;
+    std::unique_ptr<ToolbarMenu_Impl>   mpImpl;
 };
 
 } // namespace svtools

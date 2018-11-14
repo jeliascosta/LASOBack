@@ -280,25 +280,13 @@ FmXDisposeListener::~FmXDisposeListener()
 
 void FmXDisposeListener::setAdapter(FmXDisposeMultiplexer* pAdapter)
 {
-    if (m_pAdapter)
-    {
-        ::osl::MutexGuard aGuard(m_aMutex);
-        m_pAdapter->release();
-        m_pAdapter = nullptr;
-    }
-
-    if (pAdapter)
-    {
-        ::osl::MutexGuard aGuard(m_aMutex);
-        m_pAdapter = pAdapter;
-        m_pAdapter->acquire();
-    }
+    ::osl::MutexGuard aGuard(m_aMutex);
+    m_pAdapter = pAdapter;
 }
 
 FmXDisposeMultiplexer::FmXDisposeMultiplexer(FmXDisposeListener* _pListener, const Reference< css::lang::XComponent>& _rxObject)
     :m_xObject(_rxObject)
     ,m_pListener(_pListener)
-    ,m_nId(0)
 {
     m_pListener->setAdapter(this);
 
@@ -318,7 +306,7 @@ void FmXDisposeMultiplexer::disposing(const css::lang::EventObject& Source) thro
 
     if (m_pListener)
     {
-        m_pListener->disposing(Source, m_nId);
+        m_pListener->disposing(Source, 0);
         m_pListener->setAdapter(nullptr);
         m_pListener = nullptr;
     }

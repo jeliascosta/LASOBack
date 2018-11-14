@@ -69,7 +69,6 @@ public:
     {
         return m_xWindowState;
     }
-    void persistChanges() throw (css::uno::RuntimeException);
     css::uno::Reference< css::container::XIndexAccess > getSettings( const OUString& sResourceUrl ) throw (css::uno::RuntimeException);
     void removeSettings( const OUString& sResourceUrl ) throw (css::uno::RuntimeException);
     void ApplyTempChange( const OUString& sResourceUrl, const css::uno::Reference< css::container::XIndexAccess >& xSettings) throw (css::uno::RuntimeException);
@@ -78,7 +77,7 @@ public:
 
     const OUString& getModuleId() const { return maModuleId; }
     OUString findToolbarByName( const css::uno::Reference< css::container::XNameAccess >& xNameAccess, const OUString& sName ) throw (css::uno::RuntimeException);
-    static sal_Int32 findControlByName( const css::uno::Reference< css::container::XIndexAccess >& xIndexAccess, const OUString& sName, bool bMenu = false ) throw (css::uno::RuntimeException);
+    static sal_Int32 findControlByName( const css::uno::Reference< css::container::XIndexAccess >& xIndexAccess, const OUString& sName, bool bMenu ) throw (css::uno::RuntimeException);
     static OUString generateCustomURL();
 };
 

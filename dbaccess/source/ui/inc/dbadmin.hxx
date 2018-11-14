@@ -65,7 +65,7 @@ public:
         SfxItemSet* _pItems,
         const css::uno::Reference< css::uno::XComponentContext >& _rxORB
         );
-    virtual ~ODbAdminDialog();
+    virtual ~ODbAdminDialog() override;
     virtual void dispose() override;
 
     /** create and return an item set for use with the dialog.
@@ -103,10 +103,6 @@ protected:
     virtual void PageCreated(sal_uInt16 _nId, SfxTabPage& _rPage) override;
     virtual short Ok() override;
 
-protected:
-    inline bool isUIEnabled() const { return m_bUIEnabled; }
-    inline void     disabledUI() { m_bUIEnabled = false; }
-
 private:
     /// select a datasource with a given name, adjust the item set accordingly, and everything like that ..
     void impl_selectDataSource(const css::uno::Any& _aDataSourceName);
@@ -116,7 +112,6 @@ private:
     enum ApplyResult
     {
         AR_LEAVE_MODIFIED,      // something was modified and has successfully been committed
-        AR_LEAVE_UNCHANGED,     // no changes were made
         AR_KEEP                 // don't leave the page (e.g. because an error occurred)
     };
     /** apply all changes made

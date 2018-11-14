@@ -72,8 +72,7 @@ namespace editeng {
                 long nWidth = 0,
                 SvxBorderStyle nStyle = css::table::BorderLineStyle::SOLID,
                 Color (*pColorOutFn)( Color ) = &darkColor,
-                Color (*pColorInFn)( Color ) = &darkColor,
-                Color (*pColorGapFn)( Color ) = nullptr );
+                Color (*pColorInFn)( Color ) = &darkColor );
         SvxBorderLine( const SvxBorderLine& r );
 
         SvxBorderLine& operator=( const SvxBorderLine& r );
@@ -84,7 +83,7 @@ namespace editeng {
         bool            HasGapColor() const { return m_pColorGapFn != nullptr; }
         Color           GetColorGap() const;
 
-        void SetWidth( long nWidth = 0 );
+        void SetWidth( long nWidth );
         /** Guess the style and width from the three lines widths values.
 
             When the value of nStyle is SvxBorderLine::DOUBLE, the style set will be guessed
@@ -127,7 +126,7 @@ namespace editeng {
 
         bool            operator==( const SvxBorderLine &rCmp ) const;
 
-        OUString        GetValueString( SfxMapUnit eSrcUnit, SfxMapUnit eDestUnit,
+        OUString        GetValueString( MapUnit eSrcUnit, MapUnit eDestUnit,
                                         const IntlWrapper* pIntl,
                                         bool bMetricStr = false ) const;
 

@@ -95,14 +95,7 @@ SvTabListBox::SvTabListBox( vcl::Window* pParent, WinBits nBits )
     SetHighlightRange();    // select full width
 }
 
-VCL_BUILDER_DECL_FACTORY(SvTabListBox)
-{
-    WinBits nWinStyle = WB_TABSTOP;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-        nWinStyle |= WB_BORDER;
-    rRet = VclPtr<SvTabListBox>::Create(pParent, nWinStyle);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(SvTabListBox, WB_TABSTOP)
 
 SvTabListBox::~SvTabListBox()
 {
@@ -132,7 +125,7 @@ void SvTabListBox::SetTabs(const long* pTabs, MapUnit eMapUnit)
     nTabCount = nCount;
 
     MapMode aMMSource( eMapUnit );
-    MapMode aMMDest( MAP_PIXEL );
+    MapMode aMMDest( MapUnit::MapPixel );
 
     pTabs++;
     for( sal_uInt16 nIdx = 0; nIdx < nCount; nIdx++, pTabs++ )
@@ -155,7 +148,7 @@ void SvTabListBox::SetTab( sal_uInt16 nTab,long nValue,MapUnit eMapUnit )
     {
         DBG_ASSERT(pTabList,"TabList?");
         MapMode aMMSource( eMapUnit );
-        MapMode aMMDest( MAP_PIXEL );
+        MapMode aMMDest( MapUnit::MapPixel );
         Size aSize( nValue, 0 );
         aSize = LogicToLogic( aSize, &aMMSource, &aMMDest );
         nValue = aSize.Width();
@@ -263,7 +256,7 @@ OUString SvTabListBox::GetEntryText( SvTreeListEntry* pEntry, sal_uInt16 nCol )
         while( nCur < nCount )
         {
             const SvLBoxItem& rStr = pEntry->GetItem( nCur );
-            if (rStr.GetType() == SV_ITEM_ID_LBOXSTRING)
+            if (rStr.GetType() == SvLBoxItemType::String)
             {
                 if( nCol == 0xffff )
                 {
@@ -312,7 +305,7 @@ void SvTabListBox::SetEntryText(const OUString& rStr, SvTreeListEntry* pEntry, s
     for (sal_uInt16 nCur = 0; nCur < nCount; ++nCur)
     {
         SvLBoxItem& rBoxItem = pEntry->GetItem( nCur );
-        if (rBoxItem.GetType() == SV_ITEM_ID_LBOXSTRING)
+        if (rBoxItem.GetType() == SvLBoxItemType::String)
         {
             if (!nCol || nCol==0xFFFF)
             {
@@ -342,7 +335,7 @@ OUString SvTabListBox::GetCellText( sal_uLong nPos, sal_uInt16 nCol ) const
     if (pEntry && pEntry->ItemCount() > static_cast<size_t>(nCol+1))
     {
         const SvLBoxItem& rStr = pEntry->GetItem( nCol + 1 );
-        if (rStr.GetType() == SV_ITEM_ID_LBOXSTRING)
+        if (rStr.GetType() == SvLBoxItemType::String)
             aResult = static_cast<const SvLBoxString&>(rStr).GetText();
     }
     return aResult;
@@ -377,11 +370,6 @@ sal_uLong SvTabListBox::GetEntryPos( const SvTreeListEntry* pEntry ) const
     return 0xffffffff;
 }
 
-void SvTabListBox::Resize()
-{
-    SvTreeListBox::Resize();
-}
-
 // static
 OUString SvTabListBox::GetToken( const OUString &sStr, sal_Int32& nIndex )
 {
@@ -400,7 +388,7 @@ OUString SvTabListBox::GetTabEntryText( sal_uLong nPos, sal_uInt16 nCol ) const
         while( nCur < nCount )
         {
             const SvLBoxItem& rBoxItem = pEntry->GetItem( nCur );
-            if (rBoxItem.GetType() == SV_ITEM_ID_LBOXSTRING)
+            if (rBoxItem.GetType() == SvLBoxItemType::String)
             {
                 if ( nCol == 0xffff )
                 {
@@ -519,7 +507,7 @@ SvHeaderTabListBox::~SvHeaderTabListBox()
 
 void SvHeaderTabListBox::dispose()
 {
-    delete m_pImpl;
+    m_pImpl.reset();
     SvTabListBox::dispose();
 }
 
@@ -546,7 +534,7 @@ bool SvHeaderTabListBox::IsItemChecked( SvTreeListEntry* pEntry, sal_uInt16 nCol
     SvButtonState eState = SvButtonState::Unchecked;
     SvLBoxButton& rItem = static_cast<SvLBoxButton&>( pEntry->GetItem( nCol + 1 ) );
 
-    if (rItem.GetType() == SV_ITEM_ID_LBOXBUTTON)
+    if (rItem.GetType() == SvLBoxItemType::Button)
     {
         SvItemStateFlags nButtonFlags = rItem.GetButtonFlags();
         eState = SvLBoxButtonData::ConvertToButtonState( nButtonFlags );
@@ -608,12 +596,12 @@ void SvHeaderTabListBox::Clear()
     m_aAccessibleChildren.clear();
 }
 
-IMPL_LINK_NOARG_TYPED(SvHeaderTabListBox, ScrollHdl_Impl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(SvHeaderTabListBox, ScrollHdl_Impl, SvTreeListBox*, void)
 {
     m_pImpl->m_pHeaderBar->SetOffset( -GetXOffset() );
 }
 
-IMPL_LINK_NOARG_TYPED(SvHeaderTabListBox, CreateAccessibleHdl_Impl, HeaderBar*, void)
+IMPL_LINK_NOARG(SvHeaderTabListBox, CreateAccessibleHdl_Impl, HeaderBar*, void)
 {
     vcl::Window* pParent = m_pImpl->m_pHeaderBar->GetAccessibleParentWindow();
     DBG_ASSERT( pParent, "SvHeaderTabListBox..CreateAccessibleHdl_Impl - accessible parent not found" );
@@ -653,7 +641,7 @@ bool SvHeaderTabListBox::IsCellCheckBox( long _nRow, sal_uInt16 _nColumn, TriSta
         if ( nItemCount > ( _nColumn + 1 ) )
         {
             SvLBoxItem& rItem = pEntry->GetItem( _nColumn + 1 );
-            if (rItem.GetType() == SV_ITEM_ID_LBOXBUTTON)
+            if (rItem.GetType() == SvLBoxItemType::Button)
             {
                 bRet = true;
                 _rState = ( ( static_cast<SvLBoxButton&>(rItem).GetButtonFlags() & SvItemStateFlags::UNCHECKED ) == SvItemStateFlags::NONE )
@@ -741,11 +729,6 @@ void SvHeaderTabListBox::SelectAll()
     SvTreeListBox::SelectAll(true);
 }
 
-void SvHeaderTabListBox::SelectAll( bool bSelect, bool bPaint )
-{
-    // overwritten just to disambiguate the SelectAll() from the base' class SelectAll( bool, bool )
-    SvTabListBox::SelectAll( bSelect, bPaint );
-}
 void SvHeaderTabListBox::SelectRow( long _nRow, bool _bSelect, bool )
 {
     Select( GetEntry( _nRow ), _bSelect );

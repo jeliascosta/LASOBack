@@ -50,7 +50,7 @@ public:
     SV_DECL_PERSIST1( SvxFieldData, SvPersistBase, css::text::textfield::Type::UNSPECIFIED)
 
                             SvxFieldData();
-    virtual                 ~SvxFieldData();
+    virtual                 ~SvxFieldData() override;
 
     virtual SvxFieldData*   Clone() const;
     virtual bool            operator==( const SvxFieldData& ) const;
@@ -76,7 +76,7 @@ public:
 
             SvxFieldItem( const SvxFieldData& rField, const sal_uInt16 nId  );
             SvxFieldItem( const SvxFieldItem& rItem );
-            virtual ~SvxFieldItem();
+            virtual ~SvxFieldItem() override;
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
@@ -106,7 +106,7 @@ enum SvxDateFormat {    SVXDATEFORMAT_APPDEFAULT = 0,   // Set as in App
 
 class EDITENG_DLLPUBLIC SvxDateField : public SvxFieldData
 {
-    sal_uInt32              nFixDate;
+    sal_Int32               nFixDate;
     SvxDateType             eType;
     SvxDateFormat           eFormat;
 
@@ -118,7 +118,7 @@ public:
                                 SvxDateType eType = SVXDATETYPE_VAR,
                                 SvxDateFormat eFormat = SVXDATEFORMAT_STDSMALL );
 
-    sal_uInt32              GetFixDate() const { return nFixDate; }
+    sal_Int32               GetFixDate() const { return nFixDate; }
     void                    SetFixDate( const Date& rDate ) { nFixDate = rDate.GetDate(); }
 
     SvxDateType             GetType() const { return eType; }

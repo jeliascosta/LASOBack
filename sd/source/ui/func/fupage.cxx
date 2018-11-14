@@ -59,6 +59,7 @@
 #include "drawdoc.hxx"
 #include "DrawDocShell.hxx"
 #include "ViewShell.hxx"
+#include "ViewShellBase.hxx"
 #include "DrawViewShell.hxx"
 #include "app.hrc"
 #include "unchss.hxx"
@@ -132,9 +133,9 @@ void FuPage::DoExecute( SfxRequest& )
 
     if( mpDrawViewShell )
     {
-        mbMasterPage = mpDrawViewShell->GetEditMode() == EM_MASTERPAGE;
+        mbMasterPage = mpDrawViewShell->GetEditMode() == EditMode::MasterPage;
         // we don't really want to format page background with SID_ATTR_PAGE[_SIZE] slots
-        mbDisplayBackgroundTabPage = ( mpDrawViewShell->GetPageKind() == PK_STANDARD) &&
+        mbDisplayBackgroundTabPage = ( mpDrawViewShell->GetPageKind() == PageKind::Standard) &&
                                       ( nSlotId != SID_ATTR_PAGE_SIZE) && ( nSlotId != SID_ATTR_PAGE );
         mpPage = mpDrawViewShell->getCurrentPage();
     }
@@ -214,7 +215,7 @@ const SfxItemSet* FuPage::ExecuteDialog( vcl::Window* pParent )
     SfxItemSet aNewAttr(mpDoc->GetPool(),
                         mpDoc->GetPool().GetWhich(SID_ATTR_LRSPACE),
                         mpDoc->GetPool().GetWhich(SID_ATTR_ULSPACE),
-                        SID_ATTR_PAGE, SID_ATTR_PAGE_BSP,
+                        SID_ATTR_PAGE, SID_ATTR_PAGE_SHARED,
                         SID_ATTR_BORDER_OUTER, SID_ATTR_BORDER_OUTER,
                         SID_ATTR_BORDER_SHADOW, SID_ATTR_BORDER_SHADOW,
                         XATTR_FILL_FIRST, XATTR_FILL_LAST,
@@ -237,8 +238,8 @@ const SfxItemSet* FuPage::ExecuteDialog( vcl::Window* pParent )
 
     SvxPageItem aPageItem( SID_ATTR_PAGE );
     aPageItem.SetDescName( mpPage->GetName() );
-    aPageItem.SetPageUsage( (SvxPageUsage) SVX_PAGE_ALL );
-    aPageItem.SetLandscape( mpPage->GetOrientation() == ORIENTATION_LANDSCAPE );
+    aPageItem.SetPageUsage( SvxPageUsage::All );
+    aPageItem.SetLandscape( mpPage->GetOrientation() == Orientation::Landscape );
     aPageItem.SetNumType( mpDoc->GetPageNumType() );
     aNewAttr.Put( aPageItem );
 
@@ -262,7 +263,7 @@ const SfxItemSet* FuPage::ExecuteDialog( vcl::Window* pParent )
     aNewAttr.Put( aULSpaceItem );
 
     // Applikation
-    bool bScale = mpDoc->GetDocumentType() != DOCUMENT_TYPE_DRAW;
+    bool bScale = mpDoc->GetDocumentType() != DocumentType::Draw;
     aNewAttr.Put( SfxBoolItem( SID_ATTR_PAGE_EXT1, bScale ) );
 
     bool bFullSize = mpPage->IsMasterPage() ?
@@ -335,7 +336,7 @@ const SfxItemSet* FuPage::ExecuteDialog( vcl::Window* pParent )
     {
         // create the dialog
         SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-        std::unique_ptr<SfxAbstractTabDialog> pDlg( pFact ? pFact->CreateSdTabPageDialog(mpViewShell->GetActiveWindow(), &aMergedAttr, mpDocSh, mbDisplayBackgroundTabPage) : nullptr );
+        ScopedVclPtr<SfxAbstractTabDialog> pDlg( pFact ? pFact->CreateSdTabPageDialog(mpViewShell->GetActiveWindow(), &aMergedAttr, mpDocSh, mbDisplayBackgroundTabPage) : nullptr );
         if( pDlg.get() && pDlg->Execute() == RET_OK )
             pTempSet.reset( new SfxItemSet(*pDlg->GetOutputItemSet()) );
     }
@@ -374,11 +375,11 @@ const SfxItemSet* FuPage::ExecuteDialog( vcl::Window* pParent )
             {
                 // But don't ask in notice-view, because we can't change the background of
                 // notice-masterpage (at the moment)
-                if( ePageKind != PK_NOTES )
+                if( ePageKind != PageKind::Notes )
                 {
                     ScopedVclPtrInstance<MessageDialog> aQuestionBox(
                         pParent, SD_RESSTR(STR_PAGE_BACKGROUND_TXT),
-                        VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO);
+                        VclMessageType::Question, VCL_BUTTONS_YES_NO);
                     aQuestionBox->SetText(SD_RESSTR(STR_PAGE_BACKGROUND_TITLE));
                     bSetToAllPages = ( RET_YES == aQuestionBox->Execute() );
                 }
@@ -411,13 +412,13 @@ const SfxItemSet* FuPage::ExecuteDialog( vcl::Window* pParent )
                 mpDocSh->GetUndoManager()->AddUndoAction(pAction);
                 pStyleSheet->GetItemSet().Put( *(pTempSet.get()) );
                 sdr::properties::CleanupFillProperties( pStyleSheet->GetItemSet() );
-                pStyleSheet->Broadcast(SfxSimpleHint(SFX_HINT_DATACHANGED));
+                pStyleSheet->Broadcast(SfxHint(SFX_HINT_DATACHANGED));
             }
             else if( bSetToAllPages )
             {
                 OUString aComment(SdResId(STR_UNDO_CHANGE_PAGEFORMAT));
                 ::svl::IUndoManager* pUndoMgr = mpDocSh->GetUndoManager();
-                pUndoMgr->EnterListAction(aComment, aComment);
+                pUndoMgr->EnterListAction(aComment, aComment, 0, mpViewShell->GetViewShellBase().GetViewShellId());
                 SdUndoGroup* pUndoGroup = new SdUndoGroup(mpDoc);
                 pUndoGroup->SetComment(aComment);
 
@@ -433,7 +434,7 @@ const SfxItemSet* FuPage::ExecuteDialog( vcl::Window* pParent )
                     pUndoGroup->AddAction(pAction);
                     pStyle->GetItemSet().Put( *(pTempSet.get()) );
                     sdr::properties::CleanupFillProperties( pStyleSheet->GetItemSet() );
-                    pStyle->Broadcast(SfxSimpleHint(SFX_HINT_DATACHANGED));
+                    pStyle->Broadcast(SfxHint(SFX_HINT_DATACHANGED));
                 }
 
                 //Remove background from all pages to reset to the master bg
@@ -523,7 +524,7 @@ void FuPage::ApplyItemSet( const SfxItemSet* pArgs )
         mpDoc->SetPageNumType(static_cast<const SvxPageItem*>(pPoolItem)->GetNumType());
 
         eOrientation = static_cast<const SvxPageItem*>(pPoolItem)->IsLandscape() ?
-            ORIENTATION_LANDSCAPE : ORIENTATION_PORTRAIT;
+            Orientation::Landscape : Orientation::Portrait;
 
         if( mpPage->GetOrientation() != eOrientation )
             bSetPageSizeAndBorder = true;

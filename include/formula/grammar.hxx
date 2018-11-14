@@ -22,6 +22,7 @@
 
 #include <com/sun/star/sheet/FormulaLanguage.hpp>
 #include <formula/formuladllapi.h>
+#include <sal/types.h>
 
 namespace formula
 {
@@ -140,6 +141,11 @@ public:
         /// Excel OOXML with Excel OOXML reference style.
         GRAM_OOXML           = css::sheet::FormulaLanguage::OOXML               |
                                 ((CONV_XL_OOX        +
+                                  kConventionOffset) << kConventionShift)       |
+                                kEnglishBit,
+        /// API English with A1 reference style, unbracketed.
+        GRAM_API            = css::sheet::FormulaLanguage::API                  |
+                                ((CONV_OOO           +
                                   kConventionOffset) << kConventionShift)       |
                                 kEnglishBit,
         /// Central definition of the default grammar to be used.

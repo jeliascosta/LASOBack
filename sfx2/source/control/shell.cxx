@@ -82,7 +82,7 @@ struct SfxShell_Impl: public SfxBroadcaster
     {
     }
 
-    virtual ~SfxShell_Impl() { delete pExecuter; delete pUpdater;}
+    virtual ~SfxShell_Impl() override { delete pExecuter; delete pUpdater;}
 };
 
 
@@ -657,7 +657,7 @@ SfxObjectShell* SfxShell::GetObjectShell()
         return nullptr;
 }
 
-bool SfxShell::HasUIFeature( sal_uInt32 )
+bool SfxShell::HasUIFeature(SfxShellFeature) const
 {
     return false;
 }

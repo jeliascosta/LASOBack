@@ -108,7 +108,7 @@ public:
         if (rBar.GetItemCount() < 4)
             return;
         long nCheckWidth = std::max(GetControlColumnWidth() + 12,
-            rBar.LogicToPixel(Size(15, 0), MAP_APPFONT).Width());
+            rBar.LogicToPixel(Size(15, 0), MapUnit::MapAppFont).Width());
         long nVersionWidth = 12 +
             std::max(rBar.GetTextWidth(rBar.GetItemText(3)),
             GetTextWidth("0.0.0_00-icedtea"));
@@ -123,7 +123,7 @@ public:
         aStaticTabs[2] = nCheckWidth;
         aStaticTabs[3] = aStaticTabs[2] + nVendorWidth;
         aStaticTabs[4] = aStaticTabs[3] + nVersionWidth;
-        SvSimpleTable::SetTabs(aStaticTabs, MAP_PIXEL);
+        SvSimpleTable::SetTabs(aStaticTabs, MapUnit::MapPixel);
     }
     virtual void Resize() override
     {
@@ -163,7 +163,7 @@ SvxJavaOptionsPage::SvxJavaOptionsPage( vcl::Window* pParent, const SfxItemSet& 
 
     SvSimpleTableContainer *pJavaListContainer = get<SvSimpleTableContainer>("javas");
     Size aControlSize(177, 60);
-    aControlSize = LogicToPixel(aControlSize, MAP_APPFONT);
+    aControlSize = LogicToPixel(aControlSize, MapUnit::MapAppFont);
     pJavaListContainer->set_width_request(aControlSize.Width());
     pJavaListContainer->set_height_request(aControlSize.Height());
     m_pJavaList = VclPtr<SvxJavaListBox>::Create(*pJavaListContainer, m_sAccessibilityText);
@@ -191,6 +191,12 @@ SvxJavaOptionsPage::SvxJavaOptionsPage( vcl::Window* pParent, const SfxItemSet& 
     m_pExpertConfigBtn->SetClickHdl( LINK( this, SvxJavaOptionsPage, ExpertConfigHdl_Impl) );
     if (!officecfg::Office::Common::Security::EnableExpertConfiguration::get())
         m_pExpertConfigBtn->Disable();
+
+    if (officecfg::Office::Common::Misc::MacroRecorderMode::isReadOnly())
+        m_pMacroCB->Disable();
+
+    if (officecfg::Office::Common::Misc::ExperimentalMode::isReadOnly())
+        m_pExperimentalCB->Disable();
 
     xDialogListener->SetDialogClosedLink( LINK( this, SvxJavaOptionsPage, DialogClosedHdl ) );
 
@@ -238,7 +244,7 @@ void SvxJavaOptionsPage::dispose()
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, EnableHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxJavaOptionsPage, EnableHdl_Impl, Button*, void)
 {
     bool bEnable = m_pJavaEnableCB->IsChecked();
     m_pJavaBox->Enable(bEnable);
@@ -246,7 +252,7 @@ IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, EnableHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_TYPED( SvxJavaOptionsPage, CheckHdl_Impl, SvTreeListBox*, pList, void )
+IMPL_LINK( SvxJavaOptionsPage, CheckHdl_Impl, SvTreeListBox*, pList, void )
 {
     SvTreeListEntry* pEntry = pList ? m_pJavaList->GetEntry( m_pJavaList->GetCurMousePoint() )
                                 : m_pJavaList->FirstSelected();
@@ -255,7 +261,7 @@ IMPL_LINK_TYPED( SvxJavaOptionsPage, CheckHdl_Impl, SvTreeListBox*, pList, void 
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, SelectHdl_Impl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(SvxJavaOptionsPage, SelectHdl_Impl, SvTreeListBox*, void)
 {
     // set installation directory info
     SvTreeListEntry* pEntry = m_pJavaList->FirstSelected();
@@ -269,7 +275,7 @@ IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, SelectHdl_Impl, SvTreeListBox*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, AddHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxJavaOptionsPage, AddHdl_Impl, Button*, void)
 {
     try
     {
@@ -293,7 +299,7 @@ IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, AddHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, ParameterHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxJavaOptionsPage, ParameterHdl_Impl, Button*, void)
 {
 #if HAVE_FEATURE_JAVA
     Sequence< OUString > aParameterList;
@@ -345,7 +351,7 @@ IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, ParameterHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, ClassPathHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxJavaOptionsPage, ClassPathHdl_Impl, Button*, void)
 {
 #if HAVE_FEATURE_JAVA
     OUString sClassPath;
@@ -390,13 +396,13 @@ IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, ClassPathHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, ResetHdl_Impl, Idle *, void)
+IMPL_LINK_NOARG(SvxJavaOptionsPage, ResetHdl_Impl, Idle *, void)
 {
     LoadJREs();
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, StartFolderPickerHdl, void*, void)
+IMPL_LINK_NOARG(SvxJavaOptionsPage, StartFolderPickerHdl, void*, void)
 {
     try
     {
@@ -413,7 +419,7 @@ IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, StartFolderPickerHdl, void*, void)
 }
 
 
-IMPL_LINK_TYPED( SvxJavaOptionsPage, DialogClosedHdl, DialogClosedEvent*, pEvt, void )
+IMPL_LINK( SvxJavaOptionsPage, DialogClosedHdl, DialogClosedEvent*, pEvt, void )
 {
     if ( RET_OK == pEvt->DialogResult )
     {
@@ -424,7 +430,7 @@ IMPL_LINK_TYPED( SvxJavaOptionsPage, DialogClosedHdl, DialogClosedEvent*, pEvt, 
 }
 
 
-IMPL_LINK_NOARG_TYPED( SvxJavaOptionsPage, ExpertConfigHdl_Impl, Button*, void )
+IMPL_LINK_NOARG( SvxJavaOptionsPage, ExpertConfigHdl_Impl, Button*, void )
 {
     ScopedVclPtrInstance< CuiAboutConfigTabPage > pExpertConfigDlg(this);
     pExpertConfigDlg->Reset();//initialize and reset function
@@ -824,14 +830,14 @@ void SvxJavaParameterDlg::dispose()
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaParameterDlg, ModifyHdl_Impl, Edit&, void)
+IMPL_LINK_NOARG(SvxJavaParameterDlg, ModifyHdl_Impl, Edit&, void)
 {
     OUString sParam = comphelper::string::strip(m_pParameterEdit->GetText(), ' ');
     m_pAssignBtn->Enable(!sParam.isEmpty());
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaParameterDlg, AssignHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxJavaParameterDlg, AssignHdl_Impl, Button*, void)
 {
     OUString sParam = comphelper::string::strip(m_pParameterEdit->GetText(), ' ');
     if (!sParam.isEmpty())
@@ -847,26 +853,26 @@ IMPL_LINK_NOARG_TYPED(SvxJavaParameterDlg, AssignHdl_Impl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SvxJavaParameterDlg, EditHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxJavaParameterDlg, EditHdl_Impl, Button*, void)
 {
     EditParameter();
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaParameterDlg, SelectHdl_Impl, ListBox&, void)
+IMPL_LINK_NOARG(SvxJavaParameterDlg, SelectHdl_Impl, ListBox&, void)
 {
     EnableEditButton();
     EnableRemoveButton();
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaParameterDlg, DblClickHdl_Impl, ListBox&, void)
+IMPL_LINK_NOARG(SvxJavaParameterDlg, DblClickHdl_Impl, ListBox&, void)
 {
     EditParameter();
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaParameterDlg, RemoveHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxJavaParameterDlg, RemoveHdl_Impl, Button*, void)
 {
     sal_Int32 nPos = m_pAssignedList->GetSelectEntryPos();
     if ( nPos != LISTBOX_ENTRY_NOTFOUND )
@@ -996,7 +1002,7 @@ void SvxJavaClassPathDlg::dispose()
     ModalDialog::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED(SvxJavaClassPathDlg, AddArchiveHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxJavaClassPathDlg, AddArchiveHdl_Impl, Button*, void)
 {
     sfx2::FileDialogHelper aDlg( TemplateDescription::FILEOPEN_SIMPLE );
     aDlg.SetTitle( CUI_RES( RID_SVXSTR_ARCHIVE_TITLE ) );
@@ -1031,7 +1037,7 @@ IMPL_LINK_NOARG_TYPED(SvxJavaClassPathDlg, AddArchiveHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaClassPathDlg, AddPathHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxJavaClassPathDlg, AddPathHdl_Impl, Button*, void)
 {
     Reference < XComponentContext > xContext( ::comphelper::getProcessComponentContext() );
     Reference < XFolderPicker2 > xFolderPicker = FolderPicker::create(xContext);
@@ -1066,7 +1072,7 @@ IMPL_LINK_NOARG_TYPED(SvxJavaClassPathDlg, AddPathHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaClassPathDlg, RemoveHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxJavaClassPathDlg, RemoveHdl_Impl, Button*, void)
 {
     sal_Int32 nPos = m_pPathList->GetSelectEntryPos();
     if ( nPos != LISTBOX_ENTRY_NOTFOUND )
@@ -1085,7 +1091,7 @@ IMPL_LINK_NOARG_TYPED(SvxJavaClassPathDlg, RemoveHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaClassPathDlg, SelectHdl_Impl, ListBox&, void)
+IMPL_LINK_NOARG(SvxJavaClassPathDlg, SelectHdl_Impl, ListBox&, void)
 {
     EnableRemoveButton();
 }
@@ -1117,7 +1123,7 @@ OUString SvxJavaClassPathDlg::GetClassPath() const
     for ( sal_Int32 i = 0; i < nCount; ++i )
     {
         if ( !sPath.isEmpty() )
-            sPath += OUStringLiteral1<CLASSPATH_DELIMITER>();
+            sPath += OUStringLiteral1(CLASSPATH_DELIMITER);
         OUString* pFullPath = static_cast< OUString* >( m_pPathList->GetEntryData(i) );
         if ( pFullPath )
             sPath += *pFullPath;

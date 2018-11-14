@@ -57,7 +57,6 @@ DomainMapperTableManager::DomainMapperTableManager() :
     m_bHasBtlrCell(false),
     m_bTableSizeTypeInserted(false),
     m_nLayoutType(0),
-    m_nMaxFixedWidth(0),
     m_pTablePropsHandler(new TablePropertiesHandler())
 {
     m_pTablePropsHandler->SetTableManager( this );
@@ -456,7 +455,6 @@ void DomainMapperTableManager::startLevel( )
     m_nCell.push_back( 0 );
     m_nTableWidth = 0;
     m_nLayoutType = 0;
-    m_nMaxFixedWidth = 0;
 
     // And push it back to the right level.
     if (oCurrentWidth)
@@ -480,7 +478,6 @@ void DomainMapperTableManager::endLevel( )
     m_nCell.pop_back( );
     m_nTableWidth = 0;
     m_nLayoutType = 0;
-    m_nMaxFixedWidth = 0;
 
     m_aTmpPosition.pop_back( );
     m_aTmpTableProperties.pop_back( );

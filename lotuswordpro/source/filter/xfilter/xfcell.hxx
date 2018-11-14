@@ -76,7 +76,7 @@ class XFCell : public XFContentContainer
 public:
     XFCell();
 
-    virtual ~XFCell();
+    virtual ~XFCell() override;
 
 public:
     using XFContentContainer::Add;
@@ -114,7 +114,7 @@ public:
     /**
      * @descr   Set cell protected.
      */
-    void    SetProtect(bool protect=true);
+    void    SetProtect(bool protect);
 
     /**
      * @descr   Set cell column id.

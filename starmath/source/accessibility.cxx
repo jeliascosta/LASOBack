@@ -417,7 +417,7 @@ void SAL_CALL SmGraphicAccessible::removeAccessibleEventListener(
         const Reference< XAccessibleEventListener >& xListener )
     throw (RuntimeException, std::exception)
 {
-    if (xListener.is())
+    if (xListener.is() && nClientId)
     {
         SolarMutexGuard aGuard;
         sal_Int32 nListenerCount = comphelper::AccessibleEventNotifier::removeEventListener( nClientId, xListener );
@@ -937,7 +937,7 @@ SmTextForwarder::~SmTextForwarder()
         pEditEngine->SetNotifyHdl( Link<EENotify&,void>() );
 }
 
-IMPL_LINK_TYPED(SmTextForwarder, NotifyHdl, EENotify&, rNotify, void)
+IMPL_LINK(SmTextForwarder, NotifyHdl, EENotify&, rNotify, void)
 {
     ::std::unique_ptr< SfxHint > aHint = SvxEditSourceHelper::EENotification2Hint( &rNotify );
     if (aHint.get())
@@ -1268,7 +1268,7 @@ Rectangle SmTextForwarder::GetParaBounds( sal_Int32 nPara ) const
 MapMode SmTextForwarder::GetMapMode() const
 {
     EditEngine *pEditEngine = rEditAcc.GetEditEngine();
-    return pEditEngine ? pEditEngine->GetRefMapMode() : MapMode( MAP_100TH_MM );
+    return pEditEngine ? pEditEngine->GetRefMapMode() : MapMode( MapUnit::Map100thMM );
 }
 
 OutputDevice* SmTextForwarder::GetRefDevice() const

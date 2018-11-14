@@ -137,7 +137,7 @@ namespace dbmm
 
         declarePath( PATH_DEFAULT, {STATE_CLOSE_SUB_DOCS, STATE_BACKUP_DBDOC, STATE_MIGRATE, STATE_SUMMARY} );
 
-        SetPageSizePixel( LogicToPixel( ::Size( TAB_PAGE_WIDTH, TAB_PAGE_HEIGHT ), MAP_APPFONT ) );
+        SetPageSizePixel( LogicToPixel( ::Size( TAB_PAGE_WIDTH, TAB_PAGE_HEIGHT ), MapUnit::MapAppFont ) );
         SetRoadmapInteractive( true );
         enableAutomaticNextButtonState();
         defaultButton( WizardButtonFlags::NEXT );
@@ -257,22 +257,7 @@ namespace dbmm
         return true;
     }
 
-    bool MacroMigrationDialog::leaveState( WizardState _nState )
-    {
-        return MacroMigrationDialog_Base::leaveState( _nState );
-    }
-
-    MacroMigrationDialog::WizardState MacroMigrationDialog::determineNextState( WizardState _nCurrentState ) const
-    {
-        return MacroMigrationDialog_Base::determineNextState( _nCurrentState );
-    }
-
-    bool MacroMigrationDialog::onFinish()
-    {
-        return MacroMigrationDialog_Base::onFinish();
-    }
-
-    IMPL_LINK_NOARG_TYPED( MacroMigrationDialog, OnStartMigration, void*, void )
+    IMPL_LINK_NOARG( MacroMigrationDialog, OnStartMigration, void*, void )
     {
         // prevent closing
         m_pData->bMigrationIsRunning = true;

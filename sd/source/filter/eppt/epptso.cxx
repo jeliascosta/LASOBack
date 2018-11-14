@@ -21,6 +21,8 @@
 
 #include <cstdlib>
 
+#include <basegfx/numeric/ftools.hxx>
+#include <o3tl/any.hxx>
 #include <osl/endian.h>
 #include <eppt.hxx>
 #include "text.hxx"
@@ -65,7 +67,6 @@
 #include <vcl/cvtgrf.hxx>
 #include <tools/urlobj.hxx>
 #include <comphelper/extract.hxx>
-#include <cppuhelper/proptypehlp.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
 #include <rtl/crc.h>
 #include <comphelper/classids.hxx>
@@ -251,12 +252,12 @@ sal_uInt32 PPTWriter::ImplProgBinaryTag( SvStream* pStrm )
         if ( nPictureStreamSize )
         {
             pStrm->WriteUInt32( 0xf | ( EPP_PST_ExtendedBuGraContainer << 16 ) ).WriteUInt32( nPictureStreamSize );
-            pStrm->Write( aBuExPictureStream.GetData(), nPictureStreamSize );
+            pStrm->WriteBytes(aBuExPictureStream.GetData(), nPictureStreamSize);
         }
         if ( nOutlineStreamSize )
         {
             pStrm->WriteUInt32( 0xf | ( EPP_PST_ExtendedPresRuleContainer << 16 ) ).WriteUInt32( nOutlineStreamSize );
-            pStrm->Write( aBuExOutlineStream.GetData(), nOutlineStreamSize );
+            pStrm->WriteBytes(aBuExOutlineStream.GetData(), nOutlineStreamSize);
         }
     }
     return nSize;
@@ -277,7 +278,7 @@ sal_uInt32 PPTWriter::ImplProgBinaryTagContainer( SvStream* pStrm, SvMemoryStrea
         sal_uInt32 nLen = pBinTagStrm->Tell();
         nSize += nLen + 8;
         pStrm->WriteUInt32( EPP_BinaryTagData << 16 ).WriteUInt32( nLen );
-        pStrm->Write( pBinTagStrm->GetData(), nLen );
+        pStrm->WriteBytes(pBinTagStrm->GetData(), nLen);
     }
     else
         nSize += ImplProgBinaryTag( pStrm );
@@ -434,11 +435,11 @@ bool PPTWriter::ImplCloseDocument()
 
         nBytesToInsert += maSoundCollection.GetSize();
         nBytesToInsert += mpPptEscherEx->DrawingGroupContainerSize();
-        nBytesToInsert += ImplMasterSlideListContainer();
-        nBytesToInsert += ImplDocumentListContainer();
+        nBytesToInsert += ImplMasterSlideListContainer(nullptr);
+        nBytesToInsert += ImplDocumentListContainer(nullptr);
 
         // insert nBytes into stream and adjust depending container
-        mpPptEscherEx->InsertAtCurrentPos( nBytesToInsert, false );
+        mpPptEscherEx->InsertAtCurrentPos( nBytesToInsert );
 
         // CREATE HYPERLINK CONTAINER
         if ( nExEmbedSize )
@@ -451,7 +452,7 @@ bool PPTWriter::ImplCloseDocument()
                    .WriteUInt32( 4 )
                    .WriteUInt32( mnExEmbed );
             mpPptEscherEx->InsertPersistOffset( EPP_Persist_ExObj, mpStrm->Tell() );
-            mpStrm->Write( mpExEmbed->GetData(), nExEmbedSize );
+            mpStrm->WriteBytes(mpExEmbed->GetData(), nExEmbedSize);
         }
 
         // CREATE ENVIRONMENT
@@ -536,7 +537,7 @@ bool PPTWriter::ImplCloseDocument()
                .WriteUChar( 8 )                         // ?
                .WriteInt16( 0 );                        // ?
 
-        mpStrm->Write( aTxMasterStyleAtomStrm.GetData(), aTxMasterStyleAtomStrm.Tell() );
+        mpStrm->WriteBytes(aTxMasterStyleAtomStrm.GetData(), aTxMasterStyleAtomStrm.Tell());
         maSoundCollection.Write( *mpStrm );
         mpPptEscherEx->WriteDrawingGroupContainer( *mpStrm );
         ImplMasterSlideListContainer( mpStrm );
@@ -841,7 +842,7 @@ void PPTWriter::ImplWritePortions( SvStream& rOut, TextObj& rTextObj )
                     case css::drawing::FillStyle_SOLID :
                     {
                         if ( PropValue::GetPropertyValue( aAny, mXPropSet, "FillColor" ) )
-                            nBackgroundColor = EscherEx::GetColor( *static_cast<sal_uInt32 const *>(aAny.getValue()) );
+                            nBackgroundColor = EscherEx::GetColor( *o3tl::doAccess<sal_uInt32>(aAny) );
                     }
                     break;
                     case css::drawing::FillStyle_NONE :
@@ -864,7 +865,7 @@ void PPTWriter::ImplWritePortions( SvStream& rOut, TextObj& rTextObj )
                             case css::drawing::FillStyle_SOLID :
                             {
                                 if ( PropValue::GetPropertyValue( aAny, mXBackgroundPropSet, "FillColor" ) )
-                                    nBackgroundColor = EscherEx::GetColor( *static_cast<sal_uInt32 const *>(aAny.getValue()) );
+                                    nBackgroundColor = EscherEx::GetColor( *o3tl::doAccess<sal_uInt32>(aAny) );
                             }
                             break;
                             default:
@@ -899,7 +900,7 @@ void PPTWriter::ImplWritePortions( SvStream& rOut, TextObj& rTextObj )
                                 if ( PropValue::GetPropertyValue( aAny, aPropSetOfNextShape,
                                                     "FillColor", true ) )
                                 {
-                                    if ( nCharColor == EscherEx::GetColor( *static_cast<sal_uInt32 const *>(aAny.getValue()) ) )
+                                    if ( nCharColor == EscherEx::GetColor( *o3tl::doAccess<sal_uInt32>(aAny) ) )
                                     {
                                         nCharAttr |= 0x200;
                                     }
@@ -1377,523 +1378,6 @@ void PPTWriter::ImplWriteTextStyleAtom( SvStream& rOut, int nTextInstance, sal_u
     }
 }
 
-void PPTWriter::ImplWriteObjectEffect( SvStream& rSt,
-    css::presentation::AnimationEffect eAe,
-    css::presentation::AnimationEffect eTe,
-    sal_uInt16 nOrder )
-{
-    EscherExContainer aAnimationInfo( rSt, EPP_AnimationInfo );
-    EscherExAtom aAnimationInfoAtom( rSt, EPP_AnimationInfoAtom, 0, 1 );
-    sal_uInt32  nDimColor = 0x7000000;  // color to use for dimming
-    sal_uInt32  nFlags = 0x4400;        // set of flags that determine type of build
-    sal_uInt32  nSoundRef = 0;          // 0 if storage is from clipboard. Otherwise index(ID) in SoundCollection list.
-    sal_uInt32  nDelayTime = 0;         // delay before playing object
-    sal_uInt16  nSlideCount = 1;        // number of slides to play object
-    sal_uInt8   nBuildType = 1;         // type of build
-    sal_uInt8   nFlyMethod = 0;         // animation effect( fly, zoom, appear, etc )
-    sal_uInt8   nFlyDirection = 0;      // Animation direction( left, right, up, down, etc )
-    sal_uInt8   nAfterEffect = 0;       // what to do after build
-    sal_uInt8   nSubEffect = 0;         // build by word or letter
-    sal_uInt8   nOleVerb = 0;           // Determines object's class (sound, video, other)
-
-    if ( eAe == css::presentation::AnimationEffect_NONE )
-    {
-        nBuildType = 0;
-        eAe = eTe;
-    }
-    switch ( eAe )
-    {
-        case css::presentation::AnimationEffect_NONE :
-        break;
-        case css::presentation::AnimationEffect_FADE_FROM_LEFT :
-        {
-            nFlyDirection = 2;
-            nFlyMethod = 10;
-        }
-        break;
-        case css::presentation::AnimationEffect_FADE_FROM_TOP :
-        {
-            nFlyDirection = 3;
-            nFlyMethod = 10;
-        }
-        break;
-        case css::presentation::AnimationEffect_FADE_FROM_RIGHT :
-        {
-            nFlyDirection = 0;
-            nFlyMethod = 10;
-        }
-        break;
-        case css::presentation::AnimationEffect_FADE_FROM_BOTTOM :
-        {
-            nFlyDirection = 1;
-            nFlyMethod = 10;
-        }
-        break;
-        case css::presentation::AnimationEffect_FADE_TO_CENTER :
-        {
-            nFlyDirection = 1;
-            nFlyMethod = 11;
-        }
-        break;
-        case css::presentation::AnimationEffect_FADE_FROM_CENTER :
-        {
-            nFlyDirection = 0;
-            nFlyMethod = 11;
-        }
-        break;
-        case css::presentation::AnimationEffect_MOVE_FROM_LEFT :
-        {
-            nFlyDirection = 0;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_MOVE_FROM_TOP :
-        {
-            nFlyDirection = 1;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_MOVE_FROM_RIGHT :
-        {
-            nFlyDirection = 2;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_MOVE_FROM_BOTTOM :
-        {
-            nFlyDirection = 3;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_VERTICAL_STRIPES :
-        {
-            nFlyDirection = 0;
-            nFlyMethod = 2;
-        }
-        break;
-        case css::presentation::AnimationEffect_HORIZONTAL_STRIPES :
-        {
-            nFlyDirection = 1;
-            nFlyMethod = 2;
-        }
-        break;
-        case css::presentation::AnimationEffect_CLOCKWISE :
-        {
-            nFlyDirection = 1;
-            nFlyMethod = 3;
-        }
-        break;
-        case css::presentation::AnimationEffect_COUNTERCLOCKWISE :
-        {
-            nFlyDirection = 0;
-            nFlyMethod = 3;
-        }
-        break;
-        case css::presentation::AnimationEffect_FADE_FROM_UPPERLEFT :
-        {
-            nFlyDirection = 7;
-            nFlyMethod = 9;
-        }
-        break;
-        case css::presentation::AnimationEffect_FADE_FROM_UPPERRIGHT :
-        {
-            nFlyDirection = 6;
-            nFlyMethod = 9;
-        }
-        break;
-        case css::presentation::AnimationEffect_FADE_FROM_LOWERLEFT :
-        {
-            nFlyDirection = 5;
-            nFlyMethod = 9;
-        }
-        break;
-        case css::presentation::AnimationEffect_FADE_FROM_LOWERRIGHT :
-        {
-            nFlyDirection = 4;
-            nFlyMethod = 9;
-        }
-        break;
-        case css::presentation::AnimationEffect_CLOSE_VERTICAL :
-        {
-            nFlyDirection = 1;
-            nFlyMethod = 13;
-        }
-        break;
-        case css::presentation::AnimationEffect_CLOSE_HORIZONTAL :
-        {
-            nFlyDirection = 3;
-            nFlyMethod = 13;
-        }
-        break;
-        case css::presentation::AnimationEffect_OPEN_VERTICAL :
-        {
-            nFlyDirection = 0;
-            nFlyMethod = 13;
-        }
-        break;
-        case css::presentation::AnimationEffect_OPEN_HORIZONTAL :
-        {
-            nFlyDirection = 2;
-            nFlyMethod = 13;
-        }
-        break;
-        case css::presentation::AnimationEffect_PATH :
-        {
-            nFlyDirection = 28;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_MOVE_TO_LEFT :
-        {
-            nFlyDirection = 0;
-            nFlyMethod = 1;
-        }
-        break;
-        case css::presentation::AnimationEffect_MOVE_TO_TOP :
-        {
-            nFlyDirection = 0;
-            nFlyMethod = 1;
-        }
-        break;
-        case css::presentation::AnimationEffect_MOVE_TO_RIGHT :
-        {
-            nFlyDirection = 0;
-            nFlyMethod = 1;
-        }
-        break;
-        case css::presentation::AnimationEffect_MOVE_TO_BOTTOM :
-        {
-            nFlyDirection = 0;
-            nFlyMethod = 1;
-        }
-        break;
-        case css::presentation::AnimationEffect_SPIRALIN_LEFT :
-        case css::presentation::AnimationEffect_SPIRALIN_RIGHT :
-        case css::presentation::AnimationEffect_SPIRALOUT_LEFT :
-        case css::presentation::AnimationEffect_SPIRALOUT_RIGHT :
-        {
-            nFlyDirection = 0x1c;
-            nFlyMethod = 0xc;
-        }
-        break;
-        case css::presentation::AnimationEffect_DISSOLVE :
-        {
-            nFlyDirection = 0;
-            nFlyMethod = 5;
-        }
-        break;
-        case css::presentation::AnimationEffect_WAVYLINE_FROM_LEFT :
-        {
-            nFlyDirection = 2;
-            nFlyMethod = 10;
-        }
-        break;
-        case css::presentation::AnimationEffect_WAVYLINE_FROM_TOP :
-        {
-            nFlyDirection = 3;
-            nFlyMethod = 10;
-        }
-        break;
-        case css::presentation::AnimationEffect_WAVYLINE_FROM_RIGHT :
-        {
-            nFlyDirection = 0;
-            nFlyMethod = 10;
-        }
-        break;
-        case css::presentation::AnimationEffect_WAVYLINE_FROM_BOTTOM :
-        {
-            nFlyDirection = 1;
-            nFlyMethod = 10;
-        }
-        break;
-        case css::presentation::AnimationEffect_RANDOM :
-        {
-            nFlyDirection = 0;
-            nFlyMethod = 1;
-        }
-        break;
-        case css::presentation::AnimationEffect_VERTICAL_LINES :
-        {
-            nFlyDirection = 1;
-            nFlyMethod = 8;
-        }
-        break;
-        case css::presentation::AnimationEffect_HORIZONTAL_LINES :
-        {
-            nFlyDirection = 0;
-            nFlyMethod = 8;
-        }
-        break;
-        case css::presentation::AnimationEffect_LASER_FROM_LEFT :
-        {
-            nFlyDirection = 2;
-            nFlyMethod = 10;
-        }
-        break;
-        case css::presentation::AnimationEffect_LASER_FROM_TOP :
-        {
-            nFlyDirection = 3;
-            nFlyMethod = 10;
-        }
-        break;
-        case css::presentation::AnimationEffect_LASER_FROM_RIGHT :
-        {
-            nFlyDirection = 0;
-            nFlyMethod = 10;
-        }
-        break;
-        case css::presentation::AnimationEffect_LASER_FROM_BOTTOM :
-        {
-            nFlyDirection = 1;
-            nFlyMethod = 10;
-        }
-        break;
-        case css::presentation::AnimationEffect_LASER_FROM_UPPERLEFT :
-        {
-            nFlyDirection = 7;
-            nFlyMethod = 9;
-        }
-        break;
-        case css::presentation::AnimationEffect_LASER_FROM_UPPERRIGHT :
-        {
-            nFlyDirection = 6;
-            nFlyMethod = 9;
-        }
-        break;
-        case css::presentation::AnimationEffect_LASER_FROM_LOWERLEFT :
-        {
-            nFlyDirection = 5;
-            nFlyMethod = 9;
-        }
-        break;
-        case css::presentation::AnimationEffect_LASER_FROM_LOWERRIGHT :
-        {
-            nFlyDirection = 4;
-            nFlyMethod = 9;
-        }
-        break;
-        case css::presentation::AnimationEffect_APPEAR :
-        break;
-        case css::presentation::AnimationEffect_HIDE :
-        {
-            nFlyDirection = 0;
-            nFlyMethod = 1;
-        }
-        break;
-        case css::presentation::AnimationEffect_MOVE_FROM_UPPERLEFT :
-        {
-            nFlyDirection = 4;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_MOVE_FROM_UPPERRIGHT :
-        {
-            nFlyDirection = 5;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_MOVE_FROM_LOWERRIGHT :
-        {
-            nFlyDirection = 7;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_MOVE_FROM_LOWERLEFT :
-        {
-            nFlyDirection = 6;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_MOVE_TO_UPPERLEFT :
-        case css::presentation::AnimationEffect_MOVE_TO_UPPERRIGHT :
-        case css::presentation::AnimationEffect_MOVE_TO_LOWERRIGHT :
-        case css::presentation::AnimationEffect_MOVE_TO_LOWERLEFT :
-            nAfterEffect |= 2;
-        break;
-        case css::presentation::AnimationEffect_MOVE_SHORT_FROM_LEFT :
-        case css::presentation::AnimationEffect_MOVE_SHORT_FROM_UPPERLEFT :
-        {
-            nFlyDirection = 8;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_MOVE_SHORT_FROM_TOP :
-        case css::presentation::AnimationEffect_MOVE_SHORT_FROM_UPPERRIGHT :
-        {
-            nFlyDirection = 11;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_MOVE_SHORT_FROM_RIGHT :
-        case css::presentation::AnimationEffect_MOVE_SHORT_FROM_LOWERRIGHT :
-        {
-            nFlyDirection = 10;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_MOVE_SHORT_FROM_BOTTOM :
-        case css::presentation::AnimationEffect_MOVE_SHORT_FROM_LOWERLEFT :
-        {
-            nFlyDirection = 9;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_MOVE_SHORT_TO_LEFT :
-        case css::presentation::AnimationEffect_MOVE_SHORT_TO_UPPERLEFT :
-        case css::presentation::AnimationEffect_MOVE_SHORT_TO_TOP :
-        case css::presentation::AnimationEffect_MOVE_SHORT_TO_UPPERRIGHT :
-        case css::presentation::AnimationEffect_MOVE_SHORT_TO_RIGHT :
-        case css::presentation::AnimationEffect_MOVE_SHORT_TO_LOWERRIGHT :
-        case css::presentation::AnimationEffect_MOVE_SHORT_TO_BOTTOM :
-        case css::presentation::AnimationEffect_MOVE_SHORT_TO_LOWERLEFT :
-            nAfterEffect |= 2;
-        break;
-        case css::presentation::AnimationEffect_VERTICAL_CHECKERBOARD :
-        {
-            nFlyDirection = 1;
-            nFlyMethod = 3;
-        }
-        break;
-        case css::presentation::AnimationEffect_HORIZONTAL_CHECKERBOARD :
-        {
-            nFlyDirection = 0;
-            nFlyMethod = 3;
-        }
-        break;
-        case css::presentation::AnimationEffect_HORIZONTAL_ROTATE :
-        case css::presentation::AnimationEffect_VERTICAL_ROTATE :
-        {
-            nFlyDirection = 27;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_HORIZONTAL_STRETCH :
-        case css::presentation::AnimationEffect_VERTICAL_STRETCH :
-        {
-            nFlyDirection = 22;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_STRETCH_FROM_LEFT :
-        case css::presentation::AnimationEffect_STRETCH_FROM_UPPERLEFT :
-        {
-            nFlyDirection = 23;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_STRETCH_FROM_TOP :
-        case css::presentation::AnimationEffect_STRETCH_FROM_UPPERRIGHT :
-        {
-            nFlyDirection = 24;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_STRETCH_FROM_RIGHT :
-        case css::presentation::AnimationEffect_STRETCH_FROM_LOWERRIGHT :
-        {
-            nFlyDirection = 25;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_STRETCH_FROM_BOTTOM :
-        case css::presentation::AnimationEffect_STRETCH_FROM_LOWERLEFT :
-        {
-            nFlyDirection = 26;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_ZOOM_IN :
-        {
-            nFlyDirection = 16;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_ZOOM_IN_SMALL :
-        case css::presentation::AnimationEffect_ZOOM_IN_SPIRAL :
-        {
-            nFlyDirection = 17;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_ZOOM_OUT :
-        {
-            nFlyDirection = 18;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_ZOOM_OUT_SMALL :
-        case css::presentation::AnimationEffect_ZOOM_OUT_SPIRAL :
-        {
-            nFlyDirection = 19;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_ZOOM_IN_FROM_LEFT :
-        case css::presentation::AnimationEffect_ZOOM_IN_FROM_UPPERLEFT :
-        case css::presentation::AnimationEffect_ZOOM_IN_FROM_TOP :
-        case css::presentation::AnimationEffect_ZOOM_IN_FROM_UPPERRIGHT :
-        case css::presentation::AnimationEffect_ZOOM_IN_FROM_RIGHT :
-        case css::presentation::AnimationEffect_ZOOM_IN_FROM_LOWERRIGHT :
-        case css::presentation::AnimationEffect_ZOOM_IN_FROM_BOTTOM :
-        case css::presentation::AnimationEffect_ZOOM_IN_FROM_LOWERLEFT :
-        case css::presentation::AnimationEffect_ZOOM_IN_FROM_CENTER :
-        {
-            nFlyDirection = 16;
-            nFlyMethod = 12;
-        }
-        break;
-        case css::presentation::AnimationEffect_ZOOM_OUT_FROM_LEFT :
-        case css::presentation::AnimationEffect_ZOOM_OUT_FROM_UPPERLEFT :
-        case css::presentation::AnimationEffect_ZOOM_OUT_FROM_TOP :
-        case css::presentation::AnimationEffect_ZOOM_OUT_FROM_UPPERRIGHT :
-        case css::presentation::AnimationEffect_ZOOM_OUT_FROM_RIGHT :
-        case css::presentation::AnimationEffect_ZOOM_OUT_FROM_LOWERRIGHT :
-        case css::presentation::AnimationEffect_ZOOM_OUT_FROM_BOTTOM :
-        case css::presentation::AnimationEffect_ZOOM_OUT_FROM_LOWERLEFT :
-        case css::presentation::AnimationEffect_ZOOM_OUT_FROM_CENTER :
-            nAfterEffect |= 2;
-            break;
-        default:
-            break;
-    }
-    if ( mnDiaMode >= 1 )
-        nFlags |= 4;
-    if ( eTe != css::presentation::AnimationEffect_NONE )
-        nBuildType = 2;
-    if ( ImplGetPropertyValue( "SoundOn" ) )
-    {
-        bool bBool(false);
-        mAny >>= bBool;
-        if ( bBool )
-        {
-            if ( ImplGetPropertyValue( "Sound" ) )
-            {
-                nSoundRef = maSoundCollection.GetId( *static_cast<OUString const *>(mAny.getValue()) );
-                if ( nSoundRef )
-                    nFlags |= 0x10;
-            }
-        }
-    }
-    bool bDimHide = false;
-    bool bDimPrevious = false;
-    if ( ImplGetPropertyValue( "DimHide" ) )
-        mAny >>= bDimHide;
-    if ( ImplGetPropertyValue( "DimPrevious" ) )
-        mAny >>= bDimPrevious;
-    if ( bDimPrevious )
-        nAfterEffect |= 1;
-    if ( bDimHide )
-        nAfterEffect |= 2;
-    if ( ImplGetPropertyValue( "DimColor" ) )
-        nDimColor = EscherEx::GetColor( *static_cast<sal_uInt32 const *>(mAny.getValue()) ) | 0xfe000000;
-
-    rSt.WriteUInt32( nDimColor ).WriteUInt32( nFlags ).WriteUInt32( nSoundRef ).WriteUInt32( nDelayTime )
-       .WriteUInt16( nOrder )                                   // order of build ( 1.. )
-       .WriteUInt16( nSlideCount ).WriteUChar( nBuildType ).WriteUChar( nFlyMethod ).WriteUChar( nFlyDirection )
-       .WriteUChar( nAfterEffect ).WriteUChar( nSubEffect ).WriteUChar( nOleVerb )
-       .WriteUInt16( 0 );                               // PadWord
-}
-
 void PPTWriter::ImplWriteClickAction( SvStream& rSt, css::presentation::ClickAction eCa, bool bMediaClickAction )
 {
     sal_uInt32 nSoundRef = 0;   // a reference to a sound in the sound collection, or NULL.
@@ -1954,14 +1438,14 @@ void PPTWriter::ImplWriteClickAction( SvStream& rSt, css::presentation::ClickAct
         case css::presentation::ClickAction_SOUND :
         {
             if ( ImplGetPropertyValue( "Bookmark" ) )
-                nSoundRef = maSoundCollection.GetId( *static_cast<OUString const *>(mAny.getValue()) );
+                nSoundRef = maSoundCollection.GetId( *o3tl::doAccess<OUString>(mAny) );
         }
         break;
         case css::presentation::ClickAction_PROGRAM :
         {
             if ( ImplGetPropertyValue( "Bookmark" ) )
             {
-                INetURLObject aUrl( *static_cast<OUString const *>(mAny.getValue()) );
+                INetURLObject aUrl( *o3tl::doAccess<OUString>(mAny) );
                 if ( INetProtocol::File == aUrl.GetProtocol() )
                 {
                     aFile = aUrl.PathToFileName();
@@ -1975,7 +1459,7 @@ void PPTWriter::ImplWriteClickAction( SvStream& rSt, css::presentation::ClickAct
         {
             if ( ImplGetPropertyValue( "Bookmark" ) )
             {
-                OUString  aBookmark( *static_cast<OUString const *>(mAny.getValue()) );
+                OUString  aBookmark( *o3tl::doAccess<OUString>(mAny) );
                 sal_uInt32 nIndex = 0;
                 std::vector<OUString>::const_iterator pIter;
                 for ( pIter = maSlideNameList.begin(); pIter != maSlideNameList.end(); ++pIter, nIndex++ )
@@ -2002,7 +1486,7 @@ void PPTWriter::ImplWriteClickAction( SvStream& rSt, css::presentation::ClickAct
         {
             if ( ImplGetPropertyValue( "Bookmark" ) )
             {
-                OUString aBookmark( *static_cast<OUString const *>(mAny.getValue()) );
+                OUString aBookmark( *o3tl::doAccess<OUString>(mAny) );
                 if ( !aBookmark.isEmpty() )
                 {
                     nAction = 4;
@@ -2122,7 +1606,7 @@ bool PPTWriter::ImplCreatePresentationPlaceholder( const bool bMasterPage, const
             mpStrm->WriteUInt32( ( ESCHER_ClientTextbox << 16 ) | 0xf )
                    .WriteUInt32( aClientTextBox.Tell() );
 
-            mpStrm->Write( aClientTextBox.GetData(), aClientTextBox.Tell() );
+            mpStrm->WriteBytes(aClientTextBox.GetData(), aClientTextBox.Tell());
         }
         mpPptEscherEx->CloseContainer();    // ESCHER_SpContainer
     }
@@ -2155,12 +1639,11 @@ void PPTWriter::ImplWritePage( const PHLayout& rLayout, EscherSolverContainer& a
     // sal_uInt32  nGroupLevel = 0;
 
     sal_uInt32  nInstance, nGroups, nShapes, nShapeCount, nPer, nLastPer, nIndices, nOlePictureId;
-    sal_uInt16  nEffectCount;
     css::awt::Point   aTextRefPoint;
 
     ResetGroupTable( nShapes = mXShapes->getCount() );
 
-    nIndices = nInstance = nLastPer = nShapeCount = nEffectCount = 0;
+    nIndices = nInstance = nLastPer = nShapeCount = 0;
 
     bool bIsTitlePossible = true;           // powerpoint is not able to handle more than one title
 
@@ -2204,9 +1687,6 @@ void PPTWriter::ImplWritePage( const PHLayout& rLayout, EscherSolverContainer& a
             css::presentation::AnimationEffect eAe;
             css::presentation::AnimationEffect eTe;
 
-            if ( ImplGetPropertyValue( "PresentationOrder" ) )
-                nEffectCount = *static_cast<sal_uInt16 const *>(mAny.getValue());
-
             bool bEffect = ImplGetEffect( mXPropSet, eAe, eTe, bIsSound );
             css::presentation::ClickAction eCa = css::presentation::ClickAction_NONE;
             if ( ImplGetPropertyValue( "OnClick" ) )
@@ -2231,11 +1711,6 @@ void PPTWriter::ImplWritePage( const PHLayout& rLayout, EscherSolverContainer& a
                 {
                     SvMemoryStream* pTmp = nullptr;
 
-                    if ( bEffect && !mbUseNewAnimations )
-                    {
-                        pTmp = new SvMemoryStream( 0x200, 0x200 );
-                        ImplWriteObjectEffect( *pTmp, eAe, eTe, ++nEffectCount );
-                    }
                     if ( eCa != css::presentation::ClickAction_NONE )
                     {
                         if ( !pTmp )
@@ -2264,9 +1739,9 @@ void PPTWriter::ImplWritePage( const PHLayout& rLayout, EscherSolverContainer& a
                 {
                     if ( ImplGetPropertyValue( "BoundRect" ) )
                     {
-                        css::awt::Rectangle aRect( *static_cast<css::awt::Rectangle const *>(mAny.getValue()) );
-                        maPosition = MapPoint( css::awt::Point( aRect.X, aRect.Y ) );
-                        maSize = MapSize( css::awt::Size( aRect.Width, aRect.Height ) );
+                        auto aRect = o3tl::doAccess<css::awt::Rectangle>(mAny);
+                        maPosition = MapPoint( css::awt::Point( aRect->X, aRect->Y ) );
+                        maSize = MapSize( css::awt::Size( aRect->Width, aRect->Height ) );
                         maRect = Rectangle( Point( maPosition.X, maPosition.Y ), Size( maSize.Width, maSize.Height ) );
                     }
                     mType = "drawing.dontknow";
@@ -2385,10 +1860,10 @@ void PPTWriter::ImplWritePage( const PHLayout& rLayout, EscherSolverContainer& a
                     sal_Int32 nStartAngle, nEndAngle;
                     if ( !ImplGetPropertyValue( "CircleStartAngle" ) )
                         continue;
-                    nStartAngle = *static_cast<sal_Int32 const *>(mAny.getValue());
+                    nStartAngle = *o3tl::doAccess<sal_Int32>(mAny);
                     if( !ImplGetPropertyValue( "CircleEndAngle" ) )
                         continue;
-                    nEndAngle = *static_cast<sal_Int32 const *>(mAny.getValue());
+                    nEndAngle = *o3tl::doAccess<sal_Int32>(mAny);
                     css::awt::Point aPoint( mXShape->getPosition() );
                     css::awt::Size  aSize( mXShape->getSize() );
                     css::awt::Point aStart, aEnd, aCenter;
@@ -3184,11 +2659,6 @@ void PPTWriter::ImplWritePage( const PHLayout& rLayout, EscherSolverContainer& a
             else if ( (mType == "drawing.Table") || (mType == "presentation.Table") )
             {
                 SvMemoryStream* pTmp = nullptr;
-                if ( bEffect && !mbUseNewAnimations )
-                {
-                    pTmp = new SvMemoryStream( 0x200, 0x200 );
-                    ImplWriteObjectEffect( *pTmp, eAe, eTe, ++nEffectCount );
-                }
                 if ( eCa != css::presentation::ClickAction_NONE )
                 {
                     if ( !pTmp )
@@ -3255,31 +2725,9 @@ void PPTWriter::ImplWritePage( const PHLayout& rLayout, EscherSolverContainer& a
                                 .WriteUInt32( nOlePictureId );
                     nOlePictureId = 0;
                 }
-                if ( bEffect )
+                if ( bEffect && !pClientData )
                 {
-                    if ( !pClientData )
-                        pClientData = new SvMemoryStream( 0x200, 0x200 );
-
-                    // check if it is sensible to replace the object effect with text effect,
-                    // because in Impress there is the possibility to use a compound effect,
-                    // e.g. the object effect is an AnimationEffect_FADE_FROM_LEFT and the
-                    // text effect is a AnimationEffect_FADE_FROM_TOP, in PowerPoint there
-                    // can be used only one effect
-                    if ( mnTextSize && ( eTe != css::presentation::AnimationEffect_NONE )
-                        && ( eAe != css::presentation::AnimationEffect_NONE )
-                            && ( eTe != eAe ) )
-                    {
-                        sal_uInt32 nFillStyleFlags, nLineStyleFlags;
-                        if ( aPropOpt.GetOpt( ESCHER_Prop_fNoFillHitTest, nFillStyleFlags )
-                            && aPropOpt.GetOpt( ESCHER_Prop_fNoLineDrawDash, nLineStyleFlags ) )
-                        {
-                            // there is no fillstyle and also no linestyle
-                            if ( ! ( ( nFillStyleFlags & 0x10 ) + ( nLineStyleFlags & 9 ) ) )
-                                eAe = eTe;
-                        }
-                    }
-                    if ( !mbUseNewAnimations  )
-                        ImplWriteObjectEffect( *pClientData, eAe, eTe, ++nEffectCount );
+                    pClientData = new SvMemoryStream( 0x200, 0x200 );
                 }
 
                 if ( eCa != css::presentation::ClickAction_NONE )
@@ -3318,7 +2766,7 @@ void PPTWriter::ImplWritePage( const PHLayout& rLayout, EscherSolverContainer& a
                         SvMemoryStream* pOut = aTextRule.pOut;
                         if ( pOut )
                         {
-                            pClientTextBox->Write( pOut->GetData(), pOut->Tell() );
+                            pClientTextBox->WriteBytes(pOut->GetData(), pOut->Tell());
                             delete pOut;
                             aTextRule.pOut = nullptr;
                         }
@@ -3382,7 +2830,7 @@ void PPTWriter::ImplWritePage( const PHLayout& rLayout, EscherSolverContainer& a
                 mpStrm->WriteUInt32( ( ESCHER_ClientData << 16 ) | 0xf )
                        .WriteUInt32( pClientData->Tell() );
 
-                mpStrm->Write( pClientData->GetData(), pClientData->Tell() );
+                mpStrm->WriteBytes(pClientData->GetData(), pClientData->Tell());
                 delete pClientData;
                 pClientData = nullptr;
             }
@@ -3391,7 +2839,7 @@ void PPTWriter::ImplWritePage( const PHLayout& rLayout, EscherSolverContainer& a
                 mpStrm->WriteUInt32( ( ESCHER_ClientTextbox << 16 ) | 0xf )
                        .WriteUInt32( pClientTextBox->Tell() );
 
-                mpStrm->Write( pClientTextBox->GetData(), pClientTextBox->Tell() );
+                mpStrm->WriteBytes(pClientTextBox->GetData(), pClientTextBox->Tell());
                 delete pClientTextBox;
                 pClientTextBox = nullptr;
             }
@@ -3407,7 +2855,7 @@ void PPTWriter::ImplWritePage( const PHLayout& rLayout, EscherSolverContainer& a
             EscherPropertyContainer     aPropOpt;
             mnAngle = ( PropValue::GetPropertyValue( aAny,
                 mXPropSet, "RotateAngle", true ) )
-                    ? *static_cast<sal_Int32 const *>(aAny.getValue())
+                    ? *o3tl::doAccess<sal_Int32>(aAny)
                     : 0;
 
             aPropOpt.AddOpt( ESCHER_Prop_fNoLineDrawDash, 0x90000 );
@@ -3457,7 +2905,7 @@ void PPTWriter::ImplWritePage( const PHLayout& rLayout, EscherSolverContainer& a
             mpStrm->WriteUInt32( ( ESCHER_ClientTextbox << 16 ) | 0xf )
                    .WriteUInt32( pClientTextBox->Tell() );
 
-            mpStrm->Write( pClientTextBox->GetData(), pClientTextBox->Tell() );
+            mpStrm->WriteBytes(pClientTextBox->GetData(), pClientTextBox->Tell());
             delete pClientTextBox;
             pClientTextBox = nullptr;
 
@@ -3585,12 +3033,8 @@ void PPTWriter::ImplCreateTable( uno::Reference< drawing::XShape >& rXShape, Esc
 {
     try
     {
-        static const char sModel[] = "Model";
-        static const char sWidth[] = "Width";
-        static const char sHeight[] = "Height";
-
         uno::Reference< table::XTable > xTable;
-        if ( mXPropSet->getPropertyValue( sModel ) >>= xTable )
+        if ( mXPropSet->getPropertyValue( "Model" ) >>= xTable )
         {
             uno::Reference< table::XColumnRowRange > xColumnRowRange( xTable, uno::UNO_QUERY_THROW );
             uno::Reference< container::XIndexAccess > xColumns( xColumnRowRange->getColumns(), uno::UNO_QUERY_THROW );
@@ -3607,7 +3051,7 @@ void PPTWriter::ImplCreateTable( uno::Reference< drawing::XShape >& rXShape, Esc
             {
                 uno::Reference< beans::XPropertySet > xPropSet( xColumns->getByIndex( x ), uno::UNO_QUERY_THROW );
                 awt::Size aS( 0, 0 );
-                xPropSet->getPropertyValue( sWidth ) >>= aS.Width;
+                xPropSet->getPropertyValue( "Width" ) >>= aS.Width;
                 awt::Size aM( MapSize( aS ) );
                 aColumns.push_back( std::pair< sal_Int32, sal_Int32 >( nPosition, aM.Width ) );
                 nPosition += aM.Width;
@@ -3620,7 +3064,7 @@ void PPTWriter::ImplCreateTable( uno::Reference< drawing::XShape >& rXShape, Esc
             {
                 uno::Reference< beans::XPropertySet > xPropSet( xRows->getByIndex( y ), uno::UNO_QUERY_THROW );
                 awt::Size aS( 0, 0 );
-                xPropSet->getPropertyValue( sHeight ) >>= aS.Height;
+                xPropSet->getPropertyValue( "Height" ) >>= aS.Height;
                 awt::Size aM( MapSize( aS ) );
                 aRows.push_back( std::pair< sal_Int32, sal_Int32 >( nPosition, aM.Height ) );
                 nPosition += aM.Height;
@@ -3705,7 +3149,7 @@ void PPTWriter::ImplCreateTable( uno::Reference< drawing::XShape >& rXShape, Esc
                             mpStrm->WriteUInt32( ( ESCHER_ClientData << 16 ) | 0xf )
                                .WriteUInt32( pClientData->Tell() );
 
-                            mpStrm->Write( pClientData->GetData(), pClientData->Tell() );
+                            mpStrm->WriteBytes(pClientData->GetData(), pClientData->Tell());
                             delete pClientData;
                             pClientData = nullptr;
                         }
@@ -3720,16 +3164,11 @@ void PPTWriter::ImplCreateTable( uno::Reference< drawing::XShape >& rXShape, Esc
                         mpStrm->WriteUInt32( ( ESCHER_ClientTextbox << 16 ) | 0xf )
                            .WriteUInt32( aClientTextBox.Tell() );
 
-                        mpStrm->Write( aClientTextBox.GetData(), aClientTextBox.Tell() );
+                        mpStrm->WriteBytes(aClientTextBox.GetData(), aClientTextBox.Tell());
                         xCellContainer.reset();
                     }
                 }
             }
-
-            static const char sTopBorder[] = "TopBorder";
-            static const char sBottomBorder[] = "BottomBorder";
-            static const char sLeftBorder[] = "LeftBorder";
-            static const char sRightBorder[] = "RightBorder";
 
             // creating horz lines
             for( sal_Int32 nLine = 0; nLine < ( xRows->getCount() + 1 ); nLine++ )
@@ -3748,7 +3187,7 @@ void PPTWriter::ImplCreateTable( uno::Reference< drawing::XShape >& rXShape, Esc
                         {
                             uno::Reference< beans::XPropertySet > xPropSet2( xCell, uno::UNO_QUERY_THROW );
                             table::BorderLine aBorderLine;
-                            if ( xPropSet2->getPropertyValue( sTopBorder ) >>= aBorderLine )
+                            if ( xPropSet2->getPropertyValue( "TopBorder" ) >>= aBorderLine )
                                 aCellBorder.maCellBorder = aBorderLine;
                             sal_Int32 nRight  = GetCellRight( nColumn, maRect,aColumns,xCell );
                             bTop = ImplCreateCellBorder( &aCellBorder, aCellBorder.mnPos,
@@ -3774,7 +3213,7 @@ void PPTWriter::ImplCreateTable( uno::Reference< drawing::XShape >& rXShape, Esc
                                     uno::Reference< table::XMergeableCell > xCellOwn( xCellRange->getCellByPosition( nColumn, nRow - 1 ), uno::UNO_QUERY_THROW );
                                     uno::Reference< beans::XPropertySet > xPropSet2( xCellOwn, uno::UNO_QUERY_THROW );
                                     table::BorderLine aBorderLine;
-                                    if ( xPropSet2->getPropertyValue( sBottomBorder ) >>= aBorderLine )
+                                    if ( xPropSet2->getPropertyValue( "BottomBorder" ) >>= aBorderLine )
                                         aCellBorder.maCellBorder = aBorderLine;
                                     ImplCreateCellBorder( &aCellBorder, aCellBorder.mnPos,
                                         nBottom, nRight, nBottom);
@@ -3805,7 +3244,7 @@ void PPTWriter::ImplCreateTable( uno::Reference< drawing::XShape >& rXShape, Esc
                         {
                             uno::Reference< beans::XPropertySet > xCellSet( xCell, uno::UNO_QUERY_THROW );
                             table::BorderLine aBorderLine;
-                            if ( xCellSet->getPropertyValue( sLeftBorder ) >>= aBorderLine )
+                            if ( xCellSet->getPropertyValue( "LeftBorder" ) >>= aBorderLine )
                                 aCellBorder.maCellBorder = aBorderLine;
                             sal_Int32 nBottom = GetCellBottom( nRow, maRect, aRows,xCell );
                             bLeft = ImplCreateCellBorder( &aCellBorder, aColumns[nLine].first, aCellBorder.mnPos,
@@ -3827,7 +3266,7 @@ void PPTWriter::ImplCreateTable( uno::Reference< drawing::XShape >& rXShape, Esc
                                     uno::Reference< table::XMergeableCell > xCellOwn( xCellRange->getCellByPosition( nColumn - 1, nRow ), uno::UNO_QUERY_THROW );
                                     uno::Reference< beans::XPropertySet > xCellSet( xCellOwn, uno::UNO_QUERY_THROW );
                                     table::BorderLine aBorderLine;
-                                    if ( xCellSet->getPropertyValue( sRightBorder ) >>= aBorderLine )
+                                    if ( xCellSet->getPropertyValue( "RightBorder" ) >>= aBorderLine )
                                         aCellBorder.maCellBorder = aBorderLine;
                                     ImplCreateCellBorder( &aCellBorder, nRight, aCellBorder.mnPos,
                                         nRight,  nBottom );

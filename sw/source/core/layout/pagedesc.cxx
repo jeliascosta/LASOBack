@@ -48,9 +48,10 @@ SwPageDesc::SwPageDesc(const OUString& rName, SwFrameFormat *pFormat, SwDoc *con
     , m_nRegHeight( 0 )
     , m_nRegAscent( 0 )
     , m_nVerticalAdjustment( drawing::TextVerticalAdjust_TOP )
-    , m_eUse( (UseOnPage)(nsUseOnPage::PD_ALL | nsUseOnPage::PD_HEADERSHARE | nsUseOnPage::PD_FOOTERSHARE | nsUseOnPage::PD_FIRSTSHARE) )
+    , m_eUse( UseOnPage::All | UseOnPage::HeaderShare | UseOnPage::FooterShare | UseOnPage::FirstShare )
     , m_IsLandscape( false )
     , m_IsHidden( false )
+    , m_pdList( nullptr )
 {
 }
 
@@ -71,6 +72,7 @@ SwPageDesc::SwPageDesc( const SwPageDesc &rCpy )
     , m_IsLandscape( rCpy.GetLandscape() )
     , m_IsHidden( rCpy.IsHidden() )
     , m_IsFootnoteInfo( rCpy.GetFootnoteInfo() )
+    , m_pdList( nullptr )
 {
 }
 
@@ -98,6 +100,23 @@ SwPageDesc & SwPageDesc::operator = (const SwPageDesc & rSrc)
 
 SwPageDesc::~SwPageDesc()
 {
+}
+
+bool SwPageDesc::SetName( const OUString& rNewName )
+{
+    bool renamed = true;
+    if (m_pdList) {
+        SwPageDescs::iterator it = m_pdList->find_( m_StyleName );
+        if( m_pdList->end() == it ) {
+            SAL_WARN( "sw", "SwPageDesc not found in expected m_pdList" );
+            return false;
+        }
+        renamed = m_pdList->m_PosIndex.modify( it,
+            change_name( rNewName ), change_name( m_StyleName ) );
+    }
+    else
+        m_StyleName = rNewName;
+    return renamed;
 }
 
 /// Only the margin is mirrored.
@@ -305,29 +324,29 @@ bool SwPageDesc::IsFollowNextPageOfNode( const SwNode& rNd ) const
 
 SwFrameFormat *SwPageDesc::GetLeftFormat(bool const bFirst)
 {
-    return (nsUseOnPage::PD_LEFT & m_eUse)
+    return (UseOnPage::Left & m_eUse)
             ? ((bFirst) ? &m_FirstLeft : &m_Left)
             : nullptr;
 }
 
 SwFrameFormat *SwPageDesc::GetRightFormat(bool const bFirst)
 {
-    return (nsUseOnPage::PD_RIGHT & m_eUse)
-            ? ((bFirst) ? &m_FirstMaster : &m_Master)
+    return (UseOnPage::Right & m_eUse)
+            ? (bFirst ? &m_FirstMaster : &m_Master)
             : nullptr;
 }
 
 bool SwPageDesc::IsFirstShared() const
 {
-    return (m_eUse & nsUseOnPage::PD_FIRSTSHARE) != 0;
+    return bool(m_eUse & UseOnPage::FirstShare);
 }
 
 void SwPageDesc::ChgFirstShare( bool bNew )
 {
     if ( bNew )
-        m_eUse = (UseOnPage) (m_eUse | nsUseOnPage::PD_FIRSTSHARE);
+        m_eUse |= UseOnPage::FirstShare;
     else
-        m_eUse = (UseOnPage) (m_eUse & nsUseOnPage::PD_NOFIRSTSHARE);
+        m_eUse &= UseOnPage::NoFirstShare;
 }
 
 SwPageDesc* SwPageDesc::GetByName(SwDoc& rDoc, const OUString& rName)
@@ -460,6 +479,62 @@ SwPageDescExt::operator SwPageDesc() const
         aResult.SetFollow(pPageDesc);
 
     return aResult;
+}
+
+SwPageDescs::SwPageDescs()
+    : m_PosIndex( m_Array.get<0>() )
+    , m_NameIndex( m_Array.get<1>() )
+{
+}
+
+SwPageDescs::~SwPageDescs()
+{
+    for(const_iterator it = begin(); it != end(); ++it)
+        delete *it;
+}
+
+SwPageDescs::iterator SwPageDescs::find_(const OUString &name) const
+{
+    ByName::iterator it = m_NameIndex.find( name );
+    return m_Array.iterator_to( *it );
+}
+
+std::pair<SwPageDescs::const_iterator,bool> SwPageDescs::push_back( const value_type& x )
+{
+    // SwPageDesc is not already in a SwPageDescs list!
+    assert( x->m_pdList == nullptr );
+
+    std::pair<iterator,bool> res = m_PosIndex.push_back( x );
+    if( res.second )
+        x->m_pdList = this;
+    return res;
+}
+
+void SwPageDescs::erase( const value_type& x )
+{
+    // SwPageDesc is not in this SwPageDescs list!
+    assert( x->m_pdList == this );
+
+    iterator const ret = find_( x->GetName() );
+    if (ret != end())
+        m_PosIndex.erase( ret );
+    else
+        SAL_WARN( "sw", "SwPageDesc is not in SwPageDescs m_pdList!" );
+    x->m_pdList = nullptr;
+}
+
+void SwPageDescs::erase( const_iterator const& position )
+{
+    // SwPageDesc is not in this SwPageDescs list!
+    assert( (*position)->m_pdList == this );
+
+    (*position)->m_pdList = nullptr;
+    m_PosIndex.erase( position );
+}
+
+void SwPageDescs::erase( size_type index_ )
+{
+    erase( begin() + index_ );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

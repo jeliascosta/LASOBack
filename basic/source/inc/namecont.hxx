@@ -52,6 +52,7 @@
 #include <cppuhelper/component.hxx>
 #include <cppuhelper/typeprovider.hxx>
 #include <cppuhelper/basemutex.hxx>
+#include <rtl/ref.hxx>
 #include <sot/storage.hxx>
 #include <comphelper/listenernotification.hxx>
 #include <xmlscript/xmllib_imexp.hxx>
@@ -227,7 +228,7 @@ protected:
     ::osl::Mutex        maMutex;
     ModifiableHelper    maModifiable;
 
-    css::uno::Reference<NameContainer> maNameContainer;
+    rtl::Reference<NameContainer> maNameContainer;
     bool    mbOldInfoFormat;
     bool    mbOasis2OOoFormat;
 
@@ -354,7 +355,6 @@ protected:
                             const css::uno::Reference< css::embed::XStorage >& xStorage,
                             bool bComplete );
 
-    void SAL_CALL initializeFromDocumentURL( const OUString& _rInitialDocumentURL );
     void SAL_CALL initializeFromDocument( const css::uno::Reference< css::document::XStorageBasedDocument >& _rxDocument );
 
     // OEventListenerAdapter
@@ -370,7 +370,7 @@ private:
 
 public:
     SfxLibraryContainer();
-    virtual ~SfxLibraryContainer();
+    virtual ~SfxLibraryContainer() override;
 
 
     // Interface to set the BasicManager (Hack for password implementation)
@@ -381,8 +381,6 @@ public:
 
     void    enterMethod();
     static void leaveMethod();
-    bool    isDisposed() const { return rBHelper.bInDispose || rBHelper.bDisposed; }
-    void    checkDisposed() const;
 
     // Methods XElementAccess
     virtual css::uno::Type SAL_CALL getElementType()
@@ -557,7 +555,7 @@ class SfxLibrary
     css::uno::Reference< css::ucb::XSimpleFileAccess3 >   mxSFI;
 
     ModifiableHelper&                                     mrModifiable;
-    css::uno::Reference<NameContainer>                    maNameContainer;
+    rtl::Reference<NameContainer>                         maNameContainer;
 
     bool mbLoaded;
     bool mbIsModified;
@@ -717,7 +715,7 @@ class ScriptSubPackageIterator
             < css::deployment::XPackage >& rPackage, bool& rbPureDialogLib );
 
 public:
-    ScriptSubPackageIterator( css::uno::Reference< css::deployment::XPackage > xMainPackage );
+    ScriptSubPackageIterator( css::uno::Reference< css::deployment::XPackage > const & xMainPackage );
 
     css::uno::Reference< css::deployment::XPackage > getNextScriptSubPackage( bool& rbPureDialogLib );
 };

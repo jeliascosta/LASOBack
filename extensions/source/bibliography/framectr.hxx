@@ -60,7 +60,7 @@ class BibFrameController_Impl : public cppu::WeakImplHelper <
 >
 {
 friend class BibFrameCtrl_Impl;
-    BibFrameCtrl_Impl*          pImp;
+    rtl::Reference<BibFrameCtrl_Impl>                         mxImpl;
     BibStatusDispatchArr        aStatusListeners;
     css::uno::Reference< css::awt::XWindow >                  xWindow;
     css::uno::Reference< css::frame::XFrame >                 xFrame;
@@ -70,13 +70,13 @@ friend class BibFrameCtrl_Impl;
     BibDataManager*             pDatMan;
     HdlBibModul                 pBibMod;
 
-    DECL_LINK_TYPED( DisposeHdl, void*, void );
+    DECL_LINK( DisposeHdl, void*, void );
 
     static bool                 SaveModified(const css::uno::Reference< css::form::runtime::XFormController>& xController);
 public:
                                 BibFrameController_Impl( const css::uno::Reference< css::awt::XWindow > & xComponent,
                                                         BibDataManager* pDatMan);
-                                virtual ~BibFrameController_Impl();
+                                virtual ~BibFrameController_Impl() override;
 
 
     void                        ChangeDataSource(const css::uno::Sequence< css::beans::PropertyValue >& aArgs);

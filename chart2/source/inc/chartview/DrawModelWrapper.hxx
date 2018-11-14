@@ -46,16 +46,16 @@ public:
 
     SAL_DLLPRIVATE DrawModelWrapper(
         const css::uno::Reference<css::uno::XComponentContext>& xContext );
-    SAL_DLLPRIVATE virtual ~DrawModelWrapper();
+    SAL_DLLPRIVATE virtual ~DrawModelWrapper() override;
 
     css::uno::Reference< css::lang::XMultiServiceFactory > getShapeFactory();
 
     // the main page will contain the normal view objects
-    css::uno::Reference< css::drawing::XDrawPage > getMainDrawPage();
+    css::uno::Reference< css::drawing::XDrawPage > const & getMainDrawPage();
     SAL_DLLPRIVATE void clearMainDrawPage();
 
     // the extra page is not visible, but contains some extras like the symbols for data points
-    css::uno::Reference< css::drawing::XDrawPage > getHiddenDrawPage();
+    css::uno::Reference< css::drawing::XDrawPage > const & getHiddenDrawPage();
 
     static css::uno::Reference< css::drawing::XShapes >
          getChartRootShape( const css::uno::Reference< css::drawing::XDrawPage>& xPage );
@@ -79,6 +79,7 @@ public:
     XGradientListRef  GetGradientList() const;
     XHatchListRef     GetHatchList() const;
     XBitmapListRef    GetBitmapList() const;
+    XPatternListRef   GetPatternList() const;
 
     SdrObject* getNamedSdrObject( const OUString& rName );
     static SdrObject* getNamedSdrObject( const OUString& rName, SdrObjList* pObjList );

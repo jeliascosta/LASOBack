@@ -92,12 +92,12 @@
 #include "sdresid.hxx"
 #include "cusshow.hxx"
 #include "customshowlist.hxx"
-#include "../ui/inc/DrawDocShell.hxx"
-#include "../ui/inc/GraphicDocShell.hxx"
-#include "../ui/inc/sdxfer.hxx"
-#include "../ui/inc/ViewShell.hxx"
-#include "../ui/inc/optsitem.hxx"
-#include "../ui/inc/FrameView.hxx"
+#include "DrawDocShell.hxx"
+#include "GraphicDocShell.hxx"
+#include "sdxfer.hxx"
+#include "ViewShell.hxx"
+#include "optsitem.hxx"
+#include "FrameView.hxx"
 #include <undo/undomanager.hxx>
 
 #include <tools/tenccvt.hxx>
@@ -152,7 +152,6 @@ PresentationSettings::PresentationSettings( const PresentationSettings& r )
 
 SdDrawDocument::SdDrawDocument(DocumentType eType, SfxObjectShell* pDrDocSh)
 : FmFormModel( !utl::ConfigManager::IsAvoidConfig() ? SvtPathOptions().GetPalettePath() : OUString(), nullptr, pDrDocSh )
-, bReadOnly(false)
 , mpOutliner(nullptr)
 , mpInternalOutliner(nullptr)
 , mpWorkStartupTimer(nullptr)
@@ -171,7 +170,7 @@ SdDrawDocument::SdDrawDocument(DocumentType eType, SfxObjectShell* pDrDocSh)
 , meLanguage( LANGUAGE_SYSTEM )
 , meLanguageCJK( LANGUAGE_SYSTEM )
 , meLanguageCTL( LANGUAGE_SYSTEM )
-, mePageNumType(SVX_ARABIC)
+, mePageNumType(css::style::NumberingType::ARABIC)
 , mbAllocDocSh(false)
 , meDocType(eType)
 , mpCharClass(nullptr)
@@ -196,16 +195,16 @@ SdDrawDocument::SdDrawDocument(DocumentType eType, SfxObjectShell* pDrDocSh)
     pOptions->GetScale( nX, nY );
 
     // Allow UI scale only for draw documents.
-    if( eType == DOCUMENT_TYPE_DRAW )
+    if( eType == DocumentType::Draw )
         SetUIUnit( (FieldUnit)pOptions->GetMetric(), Fraction( nX, nY ) );  // user-defined
     else
         SetUIUnit( (FieldUnit)pOptions->GetMetric(), Fraction( 1, 1 ) );    // default
 
-    SetScaleUnit(MAP_100TH_MM);
+    SetScaleUnit(MapUnit::Map100thMM);
     SetScaleFraction(Fraction(1, 1));
     SetDefaultFontHeight(847);     // 24p
 
-    pItemPool->SetDefaultMetric(SFX_MAPUNIT_100TH_MM);
+    pItemPool->SetDefaultMetric(MapUnit::Map100thMM);
     pItemPool->FreezeIdRanges();
     SetTextDefaults();
 
@@ -244,11 +243,6 @@ SdDrawDocument::SdDrawDocument(DocumentType eType, SfxObjectShell* pDrDocSh)
 
     // If the current application language is a language that uses right-to-left text...
     LanguageType eRealCTLLanguage = Application::GetSettings().GetLanguageTag().getLanguageType();
-    if( MsLangId::isRightToLeft( eRealCTLLanguage ) )
-    {
-        // ... then we have to set this as a default
-        SetDefaultWritingMode( css::text::WritingMode_RL_TB );
-    }
 
     // for korean and japanese languages we have a different default for apply spacing between asian, latin and ctl text
     if (MsLangId::isKorean(eRealCTLLanguage) || (LANGUAGE_JAPANESE == eRealCTLLanguage))
@@ -293,7 +287,7 @@ SdDrawDocument::SdDrawDocument(DocumentType eType, SfxObjectShell* pDrDocSh)
         nCntrl &= ~EEControlBits::ONLINESPELLING;
 
     nCntrl &= ~ EEControlBits::ULSPACESUMMATION;
-    if ( meDocType != DOCUMENT_TYPE_IMPRESS )
+    if ( meDocType != DocumentType::Impress )
         SetSummationOfParagraphs( false );
     else
     {
@@ -374,7 +368,7 @@ SdDrawDocument::SdDrawDocument(DocumentType eType, SfxObjectShell* pDrDocSh)
 // Destructor
 SdDrawDocument::~SdDrawDocument()
 {
-    Broadcast(SdrHint(HINT_MODELCLEARED));
+    Broadcast(SdrHint(SdrHintKind::ModelCleared));
 
     if (mpWorkStartupTimer)
     {
@@ -482,14 +476,14 @@ SdDrawDocument* SdDrawDocument::AllocSdDrawDocument() const
         SfxObjectShell*   pObj = nullptr;
         ::sd::DrawDocShell*     pNewDocSh = nullptr;
 
-        if( meDocType == DOCUMENT_TYPE_IMPRESS )
+        if( meDocType == DocumentType::Impress )
             mpCreatingTransferable->SetDocShell( new ::sd::DrawDocShell(
                 SfxObjectCreateMode::EMBEDDED, true, meDocType ) );
         else
             mpCreatingTransferable->SetDocShell( new ::sd::GraphicDocShell(
                 SfxObjectCreateMode::EMBEDDED, true, meDocType ) );
 
-        pNewDocSh = static_cast< ::sd::DrawDocShell*>( pObj = mpCreatingTransferable->GetDocShell() );
+        pNewDocSh = static_cast< ::sd::DrawDocShell*>( pObj = mpCreatingTransferable->GetDocShell().get() );
         pNewDocSh->DoInitNew();
         pNewModel = pNewDocSh->GetDoc();
 
@@ -502,10 +496,10 @@ SdDrawDocument* SdDrawDocument::AllocSdDrawDocument() const
         pNewStylePool->CopyCellSheets(*pOldStylePool);
         pNewStylePool->CopyTableStyles(*pOldStylePool);
 
-        for (sal_uInt16 i = 0; i < GetMasterSdPageCount(PK_STANDARD); i++)
+        for (sal_uInt16 i = 0; i < GetMasterSdPageCount(PageKind::Standard); i++)
         {
             // Move with all of the master page's layouts
-            OUString aOldLayoutName(const_cast<SdDrawDocument*>(this)->GetMasterSdPage(i, PK_STANDARD)->GetLayoutName());
+            OUString aOldLayoutName(const_cast<SdDrawDocument*>(this)->GetMasterSdPage(i, PageKind::Standard)->GetLayoutName());
             aOldLayoutName = aOldLayoutName.copy( 0, aOldLayoutName.indexOf( SD_LT_SEPARATOR ) );
             SdStyleSheetVector aCreatedSheets;
             pNewStylePool->CopyLayoutSheets(aOldLayoutName, *pOldStylePool, aCreatedSheets );
@@ -594,7 +588,7 @@ void SdDrawDocument::NewOrLoadCompleted(DocCreationMode eMode)
 
         CheckMasterPages();
 
-        if ( GetMasterSdPageCount(PK_STANDARD) > 1 )
+        if ( GetMasterSdPageCount(PageKind::Standard) > 1 )
             RemoveUnnecessaryMasterPages( nullptr, true, false );
 
         for ( sal_uInt16 i = 0; i < GetPageCount(); i++ )
@@ -676,10 +670,10 @@ void SdDrawDocument::NewOrLoadCompleted(DocCreationMode eMode)
 
         // create missing layout style sheets for broken documents
         //         that where created with the 5.2
-        nPageCount = GetMasterSdPageCount( PK_STANDARD );
+        nPageCount = GetMasterSdPageCount( PageKind::Standard );
         for (nPage = 0; nPage < nPageCount; nPage++)
         {
-            SdPage* pPage = GetMasterSdPage(nPage, PK_STANDARD);
+            SdPage* pPage = GetMasterSdPage(nPage, PageKind::Standard);
             pSPool->CreateLayoutStyleSheets( pPage->GetName(), true );
         }
 
@@ -702,11 +696,11 @@ void SdDrawDocument::NewOrLoadCompleted(DocCreationMode eMode)
     mbNewOrLoadCompleted = true;
 
     // Update all linked pages
-    sal_uInt16 nMaxSdPages = GetSdPageCount(PK_STANDARD);
+    sal_uInt16 nMaxSdPages = GetSdPageCount(PageKind::Standard);
 
     for (sal_uInt16 nSdPage=0; nSdPage < nMaxSdPages; nSdPage++)
     {
-        SdPage* pPage = GetSdPage(nSdPage, PK_STANDARD);
+        SdPage* pPage = GetSdPage(nSdPage, PageKind::Standard);
 
         if (pPage && !pPage->GetFileName().isEmpty() && pPage->GetBookmarkName().getLength())
         {
@@ -763,7 +757,7 @@ void SdDrawDocument::NewOrLoadCompleted( SdPage* pPage, SdStyleSheetPool* pSPool
         // listeners.
         while( (pObj = rPresentationShapes.getNextShape()) )
         {
-            if (pObj->GetObjInventor() == SdrInventor)
+            if (pObj->GetObjInventor() == SdrInventor::Default)
             {
                 OutlinerParaObject* pOPO = pObj->GetOutlinerParaObject();
                 sal_uInt16 nId = pObj->GetObjIdentifier();
@@ -805,7 +799,7 @@ void SdDrawDocument::NewOrLoadCompleted( SdPage* pPage, SdStyleSheetPool* pSPool
 
                     if (!aString.isEmpty())
                     {
-                        sd::Outliner* pInternalOutl = GetInternalOutliner();
+                        SdOutliner* pInternalOutl = GetInternalOutliner();
                         pPage->SetObjText( static_cast<SdrTextObj*>(pObj), pInternalOutl, ePresObjKind, aString );
                         pObj->NbcSetStyleSheet( pPage->GetStyleSheetForPresObj( ePresObjKind ), true );
                         pInternalOutl->Clear();
@@ -818,11 +812,11 @@ void SdDrawDocument::NewOrLoadCompleted( SdPage* pPage, SdStyleSheetPool* pSPool
 
 // Local outliner that is used for outline mode. In this outliner, OutlinerViews
 // may be inserted.
-::sd::Outliner* SdDrawDocument::GetOutliner(bool bCreateOutliner)
+SdOutliner* SdDrawDocument::GetOutliner(bool bCreateOutliner)
 {
     if (!mpOutliner && bCreateOutliner)
     {
-        mpOutliner = new ::sd::Outliner( this, OutlinerMode::TextObject );
+        mpOutliner = new SdOutliner( this, OutlinerMode::TextObject );
 
         if (mpDocSh)
             mpOutliner->SetRefDevice( SD_MOD()->GetRefDevice( *mpDocSh ) );
@@ -836,11 +830,11 @@ void SdDrawDocument::NewOrLoadCompleted( SdPage* pPage, SdStyleSheetPool* pSPool
 
 // Internal outliner that is used to create text objects. We don't insert any
 // OutlinerViews into this outliner!
-::sd::Outliner* SdDrawDocument::GetInternalOutliner(bool bCreateOutliner)
+SdOutliner* SdDrawDocument::GetInternalOutliner(bool bCreateOutliner)
 {
     if ( !mpInternalOutliner && bCreateOutliner )
     {
-        mpInternalOutliner = new ::sd::Outliner( this, OutlinerMode::TextObject );
+        mpInternalOutliner = new SdOutliner( this, OutlinerMode::TextObject );
 
         // This outliner is only used to create special text objects. As no
         // information about portions is saved in this outliner, the update mode
@@ -1102,12 +1096,16 @@ void SdDrawDocument::dumpAsXml(xmlTextWriterPtr pWriter) const
     if (!pWriter)
     {
         pWriter = xmlNewTextWriterFilename("model.xml", 0);
+        xmlTextWriterSetIndent(pWriter,1);
+        xmlTextWriterSetIndentString(pWriter, BAD_CAST("  "));
         xmlTextWriterStartDocument(pWriter, nullptr, nullptr, nullptr);
         bOwns = true;
     }
-    xmlTextWriterStartElement(pWriter, BAD_CAST("sdDrawDocument"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SdDrawDocument"));
     xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("ptr"), "%p", this);
 
+    if (mpOutliner)
+        mpOutliner->dumpAsXml(pWriter);
     FmFormModel::dumpAsXml(pWriter);
     if (GetUndoManager())
         GetUndoManager()->dumpAsXml(pWriter);

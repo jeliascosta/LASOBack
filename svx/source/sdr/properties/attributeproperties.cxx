@@ -40,8 +40,6 @@
 #include <svx/svdtrans.hxx>
 #include <svx/svdpage.hxx>
 
-#include <svl/smplhint.hxx>
-
 
 namespace sdr
 {
@@ -591,7 +589,7 @@ namespace sdr
                 //  rObj.BroadcastObjectChange();
                 //}
 
-                rObj.SendUserCall(SDRUSERCALL_CHGATTR, aBoundRect);
+                rObj.SendUserCall(SdrUserCallType::ChangeAttr, aBoundRect);
 
                 bHintUsed = true;
             }

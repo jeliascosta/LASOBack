@@ -45,7 +45,6 @@
 #include <com/sun/star/sdbcx/XTablesSupplier.hpp>
 #include <com/sun/star/sdbcx/XColumnsSupplier.hpp>
 #include <com/sun/star/sdb/CommandType.hpp>
-#include <svtools/localresaccess.hxx>
 #include <svl/filenotation.hxx>
 #include <tools/urlobj.hxx>
 #include <algorithm>
@@ -249,7 +248,6 @@ namespace svt
 
     protected:
         css::uno::Any   getProperty(const OUString& _rLocalName) const;
-        css::uno::Any   getProperty(const sal_Char* _pLocalName) const;
 
         OUString        getStringProperty(const sal_Char* _pLocalName) const;
         OUString        getStringProperty(const OUString& _rLocalName) const;
@@ -258,7 +256,7 @@ namespace svt
 
     public:
         AssignmentPersistentData();
-        virtual ~AssignmentPersistentData();
+        virtual ~AssignmentPersistentData() override;
 
         // IAssigmentData overridables
         virtual OUString getDatasourceName() const override;
@@ -323,12 +321,6 @@ void AssignmentPersistentData::ImplCommit()
     }
 
 
-    Any AssignmentPersistentData::getProperty(const sal_Char* _pLocalName) const
-    {
-        return getProperty(OUString::createFromAscii(_pLocalName));
-    }
-
-
     Any AssignmentPersistentData::getProperty(const OUString& _rLocalName) const
     {
         Sequence< OUString > aProperties(&_rLocalName, 1);
@@ -349,7 +341,7 @@ void AssignmentPersistentData::ImplCommit()
     OUString AssignmentPersistentData::getStringProperty(const sal_Char* _pLocalName) const
     {
         OUString sReturn;
-        getProperty( _pLocalName ) >>= sReturn;
+        getProperty(OUString::createFromAscii(_pLocalName)) >>= sReturn;
         return sReturn;
     }
 
@@ -729,7 +721,7 @@ void AssignmentPersistentData::ImplCommit()
 
     void AddressBookSourceDialog::dispose()
     {
-        delete m_pImpl;
+        m_pImpl.reset();
         m_pDatasource.clear();
         m_pAdministrateDatasources.clear();
         m_pTable.clear();
@@ -777,7 +769,7 @@ void AssignmentPersistentData::ImplCommit()
     }
 
 
-    IMPL_LINK_TYPED(AddressBookSourceDialog, OnFieldScroll, ScrollBar*, _pScrollBar, void)
+    IMPL_LINK(AddressBookSourceDialog, OnFieldScroll, ScrollBar*, _pScrollBar, void)
     {
         implScrollFields( _pScrollBar->GetThumbPos(), true, true );
     }
@@ -972,7 +964,7 @@ void AssignmentPersistentData::ImplCommit()
     }
 
 
-    IMPL_LINK_TYPED(AddressBookSourceDialog, OnFieldSelect, ListBox&, _rListbox, void)
+    IMPL_LINK(AddressBookSourceDialog, OnFieldSelect, ListBox&, _rListbox, void)
     {
         // the index of the affected list box in our array
         sal_IntPtr nListBoxIndex = reinterpret_cast<sal_IntPtr>(_rListbox.GetEntryData(0));
@@ -1097,7 +1089,7 @@ void AssignmentPersistentData::ImplCommit()
     }
 
 
-    IMPL_LINK_NOARG_TYPED(AddressBookSourceDialog, OnDelayedInitialize, void*, void)
+    IMPL_LINK_NOARG(AddressBookSourceDialog, OnDelayedInitialize, void*, void)
     {
         // load the initial data from the configuration
         loadConfiguration();
@@ -1110,7 +1102,7 @@ void AssignmentPersistentData::ImplCommit()
     }
 
 
-    IMPL_LINK_TYPED(AddressBookSourceDialog, OnComboSelect, ComboBox&, _rBox, void)
+    IMPL_LINK(AddressBookSourceDialog, OnComboSelect, ComboBox&, _rBox, void)
     {
         if (&_rBox == m_pDatasource)
             resetTables();
@@ -1119,14 +1111,14 @@ void AssignmentPersistentData::ImplCommit()
     }
 
 
-    IMPL_STATIC_LINK_TYPED(
+    IMPL_STATIC_LINK(
         AddressBookSourceDialog, OnComboGetFocus, Control&, _rBox, void)
     {
         static_cast<ComboBox&>(_rBox).SaveValue();
     }
 
 
-    IMPL_LINK_TYPED(AddressBookSourceDialog, OnComboLoseFocus, Control&, rControl, void)
+    IMPL_LINK(AddressBookSourceDialog, OnComboLoseFocus, Control&, rControl, void)
     {
         ComboBox* _pBox = static_cast<ComboBox*>(&rControl);
         if ( _pBox->IsValueChangedFromSaved() )
@@ -1139,7 +1131,7 @@ void AssignmentPersistentData::ImplCommit()
     }
 
 
-    IMPL_LINK_NOARG_TYPED(AddressBookSourceDialog, OnOkClicked, Button*, void)
+    IMPL_LINK_NOARG(AddressBookSourceDialog, OnOkClicked, Button*, void)
     {
         OUString sSelectedDS = lcl_getSelectedDataSource(*m_pDatasource);
         if ( m_pImpl->bWorkingPersistent )
@@ -1165,7 +1157,7 @@ void AssignmentPersistentData::ImplCommit()
     }
 
 
-    IMPL_LINK_NOARG_TYPED(AddressBookSourceDialog, OnAdministrateDatasources, Button*, void)
+    IMPL_LINK_NOARG(AddressBookSourceDialog, OnAdministrateDatasources, Button*, void)
     {
         // create the dialog object
         Reference< XExecutableDialog > xAdminDialog;

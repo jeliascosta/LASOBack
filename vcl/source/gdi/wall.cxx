@@ -178,6 +178,11 @@ Wallpaper::Wallpaper( const Wallpaper& rWallpaper )
 {
 }
 
+Wallpaper::Wallpaper( Wallpaper&& rWallpaper )
+    : mpImplWallpaper( std::move(rWallpaper.mpImplWallpaper) )
+{
+}
+
 Wallpaper::Wallpaper( const Color& rColor ) : mpImplWallpaper()
 {
     mpImplWallpaper->maColor    = rColor;
@@ -320,11 +325,11 @@ bool Wallpaper::IsGradient() const
     return (mpImplWallpaper->mpGradient != nullptr);
 }
 
-Gradient Wallpaper::ImplGetApplicationGradient() const
+Gradient Wallpaper::ImplGetApplicationGradient()
 {
     Gradient g;
     g.SetAngle( 900 );
-    g.SetStyle( GradientStyle_LINEAR );
+    g.SetStyle( GradientStyle::Linear );
     g.SetStartColor( Application::GetSettings().GetStyleSettings().GetFaceColor() );
     // no 'extreme' gradient when high contrast
     if( Application::GetSettings().GetStyleSettings().GetHighContrastMode() )
@@ -393,6 +398,12 @@ bool Wallpaper::IsScrollable() const
 Wallpaper& Wallpaper::operator=( const Wallpaper& rWallpaper )
 {
     mpImplWallpaper = rWallpaper.mpImplWallpaper;
+    return *this;
+}
+
+Wallpaper& Wallpaper::operator=( Wallpaper&& rWallpaper )
+{
+    mpImplWallpaper = std::move(rWallpaper.mpImplWallpaper);
     return *this;
 }
 

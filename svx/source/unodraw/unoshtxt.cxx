@@ -99,8 +99,9 @@ private:
     bool                            mbNeedsUpdate;
     bool                            mbOldUndoMode;
     bool                            mbForwarderIsEditMode;      // have to reflect that, since ENDEDIT can happen more often
-    bool                            mbShapeIsEditMode;          // #104157# only true, if HINT_BEGEDIT was received
+    bool                            mbShapeIsEditMode;          // #104157# only true, if SdrHintKind::BeginEdit was received
     bool                            mbNotificationsDisabled;    // prevent EditEngine/Outliner notifications (e.g. when setting up forwarder)
+    bool                            mbNotifyEditOutlinerSet;
 
     SvxUnoTextRangeBaseList         maTextRanges;
 
@@ -122,7 +123,7 @@ private:
 public:
     SvxTextEditSourceImpl( SdrObject* pObject, SdrText* pText );
     SvxTextEditSourceImpl( SdrObject& rObject, SdrText* pText, SdrView& rView, const vcl::Window& rWindow );
-    virtual ~SvxTextEditSourceImpl();
+    virtual ~SvxTextEditSourceImpl() override;
 
     void SAL_CALL acquire();
     void SAL_CALL release();
@@ -146,7 +147,7 @@ public:
     Point                   LogicToPixel( const Point&, const MapMode& rMapMode );
     Point                   PixelToLogic( const Point&, const MapMode& rMapMode );
 
-    DECL_LINK_TYPED( NotifyHdl, EENotify&, void );
+    DECL_LINK( NotifyHdl, EENotify&, void );
 
     virtual void ObjectInDestruction(const SdrObject& rObject) override;
 
@@ -173,7 +174,8 @@ SvxTextEditSourceImpl::SvxTextEditSourceImpl( SdrObject* pObject, SdrText* pText
     mbOldUndoMode   ( false ),
     mbForwarderIsEditMode ( false ),
     mbShapeIsEditMode     ( false ),
-    mbNotificationsDisabled ( false )
+    mbNotificationsDisabled ( false ),
+    mbNotifyEditOutlinerSet ( false )
 {
     DBG_ASSERT( mpObject, "invalid pObject!" );
 
@@ -209,7 +211,8 @@ SvxTextEditSourceImpl::SvxTextEditSourceImpl( SdrObject& rObject, SdrText* pText
     mbOldUndoMode   ( false ),
     mbForwarderIsEditMode ( false ),
     mbShapeIsEditMode     ( true ),
-    mbNotificationsDisabled ( false )
+    mbNotificationsDisabled ( false ),
+    mbNotifyEditOutlinerSet ( false )
 {
     if( !mpText )
     {
@@ -317,39 +320,27 @@ void SvxTextEditSourceImpl::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
     // #i105988 keep reference to this object
     rtl::Reference< SvxTextEditSourceImpl > xThis( this );
 
-    const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>(&rHint);
-    const SvxViewHint* pViewHint = dynamic_cast<const SvxViewHint*>(&rHint);
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-
-    if (pSimpleHint)
+    if (SFX_HINT_DYING == rHint.GetId())
     {
-        if (SFX_HINT_DYING == pSimpleHint->GetId())
+        if (&rBC == mpView)
         {
-            if (&rBC == mpView)
+            mpView = nullptr;
+            if (mpViewForwarder)
             {
-                mpView = nullptr;
-                if (mpViewForwarder)
-                {
-                    delete mpViewForwarder;
-                    mpViewForwarder = nullptr;
-                }
+                delete mpViewForwarder;
+                mpViewForwarder = nullptr;
             }
         }
     }
-    else if( pViewHint )
+    else if (const SvxViewChangedHint* pViewHint = dynamic_cast<const SvxViewChangedHint*>(&rHint))
     {
-        switch( pViewHint->GetHintType() )
-        {
-            case SvxViewHint::SVX_HINT_VIEWCHANGED:
-                Broadcast( *pViewHint );
-                break;
-        }
+        Broadcast( *pViewHint );
     }
-    else if( pSdrHint )
+    else if (const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>(&rHint))
     {
         switch( pSdrHint->GetKind() )
         {
-            case HINT_OBJCHG:
+            case SdrHintKind::ObjectChange:
             {
                 mbDataValid = false;                        // Text muss neu geholt werden
 
@@ -362,16 +353,16 @@ void SvxTextEditSourceImpl::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
                     // UpdateOutliner();
 
                     // #101029# Broadcast object changes, as they might change visible attributes
-                    SvxViewHint aHint(SvxViewHint::SVX_HINT_VIEWCHANGED);
+                    SvxViewChangedHint aHint;
                     Broadcast( aHint );
                 }
                 break;
             }
 
-            case HINT_BEGEDIT:
+            case SdrHintKind::BeginEdit:
                 if( mpObject == pSdrHint->GetObject() )
                 {
-                    // Once HINT_BEGEDIT is broadcast, each EditSource of
+                    // Once SdrHintKind::BeginEdit is broadcast, each EditSource of
                     // AccessibleCell will handle it here and call below:
                     // mpView->GetTextEditOutliner()->SetNotifyHdl(), which
                     // will replace the Notifer for current editable cell. It
@@ -403,7 +394,10 @@ void SvxTextEditSourceImpl::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
 
                     // register as listener - need to broadcast state change messages
                     if( mpView && mpView->GetTextEditOutliner() )
+                    {
                         mpView->GetTextEditOutliner()->SetNotifyHdl( LINK(this, SvxTextEditSourceImpl, NotifyHdl) );
+                        mbNotifyEditOutlinerSet = true;
+                    }
 
                     // #104157# Only now we're really in edit mode
                     mbShapeIsEditMode = true;
@@ -412,7 +406,7 @@ void SvxTextEditSourceImpl::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
                 }
                 break;
 
-            case HINT_ENDEDIT:
+            case SdrHintKind::EndEdit:
                 if( mpObject == pSdrHint->GetObject() )
                 {
                     Broadcast( *pSdrHint );
@@ -422,7 +416,10 @@ void SvxTextEditSourceImpl::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
 
                     // remove as listener - outliner might outlive ourselves
                     if( mpView && mpView->GetTextEditOutliner() )
+                    {
                         mpView->GetTextEditOutliner()->SetNotifyHdl( Link<EENotify&,void>() );
+                        mbNotifyEditOutlinerSet = false;
+                    }
 
                     // destroy view forwarder, OutlinerView no longer
                     // valid (no need for UpdateData(), it's been
@@ -443,7 +440,7 @@ void SvxTextEditSourceImpl::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
                 }
                 break;
 
-            case HINT_MODELCLEARED:
+            case SdrHintKind::ModelCleared:
                 dispose();
                 break;
             default:
@@ -457,7 +454,7 @@ void SvxTextEditSourceImpl::ObjectInDestruction(const SdrObject&)
 {
     mpObject = nullptr;
     dispose();
-    Broadcast( SfxSimpleHint( SFX_HINT_DYING ) );
+    Broadcast( SfxHint( SFX_HINT_DYING ) );
 }
 
 /* unregister at all objects and set all references to 0 */
@@ -496,6 +493,12 @@ void SvxTextEditSourceImpl::dispose()
 
     if( mpView )
     {
+        // remove as listener - outliner might outlive ourselves
+        if (mbNotifyEditOutlinerSet && mpView && mpView->GetTextEditOutliner())
+        {
+            mpView->GetTextEditOutliner()->SetNotifyHdl(Link<EENotify&,void>());
+            mbNotifyEditOutlinerSet = false;
+        }
         EndListening( *mpView );
         mpView = nullptr;
     }
@@ -596,11 +599,12 @@ SvxTextForwarder* SvxTextEditSourceImpl::GetBackgroundTextForwarder()
         }
 
 
-        mpTextForwarder = new SvxOutlinerForwarder( *mpOutliner, (mpObject->GetObjInventor() == SdrInventor) && (mpObject->GetObjIdentifier() == OBJ_OUTLINETEXT) );
+        mpTextForwarder = new SvxOutlinerForwarder( *mpOutliner, (mpObject->GetObjInventor() == SdrInventor::Default) && (mpObject->GetObjIdentifier() == OBJ_OUTLINETEXT) );
         // delay listener subscription and UAA initialization until Outliner is fully setup
         bCreated = true;
 
         mbForwarderIsEditMode = false;
+        mbDataValid = false;
     }
 
     if( mpObject && mpText && !mbDataValid && mpObject->IsInserted() && mpObject->GetPage() )
@@ -694,7 +698,7 @@ SvxTextForwarder* SvxTextEditSourceImpl::GetEditModeTextForwarder()
 
         if( pEditOutliner )
         {
-            mpTextForwarder = new SvxOutlinerForwarder( *pEditOutliner, (mpObject->GetObjInventor() == SdrInventor) && (mpObject->GetObjIdentifier() == OBJ_OUTLINETEXT) );
+            mpTextForwarder = new SvxOutlinerForwarder( *pEditOutliner, (mpObject->GetObjInventor() == SdrInventor::Default) && (mpObject->GetObjIdentifier() == OBJ_OUTLINETEXT) );
             mbForwarderIsEditMode = true;
         }
     }
@@ -742,6 +746,7 @@ SvxDrawOutlinerViewForwarder* SvxTextEditSourceImpl::CreateViewForwarder()
     {
         // register as listener - need to broadcast state change messages
         mpView->GetTextEditOutliner()->SetNotifyHdl( LINK(this, SvxTextEditSourceImpl, NotifyHdl) );
+        mbNotifyEditOutlinerSet = true;
 
         SdrTextObj* pTextObj = dynamic_cast<SdrTextObj*>( mpObject  );
         if( pTextObj )
@@ -992,7 +997,7 @@ Point SvxTextEditSourceImpl::PixelToLogic( const Point& rPoint, const MapMode& r
     return Point();
 }
 
-IMPL_LINK_TYPED(SvxTextEditSourceImpl, NotifyHdl, EENotify&, rNotify, void)
+IMPL_LINK(SvxTextEditSourceImpl, NotifyHdl, EENotify&, rNotify, void)
 {
     if( !mbNotificationsDisabled )
     {
@@ -1006,35 +1011,31 @@ IMPL_LINK_TYPED(SvxTextEditSourceImpl, NotifyHdl, EENotify&, rNotify, void)
 SvxTextEditSource::SvxTextEditSource( SdrObject* pObject, SdrText* pText )
 {
     mpImpl = new SvxTextEditSourceImpl( pObject, pText );
-    mpImpl->acquire();
 }
 
 
 SvxTextEditSource::SvxTextEditSource( SdrObject& rObj, SdrText* pText, SdrView& rView, const vcl::Window& rWindow )
 {
     mpImpl = new SvxTextEditSourceImpl( rObj, pText, rView, rWindow );
-    mpImpl->acquire();
 }
 
 
 SvxTextEditSource::SvxTextEditSource( SvxTextEditSourceImpl* pImpl )
 {
     mpImpl = pImpl;
-    mpImpl->acquire();
 }
 
 
 SvxTextEditSource::~SvxTextEditSource()
 {
     ::SolarMutexGuard aGuard;
-
-    mpImpl->release();
+    mpImpl.clear();
 }
 
 
 SvxEditSource* SvxTextEditSource::Clone() const
 {
-    return new SvxTextEditSource( mpImpl );
+    return new SvxTextEditSource( mpImpl.get() );
 }
 
 

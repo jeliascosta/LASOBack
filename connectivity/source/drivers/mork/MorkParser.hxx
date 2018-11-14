@@ -59,21 +59,7 @@ enum MorkErrors
 {
     NoError = 0,
     FailedToOpen,
-    UnsupportedVersion,
     DefectedFormat
-};
-
-// Mork term types
-enum MorkTerm
-{
-    NoneTerm = 0,
-    DictTerm,
-    GroupTerm,
-    TableTerm,
-    RowTerm,
-    CellTerm,
-    CommentTerm,
-    LiteralTerm
 };
 
 
@@ -83,7 +69,7 @@ class LO_DLLPUBLIC_MORK MorkParser
 {
 public:
 
-    explicit MorkParser( int defaultScope = 0x80 );
+    explicit MorkParser();
 
     /// Open and parse mork file
 
@@ -152,8 +138,6 @@ protected: // Data
 
     unsigned morkPos_;
     int nextAddValueId_;
-    int defaultScope_;
-    int defaultListScope_;
     int defaultTableId_;
 
     // Indicates entity is being parsed

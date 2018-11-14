@@ -41,7 +41,7 @@ class ChartTypeManager :
 public:
     explicit ChartTypeManager(
         css::uno::Reference< css::uno::XComponentContext > const & xContext );
-    virtual ~ChartTypeManager();
+    virtual ~ChartTypeManager() override;
 
     virtual OUString SAL_CALL
         getImplementationName()
@@ -55,9 +55,6 @@ public:
         getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception )
         override;
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString >
-        getSupportedServiceNames_Static();
 
 protected:
     // ____ XMultiServiceFactory ____

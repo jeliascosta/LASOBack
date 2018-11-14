@@ -8,10 +8,12 @@
  */
 
 #include <swmodeltestbase.hxx>
+#include <config_features.h>
 
 #include <initializer_list>
 
 #if !defined(MACOSX)
+#include <com/sun/star/awt/FontSlant.hpp>
 #include <com/sun/star/awt/Gradient.hpp>
 #include <com/sun/star/container/XIndexReplace.hpp>
 #include <com/sun/star/drawing/FillStyle.hpp>
@@ -756,6 +758,12 @@ DECLARE_ODFEXPORT_TEST(testTextFrameVertAdjust, "textframe-vertadjust.odt")
     CPPUNIT_ASSERT_EQUAL(drawing::TextVerticalAdjust_BOTTOM, getProperty<drawing::TextVerticalAdjust>(xFrame, "TextVerticalAdjust"));
 }
 
+DECLARE_ODFEXPORT_TEST(testTdf111891_frameVertStyle, "tdf111891_frameVertStyle.odt")
+{
+    uno::Reference<beans::XPropertySet> xFrame(getShape(1), uno::UNO_QUERY);
+    CPPUNIT_ASSERT_EQUAL(drawing::TextVerticalAdjust_BOTTOM, getProperty<drawing::TextVerticalAdjust>(xFrame, "TextVerticalAdjust"));
+}
+
 DECLARE_ODFEXPORT_TEST(testShapeRelsize, "shape-relsize.odt")
 {
     uno::Reference<drawing::XShape> xShape = getShape(1);
@@ -844,6 +852,358 @@ DECLARE_ODFEXPORT_TEST(testCellUserDefineAttr, "userdefattr-tablecell.odt")
     getUserDefineAttribute(uno::makeAny(xCellA1), "proName", "v1");
     getUserDefineAttribute(uno::makeAny(xCellB1), "proName", "v2");
     getUserDefineAttribute(uno::makeAny(xCellC1), "proName", "v3");
+}
+
+#if HAVE_FEATURE_PDFIMPORT
+DECLARE_ODFEXPORT_TEST(testEmbeddedPdf, "embedded-pdf.odt")
+{
+    uno::Reference<drawing::XShape> xShape = getShape(1);
+    // This failed, pdf+svm replacement graphics pair didn't survive an ODT roundtrip.
+    CPPUNIT_ASSERT(!getProperty<OUString>(xShape, "ReplacementGraphicURL").isEmpty());
+}
+#endif
+
+DECLARE_ODFEXPORT_TEST(testTableStyles1, "table_styles_1.odt")
+{
+    // Table styles basic graphic test.
+    // Doesn't cover all attributes.
+    uno::Reference<style::XStyleFamiliesSupplier> XFamiliesSupplier(mxComponent, uno::UNO_QUERY);
+    uno::Reference<container::XNameAccess> xFamilies(XFamiliesSupplier->getStyleFamilies());
+    uno::Reference<container::XNameAccess> xCellFamily(xFamilies->getByName("CellStyles"), uno::UNO_QUERY);
+    uno::Reference<beans::XPropertySet> xCell1Style;
+    xCellFamily->getByName("Test style.1") >>= xCell1Style;
+
+    sal_Int64 nInt64 = 0xF0F0F0;
+    sal_Int32 nInt32 = 0xF0F0F0;
+    table::BorderLine2 oBorder;
+
+    xCell1Style->getPropertyValue("BackColor") >>= nInt64;
+    CPPUNIT_ASSERT_EQUAL(sal_Int64(0xCC0000), nInt64);
+    xCell1Style->getPropertyValue("WritingMode") >>= nInt32;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(4), nInt32);
+    xCell1Style->getPropertyValue("VertOrient") >>= nInt32;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(0), nInt32);
+    xCell1Style->getPropertyValue("BorderDistance") >>= nInt32;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(97), nInt32);
+    xCell1Style->getPropertyValue("LeftBorderDistance") >>= nInt32;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(97), nInt32);
+    xCell1Style->getPropertyValue("RightBorderDistance") >>= nInt32;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(97), nInt32);
+    xCell1Style->getPropertyValue("TopBorderDistance") >>= nInt32;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(97), nInt32);
+    xCell1Style->getPropertyValue("BottomBorderDistance") >>= nInt32;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(97), nInt32);
+    xCell1Style->getPropertyValue("RightBorder") >>= oBorder;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(0), oBorder.Color);
+    xCell1Style->getPropertyValue("LeftBorder") >>= oBorder;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(0), oBorder.Color);
+    xCell1Style->getPropertyValue("TopBorder") >>= oBorder;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(0), oBorder.Color);
+    xCell1Style->getPropertyValue("BottomBorder") >>= oBorder;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(0), oBorder.Color);
+}
+
+DECLARE_ODFEXPORT_TEST(testTableStyles2, "table_styles_2.odt")
+{
+    // Table styles paragraph and char tests
+    // Doesn't cover all attributes.
+    // Problem: underline for table autoformat doesn't work.
+    uno::Reference<style::XStyleFamiliesSupplier> XFamiliesSupplier(mxComponent, uno::UNO_QUERY);
+    uno::Reference<container::XNameAccess> xFamilies(XFamiliesSupplier->getStyleFamilies());
+    uno::Reference<container::XNameAccess> xTableFamily(xFamilies->getByName("TableStyles"), uno::UNO_QUERY);
+    uno::Reference<container::XNameAccess> xTableStyle(xTableFamily->getByName("Test style2"), uno::UNO_QUERY);
+    uno::Reference<beans::XPropertySet> xCell1Style;
+
+    float fFloat = 0.;
+    bool bBool = true;
+    sal_Int16 nInt16 = 0xF0;
+    sal_Int32 nInt32 = 0xF0F0F0;
+    sal_Int64 nInt64 = 0xF0F0F0;
+    OUString sString;
+    awt::FontSlant eCharPosture;
+
+    // cell 1
+    xTableStyle->getByName("first-row-start-column") >>= xCell1Style;
+    xCell1Style->getPropertyValue("ParaAdjust") >>= nInt32;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(0), nInt32);
+    xCell1Style->getPropertyValue("CharColor") >>= nInt64;
+    CPPUNIT_ASSERT_EQUAL(sal_Int64(0xFF6600), nInt64);
+    xCell1Style->getPropertyValue("CharContoured") >>= bBool;
+    CPPUNIT_ASSERT_EQUAL(bool(false), bBool);
+    xCell1Style->getPropertyValue("CharShadowed") >>= bBool;
+    CPPUNIT_ASSERT_EQUAL(bool(true), bBool);
+    xCell1Style->getPropertyValue("CharStrikeout") >>= nInt32;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(1), nInt32);
+    xCell1Style->getPropertyValue("CharUnderline") >>= nInt32;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(0), nInt32);
+    // underline color is not working for table autoformats
+    // xCell1Style->getPropertyValue("CharUnderlineHasColor") >>= bBool;
+    // CPPUNIT_ASSERT_EQUAL(bool(false), bBool);
+    // xCell1Style->getPropertyValue("CharUnderlineColor") >>= nInt64;
+    // CPPUNIT_ASSERT_EQUAL(sal_Int64(-1), nInt64);
+    // standard font
+    xCell1Style->getPropertyValue("CharHeight") >>= fFloat;
+    CPPUNIT_ASSERT_EQUAL(float(18.), fFloat);
+    xCell1Style->getPropertyValue("CharWeight") >>= fFloat;
+    CPPUNIT_ASSERT_EQUAL(float(100.), fFloat);
+    xCell1Style->getPropertyValue("CharPosture") >>= eCharPosture;
+    CPPUNIT_ASSERT_EQUAL(awt::FontSlant(awt::FontSlant_NONE), eCharPosture);
+    xCell1Style->getPropertyValue("CharFontName") >>= sString;
+    CPPUNIT_ASSERT_EQUAL(OUString("Courier"), sString);
+    xCell1Style->getPropertyValue("CharFontStyleName") >>= sString;
+    CPPUNIT_ASSERT_EQUAL(OUString(""), sString);
+    xCell1Style->getPropertyValue("CharFontFamily") >>= nInt16;
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(2), nInt16);
+    xCell1Style->getPropertyValue("CharFontPitch") >>= nInt16;
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(1), nInt16);
+    // cjk font
+    xCell1Style->getPropertyValue("CharHeightAsian") >>= fFloat;
+    CPPUNIT_ASSERT_EQUAL(float(18.), fFloat);
+    xCell1Style->getPropertyValue("CharWeightAsian") >>= fFloat;
+    CPPUNIT_ASSERT_EQUAL(float(100.), fFloat);
+    xCell1Style->getPropertyValue("CharPostureAsian") >>= eCharPosture;
+    CPPUNIT_ASSERT_EQUAL(awt::FontSlant(awt::FontSlant_NONE), eCharPosture);
+    xCell1Style->getPropertyValue("CharFontNameAsian") >>= sString;
+    CPPUNIT_ASSERT_EQUAL(OUString("Courier"), sString);
+    xCell1Style->getPropertyValue("CharFontStyleNameAsian") >>= sString;
+    CPPUNIT_ASSERT_EQUAL(OUString("Regularna"), sString);
+    xCell1Style->getPropertyValue("CharFontFamilyAsian") >>= nInt16;
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(2), nInt16);
+    xCell1Style->getPropertyValue("CharFontPitchAsian") >>= nInt16;
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(1), nInt16);
+    // ctl font
+    xCell1Style->getPropertyValue("CharHeightComplex") >>= fFloat;
+    CPPUNIT_ASSERT_EQUAL(float(18.), fFloat);
+    xCell1Style->getPropertyValue("CharWeightComplex") >>= fFloat;
+    CPPUNIT_ASSERT_EQUAL(float(100.), fFloat);
+    xCell1Style->getPropertyValue("CharPostureComplex") >>= eCharPosture;
+    CPPUNIT_ASSERT_EQUAL(awt::FontSlant(awt::FontSlant_NONE), eCharPosture);
+    xCell1Style->getPropertyValue("CharFontNameComplex") >>= sString;
+    CPPUNIT_ASSERT_EQUAL(OUString("Courier"), sString);
+    xCell1Style->getPropertyValue("CharFontStyleNameComplex") >>= sString;
+    CPPUNIT_ASSERT_EQUAL(OUString("Regularna"), sString);
+    xCell1Style->getPropertyValue("CharFontFamilyComplex") >>= nInt16;
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(2), nInt16);
+    xCell1Style->getPropertyValue("CharFontPitchComplex") >>= nInt16;
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(1), nInt16);
+
+    // cell 2
+    xTableStyle->getByName("first-row") >>= xCell1Style;
+    xCell1Style->getPropertyValue("ParaAdjust") >>= nInt32;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(3), nInt32);
+    xCell1Style->getPropertyValue("CharColor") >>= nInt64;
+    CPPUNIT_ASSERT_EQUAL(sal_Int64(0x9900FF), nInt64);
+    xCell1Style->getPropertyValue("CharContoured") >>= bBool;
+    CPPUNIT_ASSERT_EQUAL(bool(true), bBool);
+    xCell1Style->getPropertyValue("CharShadowed") >>= bBool;
+    CPPUNIT_ASSERT_EQUAL(bool(false), bBool);
+    xCell1Style->getPropertyValue("CharStrikeout") >>= nInt32;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(0), nInt32);
+    xCell1Style->getPropertyValue("CharUnderline") >>= nInt32;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(2), nInt32);
+    // underline color test place
+    // standard font
+    xCell1Style->getPropertyValue("CharHeight") >>= fFloat;
+    CPPUNIT_ASSERT_EQUAL(float(12.), fFloat);
+    xCell1Style->getPropertyValue("CharWeight") >>= fFloat;
+    CPPUNIT_ASSERT_EQUAL(float(150.), fFloat);
+    xCell1Style->getPropertyValue("CharPosture") >>= eCharPosture;
+    CPPUNIT_ASSERT_EQUAL(awt::FontSlant(awt::FontSlant_NONE), eCharPosture);
+    xCell1Style->getPropertyValue("CharFontName") >>= sString;
+    CPPUNIT_ASSERT_EQUAL(OUString("Liberation Serif"), sString);
+    xCell1Style->getPropertyValue("CharFontStyleName") >>= sString;
+    CPPUNIT_ASSERT_EQUAL(OUString(""), sString);
+    xCell1Style->getPropertyValue("CharFontFamily") >>= nInt16;
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(3), nInt16);
+    xCell1Style->getPropertyValue("CharFontPitch") >>= nInt16;
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(2), nInt16);
+    // cjk font
+    xCell1Style->getPropertyValue("CharHeightAsian") >>= fFloat;
+    CPPUNIT_ASSERT_EQUAL(float(12.), fFloat);
+    xCell1Style->getPropertyValue("CharWeightAsian") >>= fFloat;
+    CPPUNIT_ASSERT_EQUAL(float(150.), fFloat);
+    xCell1Style->getPropertyValue("CharPostureAsian") >>= eCharPosture;
+    CPPUNIT_ASSERT_EQUAL(awt::FontSlant(awt::FontSlant_NONE), eCharPosture);
+    xCell1Style->getPropertyValue("CharFontNameAsian") >>= sString;
+    CPPUNIT_ASSERT_EQUAL(OUString("Liberation Serif"), sString);
+    xCell1Style->getPropertyValue("CharFontStyleNameAsian") >>= sString;
+    CPPUNIT_ASSERT_EQUAL(OUString("Pogrubiona"), sString);
+    xCell1Style->getPropertyValue("CharFontFamilyAsian") >>= nInt16;
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(3), nInt16);
+    xCell1Style->getPropertyValue("CharFontPitchAsian") >>= nInt16;
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(2), nInt16);
+    // ctl font
+    xCell1Style->getPropertyValue("CharHeightComplex") >>= fFloat;
+    CPPUNIT_ASSERT_EQUAL(float(12.), fFloat);
+    xCell1Style->getPropertyValue("CharWeightComplex") >>= fFloat;
+    CPPUNIT_ASSERT_EQUAL(float(150.), fFloat);
+    xCell1Style->getPropertyValue("CharPostureComplex") >>= eCharPosture;
+    CPPUNIT_ASSERT_EQUAL(awt::FontSlant(awt::FontSlant_NONE), eCharPosture);
+    xCell1Style->getPropertyValue("CharFontNameComplex") >>= sString;
+    CPPUNIT_ASSERT_EQUAL(OUString("Liberation Serif"), sString);
+    xCell1Style->getPropertyValue("CharFontStyleNameComplex") >>= sString;
+    CPPUNIT_ASSERT_EQUAL(OUString("Pogrubiona"), sString);
+    xCell1Style->getPropertyValue("CharFontFamilyComplex") >>= nInt16;
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(3), nInt16);
+    xCell1Style->getPropertyValue("CharFontPitchComplex") >>= nInt16;
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(2), nInt16);
+
+    // cell 3
+    xTableStyle->getByName("first-row-even-column") >>= xCell1Style;
+    xCell1Style->getPropertyValue("ParaAdjust") >>= nInt32;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(1), nInt32);
+    xCell1Style->getPropertyValue("CharColor") >>= nInt64;
+    CPPUNIT_ASSERT_EQUAL(sal_Int64(0), nInt64);
+    xCell1Style->getPropertyValue("CharContoured") >>= bBool;
+    CPPUNIT_ASSERT_EQUAL(bool(true), bBool);
+    xCell1Style->getPropertyValue("CharShadowed") >>= bBool;
+    CPPUNIT_ASSERT_EQUAL(bool(true), bBool);
+    xCell1Style->getPropertyValue("CharStrikeout") >>= nInt32;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(0), nInt32);
+    xCell1Style->getPropertyValue("CharUnderline") >>= nInt32;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(6), nInt32);
+    // underline color test place
+    // standard font
+    xCell1Style->getPropertyValue("CharHeight") >>= fFloat;
+    CPPUNIT_ASSERT_EQUAL(float(12.), fFloat);
+    xCell1Style->getPropertyValue("CharWeight") >>= fFloat;
+    CPPUNIT_ASSERT_EQUAL(float(100.), fFloat);
+    xCell1Style->getPropertyValue("CharPosture") >>= eCharPosture;
+    CPPUNIT_ASSERT_EQUAL(awt::FontSlant(awt::FontSlant_ITALIC), eCharPosture);
+    xCell1Style->getPropertyValue("CharFontName") >>= sString;
+    CPPUNIT_ASSERT_EQUAL(OUString("Open Sans"), sString);
+    xCell1Style->getPropertyValue("CharFontStyleName") >>= sString;
+    CPPUNIT_ASSERT_EQUAL(OUString(""), sString);
+    xCell1Style->getPropertyValue("CharFontFamily") >>= nInt16;
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(0), nInt16);
+    xCell1Style->getPropertyValue("CharFontPitch") >>= nInt16;
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(2), nInt16);
+    // cjk font
+    xCell1Style->getPropertyValue("CharHeightAsian") >>= fFloat;
+    CPPUNIT_ASSERT_EQUAL(float(12.), fFloat);
+    xCell1Style->getPropertyValue("CharWeightAsian") >>= fFloat;
+    CPPUNIT_ASSERT_EQUAL(float(100.), fFloat);
+    xCell1Style->getPropertyValue("CharPostureAsian") >>= eCharPosture;
+    CPPUNIT_ASSERT_EQUAL(awt::FontSlant(awt::FontSlant_ITALIC), eCharPosture);
+    xCell1Style->getPropertyValue("CharFontNameAsian") >>= sString;
+    CPPUNIT_ASSERT_EQUAL(OUString("Open Sans"), sString);
+    xCell1Style->getPropertyValue("CharFontStyleNameAsian") >>= sString;
+    CPPUNIT_ASSERT_EQUAL(OUString("Kursywa"), sString);
+    xCell1Style->getPropertyValue("CharFontFamilyAsian") >>= nInt16;
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(0), nInt16);
+    xCell1Style->getPropertyValue("CharFontPitchAsian") >>= nInt16;
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(2), nInt16);
+    // ctl font
+    xCell1Style->getPropertyValue("CharHeightComplex") >>= fFloat;
+    CPPUNIT_ASSERT_EQUAL(float(12.), fFloat);
+    xCell1Style->getPropertyValue("CharWeightComplex") >>= fFloat;
+    CPPUNIT_ASSERT_EQUAL(float(100.), fFloat);
+    xCell1Style->getPropertyValue("CharPostureComplex") >>= eCharPosture;
+    CPPUNIT_ASSERT_EQUAL(awt::FontSlant(awt::FontSlant_ITALIC), eCharPosture);
+    xCell1Style->getPropertyValue("CharFontNameComplex") >>= sString;
+    CPPUNIT_ASSERT_EQUAL(OUString("Open Sans"), sString);
+    xCell1Style->getPropertyValue("CharFontStyleNameComplex") >>= sString;
+    CPPUNIT_ASSERT_EQUAL(OUString("Kursywa"), sString);
+    xCell1Style->getPropertyValue("CharFontFamilyComplex") >>= nInt16;
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(0), nInt16);
+    xCell1Style->getPropertyValue("CharFontPitchComplex") >>= nInt16;
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(2), nInt16);
+}
+
+DECLARE_ODFEXPORT_TEST(testTableStyles3, "table_styles_3.odt")
+{
+    // This test checks if default valued attributes aren't exported.
+    if (xmlDocPtr pXmlDoc = parseExport("styles.xml"))
+    {
+        // <style:paragraph-properties>
+        // For this element the only exported attributes are: "border-left", "border-bottom"
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:table-cell-properties", "background-color");
+        // border-left place
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:table-cell-properties", "border-right");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:table-cell-properties", "border-top");
+        // border-bottom place
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:table-cell-properties", "padding");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:table-cell-properties", "padding-left");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:table-cell-properties", "padding-right");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:table-cell-properties", "padding-top");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:table-cell-properties", "padding-bottom");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:table-cell-properties", "writing-mode");
+
+        // <style:paragraph-properties> should be absent, because it has only "text-align" attribute, which shouldn't be exported.
+        // Assume that style:paragraph-properties and style:text-properties exists.
+        assertXPathChildren(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']", 2);
+
+        // <style:text-properties>
+        // For this element the only exported attributes are: "use-window-font-color place", "font-size-asian", "font-name-asian", "font-family-asian", "font-name-complex", "font-family-complex"
+        // use-window-font-color place
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "text-shadow");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "text-outline");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "text-line-through-style");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "text-line-through-type");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "text-underline-style");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "text-underline-color");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "font-size");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "font-weight");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "font-style");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "font-name");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "font-family");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "font-style-name");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "font-family-generic");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "font-pitch");
+        // font-size-asian place
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "font-weight-asian");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "font-style-asian");
+        // font-name-asian place
+        // font-family-asian place
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "font-style-name-asian");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "font-family-generic-asian");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "font-pitch-asian");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "font-size-complex");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "font-weight-complex");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "font-style-complex");
+        // font-name-complex place
+        // font-family-complex place
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "font-style-name-complex");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "font-family-generic-complex");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style3.2']/style:text-properties", "font-pitch-complex");
+    }
+}
+
+DECLARE_ODFIMPORT_TEST(testTableStyles4, "table_styles_4.odt")
+{
+    // Test if loaded styles overwrite existing styles
+    uno::Reference<style::XStyleFamiliesSupplier> XFamiliesSupplier(mxComponent, uno::UNO_QUERY);
+    uno::Reference<container::XNameAccess> xFamilies(XFamiliesSupplier->getStyleFamilies());
+    uno::Reference<container::XNameAccess> xTableFamily(xFamilies->getByName("TableStyles"), uno::UNO_QUERY);
+    uno::Reference<container::XNameAccess> xTableStyle(xTableFamily->getByName("Green"), uno::UNO_QUERY);
+    uno::Reference<beans::XPropertySet> xCell1Style;
+
+    xTableStyle->getByName("first-row-start-column") >>= xCell1Style;
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(0x00ff00), getProperty<sal_Int32>(xCell1Style, "BackColor"));
+}
+
+DECLARE_ODFEXPORT_TEST(testTableStyles5, "table_styles_5.odt")
+{
+    // Test if cell styles doesn't have a style:parent-style-name attribute.
+    if (xmlDocPtr pXmlDoc = parseExport("styles.xml"))
+    {
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style.1']", "parent-style-name");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style.2']", "parent-style-name");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style.3']", "parent-style-name");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style.4']", "parent-style-name");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style.5']", "parent-style-name");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style.6']", "parent-style-name");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style.7']", "parent-style-name");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style.8']", "parent-style-name");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style.9']", "parent-style-name");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style.10']", "parent-style-name");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style.11']", "parent-style-name");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style.12']", "parent-style-name");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style.13']", "parent-style-name");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style.14']", "parent-style-name");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style.15']", "parent-style-name");
+        assertXPathNoAttribute(pXmlDoc, "/office:document-styles/office:styles/style:style[@style:display-name='Test style.16']", "parent-style-name");
+    }
 }
 
 #endif

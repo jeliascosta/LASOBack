@@ -17,8 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <xmlsecurity/certificatechooser.hxx>
-#include <xmlsecurity/certificateviewer.hxx>
+#include <certificatechooser.hxx>
+#include <certificateviewer.hxx>
 #include <com/sun/star/security/XCertificate.hpp>
 
 #include <com/sun/star/security/CertificateCharacters.hpp>
@@ -129,8 +129,8 @@ CertificateViewerGeneralTP::CertificateViewerGeneralTP( vcl::Window* _pParent, C
     utl::typeConvert( xCert->getNotValidBefore(), aDateTimeStart );
     utl::typeConvert( xCert->getNotValidAfter(), aDateTimeEnd );
 
-    OUString sValidFromDate = GetSettings().GetUILocaleDataWrapper().getDate( aDateTimeStart.GetDate() );
-    OUString sValidToDate = GetSettings().GetUILocaleDataWrapper().getDate( aDateTimeEnd.GetDate() );
+    OUString sValidFromDate = GetSettings().GetUILocaleDataWrapper().getDate( Date( aDateTimeStart.GetDate()));
+    OUString sValidToDate = GetSettings().GetUILocaleDataWrapper().getDate( Date( aDateTimeEnd.GetDate()));
 
     m_pValidFromDateFI->SetText(sValidFromDate);
     m_pValidToDateFI->SetText(sValidToDate);
@@ -253,12 +253,12 @@ CertificateViewerDetailsTP::CertificateViewerDetailsTP( vcl::Window* _pParent, C
 
     DateTime aDateTime( DateTime::EMPTY );
     utl::typeConvert( xCert->getNotValidBefore(), aDateTime );
-    aLBEntry = GetSettings().GetUILocaleDataWrapper().getDate( aDateTime.GetDate() );
+    aLBEntry = GetSettings().GetUILocaleDataWrapper().getDate( Date( aDateTime.GetDate()) );
     aLBEntry += " ";
     aLBEntry += GetSettings().GetUILocaleDataWrapper().getTime( aDateTime.GetTime() );
     InsertElement( XMLSEC_RES( STR_VALIDFROM ), aLBEntry, aLBEntry  );
     utl::typeConvert( xCert->getNotValidAfter(), aDateTime );
-    aLBEntry = GetSettings().GetUILocaleDataWrapper().getDate( aDateTime.GetDate() );
+    aLBEntry = GetSettings().GetUILocaleDataWrapper().getDate( Date( aDateTime.GetDate()) );
     aLBEntry += " ";
     aLBEntry += GetSettings().GetUILocaleDataWrapper().getTime( aDateTime.GetTime() );
     InsertElement( XMLSEC_RES( STR_VALIDTO ), aLBEntry, aLBEntry );
@@ -317,7 +317,7 @@ void CertificateViewerDetailsTP::ActivatePage()
 {
 }
 
-IMPL_LINK_NOARG_TYPED(CertificateViewerDetailsTP, ElementSelectHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(CertificateViewerDetailsTP, ElementSelectHdl, SvTreeListBox*, void)
 {
     SvTreeListEntry*    pEntry = m_pElementsLB->FirstSelected();
     OUString        aElementText;
@@ -341,7 +341,7 @@ struct CertPath_UserData
     css::uno::Reference< css::security::XCertificate > mxCert;
     bool mbValid;
 
-    CertPath_UserData( css::uno::Reference< css::security::XCertificate > xCert, bool bValid):
+    CertPath_UserData( css::uno::Reference< css::security::XCertificate > const & xCert, bool bValid):
         mxCert(xCert),
         mbValid(bValid)
     {
@@ -363,7 +363,7 @@ CertificateViewerCertPathTP::CertificateViewerCertPathTP( vcl::Window* _pParent,
     maCertImage = get<FixedImage>("imgok")->GetImage();
     maCertNotValidatedImage = get<FixedImage>("imgnotok")->GetImage();
 
-    Size aControlSize(LogicToPixel(Size(251, 45), MAP_APPFONT));
+    Size aControlSize(LogicToPixel(Size(251, 45), MapUnit::MapAppFont));
     mpCertPathLB->set_width_request(aControlSize.Width());
     mpCertPathLB->set_height_request(aControlSize.Height());
     mpCertStatusML->set_width_request(aControlSize.Width());
@@ -425,7 +425,7 @@ void CertificateViewerCertPathTP::ActivatePage()
     }
 }
 
-IMPL_LINK_NOARG_TYPED(CertificateViewerCertPathTP, ViewCertHdl, Button*, void)
+IMPL_LINK_NOARG(CertificateViewerCertPathTP, ViewCertHdl, Button*, void)
 {
     SvTreeListEntry* pEntry = mpCertPathLB->FirstSelected();
     if( pEntry )
@@ -438,7 +438,7 @@ IMPL_LINK_NOARG_TYPED(CertificateViewerCertPathTP, ViewCertHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(CertificateViewerCertPathTP, CertSelectHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(CertificateViewerCertPathTP, CertSelectHdl, SvTreeListBox*, void)
 {
     OUString sStatus;
     SvTreeListEntry* pEntry = mpCertPathLB->FirstSelected();

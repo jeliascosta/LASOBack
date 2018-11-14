@@ -26,7 +26,6 @@
 #include <vcl/xtextedt.hxx>
 #include <svl/undo.hxx>
 #include <svl/lstner.hxx>
-#include <svl/smplhint.hxx>
 
 #include <svids.hrc>
 #include <vcl/scrbar.hxx>
@@ -36,22 +35,21 @@ class TextWindow : public vcl::Window
 {
 private:
     ExtTextEngine*  mpExtTextEngine;
-    ExtTextView*    mpExtTextView;
+    TextView*       mpExtTextView;
 
     bool            mbInMBDown;
     bool            mbFocusSelectionHide;
     bool            mbIgnoreTab;
     bool            mbActivePopup;
     bool            mbSelectOnTab;
-    bool            mbTextSelectable;
 
 public:
     explicit        TextWindow( vcl::Window* pParent );
-    virtual         ~TextWindow();
+    virtual         ~TextWindow() override;
     virtual void    dispose() override;
 
     ExtTextEngine*  GetTextEngine() const { return mpExtTextEngine; }
-    ExtTextView*    GetTextView() const { return mpExtTextView; }
+    TextView*       GetTextView() const { return mpExtTextView; }
 
     virtual void    MouseMove( const MouseEvent& rMEvt ) override;
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
@@ -93,11 +91,11 @@ protected:
     void                ImpInitScrollBars();
     void                ImpSetScrollBarRanges();
     void                ImpSetHScrollBarThumbPos();
-    DECL_LINK_TYPED(    ScrollHdl, ScrollBar*, void );
+    DECL_LINK(    ScrollHdl, ScrollBar*, void );
 
 public:
                 ImpVclMEdit( VclMultiLineEdit* pVclMultiLineEdit, WinBits nWinStyle );
-                virtual ~ImpVclMEdit();
+                virtual ~ImpVclMEdit() override;
 
     void        SetModified( bool bMod );
     bool        IsModified() const;
@@ -319,7 +317,7 @@ void ImpVclMEdit::ImpSetHScrollBarThumbPos()
 
 }
 
-IMPL_LINK_TYPED( ImpVclMEdit, ScrollHdl, ScrollBar*, pCurScrollBar, void )
+IMPL_LINK( ImpVclMEdit, ScrollHdl, ScrollBar*, pCurScrollBar, void )
 {
     long nDiffX = 0, nDiffY = 0;
 
@@ -338,11 +336,11 @@ void ImpVclMEdit::SetAlign( WinBits nWinStyle )
     mpTextWindow->GetTextEngine()->SetRightToLeft( bRTL );
 
     if ( nWinStyle & WB_CENTER )
-        mpTextWindow->GetTextEngine()->SetTextAlign( TXTALIGN_CENTER );
+        mpTextWindow->GetTextEngine()->SetTextAlign( TxtAlign::Center );
     else if ( nWinStyle & WB_RIGHT )
-        mpTextWindow->GetTextEngine()->SetTextAlign( !bRTL ? TXTALIGN_RIGHT : TXTALIGN_LEFT );
+        mpTextWindow->GetTextEngine()->SetTextAlign( !bRTL ? TxtAlign::Right : TxtAlign::Left );
     else if ( nWinStyle & WB_LEFT )
-        mpTextWindow->GetTextEngine()->SetTextAlign( !bRTL ? TXTALIGN_LEFT : TXTALIGN_RIGHT );
+        mpTextWindow->GetTextEngine()->SetTextAlign( !bRTL ? TxtAlign::Left : TxtAlign::Right );
 }
 
 void ImpVclMEdit::SetModified( bool bMod )
@@ -709,7 +707,6 @@ TextWindow::TextWindow( vcl::Window* pParent ) : Window( pParent )
     mbIgnoreTab = false;
     mbActivePopup = false;
     mbSelectOnTab = true;
-    mbTextSelectable = true;
 
     SetPointer( Pointer( PointerStyle::Text ) );
 
@@ -718,7 +715,7 @@ TextWindow::TextWindow( vcl::Window* pParent ) : Window( pParent )
     if( pParent->GetStyle() & WB_BORDER )
         mpExtTextEngine->SetLeftMargin( 2 );
     mpExtTextEngine->SetLocale( GetSettings().GetLanguageTag().getLocale() );
-    mpExtTextView = new ExtTextView( mpExtTextEngine, this );
+    mpExtTextView = new TextView( mpExtTextEngine, this );
     mpExtTextEngine->InsertView( mpExtTextView );
     mpExtTextEngine->EnableUndo( true );
     mpExtTextView->ShowCursor();
@@ -750,9 +747,6 @@ void TextWindow::MouseMove( const MouseEvent& rMEvt )
 
 void TextWindow::MouseButtonDown( const MouseEvent& rMEvt )
 {
-    if ( !mbTextSelectable )
-        return;
-
     mbInMBDown = true;  // so that GetFocus does not select everything
     mpExtTextView->MouseButtonDown( rMEvt );
     GrabFocus();
@@ -818,7 +812,7 @@ void TextWindow::Command( const CommandEvent& rCEvt )
 {
     if ( rCEvt.GetCommand() == CommandEventId::ContextMenu )
     {
-        PopupMenu* pPopup = Edit::CreatePopupMenu();
+        VclPtr<PopupMenu> pPopup = Edit::CreatePopupMenu();
         if ( !mpExtTextView->HasSelection() )
         {
             pPopup->EnableItem( SV_MENU_EDIT_CUT, false );
@@ -857,7 +851,7 @@ void TextWindow::Command( const CommandEvent& rCEvt )
         }
 //      pPopup->RemoveDisabledEntries();
         sal_uInt16 n = pPopup->Execute( this, aPos );
-        Edit::DeletePopupMenu( pPopup );
+        pPopup.disposeAndClear();
         switch ( n )
         {
             case SV_MENU_EDIT_UNDO:     mpExtTextView->Undo();
@@ -1092,7 +1086,7 @@ void VclMultiLineEdit::CaretChanged()
     CallEventListeners(VCLEVENT_EDIT_CARETCHANGED);
 }
 
-IMPL_LINK_NOARG_TYPED(VclMultiLineEdit, ImpUpdateDataHdl, Timer *, void)
+IMPL_LINK_NOARG(VclMultiLineEdit, ImpUpdateDataHdl, Timer *, void)
 {
     UpdateData();
 }
@@ -1472,37 +1466,37 @@ bool VclMultiLineEdit::PreNotify( NotifyEvent& rNEvt )
                     case KEY_UP:
                     {
                         if ( pImpVclMEdit->GetVScrollBar() )
-                            pImpVclMEdit->GetVScrollBar()->DoScrollAction( SCROLL_LINEUP );
+                            pImpVclMEdit->GetVScrollBar()->DoScrollAction( ScrollType::LineUp );
                     }
                     break;
                     case KEY_DOWN:
                     {
                         if ( pImpVclMEdit->GetVScrollBar() )
-                            pImpVclMEdit->GetVScrollBar()->DoScrollAction( SCROLL_LINEDOWN );
+                            pImpVclMEdit->GetVScrollBar()->DoScrollAction( ScrollType::LineDown );
                     }
                     break;
                     case KEY_PAGEUP :
                     {
                         if ( pImpVclMEdit->GetVScrollBar() )
-                            pImpVclMEdit->GetVScrollBar()->DoScrollAction( SCROLL_PAGEUP );
+                            pImpVclMEdit->GetVScrollBar()->DoScrollAction( ScrollType::PageUp );
                     }
                     break;
                     case KEY_PAGEDOWN:
                     {
                         if ( pImpVclMEdit->GetVScrollBar() )
-                            pImpVclMEdit->GetVScrollBar()->DoScrollAction( SCROLL_PAGEDOWN );
+                            pImpVclMEdit->GetVScrollBar()->DoScrollAction( ScrollType::PageDown );
                     }
                     break;
                     case KEY_LEFT:
                     {
                         if ( pImpVclMEdit->GetHScrollBar() )
-                            pImpVclMEdit->GetHScrollBar()->DoScrollAction( SCROLL_LINEUP );
+                            pImpVclMEdit->GetHScrollBar()->DoScrollAction( ScrollType::LineUp );
                     }
                     break;
                     case KEY_RIGHT:
                     {
                         if ( pImpVclMEdit->GetHScrollBar() )
-                            pImpVclMEdit->GetHScrollBar()->DoScrollAction( SCROLL_LINEDOWN );
+                            pImpVclMEdit->GetHScrollBar()->DoScrollAction( ScrollType::LineDown );
                     }
                     break;
                     case KEY_HOME:
@@ -1538,7 +1532,7 @@ ExtTextEngine* VclMultiLineEdit::GetTextEngine() const
     return pImpVclMEdit->GetTextWindow()->GetTextEngine();
 }
 
-ExtTextView* VclMultiLineEdit::GetTextView() const
+TextView* VclMultiLineEdit::GetTextView() const
 {
     return pImpVclMEdit->GetTextWindow()->GetTextView();
 }

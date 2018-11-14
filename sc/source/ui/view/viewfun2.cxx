@@ -86,6 +86,7 @@
 #include <rowheightcontext.hxx>
 #include <LibreOfficeKit/LibreOfficeKitEnums.h>
 #include <comphelper/lok.hxx>
+#include "mergecellsdialog.hxx"
 
 #include <vector>
 #include <memory>
@@ -149,7 +150,7 @@ bool ScViewFunc::AdjustBlockHeight( bool bPaint, ScMarkData* pMarkData )
         }
         if ( bPaint && bChanged )
             pDocSh->PostPaint( 0, nPaintY, nTab, MAXCOL, MAXROW, nTab,
-                                                PAINT_GRID | PAINT_LEFT );
+                                                PaintPartFlags::Grid | PaintPartFlags::Left );
     }
 
     if ( bPaint && bAnyChanged )
@@ -190,7 +191,7 @@ bool ScViewFunc::AdjustRowHeight( SCROW nStartRow, SCROW nEndRow )
 
     if ( bChanged )
         pDocSh->PostPaint( 0, nStartRow, nTab, MAXCOL, MAXROW, nTab,
-                                            PAINT_GRID | PAINT_LEFT );
+                                            PaintPartFlags::Grid | PaintPartFlags::Left );
 
     return bChanged;
 }
@@ -750,7 +751,7 @@ void ScViewFunc::EnterBlock( const OUString& rString, const EditTextObject* pDat
         }
     }
 
-    if (GetViewData().SelectionForbidsPaste())
+    if (GetViewData().SelectionForbidsCellFill())
     {
         PaintArea(nCol, nRow, nCol, nRow);        // possibly the edit-engine is still painted there
         return;
@@ -862,7 +863,7 @@ void ScViewFunc::RemoveManualBreaks()
     {
         ScDocument* pUndoDoc = new ScDocument( SCDOCMODE_UNDO );
         pUndoDoc->InitUndo( &rDoc, nTab, nTab, true, true );
-        rDoc.CopyToDocument( 0,0,nTab, MAXCOL,MAXROW,nTab, InsertDeleteFlags::NONE, false, pUndoDoc );
+        rDoc.CopyToDocument( 0,0,nTab, MAXCOL,MAXROW,nTab, InsertDeleteFlags::NONE, false, *pUndoDoc );
         pDocSh->GetUndoManager()->AddUndoAction(
                                 new ScUndoRemoveBreaks( pDocSh, nTab, pUndoDoc ) );
     }
@@ -872,7 +873,7 @@ void ScViewFunc::RemoveManualBreaks()
 
     UpdatePageBreakData( true );
     pDocSh->SetDocumentModified();
-    pDocSh->PostPaint( 0,0,nTab, MAXCOL,MAXROW,nTab, PAINT_GRID );
+    pDocSh->PostPaint( 0,0,nTab, MAXCOL,MAXROW,nTab, PaintPartFlags::Grid );
 }
 
 void ScViewFunc::SetPrintZoom(sal_uInt16 nScale)
@@ -946,7 +947,7 @@ void ScViewFunc::SetPrintRanges( bool bEntireSheet, const OUString* pPrint,
             {
                 rMark.MarkToMulti();
                 ScRangeListRef pList( new ScRangeList );
-                rMark.FillRangeListWithMarks( pList, false );
+                rMark.FillRangeListWithMarks( pList.get(), false );
                 for (size_t i = 0, n = pList->size(); i < n; ++i)
                 {
                     ScRange* pR = (*pList)[i];
@@ -1010,8 +1011,11 @@ bool ScViewFunc::TestMergeCells()           // pre-test (for menu)
     const ScMarkData& rMark = GetViewData().GetMarkData();
     if ( rMark.IsMarked() || rMark.IsMultiMarked() )
     {
-        ScRange aDummy;
-        return GetViewData().GetSimpleArea( aDummy) == SC_MARK_SIMPLE;
+        ScRange aRange;
+        bool bMergable = ( GetViewData().GetSimpleArea( aRange ) == SC_MARK_SIMPLE );
+        bMergable = bMergable && ( aRange.aStart.Col() != aRange.aEnd.Col() ||
+                                   aRange.aStart.Row() != aRange.aEnd.Row() );
+        return bMergable;
     }
     else
         return false;
@@ -1054,7 +1058,7 @@ bool ScViewFunc::MergeCells( bool bApi, bool& rDoContents, bool bCenter )
     }
 
     if ( rDoc.HasAttrib( nStartCol, nStartRow, nStartTab, nEndCol, nEndRow, nEndTab,
-                            HASATTR_MERGED | HASATTR_OVERLAPPED ) )
+                            HasAttrFlags::Merged | HasAttrFlags::Overlapped ) )
     {       // "Don't nest merging  !"
         ErrorMessage(STR_MSSG_MERGECELLS_0);
         return false;
@@ -1069,25 +1073,44 @@ bool ScViewFunc::MergeCells( bool bApi, bool& rDoContents, bool bCenter )
         SCTAB i = *itr;
         aMergeOption.maTabs.insert(i);
 
-        if (!rDoc.IsBlockEmpty(i, nStartCol, nStartRow+1, nStartCol, nEndRow) ||
-            !rDoc.IsBlockEmpty(i, nStartCol+1, nStartRow, nEndCol, nEndRow))
-            bAskDialog = true;
+        if ( nEndRow == nStartRow )
+        {
+            if (!rDoc.IsBlockEmpty(i, nStartCol+1, nStartRow, nEndCol, nEndRow))
+                bAskDialog = true;
+        }
+        else
+            if (!rDoc.IsBlockEmpty(i, nStartCol, nStartRow+1, nStartCol, nEndRow) ||
+                !rDoc.IsBlockEmpty(i, nStartCol+1, nStartRow, nEndCol, nEndRow))
+                bAskDialog = true;
     }
 
     bool bOk = true;
+    bool bEmptyMergedCells = false;
 
     if (bAskDialog)
     {
         if (!bApi)
         {
-            ScopedVclPtrInstance<MessBox> aBox( GetViewData().GetDialogParent(),
-                            WinBits(WB_YES_NO_CANCEL | WB_DEF_NO),
-                            ScGlobal::GetRscString( STR_MSSG_DOSUBTOTALS_0 ),
-                            ScGlobal::GetRscString( STR_MERGE_NOTEMPTY ) );
+            VclPtr<ScMergeCellsDialog> aBox = VclPtr<ScMergeCellsDialog>::Create( GetViewData().GetDialogParent() );
             sal_uInt16 nRetVal = aBox->Execute();
 
-            if ( nRetVal == RET_YES )
-                rDoContents = true;
+            if ( nRetVal == RET_OK )
+            {
+                switch ( aBox->GetMergeCellsOption() )
+                {
+                    case MoveContentHiddenCells:
+                        rDoContents = true;
+                        break;
+                    case KeepContentHiddenCells:
+                        break; // keep default values
+                    case EmptyContentHiddenCells:
+                        bEmptyMergedCells = true;
+                        break;
+                    default:
+                        assert(!"Unknown option for merge cells.");
+                        break;
+                }
+            }
             else if ( nRetVal == RET_CANCEL )
                 bOk = false;
         }
@@ -1095,7 +1118,7 @@ bool ScViewFunc::MergeCells( bool bApi, bool& rDoContents, bool bCenter )
 
     if (bOk)
     {
-        bOk = pDocSh->GetDocFunc().MergeCells( aMergeOption, rDoContents, true/*bRecord*/, bApi );
+        bOk = pDocSh->GetDocFunc().MergeCells( aMergeOption, rDoContents, true/*bRecord*/, bApi, bEmptyMergedCells );
 
         if (bOk)
         {
@@ -1118,7 +1141,7 @@ bool ScViewFunc::TestRemoveMerge()
     if (GetViewData().GetSimpleArea( aRange ) == SC_MARK_SIMPLE)
     {
         ScDocument* pDoc = GetViewData().GetDocument();
-        if ( pDoc->HasAttrib( aRange, HASATTR_MERGED ) )
+        if ( pDoc->HasAttrib( aRange, HasAttrFlags::Merged ) )
             bMerged = true;
     }
     return bMerged;
@@ -1464,7 +1487,7 @@ void ScViewFunc::FillTab( InsertDeleteFlags nFlags, ScPasteFunc nFunction, bool 
                 pUndoDoc->AddUndoTab( i, i );
                 aMarkRange.aStart.SetTab( i );
                 aMarkRange.aEnd.SetTab( i );
-                rDoc.CopyToDocument( aMarkRange, InsertDeleteFlags::ALL, bMulti, pUndoDoc );
+                rDoc.CopyToDocument( aMarkRange, InsertDeleteFlags::ALL, bMulti, *pUndoDoc );
             }
     }
 
@@ -1571,7 +1594,7 @@ void ScViewFunc::ConvertFormulaToValue()
 
     ScDocShell* pDocSh = GetViewData().GetDocShell();
     pDocSh->GetDocFunc().ConvertFormulaToValue(aRange, true);
-    pDocSh->PostPaint(aRange, PAINT_GRID);
+    pDocSh->PostPaint(aRange, PaintPartFlags::Grid);
 }
 
 void ScViewFunc::TransliterateText( sal_Int32 nType )
@@ -1637,7 +1660,7 @@ void ScViewFunc::AutoFormat( sal_uInt16 nFormatNo )
 bool ScViewFunc::SearchAndReplace( const SvxSearchItem* pSearchItem,
                                         bool bAddUndo, bool bIsApi )
 {
-    SvxSearchDialogWrapper::SetSearchLabel(SL_Empty);
+    SvxSearchDialogWrapper::SetSearchLabel(SearchLabel::Empty);
     ScDocShell* pDocSh = GetViewData().GetDocShell();
     ScDocument& rDoc = pDocSh->GetDocument();
     ScMarkData& rMark = GetViewData().GetMarkData();
@@ -1772,9 +1795,9 @@ bool ScViewFunc::SearchAndReplace( const SvxSearchItem* pSearchItem,
             if (!bIsApi)
             {
                 if ( nStartTab == nEndTab )
-                    SvxSearchDialogWrapper::SetSearchLabel(SL_EndSheet);
+                    SvxSearchDialogWrapper::SetSearchLabel(SearchLabel::EndSheet);
                 else
-                    SvxSearchDialogWrapper::SetSearchLabel(SL_End);
+                    SvxSearchDialogWrapper::SetSearchLabel(SearchLabel::End);
 
                 ScDocument::GetSearchAndReplaceStart( *pSearchItem, nCol, nRow );
                 if (pSearchItem->GetBackward())
@@ -1797,9 +1820,8 @@ bool ScViewFunc::SearchAndReplace( const SvxSearchItem* pSearchItem,
             GetFrameWin()->LeaveWait();
             if (!bIsApi)
             {
-                rDoc.GetDrawLayer()->libreOfficeKitCallback(LOK_CALLBACK_SEARCH_NOT_FOUND,
-                                                            pSearchItem->GetSearchString().toUtf8().getStr());
-                SvxSearchDialogWrapper::SetSearchLabel(SL_NotFound);
+                GetViewData().GetViewShell()->libreOfficeKitViewCallback(LOK_CALLBACK_SEARCH_NOT_FOUND, pSearchItem->GetSearchString().toUtf8().getStr());
+                SvxSearchDialogWrapper::SetSearchLabel(SearchLabel::NotFound);
             }
 
             break;                      // break 'while (TRUE)'
@@ -1827,9 +1849,9 @@ bool ScViewFunc::SearchAndReplace( const SvxSearchItem* pSearchItem,
     }
 
     // Avoid LOK selection notifications before we have all the results.
-    rDoc.GetDrawLayer()->setTiledSearching(true);
+    GetViewData().GetViewShell()->setTiledSearching(true);
     MarkDataChanged();
-    rDoc.GetDrawLayer()->setTiledSearching(false);
+    GetViewData().GetViewShell()->setTiledSearching(false);
 
     if ( bFound )
     {
@@ -1881,7 +1903,8 @@ bool ScViewFunc::SearchAndReplace( const SvxSearchItem* pSearchItem,
                 std::stringstream aStream;
                 boost::property_tree::write_json(aStream, aTree);
                 OString aPayload = aStream.str().c_str();
-                rDoc.GetDrawLayer()->libreOfficeKitCallback(LOK_CALLBACK_SEARCH_RESULT_SELECTION, aPayload.getStr());
+                SfxViewShell* pViewShell = GetViewData().GetViewShell();
+                pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_SEARCH_RESULT_SELECTION, aPayload.getStr());
 
                 // Trigger LOK_CALLBACK_TEXT_SELECTION now.
                 MarkDataChanged();
@@ -1893,7 +1916,7 @@ bool ScViewFunc::SearchAndReplace( const SvxSearchItem* pSearchItem,
         {
             if ( nCommand == SvxSearchCmd::REPLACE )
             {
-                pDocSh->PostPaint( nCol,nRow,nTab, nCol,nRow,nTab, PAINT_GRID );
+                pDocSh->PostPaint( nCol,nRow,nTab, nCol,nRow,nTab, PaintPartFlags::Grid );
 
                 // jump to next cell if we replaced everything in the cell
                 // where the cursor was positioned (but avoid switching tabs)
@@ -1909,6 +1932,7 @@ bool ScViewFunc::SearchAndReplace( const SvxSearchItem* pSearchItem,
                             ( nTab == nOldTab ) &&
                             ( nCol != nOldCol || nRow != nOldRow ) )
                     {
+                        AlignToCursor(nCol, nRow, SC_FOLLOW_JUMP);
                         SetCursor( nCol, nRow, true );
                     }
                 }
@@ -2014,15 +2038,15 @@ void ScViewFunc::TabOp( const ScTabOpParam& rParam, bool bRecord )
 }
 
 void ScViewFunc::MakeScenario( const OUString& rName, const OUString& rComment,
-                                    const Color& rColor, sal_uInt16 nFlags )
+                                    const Color& rColor, ScScenarioFlags nFlags )
 {
     ScDocShell* pDocSh  = GetViewData().GetDocShell();
     ScMarkData& rMark   = GetViewData().GetMarkData();
     SCTAB       nTab    = GetViewData().GetTabNo();
 
     SCTAB nNewTab = pDocSh->MakeScenario( nTab, rName, rComment, rColor, nFlags, rMark );
-    if (nFlags & SC_SCENARIO_COPYALL)
-        SetTabNo( nNewTab, true );          // SC_SCENARIO_COPYALL -> visible
+    if (nFlags & ScScenarioFlags::CopyAll)
+        SetTabNo( nNewTab, true );          // ScScenarioFlags::CopyAll -> visible
     else
     {
         SfxBindings& rBindings = GetViewData().GetBindings();
@@ -2115,7 +2139,7 @@ void ScViewFunc::InsertTables(std::vector<OUString>& aNames, SCTAB nTab,
         SetTabNo( nTab, true );
         pDocSh->PostPaintExtras();
         pDocSh->SetDocumentModified();
-        SfxGetpApp()->Broadcast( SfxSimpleHint( SC_HINT_TABLES_CHANGED ) );
+        SfxGetpApp()->Broadcast( SfxHint( SC_HINT_TABLES_CHANGED ) );
     }
 }
 
@@ -2141,7 +2165,7 @@ bool ScViewFunc::AppendTable( const OUString& rName, bool bRecord )
         SetTabNo( nTab, true );
         pDocSh->PostPaintExtras();
         pDocSh->SetDocumentModified();
-        SfxGetpApp()->Broadcast( SfxSimpleHint( SC_HINT_TABLES_CHANGED ) );
+        SfxGetpApp()->Broadcast( SfxHint( SC_HINT_TABLES_CHANGED ) );
         return true;
     }
     else
@@ -2200,9 +2224,9 @@ void ScViewFunc::DeleteTables( const SCTAB nTab, SCTAB nSheets )
         pDocSh->SetDocumentModified();
 
         SfxApplication* pSfxApp = SfxGetpApp();                                // Navigator
-        pSfxApp->Broadcast( SfxSimpleHint( SC_HINT_TABLES_CHANGED ) );
-        pSfxApp->Broadcast( SfxSimpleHint( SC_HINT_DBAREAS_CHANGED ) );
-        pSfxApp->Broadcast( SfxSimpleHint( SC_HINT_AREALINKS_CHANGED ) );
+        pSfxApp->Broadcast( SfxHint( SC_HINT_TABLES_CHANGED ) );
+        pSfxApp->Broadcast( SfxHint( SC_HINT_DBAREAS_CHANGED ) );
+        pSfxApp->Broadcast( SfxHint( SC_HINT_AREALINKS_CHANGED ) );
     }
 }
 
@@ -2238,7 +2262,7 @@ bool ScViewFunc::DeleteTables(const vector<SCTAB> &TheTabs, bool bRecord )
             else
                 pUndoDoc->AddUndoTab( nTab,nTab, true,true );       // incl. column/fow flags
 
-            rDoc.CopyToDocument(0,0,nTab, MAXCOL,MAXROW,nTab, InsertDeleteFlags::ALL,false, pUndoDoc );
+            rDoc.CopyToDocument(0,0,nTab, MAXCOL,MAXROW,nTab, InsertDeleteFlags::ALL,false, *pUndoDoc );
             rDoc.GetName( nTab, aOldName );
             pUndoDoc->RenameTab( nTab, aOldName, false );
             if (rDoc.IsLinked(nTab))
@@ -2254,7 +2278,7 @@ bool ScViewFunc::DeleteTables(const vector<SCTAB> &TheTabs, bool bRecord )
                 pUndoDoc->SetScenario( nTab, true );
                 OUString aComment;
                 Color  aColor;
-                sal_uInt16 nScenFlags;
+                ScScenarioFlags nScenFlags;
                 rDoc.GetScenarioData( nTab, aComment, aColor, nScenFlags );
                 pUndoDoc->SetScenarioData( nTab, aComment, aColor, nScenFlags );
                 bool bActive = rDoc.IsActiveScenario( nTab );
@@ -2322,9 +2346,9 @@ bool ScViewFunc::DeleteTables(const vector<SCTAB> &TheTabs, bool bRecord )
         pDocSh->SetDocumentModified();
 
         SfxApplication* pSfxApp = SfxGetpApp();                                // Navigator
-        pSfxApp->Broadcast( SfxSimpleHint( SC_HINT_TABLES_CHANGED ) );
-        pSfxApp->Broadcast( SfxSimpleHint( SC_HINT_DBAREAS_CHANGED ) );
-        pSfxApp->Broadcast( SfxSimpleHint( SC_HINT_AREALINKS_CHANGED ) );
+        pSfxApp->Broadcast( SfxHint( SC_HINT_TABLES_CHANGED ) );
+        pSfxApp->Broadcast( SfxHint( SC_HINT_DBAREAS_CHANGED ) );
+        pSfxApp->Broadcast( SfxHint( SC_HINT_AREALINKS_CHANGED ) );
     }
     else
     {
@@ -2517,11 +2541,11 @@ void ScViewFunc::ImportTables( ScDocShell* pSrcShell,
         GetViewData().InsertTab(nTab);
     SetTabNo(nTab,true);
     pDocSh->PostPaint( 0,0,0, MAXCOL,MAXROW,MAXTAB,
-                                PAINT_GRID | PAINT_TOP | PAINT_LEFT | PAINT_EXTRAS );
+                                PaintPartFlags::Grid | PaintPartFlags::Top | PaintPartFlags::Left | PaintPartFlags::Extras );
 
     SfxApplication* pSfxApp = SfxGetpApp();
-    pSfxApp->Broadcast( SfxSimpleHint( SC_HINT_TABLES_CHANGED ) );
-    pSfxApp->Broadcast( SfxSimpleHint( SC_HINT_AREAS_CHANGED ) );
+    pSfxApp->Broadcast( SfxHint( SC_HINT_TABLES_CHANGED ) );
+    pSfxApp->Broadcast( SfxHint( SC_HINT_AREAS_CHANGED ) );
 
     pDocSh->PostPaintExtras();
     pDocSh->PostPaintGridAll();
@@ -2733,9 +2757,9 @@ void ScViewFunc::MoveTable(
                 pDestViewSh->TabChanged();      // pages on the drawing layer
             }
             pDestShell->PostPaint( 0,0,0, MAXCOL,MAXROW,MAXTAB,
-                                    PAINT_GRID | PAINT_TOP | PAINT_LEFT |
-                                    PAINT_EXTRAS | PAINT_SIZE );
-            //  PAINT_SIZE for outline
+                                    PaintPartFlags::Grid | PaintPartFlags::Top | PaintPartFlags::Left |
+                                    PaintPartFlags::Extras | PaintPartFlags::Size );
+            //  PaintPartFlags::Size for outline
         }
         else
         {
@@ -2747,7 +2771,7 @@ void ScViewFunc::MoveTable(
         TheTabs.clear();
 
         pDestShell->SetDocumentModified();
-        SfxGetpApp()->Broadcast( SfxSimpleHint( SC_HINT_TABLES_CHANGED ) );
+        SfxGetpApp()->Broadcast( SfxHint( SC_HINT_TABLES_CHANGED ) );
     }
     else
     {
@@ -2808,7 +2832,7 @@ void ScViewFunc::MoveTable(
             {
                 OUString aComment;
                 Color  aColor;
-                sal_uInt16 nFlags;
+                ScScenarioFlags nFlags;
 
                 pDoc->GetScenarioData(nMovTab, aComment,aColor, nFlags);
                 pDoc->SetScenario(nDestTab1,true);
@@ -2902,7 +2926,7 @@ void ScViewFunc::ShowTable( const std::vector<OUString>& rNames )
         {
             rDoc.SetVisible( nPos, true );
             SetTabNo( nPos, true );
-            SfxGetpApp()->Broadcast( SfxSimpleHint( SC_HINT_TABLES_CHANGED ) );
+            SfxGetpApp()->Broadcast( SfxHint( SC_HINT_TABLES_CHANGED ) );
             if (!bFound)
                 bFound = true;
             if (bUndo)
@@ -2915,7 +2939,7 @@ void ScViewFunc::ShowTable( const std::vector<OUString>& rNames )
         {
             pDocSh->GetUndoManager()->AddUndoAction( new ScUndoShowHideTab( pDocSh, undoTabs, true ) );
         }
-        pDocSh->PostPaint(0,0,0,MAXCOL,MAXROW,MAXTAB, PAINT_EXTRAS);
+        pDocSh->PostPaint(0,0,0,MAXCOL,MAXROW,MAXTAB, PaintPartFlags::Extras);
         pDocSh->SetDocumentModified();
     }
 }
@@ -2962,8 +2986,8 @@ void ScViewFunc::HideTable( const ScMarkData& rMark )
         }
 
         //  Update views
-        SfxGetpApp()->Broadcast( SfxSimpleHint( SC_HINT_TABLES_CHANGED ) );
-        pDocSh->PostPaint(0,0,0,MAXCOL,MAXROW,MAXTAB, PAINT_EXTRAS);
+        SfxGetpApp()->Broadcast( SfxHint( SC_HINT_TABLES_CHANGED ) );
+        pDocSh->PostPaint(0,0,0,MAXCOL,MAXROW,MAXTAB, PaintPartFlags::Extras);
         pDocSh->SetDocumentModified();
     }
 }
@@ -3138,7 +3162,7 @@ void ScViewFunc::SetSelectionFrameLines( const SvxBorderLine* pLine,
         SCTAB nEndTab = aMarkRange.aEnd.Tab();
         pDocSh->PostPaint( nStartCol, nStartRow, nStartTab,
                            nEndCol, nEndRow, nEndTab,
-                           PAINT_GRID, SC_PF_LINES | SC_PF_TESTMERGE );
+                           PaintPartFlags::Grid, SC_PF_LINES | SC_PF_TESTMERGE );
 
         pDocSh->UpdateOle( &GetViewData() );
         pDocSh->SetDocumentModified();

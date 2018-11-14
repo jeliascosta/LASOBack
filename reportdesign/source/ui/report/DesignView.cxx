@@ -21,6 +21,7 @@
 #include <tools/debug.hxx>
 #include "ReportController.hxx"
 #include <comphelper/types.hxx>
+#include <svtools/acceleratorexecute.hxx>
 #include <unotools/syslocale.hxx>
 #include <unotools/viewoptions.hxx>
 #include "RptDef.hxx"
@@ -62,7 +63,7 @@ class OTaskWindow : public vcl::Window
     VclPtr<PropBrw> m_pPropWin;
 public:
     explicit OTaskWindow(vcl::Window* _pParent) : Window(_pParent),m_pPropWin(nullptr){}
-    virtual ~OTaskWindow() { disposeOnce(); }
+    virtual ~OTaskWindow() override { disposeOnce(); }
     virtual void dispose() override { m_pPropWin.clear(); vcl::Window::dispose(); }
 
     inline void setPropertyBrowser(PropBrw* _pPropWin)
@@ -97,13 +98,12 @@ ODesignView::ODesignView(   vcl::Window* pParent,
     ,m_eActObj( OBJ_NONE )
     ,m_aGridSizeCoarse( 1000, 1000 )    // #i93595# 100TH_MM changed to grid using coarse 1 cm grid
     ,m_aGridSizeFine( 250, 250 )        // and a 0,25 cm subdivision for better visualisation
-    ,m_bGridSnap(true)
     ,m_bDeleted( false )
 {
     SetHelpId(UID_RPT_RPT_APP_VIEW);
     ImplInitSettings();
 
-    SetMapMode( MapMode( MAP_100TH_MM ) );
+    SetMapMode( MapMode( MapUnit::Map100thMM ) );
 
     // now create the task pane on the right side :-)
     m_pTaskPane = VclPtr<OTaskWindow>::Create(this);
@@ -161,7 +161,7 @@ void ODesignView::dispose()
 
 void ODesignView::initialize()
 {
-    SetMapMode( MapMode( MAP_100TH_MM ) );
+    SetMapMode( MapMode( MapUnit::Map100thMM ) );
     m_aScrollWindow->initialize();
     m_aScrollWindow->Show();
 }
@@ -184,26 +184,26 @@ bool ODesignView::PreNotify( NotifyEvent& rNEvt )
     switch(rNEvt.GetType())
     {
         case MouseNotifyEvent::KEYINPUT:
-            if ( (m_pPropWin && m_pPropWin->HasChildPathFocus()) )
+        {
+            if ( m_pPropWin && m_pPropWin->HasChildPathFocus() )
                 return false;
-            if ( (m_pAddField && m_pAddField->HasChildPathFocus()) )
+            if ( m_pAddField && m_pAddField->HasChildPathFocus() )
                 return false;
-            if ( (m_pReportExplorer && m_pReportExplorer->HasChildPathFocus()) )
+            if ( m_pReportExplorer && m_pReportExplorer->HasChildPathFocus() )
                 return false;
+            const KeyEvent* pKeyEvent = rNEvt.GetKeyEvent();
+            if ( handleKeyEvent(*pKeyEvent) )
+                bRet = true;
+            else if ( bRet && m_pAccel.get() )
             {
-                const KeyEvent* pKeyEvent = rNEvt.GetKeyEvent();
-                if ( handleKeyEvent(*pKeyEvent) )
-                    bRet = true;
-                else if ( bRet && m_pAccel.get() )
-                {
-                    const vcl::KeyCode& rCode = pKeyEvent->GetKeyCode();
-                    util::URL aUrl;
-                    aUrl.Complete = m_pAccel->findCommand(svt::AcceleratorExecute::st_VCLKey2AWTKey(rCode));
-                    if ( aUrl.Complete.isEmpty() || !m_xController->isCommandEnabled( aUrl.Complete ) )
-                        bRet = false;
-                }
+                const vcl::KeyCode& rCode = pKeyEvent->GetKeyCode();
+                util::URL aUrl;
+                aUrl.Complete = m_pAccel->findCommand(svt::AcceleratorExecute::st_VCLKey2AWTKey(rCode));
+                if ( aUrl.Complete.isEmpty() || !m_xController->isCommandEnabled( aUrl.Complete ) )
+                    bRet = false;
             }
             break;
+        }
         default:
             break;
     }
@@ -266,7 +266,7 @@ void ODesignView::resizeDocumentView(Rectangle& _rPlayground)
 
 }
 
-IMPL_LINK_NOARG_TYPED(ODesignView, MarkTimeout, Idle *, void)
+IMPL_LINK_NOARG(ODesignView, MarkTimeout, Idle *, void)
 {
     if ( m_pPropWin && m_pPropWin->IsVisible() )
     {
@@ -399,7 +399,7 @@ void ODesignView::ImplInitSettings()
     SetTextFillColor( Application::GetSettings().GetStyleSettings().GetFaceColor() );
 }
 
-IMPL_LINK_NOARG_TYPED( ODesignView, SplitHdl, SplitWindow*, void )
+IMPL_LINK_NOARG( ODesignView, SplitHdl, SplitWindow*, void )
 {
     const Size aOutputSize = GetOutputSizePixel();
     const long nTest = aOutputSize.Width() * m_aSplitWin->GetItemSize(TASKPANE_ID) / 100;
@@ -422,7 +422,7 @@ void ODesignView::SelectAll(const sal_uInt16 _nObjectType)
 
 void ODesignView::unmarkAllObjects()
 {
-    m_aScrollWindow->unmarkAllObjects(nullptr);
+    m_aScrollWindow->unmarkAllObjects();
 }
 
 void ODesignView::togglePropertyBrowser(bool _bToogleOn)

@@ -36,11 +36,6 @@
 
 #include "svids.hrc"
 
-#include <config_graphite.h>
-#if ENABLE_GRAPHITE
-#include "graphite_features.hxx"
-#endif
-
 FontMetric OutputDevice::GetDevFont( int nDevFontIndex ) const
 {
     FontMetric aFontMetric;
@@ -58,7 +53,7 @@ FontMetric OutputDevice::GetDevFont( int nDevFontIndex ) const
         aFontMetric.SetPitch( rData.GetPitch() );
         aFontMetric.SetWeight( rData.GetWeight() );
         aFontMetric.SetItalic( rData.GetItalic() );
-        aFontMetric.SetAlignment( rData.GetAlignment() );
+        aFontMetric.SetAlignment( TextAlign::ALIGN_TOP );
         aFontMetric.SetWidthType( rData.GetWidthType() );
         aFontMetric.SetScalableFlag( rData.IsScalable() );
         aFontMetric.SetBuiltInFontFlag( rData.IsBuiltInFont() );
@@ -74,9 +69,19 @@ int OutputDevice::GetDevFontCount() const
     if( !mpDeviceFontList )
     {
         if (!mpFontCollection)
+        {
             return 0;
+        }
 
         mpDeviceFontList = mpFontCollection->GetDeviceFontList();
+
+        if (!mpDeviceFontList->Count())
+        {
+            delete mpDeviceFontList;
+            mpDeviceFontList = nullptr;
+
+            return 0;
+        }
     }
     return mpDeviceFontList->Count();
 }
@@ -108,7 +113,7 @@ Size OutputDevice::GetDevFontSize( const vcl::Font& rFont, int nSizeIndex ) cons
     if ( mbMap )
     {
         aSize.Height() *= 10;
-        MapMode aMap( MAP_10TH_INCH, Point(), Fraction( 1, 72 ), Fraction( 1, 72 ) );
+        MapMode aMap( MapUnit::Map10thInch, Point(), Fraction( 1, 72 ), Fraction( 1, 72 ) );
         aSize = PixelToLogic( aSize, aMap );
         aSize.Height() += 5;
         aSize.Height() /= 10;
@@ -169,7 +174,7 @@ FontMetric OutputDevice::GetFontMetric() const
         return aMetric;
 
     LogicalFontInstance* pFontInstance = mpFontInstance;
-    ImplFontMetricDataPtr xFontMetric = pFontInstance->mxFontMetric;
+    ImplFontMetricDataRef xFontMetric = pFontInstance->mxFontMetric;
 
     // prepare metric
     aMetric.Font::operator=( maFont );
@@ -183,7 +188,7 @@ FontMetric OutputDevice::GetFontMetric() const
     aMetric.SetPitch( xFontMetric->GetPitch() );
     aMetric.SetWeight( xFontMetric->GetWeight() );
     aMetric.SetItalic( xFontMetric->GetItalic() );
-    aMetric.SetAlignment( xFontMetric->GetAlignment() );
+    aMetric.SetAlignment( TextAlign::ALIGN_TOP );
     aMetric.SetWidthType( xFontMetric->GetWidthType() );
     if ( pFontInstance->mnOwnOrientation )
         aMetric.SetOrientation( pFontInstance->mnOwnOrientation );
@@ -226,7 +231,7 @@ FontMetric OutputDevice::GetFontMetric( const vcl::Font& rFont ) const
     return aMetric;
 }
 
-bool OutputDevice::GetFontCharMap( FontCharMapPtr& rxFontCharMap ) const
+bool OutputDevice::GetFontCharMap( FontCharMapRef& rxFontCharMap ) const
 {
     // we need a graphics
     if( !mpGraphics && !AcquireGraphics() )
@@ -239,10 +244,10 @@ bool OutputDevice::GetFontCharMap( FontCharMapPtr& rxFontCharMap ) const
     if( !mpFontInstance )
         return false;
 
-    FontCharMapPtr xFontCharMap ( mpGraphics->GetFontCharMap() );
-    if (!xFontCharMap)
+    FontCharMapRef xFontCharMap ( mpGraphics->GetFontCharMap() );
+    if (!xFontCharMap.Is())
     {
-        FontCharMapPtr xDefaultMap( new FontCharMap() );
+        FontCharMapRef xDefaultMap( new FontCharMap() );
         rxFontCharMap = xDefaultMap;
     }
     else
@@ -710,7 +715,7 @@ void OutputDevice::RemoveFontSubstitute( sal_uInt16 n )
 
 void ImplDirectFontSubstitution::RemoveFontSubstitute( int nIndex )
 {
-    FontSubstList::iterator it = maFontSubstList.begin();
+    std::list<ImplFontSubstEntry>::iterator it = maFontSubstList.begin();
     for( int nCount = 0; (it != maFontSubstList.end()) && (nCount++ != nIndex); ++it ) ;
     if( it != maFontSubstList.end() )
         maFontSubstList.erase( it );
@@ -729,7 +734,7 @@ bool ImplDirectFontSubstitution::FindFontSubstitute( OUString& rSubstName,
     const OUString& rSearchName ) const
 {
     // TODO: get rid of O(N) searches
-    FontSubstList::const_iterator it = maFontSubstList.begin();
+    std::list<ImplFontSubstEntry>::const_iterator it = maFontSubstList.begin();
     for(; it != maFontSubstList.end(); ++it )
     {
         const ImplFontSubstEntry& rEntry = *it;
@@ -951,10 +956,11 @@ vcl::Font OutputDevice::GetDefaultFont( DefaultFontType nType, LanguageType eLan
     case DefaultFontType::CTL_HEADING:   s = "DefaultFontType::CTL_HEADING"; break;
     case DefaultFontType::CTL_DISPLAY:   s = "DefaultFontType::CTL_DISPLAY"; break;
     }
-    fprintf( stderr, "   OutputDevice::GetDefaultFont() Type=\"%s\" lang=%d flags=%ld FontName=\"%s\"\n",
-         s, eLang, nFlags,
-         OUStringToOString( aFont.GetName(), RTL_TEXTENCODING_UTF8 ).getStr()
-         );
+    SAL_INFO("vcl.gdi",
+             "OutputDevice::GetDefaultFont() Type=\"" << s
+             << "\" lang=" << eLang
+             << " flags=" << nFlags
+             << " FontName=\"" << OUStringToOString( aFont.GetName(), RTL_TEXTENCODING_UTF8 ).getStr());
 #endif
 
     return aFont;
@@ -1084,7 +1090,7 @@ bool OutputDevice::ImplNewFont() const
             pFontInstance->mbInit = true;
 
             pFontInstance->mxFontMetric->SetOrientation( sal::static_int_cast<short>(pFontInstance->maFontSelData.mnOrientation) );
-            pGraphics->GetFontMetric( pFontInstance->mxFontMetric );
+            pGraphics->GetFontMetric( pFontInstance->mxFontMetric, 0 );
 
             pFontInstance->mxFontMetric->ImplInitTextLineSize( this );
             pFontInstance->mxFontMetric->ImplInitAboveTextLineSize();
@@ -1157,7 +1163,7 @@ bool OutputDevice::ImplNewFont() const
                       ((maFont.GetOverline()  != LINESTYLE_NONE) && (maFont.GetOverline()  != LINESTYLE_DONTKNOW)) ||
                       ((maFont.GetStrikeout() != STRIKEOUT_NONE) && (maFont.GetStrikeout() != STRIKEOUT_DONTKNOW));
     mbTextSpecial   = maFont.IsShadow() || maFont.IsOutline() ||
-                      (maFont.GetRelief() != RELIEF_NONE);
+                      (maFont.GetRelief() != FontRelief::NONE);
 
 
     // #95414# fix for OLE objects which use scale factors very creatively
@@ -1513,13 +1519,13 @@ sal_Int32 OutputDevice::HasGlyphs( const vcl::Font& rTempFont, const OUString& r
     else
         nEnd = std::min( rStr.getLength(), nIndex + nLen );
 
-    DBG_ASSERT( nIndex < nEnd, "StartPos >= EndPos?" );
-    DBG_ASSERT( nEnd <= rStr.getLength(), "String too short" );
+    SAL_WARN_IF( nIndex >= nEnd, "vcl", "StartPos >= EndPos?" );
+    SAL_WARN_IF( nEnd > rStr.getLength(), "vcl", "String too short" );
 
     // to get the map temporarily set font
     const vcl::Font aOrigFont = GetFont();
     const_cast<OutputDevice&>(*this).SetFont( rTempFont );
-    FontCharMapPtr xFontCharMap ( new FontCharMap() );
+    FontCharMapRef xFontCharMap ( new FontCharMap() );
     bool bRet = GetFontCharMap( xFontCharMap );
     const_cast<OutputDevice&>(*this).SetFont( aOrigFont );
 

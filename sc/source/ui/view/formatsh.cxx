@@ -572,7 +572,7 @@ void ScFormatShell::ExecuteStyle( SfxRequest& rReq )
                             if ( bUndo )
                             {
                                 OUString aUndo = ScGlobal::GetRscString( STR_UNDO_EDITCELLSTYLE );
-                                pDocSh->GetUndoManager()->EnterListAction( aUndo, aUndo );
+                                pDocSh->GetUndoManager()->EnterListAction( aUndo, aUndo, 0, pTabViewShell->GetViewShellId() );
                                 bListAction = true;
                             }
 
@@ -630,7 +630,7 @@ void ScFormatShell::ExecuteStyle( SfxRequest& rReq )
                                 if ( bUndo )
                                 {
                                     OUString aUndo = ScGlobal::GetRscString( STR_UNDO_EDITCELLSTYLE );
-                                    pDocSh->GetUndoManager()->EnterListAction( aUndo, aUndo );
+                                    pDocSh->GetUndoManager()->EnterListAction( aUndo, aUndo, 0, pTabViewShell->GetViewShellId() );
                                     bListAction = true;
                                 }
 
@@ -777,7 +777,7 @@ void ScFormatShell::ExecuteStyle( SfxRequest& rReq )
             if ( pStyleSheet )
             {
                 SfxStyleFamily  eFam    = pStyleSheet->GetFamily();
-                std::unique_ptr<SfxAbstractTabDialog> pDlg;
+                ScopedVclPtr<SfxAbstractTabDialog> pDlg;
                 sal_uInt16          nRsc    = 0;
 
                 // Store old Items from the style
@@ -860,7 +860,7 @@ void ScFormatShell::ExecuteStyle( SfxRequest& rReq )
                 ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
                 OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
 
-                pDlg.reset(pFact->CreateScStyleDlg( pParent, *pStyleSheet, nRsc, nRsc ));
+                pDlg.disposeAndReset(pFact->CreateScStyleDlg( pParent, *pStyleSheet, nRsc, nRsc ));
                 OSL_ENSURE(pDlg, "Dialog create fail!");
                 short nResult = pDlg->Execute();
                 pTabViewShell->SetInFormatDialog(false);
@@ -1149,7 +1149,7 @@ void ScFormatShell::ExecuteNumFormat( SfxRequest& rReq )
                     eType = pEntry->GetType();
                 }
 
-                //Just use eType to judge whether the command is fired for NUMBER/PERCENT/CURRENCY/SCIENTIFIC
+                //Just use eType to judge whether the command is fired for NUMBER/PERCENT/CURRENCY/SCIENTIFIC/FRACTION
                 //In sidebar, users can fire SID_NUMBER_FORMAT command by operating the related UI controls before they are disable
                 switch(eType)
                 {
@@ -1162,6 +1162,8 @@ void ScFormatShell::ExecuteNumFormat( SfxRequest& rReq )
                 case css::util::NumberFormat::CURRENCY|css::util::NumberFormat::DEFINED:
                 case css::util::NumberFormat::SCIENTIFIC:
                 case css::util::NumberFormat::SCIENTIFIC|css::util::NumberFormat::DEFINED:
+                case css::util::NumberFormat::FRACTION:
+                case css::util::NumberFormat::FRACTION|css::util::NumberFormat::DEFINED:
                     eType = 0;
                     break;
                 default:
@@ -1189,7 +1191,7 @@ void ScFormatShell::ExecuteNumFormat( SfxRequest& rReq )
                         }
                         else
                         {
-                            sTmpStr += OUString(cChar);
+                            sTmpStr += OUStringLiteral1(cChar);
                         }
 
                         nCount++;
@@ -2183,7 +2185,8 @@ void ScFormatShell::GetAttrState( SfxItemSet& rSet )
             break;
             case SID_ATTR_BRUSH:
             {
-                rSet.Put( rBrushItem, GetPool().GetWhich(nWhich) );
+                std::unique_ptr<SfxPoolItem> pNewItem(rBrushItem.CloneSetWhich(GetPool().GetWhich(nWhich)));
+                rSet.Put( *pNewItem );
             }
             break;
         }
@@ -2581,17 +2584,7 @@ void ScFormatShell::GetNumFormatState( SfxItemSet& rSet )
                 }
                 break;
             case SID_NUMBER_CURRENCY:
-                {
-                    const SfxItemSet& rAttrSet = pTabViewShell->GetSelectionPattern()->GetItemSet();
-                    if( SfxItemState::DONTCARE != rAttrSet.GetItemState( ATTR_VALUE_FORMAT ) )
-                    {
-                        sal_uInt32 nNumberFormat = static_cast<const SfxUInt32Item&>(
-                                                   rAttrSet.Get( ATTR_VALUE_FORMAT ) ).GetValue();
-                        rSet.Put( SfxUInt32Item( nWhich, nNumberFormat ) );
-                    }
-                    else
-                        rSet.InvalidateItem( nWhich );
-                }
+                rSet.Put( SfxBoolItem(nWhich, (nType & css::util::NumberFormat::CURRENCY)) );
                 break;
             case SID_NUMBER_SCIENTIFIC:
                 rSet.Put( SfxBoolItem(nWhich, (nType & css::util::NumberFormat::SCIENTIFIC)) );

@@ -38,11 +38,11 @@
 #include <svx/svdograf.hxx>
 #include <svx/svdpagv.hxx>
 
-#include "../../ui/inc/strings.hrc"
-#include "../../ui/inc/DrawViewShell.hxx"
-#include "../../ui/inc/DrawDocShell.hxx"
-#include "../../ui/inc/ClientView.hxx"
-#include "../../ui/inc/FrameView.hxx"
+#include "strings.hrc"
+#include "DrawViewShell.hxx"
+#include "DrawDocShell.hxx"
+#include "ClientView.hxx"
+#include "FrameView.hxx"
 
 #include "comphelper/anytostring.hxx"
 #include "cppuhelper/exc_hlp.hxx"
@@ -57,7 +57,7 @@
 #include "drawdoc.hxx"
 #include "sdresid.hxx"
 #include "sdgrffilter.hxx"
-#include "../../ui/inc/ViewShellBase.hxx"
+#include "ViewShellBase.hxx"
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <com/sun/star/beans/PropertyValues.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
@@ -66,7 +66,7 @@
 #include <com/sun/star/document/XExporter.hpp>
 #include <com/sun/star/view/XSelectionSupplier.hpp>
 #include <com/sun/star/drawing/XDrawView.hpp>
-#include "../../ui/inc/DrawController.hxx"
+#include "DrawController.hxx"
 #include <cppuhelper/implbase.hxx>
 #include <com/sun/star/drawing/XShape.hpp>
 #include <com/sun/star/task/XInteractionHandler.hpp>
@@ -90,12 +90,12 @@ class SdGRFFilter_ImplInteractionHdl : public ::cppu::WeakImplHelper< css::task:
 
     public:
 
-    explicit SdGRFFilter_ImplInteractionHdl( css::uno::Reference< css::task::XInteractionHandler > xInteraction ) :
+    explicit SdGRFFilter_ImplInteractionHdl( css::uno::Reference< css::task::XInteractionHandler > const & xInteraction ) :
         m_xInter( xInteraction ),
         nFilterError( GRFILTER_OK )
         {}
 
-    virtual ~SdGRFFilter_ImplInteractionHdl();
+    virtual ~SdGRFFilter_ImplInteractionHdl() override;
 
     sal_uInt16 GetErrorCode() const { return nFilterError; };
 
@@ -190,11 +190,11 @@ bool SdGRFFilter::Import()
             if( mrDocument.GetPageCount() == 0 )
                 mrDocument.CreateFirstPages();
 
-            SdPage*     pPage = mrDocument.GetSdPage( 0, PK_STANDARD );
+            SdPage*     pPage = mrDocument.GetSdPage( 0, PageKind::Standard );
             Point       aPos;
             Size        aPagSize( pPage->GetSize() );
             Size        aGrfSize( OutputDevice::LogicToLogic( aGraphic.GetPrefSize(),
-                                  aGraphic.GetPrefMapMode(), MAP_100TH_MM ) );
+                                  aGraphic.GetPrefMapMode(), MapUnit::Map100thMM ) );
 
             aPagSize.Width() -= pPage->GetLftBorder() + pPage->GetRgtBorder();
             aPagSize.Height() -= pPage->GetUppBorder() + pPage->GetLwrBorder();
@@ -241,17 +241,17 @@ bool SdGRFFilter::Export()
     SdPage* pPage = nullptr;
     sd::DrawViewShell*  pDrawViewShell = dynamic_cast<::sd::DrawViewShell* >(mrDocShell.GetViewShell() );
 
-    PageKind ePageKind = PK_STANDARD;
+    PageKind ePageKind = PageKind::Standard;
     if( pDrawViewShell )
     {
         ePageKind = pDrawViewShell->GetPageKind();
-        if( PK_HANDOUT == ePageKind )
-            pPage = mrDocument.GetSdPage( 0, PK_HANDOUT );
+        if( PageKind::Handout == ePageKind )
+            pPage = mrDocument.GetSdPage( 0, PageKind::Handout );
         else
             pPage = pDrawViewShell->GetActualPage();
     }
     else
-        pPage = mrDocument.GetSdPage( 0, PK_STANDARD );
+        pPage = mrDocument.GetSdPage( 0, PageKind::Standard );
 
     if ( pPage )
     {

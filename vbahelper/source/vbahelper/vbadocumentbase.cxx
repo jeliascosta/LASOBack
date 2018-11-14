@@ -27,6 +27,7 @@
 #include <com/sun/star/util/XCloseable.hpp>
 #include <com/sun/star/util/URLTransformer.hpp>
 #include <com/sun/star/util/XURLTransformer.hpp>
+#include <com/sun/star/frame/XDispatchProvider.hpp>
 #include <com/sun/star/frame/XStorable.hpp>
 #include <com/sun/star/frame/XFrame.hpp>
 #include <com/sun/star/frame/XTitle.hpp>
@@ -42,7 +43,7 @@
 using namespace ::com::sun::star;
 using namespace ::ooo::vba;
 
-VbaDocumentBase::VbaDocumentBase( const uno::Reference< ov::XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, uno::Reference< frame::XModel > xModel ) : VbaDocumentBase_BASE( xParent, xContext ),  mxModel( xModel )
+VbaDocumentBase::VbaDocumentBase( const uno::Reference< ov::XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, uno::Reference< frame::XModel > const & xModel ) : VbaDocumentBase_BASE( xParent, xContext ),  mxModel( xModel )
 {
 }
 

@@ -87,7 +87,7 @@ void XclExpProgressBar::Initialize()
             SCCOL nLastUsedScCol;
             SCROW nLastUsedScRow;
             rDoc.GetTableArea( nScTab, nLastUsedScCol, nLastUsedScRow );
-            sal_Size nSegSize = static_cast< sal_Size >( nLastUsedScRow + 1 );
+            std::size_t nSegSize = static_cast< std::size_t >( nLastUsedScRow + 1 );
             maSubSegRowCreate[ nScTab ] = mpSubRowCreate->AddSegment( nSegSize );
         }
     }
@@ -867,7 +867,7 @@ void XclExpHFConverter::AppendPortion( const EditTextObject* pTextObj, sal_Unico
 
     if( !aText.isEmpty() )
     {
-        maHFString += "&" + OUString(cPortionCode) + aText;
+        maHFString += "&" + OUStringLiteral1(cPortionCode) + aText;
         mnTotalHeight = ::std::max( mnTotalHeight, nHeight );
     }
 }
@@ -996,7 +996,7 @@ void XclExpCachedMatrix::GetDimensions( SCSIZE & nCols, SCSIZE & nRows ) const
     OSL_ENSURE( nCols <= 256, "XclExpCachedMatrix::GetDimensions - too many columns" );
 }
 
-sal_Size XclExpCachedMatrix::GetSize() const
+std::size_t XclExpCachedMatrix::GetSize() const
 {
     SCSIZE nCols, nRows;
 
@@ -1027,7 +1027,8 @@ void XclExpCachedMatrix::Save( XclExpStream& rStrm ) const
         {
             ScMatrixValue nMatVal = mrMatrix.Get( nCol, nRow );
 
-            if( SC_MATVAL_EMPTY == nMatVal.nType )
+            FormulaError nScError;
+            if( ScMatValType::Empty == nMatVal.nType )
             {
                 rStrm.SetSliceSize( 9 );
                 rStrm << EXC_CACHEDVAL_EMPTY;
@@ -1039,14 +1040,14 @@ void XclExpCachedMatrix::Save( XclExpStream& rStrm ) const
                 rStrm.SetSliceSize( 6 );
                 rStrm << EXC_CACHEDVAL_STRING << aStr;
             }
-            else if( SC_MATVAL_BOOLEAN == nMatVal.nType )
+            else if( ScMatValType::Boolean == nMatVal.nType )
             {
                 sal_Int8 nBool = sal_Int8(nMatVal.GetBoolean());
                 rStrm.SetSliceSize( 9 );
                 rStrm << EXC_CACHEDVAL_BOOL << nBool;
                 rStrm.WriteZeroBytes( 7 );
             }
-            else if( sal_uInt16 nScError = nMatVal.GetError() )
+            else if( (nScError = nMatVal.GetError()) != FormulaError::NONE )
             {
                 sal_Int8 nError ( XclTools::GetXclErrorCode( nScError ) );
                 rStrm.SetSliceSize( 9 );

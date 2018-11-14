@@ -24,7 +24,9 @@
 #include <cppuhelper/interfacecontainer.hxx>
 #include <cppuhelper/exc_hlp.hxx>
 #include <cppuhelper/queryinterface.hxx>
+
 #include <algorithm>
+#include <utility>
 
 using namespace osl;
 using namespace com::sun::star::uno;
@@ -150,7 +152,7 @@ Reference< XInterface > SAL_CALL OWeakConnectionPoint::queryAdapted() throw(css:
 
         if (n > 1)
         {
-            // The refence is incremented. The object cannot be destroyed.
+            // The reference is incremented. The object cannot be destroyed.
             // Release the guard at the earliest point.
             guard.clear();
             // WeakObject has a (XInterface *) cast operator
@@ -201,7 +203,7 @@ void SAL_CALL OWeakConnectionPoint::removeReference(const Reference< XReference 
 // Accidentally occurs in msvc mapfile = > had to be outlined.
 OWeakObject::OWeakObject()
     : m_refCount( 0 ),
-      m_pWeakConnectionPoint( 0 )
+      m_pWeakConnectionPoint( nullptr )
 {
 }
 #endif
@@ -483,6 +485,14 @@ WeakReferenceHelper& WeakReferenceHelper::operator=(const WeakReferenceHelper& r
     }
     Reference< XInterface > xInt( rWeakRef.get() );
     return operator = ( xInt );
+}
+
+WeakReferenceHelper & WeakReferenceHelper::operator =(
+    WeakReferenceHelper && other)
+{
+    clear();
+    std::swap(m_pImpl, other.m_pImpl);
+    return *this;
 }
 
 WeakReferenceHelper & SAL_CALL

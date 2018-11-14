@@ -89,9 +89,9 @@ using namespace editeng;
 
 // Some helper functions
 // char
-inline const SvxEscapementItem& GetEscapement(const SfxItemSet& rSet,sal_uInt16 nId,bool bInP=true)
+inline const SvxEscapementItem& GetEscapement(const SfxItemSet& rSet,sal_uInt16 nId,bool bInP)
     { return static_cast<const SvxEscapementItem&>(rSet.Get( nId,bInP)); }
-inline const SvxLineSpacingItem& GetLineSpacing(const SfxItemSet& rSet,sal_uInt16 nId,bool bInP=true)
+inline const SvxLineSpacingItem& GetLineSpacing(const SfxItemSet& rSet,sal_uInt16 nId,bool bInP)
     { return static_cast<const SvxLineSpacingItem&>(rSet.Get( nId,bInP)); }
 // frm
 inline const SvxLRSpaceItem& GetLRSpace(const SfxItemSet& rSet,sal_uInt16 nId)
@@ -210,7 +210,7 @@ void SvxRTFParser::ReadAttr( int nToken, SfxItemSet* pSet )
     FontEmphasisMark eEmphasis;
     bPardTokenRead = false;
     RTF_CharTypeDef eCharType = NOTDEF_CHARTYPE;
-    sal_uInt16 nFontAlign;
+    SvxParaVertAlignItem::Align nFontAlign;
 
     bool bChkStkPos = !bNewGroup && !aAttrStack.empty();
 
@@ -449,7 +449,7 @@ void SvxRTFParser::ReadAttr( int nToken, SfxItemSet* pSet )
                         nTokenValue = 200;      // is one BYTE !!!
 
                     aLSpace.SetPropLineSpace( (const sal_uInt8)nTokenValue );
-                    aLSpace.GetLineSpaceRule() = SVX_LINE_SPACE_AUTO;
+                    aLSpace.SetLineSpaceRule( SvxLineSpaceRule::Auto );
 
                     pSet->Put( aLSpace );
                 }
@@ -467,28 +467,28 @@ void SvxRTFParser::ReadAttr( int nToken, SfxItemSet* pSet )
                     if (1000 == nTokenValue )
                         nTokenValue = 240;
 
-                    SvxLineSpace eLnSpc;
+                    SvxLineSpaceRule eLnSpc;
                     if (nTokenValue < 0)
                     {
-                        eLnSpc = SVX_LINE_SPACE_FIX;
+                        eLnSpc = SvxLineSpaceRule::Fix;
                         nTokenValue = -nTokenValue;
                     }
                     else if (nTokenValue == 0)
                     {
                         //if \sl0 is used, the line spacing is automatically
                         //determined
-                        eLnSpc = SVX_LINE_SPACE_AUTO;
+                        eLnSpc = SvxLineSpaceRule::Auto;
                     }
                     else
-                        eLnSpc = SVX_LINE_SPACE_MIN;
+                        eLnSpc = SvxLineSpaceRule::Min;
 
                     if (IsCalcValue())
                         CalcValue();
 
-                    if (eLnSpc != SVX_LINE_SPACE_AUTO)
+                    if (eLnSpc != SvxLineSpaceRule::Auto)
                         aLSpace.SetLineHeight( (const sal_uInt16)nTokenValue );
 
-                    aLSpace.GetLineSpaceRule() = eLnSpc;
+                    aLSpace.SetLineSpaceRule(eLnSpc);
                     pSet->Put(aLSpace);
                 }
                 break;
@@ -517,15 +517,15 @@ void SvxRTFParser::ReadAttr( int nToken, SfxItemSet* pSet )
                 break;
 
             case RTF_FAFIXED:
-            case RTF_FAAUTO:    nFontAlign = SvxParaVertAlignItem::AUTOMATIC;
+            case RTF_FAAUTO:    nFontAlign = SvxParaVertAlignItem::Align::Automatic;
                                 goto SET_FONTALIGNMENT;
-            case RTF_FAHANG:    nFontAlign = SvxParaVertAlignItem::TOP;
+            case RTF_FAHANG:    nFontAlign = SvxParaVertAlignItem::Align::Top;
                                 goto SET_FONTALIGNMENT;
-            case RTF_FAVAR:     nFontAlign = SvxParaVertAlignItem::BOTTOM;
+            case RTF_FAVAR:     nFontAlign = SvxParaVertAlignItem::Align::Bottom;
                                 goto SET_FONTALIGNMENT;
-            case RTF_FACENTER:  nFontAlign = SvxParaVertAlignItem::CENTER;
+            case RTF_FACENTER:  nFontAlign = SvxParaVertAlignItem::Align::Center;
                                 goto SET_FONTALIGNMENT;
-            case RTF_FAROMAN:   nFontAlign = SvxParaVertAlignItem::BASELINE;
+            case RTF_FAROMAN:   nFontAlign = SvxParaVertAlignItem::Align::Baseline;
                                 goto SET_FONTALIGNMENT;
 SET_FONTALIGNMENT:
             if( aPardMap.nFontAlign )
@@ -1062,14 +1062,14 @@ ATTR_SETEMPHASIS:
             case RTF_EMBO:
                 if (aPlainMap.nRelief)
                 {
-                    pSet->Put(SvxCharReliefItem(RELIEF_EMBOSSED,
+                    pSet->Put(SvxCharReliefItem(FontRelief::Embossed,
                         aPlainMap.nRelief));
                 }
                 break;
             case RTF_IMPR:
                 if (aPlainMap.nRelief)
                 {
-                    pSet->Put(SvxCharReliefItem(RELIEF_ENGRAVED,
+                    pSet->Put(SvxCharReliefItem(FontRelief::Engraved,
                         aPlainMap.nRelief));
                 }
                 break;
@@ -1282,7 +1282,7 @@ void SvxRTFParser::ReadTabAttr( int nToken, SfxItemSet& rSet )
     bool bMethodOwnsToken = false; // #i52542# patch from cmc.
 // then read all the TabStops
     SvxTabStop aTabStop;
-    SvxTabStopItem aAttr( 0, 0, SVX_TAB_ADJUST_DEFAULT, aPardMap.nTabStop );
+    SvxTabStopItem aAttr( 0, 0, SvxTabAdjust::Default, aPardMap.nTabStop );
     bool bContinue = true;
     do {
         switch( nToken )
@@ -1299,16 +1299,16 @@ void SvxRTFParser::ReadTabAttr( int nToken, SfxItemSet& rSet )
             break;
 
         case RTF_TQL:
-            aTabStop.GetAdjustment() = SVX_TAB_ADJUST_LEFT;
+            aTabStop.GetAdjustment() = SvxTabAdjust::Left;
             break;
         case RTF_TQR:
-            aTabStop.GetAdjustment() = SVX_TAB_ADJUST_RIGHT;
+            aTabStop.GetAdjustment() = SvxTabAdjust::Right;
             break;
         case RTF_TQC:
-            aTabStop.GetAdjustment() = SVX_TAB_ADJUST_CENTER;
+            aTabStop.GetAdjustment() = SvxTabAdjust::Center;
             break;
         case RTF_TQDEC:
-            aTabStop.GetAdjustment() = SVX_TAB_ADJUST_DECIMAL;
+            aTabStop.GetAdjustment() = SvxTabAdjust::Decimal;
             break;
 
         case RTF_TLDOT:     aTabStop.GetFill() = '.';   break;
@@ -1538,7 +1538,7 @@ void SvxRTFParser::ReadBorderAttr( int nToken, SfxItemSet& rSet,
                     break;
 
                 case RTF_BOX:
-                    aAttr.SetDistance( (sal_uInt16)nTokenValue );
+                    aAttr.SetAllDistances( (sal_uInt16)nTokenValue );
                     break;
                 }
             }
@@ -1663,7 +1663,7 @@ void SvxRTFParser::ReadBackgroundAttr( int nToken, SfxItemSet& rSet,
     Color aCol( COL_WHITE ), aFCol;
     if( !nFillValue )
     {
-        // there was only one of two colors specified or no BrushTyp
+        // there was only one of two colors specified or no BrushType
         if( USHRT_MAX != nFillColor )
         {
             nFillValue = 100;
@@ -1758,7 +1758,7 @@ void SvxRTFParser::RTFPardPlain( bool const bPard, SfxItemSet** ppSet )
                 // Item set and different -> Set the Default Pool
                 if( !*pPtr )
                     ;
-                else if( SFX_WHICH_MAX < *pPtr )
+                else if (SfxItemPool::IsSlot(*pPtr))
                     pAkt->aAttrSet.ClearItem( *pPtr );
                 else if( IsChkStyleAttr() )
                     pAkt->aAttrSet.Put( pDfltSet->Get( *pPtr ) );
@@ -1873,9 +1873,9 @@ void SvxRTFParser::SetDefault( int nToken, int nValue )
 
             // we want Defaulttabs
             SvxTabStopItem aNewTab( nTabCount, sal_uInt16(nValue),
-                                SVX_TAB_ADJUST_DEFAULT, aPardMap.nTabStop );
+                                SvxTabAdjust::Default, aPardMap.nTabStop );
             while( nTabCount )
-                ((SvxTabStop&)aNewTab[ --nTabCount ]).GetAdjustment() = SVX_TAB_ADJUST_DEFAULT;
+                ((SvxTabStop&)aNewTab[ --nTabCount ]).GetAdjustment() = SvxTabAdjust::Default;
 
             pAttrPool->SetPoolDefaultItem( aNewTab );
         }

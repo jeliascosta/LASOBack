@@ -20,15 +20,16 @@
 #define INCLUDED_SW_INC_NDOLE_HXX
 
 #include <ndnotxt.hxx>
-
 #include <svtools/embedhlp.hxx>
+#include <drawinglayer/primitive2d/baseprimitive2d.hxx>
 
 class SwGrfFormatColl;
 class SwDoc;
 class SwOLENode;
-
 class SwOLEListener_Impl;
 class SwEmbedObjectLink;
+class DeflateData;
+
 class SW_DLLPUBLIC SwOLEObj
 {
     friend class SwOLENode;
@@ -41,6 +42,11 @@ class SW_DLLPUBLIC SwOLEObj
     svt::EmbeddedObjectRef xOLERef;
     OUString aName;
 
+    // eventually buffered data if it is a chart OLE
+    drawinglayer::primitive2d::Primitive2DContainer     m_aPrimitive2DSequence;
+    basegfx::B2DRange                                   m_aRange;
+    class DeflateData*                                  m_pDeflateData;
+
     SwOLEObj( const SwOLEObj& rObj ) = delete;
 
     void SetNode( SwOLENode* pNode );
@@ -51,7 +57,7 @@ public:
     ~SwOLEObj();
 
     bool UnloadObject();
-    static bool UnloadObject( css::uno::Reference< css::embed::XEmbeddedObject > xObj,
+    static bool UnloadObject( css::uno::Reference< css::embed::XEmbeddedObject > const & xObj,
                                 const SwDoc* pDoc,
                                 sal_Int64 nAspect );
 
@@ -62,6 +68,13 @@ public:
     const OUString& GetCurrentPersistName() const { return aName; }
     OUString GetStyleString();
     bool IsOleRef() const;  ///< To avoid unnecessary loading of object.
+
+    // try to get OLE visualization in form of a Primitive2DSequence
+    // and the corresponding B2DRange. This data may be locally buffered
+    drawinglayer::primitive2d::Primitive2DContainer const & tryToGetChartContentAsPrimitive2DSequence(
+        basegfx::B2DRange& rRange,
+        bool bSynchron);
+    void resetBufferedData();
 };
 
 // SwOLENode
@@ -80,13 +93,13 @@ class SW_DLLPUBLIC SwOLENode: public SwNoTextNode
     SwOLENode(  const SwNodeIndex &rWhere,
                 const svt::EmbeddedObjectRef&,
                 SwGrfFormatColl *pGrfColl,
-                SwAttrSet* pAutoAttr = nullptr );
+                SwAttrSet* pAutoAttr );
 
     SwOLENode(  const SwNodeIndex &rWhere,
                 const OUString &rName,
                 sal_Int64 nAspect,
                 SwGrfFormatColl *pGrfColl,
-                SwAttrSet* pAutoAttr = nullptr );
+                SwAttrSet* pAutoAttr );
 
     SwOLENode( const SwOLENode & ) = delete;
 
@@ -95,7 +108,7 @@ class SW_DLLPUBLIC SwOLENode: public SwNoTextNode
 public:
     const SwOLEObj& GetOLEObj() const { return aOLEObj; }
           SwOLEObj& GetOLEObj()       { return aOLEObj; }
-    virtual ~SwOLENode();
+    virtual ~SwOLENode() override;
 
     virtual SwContentNode *SplitContentNode( const SwPosition & ) override;
 

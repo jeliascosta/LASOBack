@@ -26,7 +26,7 @@ class VCL_DLLPUBLIC EmbeddedFontsHelper
 {
 public:
     /// Specification of what kind of operation is allowed when embedding a font
-    enum FontRights
+    enum class FontRights
     {
         ViewingAllowed, ///< Font may be embedded for viewing the document (but not editing)
         EditingAllowed ///< Font may be embedded for editing document (implies viewing)
@@ -48,7 +48,7 @@ public:
     */
     static bool addEmbeddedFont( const css::uno::Reference< css::io::XInputStream >& stream,
         const OUString& fontName, const char* extra,
-        std::vector< unsigned char > key = std::vector< unsigned char >(), bool eot = false);
+        std::vector< unsigned char > key, bool eot = false);
 
     /**
       Returns an URL for a file where to store contents of a given temporary font.

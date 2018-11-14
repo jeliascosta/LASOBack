@@ -192,7 +192,7 @@ SbiExprNode* SbiExpression::Term( const KeywordSymbolInfo* pKeywordSymbolInfo )
         return pNd;
     }
 
-    SbiToken eTok = (pKeywordSymbolInfo == nullptr) ? pParser->Next() : pKeywordSymbolInfo->m_eTok;
+    SbiToken eTok = (pKeywordSymbolInfo == nullptr) ? pParser->Next() : SYMBOL;
     // memorize the parsing's begin
     pParser->LockColumn();
     OUString aSym( (pKeywordSymbolInfo == nullptr) ? pParser->GetSym() : pKeywordSymbolInfo->m_aKeywordSymbol );
@@ -269,8 +269,7 @@ SbiExprNode* SbiExpression::Term( const KeywordSymbolInfo* pKeywordSymbolInfo )
 
         // #i109184: Check if symbol is or later will be defined inside module
         SbModule& rMod = pParser->aGen.GetModule();
-        SbxArray* pModMethods = rMod.GetMethods();
-        if( pModMethods->Find( aSym, SbxClassType::DontCare ) )
+        if( rMod.FindMethod( aSym, SbxClassType::DontCare ) )
         {
             pDef = nullptr;
         }

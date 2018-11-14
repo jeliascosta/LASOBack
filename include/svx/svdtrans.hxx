@@ -60,7 +60,7 @@ inline void MovePoly(tools::Polygon& rPoly, const Size& S)      { rPoly.Move(S.W
 void MoveXPoly(XPolygon& rPoly, const Size& S);
 
 SVX_DLLPUBLIC void ResizeRect(Rectangle& rRect, const Point& rRef, const Fraction& xFact, const Fraction& yFact);
-inline void ResizePoint(Point& rPnt, const Point& rRef, Fraction xFact, Fraction yFact);
+inline void ResizePoint(Point& rPnt, const Point& rRef, const Fraction& xFract, const Fraction& yFract);
 void ResizePoly(tools::Polygon& rPoly, const Point& rRef, const Fraction& xFact, const Fraction& yFact);
 void ResizeXPoly(XPolygon& rPoly, const Point& rRef, const Fraction& xFact, const Fraction& yFact);
 
@@ -111,18 +111,12 @@ void CrookStretchPoly(XPolyPolygon& rPoly, const Point& rCenter, const Point& rR
 /*  Inline                                                                                        */
 /**************************************************************************************************/
 
-inline void ResizePoint(Point& rPnt, const Point& rRef, Fraction xFact, Fraction yFact)
+inline void ResizePoint(Point& rPnt, const Point& rRef, const Fraction& xFract, const Fraction& yFract)
 {
-    if (!xFact.IsValid()) {
-        SAL_WARN( "svx.svdraw", "invalid fraction xFact, using Fraction(1,1)" );
-        xFact = Fraction(1,1);
-    }
-    if (!yFact.IsValid()) {
-        SAL_WARN( "svx.svdraw", "invalid fraction yFact, using Fraction(1,1)" );
-        yFact = Fraction(1,1);
-    }
-    rPnt.X() = rRef.X() + svx::Round( (rPnt.X() - rRef.X()) * double(xFact) );
-    rPnt.Y() = rRef.Y() + svx::Round( (rPnt.Y() - rRef.Y()) * double(yFact) );
+    double nxFract = xFract.IsValid() ? static_cast<double>(xFract) : 1.0;
+    double nyFract = yFract.IsValid() ? static_cast<double>(yFract) : 1.0;
+    rPnt.X() = rRef.X() + svx::Round( (rPnt.X() - rRef.X()) * nxFract );
+    rPnt.Y() = rRef.Y() + svx::Round( (rPnt.Y() - rRef.Y()) * nyFract );
 }
 
 inline void RotatePoint(Point& rPnt, const Point& rRef, double sn, double cs)
@@ -267,12 +261,12 @@ SVX_DLLPUBLIC FrPair GetMapFactor(MapUnit eS, MapUnit eD);
 FrPair GetMapFactor(FieldUnit eS, FieldUnit eD);
 
 inline bool IsMetric(MapUnit eU) {
-    return (eU==MAP_100TH_MM || eU==MAP_10TH_MM || eU==MAP_MM || eU==MAP_CM);
+    return (eU==MapUnit::Map100thMM || eU==MapUnit::Map10thMM || eU==MapUnit::MapMM || eU==MapUnit::MapCM);
 }
 
 inline bool IsInch(MapUnit eU) {
-    return (eU==MAP_1000TH_INCH || eU==MAP_100TH_INCH || eU==MAP_10TH_INCH || eU==MAP_INCH ||
-            eU==MAP_POINT       || eU==MAP_TWIP);
+    return (eU==MapUnit::Map1000thInch || eU==MapUnit::Map100thInch || eU==MapUnit::Map10thInch || eU==MapUnit::MapInch ||
+            eU==MapUnit::MapPoint       || eU==MapUnit::MapTwip);
 }
 
 inline bool IsMetric(FieldUnit eU) {
@@ -288,28 +282,19 @@ class SVX_DLLPUBLIC SdrFormatter {
     long      nMul_;
     long      nDiv_;
     short     nKomma_;
-    bool      bSrcFU;
-    bool      bDstFU;
     bool      bDirty;
     MapUnit   eSrcMU;
     MapUnit   eDstMU;
-    FieldUnit eSrcFU;
-    FieldUnit eDstFU;
 private:
     SVX_DLLPRIVATE void Undirty();
-    SVX_DLLPRIVATE void ForceUndirty() const { if (bDirty) const_cast<SdrFormatter*>(this)->Undirty(); }
 public:
     SdrFormatter(MapUnit eSrc, MapUnit eDst)
         : nMul_(0)
         , nDiv_(0)
         , nKomma_(0)
-        , bSrcFU(false)
-        , bDstFU(false)
         , bDirty(true)
         , eSrcMU(eSrc)
         , eDstMU(eDst)
-        , eSrcFU(FUNIT_NONE)
-        , eDstFU(FUNIT_NONE)
     {
     }
     void TakeStr(long nVal, OUString& rStr) const;

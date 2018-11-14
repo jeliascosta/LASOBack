@@ -36,14 +36,14 @@ using namespace com::sun::star::sdbc;
 
 //  IMPLEMENT_SERVICE_INFO(OAdoView,"com.sun.star.sdbcx.AView","com.sun.star.sdbcx.View");
 
-OAdoView::OAdoView(sal_Bool _bCase,ADOView* _pView) : OView_ADO(_bCase,NULL)
+OAdoView::OAdoView(bool _bCase,ADOView* _pView) : OView_ADO(_bCase,nullptr)
 ,m_aView(_pView)
 {
 }
 
 Sequence< sal_Int8 > OAdoView::getUnoTunnelImplementationId()
 {
-    static ::cppu::OImplementationId * pId = 0;
+    static ::cppu::OImplementationId * pId = nullptr;
     if (! pId)
     {
         ::osl::MutexGuard aGuard( ::osl::Mutex::getGlobalMutex() );
@@ -56,7 +56,7 @@ Sequence< sal_Int8 > OAdoView::getUnoTunnelImplementationId()
     return pId->getImplementationId();
 }
 
-// com::sun::star::lang::XUnoTunnel
+// css::lang::XUnoTunnel
 
 sal_Int64 OAdoView::getSomething( const Sequence< sal_Int8 > & rId ) throw (RuntimeException)
 {
@@ -86,10 +86,10 @@ void OAdoView::getFastPropertyValue(Any& rValue,sal_Int32 nHandle) const
                     m_aView.get_Command(aVar);
                     if(!aVar.isNull() && !aVar.isEmpty())
                     {
-                        ADOCommand* pCom = (ADOCommand*)aVar.getIDispatch();
+                        ADOCommand* pCom = static_cast<ADOCommand*>(aVar.getIDispatch());
                         OLEString aBSTR;
-                        pCom->get_CommandText(&aBSTR);
-                        rValue <<= aBSTR.operator OUString();
+                        pCom->get_CommandText(aBSTR.getAddress());
+                        rValue <<= aBSTR.asOUString();
                     }
                 }
                 break;
@@ -98,16 +98,5 @@ void OAdoView::getFastPropertyValue(Any& rValue,sal_Int32 nHandle) const
     else
         OView_ADO::getFastPropertyValue(rValue,nHandle);
 }
-
-void SAL_CALL OAdoView::acquire() throw()
-{
-    OView_ADO::acquire();
-}
-
-void SAL_CALL OAdoView::release() throw()
-{
-    OView_ADO::release();
-}
-
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

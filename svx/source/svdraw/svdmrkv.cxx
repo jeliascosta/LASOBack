@@ -53,6 +53,8 @@
 #include <editeng/editdata.hxx>
 #include <LibreOfficeKit/LibreOfficeKitEnums.h>
 #include <comphelper/lok.hxx>
+#include <sfx2/lokhelper.hxx>
+#include <sfx2/viewsh.hxx>
 
 using namespace com::sun::star;
 
@@ -66,12 +68,11 @@ class ImplMarkingOverlay
     // The remembered second position in logical coordinates
     basegfx::B2DPoint                               maSecondPosition;
 
-    // bitfield
     // A flag to remember if the action is for unmarking.
     bool                                            mbUnmarking : 1;
 
 public:
-    ImplMarkingOverlay(const SdrPaintView& rView, const basegfx::B2DPoint& rStartPos, bool bUnmarking = false);
+    ImplMarkingOverlay(const SdrPaintView& rView, const basegfx::B2DPoint& rStartPos, bool bUnmarking);
     ~ImplMarkingOverlay();
 
     void SetSecondPosition(const basegfx::B2DPoint& rNewPosition);
@@ -126,10 +127,9 @@ void ImplMarkingOverlay::SetSecondPosition(const basegfx::B2DPoint& rNewPosition
 
 void SdrMarkView::ImpClearVars()
 {
-    meDragMode=SDRDRAG_MOVE;
-    mbRefHdlShownOnly=false;
-    meEditMode=SDREDITMODE_EDIT;
-    meEditMode0=SDREDITMODE_EDIT;
+    meDragMode=SdrDragMode::Move;
+    meEditMode=SdrViewEditMode::Edit;
+    meEditMode0=SdrViewEditMode::Edit;
     mbDesignMode=false;
     mpMarkedObj=nullptr;
     mpMarkedPV=nullptr;
@@ -143,8 +143,6 @@ void SdrMarkView::ImpClearVars()
     mbMarkHandlesHidden = false;
     mbMrkPntDirty=false;
     mbMarkHdlWhenTextEdit=false;
-    mbMarkableObjCountDirty=false; // not yet implemented
-    mnMarkableObjCount=0;          // not yet implemented
 
     // Migrate selections
     BrkMarkObj();
@@ -180,7 +178,7 @@ void SdrMarkView::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
     {
         SdrHintKind eKind=pSdrHint->GetKind();
 
-        if (eKind==HINT_OBJCHG || eKind==HINT_OBJINSERTED || eKind==HINT_OBJREMOVED)
+        if (eKind==SdrHintKind::ObjectChange || eKind==SdrHintKind::ObjectInserted || eKind==SdrHintKind::ObjectRemoved)
         {
             mbMarkedObjRectDirty=true;
             mbMarkedPointsRectsDirty=true;
@@ -205,6 +203,32 @@ void SdrMarkView::ModelHasChanged()
     SdrView* pV=static_cast<SdrView*>(this);
     if (pV!=nullptr && !pV->IsDragObj() && !pV->IsInsObjPoint()) {
         AdjustMarkHdl();
+    }
+
+    if (comphelper::LibreOfficeKit::isActive() && GetMarkedObjectCount() > 0)
+    {
+        //TODO: Is MarkedObjRect valid at this point?
+        Rectangle aSelection(GetMarkedObjRect());
+        OString sSelection;
+        if (aSelection.IsEmpty())
+            sSelection = "EMPTY";
+        else
+        {
+            // In case the map mode is in 100th MM, then need to convert the coordinates over to twips for LOK.
+            if (mpMarkedPV)
+            {
+                if (OutputDevice* pOutputDevice = mpMarkedPV->GetView().GetFirstOutputDevice())
+                {
+                    if (pOutputDevice->GetMapMode().GetMapUnit() == MapUnit::Map100thMM)
+                        aSelection = OutputDevice::LogicToLogic(aSelection, MapUnit::Map100thMM, MapUnit::MapTwip);
+                }
+            }
+
+            sSelection = aSelection.toString();
+        }
+
+        if(SfxViewShell* pViewShell = GetSfxViewShell())
+            SfxLokHelper::notifyInvalidation(pViewShell, sSelection);
     }
 }
 
@@ -409,7 +433,7 @@ bool SdrMarkView::EndMarkPoints()
         {
             Rectangle aRect(maDragStat.GetStart(), maDragStat.GetNow());
             aRect.Justify();
-            MarkPoints(aRect, mpMarkPointsOverlay->IsUnmarking());
+            MarkPoints(&aRect, mpMarkPointsOverlay->IsUnmarking());
 
             bRetval = true;
         }
@@ -548,11 +572,11 @@ bool SdrMarkView::ImpIsFrameHandles() const
 {
     const size_t nMarkCount=GetMarkedObjectCount();
     bool bFrmHdl=nMarkCount>static_cast<size_t>(mnFrameHandlesLimit) || mbForceFrameHandles;
-    bool bStdDrag=meDragMode==SDRDRAG_MOVE;
+    bool bStdDrag=meDragMode==SdrDragMode::Move;
     if (nMarkCount==1 && bStdDrag && bFrmHdl)
     {
         const SdrObject* pObj=GetMarkedObjectByIndex(0);
-        if (pObj->GetObjInventor()==SdrInventor)
+        if (pObj->GetObjInventor()==SdrInventor::Default)
         {
             sal_uInt16 nIdent=pObj->GetObjIdentifier();
             if (nIdent==OBJ_LINE || nIdent==OBJ_EDGE || nIdent==OBJ_CAPTION || nIdent==OBJ_MEASURE || nIdent==OBJ_CUSTOMSHAPE || nIdent==OBJ_TABLE )
@@ -564,7 +588,7 @@ bool SdrMarkView::ImpIsFrameHandles() const
     if (!bStdDrag && !bFrmHdl) {
         // all other drag modes only with FrameHandles
         bFrmHdl=true;
-        if (meDragMode==SDRDRAG_ROTATE) {
+        if (meDragMode==SdrDragMode::Rotate) {
             // when rotating, use ObjOwn drag, if there's at least 1 PolyObj
             for (size_t nMarkNum=0; nMarkNum<nMarkCount && bFrmHdl; ++nMarkNum) {
                 const SdrMark* pM=GetSdrMarkByIndex(nMarkNum);
@@ -583,7 +607,7 @@ bool SdrMarkView::ImpIsFrameHandles() const
     }
 
     // no FrameHdl for crop
-    if(bFrmHdl && SDRDRAG_CROP == meDragMode)
+    if(bFrmHdl && SdrDragMode::Crop == meDragMode)
     {
         bFrmHdl = false;
     }
@@ -591,19 +615,19 @@ bool SdrMarkView::ImpIsFrameHandles() const
     return bFrmHdl;
 }
 
-void SdrMarkView::SetMarkHandles()
+void SdrMarkView::SetMarkHandles(SfxViewShell* pOtherShell)
 {
     // remember old focus handle values to search for it again
     const SdrHdl* pSaveOldFocusHdl = maHdlList.GetFocusHdl();
     bool bSaveOldFocus(false);
     sal_uInt32 nSavePolyNum(0L), nSavePointNum(0L);
-    SdrHdlKind eSaveKind(HDL_MOVE);
+    SdrHdlKind eSaveKind(SdrHdlKind::Move);
     SdrObject* pSaveObj = nullptr;
 
     if(pSaveOldFocusHdl
         && pSaveOldFocusHdl->GetObj()
         && dynamic_cast<const SdrPathObj*>(pSaveOldFocusHdl->GetObj()) != nullptr
-        && (pSaveOldFocusHdl->GetKind() == HDL_POLY || pSaveOldFocusHdl->GetKind() == HDL_BWGT))
+        && (pSaveOldFocusHdl->GetKind() == SdrHdlKind::Poly || pSaveOldFocusHdl->GetKind() == SdrHdlKind::BezierWeight))
     {
         bSaveOldFocus = true;
         nSavePolyNum = pSaveOldFocusHdl->GetPolyNum();
@@ -614,8 +638,8 @@ void SdrMarkView::SetMarkHandles()
 
     // delete/clear all handles. This will always be done, even with areMarkHandlesHidden()
     maHdlList.Clear();
-    maHdlList.SetRotateShear(meDragMode==SDRDRAG_ROTATE);
-    maHdlList.SetDistortShear(meDragMode==SDRDRAG_SHEAR);
+    maHdlList.SetRotateShear(meDragMode==SdrDragMode::Rotate);
+    maHdlList.SetDistortShear(meDragMode==SdrDragMode::Shear);
     mpMarkedObj=nullptr;
     mpMarkedPV=nullptr;
 
@@ -623,7 +647,7 @@ void SdrMarkView::SetMarkHandles()
     if(!areMarkHandlesHidden())
     {
         const size_t nMarkCount=GetMarkedObjectCount();
-        bool bStdDrag=meDragMode==SDRDRAG_MOVE;
+        bool bStdDrag=meDragMode==SdrDragMode::Move;
         bool bSingleTextObjMark=false;
 
         if (nMarkCount==1)
@@ -665,12 +689,12 @@ void SdrMarkView::SetMarkHandles()
         // Using a strict return statement is okay here; no handles means *no* handles.
         if(mpMarkedObj)
         {
-            // formally #i33755#: If TextEdit is active the EditEngine will directly paint
+            // formerly #i33755#: If TextEdit is active the EditEngine will directly paint
             // to the window, so suppress Overlay and handles completely; a text frame for
             // the active text edit will be painted by the repaint mechanism in
             // SdrObjEditView::ImpPaintOutlinerView in this case. This needs to be reworked
             // in the future
-            // Also formally #122142#: Pretty much the same for SdrCaptionObj's in calc.
+            // Also formerly #122142#: Pretty much the same for SdrCaptionObj's in calc.
             if(static_cast<SdrView*>(this)->IsTextEdit())
             {
                 const SdrTextObj* pSdrTextObj = dynamic_cast< const SdrTextObj* >(mpMarkedObj);
@@ -678,13 +702,19 @@ void SdrMarkView::SetMarkHandles()
                 if(pSdrTextObj && pSdrTextObj->IsInEditMode())
                 {
                     if (bTiledRendering)
+                    {
                         // Suppress handles -> empty graphic selection.
-                        GetModel()->libreOfficeKitCallback(LOK_CALLBACK_GRAPHIC_SELECTION, "EMPTY");
+                        if(SfxViewShell* pViewShell = GetSfxViewShell())
+                        {
+                            pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_GRAPHIC_SELECTION, "EMPTY");
+                            SfxLokHelper::notifyOtherViews(pViewShell, LOK_CALLBACK_GRAPHIC_VIEW_SELECTION, "selection", "EMPTY");
+                        }
+                    }
                     return;
                 }
             }
 
-            // formally #i118524#: if inplace activated OLE is selected, suppress handles
+            // formerly #i118524#: if inplace activated OLE is selected, suppress handles
             const SdrOle2Obj* pSdrOle2Obj = dynamic_cast< const SdrOle2Obj* >(mpMarkedObj);
 
             if(pSdrOle2Obj && (pSdrOle2Obj->isInplaceActive() || pSdrOle2Obj->isUiActive()))
@@ -698,7 +728,11 @@ void SdrMarkView::SetMarkHandles()
                 if (xController.is() && xController->hasSelectedCells())
                 {
                     // The table shape has selected cells, which provide text selection already -> no graphic selection.
-                    GetModel()->libreOfficeKitCallback(LOK_CALLBACK_GRAPHIC_SELECTION, "EMPTY");
+                    if(SfxViewShell* pViewShell = GetSfxViewShell())
+                    {
+                        pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_GRAPHIC_SELECTION, "EMPTY");
+                        SfxLokHelper::notifyOtherViews(pViewShell, LOK_CALLBACK_GRAPHIC_VIEW_SELECTION, "selection", "EMPTY");
+                    }
                     return;
                 }
             }
@@ -719,17 +753,34 @@ void SdrMarkView::SetMarkHandles()
                 {
                     if (OutputDevice* pOutputDevice = mpMarkedPV->GetView().GetFirstOutputDevice())
                     {
-                        if (pOutputDevice->GetMapMode().GetMapUnit() == MAP_100TH_MM)
-                            aSelection = OutputDevice::LogicToLogic(aSelection, MAP_100TH_MM, MAP_TWIP);
+                        if (pOutputDevice->GetMapMode().GetMapUnit() == MapUnit::Map100thMM)
+                            aSelection = OutputDevice::LogicToLogic(aSelection, MapUnit::Map100thMM, MapUnit::MapTwip);
                     }
                 }
 
                 sSelection = aSelection.toString();
 
                 // hide the text selection too
-                GetModel()->libreOfficeKitCallback(LOK_CALLBACK_TEXT_SELECTION, "");
+                if(SfxViewShell* pViewShell = GetSfxViewShell())
+                    pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_TEXT_SELECTION, "");
             }
-            GetModel()->libreOfficeKitCallback(LOK_CALLBACK_GRAPHIC_SELECTION, sSelection.getStr());
+            if(SfxViewShell* pViewShell = GetSfxViewShell())
+            {
+                if (pOtherShell)
+                {
+                    // An other shell wants to know about our existing
+                    // selection.
+                    if (pViewShell != pOtherShell)
+                        SfxLokHelper::notifyOtherView(pViewShell, pOtherShell, LOK_CALLBACK_GRAPHIC_VIEW_SELECTION, "selection", sSelection);
+                }
+                else
+                {
+                    // We have a new selection, so both pViewShell and the
+                    // other views want to know about it.
+                    pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_GRAPHIC_SELECTION, sSelection.getStr());
+                    SfxLokHelper::notifyOtherViews(pViewShell, LOK_CALLBACK_GRAPHIC_VIEW_SELECTION, "selection", sSelection);
+                }
+            }
         }
 
         if (bFrmHdl)
@@ -756,23 +807,23 @@ void SdrMarkView::SetMarkHandles()
                     bool bHgt0=aRect.Top()==aRect.Bottom();
                     if (bWdt0 && bHgt0)
                     {
-                        maHdlList.AddHdl(new SdrHdl(aRect.TopLeft(),HDL_UPLFT));
+                        maHdlList.AddHdl(new SdrHdl(aRect.TopLeft(),SdrHdlKind::UpperLeft));
                     }
                     else if (!bStdDrag && (bWdt0 || bHgt0))
                     {
-                        maHdlList.AddHdl(new SdrHdl(aRect.TopLeft()    ,HDL_UPLFT));
-                        maHdlList.AddHdl(new SdrHdl(aRect.BottomRight(),HDL_LWRGT));
+                        maHdlList.AddHdl(new SdrHdl(aRect.TopLeft()    ,SdrHdlKind::UpperLeft));
+                        maHdlList.AddHdl(new SdrHdl(aRect.BottomRight(),SdrHdlKind::LowerRight));
                     }
                     else
                     {
-                        if (!bWdt0 && !bHgt0) maHdlList.AddHdl(new SdrHdl(aRect.TopLeft()     ,HDL_UPLFT));
-                        if (          !bHgt0) maHdlList.AddHdl(new SdrHdl(aRect.TopCenter()   ,HDL_UPPER));
-                        if (!bWdt0 && !bHgt0) maHdlList.AddHdl(new SdrHdl(aRect.TopRight()    ,HDL_UPRGT));
-                        if (!bWdt0          ) maHdlList.AddHdl(new SdrHdl(aRect.LeftCenter()  ,HDL_LEFT ));
-                        if (!bWdt0          ) maHdlList.AddHdl(new SdrHdl(aRect.RightCenter() ,HDL_RIGHT));
-                        if (!bWdt0 && !bHgt0) maHdlList.AddHdl(new SdrHdl(aRect.BottomLeft()  ,HDL_LWLFT));
-                        if (          !bHgt0) maHdlList.AddHdl(new SdrHdl(aRect.BottomCenter(),HDL_LOWER));
-                        if (!bWdt0 && !bHgt0) maHdlList.AddHdl(new SdrHdl(aRect.BottomRight() ,HDL_LWRGT));
+                        if (!bWdt0 && !bHgt0) maHdlList.AddHdl(new SdrHdl(aRect.TopLeft()     ,SdrHdlKind::UpperLeft));
+                        if (          !bHgt0) maHdlList.AddHdl(new SdrHdl(aRect.TopCenter()   ,SdrHdlKind::Upper));
+                        if (!bWdt0 && !bHgt0) maHdlList.AddHdl(new SdrHdl(aRect.TopRight()    ,SdrHdlKind::UpperRight));
+                        if (!bWdt0          ) maHdlList.AddHdl(new SdrHdl(aRect.LeftCenter()  ,SdrHdlKind::Left ));
+                        if (!bWdt0          ) maHdlList.AddHdl(new SdrHdl(aRect.RightCenter() ,SdrHdlKind::Right));
+                        if (!bWdt0 && !bHgt0) maHdlList.AddHdl(new SdrHdl(aRect.BottomLeft()  ,SdrHdlKind::LowerLeft));
+                        if (          !bHgt0) maHdlList.AddHdl(new SdrHdl(aRect.BottomCenter(),SdrHdlKind::Lower));
+                        if (!bWdt0 && !bHgt0) maHdlList.AddHdl(new SdrHdl(aRect.BottomRight() ,SdrHdlKind::LowerRight));
                     }
                 }
             }
@@ -782,7 +833,7 @@ void SdrMarkView::SetMarkHandles()
             bool bDone(false);
 
             // moved crop handling to non-frame part and the handle creation to SdrGrafObj
-            if(1 == nMarkCount && mpMarkedObj && SDRDRAG_CROP == meDragMode)
+            if(1 == nMarkCount && mpMarkedObj && SdrDragMode::Crop == meDragMode)
             {
                 // Default addCropHandles from SdrObject does nothing. When pMarkedObj is SdrGrafObj, previous
                 // behaviour occurs (code in svx/source/svdraw/svdograf.cxx). When pMarkedObj is SwVirtFlyDrawObj
@@ -802,7 +853,7 @@ void SdrMarkView::SetMarkHandles()
                     pObj->AddToHdlList(maHdlList);
                     const size_t nSiz1=maHdlList.GetHdlCount();
                     bool bPoly=pObj->IsPolyObj();
-                    const SdrUShortCont* pMrkPnts=pM->GetMarkedPoints();
+                    const SdrUShortCont& rMrkPnts = pM->GetMarkedPoints();
                     for (size_t i=nSiz0; i<nSiz1; ++i)
                     {
                         SdrHdl* pHdl=maHdlList.GetHdl(i);
@@ -813,8 +864,7 @@ void SdrMarkView::SetMarkHandles()
 
                         if (bPoly)
                         {
-                            bool bSelected=pMrkPnts!=nullptr
-                                      && pMrkPnts->find( sal_uInt16(i-nSiz0) ) != pMrkPnts->end();
+                            bool bSelected= rMrkPnts.find( sal_uInt16(i-nSiz0) ) != rMrkPnts.end();
                             pHdl->SetSelected(bSelected);
                             if (mbPlusHdlAlways || bSelected)
                             {
@@ -842,29 +892,26 @@ void SdrMarkView::SetMarkHandles()
         {
             const SdrMark* pM=GetSdrMarkByIndex(nMarkNum);
             SdrObject* pObj=pM->GetMarkedSdrObj();
+            const SdrGluePointList* pGPL=pObj->GetGluePointList();
+            if (!pGPL)
+                continue;
+
             SdrPageView* pPV=pM->GetPageView();
-            const SdrUShortCont* pMrkGlue=pM->GetMarkedGluePoints();
-            if (pMrkGlue!=nullptr)
+            const SdrUShortCont& rMrkGlue=pM->GetMarkedGluePoints();
+            for (SdrUShortCont::const_iterator it = rMrkGlue.begin(); it != rMrkGlue.end(); ++it)
             {
-                const SdrGluePointList* pGPL=pObj->GetGluePointList();
-                if (pGPL!=nullptr)
+                sal_uInt16 nId=*it;
+                //nNum changed to nNumGP because already used in for loop
+                sal_uInt16 nNumGP=pGPL->FindGluePoint(nId);
+                if (nNumGP!=SDRGLUEPOINT_NOTFOUND)
                 {
-                    for(SdrUShortCont::const_iterator it = pMrkGlue->begin(); it != pMrkGlue->end(); ++it)
-                    {
-                        sal_uInt16 nId=*it;
-                        //nNum changed to nNumGP because already used in for loop
-                        sal_uInt16 nNumGP=pGPL->FindGluePoint(nId);
-                        if (nNumGP!=SDRGLUEPOINT_NOTFOUND)
-                        {
-                            const SdrGluePoint& rGP=(*pGPL)[nNumGP];
-                            Point aPos(rGP.GetAbsolutePos(*pObj));
-                            SdrHdl* pGlueHdl=new SdrHdl(aPos,HDL_GLUE);
-                            pGlueHdl->SetObj(pObj);
-                            pGlueHdl->SetPageView(pPV);
-                            pGlueHdl->SetObjHdlNum(nId);
-                            maHdlList.AddHdl(pGlueHdl);
-                        }
-                    }
+                    const SdrGluePoint& rGP=(*pGPL)[nNumGP];
+                    Point aPos(rGP.GetAbsolutePos(*pObj));
+                    SdrHdl* pGlueHdl=new SdrHdl(aPos,SdrHdlKind::Glue);
+                    pGlueHdl->SetObj(pObj);
+                    pGlueHdl->SetPageView(pPV);
+                    pGlueHdl->SetObjHdlNum(nId);
+                    maHdlList.AddHdl(pGlueHdl);
                 }
             }
         }
@@ -908,10 +955,10 @@ void SdrMarkView::SetDragMode(SdrDragMode eMode)
 {
     SdrDragMode eMode0=meDragMode;
     meDragMode=eMode;
-    if (meDragMode==SDRDRAG_RESIZE) meDragMode=SDRDRAG_MOVE;
+    if (meDragMode==SdrDragMode::Resize) meDragMode=SdrDragMode::Move;
     if (meDragMode!=eMode0) {
         ForceRefToMarked();
-        SetMarkHandles();
+        SetMarkHandles(nullptr);
         {
             if (AreObjectsMarked()) MarkListHasChanged();
         }
@@ -922,21 +969,21 @@ void SdrMarkView::AddDragModeHdl(SdrDragMode eMode)
 {
     switch(eMode)
     {
-        case SDRDRAG_ROTATE:
+        case SdrDragMode::Rotate:
         {
             // add rotation center
-            SdrHdl* pHdl = new SdrHdl(maRef1, HDL_REF1);
+            SdrHdl* pHdl = new SdrHdl(maRef1, SdrHdlKind::Ref1);
 
             maHdlList.AddHdl(pHdl);
 
             break;
         }
-        case SDRDRAG_MIRROR:
+        case SdrDragMode::Mirror:
         {
             // add axis of reflection
-            SdrHdl* pHdl3 = new SdrHdl(maRef2, HDL_REF2);
-            SdrHdl* pHdl2 = new SdrHdl(maRef1, HDL_REF1);
-            SdrHdl* pHdl1 = new SdrHdlLine(*pHdl2, *pHdl3, HDL_MIRX);
+            SdrHdl* pHdl3 = new SdrHdl(maRef2, SdrHdlKind::Ref2);
+            SdrHdl* pHdl2 = new SdrHdl(maRef1, SdrHdlKind::Ref1);
+            SdrHdl* pHdl1 = new SdrHdlLine(*pHdl2, *pHdl3, SdrHdlKind::MirrorAxis);
 
             pHdl1->SetObjHdlNum(1); // for sorting
             pHdl2->SetObjHdlNum(2); // for sorting
@@ -948,7 +995,7 @@ void SdrMarkView::AddDragModeHdl(SdrDragMode eMode)
 
             break;
         }
-        case SDRDRAG_TRANSPARENCE:
+        case SdrDragMode::Transparence:
         {
             // add interactive transparency handle
             const size_t nMarkCount = GetMarkedObjectCount();
@@ -1012,7 +1059,7 @@ void SdrMarkView::AddDragModeHdl(SdrDragMode eMode)
             }
             break;
         }
-        case SDRDRAG_GRADIENT:
+        case SdrDragMode::Gradient:
         {
             // add interactive gradient handle
             const size_t nMarkCount = GetMarkedObjectCount();
@@ -1055,7 +1102,7 @@ void SdrMarkView::AddDragModeHdl(SdrDragMode eMode)
             }
             break;
         }
-        case SDRDRAG_CROP:
+        case SdrDragMode::Crop:
         {
             // TODO
             break;
@@ -1107,7 +1154,7 @@ void SdrMarkView::ForceRefToMarked()
 {
     switch(meDragMode)
     {
-        case SDRDRAG_ROTATE:
+        case SdrDragMode::Rotate:
         {
             Rectangle aR(GetMarkedObjRect());
             maRef1 = aR.Center();
@@ -1115,7 +1162,7 @@ void SdrMarkView::ForceRefToMarked()
             break;
         }
 
-        case SDRDRAG_MIRROR:
+        case SdrDragMode::Mirror:
         {
             // first calculate the length of the axis of reflection
             long nOutMin=0;
@@ -1179,9 +1226,9 @@ void SdrMarkView::ForceRefToMarked()
             break;
         }
 
-        case SDRDRAG_TRANSPARENCE:
-        case SDRDRAG_GRADIENT:
-        case SDRDRAG_CROP:
+        case SdrDragMode::Transparence:
+        case SdrDragMode::Gradient:
+        case SdrDragMode::Crop:
         {
             Rectangle aRect(GetMarkedObjBoundRect());
             maRef1 = aRect.TopLeft();
@@ -1194,10 +1241,10 @@ void SdrMarkView::ForceRefToMarked()
 
 void SdrMarkView::SetRef1(const Point& rPt)
 {
-    if(meDragMode == SDRDRAG_ROTATE || meDragMode == SDRDRAG_MIRROR)
+    if(meDragMode == SdrDragMode::Rotate || meDragMode == SdrDragMode::Mirror)
     {
         maRef1 = rPt;
-        SdrHdl* pH = maHdlList.GetHdl(HDL_REF1);
+        SdrHdl* pH = maHdlList.GetHdl(SdrHdlKind::Ref1);
         if(pH)
             pH->SetPos(rPt);
     }
@@ -1205,40 +1252,18 @@ void SdrMarkView::SetRef1(const Point& rPt)
 
 void SdrMarkView::SetRef2(const Point& rPt)
 {
-    if(meDragMode == SDRDRAG_MIRROR)
+    if(meDragMode == SdrDragMode::Mirror)
     {
         maRef2 = rPt;
-        SdrHdl* pH = maHdlList.GetHdl(HDL_REF2);
+        SdrHdl* pH = maHdlList.GetHdl(SdrHdlKind::Ref2);
         if(pH)
             pH->SetPos(rPt);
     }
 }
 
-bool SdrPageView::IsObjSelectable(SdrObject *pObj) const
+SfxViewShell* SdrMarkView::GetSfxViewShell() const
 {
-    SdrLayerID nLay=pObj->GetLayer();
-    bool bRaus=!pObj->IsInserted(); // Obj deleted?
-    if (!pObj->Is3DObj()) {
-        bRaus=bRaus || pObj->GetPage()!=GetPage();   // Obj suddenly in different Page or Group
-    }
-    bRaus=bRaus || GetLockedLayers().IsSet(nLay) ||  // Layer locked?
-                   !GetVisibleLayers().IsSet(nLay);  // Layer invisible?
-
-    if( !bRaus )
-        bRaus = !pObj->IsVisible(); // invisible objects can not be selected
-
-    if (!bRaus) {
-        // Grouped objects can now be selected.
-        // After EnterGroup the higher-level objects,
-        // have to be deselected, though.
-        const SdrObjList* pOOL=pObj->GetObjList();
-        const SdrObjList* pVOL=GetObjList();
-        while (pOOL!=nullptr && pOOL!=pVOL) {
-            pOOL=pOOL->GetUpList();
-        }
-        bRaus=pOOL!=pVOL;
-    }
-    return !bRaus;
+    return SfxViewShell::Current();
 }
 
 void SdrMarkView::CheckMarked()
@@ -1248,7 +1273,7 @@ void SdrMarkView::CheckMarked()
         SdrMark* pM = GetSdrMarkByIndex(nm);
         SdrObject* pObj = pM->GetMarkedSdrObj();
         SdrPageView* pPV = pM->GetPageView();
-        bool bRaus = !pObj || !pPV->IsObjSelectable(pObj);
+        bool bRaus = !pObj || !pPV->IsObjMarkable(pObj);
         if (bRaus)
         {
             GetMarkedObjectListWriteAccess().DeleteMark(nm);
@@ -1256,10 +1281,8 @@ void SdrMarkView::CheckMarked()
         else
         {
             if (!IsGluePointEditMode()) { // selected glue points only in GlueEditMode
-                SdrUShortCont* pPts=pM->GetMarkedGluePoints();
-                if (pPts!=nullptr) {
-                    pPts->clear();
-                }
+                SdrUShortCont& rPts = pM->GetMarkedGluePoints();
+                rPts.clear();
             }
         }
     }
@@ -1275,8 +1298,8 @@ void SdrMarkView::SetMarkRects()
 
     if(pPV)
     {
-        pPV->SetHasMarkedObj(GetSnapRectFromMarkedObjects(pPV, pPV->MarkSnap()));
-        GetBoundRectFromMarkedObjects(pPV, pPV->MarkBound());
+        pPV->SetHasMarkedObj(GetMarkedObjectList().TakeSnapRect(pPV, pPV->MarkSnap()));
+        GetMarkedObjectList().TakeBoundRect(pPV, pPV->MarkBound());
     }
 }
 
@@ -1296,11 +1319,11 @@ void SdrMarkView::SetFrameHandles(bool bOn)
 void SdrMarkView::SetEditMode(SdrViewEditMode eMode)
 {
     if (eMode!=meEditMode) {
-        bool bGlue0=meEditMode==SDREDITMODE_GLUEPOINTEDIT;
+        bool bGlue0=meEditMode==SdrViewEditMode::GluePointEdit;
         bool bEdge0=static_cast<SdrCreateView*>(this)->IsEdgeTool();
         meEditMode0=meEditMode;
         meEditMode=eMode;
-        bool bGlue1=meEditMode==SDREDITMODE_GLUEPOINTEDIT;
+        bool bGlue1=meEditMode==SdrViewEditMode::GluePointEdit;
         bool bEdge1=static_cast<SdrCreateView*>(this)->IsEdgeTool();
         // avoid flickering when switching between GlueEdit and EdgeTool
         if (bGlue1 && !bGlue0) ImpSetGlueVisible2(bGlue1);
@@ -1349,17 +1372,16 @@ SdrHdl* SdrMarkView::PickHandle(const Point& rPnt) const
 
 bool SdrMarkView::MarkObj(const Point& rPnt, short nTol, bool bToggle, bool bDeep)
 {
-    SdrObject* pObj;
     SdrPageView* pPV;
     nTol=ImpGetHitTolLogic(nTol,nullptr);
     SdrSearchOptions nOptions=SdrSearchOptions::PICKMARKABLE;
     if (bDeep) nOptions=nOptions|SdrSearchOptions::DEEP;
-    bool bRet=PickObj(rPnt,(sal_uInt16)nTol,pObj,pPV,nOptions);
-    if (bRet) {
+    SdrObject* pObj = PickObj(rPnt, (sal_uInt16)nTol, pPV, nOptions);
+    if (pObj) {
         bool bUnmark=bToggle && IsObjMarked(pObj);
         MarkObj(pObj,pPV,bUnmark);
     }
-    return bRet;
+    return pObj != nullptr;
 }
 
 bool SdrMarkView::MarkNextObj(bool bPrev)
@@ -1718,17 +1740,17 @@ SdrObject* SdrMarkView::CheckSingleSdrObjectHit(const Point& rPnt, sal_uInt16 nT
     return pRet;
 }
 
-bool SdrMarkView::PickObj(const Point& rPnt, short nTol, SdrObject*& rpObj, SdrPageView*& rpPV, SdrSearchOptions nOptions) const
+SdrObject* SdrMarkView::PickObj(const Point& rPnt, short nTol, SdrPageView*& rpPV, SdrSearchOptions nOptions) const
 {
-    return PickObj(rPnt,nTol,rpObj,rpPV,nOptions,nullptr);
+    return PickObj(rPnt, nTol, rpPV, nOptions, nullptr);
 }
 
-bool SdrMarkView::PickObj(const Point& rPnt, short nTol, SdrObject*& rpObj, SdrPageView*& rpPV, SdrSearchOptions nOptions, SdrObject** ppRootObj, bool* pbHitPassDirect) const
+SdrObject* SdrMarkView::PickObj(const Point& rPnt, short nTol, SdrPageView*& rpPV, SdrSearchOptions nOptions, SdrObject** ppRootObj, bool* pbHitPassDirect) const
 { // TODO: lacks a Pass2,Pass3
     SortMarkedObjects();
     if (ppRootObj!=nullptr) *ppRootObj=nullptr;
     if (pbHitPassDirect!=nullptr) *pbHitPassDirect=true;
-    rpObj=nullptr;
+    SdrObject* pRet = nullptr;
     rpPV=nullptr;
     bool bWholePage(nOptions & SdrSearchOptions::WHOLEPAGE);
     bool bMarked(nOptions & SdrSearchOptions::MARKED);
@@ -1833,11 +1855,11 @@ bool SdrMarkView::PickObj(const Point& rPnt, short nTol, SdrObject*& rpObj, SdrP
             }
         }
         if (pObj!=nullptr) {
-            rpObj=pObj;
+            pRet=pObj;
             rpPV=pPV;
         }
     }
-    return rpObj!=nullptr;
+    return pRet;
 }
 
 bool SdrMarkView::PickMarkedObj(const Point& rPnt, SdrObject*& rpObj, SdrPageView*& rpPV, SdrSearchOptions nOptions) const
@@ -1948,11 +1970,11 @@ void SdrMarkView::MarkAllObj(SdrPageView* _pPV)
     }
 }
 
-void SdrMarkView::AdjustMarkHdl()
+void SdrMarkView::AdjustMarkHdl(SfxViewShell* pOtherShell)
 {
     CheckMarked();
     SetMarkRects();
-    SetMarkHandles();
+    SetMarkHandles(pOtherShell);
 }
 
 Rectangle SdrMarkView::GetMarkedObjBoundRect() const
@@ -2065,7 +2087,7 @@ void SdrMarkView::EnterMarkedGroup()
 void SdrMarkView::MarkListHasChanged()
 {
     GetMarkedObjectListWriteAccess().SetNameDirty();
-    SetEdgesOfMarkedNodesDirty();
+    mpSdrViewSelection->SetEdgesOfMarkedNodesDirty();
 
     mbMarkedObjRectDirty=true;
     mbMarkedPointsRectsDirty=true;
@@ -2075,7 +2097,7 @@ void SdrMarkView::MarkListHasChanged()
     bool bOneEdgeMarked=false;
     if (GetMarkedObjectCount()==1) {
         const SdrObject* pObj=GetMarkedObjectByIndex(0);
-        if (pObj->GetObjInventor()==SdrInventor) {
+        if (pObj->GetObjInventor()==SdrInventor::Default) {
             sal_uInt16 nIdent=pObj->GetObjIdentifier();
             bOneEdgeMarked=nIdent==OBJ_EDGE;
         }

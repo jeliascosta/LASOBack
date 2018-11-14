@@ -48,9 +48,6 @@ namespace dbaui
         /** loops through the vector and deletes all lines */
         void clearLineData();
 
-    protected:
-        static OConnectionLine* CreateConnLine( const OConnectionLine& rConnLine );
-
     public:
         OTableConnection( OJoinTableView* pContainer, const TTableConnectionData::value_type& pTabConnData );
         OTableConnection( const OTableConnection& rConn );
@@ -63,7 +60,7 @@ namespace dbaui
                        responsible to check and save the data for deleting it
                        eventually.
          */
-        virtual ~OTableConnection();
+        virtual ~OTableConnection() override;
         virtual void dispose() override;
 
         OTableConnection& operator=( const OTableConnection& rConn );

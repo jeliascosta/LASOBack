@@ -241,19 +241,14 @@ sal_Int32 ImplEntryList::FindEntry( const OUString& rString, bool bSearchMRUArea
     return LISTBOX_ENTRY_NOTFOUND;
 }
 
-sal_Int32 ImplEntryList::FindMatchingEntry( const OUString& rStr, sal_Int32 nStart, bool bForward, bool bLazy ) const
+sal_Int32 ImplEntryList::FindMatchingEntry( const OUString& rStr, sal_Int32 nStart, bool bLazy ) const
 {
     sal_Int32  nPos = LISTBOX_ENTRY_NOTFOUND;
     sal_Int32  nEntryCount = GetEntryCount();
-    if ( !bForward )
-        nStart++;   // decrements right away
 
     const vcl::I18nHelper& rI18nHelper = mpWindow->GetSettings().GetLocaleI18nHelper();
-    for ( sal_Int32 n = nStart; bForward ? n < nEntryCount : n != 0; )
+    for ( sal_Int32 n = nStart; n < nEntryCount; )
     {
-        if ( !bForward )
-            n--;
-
         ImplEntryType* pImplEntry = GetEntry( n );
         bool bMatch;
         if ( bLazy  )
@@ -270,8 +265,7 @@ sal_Int32 ImplEntryList::FindMatchingEntry( const OUString& rStr, sal_Int32 nSta
             break;
         }
 
-        if ( bForward )
-            n++;
+        n++;
     }
 
     return nPos;
@@ -1615,7 +1609,7 @@ bool ImplListBoxWindow::ProcessKeyInput( const KeyEvent& rKEvt )
             )
         )
     {
-        DBG_ASSERT( !mpEntryList->IsEntryPosSelected( nSelect ) || mbMulti, "ImplListBox: Selecting same Entry" );
+        SAL_WARN_IF( mpEntryList->IsEntryPosSelected( nSelect ) && !mbMulti, "vcl", "ImplListBox: Selecting same Entry" );
         sal_Int32 nCount = mpEntryList->GetEntryCount();
         if (nSelect >= nCount)
             nSelect = nCount ? nCount-1 : LISTBOX_ENTRY_NOTFOUND;
@@ -2231,12 +2225,12 @@ void ImplListBox::Resize()
     ImplCheckScrollBars();
 }
 
-IMPL_LINK_NOARG_TYPED(ImplListBox, MRUChanged, LinkParamNone*, void)
+IMPL_LINK_NOARG(ImplListBox, MRUChanged, LinkParamNone*, void)
 {
     CompatStateChanged( StateChangedType::Data );
 }
 
-IMPL_LINK_NOARG_TYPED(ImplListBox, LBWindowScrolled, ImplListBoxWindow*, void)
+IMPL_LINK_NOARG(ImplListBox, LBWindowScrolled, ImplListBoxWindow*, void)
 {
     long nSet = GetTopEntry();
     if( nSet > mpVScrollBar->GetRangeMax() )
@@ -2248,7 +2242,7 @@ IMPL_LINK_NOARG_TYPED(ImplListBox, LBWindowScrolled, ImplListBoxWindow*, void)
     maScrollHdl.Call( this );
 }
 
-IMPL_LINK_TYPED( ImplListBox, ScrollBarHdl, ScrollBar*, pSB, void )
+IMPL_LINK( ImplListBox, ScrollBarHdl, ScrollBar*, pSB, void )
 {
     sal_uInt16 nPos = (sal_uInt16) pSB->GetThumbPos();
     if( pSB == mpVScrollBar )
@@ -2472,11 +2466,6 @@ void ImplListBox::StateChanged( StateChangedType nType )
     Control::StateChanged( nType );
 }
 
-void ImplListBox::DataChanged( const DataChangedEvent& rDCEvt )
-{
-        Control::DataChanged( rDCEvt );
-}
-
 bool ImplListBox::Notify( NotifyEvent& rNEvt )
 {
     bool bDone = false;
@@ -2586,17 +2575,11 @@ ImplWin::ImplWin( vcl::Window* pParent, WinBits nWinStyle ) :
     mnItemPos = LISTBOX_ENTRY_NOTFOUND;
 }
 
-void ImplWin::MBDown()
-{
-    if (IsEnabled())
-        maMBDownHdl.Call(this);
-}
-
 void ImplWin::MouseButtonDown( const MouseEvent& )
 {
     if( IsEnabled() )
     {
-        MBDown();
+        maMBDownHdl.Call(this);
     }
 }
 
@@ -2822,8 +2805,7 @@ void ImplWin::DrawEntry(vcl::RenderContext& rRenderContext, bool bDrawImage, boo
 
         if ( !bDrawTextAtImagePos && ( bImage || IsUserDrawEnabled() ) )
         {
-            long nMaxWidth = std::max( maImage.GetSizePixel().Width(), maUserItemSize.Width() );
-            aTextRect.Left() += nMaxWidth + IMG_TXT_DISTANCE;
+            aTextRect.Left() += maImage.GetSizePixel().Width() + IMG_TXT_DISTANCE;
         }
 
         MetricVector* pVector = bLayout ? &mpControlData->mpLayoutData->m_aUnicodeBoundRects : nullptr;
@@ -2896,18 +2878,12 @@ ImplBtn::ImplBtn( vcl::Window* pParent, WinBits nWinStyle ) :
 {
 }
 
-void ImplBtn::MBDown()
-{
-    if (IsEnabled())
-        maMBDownHdl.Call(this);
-}
-
 void ImplBtn::MouseButtonDown( const MouseEvent& )
 {
     //PushButton::MouseButtonDown( rMEvt );
     if( IsEnabled() )
     {
-        MBDown();
+        maMBDownHdl.Call(this);
         mbDown = true;
     }
 }

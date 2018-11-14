@@ -18,9 +18,6 @@
  */
 
 #include <com/sun/star/util/CellProtection.hpp>
-#include <com/sun/star/util/XProtectable.hpp>
-#include <com/sun/star/text/XText.hpp>
-#include <com/sun/star/beans/XPropertySet.hpp>
 
 #include "scitems.hxx"
 #include <editeng/eeitem.hxx>
@@ -30,6 +27,8 @@
 #include <editeng/editeng.hxx>
 #include <editeng/editobj.hxx>
 #include <editeng/flditem.hxx>
+
+#include <libxml/xmlwriter.h>
 
 #include "attrib.hxx"
 #include "global.hxx"
@@ -41,9 +40,20 @@
 
 using namespace com::sun::star;
 
+#ifdef ANDROID
+namespace std
+{
+template <typename T> std::string to_string(const T& rNumber)
+{
+    std::ostringstream aStream;
+    aStream << rNumber;
+    return aStream.str();
+}
+}
+#endif
 
 SfxPoolItem* ScProtectionAttr::CreateDefault() { return new ScProtectionAttr; }
-SfxPoolItem* ScDoubleItem::CreateDefault() { DBG_ASSERT(false, "No ScDoubleItem factory available"); return nullptr; }
+SfxPoolItem* ScDoubleItem::CreateDefault() { SAL_WARN( "sc", "No ScDoubleItem factory available"); return nullptr; }
 
 /**
  * General Help Function
@@ -150,12 +160,12 @@ SfxPoolItem * ScMergeFlagAttr::Clone(SfxItemPool *) const
 
 bool ScMergeFlagAttr::HasPivotButton() const
 {
-    return bool(static_cast<ScMF>(GetValue()) & ScMF::Button);
+    return bool(GetValue() & ScMF::Button);
 }
 
 bool ScMergeFlagAttr::HasPivotPopupButton() const
 {
-    return bool(static_cast<ScMF>(GetValue()) & ScMF::ButtonPopup);
+    return bool(GetValue() & ScMF::ButtonPopup);
 }
 
 /**
@@ -284,8 +294,8 @@ OUString ScProtectionAttr::GetValueText() const
 bool ScProtectionAttr::GetPresentation
     (
         SfxItemPresentation ePres,
-        SfxMapUnit /* eCoreMetric */,
-        SfxMapUnit /* ePresMetric */,
+        MapUnit /* eCoreMetric */,
+        MapUnit /* ePresMetric */,
         OUString& rText,
         const IntlWrapper* /* pIntl */
     ) const
@@ -295,11 +305,11 @@ bool ScProtectionAttr::GetPresentation
 
     switch ( ePres )
     {
-        case SFX_ITEM_PRESENTATION_NAMELESS:
+        case SfxItemPresentation::Nameless:
             rText = GetValueText();
             break;
 
-        case SFX_ITEM_PRESENTATION_COMPLETE:
+        case SfxItemPresentation::Complete:
             rText  = ScGlobal::GetRscString(STR_PROTECTION)
                 + ": "
                 + (bProtection ? aStrYes : aStrNo)
@@ -391,8 +401,8 @@ SfxPoolItem* ScRangeItem::Clone( SfxItemPool* ) const
 bool ScRangeItem::GetPresentation
     (
         SfxItemPresentation ePres,
-        SfxMapUnit          /* eCoreUnit */,
-        SfxMapUnit          /* ePresUnit */,
+        MapUnit             /* eCoreUnit */,
+        MapUnit             /* ePresUnit */,
         OUString&           rText,
         const IntlWrapper*  /* pIntl */
     ) const
@@ -401,11 +411,11 @@ bool ScRangeItem::GetPresentation
 
     switch ( ePres )
     {
-        case SFX_ITEM_PRESENTATION_COMPLETE:
+        case SfxItemPresentation::Complete:
         rText = ScGlobal::GetRscString(STR_AREA) + ": ";
         SAL_FALLTHROUGH;
 
-        case SFX_ITEM_PRESENTATION_NAMELESS:
+        case SfxItemPresentation::Nameless:
         {
             /* Always use OOo:A1 format */
             rText += aRange.Format();
@@ -492,15 +502,15 @@ SfxPoolItem* ScTableListItem::Clone( SfxItemPool* ) const
 bool ScTableListItem::GetPresentation
     (
         SfxItemPresentation ePres,
-        SfxMapUnit          /* eCoreUnit */,
-        SfxMapUnit          /* ePresUnit */,
+        MapUnit             /* eCoreUnit */,
+        MapUnit             /* ePresUnit */,
         OUString&           rText,
         const IntlWrapper* /* pIntl */
     ) const
 {
     switch ( ePres )
     {
-        case SFX_ITEM_PRESENTATION_NAMELESS:
+        case SfxItemPresentation::Nameless:
             {
             rText  = "(";
             if ( nCount>0 && pTabArr )
@@ -514,7 +524,7 @@ bool ScTableListItem::GetPresentation
             }
             return true;
 
-        case SFX_ITEM_PRESENTATION_COMPLETE:
+        case SfxItemPresentation::Complete:
             rText.clear();
             return false;
 
@@ -823,8 +833,8 @@ ScViewObjectModeItem::~ScViewObjectModeItem()
 bool ScViewObjectModeItem::GetPresentation
 (
     SfxItemPresentation ePres,
-    SfxMapUnit          /* eCoreUnit */,
-    SfxMapUnit          /* ePresUnit */,
+    MapUnit             /* eCoreUnit */,
+    MapUnit             /* ePresUnit */,
     OUString&           rText,
     const IntlWrapper* /* pIntl */
 )   const
@@ -834,7 +844,7 @@ bool ScViewObjectModeItem::GetPresentation
 
     switch ( ePres )
     {
-        case SFX_ITEM_PRESENTATION_COMPLETE:
+        case SfxItemPresentation::Complete:
             switch( Which() )
             {
                 case SID_SCATTR_PAGE_CHARTS:
@@ -852,7 +862,7 @@ bool ScViewObjectModeItem::GetPresentation
                 default: break;
             }
             SAL_FALLTHROUGH;
-        case SFX_ITEM_PRESENTATION_NAMELESS:
+        case SfxItemPresentation::Nameless:
             rText += ScGlobal::GetRscString(STR_VOBJ_MODE_SHOW+GetValue());
             return true;
             break;
@@ -986,7 +996,7 @@ void lclAppendScalePageCount( OUString& rText, sal_uInt16 nPages )
 } // namespace
 
 bool ScPageScaleToItem::GetPresentation(
-        SfxItemPresentation ePres, SfxMapUnit, SfxMapUnit, OUString& rText, const IntlWrapper* ) const
+        SfxItemPresentation ePres, MapUnit, MapUnit, OUString& rText, const IntlWrapper* ) const
 {
     rText.clear();
     if( !IsValid())
@@ -1000,12 +1010,12 @@ bool ScPageScaleToItem::GetPresentation(
 
     switch( ePres )
     {
-        case SFX_ITEM_PRESENTATION_NAMELESS:
+        case SfxItemPresentation::Nameless:
             rText = aValue;
             return true;
         break;
 
-        case SFX_ITEM_PRESENTATION_COMPLETE:
+        case SfxItemPresentation::Complete:
             rText = aName + " (" + aValue + ")";
             return true;
         break;
@@ -1076,6 +1086,18 @@ void ScCondFormatItem::AddCondFormatData( sal_uInt32 nIndex )
 void ScCondFormatItem::SetCondFormatData( const std::vector<sal_uInt32>& rIndex )
 {
     maIndex = rIndex;
+}
+
+void ScCondFormatItem::dumpAsXml(xmlTextWriterPtr pWriter) const
+{
+    xmlTextWriterStartElement(pWriter, BAD_CAST("ScCondFormatItem"));
+    for (const auto& nItem : maIndex)
+    {
+        std::string aStrVal = std::to_string(nItem);
+        xmlTextWriterStartElement(pWriter, BAD_CAST(aStrVal.c_str()));
+        xmlTextWriterEndElement(pWriter);
+    }
+    xmlTextWriterEndElement(pWriter);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

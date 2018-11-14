@@ -59,18 +59,18 @@ void SwBreakDlg::Apply()
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SwBreakDlg, ClickHdl, Button*, void)
+IMPL_LINK_NOARG(SwBreakDlg, ClickHdl, Button*, void)
 {
     CheckEnable();
 }
 
-IMPL_LINK_NOARG_TYPED(SwBreakDlg, SelectHdl, ListBox&, void)
+IMPL_LINK_NOARG(SwBreakDlg, SelectHdl, ListBox&, void)
 {
     CheckEnable();
 }
 
 // Handler for Change Page Number
-IMPL_LINK_TYPED( SwBreakDlg, PageNumHdl, Button*, pBox, void )
+IMPL_LINK( SwBreakDlg, PageNumHdl, Button*, pBox, void )
 {
     if(static_cast<CheckBox*>(pBox)->IsChecked())
         m_pPageNumEdit->SetValue(1);
@@ -79,7 +79,7 @@ IMPL_LINK_TYPED( SwBreakDlg, PageNumHdl, Button*, pBox, void )
 }
 
 // By changing the Page number the checkbox is checked.
-IMPL_LINK_NOARG_TYPED(SwBreakDlg, PageNumModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(SwBreakDlg, PageNumModifyHdl, Edit&, void)
 {
     m_pPageNumBox->Check();
 }
@@ -89,7 +89,7 @@ IMPL_LINK_NOARG_TYPED(SwBreakDlg, PageNumModifyHdl, Edit&, void)
  * checks whether pagenumber nPage is a legal pagenumber (left pages with even
  * numbers etc. for a page template with alternating pages)
  */
-IMPL_LINK_NOARG_TYPED(SwBreakDlg, OkHdl, Button*, void)
+IMPL_LINK_NOARG(SwBreakDlg, OkHdl, Button*, void)
 {
     if(m_pPageNumBox->IsChecked()) {
         // In case of differing page descriptions, test validity
@@ -107,14 +107,14 @@ IMPL_LINK_NOARG_TYPED(SwBreakDlg, OkHdl, Button*, void)
         bool bOk = true;
         switch(pPageDesc->GetUseOn())
         {
-            case nsUseOnPage::PD_MIRROR:
-            case nsUseOnPage::PD_ALL: break;
-            case nsUseOnPage::PD_LEFT: bOk = 0 == nUserPage % 2; break;
-            case nsUseOnPage::PD_RIGHT: bOk = 1 == nUserPage % 2; break;
+            case UseOnPage::Mirror:
+            case UseOnPage::All: break;
+            case UseOnPage::Left: bOk = 0 == nUserPage % 2; break;
+            case UseOnPage::Right: bOk = 1 == nUserPage % 2; break;
             default:; //prevent warning
         }
         if(!bOk) {
-            ScopedVclPtrInstance<MessageDialog>(this, SW_RES(STR_ILLEGAL_PAGENUM), VCL_MESSAGE_INFO)->Execute();
+            ScopedVclPtrInstance<MessageDialog>(this, SW_RES(STR_ILLEGAL_PAGENUM), VclMessageType::Info)->Execute();
             m_pPageNumEdit->GrabFocus();
             return;
         }
@@ -135,8 +135,6 @@ SwBreakDlg::SwBreakDlg( vcl::Window *pParent, SwWrtShell &rS )
     get(m_pPageCollBox, "stylelb");
     get(m_pPageNumBox, "pagenumcb");
     get(m_pPageNumEdit, "pagenumsb");
-
-    m_pPageNumEdit->SetAccessibleName(m_pPageNumBox->GetText());
 
     Link<Button*,void> aLk = LINK(this,SwBreakDlg,ClickHdl);
     m_pPageBtn->SetClickHdl( aLk );

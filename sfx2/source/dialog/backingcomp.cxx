@@ -59,11 +59,9 @@
 
 #include <unotools/bootstrap.hxx>
 
+#include <sfx2/notebookbar/SfxNotebookBar.hxx>
 
 namespace {
-
-const char FRAME_PROPNAME_LAYOUTMANAGER[] = "LayoutManager";
-const char HID_BACKINGWINDOW[] = "FWK_HID_BACKINGWINDOW";
 
 /**
     implements the backing component.
@@ -99,7 +97,7 @@ private:
 public:
 
     explicit BackingComp(const css::uno::Reference< css::uno::XComponentContext >& xContext);
-    virtual ~BackingComp(                                                                    );
+    virtual ~BackingComp(                                                                    ) override;
 
     // XInterface
     virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) throw(css::uno::RuntimeException, std::exception) override;
@@ -410,7 +408,7 @@ void SAL_CALL BackingComp::attachFrame( /*IN*/ const css::uno::Reference< css::f
     // create the menu bar for the backing component
     css::uno::Reference< css::beans::XPropertySet > xPropSet(m_xFrame, css::uno::UNO_QUERY_THROW);
     css::uno::Reference< css::frame::XLayoutManager > xLayoutManager;
-    xPropSet->getPropertyValue(FRAME_PROPNAME_LAYOUTMANAGER) >>= xLayoutManager;
+    xPropSet->getPropertyValue("LayoutManager") >>= xLayoutManager;
     if (xLayoutManager.is())
     {
         xLayoutManager->lock();
@@ -421,13 +419,20 @@ void SAL_CALL BackingComp::attachFrame( /*IN*/ const css::uno::Reference< css::f
     if (pWindow)
     {
         // set help ID for our canvas
-        pWindow->SetHelpId(HID_BACKINGWINDOW);
+        pWindow->SetHelpId("FWK_HID_BACKINGWINDOW");
     }
 
     // inform BackingWindow about frame
     BackingWindow* pBack = dynamic_cast<BackingWindow*>(pWindow.get());
     if( pBack )
         pBack->setOwningFrame( m_xFrame );
+
+    // set NotebookBar
+    SystemWindow* pSysWindow = static_cast<SystemWindow*>(pParent);
+    if (pSysWindow)
+    {
+        //sfx2::SfxNotebookBar::StateMethod(pSysWindow, m_xFrame, "sfx/ui/notebookbar.ui");
+    }
 
     // Set a minimum size for Start Center
     if( pParent && pBack )
@@ -595,9 +600,7 @@ void SAL_CALL BackingComp::dispose()
         VclPtr< WorkWindow > pParent = static_cast<WorkWindow*>(VCLUnoHelper::GetWindow(xParentWindow).get());
 
         // hide NotebookBar
-        SystemWindow* pSysWindow = static_cast<SystemWindow*>(pParent);
-        if (pSysWindow && pSysWindow->GetNotebookBar())
-            pSysWindow->GetNotebookBar()->Hide();
+        sfx2::SfxNotebookBar::CloseMethod(static_cast<SystemWindow*>(pParent));
     }
 
     // stop listening at the window
@@ -697,7 +700,7 @@ void SAL_CALL BackingComp::initialize( /*IN*/ const css::uno::Sequence< css::uno
     }
 
     // create the component window
-    vcl::Window* pParent   = VCLUnoHelper::GetWindow(xParentWindow);
+    VclPtr<vcl::Window> pParent = VCLUnoHelper::GetWindow(xParentWindow);
     VclPtr<vcl::Window> pWindow = VclPtr<BackingWindow>::Create(pParent);
     m_xWindow = VCLUnoHelper::GetInterface(pWindow);
 
@@ -769,8 +772,8 @@ void SAL_CALL BackingComp::dispatch( const css::util::URL& aURL, const css::uno:
     // vnd.org.libreoffice.recentdocs:ClearRecentFileList  - clear recent files
     if ( aURL.Path == "ClearRecentFileList" )
     {
-        vcl::Window* pWindow = VCLUnoHelper::GetWindow(m_xWindow);
-        BackingWindow* pBack = dynamic_cast<BackingWindow*>(pWindow );
+        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow(m_xWindow);
+        BackingWindow* pBack = dynamic_cast<BackingWindow*>(pWindow.get());
         if( pBack )
         {
             pBack->clearRecentFileList();

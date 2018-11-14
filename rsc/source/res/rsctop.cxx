@@ -41,7 +41,7 @@ void RscTop::SetCallPar(const OString& rPar1, const OString& rPar2,
     aCallParType = rParType;
 }
 
-RSCINST RscTop::GetDefault()
+RSCINST const & RscTop::GetDefault()
 {
     if( !aDfltInst.IsInst() )
         aDfltInst = this->Create( nullptr, RSCINST() );
@@ -66,7 +66,7 @@ RscTop * RscTop::GetTypeClass() const
         return nullptr;
 }
 
-sal_uInt32 RscTop::Size()
+sal_uInt32 RscTop::Size() const
 {
     if( pSuperClass )
         return pSuperClass->Size();
@@ -93,28 +93,6 @@ bool RscTop::InHierarchy( RscTop * pClass )
 
 ERRTYPE RscTop::SetVariable( Atom nVarName, RscTop * pClass,
                      RSCINST * pDflt, RSCVAR nVarType, sal_uInt32 nMask,
-                     Atom nDataBaseName )
-{
-    if( pSuperClass )
-        return pSuperClass->SetVariable( nVarName, pClass, pDflt,
-                                         nVarType, nMask, nDataBaseName );
-    else
-        return ERR_UNKNOWN_METHOD;
-}
-
-ERRTYPE RscTop::SetVariable( Atom nVarName, RscTop * pClass,
-                     RSCINST * pDflt, RSCVAR nVarType, SfxStyleItem nMask,
-                     Atom nDataBaseName )
-{
-    if( pSuperClass )
-        return pSuperClass->SetVariable( nVarName, pClass, pDflt,
-                                         nVarType, nMask, nDataBaseName );
-    else
-        return ERR_UNKNOWN_METHOD;
-}
-
-ERRTYPE RscTop::SetVariable( Atom nVarName, RscTop * pClass,
-                     RSCINST * pDflt, RSCVAR nVarType, SfxSlotInfo nMask,
                      Atom nDataBaseName )
 {
     if( pSuperClass )

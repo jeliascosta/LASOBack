@@ -62,7 +62,7 @@ private:
 
     VclPtr<VirtualDevice>       mpBackgrDev;        /// Grid background, headers, cell texts.
     VclPtr<VirtualDevice>       mpGridDev;          /// Data grid with selection and cursor.
-    PopupMenu                   maPopup;            /// Popup menu for column types.
+    VclPtr<PopupMenu>           mpPopup;            /// Popup menu for column types.
 
     ::svtools::ColorConfig*     mpColorConfig;      /// Application color configuration.
     Color                       maBackColor;        /// Cell background color.
@@ -93,7 +93,7 @@ private:
 
 public:
     explicit                    ScCsvGrid( ScCsvControl& rParent );
-    virtual                     ~ScCsvGrid();
+    virtual                     ~ScCsvGrid() override;
     virtual void                dispose() override;
 
     /** Finishes initialization. Must be called after constructing a new object. */
@@ -189,7 +189,7 @@ public:
 private:
     /** Returns the data type of the specified column. */
     SAL_DLLPRIVATE sal_Int32                   GetColumnType( sal_uInt32 nColIndex ) const;
-    /** Returns the data type of the specified column. */
+    /** Sets the data type of the specified column. */
     SAL_DLLPRIVATE void                        SetColumnType( sal_uInt32 nColIndex, sal_Int32 nColType );
 
     /** Scrolls data grid vertically. */

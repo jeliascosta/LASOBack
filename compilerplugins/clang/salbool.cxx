@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <limits>
 #include <set>
 #include <string>
 
@@ -32,20 +33,6 @@ bool isSalBoolArray(QualType type) {
             || isSalBoolArray(t->getElementType()));
 }
 
-// Clang 3.2 FunctionDecl::isInlined doesn't work as advertised ("Determine
-// whether this function should be inlined, because it is either marked 'inline'
-// or 'constexpr' or is a member function of a class that was defined in the
-// class body.") but mis-classifies salhelper::Timer's isTicking, isExpired, and
-// expiresBefore members as defined in salhelper/source/timer.cxx as inlined:
-bool isInlined(FunctionDecl const & decl) {
-#if CLANG_VERSION >= 30300
-    return decl.isInlined();
-#else
-    (void)decl;
-    return false;
-#endif
-}
-
 // It appears that, given a function declaration, there is no way to determine
 // the language linkage of the function's type, only of the function's name
 // (via FunctionDecl::isExternC); however, in a case like
@@ -61,15 +48,9 @@ bool hasCLanguageLinkageType(FunctionDecl const * decl) {
     if (decl->isExternC()) {
         return true;
     }
-#if CLANG_VERSION >= 30300
     if (decl->isInExternCContext()) {
         return true;
     }
-#else
-    if (decl->getCanonicalDecl()->getDeclContext()->isExternCContext()) {
-        return true;
-    }
-#endif
     return false;
 }
 
@@ -94,7 +75,7 @@ OverrideKind getOverrideKind(FunctionDecl const * decl) {
 bool hasBoolOverload(FunctionDecl const * decl, bool mustBeDeleted) {
     unsigned n = decl->getNumParams();
     auto res = decl->getDeclContext()->lookup(decl->getDeclName());
-    for (auto d = compat::begin(res); d != compat::end(res); ++d) {
+    for (auto d = res.begin(); d != res.end(); ++d) {
         FunctionDecl const * f = dyn_cast<FunctionDecl>(*d);
         if (f != nullptr && (!mustBeDeleted || f->isDeleted())) {
             if (f->getNumParams() == n) {
@@ -144,6 +125,8 @@ public:
 
     bool VisitCXXFunctionalCastExpr(CXXFunctionalCastExpr * expr);
 
+    bool VisitImplicitCastExpr(ImplicitCastExpr * expr);
+
     bool VisitReturnStmt(ReturnStmt const * stmt);
 
     bool WalkUpFromParmVarDecl(ParmVarDecl const * decl);
@@ -162,14 +145,19 @@ public:
 
     bool TraverseStaticAssertDecl(StaticAssertDecl * decl);
 
+    bool TraverseLinkageSpecDecl(LinkageSpecDecl * decl);
+
 private:
     bool isFromCIncludeFile(SourceLocation spellingLocation) const;
+
+    bool isSharedCAndCppCode(SourceLocation location) const;
 
     bool isInSpecialMainFile(SourceLocation spellingLocation) const;
 
     bool rewrite(SourceLocation location);
 
     std::set<VarDecl const *> varDecls_;
+    unsigned int externCContexts_ = 0;
 };
 
 void SalBool::run() {
@@ -296,18 +284,17 @@ bool SalBool::VisitCStyleCastExpr(CStyleCastExpr * expr) {
         while (compiler.getSourceManager().isMacroArgExpansion(loc)) {
             loc = compiler.getSourceManager().getImmediateMacroCallerLoc(loc);
         }
-        if (compat::isMacroBodyExpansion(compiler, loc)) {
+        if (compiler.getSourceManager().isMacroBodyExpansion(loc)) {
             StringRef name { Lexer::getImmediateMacroName(
                 loc, compiler.getSourceManager(), compiler.getLangOpts()) };
             if (name == "sal_False" || name == "sal_True") {
-                auto callLoc = compiler.getSourceManager().getSpellingLoc(
-                    compiler.getSourceManager().getImmediateMacroCallerLoc(
-                        loc));
-                if (!isFromCIncludeFile(callLoc)) {
+                auto callLoc = compiler.getSourceManager()
+                    .getImmediateMacroCallerLoc(loc);
+                if (!isSharedCAndCppCode(callLoc)) {
                     SourceLocation argLoc;
                     if (compat::isMacroArgExpansion(
                             compiler, expr->getLocStart(), &argLoc)
-                        //TODO: check its the complete (first) arg to the macro
+                        //TODO: check it's the complete (first) arg to the macro
                         && (Lexer::getImmediateMacroName(
                                 argLoc, compiler.getSourceManager(),
                                 compiler.getLangOpts())
@@ -319,17 +306,19 @@ bool SalBool::VisitCStyleCastExpr(CStyleCastExpr * expr) {
                     }
                     bool b = name == "sal_True";
                     if (rewriter != nullptr) {
+                        auto callSpellLoc = compiler.getSourceManager()
+                            .getSpellingLoc(callLoc);
                         unsigned n = Lexer::MeasureTokenLength(
-                            callLoc, compiler.getSourceManager(),
+                            callSpellLoc, compiler.getSourceManager(),
                             compiler.getLangOpts());
                         if (StringRef(
                                 compiler.getSourceManager().getCharacterData(
-                                    callLoc),
+                                    callSpellLoc),
                                 n)
                             == name)
                         {
                             return replaceText(
-                                callLoc, n, b ? "true" : "false");
+                                callSpellLoc, n, b ? "true" : "false");
                         }
                     }
                     report(
@@ -380,6 +369,53 @@ bool SalBool::VisitCXXFunctionalCastExpr(CXXFunctionalCastExpr * expr) {
             << expr->getSubExpr()->IgnoreParenImpCasts()->getType()
             << expr->getType() << expr->getSourceRange();
     }
+    return true;
+}
+
+bool SalBool::VisitImplicitCastExpr(ImplicitCastExpr * expr) {
+    if (ignoreLocation(expr)) {
+        return true;
+    }
+    if (!isSalBool(expr->getType())) {
+        return true;
+    }
+    auto l = expr->getLocStart();
+    while (compiler.getSourceManager().isMacroArgExpansion(l)) {
+        l = compiler.getSourceManager().getImmediateMacroCallerLoc(l);
+    }
+    if (compiler.getSourceManager().isMacroBodyExpansion(l)) {
+        auto n = Lexer::getImmediateMacroName(
+            l, compiler.getSourceManager(), compiler.getLangOpts());
+        if (n == "sal_False" || n == "sal_True") {
+            return true;
+        }
+    }
+    auto e1 = expr->getSubExprAsWritten();
+    auto t = e1->getType();
+    if (!t->isFundamentalType() || loplugin::TypeCheck(t).AnyBoolean()) {
+        return true;
+    }
+    auto e2 = dyn_cast<ConditionalOperator>(e1);
+    if (e2 != nullptr) {
+        auto ic1 = dyn_cast<ImplicitCastExpr>(
+            e2->getTrueExpr()->IgnoreParens());
+        auto ic2 = dyn_cast<ImplicitCastExpr>(
+            e2->getFalseExpr()->IgnoreParens());
+        if (ic1 != nullptr && ic2 != nullptr
+            && ic1->getType()->isSpecificBuiltinType(BuiltinType::Int)
+            && (loplugin::TypeCheck(ic1->getSubExprAsWritten()->getType())
+                .AnyBoolean())
+            && ic2->getType()->isSpecificBuiltinType(BuiltinType::Int)
+            && (loplugin::TypeCheck(ic2->getSubExprAsWritten()->getType())
+                .AnyBoolean()))
+        {
+            return true;
+        }
+    }
+    report(
+        DiagnosticsEngine::Warning, "conversion from %0 to sal_Bool",
+        expr->getLocStart())
+        << t << expr->getSourceRange();
     return true;
 }
 
@@ -443,10 +479,8 @@ bool SalBool::VisitParmVarDecl(ParmVarDecl const * decl) {
         if (f != nullptr) { // e.g.: typedef sal_Bool (* FuncPtr )( sal_Bool );
             f = f->getCanonicalDecl();
             if (!(hasCLanguageLinkageType(f)
-                  || (isInUnoIncludeFile(
-                          compiler.getSourceManager().getSpellingLoc(
-                              f->getNameInfo().getLoc()))
-                      && (!isInlined(*f) || f->hasAttr<DeprecatedAttr>()
+                  || (isInUnoIncludeFile(f)
+                      && (!f->isInlined() || f->hasAttr<DeprecatedAttr>()
                           || decl->getType()->isReferenceType()
                           || hasBoolOverload(f, false)))
                   || f->isDeleted() || hasBoolOverload(f, true)))
@@ -498,8 +532,7 @@ bool SalBool::VisitParmVarDecl(ParmVarDecl const * decl) {
                     // where the function would still implicitly override and
                     // cause a compilation error due to the incompatible return
                     // type):
-                    if (!((compat::isInMainFile(
-                               compiler.getSourceManager(),
+                    if (!((compiler.getSourceManager().isInMainFile(
                                compiler.getSourceManager().getSpellingLoc(
                                    dyn_cast<FunctionDecl>(
                                        decl->getDeclContext())
@@ -558,8 +591,7 @@ bool SalBool::VisitFieldDecl(FieldDecl const * decl) {
     {
         TagDecl const * td = dyn_cast<TagDecl>(decl->getDeclContext());
         assert(td != nullptr);
-        if (!(((td->isStruct() || td->isUnion())
-               && compat::isExternCContext(*td))
+        if (!(((td->isStruct() || td->isUnion()) && td->isExternCContext())
               || isInUnoIncludeFile(
                   compiler.getSourceManager().getSpellingLoc(
                       decl->getLocation()))))
@@ -620,10 +652,8 @@ bool SalBool::VisitFunctionDecl(FunctionDecl const * decl) {
         OverrideKind k = getOverrideKind(f);
         if (k != OverrideKind::YES
             && !(hasCLanguageLinkageType(f)
-                 || (isInUnoIncludeFile(
-                         compiler.getSourceManager().getSpellingLoc(
-                             f->getNameInfo().getLoc()))
-                     && (!isInlined(*f) || f->hasAttr<DeprecatedAttr>()))))
+                 || (isInUnoIncludeFile(f)
+                     && (!f->isInlined() || f->hasAttr<DeprecatedAttr>()))))
         {
             SourceLocation loc { decl->getLocStart() };
             SourceLocation l { compiler.getSourceManager().getExpansionLoc(
@@ -650,8 +680,7 @@ bool SalBool::VisitFunctionDecl(FunctionDecl const * decl) {
             // rewriter had a chance to act upon the definition (but use the
             // heuristic of assuming pure virtual functions do not have
             // definitions):
-            if (!((compat::isInMainFile(
-                       compiler.getSourceManager(),
+            if (!((compiler.getSourceManager().isInMainFile(
                        compiler.getSourceManager().getSpellingLoc(
                            decl->getNameInfo().getLoc()))
                    || f->isDefined() || f->isPure())
@@ -699,16 +728,35 @@ bool SalBool::TraverseStaticAssertDecl(StaticAssertDecl * decl) {
         || RecursiveASTVisitor::TraverseStaticAssertDecl(decl);
 }
 
+bool SalBool::TraverseLinkageSpecDecl(LinkageSpecDecl * decl) {
+    assert(externCContexts_ != std::numeric_limits<unsigned int>::max()); //TODO
+    ++externCContexts_;
+    bool ret = RecursiveASTVisitor::TraverseLinkageSpecDecl(decl);
+    assert(externCContexts_ != 0);
+    --externCContexts_;
+    return ret;
+}
+
 bool SalBool::isFromCIncludeFile(SourceLocation spellingLocation) const {
-    return !compat::isInMainFile(compiler.getSourceManager(), spellingLocation)
+    return !compiler.getSourceManager().isInMainFile(spellingLocation)
         && (StringRef(
                 compiler.getSourceManager().getPresumedLoc(spellingLocation)
                 .getFilename())
             .endswith(".h"));
 }
 
+bool SalBool::isSharedCAndCppCode(SourceLocation location) const {
+    // Assume that code is intended to be shared between C and C++ if it comes
+    // from an include file ending in .h, and is either in an extern "C" context
+    // or the body of a macro definition:
+    return
+        isFromCIncludeFile(compiler.getSourceManager().getSpellingLoc(location))
+        && (externCContexts_ != 0
+            || compiler.getSourceManager().isMacroBodyExpansion(location));
+}
+
 bool SalBool::isInSpecialMainFile(SourceLocation spellingLocation) const {
-    if (!compat::isInMainFile(compiler.getSourceManager(), spellingLocation)) {
+    if (!compiler.getSourceManager().isInMainFile(spellingLocation)) {
         return false;
     }
     auto f = compiler.getSourceManager().getFilename(spellingLocation);

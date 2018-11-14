@@ -300,7 +300,7 @@ bool SvxGeneralTabPage::FillItemSet( SfxItemSet* )
         vFields[i]->pEdit->SetText(comphelper::string::strip(vFields[i]->pEdit->GetText(), ' '));
 
     bool bModified = false;
-    bModified |= GetAddress_Impl();
+    bModified |= GetData_Impl();
     SvtSaveOptions aSaveOpt;
     if ( m_pUseDataCB->IsChecked() != aSaveOpt.IsUseUserData() )
     {
@@ -312,7 +312,7 @@ bool SvxGeneralTabPage::FillItemSet( SfxItemSet* )
 
 void SvxGeneralTabPage::Reset( const SfxItemSet* rSet )
 {
-    SetAddress_Impl();
+    SetData_Impl();
 
     sal_uInt16 const nWhich = GetWhich(SID_FIELD_GRABFOCUS);
 
@@ -336,7 +336,7 @@ void SvxGeneralTabPage::Reset( const SfxItemSet* rSet )
 // ModifyHdl_Impl()
 // This handler updates the initials (short name)
 // when one of the name fields was updated.
-IMPL_LINK_TYPED( SvxGeneralTabPage, ModifyHdl_Impl, Edit&, rEdit, void )
+IMPL_LINK( SvxGeneralTabPage, ModifyHdl_Impl, Edit&, rEdit, void )
 {
     // short name field and row
     Field& rShortName = *vFields[nShortNameField];
@@ -369,7 +369,7 @@ IMPL_LINK_TYPED( SvxGeneralTabPage, ModifyHdl_Impl, Edit&, rEdit, void )
 }
 
 
-bool SvxGeneralTabPage::GetAddress_Impl()
+bool SvxGeneralTabPage::GetData_Impl()
 {
     // updating
     SvtUserOptions aUserOpt;
@@ -387,7 +387,7 @@ bool SvxGeneralTabPage::GetAddress_Impl()
 }
 
 
-void SvxGeneralTabPage::SetAddress_Impl()
+void SvxGeneralTabPage::SetData_Impl()
 {
     // updating and disabling edit boxes
     SvtUserOptions aUserOpt;
@@ -416,11 +416,11 @@ void SvxGeneralTabPage::SetAddress_Impl()
 }
 
 
-SvxGeneralTabPage::sfxpg SvxGeneralTabPage::DeactivatePage( SfxItemSet* pSet_ )
+DeactivateRC SvxGeneralTabPage::DeactivatePage( SfxItemSet* pSet_ )
 {
     if ( pSet_ )
         FillItemSet( pSet_ );
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

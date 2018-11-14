@@ -41,7 +41,7 @@ $(call gb_CustomTarget_get_workdir,instsetoo_native/setup)/$(call gb_Helper_get_
 		&& echo 'InstallMode=<installmode>' \
 		&& echo 'ProductKey=$(PRODUCTNAME) $(PRODUCTVERSION)' \
 		$(if $(ENABLE_RELEASE_BUILD),\
-			&& echo 'UserInstallation=$$SYSUSERCONFIG/$(if $(filter-out MACOSX WNT,$(OS)),$(shell echo $(PRODUCTNAME) | tr "[:upper:]" "[:lower:]"),$(PRODUCTNAME))/4', \
+			&& echo 'UserInstallation=$$SYSUSERCONFIG/$(if $(filter-out MACOSX WNT,$(OS)),$(shell echo $(PRODUCTNAME) | tr "[:upper:]" "[:lower:]"),$(shell echo $(PRODUCTNAME) | sed -e 's/ /%20/g'))/4', \
 			&& echo 'UserInstallation=$$ORIGIN/..') \
 	) > $@
 
@@ -104,6 +104,16 @@ $(call gb_CustomTarget_get_workdir,instsetoo_native/setup)/$(call gb_Helper_get_
 	) > $@
 
 # for release-builds (building installers) adjust values in openoffice.lst.in
+# Added 'SecureUserConfig' flags to enable and safe user config files
+#  SecureUserConfig :           boolean - switches securing on/off - default false
+#  SecureUserConfigCompress :   boolean - defines if backup data will be compressed - default true
+#  SecureUserConfigNumCopies :  integer - defines how many compressed copies of saved content will be kept - default 2
+#  SecureUserConfigMode:        integer - defines what to secure, default is 1
+#                                           0 : only registrymodifications.xcu
+#                                           1 : a selected amount of user-defined configs
+#                                           2 : everything in the user config directory
+#  SecureUserConfigExtensions:  boolean - defines to also safe the extension configuration (which extensions
+#                                         are installed, which are activated) - default is true
 $(call gb_CustomTarget_get_workdir,instsetoo_native/setup)/$(call gb_Helper_get_rcfile,soffice) :
 	$(call gb_Output_announce,$(subst $(WORKDIR)/,,$@),$(true),ECH,1)
 	( \
@@ -118,6 +128,11 @@ $(call gb_CustomTarget_get_workdir,instsetoo_native/setup)/$(call gb_Helper_get_
 		&& echo 'ProgressTextBaseline=145' \
 		&& echo 'ProgressTextColor=255,255,255' \
 		&& echo 'URE_BOOTSTRAP=$${ORIGIN}/$(call gb_Helper_get_rcfile,fundamental)' \
+		&& echo 'SecureUserConfig=true' \
+		&& echo 'SecureUserConfigCompress=true' \
+		&& echo 'SecureUserConfigNumCopies=2' \
+		&& echo 'SecureUserConfigMode=1' \
+        && echo 'SecureUserConfigExtensions=true' \
 	) > $@
 
 $(call gb_CustomTarget_get_workdir,instsetoo_native/setup)/$(call gb_Helper_get_rcfile,uno) :

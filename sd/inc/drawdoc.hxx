@@ -58,9 +58,9 @@ namespace com
 namespace sd
 {
     class FrameView;
-    class Outliner;
 }
 
+class SdOutliner;
 class Timer;
 class SfxObjectShell;
 class SdPage;
@@ -135,18 +135,14 @@ namespace sd
 // SdDrawDocument
 class SD_DLLPUBLIC SdDrawDocument : public FmFormModel
 {
-private:
-    OUString msDocAccTitle;
 public:
     SAL_DLLPRIVATE void setDocAccTitle( const OUString& rTitle ) { msDocAccTitle = rTitle; }
     SAL_DLLPRIVATE const OUString& getDocAccTitle() const { return msDocAccTitle; }
-private:
-    bool bReadOnly;
-public:
     SAL_DLLPRIVATE bool getDocReadOnly() const { return bReadOnly; }
 private:
-    ::sd::Outliner*     mpOutliner;          ///< local outliner for outline mode
-    ::sd::Outliner*     mpInternalOutliner;  ///< internal outliner for creation of text objects
+    OUString            msDocAccTitle;
+    SdOutliner*     mpOutliner;          ///< local outliner for outline mode
+    SdOutliner*     mpInternalOutliner;  ///< internal outliner for creation of text objects
     Timer*              mpWorkStartupTimer;
     Idle*               mpOnlineSpellingIdle;
     sd::ShapeList*      mpOnlineSpellingList;
@@ -188,9 +184,9 @@ private:
     SAL_DLLPRIVATE void                FillOnlineSpellingList(SdPage* pPage);
     SAL_DLLPRIVATE void                SpellObject(SdrTextObj* pObj);
 
-                        DECL_DLLPRIVATE_LINK_TYPED(WorkStartupHdl, Timer *, void);
-                        DECL_DLLPRIVATE_LINK_TYPED(OnlineSpellingHdl, Idle *, void);
-                        DECL_DLLPRIVATE_LINK_TYPED(OnlineSpellEventHdl, EditStatus&, void);
+                        DECL_DLLPRIVATE_LINK(WorkStartupHdl, Timer *, void);
+                        DECL_DLLPRIVATE_LINK(OnlineSpellingHdl, Idle *, void);
+                        DECL_DLLPRIVATE_LINK(OnlineSpellEventHdl, EditStatus&, void);
 
     std::vector< OUString > maAnnotationAuthors;
     std::vector<css::uno::Reference< css::xml::dom::XNode> > maLayoutInfo;
@@ -206,7 +202,7 @@ public:
 
 
                         SAL_DLLPRIVATE SdDrawDocument(DocumentType eType, SfxObjectShell* pDocSh);
-                        SAL_DLLPRIVATE virtual ~SdDrawDocument();
+                        SAL_DLLPRIVATE virtual ~SdDrawDocument() override;
 
     SAL_DLLPRIVATE SdDrawDocument*     AllocSdDrawDocument() const;
     SAL_DLLPRIVATE virtual SdrModel*   AllocModel() const override; //forwards to AllocSdDrawDocument
@@ -219,8 +215,8 @@ public:
 
     SAL_DLLPRIVATE SfxItemPool&        GetPool() { return( *pItemPool ); }
 
-    SAL_DLLPRIVATE ::sd::Outliner* GetOutliner(bool bCreateOutliner=true);
-    ::sd::Outliner* GetInternalOutliner(bool bCreateOutliner=true);
+    SAL_DLLPRIVATE SdOutliner* GetOutliner(bool bCreateOutliner=true);
+    SdOutliner* GetInternalOutliner(bool bCreateOutliner=true);
 
     SAL_DLLPRIVATE ::sd::DrawDocShell*     GetDocSh() const { return mpDocSh; }
 
@@ -339,7 +335,7 @@ public:
     SAL_DLLPRIVATE bool InsertBookmarkAsObject(const std::vector<OUString> &rBookmarkList,
                                     const std::vector<OUString> &rExchangeList,
                                     bool bLink, ::sd::DrawDocShell* pBookmarkDocSh,
-                                    Point* pObjPos, bool bCalcObjCount = false);
+                                    Point* pObjPos, bool bCalcObjCount);
 
     void   CloseBookmarkDoc();
 
@@ -418,7 +414,7 @@ public:
     SAL_DLLPRIVATE std::vector<sd::FrameView*>& GetFrameViewList() { return maFrameViewList; }
     SdCustomShowList* GetCustomShowList(bool bCreate = false);
 
-    SAL_DLLPRIVATE void                NbcSetChanged(bool bFlag = true);
+    SAL_DLLPRIVATE void                NbcSetChanged(bool bFlag);
 
     SAL_DLLPRIVATE void                SetTextDefaults() const;
 
@@ -437,12 +433,12 @@ public:
         return nPos < maFrameViewList.size() ? maFrameViewList[nPos] : nullptr; }
 
     /** deprecated*/
-    SAL_DLLPRIVATE SdAnimationInfo*    GetAnimationInfo(SdrObject* pObject) const;
+    SAL_DLLPRIVATE static SdAnimationInfo* GetAnimationInfo(SdrObject* pObject);
 
     static     SdAnimationInfo* GetShapeUserData(SdrObject& rObject, bool bCreate = false );
 
-    SAL_DLLPRIVATE SdIMapInfo*         GetIMapInfo( SdrObject* pObject ) const;
-    SAL_DLLPRIVATE IMapObject*         GetHitIMapObject( SdrObject* pObject, const Point& rWinPoint, const vcl::Window& rCmpWnd );
+    SAL_DLLPRIVATE static SdIMapInfo*  GetIMapInfo( SdrObject* pObject );
+    SAL_DLLPRIVATE static IMapObject*  GetHitIMapObject( SdrObject* pObject, const Point& rWinPoint );
 
     SAL_DLLPRIVATE CharClass*          GetCharClass() const { return mpCharClass; }
 
@@ -453,8 +449,8 @@ public:
     SAL_DLLPRIVATE void                CheckMasterPages();
 
     SAL_DLLPRIVATE void                Merge(SdrModel& rSourceModel,
-                                sal_uInt16 nFirstPageNum=0, sal_uInt16 nLastPageNum=0xFFFF,
-                                sal_uInt16 nDestPos=0xFFFF,
+                                sal_uInt16 nFirstPageNum, sal_uInt16 nLastPageNum,
+                                sal_uInt16 nDestPos,
                                 bool bMergeMasterPages = false, bool bAllMasterPages = false,
                                 bool bUndo = true, bool bTreadSourceAsConst = false) override;
 
@@ -517,7 +513,7 @@ public:
         AutoLayout eNotesLayout,
         bool bIsPageBack,
         bool bIsPageObj,
-        const sal_Int32 nInsertPosition = -1);
+        const sal_Int32 nInsertPosition);
 
     /** This method acts as a simplified front end for the more complex
         <member>DuplicatePage()</member> method.
@@ -565,7 +561,7 @@ public:
         const OUString& sNotesPageName,
         bool bIsPageBack,
         bool bIsPageObj,
-        const sal_Int32 nInsertPosition = -1);
+        const sal_Int32 nInsertPosition);
 
     /** return the document fonts for latin, cjk and ctl according to the current
         languages set at this document */
@@ -582,7 +578,7 @@ public:
 
     SAL_DLLPRIVATE void UpdatePageRelativeURLs(const OUString& rOldName, const OUString& rNewName);
 
-    SAL_DLLPRIVATE void SetCalcFieldValueHdl( ::Outliner* pOutliner);
+    SAL_DLLPRIVATE static void SetCalcFieldValueHdl( ::Outliner* pOutliner);
 
     SAL_DLLPRIVATE sal_uInt16 GetAnnotationAuthorIndex( const OUString& rAuthor );
 
@@ -635,7 +631,7 @@ private:
         bool bIsPageObj,
         SdPage* pStandardPage,
         SdPage* pNotesPage,
-        sal_Int32 nInsertPosition = -1);
+        sal_Int32 nInsertPosition);
 
     /** Set up a newly created page and insert it into the list of pages.
         @param pPreviousPage

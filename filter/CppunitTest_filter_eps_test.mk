@@ -25,10 +25,7 @@ $(eval $(call gb_CppunitTest_use_libraries,filter_eps_test, \
 	$(gb_UWINAPI) \
 ))
 
-$(eval $(call gb_CppunitTest_use_api,filter_eps_test,\
-    udkapi \
-    offapi \
-))
+$(eval $(call gb_CppunitTest_use_sdk_api,filter_eps_test))
 
 $(eval $(call gb_CppunitTest_use_ure,filter_eps_test))
 $(eval $(call gb_CppunitTest_use_vcl,filter_eps_test))
@@ -38,6 +35,7 @@ $(eval $(call gb_CppunitTest_use_components,filter_eps_test,\
     i18npool/util/i18npool \
     ucb/source/core/ucb1 \
     ucb/source/ucp/file/ucpfile1 \
+    uui/util/uui \
 ))
 
 $(eval $(call gb_CppunitTest_use_configuration,filter_eps_test))

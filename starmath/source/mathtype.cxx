@@ -110,56 +110,56 @@ bool MathType::LookupChar(sal_Unicode nChar,OUString &rRet,sal_uInt8 nVersion,
                 pC = " rightarrow ";
             else
             {
-                rRet += OUString( nChar );
+                rRet += OUStringLiteral1( nChar );
                 bRet=true;
             }
             break;
         case 0x00fb:
             if ((nVersion < 3) && (nTypeFace == 0x81))
                 nChar = 0xDF;
-            rRet += OUString( nChar );
+            rRet += OUStringLiteral1( nChar );
             bRet=true;
             break;
         case 'a':
             if ((nVersion < 3) && (nTypeFace == 0x84))
                 nChar = 0x3b1;
-            rRet += OUString( nChar );
+            rRet += OUStringLiteral1( nChar );
             bRet=true;
             break;
         case 'b':
             if ((nVersion < 3) && (nTypeFace == 0x84))
                 nChar = 0x3b2;
-            rRet += OUString( nChar );
+            rRet += OUStringLiteral1( nChar );
             bRet=true;
             break;
         case 'l':
             if ((nVersion < 3) && (nTypeFace == 0x84))
                 nChar = 0x3bb;
-            rRet += OUString( nChar );
+            rRet += OUStringLiteral1( nChar );
             bRet=true;
             break;
         case 'n':
             if ((nVersion < 3) && (nTypeFace == 0x84))
                 nChar = 0x3bd;
-            rRet += OUString( nChar );
+            rRet += OUStringLiteral1( nChar );
             bRet=true;
             break;
         case 'r':
             if ((nVersion < 3) && (nTypeFace == 0x84))
                 nChar = 0x3c1;
-            rRet += OUString( nChar );
+            rRet += OUStringLiteral1( nChar );
             bRet=true;
             break;
         case 'D':
             if ((nVersion < 3) && (nTypeFace == 0x84))
                 nChar = 0x394;
-            rRet += OUString( nChar );
+            rRet += OUStringLiteral1( nChar );
             bRet=true;
             break;
         case 0xa9:
             if ((nVersion < 3) && (nTypeFace == 0x82))
                 nChar = '\'';
-            rRet += OUString( nChar );
+            rRet += OUStringLiteral1( nChar );
             bRet=true;
             break;
         case 0x00f1:
@@ -167,7 +167,7 @@ bool MathType::LookupChar(sal_Unicode nChar,OUString &rRet,sal_uInt8 nVersion,
                 pC = " \\rangle ";
             else
             {
-                rRet += OUString( nChar );
+                rRet += OUStringLiteral1( nChar );
                 bRet=true;
             }
             break;
@@ -176,7 +176,7 @@ bool MathType::LookupChar(sal_Unicode nChar,OUString &rRet,sal_uInt8 nVersion,
                 pC = " <= ";
             else
             {
-                rRet += OUString( nChar );
+                rRet += OUStringLiteral1( nChar );
                 bRet=true;
             }
             break;
@@ -185,7 +185,7 @@ bool MathType::LookupChar(sal_Unicode nChar,OUString &rRet,sal_uInt8 nVersion,
                 pC = " drarrow ";
             else
             {
-                rRet += OUString( nChar );
+                rRet += OUStringLiteral1( nChar );
                 bRet=true;
             }
             break;
@@ -194,7 +194,7 @@ bool MathType::LookupChar(sal_Unicode nChar,OUString &rRet,sal_uInt8 nVersion,
                 pC = " %OMEGA ";
             else
             {
-                rRet += OUString( nChar );
+                rRet += OUStringLiteral1( nChar );
                 bRet=true;
             }
             break;
@@ -442,7 +442,7 @@ bool MathType::LookupChar(sal_Unicode nChar,OUString &rRet,sal_uInt8 nVersion,
             break;
         case 0x22b2:
         case 0x22b3:
-            rRet += " " + OUString( nChar ) + " ";
+            rRet += " " + OUStringLiteral1( nChar ) + " ";
             break;
         case 0x22a5:
             pC = " ortho ";
@@ -513,7 +513,7 @@ bool MathType::LookupChar(sal_Unicode nChar,OUString &rRet,sal_uInt8 nVersion,
             pC = " %OMEGA ";
             break;
         default:
-            rRet += OUString( nChar );
+            rRet += OUStringLiteral1( nChar );
             bRet=true;
             break;
     }
@@ -557,10 +557,10 @@ bool MathType::Parse(SotStorage *pStor)
 {
     tools::SvRef<SotStorageStream> xSrc = pStor->OpenSotStream(
         "Equation Native",
-        STREAM_STD_READ | StreamMode::NOCREATE);
+        StreamMode::STD_READ);
     if ( (!xSrc.Is()) || (SVSTREAM_OK != xSrc->GetError()))
         return false;
-    pS = &xSrc;
+    pS = xSrc.get();
     pS->SetEndian( SvStreamEndian::LITTLE );
 
     EQNOLEFILEHDR aHdr;
@@ -574,7 +574,7 @@ bool MathType::Parse(SotStorage *pStor)
     if (nVersion > 3)   // allow only supported versions of MathType to be parsed
         return false;
 
-    bool bRet = HandleRecords();
+    bool bRet = HandleRecords(0);
     //little crude hack to close occasionally open expressions
     //a sophisticated system to determine what expressions are
     //opened is required, but this is as much work as rewriting
@@ -672,7 +672,7 @@ bool MathType::HandleRecords(int nLevel, sal_uInt8 nSelector,
          so this special case must be handled in the
          character handler case 2:
          */
-        if ((nRecord == CHAR) && (!bIsSilent) && (!bOpenString))
+        if ((nRecord == CHAR) && (!bOpenString))
         {
             bOpenString=true;
             nTextStart = rRet.getLength();
@@ -1820,6 +1820,7 @@ void MathType::HandleAlign(sal_uInt8 nHorAlign, sal_uInt8 /*nVAlign*/, int &rSet
  * indicator by mathtype file format*/
 bool MathType::HandleSize(sal_Int16 nLstSize,sal_Int16 nDefSize, int &rSetSize)
 {
+    const sal_Int16 nDefaultSize = 12;
     bool bRet=false;
     if (nLstSize < 0)
     {
@@ -1904,7 +1905,7 @@ bool MathType::ConvertFromStarMath( SfxMedium& rMedium )
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00
         };
         tools::SvRef<SotStorageStream> xStor( pStor->OpenSotStream("\1CompObj"));
-        xStor->Write(aCompObj,sizeof(aCompObj));
+        xStor->WriteBytes(aCompObj, sizeof(aCompObj));
 
         static sal_uInt8 const aOle[] = {
             0x01, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00,
@@ -1912,7 +1913,7 @@ bool MathType::ConvertFromStarMath( SfxMedium& rMedium )
             0x00, 0x00, 0x00, 0x00
             };
         tools::SvRef<SotStorageStream> xStor2( pStor->OpenSotStream("\1Ole"));
-        xStor2->Write(aOle,sizeof(aOle));
+        xStor2->WriteBytes(aOle, sizeof(aOle));
         xStor.Clear();
         xStor2.Clear();
 
@@ -1920,7 +1921,7 @@ bool MathType::ConvertFromStarMath( SfxMedium& rMedium )
         if ( (!xSrc.Is()) || (SVSTREAM_OK != xSrc->GetError()))
             return false;
 
-        pS = &xSrc;
+        pS = xSrc.get();
         pS->SetEndian( SvStreamEndian::LITTLE );
 
         pS->SeekRel(EQNOLEFILEHDR_SIZE); //Skip 28byte Header and fill it in later
@@ -1932,7 +1933,7 @@ bool MathType::ConvertFromStarMath( SfxMedium& rMedium )
         sal_uInt32 nSize = pS->Tell();
         nPendingAttributes=0;
 
-        HandleNodes(pTree);
+        HandleNodes(pTree, 0);
         pS->WriteUChar( END );
 
         nSize = pS->Tell()-nSize;

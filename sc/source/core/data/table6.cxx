@@ -571,10 +571,14 @@ bool ScTable::ReplaceAll(
     else
         GetLastDataPos(nLastCol, nLastRow);
 
+    // tdf#92160 - columnular replace is faster, and more memory efficient.
+    SvxSearchItem aCopyItem(rSearchItem);
+    aCopyItem.SetRowDirection(false);
+
     bool bEverFound = false;
     while (true)
     {
-        bool bFound = Search(rSearchItem, nCol, nRow, nLastCol, nLastRow, rMark, rUndoStr, pUndoDoc);
+        bool bFound = Search(aCopyItem, nCol, nRow, nLastCol, nLastRow, rMark, rUndoStr, pUndoDoc);
 
         if (bFound)
         {
@@ -687,7 +691,7 @@ bool ScTable::ReplaceStyle(const SvxSearchItem& rSearchItem, SCCOL& rCol, SCROW&
                                         rSearchItem.GetReplaceString(), SfxStyleFamily::Para ));
 
         if (pReplaceStyle)
-            ApplyStyle( rCol, rRow, *pReplaceStyle );
+            ApplyStyle( rCol, rRow, pReplaceStyle );
         else
         {
             OSL_FAIL("pReplaceStyle==0");
@@ -747,8 +751,8 @@ bool ScTable::ReplaceAllStyle(
         if (pReplaceStyle)
         {
             if (pUndoDoc)
-                pDocument->CopyToDocument( 0,0,nTab, MAXCOL,MAXROW,nTab,
-                                            InsertDeleteFlags::ATTRIB, true, pUndoDoc, &rMark );
+                pDocument->CopyToDocument(0, 0 ,nTab, MAXCOL,MAXROW,nTab,
+                                          InsertDeleteFlags::ATTRIB, true, *pUndoDoc, &rMark);
             ApplySelectionStyle( *pReplaceStyle, rMark );
         }
         else

@@ -90,11 +90,11 @@ namespace rptui
         css::uno::Sequence< css::beans::PropertyValue>
                                 m_aCollapsedSections;
         TransferableDataHelper  m_aSystemClipboard;     // content of the clipboard
-        TransferableClipboardListener*
-                                m_pClipbordNotifier;    /// notifier for changes in the clipboard
+        rtl::Reference<TransferableClipboardListener>
+                                m_pClipboardNotifier;    /// notifier for changes in the clipboard
         VclPtr<OGroupsSortingDialog>   m_pGroupsFloater;
 
-        OXReportControllerObserver* m_pReportControllerObserver;
+        rtl::Reference<OXReportControllerObserver> m_pReportControllerObserver;
 
         ODesignView*  getDesignView() const   { return static_cast< ODesignView* >( getView() ); }
 
@@ -206,9 +206,6 @@ namespace rptui
         void executeMethodWithUndo(sal_uInt16 _nUndoStrId,const ::std::mem_fun_t<void,ODesignView>& _pMemfun);
         void alignControlsWithUndo(sal_uInt16 _nUndoStrId,sal_Int32 _nControlModification,bool _bAlignAtSection = false);
 
-        // open the help agent of report designer at start time
-        void doOpenHelpAgent();
-
         css::uno::Reference< css::frame::XFrame > getXFrame();
 
         /** shrink a section
@@ -225,10 +222,6 @@ namespace rptui
         * bound to a newly created image button.
         */
         void insertGraphic();
-
-        /** resets the floater
-        */
-        void updateFloater();
 
         /** creates a new function in the given value context
         *
@@ -314,9 +307,9 @@ namespace rptui
             ,const css::uno::Sequence< css::beans::PropertyValue >& _aArgs);
 
         void OnInvalidateClipboard();
-        DECL_LINK_TYPED( OnClipboardChanged, TransferableDataHelper*, void );
-        DECL_LINK_TYPED( OnExecuteReport, void*, void );
-        DECL_LINK_TYPED( OnOpenHelpAgent, void*, void );
+        DECL_LINK( OnClipboardChanged, TransferableDataHelper*, void );
+        DECL_LINK( OnExecuteReport, void*, void );
+        DECL_LINK( OnOpenHelpAgent, void*, void );
         // all the features which should be handled by this class
         virtual void            describeSupportedFeatures() override;
         // state of a feature. 'feature' may be the handle of a css::util::URL somebody requested a dispatch interface for OR a toolbar slot.
@@ -328,15 +321,15 @@ namespace rptui
         virtual void SAL_CALL setFastPropertyValue_NoBroadcast(sal_Int32 nHandle,const css::uno::Any& rValue) throw (css::uno::Exception, std::exception) override;
 
     private:
-        virtual ~OReportController();
+        virtual ~OReportController() override;
 
     public:
         explicit OReportController(css::uno::Reference< css::uno::XComponentContext > const & the_context);
         OReportController(const OReportController&) = delete;
         OReportController& operator=(const OReportController&) = delete;
 
-        DECL_LINK_TYPED( EventLstHdl, VclWindowEvent&, void );
-        DECL_LINK_TYPED( OnCreateHdl, OAddFieldWindow&, void);
+        DECL_LINK( EventLstHdl, VclWindowEvent&, void );
+        DECL_LINK( OnCreateHdl, OAddFieldWindow&, void);
 
         DECLARE_XINTERFACE( )
         DECLARE_XTYPEPROVIDER( )
@@ -431,7 +424,7 @@ namespace rptui
             The caller is allowed to hold a reference to the RowSet - it is kept alive as long
             as the controller lives, and it's settings will follow the report definition's settings.
         */
-        css::uno::Reference< css::sdbc::XRowSet > getRowSet();
+        css::uno::Reference< css::sdbc::XRowSet > const & getRowSet();
 
         /** returns the number formatter
         */
@@ -460,7 +453,7 @@ namespace rptui
 
         OSectionWindow* getSectionWindow(const css::uno::Reference< css::report::XSection>& _xSection) const;
 
-        css::uno::Reference< css::container::XNameAccess > getColumns() const;
+        css::uno::Reference< css::container::XNameAccess > const & getColumns() const;
         OUString getColumnLabel_throw(const OUString& i_sColumnName) const;
 
         SfxUndoManager& getUndoManager() const;

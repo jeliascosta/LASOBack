@@ -47,8 +47,6 @@ using ::osl::MutexGuard;
 namespace
 {
 
-static const char lcl_aServiceName[] = "com.sun.star.comp.chart2.Title";
-
 enum
 {
     PROP_TITLE_PARA_ADJUST,
@@ -374,26 +372,10 @@ void Title::fireModifyEvent()
     m_xModifyEventForwarder->modified( lang::EventObject( static_cast< uno::XWeak* >( this )));
 }
 
-uno::Sequence< OUString > Title::getSupportedServiceNames_Static()
-{
-    uno::Sequence< OUString > aServices( 4 );
-    aServices[ 0 ] = "com.sun.star.chart2.Title";
-    aServices[ 1 ] = "com.sun.star.style.ParagraphProperties";
-    aServices[ 2 ] = "com.sun.star.beans.PropertySet";
-    aServices[ 3 ] = "com.sun.star.layout.LayoutElement";
-    return aServices;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL Title::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString Title::getImplementationName_Static()
-{
-    return OUString(lcl_aServiceName);
+    return OUString("com.sun.star.comp.chart2.Title");
 }
 
 sal_Bool SAL_CALL Title::supportsService( const OUString& rServiceName )
@@ -405,7 +387,11 @@ sal_Bool SAL_CALL Title::supportsService( const OUString& rServiceName )
 css::uno::Sequence< OUString > SAL_CALL Title::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return {
+        "com.sun.star.chart2.Title",
+        "com.sun.star.style.ParagraphProperties",
+        "com.sun.star.beans.PropertySet",
+        "com.sun.star.layout.LayoutElement" };
 }
 
 // needed by MSC compiler

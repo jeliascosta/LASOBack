@@ -73,7 +73,6 @@ namespace drawinglayer
             /// the primitiveSequence for on-demand created shadow primitives (see mbShadow3DChecked)
             Primitive2DContainer                                   maShadowPrimitives;
 
-            /// bitfield
             /** flag if given 3D geometry is already cheched for shadow definitions and 2d shadows
                 are created in maShadowPrimitives
              */
@@ -99,7 +98,7 @@ namespace drawinglayer
 
         protected:
             /// local decomposition.
-            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const override;
 
         public:
             /// public helpers
@@ -146,7 +145,7 @@ namespace drawinglayer
             DeclPrimitive2DIDBlock()
 
             /// get local decomposition. Override since this decomposition is view-dependent
-            virtual Primitive2DContainer get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual void get2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const override;
         };
     } // end of namespace primitive2d
 } // end of namespace drawinglayer

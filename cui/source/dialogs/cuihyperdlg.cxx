@@ -117,8 +117,8 @@ SvxHpLinkDlg::SvxHpLinkDlg (vcl::Window* pParent, SfxBindings* pBindings)
     mpItemSet = new SfxItemSet( SfxGetpApp()->GetPool(), SID_HYPERLINK_GETLINK,
                                SID_HYPERLINK_SETLINK );
 
-    SvxHyperlinkItem aItem;
-    mpItemSet->Put (aItem, SID_HYPERLINK_GETLINK);
+    SvxHyperlinkItem aItem(SID_HYPERLINK_GETLINK);
+    mpItemSet->Put(aItem);
 
     SetInputSet (mpItemSet);
 
@@ -263,7 +263,7 @@ void SvxHpLinkDlg::Move()
 }
 
 /// Click on OK button
-IMPL_LINK_NOARG_TYPED(SvxHpLinkDlg, ClickOkHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxHpLinkDlg, ClickOkHdl_Impl, Button*, void)
 {
     Apply();
     Close();
@@ -275,7 +275,7 @@ IMPL_LINK_NOARG_TYPED(SvxHpLinkDlg, ClickOkHdl_Impl, Button*, void)
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG_TYPED(SvxHpLinkDlg, ClickApplyHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxHpLinkDlg, ClickApplyHdl_Impl, Button*, void)
 {
     Apply();
 }
@@ -286,7 +286,7 @@ IMPL_LINK_NOARG_TYPED(SvxHpLinkDlg, ClickApplyHdl_Impl, Button*, void)
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG_TYPED(SvxHpLinkDlg, ClickCloseHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxHpLinkDlg, ClickCloseHdl_Impl, Button*, void)
 {
     Close();
 }

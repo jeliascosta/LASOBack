@@ -17,6 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <vector>
+
 #include <tools/debug.hxx>
 #include <tools/solar.h>
 #include <o3tl/sorted_vector.hxx>
@@ -157,7 +159,6 @@ XMLTextListAutoStylePool::~XMLTextListAutoStylePool()
 {
     // The XMLTextListAutoStylePoolEntry_Impl object in the pool need delete explicitly in dtor.
     pPool->DeleteAndDestroyAll();
-    delete pPool;
 }
 
 void XMLTextListAutoStylePool::RegisterName( const OUString& rName )
@@ -247,18 +248,13 @@ void XMLTextListAutoStylePool::exportXML() const
     if( !nCount )
         return;
 
-    XMLTextListAutoStylePoolEntry_Impl **aExpEntries =
-        new XMLTextListAutoStylePoolEntry_Impl*[nCount];
+    std::vector<XMLTextListAutoStylePoolEntry_Impl*> aExpEntries(nCount);
 
     sal_uInt32 i;
     for( i=0; i < nCount; i++ )
     {
-        aExpEntries[i] = nullptr;
-    }
-    for( i=0; i < nCount; i++ )
-    {
         XMLTextListAutoStylePoolEntry_Impl *pEntry = (*pPool)[i];
-        DBG_ASSERT( pEntry->GetPos() < nCount, "Illegal pos" );
+        SAL_WARN_IF( pEntry->GetPos() >= nCount, "xmloff", "Illegal pos" );
         aExpEntries[pEntry->GetPos()] = pEntry;
     }
 
@@ -270,7 +266,6 @@ void XMLTextListAutoStylePool::exportXML() const
         aNumRuleExp.exportNumberingRule( pEntry->GetName(), false,
                                          pEntry->GetNumRules() );
     }
-    delete [] aExpEntries;
 }
 
 

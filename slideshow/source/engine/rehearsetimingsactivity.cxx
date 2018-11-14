@@ -144,7 +144,7 @@ RehearseTimingsActivity::RehearseTimingsActivity( const SlideShowContext& rConte
     maElapsedTime( rContext.mrEventQueue.getTimer() ),
     maViews(),
     maSpriteRectangle(),
-    maFont( Application::GetSettings().GetStyleSettings().GetInfoFont() ),
+    maFont( Application::GetSettings().GetStyleSettings().GetLabelFont() ),
     mpWakeUpEvent(),
     mpMouseHandler(),
     maSpriteSizePixel(),
@@ -161,7 +161,7 @@ RehearseTimingsActivity::RehearseTimingsActivity( const SlideShowContext& rConte
     ScopedVclPtrInstance< VirtualDevice > blackHole;
     blackHole->EnableOutput(false);
     blackHole->SetFont( maFont );
-    blackHole->SetMapMode( MAP_PIXEL );
+    blackHole->SetMapMode( MapUnit::MapPixel );
     Rectangle rect;
     const FontMetric metric( blackHole->GetFontMetric() );
     blackHole->GetTextBoundRect( rect, "XX:XX:XX" );
@@ -385,7 +385,7 @@ void RehearseTimingsActivity::viewChanged( const UnoViewSharedPtr& rView )
     aModifiedEntry->second->move( maSpriteRectangle.getMinimum() );
 
     // sprites changed, need screen update
-    mrScreenUpdater.notifyUpdate( rView );
+    mrScreenUpdater.notifyUpdate( rView, false );
 }
 
 void RehearseTimingsActivity::viewsChanged()
@@ -440,7 +440,7 @@ void RehearseTimingsActivity::paint( cppcanvas::CanvasSharedPtr const & canvas )
     metaFile.Record( blackHole );
     metaFile.SetPrefSize( Size( 1, 1 ) );
     blackHole->EnableOutput(false);
-    blackHole->SetMapMode( MAP_PIXEL );
+    blackHole->SetMapMode( MapUnit::MapPixel );
     blackHole->SetFont( maFont );
     Rectangle rect = Rectangle( 0,0,
                                 maSpriteSizePixel.getX(),

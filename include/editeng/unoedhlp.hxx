@@ -48,15 +48,14 @@ public:
             SvxEditSourceHint( sal_uInt32 nId );
             SvxEditSourceHint( sal_uInt32 nId, sal_uLong nValue, sal_Int32 nStart=0, sal_Int32 nEnd=0 );
 
-    sal_uLong   GetValue() const;
+    using TextHint::GetValue;
     sal_Int32   GetStartValue() const { return mnStart;}
     sal_Int32   GetEndValue() const { return mnEnd;}
 };
 class SvxEditSourceHintEndPara :public SvxEditSourceHint
 {
 public:
-    SvxEditSourceHintEndPara( sal_uInt32 nId )
-        :SvxEditSourceHint(nId) {}
+    SvxEditSourceHintEndPara() : SvxEditSourceHint(EDITSOURCE_HINT_SELECTIONCHANGED) {}
 };
 /** Helper class for common functionality in edit sources
  */

@@ -49,7 +49,7 @@ class FontHeightToolBoxControl : public svt::ToolboxController,
     public:
         explicit FontHeightToolBoxControl(
             const css::uno::Reference< css::uno::XComponentContext >& rServiceManager );
-        virtual ~FontHeightToolBoxControl();
+        virtual ~FontHeightToolBoxControl() override;
 
         // XInterface
         virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) throw (css::uno::RuntimeException, std::exception) override;
@@ -89,7 +89,7 @@ public:
                                              const uno::Reference< frame::XFrame >& _xFrame,
                                              FontHeightToolBoxControl& rCtrl );
 
-    void                statusChanged_Impl( long nHeight, bool bErase = false );
+    void                statusChanged_Impl( long nHeight, bool bErase );
     void                UpdateFont( const css::awt::FontDescriptor& rCurrentFont );
     void                SetOptimalSize();
 
@@ -247,7 +247,7 @@ bool SvxFontSizeBox_Impl::Notify( NotifyEvent& rNEvt )
 
 void SvxFontSizeBox_Impl::SetOptimalSize()
 {
-    Size aPrefSize(LogicToPixel(m_aLogicalSize, MAP_APPFONT));
+    Size aPrefSize(LogicToPixel(m_aLogicalSize, MapUnit::MapAppFont));
     aPrefSize.Width() = get_preferred_size().Width();
     SetSizePixel(aPrefSize);
 }
@@ -342,7 +342,7 @@ throw ( uno::RuntimeException, std::exception )
                 m_pBox->Enable();
                 frame::status::FontHeight aFontHeight;
                 if ( rEvent.State >>= aFontHeight )
-                    m_pBox->statusChanged_Impl( long( 10. * aFontHeight.Height ) );
+                    m_pBox->statusChanged_Impl( long( 10. * aFontHeight.Height ), false );
                 else
                     m_pBox->statusChanged_Impl( long( -1 ), true );
             }
@@ -385,7 +385,7 @@ uno::Reference< awt::XWindow > SAL_CALL FontHeightToolBoxControl::createItemWind
 {
     uno::Reference< awt::XWindow > xItemWindow;
 
-    vcl::Window* pParent = VCLUnoHelper::GetWindow( xParent );
+    VclPtr<vcl::Window> pParent = VCLUnoHelper::GetWindow( xParent );
     if ( pParent )
     {
         SolarMutexGuard aSolarMutexGuard;

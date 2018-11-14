@@ -88,14 +88,32 @@ class Content : public ::ucbhelper::ContentImplHelper,
     std::unique_ptr< CachableContentProperties >
                       m_xCachedProps; // locally cached props
     OUString     m_aEscapedTitle;
+    // resource type for general DAV methods
     ResourceType      m_eResourceType;
+    // resource type for general LOCK method only
     ResourceType      m_eResourceTypeForLocks;
     ContentProvider*  m_pProvider; // No need for a ref, base class holds object
-    rtl::Reference< DAVSessionFactory > m_rSessionFactory;
     bool              m_bTransient;
     bool              m_bCollection;
     bool              m_bDidGetOrHead;
     std::vector< OUString > m_aFailedPropNames;
+    // Options Cache lifetime
+    // for web site implementing OPTIONS, but not dav
+    sal_uInt32 m_nOptsCacheLifeImplWeb;
+    // for WebDAV site where OPTIONS is mandatory
+    sal_uInt32 m_nOptsCacheLifeDAV;
+    // same as above, but when the resource is locked by us
+    sal_uInt32 m_nOptsCacheLifeDAVLocked;
+// For web site not implementing OPTIONS
+    // during this time we assume the site doesn't turn to WebDAV
+    // but remains a simple Web
+    sal_uInt32 m_nOptsCacheLifeNotImpl;
+    // When resource is not found
+    // may be the resource is unavailable only briefly?
+    // so better have this small
+    sal_uInt32 m_nOptsCacheLifeNotFound;
+
+    void initOptsCacheLifeTime();
 
 private:
     virtual css::uno::Sequence< css::beans::Property >
@@ -182,7 +200,11 @@ private:
     static bool shouldAccessNetworkAfterException( const DAVException & e );
 
     ResourceType resourceTypeForLocks(
-        const css::uno::Reference< css::ucb::XCommandEnvironment >& Environment );
+        const css::uno::Reference< css::ucb::XCommandEnvironment >& rEnvironment,
+        const std::unique_ptr< DAVResourceAccess > & rResAccess );
+
+    ResourceType resourceTypeForLocks(
+        const css::uno::Reference< css::ucb::XCommandEnvironment >& rEnvironment );
 
     void addProperty( const css::ucb::PropertyCommandArgument &aCmdArg,
                       const css::uno::Reference< css::ucb::XCommandEnvironment >& Environment )
@@ -204,14 +226,14 @@ public:
              ContentProvider* pProvider,
              const css::uno::Reference< css::ucb::XContentIdentifier >& Identifier,
              rtl::Reference< DAVSessionFactory > const & rSessionFactory )
-        throw ( css::ucb::ContentCreationException );
+        throw (css::ucb::ContentCreationException, css::uno::RuntimeException);
     Content( const css::uno::Reference< css::uno::XComponentContext >& rxContext,
              ContentProvider* pProvider,
              const css::uno::Reference< css::ucb::XContentIdentifier >& Identifier,
              rtl::Reference< DAVSessionFactory > const & rSessionFactory,
              bool isCollection )
-        throw ( css::ucb::ContentCreationException );
-    virtual ~Content();
+        throw (css::ucb::ContentCreationException, css::uno::RuntimeException);
+    virtual ~Content() override;
 
     // XInterface
     virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
@@ -294,6 +316,20 @@ public:
                        const ContentProperties& rData,
                        const rtl::Reference< ::ucbhelper::ContentProviderImplHelper >& rProvider,
                        const OUString& rContentId );
+
+    // Use OPTIONS method to retrieve the type of the Web resource
+    void getResourceOptions( const css::uno::Reference< css::ucb::XCommandEnvironment >& xEnv,
+                             DAVOptions& rDAVOptions,
+                             const std::unique_ptr< DAVResourceAccess > & rResAccess,
+                             bool * networkAccessAllowed = nullptr)
+        throw ( css::uno::Exception, std::exception );
+
+    static bool isResourceAvailable( const css::uno::Reference< css::ucb::XCommandEnvironment >& xEnv,
+                             const std::unique_ptr< DAVResourceAccess > & rResAccess,
+                                     DAVOptions& rDAVOptions );
+
+    static void removeCachedPropertyNames( const OUString & rURL );
+
 };
 
 }

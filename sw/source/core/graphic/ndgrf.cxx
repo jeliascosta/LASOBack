@@ -131,7 +131,7 @@ SwGrfNode::SwGrfNode( const SwNodeIndex & rWhere,
             FStatHelper::IsDocument( aUrl.GetMainURL( INetURLObject::NO_DECODE ) ))
         {
             // file exists, so create connection without an update
-            static_cast<SwBaseLink*>(&refLink)->Connect();
+            static_cast<SwBaseLink*>( refLink.get() )->Connect();
         }
     }
 }
@@ -172,7 +172,7 @@ bool SwGrfNode::ReRead(
                 if( nNewType != refLink->GetObjType() )
                 {
                     refLink->Disconnect();
-                    static_cast<SwBaseLink*>(&refLink)->SetObjType( nNewType );
+                    static_cast<SwBaseLink*>( refLink.get() )->SetObjType( nNewType );
                 }
             }
 
@@ -180,7 +180,7 @@ bool SwGrfNode::ReRead(
         }
         else // no name anymore, so remove link
         {
-            GetDoc()->getIDocumentLinksAdministration().GetLinkManager().Remove( refLink );
+            GetDoc()->getIDocumentLinksAdministration().GetLinkManager().Remove( refLink.get() );
             refLink.Clear();
         }
 
@@ -214,7 +214,7 @@ bool SwGrfNode::ReRead(
                 else if ( bNewGrf )
                 {
                     //TODO refLink->setInputStream(getInputStream());
-                    static_cast<SwBaseLink*>(&refLink)->SwapIn();
+                    static_cast<SwBaseLink*>( refLink.get() )->SwapIn();
                 }
             }
             onGraphicChanged();
@@ -234,7 +234,7 @@ bool SwGrfNode::ReRead(
         bReadGrf = true;
     }
     // Was the graphic already loaded?
-    else if( !bNewGrf && GRAPHIC_NONE != maGrfObj.GetType() )
+    else if( !bNewGrf && GraphicType::NONE != maGrfObj.GetType() )
         return true;
     else
     {
@@ -249,7 +249,7 @@ bool SwGrfNode::ReRead(
                 onGraphicChanged();
                 bReadGrf = true;
                 // create connection without update, as we have the graphic
-                static_cast<SwBaseLink*>(&refLink)->Connect();
+                static_cast<SwBaseLink*>( refLink.get() )->Connect();
             }
             else if( pGrfObj )
             {
@@ -258,7 +258,7 @@ bool SwGrfNode::ReRead(
                 onGraphicChanged();
                 bReadGrf = true;
                 // create connection without update, as we have the graphic
-                static_cast<SwBaseLink*>(&refLink)->Connect();
+                static_cast<SwBaseLink*>( refLink.get() )->Connect();
             }
             else
             {
@@ -268,7 +268,7 @@ bool SwGrfNode::ReRead(
                 onGraphicChanged();
                 if ( bNewGrf )
                 {
-                    static_cast<SwBaseLink*>(&refLink)->SwapIn();
+                    static_cast<SwBaseLink*>( refLink.get() )->SwapIn();
                 }
             }
         }
@@ -301,7 +301,7 @@ SwGrfNode::~SwGrfNode()
     if( refLink.Is() )
     {
         OSL_ENSURE( !bInSwapIn, "DTOR: I am still in SwapIn" );
-        pDoc->getIDocumentLinksAdministration().GetLinkManager().Remove( refLink );
+        pDoc->getIDocumentLinksAdministration().GetLinkManager().Remove( refLink.get() );
         refLink->Disconnect();
     }
     else
@@ -401,6 +401,16 @@ const GraphicObject* SwGrfNode::GetReplacementGrfObj() const
         if(rSvgDataPtr.get())
         {
             const_cast< SwGrfNode* >(this)->mpReplacementGraphic = new GraphicObject(rSvgDataPtr->getReplacement());
+        }
+        else if (GetGrfObj().GetGraphic().getPdfData().hasElements())
+        {
+            // This returns the metafile, without the pdf data.
+            const_cast<SwGrfNode*>(this)->mpReplacementGraphic = new GraphicObject(GetGrfObj().GetGraphic().GetGDIMetaFile());
+        }
+        if (mpReplacementGraphic)
+        {
+            mpReplacementGraphic->SetSwapStreamHdl(
+                LINK(const_cast<SwGrfNode*>(this), SwGrfNode, SwapReplacement));
         }
     }
 
@@ -519,19 +529,19 @@ bool SwGrfNode::SwapIn( bool bWaitForData )
 
     bool bRet = false;
     bInSwapIn = true;
-    SwBaseLink* pLink = static_cast<SwBaseLink*>(static_cast<sfx2::SvBaseLink*>(refLink));
+    SwBaseLink* pLink = static_cast<SwBaseLink*>( refLink.get() );
 
     if( pLink )
     {
-        if( GRAPHIC_NONE == maGrfObj.GetType() ||
-            GRAPHIC_DEFAULT == maGrfObj.GetType() )
+        if( GraphicType::NONE == maGrfObj.GetType() ||
+            GraphicType::Default == maGrfObj.GetType() )
         {
             // link was not loaded yet
             if( pLink->SwapIn( bWaitForData ) )
             {
                 bRet = true;
             }
-            else if( GRAPHIC_DEFAULT == maGrfObj.GetType() )
+            else if( GraphicType::Default == maGrfObj.GetType() )
             {
                 // no default bitmap anymore, thus re-paint
                 delete mpReplacementGraphic;
@@ -603,8 +613,8 @@ bool SwGrfNode::SwapIn( bool bWaitForData )
 
 bool SwGrfNode::SwapOut()
 {
-    if( maGrfObj.GetType() != GRAPHIC_DEFAULT &&
-        maGrfObj.GetType() != GRAPHIC_NONE &&
+    if( maGrfObj.GetType() != GraphicType::Default &&
+        maGrfObj.GetType() != GraphicType::NONE &&
         !maGrfObj.IsSwappedOut() && !bInSwapIn )
     {
         if( refLink.Is() )
@@ -629,17 +639,17 @@ bool SwGrfNode::GetFileFilterNms( OUString* pFileNm, OUString* pFilterNm ) const
         sal_uInt16 nType = refLink->GetObjType();
         if( OBJECT_CLIENT_GRF == nType )
             bRet = sfx2::LinkManager::GetDisplayNames(
-                    refLink, nullptr, pFileNm, nullptr, pFilterNm );
+                    refLink.get(), nullptr, pFileNm, nullptr, pFilterNm );
         else if( OBJECT_CLIENT_DDE == nType && pFileNm && pFilterNm )
         {
             OUString sApp;
             OUString sTopic;
             OUString sItem;
             if( sfx2::LinkManager::GetDisplayNames(
-                    refLink, &sApp, &sTopic, &sItem ) )
+                    refLink.get(), &sApp, &sTopic, &sItem ) )
             {
-                *pFileNm = sApp + OUString(sfx2::cTokenSeparator)
-                         + sTopic + OUString(sfx2::cTokenSeparator)
+                *pFileNm = sApp + OUStringLiteral1(sfx2::cTokenSeparator)
+                         + sTopic + OUStringLiteral1(sfx2::cTokenSeparator)
                          + sItem;
                 *pFilterNm = "DDE";
                 bRet = true;
@@ -658,7 +668,7 @@ bool SwGrfNode::SavePersistentData()
     if( refLink.Is() )
     {
         OSL_ENSURE( !bInSwapIn, "SavePersistentData: I am still in SwapIn" );
-        GetDoc()->getIDocumentLinksAdministration().GetLinkManager().Remove( refLink );
+        GetDoc()->getIDocumentLinksAdministration().GetLinkManager().Remove( refLink.get() );
         return true;
     }
 
@@ -687,7 +697,7 @@ bool SwGrfNode::RestorePersistentData()
     {
         IDocumentLinksAdministration& rIDLA = getIDocumentLinksAdministration();
         refLink->SetVisible( rIDLA.IsVisibleLinks() );
-        rIDLA.GetLinkManager().InsertDDELink( refLink );
+        rIDLA.GetLinkManager().InsertDDELink( refLink.get() );
         if( getIDocumentLayoutAccess().GetCurrentLayout() )
             refLink->Update();
     }
@@ -709,7 +719,7 @@ void SwGrfNode::InsertLink( const OUString& rGrfName, const OUString& rFltName )
             sApp = rGrfName.getToken( 0, sfx2::cTokenSeparator, nTmp );
             sTopic = rGrfName.getToken( 0, sfx2::cTokenSeparator, nTmp );
             sItem = rGrfName.copy( nTmp );
-            rIDLA.GetLinkManager().InsertDDELink( refLink,
+            rIDLA.GetLinkManager().InsertDDELink( refLink.get(),
                                             sApp, sTopic, sItem );
         }
         else
@@ -736,17 +746,17 @@ void SwGrfNode::ReleaseLink()
 
         {
             bInSwapIn = true;
-            SwBaseLink* pLink = static_cast<SwBaseLink*>(static_cast<sfx2::SvBaseLink*>(refLink));
+            SwBaseLink* pLink = static_cast<SwBaseLink*>( refLink.get() );
             pLink->SwapIn( true, true );
             bInSwapIn = false;
         }
 
-        getIDocumentLinksAdministration().GetLinkManager().Remove( refLink );
+        getIDocumentLinksAdministration().GetLinkManager().Remove( refLink.get() );
         refLink.Clear();
         maGrfObj.SetLink();
 
         // #i15508# added extra processing after getting rid of the link. Use whatever is
-        // known from the formally linked graphic to get to a state as close to a directly
+        // known from the formerly linked graphic to get to a state as close to a directly
         // unlinked inserted graphic as possible. Goal is to have a valid GfxLink at the
         // ImplGraphic (see there) that holds temporary data to the original data and type
         // information about the original data. Only when this is given will
@@ -900,7 +910,7 @@ SvStream* SwGrfNode::GetStreamForEmbedGrf(
         if ( !_refPics->hasByName( sStreamName ) ||
              !_refPics->isStreamElement( sStreamName ) )
         {
-            if ( GetGrfObj().GetType() != GRAPHIC_NONE )
+            if ( GetGrfObj().GetType() != GraphicType::NONE )
             {
                 const sal_Int32 nExtPos = sStreamName.indexOf('.');
                 const OUString aExtStr = (nExtPos>=0) ? sStreamName.copy( nExtPos ) : OUString();
@@ -934,11 +944,11 @@ SwContentNode* SwGrfNode::MakeCopy( SwDoc* pDoc, const SwNodeIndex& rIdx ) const
 
     OUString sFile, sFilter;
     if( IsLinkedFile() )
-        sfx2::LinkManager::GetDisplayNames( refLink, nullptr, &sFile, nullptr, &sFilter );
+        sfx2::LinkManager::GetDisplayNames( refLink.get(), nullptr, &sFile, nullptr, &sFilter );
     else if( IsLinkedDDE() )
     {
         OUString sTmp1, sTmp2;
-        sfx2::LinkManager::GetDisplayNames( refLink, &sTmp1, &sTmp2, &sFilter );
+        sfx2::LinkManager::GetDisplayNames( refLink.get(), &sTmp1, &sTmp2, &sFilter );
         sfx2::MakeLnkName( sFile, &sTmp1, sTmp2, sFilter );
         sFilter = "DDE";
     }
@@ -952,7 +962,26 @@ SwContentNode* SwGrfNode::MakeCopy( SwDoc* pDoc, const SwNodeIndex& rIdx ) const
     return pGrfNd;
 }
 
-IMPL_LINK_TYPED( SwGrfNode, SwapGraphic, const GraphicObject*, pGrfObj, SvStream* )
+IMPL_STATIC_LINK(SwGrfNode, SwapReplacement, const GraphicObject*, pGrfObj, SvStream*)
+{
+    // replacement image is always swapped
+    if (pGrfObj->IsInSwapOut())
+    {
+        return GRFMGR_AUTOSWAPSTREAM_TEMP;
+    }
+    else if (pGrfObj->IsInSwapIn())
+    {
+        return GRFMGR_AUTOSWAPSTREAM_TEMP;
+    }
+    else
+    {
+        assert(!"why is swap handler being called?");
+    }
+
+    return GRFMGR_AUTOSWAPSTREAM_NONE;
+}
+
+IMPL_LINK( SwGrfNode, SwapGraphic, const GraphicObject*, pGrfObj, SvStream* )
 {
     SvStream* pRet;
 
@@ -1094,7 +1123,7 @@ void SwGrfNode::TriggerAsyncRetrieveInputStream()
         mpThreadConsumer.reset( new SwAsyncRetrieveInputStreamThreadConsumer( *this ) );
 
         OUString sGrfNm;
-        sfx2::LinkManager::GetDisplayNames( refLink, nullptr, &sGrfNm );
+        sfx2::LinkManager::GetDisplayNames( refLink.get(), nullptr, &sGrfNm );
         OUString sReferer;
         SfxObjectShell * sh = GetDoc()->GetPersist();
         if (sh != nullptr && sh->HasName())
@@ -1149,7 +1178,7 @@ bool SwGrfNode::IsAsyncRetrieveInputStreamPossible() const
     if ( IsLinkedFile() )
     {
         OUString sGrfNm;
-        sfx2::LinkManager::GetDisplayNames( refLink, nullptr, &sGrfNm );
+        sfx2::LinkManager::GetDisplayNames( refLink.get(), nullptr, &sGrfNm );
         if ( !sGrfNm.startsWith( "vnd.sun.star.pkg:" ) )
         {
             bRet = true;

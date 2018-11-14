@@ -63,9 +63,9 @@ namespace dxcanvas
         std::vector< sal_Unicode > pStrBuf(nLen+1,0);
         std::copy(pStr,pStr+nLen,&pStrBuf[0]);
 
-        mpFontFamily.reset( new Gdiplus::FontFamily(reinterpret_cast<LPCWSTR>(&pStrBuf[0]),NULL) );
+        mpFontFamily.reset( new Gdiplus::FontFamily(reinterpret_cast<LPCWSTR>(&pStrBuf[0]),nullptr) );
         if( !mpFontFamily->IsAvailable() )
-            mpFontFamily.reset( new Gdiplus::FontFamily(L"Arial",NULL) );
+            mpFontFamily.reset( new Gdiplus::FontFamily(L"Arial",nullptr) );
 
         mpFont.reset( new Gdiplus::Font( mpFontFamily.get(),
                                          static_cast<Gdiplus::REAL>(rFontRequest.CellSize),
@@ -134,9 +134,7 @@ namespace dxcanvas
 
     uno::Sequence< OUString > SAL_CALL CanvasFont::getSupportedServiceNames()  throw( uno::RuntimeException )
     {
-        uno::Sequence< OUString > aRet { "com.sun.star.rendering.CanvasFont" };
-
-        return aRet;
+        return { "com.sun.star.rendering.CanvasFont" };
     }
 
     double CanvasFont::getCellAscent() const

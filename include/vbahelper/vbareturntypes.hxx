@@ -19,15 +19,13 @@
 #ifndef INCLUDED_VBAHELPER_VBARETURNTYPES_HXX
 #define INCLUDED_VBAHELPER_VBARETURNTYPES_HXX
 
-#include <cppuhelper/implbase.hxx>
 #include <com/sun/star/script/XDefaultProperty.hpp>
+#include <com/sun/star/uno/RuntimeException.hpp>
+#include <cppuhelper/implbase.hxx>
 #include <ooo/vba/msforms/XReturnInteger.hpp>
-#include <ooo/vba/msforms/XReturnBoolean.hpp>
-#include <ooo/vba/msforms/XReturnSingle.hpp>
-#include <ooo/vba/msforms/XReturnEffect.hpp>
-
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
 #include <vbahelper/vbahelper.hxx>
-#include <vbahelper/vbahelperinterface.hxx>
 
 namespace ooo
 {
@@ -51,24 +49,6 @@ namespace ooo
             ReturnInteger( sal_Int32 nValue ) : ReturnInteger_BASE( nValue ){}
         };
 
-        typedef DefaultReturnHelper< sal_Bool, ov::msforms::XReturnBoolean > ReturnBoolean_BASE;
-        class ReturnBoolean : public ReturnBoolean_BASE
-        {
-            public:
-            ReturnBoolean( bool bValue ) : ReturnBoolean_BASE( bValue ){}
-        };
-        typedef DefaultReturnHelper< float, ov::msforms::XReturnSingle > ReturnSingle_BASE;
-        class ReturnSingle : public ReturnSingle_BASE
-        {
-            public:
-            ReturnSingle( float nValue ) : ReturnSingle_BASE( nValue ){}
-        };
-        typedef DefaultReturnHelper< short, ov::msforms::XReturnEffect > ReturnEffect_BASE;
-        class ReturnEffect : public ReturnEffect_BASE
-        {
-            public:
-            ReturnEffect( short nValue ) : ReturnEffect_BASE( nValue ){}
-        };
     } // vba
 } // ooo
 

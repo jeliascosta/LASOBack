@@ -430,7 +430,7 @@ void AnnotationManagerImpl::ExecuteReplyToAnnotation( SfxRequest& rReq )
     {
         std::unique_ptr< ::Outliner > pOutliner( new ::Outliner(GetAnnotationPool(),OutlinerMode::TextObject) );
 
-        mpDoc->SetCalcFieldValueHdl( pOutliner.get() );
+        SdDrawDocument::SetCalcFieldValueHdl( pOutliner.get() );
         pOutliner->SetUpdateMode( true );
 
         OUString aStr(SD_RESSTR(STR_ANNOTATION_REPLY));
@@ -560,7 +560,7 @@ void AnnotationManagerImpl::GetAnnotationState(SfxItemSet& rSet)
     SdPage* pCurrentPage = GetCurrentPage();
 
     const bool bReadOnly = mrBase.GetDocShell()->IsReadOnly();
-    const bool bWrongPageKind = (pCurrentPage == nullptr) || (pCurrentPage->GetPageKind() != PK_STANDARD);
+    const bool bWrongPageKind = (pCurrentPage == nullptr) || (pCurrentPage->GetPageKind() != PageKind::Standard);
 
     const SvtSaveOptions::ODFDefaultVersion nCurrentODFVersion( SvtSaveOptions().GetODFDefaultVersion() );
 
@@ -674,7 +674,7 @@ void AnnotationManagerImpl::SelectNextAnnotation(bool bForeward)
                 std::shared_ptr<DrawViewShell> pDrawViewShell(std::dynamic_pointer_cast<DrawViewShell>(mrBase.GetMainViewShell()));
                 if (pDrawViewShell.get() != nullptr)
                 {
-                    pDrawViewShell->ChangeEditMode(pPage->IsMasterPage() ? EM_MASTERPAGE : EM_PAGE, false);
+                    pDrawViewShell->ChangeEditMode(pPage->IsMasterPage() ? EditMode::MasterPage : EditMode::Page, false);
                     pDrawViewShell->SwitchPage((pPage->GetPageNum() - 1) >> 1);
 
                     SfxDispatcher* pDispatcher = getDispatcher( mrBase );
@@ -688,7 +688,7 @@ void AnnotationManagerImpl::SelectNextAnnotation(bool bForeward)
         while( pPage );
 
         // The question text depends on the search direction.
-        bool bImpress = mpDoc->GetDocumentType() == DOCUMENT_TYPE_IMPRESS;
+        bool bImpress = mpDoc->GetDocumentType() == DocumentType::Impress;
         sal_uInt16 nStringId;
         if(bForeward)
             nStringId = bImpress ? STR_ANNOTATION_WRAP_FORWARD : STR_ANNOTATION_WRAP_FORWARD_DRAW;
@@ -793,7 +793,7 @@ void AnnotationManagerImpl::UpdateTags( bool bSynchron )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(AnnotationManagerImpl, UpdateTagsHdl, void*, void)
+IMPL_LINK_NOARG(AnnotationManagerImpl, UpdateTagsHdl, void*, void)
 {
     mnUpdateTagsEvent  = nullptr;
     DisposeTags();
@@ -866,12 +866,7 @@ void AnnotationManagerImpl::DisposeTags()
 void AnnotationManagerImpl::addListener()
 {
     Link<tools::EventMultiplexerEvent&,void> aLink( LINK(this,AnnotationManagerImpl,EventMultiplexerListener) );
-    mrBase.GetEventMultiplexer()->AddEventListener (
-        aLink,
-        tools::EventMultiplexerEvent::EID_EDIT_VIEW_SELECTION
-        | tools::EventMultiplexerEvent::EID_CURRENT_PAGE
-        | tools::EventMultiplexerEvent::EID_MAIN_VIEW_REMOVED
-        | tools::EventMultiplexerEvent::EID_MAIN_VIEW_ADDED);
+    mrBase.GetEventMultiplexer()->AddEventListener(aLink);
 }
 
 void AnnotationManagerImpl::removeListener()
@@ -880,25 +875,27 @@ void AnnotationManagerImpl::removeListener()
     mrBase.GetEventMultiplexer()->RemoveEventListener( aLink );
 }
 
-IMPL_LINK_TYPED(AnnotationManagerImpl,EventMultiplexerListener,
+IMPL_LINK(AnnotationManagerImpl,EventMultiplexerListener,
     tools::EventMultiplexerEvent&, rEvent, void)
 {
     switch (rEvent.meEventId)
     {
-        case tools::EventMultiplexerEvent::EID_CURRENT_PAGE:
-        case tools::EventMultiplexerEvent::EID_EDIT_VIEW_SELECTION:
+        case EventMultiplexerEventId::CurrentPageChanged:
+        case EventMultiplexerEventId::EditViewSelection:
             onSelectionChanged();
             break;
 
-        case tools::EventMultiplexerEvent::EID_MAIN_VIEW_REMOVED:
+        case EventMultiplexerEventId::MainViewRemoved:
             mxView.clear();
             onSelectionChanged();
             break;
 
-        case tools::EventMultiplexerEvent::EID_MAIN_VIEW_ADDED:
+        case EventMultiplexerEventId::MainViewAdded:
             mxView.set( mrBase.GetController(), UNO_QUERY );
             onSelectionChanged();
             break;
+
+        default: break;
     }
 }
 
@@ -915,7 +912,7 @@ void AnnotationManagerImpl::ExecuteAnnotationContextMenu( const Reference< XAnno
     if( bReadOnly && !pAnnotationWindow )
         return;
 
-    std::unique_ptr< PopupMenu > pMenu( new PopupMenu( SdResId( pAnnotationWindow ? RID_ANNOTATION_CONTEXTMENU : RID_ANNOTATION_TAG_CONTEXTMENU ) ) );
+    ScopedVclPtrInstance<PopupMenu> pMenu( SdResId( pAnnotationWindow ? RID_ANNOTATION_CONTEXTMENU : RID_ANNOTATION_TAG_CONTEXTMENU ) );
 
     SvtUserOptions aUserOptions;
     OUString sCurrentAuthor( aUserOptions.GetFullName() );
@@ -1090,22 +1087,27 @@ Color AnnotationManagerImpl::GetColorDark(sal_uInt16 aAuthorIndex)
     return Color(COL_WHITE);
 }
 
-SdPage* AnnotationManagerImpl::GetNextPage( SdPage* pPage, bool bForeward )
+SdPage* AnnotationManagerImpl::GetNextPage( SdPage* pPage, bool bForward )
 {
     if( pPage == nullptr )
-        return bForeward ? GetFirstPage() : GetLastPage();
+    {
+        if (bForward)
+            return mpDoc->GetSdPage(0, PageKind::Standard ); // first page
+        else
+            return mpDoc->GetMasterSdPage( mpDoc->GetMasterSdPageCount(PageKind::Standard) - 1, PageKind::Standard ); // last page
+    }
 
     sal_uInt16 nPageNum = (pPage->GetPageNum() - 1) >> 1;
 
     // first all non master pages
     if( !pPage->IsMasterPage() )
     {
-        if( bForeward )
+        if( bForward )
         {
-            if( nPageNum >= mpDoc->GetSdPageCount(PK_STANDARD)-1 )
+            if( nPageNum >= mpDoc->GetSdPageCount(PageKind::Standard)-1 )
             {
                 // we reached end of draw pages, start with master pages (skip handout master for draw)
-                return mpDoc->GetMasterSdPage( (mpDoc->GetDocumentType() == DOCUMENT_TYPE_IMPRESS) ? 0 : 1, PK_STANDARD );
+                return mpDoc->GetMasterSdPage( (mpDoc->GetDocumentType() == DocumentType::Impress) ? 0 : 1, PageKind::Standard );
             }
             nPageNum++;
         }
@@ -1116,13 +1118,13 @@ SdPage* AnnotationManagerImpl::GetNextPage( SdPage* pPage, bool bForeward )
 
             nPageNum--;
         }
-        return mpDoc->GetSdPage(nPageNum, PK_STANDARD);
+        return mpDoc->GetSdPage(nPageNum, PageKind::Standard);
     }
     else
     {
-        if( bForeward )
+        if( bForward )
         {
-            if( nPageNum >= mpDoc->GetMasterSdPageCount(PK_STANDARD)-1 )
+            if( nPageNum >= mpDoc->GetMasterSdPageCount(PageKind::Standard)-1 )
             {
                 return nullptr;   // we reached the end, there is nothing more to see here
             }
@@ -1130,27 +1132,16 @@ SdPage* AnnotationManagerImpl::GetNextPage( SdPage* pPage, bool bForeward )
         }
         else
         {
-            if( nPageNum == (mpDoc->GetDocumentType() == DOCUMENT_TYPE_IMPRESS ? 0 : 1) )
+            if( nPageNum == (mpDoc->GetDocumentType() == DocumentType::Impress ? 0 : 1) )
             {
                 // we reached beginning of master pages, start with end if pages
-                return mpDoc->GetSdPage( mpDoc->GetSdPageCount(PK_STANDARD)-1, PK_STANDARD );
+                return mpDoc->GetSdPage( mpDoc->GetSdPageCount(PageKind::Standard)-1, PageKind::Standard );
             }
 
             nPageNum--;
         }
-        return mpDoc->GetMasterSdPage(nPageNum,PK_STANDARD);
+        return mpDoc->GetMasterSdPage(nPageNum,PageKind::Standard);
     }
-}
-
-SdPage* AnnotationManagerImpl::GetFirstPage()
-{
-    // return first drawing page
-    return mpDoc->GetSdPage(0, PK_STANDARD );
-}
-
-SdPage* AnnotationManagerImpl::GetLastPage()
-{
-    return mpDoc->GetMasterSdPage( mpDoc->GetMasterSdPageCount(PK_STANDARD) - 1, PK_STANDARD );
 }
 
 SdPage* AnnotationManagerImpl::GetCurrentPage()

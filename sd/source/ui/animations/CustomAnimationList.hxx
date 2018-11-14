@@ -51,7 +51,7 @@ class CustomAnimationList : public SvTreeListBox, public ISequenceListener
 
 public:
     explicit CustomAnimationList( vcl::Window* pParent );
-    virtual ~CustomAnimationList();
+    virtual ~CustomAnimationList() override;
     virtual void dispose() override;
 
     // methods
@@ -76,12 +76,10 @@ public:
 
     virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
 
-    virtual std::unique_ptr<PopupMenu> CreateContextMenu() override;
+    virtual VclPtr<PopupMenu> CreateContextMenu() override;
     virtual void    ExecuteContextMenuAction( sal_uInt16 nSelectedPopupEntry ) override;
 
     virtual void KeyInput( const KeyEvent& rKEvt ) override;
-
-    virtual void    SetTabs() override;
 
     virtual void notify_change() override;
 
@@ -117,7 +115,7 @@ private:
 
 OUString getPropertyName( sal_Int32 nPropertyType );
 
-OUString getShapeDescription( const css::uno::Reference< css::drawing::XShape >& xShape, bool bWithText = true );
+OUString getShapeDescription( const css::uno::Reference< css::drawing::XShape >& xShape, bool bWithText );
 
 }
 

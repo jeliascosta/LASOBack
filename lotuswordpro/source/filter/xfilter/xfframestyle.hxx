@@ -81,7 +81,7 @@ class XFFrameStyle : public XFStyle
 public:
     XFFrameStyle();
 
-    virtual ~XFFrameStyle();
+    virtual ~XFFrameStyle() override;
 
 public:
     void    SetWrapType(enumXFWrap wrap);
@@ -89,12 +89,12 @@ public:
     /**
      * @descr:  space between frame and paragraph text.
      */
-    void    SetMargins(double left, double right=-1,double top=-1, double bottom=-1);
+    void    SetMargins(double left, double right, double top, double bottom);
 
     /**
      * @descr:  space between frame and text inside frame.
      */
-    void    SetPadding(double left, double right=-1,double top=-1, double bottom=-1);
+    void    SetPadding(double left, double right, double top, double bottom);
 
     /**
      * @descr:  set the border property of the frame.
@@ -156,13 +156,10 @@ protected:
     XFShadow    *m_pShadow;
     XFBGImage   *m_pBGImage;
     XFColor     m_aBackColor;
-    bool    m_bProtectContent;
-    bool    m_bProtectSize;
-    bool    m_bProtectPos;
-    bool    m_bEditable;
-    bool    m_bPrintable;
-    bool    m_bBackground;
-    sal_Int16 m_nTransparency;
+    bool        m_bProtectContent;
+    bool        m_bProtectSize;
+    bool        m_bProtectPos;
+    sal_Int16   m_nTransparency;
 
     enumXFTextDir   m_eTextDir;
     enumXFFrameXPos m_eXPos;

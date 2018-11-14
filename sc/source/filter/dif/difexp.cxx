@@ -31,6 +31,7 @@
 #include "cellvalue.hxx"
 #include <rtl/strbuf.hxx>
 #include <osl/diagnose.h>
+#include <formula/errorcodes.hxx>
 
 void ScFormatFilterPluginImpl::ScExportDif( SvStream& rStream, ScDocument* pDoc,
     const ScAddress& rOutPos, const rtl_TextEncoding eNach )
@@ -46,7 +47,7 @@ void ScFormatFilterPluginImpl::ScExportDif( SvStream& rStream, ScDocument* pDoc,
     ScExportDif( rStream, pDoc, ScRange( aStart, aEnd ), eNach );
 }
 
-FltError ScFormatFilterPluginImpl::ScExportDif( SvStream& rOut, ScDocument* pDoc,
+void ScFormatFilterPluginImpl::ScExportDif( SvStream& rOut, ScDocument* pDoc,
     const ScRange&rRange, const rtl_TextEncoding eCharSet )
 {
     OSL_ENSURE( rRange.aStart <= rRange.aEnd, "*ScExportDif(): Range not sorted!" );
@@ -90,7 +91,6 @@ FltError ScFormatFilterPluginImpl::ScExportDif( SvStream& rOut, ScDocument* pDoc
     const sal_Char*     pNumData = "0,";
     const sal_Char*     pNumDataERROR = "0,0\nERROR\n";
 
-    FltError            eRet = eERR_OK;
     OUStringBuffer aOS;
     OUString       aString;
     SCCOL               nEndCol = rRange.aEnd.Col();
@@ -169,7 +169,7 @@ FltError ScFormatFilterPluginImpl::ScExportDif( SvStream& rOut, ScDocument* pDoc
                     bWriteStringData = true;
                 break;
                 case CELLTYPE_FORMULA:
-                    if (aCell.mpFormula->GetErrCode())
+                    if (aCell.mpFormula->GetErrCode() != FormulaError::NONE)
                         aOS.appendAscii(pNumDataERROR);
                     else if (aCell.mpFormula->IsValue())
                     {
@@ -247,9 +247,9 @@ FltError ScFormatFilterPluginImpl::ScExportDif( SvStream& rOut, ScDocument* pDoc
                             aStrDelimEncoded, nPos+1+aStrDelimEncoded.getLength());
                     }
                     // write byte encoded
-                    rOut.Write(aStrDelimEncoded.getStr(), aStrDelimEncoded.getLength());
-                    rOut.Write(aStrEnc.getStr(), aStrEnc.getLength());
-                    rOut.Write(aStrDelimEncoded.getStr(), aStrDelimEncoded.getLength());
+                    rOut.WriteBytes(aStrDelimEncoded.getStr(), aStrDelimEncoded.getLength());
+                    rOut.WriteBytes(aStrEnc.getStr(), aStrEnc.getLength());
+                    rOut.WriteBytes(aStrDelimEncoded.getStr(), aStrDelimEncoded.getLength());
                 }
                 rOut.WriteUniOrByteChar( '\n', eCharSet );
             }
@@ -265,8 +265,6 @@ FltError ScFormatFilterPluginImpl::ScExportDif( SvStream& rOut, ScDocument* pDoc
 
     // restore original value
     rOut.SetStreamCharSet( eStreamCharSet );
-
-    return eRet;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

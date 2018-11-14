@@ -185,6 +185,11 @@ static SalInstance* autodetect_plugin()
 
     static const char* const pStandardFallbackList[] =
     {
+//ADD LIBRAS
+#if ENABLE_KDE4
+        "kde4",
+#endif		
+//END LIBRAS
         "gtk3", "gtk", "gen", nullptr
     };
 

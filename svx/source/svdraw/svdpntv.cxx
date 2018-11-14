@@ -30,7 +30,7 @@
 #endif
 #include <svx/svdpage.hxx>
 #include <svx/svdpagv.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 
 #include <editeng/editdata.hxx>
 #include <svx/svdmrkv.hxx>
@@ -60,6 +60,7 @@
 #include <drawinglayer/primitive2d/metafileprimitive2d.hxx>
 #include <basegfx/matrix/b2dhommatrixtools.hxx>
 #include <comphelper/lok.hxx>
+#include <svx/svdviter.hxx>
 
 using namespace ::com::sun::star;
 
@@ -88,24 +89,14 @@ SdrPaintWindow* SdrPaintView::GetPaintWindow(sal_uInt32 nIndex) const
     return nullptr;
 }
 
-void SdrPaintView::AppendPaintWindow(SdrPaintWindow& rNew)
+void SdrPaintView::RemovePaintWindow(SdrPaintWindow& rOld)
 {
-    maPaintWindows.push_back(&rNew);
-}
-
-SdrPaintWindow* SdrPaintView::RemovePaintWindow(SdrPaintWindow& rOld)
-{
-    SdrPaintWindow* pRetval = nullptr;
     const SdrPaintWindowVector::iterator aFindResult = ::std::find(maPaintWindows.begin(), maPaintWindows.end(), &rOld);
 
     if(aFindResult != maPaintWindows.end())
     {
-        // remember return value, aFindResult is no longer valid after deletion
-        pRetval = *aFindResult;
         maPaintWindows.erase(aFindResult);
     }
-
-    return pRetval;
 }
 
 OutputDevice* SdrPaintView::GetFirstOutputDevice() const
@@ -119,8 +110,7 @@ OutputDevice* SdrPaintView::GetFirstOutputDevice() const
 }
 
 
-SvxViewHint::SvxViewHint (HintType eHintType)
-    : meHintType(eHintType)
+SvxViewChangedHint::SvxViewChangedHint()
 {
 }
 
@@ -171,7 +161,7 @@ void SdrPaintView::ImpClearVars()
     mbPrintPreview=false;
     mbPreviewRenderer=false;
 
-    meAnimationMode = SDR_ANIMATION_ANIMATE;
+    meAnimationMode = SdrAnimationMode::Animate;
     mbAnimationPause = false;
 
     mnHitTolPix=2;
@@ -180,7 +170,6 @@ void SdrPaintView::ImpClearVars()
     mnMinMovLog=0;
     mpActualOutDev=nullptr;
     mpDragWin=nullptr;
-    mbRestoreColors=true;
     mpDefaultStyleSheet=nullptr;
     mbSomeObjChgdFlag=false;
     mnGraphicManagerDrawMode = GraphicManagerDrawFlags::STANDARD;
@@ -212,9 +201,6 @@ SdrPaintView::SdrPaintView(SdrModel* pModel, OutputDevice* pOut)
         AddWindowToPaintView(pOut, nullptr);
     }
 
-    // flag to visualize groups
-    mbVisualizeEnteredGroup = true;
-
     maColorConfig.AddListener(this);
     onChangeColorConfig();
 }
@@ -245,8 +231,7 @@ void SdrPaintView::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
     //If the stylesheet has been destroyed
     if (&rBC == mpDefaultStyleSheet)
     {
-        const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-        if (pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING)
+        if (rHint.GetId() == SFX_HINT_DYING)
             mpDefaultStyleSheet = nullptr;
         return;
     }
@@ -256,7 +241,7 @@ void SdrPaintView::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
         return;
 
     SdrHintKind eKind = pSdrHint->GetKind();
-    if (eKind==HINT_OBJCHG || eKind==HINT_OBJINSERTED || eKind==HINT_OBJREMOVED)
+    if (eKind==SdrHintKind::ObjectChange || eKind==SdrHintKind::ObjectInserted || eKind==SdrHintKind::ObjectRemoved)
     {
         bool bObjChg = !mbSomeObjChgdFlag; // if true, evaluate for ComeBack timer
         if (bObjChg)
@@ -266,7 +251,7 @@ void SdrPaintView::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
         }
     }
 
-    if (eKind==HINT_PAGEORDERCHG)
+    if (eKind==SdrHintKind::PageOrderChange)
     {
         const SdrPage* pPg=pSdrHint->GetPage();
         if (pPg && !pPg->IsInserted())
@@ -285,7 +270,7 @@ void SdrPaintView::ConfigurationChanged( ::utl::ConfigurationBroadcaster* , sal_
     InvalidateAllWin();
 }
 
-IMPL_LINK_NOARG_TYPED(SdrPaintView, ImpComeBackHdl, Idle *, void)
+IMPL_LINK_NOARG(SdrPaintView, ImpComeBackHdl, Idle *, void)
 {
     if (mbSomeObjChgdFlag) {
         mbSomeObjChgdFlag=false;
@@ -450,7 +435,7 @@ void SdrPaintView::AddWindowToPaintView(OutputDevice* pNewWin, vcl::Window *pWin
 {
     DBG_ASSERT(pNewWin, "SdrPaintView::AddWindowToPaintView: No OutputDevice(!)");
     SdrPaintWindow* pNewPaintWindow = new SdrPaintWindow(*this, *pNewWin, pWindow);
-    AppendPaintWindow(*pNewPaintWindow);
+    maPaintWindows.push_back(pNewPaintWindow);
 
     if(mpPageView)
     {
@@ -747,6 +732,26 @@ void SdrPaintView::EndCompleteRedraw(SdrPaintWindow& rPaintWindow, bool bPaintFo
         if(IsTextEdit() && GetSdrPageView())
         {
             static_cast< SdrView* >(this)->TextEditDrawing(rPaintWindow);
+        }
+
+        if (comphelper::LibreOfficeKit::isActive())
+        {
+            // Look for active text edits in other views showing the same page,
+            // and show them as well.
+            if (SdrPageView* pPageView = GetSdrPageView())
+            {
+                SdrViewIter aIter(pPageView->GetPage());
+                for (SdrView* pView = aIter.FirstView(); pView; pView = aIter.NextView())
+                {
+                    if (pView == this)
+                        continue;
+
+                    if (pView->IsTextEdit() && pView->GetSdrPageView())
+                    {
+                        pView->TextEditDrawing(rPaintWindow);
+                    }
+                }
+            }
         }
 
         // draw Overlay, also to PreRender device if exists
@@ -1083,7 +1088,7 @@ bool SdrPaintView::SetAttributes(const SfxItemSet& rSet, bool bReplaceAll)
 
 SfxStyleSheet* SdrPaintView::GetStyleSheet() const
 {
-    return GetDefaultStyleSheet();
+    return mpDefaultStyleSheet;
 }
 
 bool SdrPaintView::SetStyleSheet(SfxStyleSheet* pStyleSheet, bool bDontRemoveHardAttr)
@@ -1166,7 +1171,7 @@ void SdrPaintView::DoConnect(SdrOle2Obj* /*pOleObj*/)
 
 void SdrPaintView::SetAnimationEnabled( bool bEnable )
 {
-    SetAnimationMode( bEnable ? SDR_ANIMATION_ANIMATE : SDR_ANIMATION_DISABLE );
+    SetAnimationMode( bEnable ? SdrAnimationMode::Animate : SdrAnimationMode::Disable );
 }
 
 #if defined DBG_UTIL
@@ -1230,18 +1235,13 @@ void SdrPaintView::VisAreaChanged(const OutputDevice* pOut)
 void SdrPaintView::VisAreaChanged(const SdrPageWindow& /*rWindow*/)
 {
     // notify SfxListener
-    Broadcast(SvxViewHint(SvxViewHint::SVX_HINT_VIEWCHANGED));
+    Broadcast(SvxViewChangedHint());
 }
 
 
 void SdrPaintView::onChangeColorConfig()
 {
-    SetGridColor( Color( maColorConfig.GetColorValue( svtools::DRAWGRID ).nColor ) );
-}
-
-void SdrPaintView::SetGridColor( Color aColor )
-{
-    maGridColor = aColor;
+    maGridColor = Color( maColorConfig.GetColorValue( svtools::DRAWGRID ).nColor );
 }
 
 

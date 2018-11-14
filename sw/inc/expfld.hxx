@@ -95,12 +95,11 @@ class SW_DLLPUBLIC SwGetExpField : public SwFormulaField
 
 public:
     SwGetExpField( SwGetExpFieldType*, const OUString& rFormel,
-                   sal_uInt16 nSubType = nsSwGetSetExpType::GSE_EXPR, sal_uLong nFormat = 0);
+                   sal_uInt16 nSubType, sal_uLong nFormat = 0);
 
     virtual void                SetValue( const double& rVal ) override;
     virtual void                SetLanguage(sal_uInt16 nLng) override;
 
-    inline const OUString&      GetExpStr() const;
     inline void                 ChgExpStr(const OUString& rExpand);
 
     /// Called by formatting.
@@ -131,9 +130,6 @@ public:
 
 inline void SwGetExpField::ChgExpStr(const OUString& rExpand)
     { sExpand = rExpand;}
-
-inline const OUString& SwGetExpField::GetExpStr() const
-    { return sExpand;   }
 
  /// Called by formatting.
 inline bool SwGetExpField::IsInBodyText() const
@@ -307,19 +303,16 @@ class SW_DLLPUBLIC SwInputField : public SwField
     // Accessing Input Field's content
     const OUString& getContent() const { return aContent;}
 
-    void LockNotifyContentChange();
-    void UnlockNotifyContentChange();
-
 public:
     /// Direct input via dialog; delete old value.
     SwInputField(
         SwInputFieldType* pFieldType,
         const OUString& rContent,
         const OUString& rPrompt,
-        sal_uInt16 nSubType = 0,
+        sal_uInt16 nSubType,
         sal_uLong nFormat = 0,
         bool bIsFormField = true );
-    virtual ~SwInputField();
+    virtual ~SwInputField() override;
 
     void SetFormatField( SwFormatField& rFormatField );
     SwFormatField* GetFormatField() { return mpFormatField;}
@@ -400,13 +393,12 @@ class SwTableField : public SwValueField, public SwTableFormula
 
 public:
     SwTableField( SwTableFieldType*, const OUString& rFormel,
-                sal_uInt16 nSubType = 0, sal_uLong nFormat = 0);
+                sal_uInt16 nSubType, sal_uLong nFormat = 0);
 
     virtual void        SetValue( const double& rVal ) override;
     virtual sal_uInt16  GetSubType() const override;
     virtual void        SetSubType(sal_uInt16 nType) override;
 
-    const OUString&     GetExpStr() const               { return sExpand; }
     void                ChgExpStr(const OUString& rStr) { sExpand = rStr; }
 
     void                CalcField( SwTableCalcPara& rCalcPara );

@@ -103,7 +103,7 @@ public:
     */
     AquaSalFrame( SalFrame* pParent, SalFrameStyleFlags salFrameStyle );
 
-    virtual ~AquaSalFrame();
+    virtual ~AquaSalFrame() override;
 
     virtual SalGraphics*        AcquireGraphics() override;
     virtual void                ReleaseGraphics( SalGraphics* pGraphics ) override;
@@ -161,7 +161,7 @@ public:
     void UpdateFrameGeometry();
 
     // trigger painting of the window
-    void SendPaintEvent( const Rectangle* pRect = NULL );
+    void SendPaintEvent( const Rectangle* pRect = nullptr );
 
     static bool isAlive( const AquaSalFrame* pFrame )
     { return GetSalData()->maFrameCheck.find( pFrame ) != GetSalData()->maFrameCheck.end(); }

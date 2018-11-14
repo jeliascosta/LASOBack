@@ -46,10 +46,10 @@ class SW_DLLPUBLIC SwNoTextNode : public SwContentNode
 
 protected:
     SwNoTextNode( const SwNodeIndex &rWhere, const sal_uInt8 nNdType,
-                SwGrfFormatColl *pGrColl, SwAttrSet* pAutoAttr = nullptr );
+                SwGrfFormatColl *pGrColl, SwAttrSet* pAutoAttr );
 
 public:
-    virtual ~SwNoTextNode();
+    virtual ~SwNoTextNode() override;
 
     virtual SwContentFrame *MakeFrame( SwFrame* ) override;
 

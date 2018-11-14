@@ -143,7 +143,8 @@ class ScGridWindow : public vcl::Window, public DropTargetHelper, public DragSou
 
     sal_uInt16              nButtonDown;
     sal_uInt8               nMouseStatus;
-    sal_uInt8               nNestedButtonState;     // track nested button up/down calls
+    enum class ScNestedButtonState { NONE, Down, Up };
+    ScNestedButtonState     nNestedButtonState;     // track nested button up/down calls
 
     long                    nDPField;
     ScDPObject*             pDragDPObj; //! name?
@@ -165,8 +166,6 @@ class ScGridWindow : public vcl::Window, public DropTargetHelper, public DragSou
     SCCOL                   nDragEndX;
     SCROW                   nDragEndY;
     InsCellCmd              meDragInsertMode;
-
-    sal_uInt16              nCurrentPointer;
 
     ScDDComboBoxButton      aComboButton;
 
@@ -194,8 +193,8 @@ class ScGridWindow : public vcl::Window, public DropTargetHelper, public DragSou
     bool                    bAutoMarkVisible:1;
     bool                    bListValButton:1;
 
-    DECL_LINK_TYPED( PopupModeEndHdl, FloatingWindow*, void );
-    DECL_LINK_TYPED( PopupSpellingHdl, SpellCallbackInfo&, void );
+    DECL_LINK( PopupModeEndHdl, FloatingWindow*, void );
+    DECL_LINK( PopupSpellingHdl, SpellCallbackInfo&, void );
 
     bool            TestMouse( const MouseEvent& rMEvt, bool bAction );
 
@@ -225,7 +224,7 @@ class ScGridWindow : public vcl::Window, public DropTargetHelper, public DragSou
 
     bool            IsAutoFilterActive( SCCOL nCol, SCROW nRow, SCTAB nTab );
     void            ExecFilter( sal_uLong nSel, SCCOL nCol, SCROW nRow,
-                                const OUString& aValue, bool bCheckForDates );
+                                const OUString& aValue );
     void            FilterSelect( sal_uLong nSel );
 
     void            ExecDataSelect( SCCOL nCol, SCROW nRow, const OUString& rStr );
@@ -266,11 +265,11 @@ class ScGridWindow : public vcl::Window, public DropTargetHelper, public DragSou
 
     bool IsSpellErrorAtPos( const Point& rPos, SCCOL nCol1, SCROW nRow );
 
-    bool            HitRangeFinder( const Point& rMouse, RfCorner& rCorner, sal_uInt16* pIndex = nullptr,
-                                    SCsCOL* pAddX = nullptr, SCsROW* pAddY = nullptr );
+    bool            HitRangeFinder( const Point& rMouse, RfCorner& rCorner, sal_uInt16* pIndex,
+                                    SCsCOL* pAddX, SCsROW* pAddY );
 
-    sal_uInt16          HitPageBreak( const Point& rMouse, ScRange* pSource = nullptr,
-                                    SCCOLROW* pBreak = nullptr, SCCOLROW* pPrev = nullptr );
+    sal_uInt16      HitPageBreak( const Point& rMouse, ScRange* pSource,
+                                  SCCOLROW* pBreak, SCCOLROW* pPrev );
 
     /** The cell may be covered by text that overflows from a previous cell.
 
@@ -287,7 +286,6 @@ class ScGridWindow : public vcl::Window, public DropTargetHelper, public DragSou
     void            GetSelectionRects( ::std::vector< Rectangle >& rPixelRects );
 
 
-    void            updateLibreOfficeKitCellCursor();
 protected:
     virtual void    PrePaint(vcl::RenderContext& rRenderContext) override;
     virtual void    Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
@@ -304,7 +302,7 @@ public:
     enum AutoFilterMode { Normal, Top10, Custom, Empty, NonEmpty, SortAscending, SortDescending };
 
     ScGridWindow( vcl::Window* pParent, ScViewData* pData, ScSplitPos eWhichPos );
-    virtual ~ScGridWindow();
+    virtual ~ScGridWindow() override;
     virtual void dispose() override;
 
     virtual void    KeyInput(const KeyEvent& rKEvt) override;
@@ -345,7 +343,7 @@ public:
 
     void            ClickExtern();
 
-    void            SetPointer( const Pointer& rPointer );
+    using Window::SetPointer;
 
     void            MoveMouseStatus( ScGridWindow &rDestWin );
 
@@ -370,7 +368,7 @@ public:
 
     using Window::Draw;
     void            Draw( SCCOL nX1, SCROW nY1, SCCOL nX2, SCROW nY2,
-                          ScUpdateMode eMode = SC_UPDATE_ALL );
+                          ScUpdateMode eMode );
 
     /// Draw content of the gridwindow; shared between the desktop and the tiled rendering.
     void DrawContent(OutputDevice &rDevice, const ScTableInfo& rTableInfo, ScOutputData& aOutputData, bool bLogicText, ScUpdateMode eMode);
@@ -428,11 +426,15 @@ public:
 
     /// @see ScModelObj::getCellCursor().
     OString         getCellCursor(const Fraction& rZoomX,
-                                  const Fraction& rZoomY);
+                                  const Fraction& rZoomY) const;
     OString         getCellCursor(int nOutputWidth,
                                   int nOutputHeight,
                                   long nTileWidth,
                                   long nTileHeight);
+    void updateLibreOfficeKitCellCursor(SfxViewShell* pOtherShell) const;
+
+    ScViewData* getViewData();
+    virtual FactoryFunction GetUITestFactory() const override;
 
 protected:
     void ImpCreateOverlayObjects();
@@ -445,6 +447,7 @@ private:
     void dumpColumnInformationPixel();
     void dumpColumnInformationHmm();
     void dumpGraphicInformation();
+    void dumpColumnCellStorage();
 #endif
 
 };

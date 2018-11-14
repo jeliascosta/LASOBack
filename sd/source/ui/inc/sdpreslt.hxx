@@ -41,13 +41,13 @@ public:
         ::sd::DrawDocShell* pDocShell,
         vcl::Window* pWindow,
         const SfxItemSet& rInAttrs);
-    virtual ~SdPresLayoutDlg();
+    virtual ~SdPresLayoutDlg() override;
     virtual void dispose() override;
 
     void                GetAttr(SfxItemSet& rOutAttrs);
 
-    DECL_LINK_TYPED(ClickLayoutHdl, ValueSet*, void);
-    DECL_LINK_TYPED(ClickLoadHdl, Button*, void);
+    DECL_LINK(ClickLayoutHdl, ValueSet*, void);
+    DECL_LINK(ClickLoadHdl, Button*, void);
 
 private:
     ::sd::DrawDocShell* mpDocSh;

@@ -34,6 +34,7 @@
 #include <comphelper/uno3.hxx>
 #include <cppuhelper/implbase.hxx>
 #include <cppuhelper/supportsservice.hxx>
+#include <rtl/ref.hxx>
 
 namespace
 {
@@ -79,7 +80,7 @@ namespace
         virtual Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (RuntimeException, std::exception) override;
 
     protected:
-        virtual ~DataAccessDescriptor();
+        virtual ~DataAccessDescriptor() override;
 
     protected:
         // XPropertySet
@@ -210,7 +211,7 @@ namespace
         virtual Reference< XPropertySet > SAL_CALL createDataAccessDescriptor(  ) throw (RuntimeException, std::exception) override;
 
         DataAccessDescriptorFactory();
-        virtual ~DataAccessDescriptorFactory();
+        virtual ~DataAccessDescriptorFactory() override;
     };
 
     DataAccessDescriptorFactory::DataAccessDescriptorFactory()
@@ -247,7 +248,7 @@ struct Instance {
         instance(new DataAccessDescriptorFactory())
     {}
 
-    css::uno::Reference<cppu::OWeakObject> instance;
+    rtl::Reference<cppu::OWeakObject> instance;
 };
 
 struct Singleton:

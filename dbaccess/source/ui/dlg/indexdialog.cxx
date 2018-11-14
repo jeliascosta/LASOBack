@@ -37,12 +37,6 @@
 #include <connectivity/dbtools.hxx>
 #include <osl/diagnose.h>
 
-const char INDEX_NEW_CMD[] = ".index:createNew";
-const char INDEX_DROP_CMD[] = ".index:dropCurrent";
-const char INDEX_RENAME_CMD[] = ".index:renameCurrent";
-const char INDEX_SAVE_CMD[] = ".index:saveCurrent";
-const char INDEX_RESET_CMD[] = ".index:resetCurrent";
-
 namespace dbaui
 {
 
@@ -145,7 +139,7 @@ namespace dbaui
     void DbaIndexList::SelectNoHandlerCall( SvTreeListEntry* _pEntry )
     {
         disableSelectHandler();
-        Select(_pEntry, true);
+        Select(_pEntry );
         enableSelectHandler();
     }
 
@@ -175,11 +169,11 @@ namespace dbaui
     {
         get(m_pActions, "ACTIONS");
 
-        mnNewCmdId = m_pActions->GetItemId(INDEX_NEW_CMD);
-        mnDropCmdId = m_pActions->GetItemId(INDEX_DROP_CMD);
-        mnRenameCmdId = m_pActions->GetItemId(INDEX_RENAME_CMD);
-        mnSaveCmdId = m_pActions->GetItemId(INDEX_SAVE_CMD);
-        mnResetCmdId = m_pActions->GetItemId(INDEX_RESET_CMD);
+        mnNewCmdId = m_pActions->GetItemId(".index:createNew");
+        mnDropCmdId = m_pActions->GetItemId(".index:dropCurrent");
+        mnRenameCmdId = m_pActions->GetItemId(".index:renameCurrent");
+        mnSaveCmdId = m_pActions->GetItemId(".index:saveCurrent");
+        mnResetCmdId = m_pActions->GetItemId(".index:resetCurrent");
 
         maScNewCmdImg = m_pActions->GetItemImage(mnNewCmdId);
         maScDropCmdImg = m_pActions->GetItemImage(mnDropCmdId);
@@ -193,7 +187,7 @@ namespace dbaui
         maLcResetCmdImg = get<FixedImage>("image5")->GetImage();
 
         get(m_pIndexList, "INDEX_LIST");
-        Size aSize(LogicToPixel(Size(70, 97), MAP_APPFONT));
+        Size aSize(LogicToPixel(Size(70, 97), MapUnit::MapAppFont));
         m_pIndexList->set_width_request(aSize.Width());
         m_pIndexList->set_height_request(aSize.Height());
         get(m_pIndexDetails, "INDEX_DETAILS");
@@ -202,7 +196,7 @@ namespace dbaui
         get(m_pUnique, "UNIQUE");
         get(m_pFieldsLabel, "FIELDS_LABEL");
         get(m_pFields, "FIELDS");
-        aSize = LogicToPixel(Size(128, 61), MAP_APPFONT);
+        aSize = LogicToPixel(Size(128, 61), MapUnit::MapAppFont);
         m_pFields->set_width_request(aSize.Width());
         m_pFields->set_height_request(aSize.Height());
         get(m_pClose, "close");
@@ -211,7 +205,7 @@ namespace dbaui
 
         m_pIndexList->SetSelectHdl(LINK(this, DbaIndexDialog, OnIndexSelected));
         m_pIndexList->SetEndEditHdl(LINK(this, DbaIndexDialog, OnEntryEdited));
-        m_pIndexList->SetSelectionMode(SINGLE_SELECTION);
+        m_pIndexList->SetSelectionMode(SelectionMode::Single);
         m_pIndexList->SetHighlightRange();
         m_pIndexList->setConnection(m_xConnection);
 
@@ -376,8 +370,7 @@ namespace dbaui
 
         for ( i = 1; i < 0x7FFFFFFF; ++i )
         {
-            sNewIndexName = sNewIndexNameBase;
-            sNewIndexName += OUString::number(i);
+            sNewIndexName = sNewIndexNameBase + OUString::number(i);
             if (m_pIndexes->end() == m_pIndexes->find(sNewIndexName))
                 break;
         }
@@ -419,7 +412,7 @@ namespace dbaui
             {
                 OUString sConfirm(ModuleRes(STR_CONFIRM_DROP_INDEX));
                 sConfirm = sConfirm.replaceFirst("$name$", m_pIndexList->GetEntryText(pSelected));
-                ScopedVclPtrInstance< MessageDialog > aConfirm(this, sConfirm, VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO);
+                ScopedVclPtrInstance< MessageDialog > aConfirm(this, sConfirm, VclMessageType::Question, VCL_BUTTONS_YES_NO);
                 if (RET_YES != aConfirm->Execute())
                     return;
             }
@@ -541,7 +534,7 @@ namespace dbaui
         updateToolbox();
     }
 
-    IMPL_LINK_NOARG_TYPED( DbaIndexDialog, OnIndexAction, ToolBox*, void )
+    IMPL_LINK_NOARG( DbaIndexDialog, OnIndexAction, ToolBox*, void )
     {
         sal_uInt16 nClicked = m_pActions->GetCurItemId();
         if (nClicked == mnNewCmdId)
@@ -556,7 +549,7 @@ namespace dbaui
             OnResetIndex();
     }
 
-    IMPL_LINK_NOARG_TYPED( DbaIndexDialog, OnCloseDialog, Button*, void )
+    IMPL_LINK_NOARG( DbaIndexDialog, OnCloseDialog, Button*, void )
     {
         if (m_pIndexList->IsEditingActive())
         {
@@ -602,14 +595,14 @@ namespace dbaui
         EndDialog(RET_OK);
     }
 
-    IMPL_LINK_TYPED( DbaIndexDialog, OnEditIndexAgain, void*, p, void )
+    IMPL_LINK( DbaIndexDialog, OnEditIndexAgain, void*, p, void )
     {
         SvTreeListEntry* _pEntry = static_cast<SvTreeListEntry*>(p);
         m_bEditAgain = false;
         m_pIndexList->EditEntry(_pEntry);
     }
 
-    IMPL_LINK_TYPED( DbaIndexDialog, OnEntryEdited, SvTreeListEntry*, _pEntry, bool )
+    IMPL_LINK( DbaIndexDialog, OnEntryEdited, SvTreeListEntry*, _pEntry, bool )
     {
         Indexes::iterator aPosition = m_pIndexes->begin() + reinterpret_cast<sal_IntPtr>(_pEntry->GetUserData());
 
@@ -730,11 +723,11 @@ namespace dbaui
         return true;
     }
 
-    IMPL_LINK_NOARG_TYPED( DbaIndexDialog, OnModifiedClick, Button*, void )
+    IMPL_LINK_NOARG( DbaIndexDialog, OnModifiedClick, Button*, void )
     {
         OnModified(*m_pFields);
     }
-    IMPL_LINK_NOARG_TYPED( DbaIndexDialog, OnModified, IndexFieldsControl&, void )
+    IMPL_LINK_NOARG( DbaIndexDialog, OnModified, IndexFieldsControl&, void )
     {
         OSL_ENSURE(m_pPreviousSelection, "DbaIndexDialog, OnModified: invalid call!");
         Indexes::iterator aPosition = m_pIndexes->begin() + reinterpret_cast<sal_IntPtr>(m_pPreviousSelection->GetUserData());
@@ -772,7 +765,7 @@ namespace dbaui
         }
     }
 
-    IMPL_LINK_NOARG_TYPED( DbaIndexDialog, OnIndexSelected, DbaIndexList&, void )
+    IMPL_LINK_NOARG( DbaIndexDialog, OnIndexSelected, DbaIndexList&, void )
     {
         m_pIndexList->EndSelection();
 

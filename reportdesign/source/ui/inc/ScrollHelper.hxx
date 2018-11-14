@@ -56,7 +56,7 @@ namespace rptui
         ::rtl::Reference<comphelper::OPropertyChangeMultiplexer >
                                     m_pReportDefinitionMultiPlexer; // listener for property changes
 
-        DECL_LINK_TYPED( ScrollHdl, ScrollBar*, void);
+        DECL_LINK( ScrollHdl, ScrollBar*, void);
         Size ResizeScrollBars();
         void ImplInitSettings();
         void impl_initScrollBar( ScrollBar& _rScrollBar ) const;
@@ -72,7 +72,7 @@ namespace rptui
         virtual void            _propertyChanged(const css::beans::PropertyChangeEvent& _rEvent) throw( css::uno::RuntimeException, std::exception) override;
     public:
         OScrollWindowHelper( ODesignView* _pReportDesignView);
-        virtual ~OScrollWindowHelper();
+        virtual ~OScrollWindowHelper() override;
         virtual void dispose() override;
 
         /** late ctor
@@ -87,7 +87,7 @@ namespace rptui
 
         // forwards
         void                    SetMode( DlgEdMode _eMode );
-        void                    SetInsertObj( sal_uInt16 eObj,const OUString& _sShapeType = OUString());
+        void                    SetInsertObj( sal_uInt16 eObj,const OUString& _sShapeType);
         OUString                GetInsertObjString() const;
         void                    setGridSnap(bool bOn);
         void                    setDragStripes(bool bOn);
@@ -130,7 +130,7 @@ namespace rptui
         */
         void                    addSection(const css::uno::Reference< css::report::XSection >& _xSection
                                     ,const OUString& _sColorEntry
-                                    ,sal_uInt16 _nPosition = USHRT_MAX);
+                                    ,sal_uInt16 _nPosition);
 
         sal_uInt16                  getSectionCount() const;
 
@@ -140,11 +140,9 @@ namespace rptui
         */
         void                    toggleGrid(bool _bVisible);
 
-        /** unmark all objects on the views without the given one.
-        *
-        * @param _pSectionView The view where the objects should not be unmarked.
+        /** unmark all objects on the views.
         */
-        void                    unmarkAllObjects(OSectionView* _pSectionView);
+        void                    unmarkAllObjects();
 
         /** shows or hides the ruler.
         */

@@ -4,8 +4,8 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
 "POT-Creation-Date: 2016-11-09 14:10+0100\n"
-"PO-Revision-Date: 2017-03-18 05:31+0000\n"
-"Last-Translator: Christian Kühl <kuehl.christian@googlemail.com>\n"
+"PO-Revision-Date: 2017-10-22 09:58+0000\n"
+"Last-Translator: Sophia Schröder <sophia.schroeder@outlook.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Accelerator-Marker: ~\n"
 "X-Generator: Pootle 2.8\n"
-"X-POOTLE-MTIME: 1489815079.000000\n"
+"X-POOTLE-MTIME: 1508666317.000000\n"
 
 #: 01110000.xhp
 msgctxt ""
@@ -30,7 +30,7 @@ msgctxt ""
 "bm_id3153539\n"
 "help.text"
 msgid "<bookmark_value>printing; directly</bookmark_value>"
-msgstr "<bookmark_value>Drucken;direkt</bookmark_value>"
+msgstr "<bookmark_value>Drucken; direkt</bookmark_value>"
 
 #: 01110000.xhp
 msgctxt ""
@@ -89,7 +89,7 @@ msgctxt ""
 "bm_id3150476\n"
 "help.text"
 msgid "<bookmark_value>Drawing bar</bookmark_value>      <bookmark_value>lines; draw functions</bookmark_value>      <bookmark_value>polygon drawing</bookmark_value>      <bookmark_value>freeform lines; draw functions</bookmark_value>      <bookmark_value>text boxes; positioning</bookmark_value>      <bookmark_value>headings; entering as text box</bookmark_value>      <bookmark_value>text objects; draw functions</bookmark_value>      <bookmark_value>ticker text</bookmark_value>      <bookmark_value>text; animating</bookmark_value>      <bookmark_value>vertical callouts</bookmark_value>      <bookmark_value>vertical text boxes</bookmark_value>      <bookmark_value>cube drawing</bookmark_value>      <bookmark_value>triangle drawing</bookmark_value>      <bookmark_value>ellipse drawing</bookmark_value>      <bookmark_value>rectangle drawing</bookmark_value>      <bookmark_value>shapes</bookmark_value>"
-msgstr "<bookmark_value>Symbolleiste Zeichnung</bookmark_value>  <bookmark_value>Linien;Zeichnungsfunktionen</bookmark_value>  <bookmark_value>Polygon zeichnen</bookmark_value>  <bookmark_value>Freihandlinien;Zeichnungsfunktionen</bookmark_value>  <bookmark_value>Textfelder;Positionierung</bookmark_value>  <bookmark_value>Überschriften;einfügen als Textfeld</bookmark_value>  <bookmark_value>Textobjekte;Zeichnungsfunktionen</bookmark_value>  <bookmark_value>Lauftext</bookmark_value>  <bookmark_value>Text;Animationseffekt</bookmark_value>  <bookmark_value>Vertikale Legenden</bookmark_value>  <bookmark_value>Vertikale Textfelder</bookmark_value>  <bookmark_value>Würfel zeichnen</bookmark_value>  <bookmark_value>Dreieck zeichnen</bookmark_value>  <bookmark_value>Ellipse zeichnen</bookmark_value>  <bookmark_value>Rechteck zeichnen</bookmark_value>  <bookmark_value>Formen</bookmark_value>"
+msgstr "<bookmark_value>Symbolleiste Zeichnung</bookmark_value><bookmark_value>Linien; Zeichnungsfunktionen</bookmark_value><bookmark_value>Polygon zeichnen</bookmark_value><bookmark_value>Freihandlinien; Zeichnungsfunktionen</bookmark_value><bookmark_value>Textfelder; Positionierung</bookmark_value><bookmark_value>Überschriften; einfügen als Textfeld</bookmark_value><bookmark_value>Textobjekte; Zeichnungsfunktionen</bookmark_value> <bookmark_value>Lauftext</bookmark_value><bookmark_value>Text; Animationseffekt</bookmark_value><bookmark_value>Vertikale Legenden</bookmark_value><bookmark_value>Vertikale Textfelder</bookmark_value><bookmark_value>Würfel zeichnen</bookmark_value><bookmark_value>Dreieck zeichnen</bookmark_value><bookmark_value>Ellipse zeichnen</bookmark_value><bookmark_value>Rechteck zeichnen</bookmark_value><bookmark_value>Formen</bookmark_value>"
 
 #: 01140000.xhp
 msgctxt ""
@@ -115,7 +115,7 @@ msgctxt ""
 "par_idN10849\n"
 "help.text"
 msgid "You can switch on and off the Drawing toolbar of Writer and Calc documents using an icon on the Standard toolbar."
-msgstr "Sie können die Symbolleiste Zeichnung in Writer- und Calc-Dokumenten durch Klicken auf ein Symbol in der Symbolleiste Standard ein- bzw. ausschalten."
+msgstr "Sie können die Symbolleiste Zeichnung in Writer- und Calc-Dokumenten durch Klicken auf ein Symbol in der Symbolleiste Standard ein- beziehungsweise ausschalten."
 
 #: 01140000.xhp
 msgctxt ""
@@ -545,7 +545,7 @@ msgctxt ""
 "par_idN10EA5\n"
 "help.text"
 msgid "Switches the 3D effects on and off for the selected objects."
-msgstr "Schaltet die 3D-Effekte für die gewählten Objekte ein bzw. aus."
+msgstr "Schaltet die 3D-Effekte für die gewählten Objekte ein beziehungsweise aus."
 
 #: 01140000.xhp
 msgctxt ""
@@ -597,7 +597,7 @@ msgctxt ""
 "78\n"
 "help.text"
 msgid "<ahelp hid=\".uno:VerticalText\">Draws a text box with vertical text direction where you click or drag in the current document. Click anywhere in the document, and then type or paste your text. You can also move the cursor to where you want to add the text, drag a text box, and then type or paste your text. Only available when Asian language support is enabled.</ahelp>"
-msgstr "<ahelp hid=\".uno:VerticalText\">Hiermit zeichnen Sie dort, wo Sie im aktuellen Dokument ziehen, ein Textfeld mit vertikalem Textverlauf ein. Klicken Sie an einer beliebigen Stelle im Dokument, und geben Sie den gewünschten Text ein bzw. fügen Sie ihn ein. Sie können auch den Cursor an die für den Text vorgesehene Stelle setzen, ein Textfeld aufziehen und dann den Text eingeben oder einfügen. Diese Option ist nur verfügbar, wenn die Unterstützung für asiatische Sprachen aktiviert ist.</ahelp>"
+msgstr "<ahelp hid=\".uno:VerticalText\">Hiermit zeichnen Sie dort, wo Sie im aktuellen Dokument ziehen, ein Textfeld mit vertikalem Textverlauf ein. Klicken Sie an einer beliebigen Stelle im Dokument, und geben Sie den gewünschten Text ein beziehungsweise fügen Sie ihn ein. Sie können auch den Cursor an die für den Text vorgesehene Stelle setzen, ein Textfeld aufziehen und dann den Text eingeben oder einfügen. Diese Option ist nur verfügbar, wenn die Unterstützung für asiatische Sprachen aktiviert ist.</ahelp>"
 
 #: 01140000.xhp
 msgctxt ""
@@ -622,7 +622,7 @@ msgctxt ""
 "bm_id3154142\n"
 "help.text"
 msgid "<bookmark_value>form controls;toolbars</bookmark_value><bookmark_value>inserting; form fields</bookmark_value><bookmark_value>form fields</bookmark_value><bookmark_value>command button creation</bookmark_value><bookmark_value>buttons; form functions</bookmark_value><bookmark_value>controls; inserting</bookmark_value><bookmark_value>push buttons;creating</bookmark_value><bookmark_value>radio button creation</bookmark_value><bookmark_value>check box creation</bookmark_value><bookmark_value>labels; form functions</bookmark_value><bookmark_value>fixed text; form functions</bookmark_value><bookmark_value>text boxes;form functions</bookmark_value><bookmark_value>list box creation</bookmark_value><bookmark_value>picklist creation</bookmark_value><bookmark_value>drop-down lists in form functions</bookmark_value><bookmark_value>combo box creation</bookmark_value><bookmark_value>selecting;controls</bookmark_value><bookmark_value>controls; select mode</bookmark_value>"
-msgstr "<bookmark_value>Formular-Steuerelemente;Symbolleisten</bookmark_value>  <bookmark_value>Einfügen;Formularfelder</bookmark_value>  <bookmark_value>Formularfelder</bookmark_value>  <bookmark_value>Befehlsschaltfläche;erstellen</bookmark_value>  <bookmark_value>Schaltflächen;Formularfunktionen</bookmark_value>  <bookmark_value>Kontrollfelder;einfügen</bookmark_value>  <bookmark_value>Schaltflächen;erstellen</bookmark_value>  <bookmark_value>Optionsfelder;erstellen</bookmark_value>  <bookmark_value>Markierfelder;erstellen</bookmark_value>  <bookmark_value>Beschriftungsfelder;Formularfunktionen</bookmark_value>  <bookmark_value>Fester Text;Formularfunktionen</bookmark_value>  <bookmark_value>Textfelder;Formularfunktionen</bookmark_value>  <bookmark_value>Listenfelder;erstellen</bookmark_value>  <bookmark_value>Auswahllisten;erstellen</bookmark_value>  <bookmark_value>Kombinationsfelder;in Formularfunktionen</bookmark_value>  <bookmark_value>Kombinationsfelder;erstellen</bookmark_value>  <bookmark_value>Auswählen;Kontrollfelder</bookmark_value>  <bookmark_value>Kontrollfelder;Auswahlmodus</bookmark_value>"
+msgstr "<bookmark_value>Formular-Steuerelemente; Symbolleisten</bookmark_value><bookmark_value>Einfügen; Formularfelder</bookmark_value><bookmark_value>Formularfelder</bookmark_value><bookmark_value>Befehlsschaltfläche; erstellen</bookmark_value><bookmark_value>Schaltflächen; Formularfunktionen</bookmark_value><bookmark_value>Kontrollfelder; einfügen</bookmark_value><bookmark_value>Schaltflächen; erstellen</bookmark_value><bookmark_value>Optionsfelder; erstellen</bookmark_value><bookmark_value>Markierfelder; erstellen</bookmark_value><bookmark_value>Beschriftungsfelder; Formularfunktionen</bookmark_value><bookmark_value>Fester Text; Formularfunktionen</bookmark_value><bookmark_value>Textfelder; Formularfunktionen</bookmark_value><bookmark_value>Listenfelder; erstellen</bookmark_value><bookmark_value>Auswahllisten; erstellen</bookmark_value><bookmark_value>Kombinationsfelder; in Formularfunktionen</bookmark_value><bookmark_value>Kombinationsfelder; erstellen</bookmark_value><bookmark_value>Auswählen; Kontrollfelder</bookmark_value><bookmark_value>Kontrollfelder; Auswahlmodus</bookmark_value>"
 
 #: 01170000.xhp
 msgctxt ""
@@ -657,7 +657,7 @@ msgctxt ""
 "68\n"
 "help.text"
 msgid "Icon on the <emph>Insert</emph> toolbar (you may need to enable this initially invisible icon):"
-msgstr "Symbol in der <emph>Einfügen</emph> Symbolleiste (Sie müssen evtl. das ursprünglich unsichtbaren Symbol einblenden)."
+msgstr "Symbol in der Symbolleiste <emph>Einfügen</emph> (Sie müssen eventuell das ursprünglich unsichtbare Symbol einblenden):"
 
 #: 01170000.xhp
 msgctxt ""
@@ -751,7 +751,7 @@ msgctxt ""
 "78\n"
 "help.text"
 msgid "To add a field from the field list of a table or query to a form, drag a cell into the form. In a text document, you can also drag a column header to add a field to a form. To include a label for the field, hold down the <switchinline select=\"sys\"><caseinline select=\"MAC\">Command</caseinline><defaultinline>Ctrl</defaultinline></switchinline>+Shift key down when you drag a column head."
-msgstr "Ziehen Sie eine Zelle in das Formulardokument, um ein Feld aus der Feldliste einer Tabelle oder einer Abfrage in das Formulardokument einzufügen. In einem Textdokument können Sie auch einen Spalten ziehen, um einem Formulardokument ein Feld hinzuzufügen. Um eine Beschriftung für das Feld hinzuzufügen, halten Sie beim Ziehen eines Spaltenkopfs <switchinline select=\"sys\"><caseinline select=\"MAC\">Befehl </caseinline><defaultinline>Strg</defaultinline></switchinline>+Umschalttaste gedrückt."
+msgstr "Ziehen Sie eine Zelle in das Formulardokument, um ein Feld aus der Feldliste einer Tabelle oder einer Abfrage in das Formulardokument einzufügen. In einem Textdokument können Sie auch einen Spaltenkopf ziehen, um einem Formulardokument ein Feld hinzuzufügen. Um eine Beschriftung für das Feld hinzuzufügen, halten Sie beim Ziehen des Spaltenkopfes die Tasten <switchinline select=\"sys\"><caseinline select=\"MAC\">Befehl</caseinline><defaultinline>Strg</defaultinline></switchinline>+Umschalt gedrückt."
 
 #: 01170000.xhp
 msgctxt ""
@@ -786,7 +786,7 @@ msgctxt ""
 "135\n"
 "help.text"
 msgid "You can drag and drop controls from one document to another document. You can also copy and paste controls between documents. When you insert a control from another document, $[officename] analyzes the data source, content type, and content properties of the control so that the control fits the logical structure in the target document. For example, a control that displays contents from an address book continues to display the same contents after you copy the control to a different document. You can view these properties on the <emph>Data</emph> tab page of the <emph>Form properties</emph> dialog."
-msgstr "Es besteht die Möglichkeit, Kontrollfelder per Ziehen und Ablegen oder durch Kopieren und Einfügen über die Zwischenablage aus einem Dokument in ein anderes zu kopieren. Dabei wertet $[officename] die drei Kontrollfeldeigenschaften \"Datenquelle\", \"Art des Inhalts\" und \"Inhalt\" aus, damit die Felder der richtigen Stelle in der logischen Formularstruktur des Zieldokuments zugeordnet werden können. So zeigt beispielsweise ein Kontrollfeld aus dem Adressbuch auch nach dem Kopieren in das Zieldokument noch denselben Inhalt an. Diese Eigenschaften finden Sie im Register <emph>Daten</emph> im Dialog <emph>Formular-Eigenschaften</emph>."
+msgstr "Es besteht die Möglichkeit, Kontrollfelder per Ziehen-und-Ablegen oder durch Kopieren und Einfügen über die Zwischenablage aus einem Dokument in ein anderes zu kopieren. Dabei wertet $[officename] die drei Kontrollfeldeigenschaften \"Datenquelle\", \"Art des Inhalts\" und \"Inhalt\" aus, damit die Felder der richtigen Stelle in der logischen Formularstruktur des Zieldokuments zugeordnet werden können. So zeigt beispielsweise ein Kontrollfeld aus dem Adressbuch auch nach dem Kopieren in das Zieldokument noch denselben Inhalt an. Diese Eigenschaften finden Sie im Register <emph>Daten</emph> im Dialog <emph>Formular-Eigenschaften</emph>."
 
 #: 01170000.xhp
 msgctxt ""
@@ -925,7 +925,7 @@ msgctxt ""
 "7\n"
 "help.text"
 msgid "<ahelp hid=\".uno:Pushbutton\">Creates a push button.</ahelp> This function can be used to execute a command for a defined event, such as a mouse click."
-msgstr "<ahelp hid=\".uno:Pushbutton\">Erzeugt eine Schaltfläche.</ahelp> Diese Funktion können Sie einsetzen, wenn bei einem bestimmten Ereignis, z. B. einem Mausklick, ein Befehl ausgeführt werden soll."
+msgstr "<ahelp hid=\".uno:Pushbutton\">Erzeugt eine Schaltfläche.</ahelp> Diese Funktion können Sie einsetzen, wenn bei einem bestimmten Ereignis, beispielsweise einem Mausklick, ein Befehl ausgeführt werden soll."
 
 #: 01170000.xhp
 msgctxt ""
@@ -1062,7 +1062,7 @@ msgctxt ""
 "par_idN10CF7\n"
 "help.text"
 msgid "Form Design"
-msgstr "Formular Entwurf"
+msgstr "Formular-Entwurf"
 
 #: 01170000.xhp
 msgctxt ""
@@ -1094,7 +1094,7 @@ msgctxt ""
 "par_idN11B76\n"
 "help.text"
 msgid "Turns on and turns off the automatic form controls wizards."
-msgstr "Schaltet die Assistenten für automatische Formular-Steuerelemente ein bzw. aus."
+msgstr "Schaltet die Assistenten für automatische Formular-Steuerelemente ein beziehungsweise aus."
 
 #: 01170000.xhp
 msgctxt ""
@@ -1207,7 +1207,7 @@ msgctxt ""
 "par_idN11CED\n"
 "help.text"
 msgid "Specifies the minimum height or the minimum width of a scrollbar."
-msgstr "Legt die Mindesthöhe bzw. -breite einer Bildlaufleiste fest."
+msgstr "Legt die minimale Höhe beziehungsweise Breite einer Bildlaufleiste fest."
 
 #: 01170000.xhp
 msgctxt ""
@@ -1223,7 +1223,7 @@ msgctxt ""
 "par_idN11CFA\n"
 "help.text"
 msgid "Specifies the maximum height or the maximum width of a scrollbar."
-msgstr "Legt die maximale Höhe bzw. Breite einer Bildlaufleiste fest."
+msgstr "Legt die maximale Höhe beziehungsweise Breite einer Bildlaufleiste fest."
 
 #: 01170000.xhp
 msgctxt ""
@@ -1271,7 +1271,7 @@ msgctxt ""
 "par_idN11D21\n"
 "help.text"
 msgid "Specifies the minimum amount by which you can scroll a scrollbar, for example, by clicking an arrow."
-msgstr "Legt den Mindestwert für den Bildlauf fest (z. B. beim Klicken auf die Pfeile der Bildlaufleiste)."
+msgstr "Legt den Mindestwert für den Bildlauf fest, beispielsweise beim Klicken auf die Pfeile der Bildlaufleiste."
 
 #: 01170000.xhp
 msgctxt ""
@@ -1303,7 +1303,7 @@ msgctxt ""
 "par_idN11D3B\n"
 "help.text"
 msgid "Specifies the delay in milliseconds between scrollbar trigger events. For example, the delay that occurs when you click an arrow button on the scrollbar and hold down the mouse button."
-msgstr "Legt die Verzögerung (in Millisekunden) zwischen Bildlaufleistenereignissen fest, z B. die Verzögerung beim Klicken auf einen Pfeil der Bildlaufleiste und dem Gedrückthalten der Maustaste."
+msgstr "Legt die Verzögerung (in Millisekunden) zwischen Bildlaufleistenereignissen fest, beispielsweise die Verzögerung beim Klicken auf einen Pfeil der Bildlaufleiste und dem Gedrückthalten der Maustaste."
 
 #: 01170000.xhp
 msgctxt ""
@@ -1456,7 +1456,7 @@ msgctxt ""
 "63\n"
 "help.text"
 msgid "Date fields can be easily edited by the user with the up arrow and down arrow keys. Depending on the cursor position, the day, month, or the year is can be increased or decreased using the arrow keys."
-msgstr "Datumsfelder lassen sich anhand der Auf- und Abwärtspfeile problemlos von den Benutzern bearbeiten. Je nach Cursorposition wird der Wert für den Tag, den Monat oder das Jahr erhöht oder verringert"
+msgstr "Datumsfelder lassen sich mithilfe der Auf- und Abwärtspfeiltasten problemlos von den Benutzern bearbeiten. Je nach Cursorposition wird der Wert für den Tag, den Monat oder das Jahr erhöht oder verringert."
 
 #: 01170000.xhp
 msgctxt ""
@@ -1500,7 +1500,7 @@ msgctxt ""
 "64\n"
 "help.text"
 msgid "Time fields can be easily edited by the user with the up and down arrow keys. Depending on the cursor position, the hours, minutes, or the seconds are increased or decreased using the arrow keys."
-msgstr "Uhrzeitfelder lassen sich anhand der Auf- und Abwärtspfeile problemlos von den Benutzern bearbeiten. Je nach Cursorposition wird der Wert für die Stunde, die Minute oder die Sekunden erhöht oder verringert."
+msgstr "Uhrzeitfelder lassen sich mithilfe der Auf- und Abwärtspfeiltasten problemlos von den Benutzern bearbeiten. Je nach Cursorposition wird der Wert für die Stunde, die Minute oder die Sekunden erhöht oder verringert."
 
 #: 01170000.xhp
 msgctxt ""
@@ -1733,7 +1733,7 @@ msgctxt ""
 "par_idN11DB1\n"
 "help.text"
 msgid "The navigation bar allows you to move through the records of a database or a database form. The controls on this navigation bar work the same way as the controls on the default <link href=\"text/shared/main0213.xhp\">navigation bar</link> in $[officename]."
-msgstr "Mit der Navigationsleiste können Sie durch die Datensätze einer Datenbank bzw. ein Datenbankformular blättern. Die Steuerelemente dieser Navigationleiste funktionieren genau wie die Steuerelemente der Standard-<link href=\"text/shared/main0213.xhp\">Navigationsleiste</link> in $[officename]."
+msgstr "Mit der Navigationsleiste können Sie durch die Datensätze einer Datenbank beziehungsweise ein Datenbankformular blättern. Die Steuerelemente dieser Navigationleiste funktionieren genau wie die Steuerelemente der Standard-<link href=\"text/shared/main0213.xhp\">Navigationsleiste</link> in $[officename]."
 
 #: 01170000.xhp
 msgctxt ""
@@ -1785,7 +1785,7 @@ msgctxt ""
 "88\n"
 "help.text"
 msgid "The context menu of a control field has the following commands."
-msgstr "Im Kontextmenü eines Kontrollfelds finden Sie u. a. den folgenden Befehl:"
+msgstr "Im Kontextmenü eines Kontrollfelds finden Sie folgende Befehle."
 
 #: 01170001.xhp
 msgctxt ""
@@ -2107,7 +2107,7 @@ msgctxt ""
 "bm_id3150774\n"
 "help.text"
 msgid "<bookmark_value>formatted fields; properties</bookmark_value><bookmark_value>fields; formatted fields</bookmark_value><bookmark_value>controls; formatted fields</bookmark_value>"
-msgstr "<bookmark_value>Formatierte Felder;Eigenschaften</bookmark_value>  <bookmark_value>Felder;formatierte Felder</bookmark_value>  <bookmark_value>Kontrollfelder;formatierte Felder</bookmark_value>"
+msgstr "<bookmark_value>Formatiertes Feld; Eigenschaften</bookmark_value><bookmark_value>Felder; formatierte Felder</bookmark_value><bookmark_value>Kontrollfeld; Formatiertes Feld</bookmark_value>"
 
 #: 01170002.xhp
 msgctxt ""
@@ -2168,7 +2168,7 @@ msgctxt ""
 "bm_id3150445\n"
 "help.text"
 msgid "<bookmark_value>date fields; properties</bookmark_value>"
-msgstr "<bookmark_value>Datumsfeld;Eigenschaften</bookmark_value>"
+msgstr "<bookmark_value>Datumsfeld; Eigenschaften</bookmark_value>"
 
 #: 01170003.xhp
 msgctxt ""
@@ -2211,7 +2211,7 @@ msgctxt ""
 "bm_id3109850\n"
 "help.text"
 msgid "<bookmark_value>table controls; properties</bookmark_value><bookmark_value>controls; properties of table controls</bookmark_value><bookmark_value>table controls;keyboard-only edit mode</bookmark_value>"
-msgstr "<bookmark_value>Tabellen-Kontrollfelder;Eigenschaften</bookmark_value>  <bookmark_value>Kontrollfelder;Eigenschaften von Tabellen-Kontrollfeldern</bookmark_value>  <bookmark_value>Tabellen-Kontrollfelder;nur mit der Tastatur bearbeiten</bookmark_value>"
+msgstr "<bookmark_value>Tabellen-Kontrollfelder; Eigenschaften</bookmark_value><bookmark_value>Kontrollfelder; Eigenschaften von Tabellen-Kontrollfeldern</bookmark_value><bookmark_value>Tabellen-Kontrollfelder; nur mit der Tastatur bearbeiten</bookmark_value>"
 
 #: 01170004.xhp
 msgctxt ""
@@ -2283,7 +2283,7 @@ msgctxt ""
 "59\n"
 "help.text"
 msgid "Configure the table control using drag and drop: Open the data source browser and drag the desired fields out of the data source browser and on to the column heads of the table control. A pre-configured column is created."
-msgstr "Konfigurieren Sie das Tabellen-Kontrollfeld per Ziehen&Ablegen: Lassen Sie die Datenquellenansicht anzeigen und ziehen Sie die gewünschten Felder aus der Datenquellenansicht auf die Spaltenköpfe des Tabellen-Kontrollfeldes. Es wird dann eine vorkonfigurierte Spalte erzeugt."
+msgstr "Konfigurieren Sie das Tabellen-Kontrollfeld per Ziehen-und-Ablegen: Lassen Sie die Datenquellenansicht anzeigen und ziehen Sie die gewünschten Felder aus der Datenquellenansicht auf die Spaltenköpfe des Tabellen-Kontrollfeldes. Es wird dann eine vorkonfigurierte Spalte erzeugt."
 
 #: 01170004.xhp
 msgctxt ""
@@ -2400,7 +2400,7 @@ msgctxt ""
 "85\n"
 "help.text"
 msgid "<ahelp hid=\"cui/ui/showcoldialog/ShowColDialog\">In the <emph>Show Columns</emph> dialog you can select the columns to be shown. Hold down the Shift or <switchinline select=\"sys\"><caseinline select=\"MAC\">Command</caseinline><defaultinline>Ctrl</defaultinline></switchinline> key to select multiple entries.</ahelp>"
-msgstr "<ahelp hid=\"cui/ui/showcoldialog/ShowColDialog\">Im Dialog <emph>Spalten anzeigen</emph> können Sie die Spalten auswählen, die eingeblendet werden sollen. Halten Sie die Taste Umschalt bzw. <switchinline select=\"sys\"><caseinline select=\"MAC\">Befehl</caseinline><defaultinline>Strg</defaultinline></switchinline> gedrückt, um mehrere Einträge auszuwählen.</ahelp>"
+msgstr "<ahelp hid=\"cui/ui/showcoldialog/ShowColDialog\">Im Dialog <emph>Spalten anzeigen</emph> können Sie die Spalten auswählen, die eingeblendet werden sollen. Halten Sie die Umschalttaste beziehungsweise <switchinline select=\"sys\"><caseinline select=\"MAC\">Befehl</caseinline><defaultinline>Strg</defaultinline></switchinline> gedrückt, um mehrere Einträge auszuwählen.</ahelp>"
 
 #: 01170004.xhp
 msgctxt ""
@@ -2499,7 +2499,7 @@ msgctxt ""
 "134\n"
 "help.text"
 msgid "If you want to edit columns, press Shift+Space to enter column edit mode. Now you can rearrange the order of columns with <switchinline select=\"sys\"><caseinline select=\"MAC\">Command</caseinline><defaultinline>Ctrl</defaultinline></switchinline>+Arrow keys. The Delete key deletes the current column."
-msgstr "Wenn Sie Spalten editieren wollen, drücken sie Umschalt+Leerzeichen. Nun können Sie die Reihenfolge der Spalten mit <switchinline select=\"sys\"><caseinline select=\"MAC\">Befehl</caseinline><defaultinline>Strg</defaultinline></switchinline>+Pfeil Tasten. Die Entf-Taste löscht die aktuelle Spalte."
+msgstr "Wenn Sie Spalten editieren wollen, drücken sie Umschalt+Leerzeichen. Nun können Sie die Reihenfolge der Spalten mit <switchinline select=\"sys\"><caseinline select=\"MAC\">Befehl</caseinline><defaultinline>Strg</defaultinline></switchinline>+Pfeiltasten ändern. Die Taste Entf löscht die aktuelle Spalte."
 
 #: 01170004.xhp
 msgctxt ""
@@ -2524,7 +2524,7 @@ msgctxt ""
 "bm_id3147102\n"
 "help.text"
 msgid "<bookmark_value>controls; properties of form controls</bookmark_value><bookmark_value>properties; form controls</bookmark_value>"
-msgstr "<bookmark_value>Kontrollfelder;Eigenschaften von Formularkontrollfeldern</bookmark_value>  <bookmark_value>Eigenschaften;Formularkontrollfelder</bookmark_value>"
+msgstr "<bookmark_value>Kontrollfelder; Eigenschaften von Formularkontrollfeldern</bookmark_value><bookmark_value>Eigenschaften; Formularkontrollfelder</bookmark_value>"
 
 #: 01170100.xhp
 msgctxt ""
@@ -2641,7 +2641,7 @@ msgctxt ""
 "10\n"
 "help.text"
 msgid "Up Arrow"
-msgstr "CursorAuf"
+msgstr "Cursor nach oben"
 
 #: 01170100.xhp
 msgctxt ""
@@ -2659,7 +2659,7 @@ msgctxt ""
 "12\n"
 "help.text"
 msgid "Down Arrow"
-msgstr "CursorAb"
+msgstr "Cursor nach unten"
 
 #: 01170100.xhp
 msgctxt ""
@@ -2695,7 +2695,7 @@ msgctxt ""
 "16\n"
 "help.text"
 msgid "As with list boxes or combo boxes, you can open or close the list with a mouse click at the arrow on the right end of the field. However, the input here can be entered either in the opened list or in the top text field. An exception is the properties that expect a list representation, for example, the property <emph>List Entries</emph>, which can be set for the control fields <emph>List Box</emph> and <emph>Combo Box</emph>. Here, you can only edit the entries when the field is opened."
-msgstr "Wie bei Kombinationsfeldern können Sie die Liste mit der Pfeiltaste am rechten Rand des Feldes mit einem Mausklick auf- und zuklappen. Die Eingabe kann hier allerdings sowohl in der aufgeklappten Liste als auch im oberen Textfeld erfolgen. Eine Ausnahme bilden die Eigenschaften, die eine Listendarstellung erwarten, wie z. B. die Eigenschaft <emph>Listen-Einträge</emph>, die für die Kontrollfelder <emph>Listenfeld</emph> und <emph>Kombinationsfeld</emph> gesetzt werden kann. Hier können Sie die Einträge nur im aufgeklappten Zustand editieren."
+msgstr "Wie bei Kombinationsfeldern können Sie die Liste mit der Pfeiltaste am rechten Rand des Feldes mit einem Mausklick auf- und zuklappen. Die Eingabe kann hier allerdings sowohl in der aufgeklappten Liste als auch im oberen Textfeld erfolgen. Eine Ausnahme bilden die Eigenschaften, die eine Listendarstellung erwarten, wie beispielsweise die Eigenschaft <emph>Listen-Einträge</emph>, die für die Kontrollfelder <emph>Listenfeld</emph> und <emph>Kombinationsfeld</emph> gesetzt werden kann. Hier können Sie die Einträge nur im aufgeklappten Zustand editieren."
 
 #: 01170101.xhp
 msgctxt ""
@@ -2730,7 +2730,7 @@ msgctxt ""
 "172\n"
 "help.text"
 msgid "If you export the current form document to HTML format, the default control values are exported, not the current control values. Default values are determined - depending on the type of control - by the properties' Default value (for example, in text fields), Default status (for check boxes and option fields), and Default selection (for list boxes)."
-msgstr "Wenn Sie das aktuelle Formular-Dokument in das HTML-Format exportieren, werden die Standardwerte der Kontrollelemente exportiert. Die Standardwerte sind - je nach Art des Kontrollfeldes - durch die Eigenschaften des Standardwertes (z. B. Textfelder), des Standardstatus (z. B. Auswahl- und Optionsfelder) und Standardauswahl (für Listenfelder) bestimmt."
+msgstr "Wenn Sie das aktuelle Formular-Dokument in das HTML-Format exportieren, werden nur die Standardwerte der Kontrollelemente exportiert, nicht die aktuellen. Die Standardwerte sind - je nach Art des Kontrollfeldes - durch die Eigenschaften des Standardwertes (beispielsweise in Textfeldern), des Standardstatus (für Auswahl- und Optionsfelder) und der Standardauswahl (für Listenfelder) bestimmt."
 
 #: 01170101.xhp
 msgctxt ""
@@ -3112,7 +3112,7 @@ msgctxt ""
 "par_idN109E9\n"
 "help.text"
 msgid "Graphics or text that are used in buttons"
-msgstr "Auf Schaltflächen angezeigte Grafiken bzw. Text"
+msgstr "Auf Schaltflächen angezeigte Grafiken beziehungsweise Text"
 
 #: 01170101.xhp
 msgctxt ""
@@ -3156,7 +3156,7 @@ msgctxt ""
 "217\n"
 "help.text"
 msgid "<ahelp hid=\"HID_PROP_CONTROLLABEL\">Specifies the source for the label of the control.</ahelp> The text of the label field will be used instead of the name of a database field. For example, in the <emph>Filter Navigator</emph>, <emph>Search</emph> dialog, and as a column name in the table view."
-msgstr "<ahelp hid=\"HID_PROP_CONTROLLABEL\">Gibt die Quelle für die Beschriftung des Kontrollfelds an.</ahelp> Der Text des Beschriftungsfelds wird überall dort eingefügt, wo der Name eines Quelldatenbankfelds gefunden wird, also z. B. im <emph>Filter-Navigator</emph>, im <emph>Suchdialog</emph> und als Spaltenname in der Tabellenansicht."
+msgstr "<ahelp hid=\"HID_PROP_CONTROLLABEL\">Gibt die Quelle für die Beschriftung des Kontrollfelds an.</ahelp> Der Text des Beschriftungsfelds wird überall dort eingefügt, wo der Name eines Quelldatenbankfelds gefunden wird, also beispielsweise im <emph>Filter-Navigator</emph>, im <emph>Suchdialog</emph> und als Spaltenname in der Tabellenansicht."
 
 #: 01170101.xhp
 msgctxt ""
@@ -3210,7 +3210,7 @@ msgctxt ""
 "143\n"
 "help.text"
 msgid "<ahelp hid=\"HID_PROP_WIDTH\" visibility=\"hidden\">Sets the column width in the table control field.</ahelp> Sets the column width in the table control field in the units that are specified in the %PRODUCTNAME module options. If you want, you can enter a value followed by a valid measurement unit, for example, 2 cm."
-msgstr "<ahelp hid=\"HID_PROP_WIDTH\" visibility=\"hidden\">Hier legen Sie die Spaltenbreite für Tabellen-Kontrollfelder fest.</ahelp> Hier legen Sie die Spaltenbreite für Tabellen-Kontrollfelder in der Einheit, die in %PRODUCTNAME voreingestellt ist, fest. Sie können auch einen Wert, gefolgt von einer anderen gültigen Einheit, festlegen, z.B. 2cm."
+msgstr "<ahelp hid=\"HID_PROP_WIDTH\" visibility=\"hidden\">Hier legen Sie die Spaltenbreite für Tabellen-Kontrollfelder fest.</ahelp> Hier legen Sie die Spaltenbreite für Tabellen-Kontrollfelder in der Einheit, die in %PRODUCTNAME voreingestellt ist, fest. Sie können auch einen Wert, gefolgt von einer anderen gültigen Einheit, festlegen, beispielsweise 2 cm."
 
 #: 01170101.xhp
 msgctxt ""
@@ -3242,7 +3242,7 @@ msgctxt ""
 "par_id6092715\n"
 "help.text"
 msgid "<ahelp hid=\"HID_PROP_REPEAT_DELAY\">Specifies the delay in milliseconds between repeating events.</ahelp> A repeating event occurs when you click an arrow button or the background of a scrollbar, or one of the record navigation buttons of a Navigation Bar, and you keep the mouse button pressed for some time. You can enter a value followed by a valid time unit, for example, 2 s or 500 ms."
-msgstr "<ahelp hid=\"HID_PROP_REPEAT_DELAY\">Legt die Verzögerung (in Millisekunden) zwischen sich wiederholenden Ereignissen fest, </ahelp> Ein sich wiederholendes Ereignis tritt ein, wenn Sie auf einen Pfeil in einer Bildlaufleiste oder eine der Schaltflächen für die Navigationsfunktionen in der Navigationsleiste klicken und dabei die Maustaste gedrückt lassen. Sie können einen Wert und eine gültige Maßeinheit (z. B. 2 s oder 500 ms) eingeben."
+msgstr "<ahelp hid=\"HID_PROP_REPEAT_DELAY\">Legt die Verzögerung in Millisekunden zwischen sich wiederholenden Ereignissen fest.</ahelp> Ein sich wiederholendes Ereignis tritt ein, wenn Sie auf einen Pfeil in einer Bildlaufleiste oder eine der Schaltflächen für die Navigationsfunktionen in der Navigationsleiste klicken und dabei die Maustaste gedrückt lassen. Sie können einen Wert und eine gültige Zeiteinheit, beispielsweise 2 s oder 500 ms, eingeben."
 
 #: 01170101.xhp
 msgctxt ""
@@ -3628,7 +3628,7 @@ msgctxt ""
 "111\n"
 "help.text"
 msgid "For the literal mask \"__.__.2000\", for example, define the \"NNLNNLLLLL\" edit mask so that the user can only enter four digits when entering a date."
-msgstr "Definieren Sie z. B. für die Zeichenmaske \"__.__.2000\" die Eingabemaske \"NNLNNLLLLL\", um dem Benutzer nur noch die Eingabe von 4 Ziffern zur Datumsangabe zu ermöglichen."
+msgstr "Definieren Sie beispielsweise für die Zeichenmaske \"__.__.2000\" die Eingabemaske \"NNLNNLLLLL\", um dem Benutzer nur noch die Eingabe von 4 Ziffern zur Datumsangabe zu ermöglichen."
 
 #: 01170101.xhp
 msgctxt ""
@@ -3646,7 +3646,7 @@ msgctxt ""
 "113\n"
 "help.text"
 msgid "You can have a format check with control fields that accept formatted contents (date, time, and so on). <ahelp hid=\"HID_PROP_STRICTFORMAT\">If the strict format function is activated (Yes), only the allowed characters are accepted.</ahelp> For example, in a date field, only numbers or date delimiters are accepted; all alphabet entries typed with your keyboard are ignored."
-msgstr "In Kontrollfeldern, die formatierte Inhalte akzeptieren (z.B. Datums- oder Uhrzeitwerte), können Sie eine Formatkontrolle ausführen lassen. <ahelp hid=\"HID_PROP_STRICTFORMAT\">Ist diese Funktion aktiviert (Ja), werden nur die zugelassenen Zeichen übernommen.</ahelp> So werden beispielsweise in einem Datumsfeld nur Zahlen oder Datumstrennzeichen akzeptiert und alle Buchstabeneingaben ignoriert."
+msgstr "In Kontrollfeldern, die formatierte Inhalte akzeptieren (beispielsweise Datums- oder Uhrzeitwerte), können Sie eine Formatkontrolle ausführen lassen. <ahelp hid=\"HID_PROP_STRICTFORMAT\">Ist diese Funktion aktiviert (Ja), werden nur die zugelassenen Zeichen übernommen.</ahelp> So werden beispielsweise in einem Datumsfeld nur Zahlen oder Datumstrennzeichen akzeptiert und alle Buchstabeneingaben ignoriert."
 
 #: 01170101.xhp
 msgctxt ""
@@ -3808,7 +3808,7 @@ msgctxt ""
 "209\n"
 "help.text"
 msgid "<ahelp hid=\"HID_PROP_HELPTEXT\">Provides the option of entering a help text that will be displayed as a tip on the control.</ahelp> The tip shows the text in user mode when the mouse is moved over the control."
-msgstr "<ahelp hid=\"HID_PROP_HELPTEXT\">Ermöglicht die Eingabe eines Hilfetexts, der als Tipp zum Kontrollfeld eingeblendet wird.</ahelp> Die Tipp-Hilfe blendet den Text im Benutzermodus ein, wenn die Maus über das Kontrollfeld geführt wird."
+msgstr "<ahelp hid=\"HID_PROP_HELPTEXT\">Ermöglicht die Eingabe eines Hilfetextes, der als Tipp zum Kontrollfeld eingeblendet wird.</ahelp> Die Tipp-Hilfe blendet den Text im Benutzermodus ein, wenn die Maus über das Kontrollfeld geführt wird."
 
 #: 01170101.xhp
 msgctxt ""
@@ -4066,7 +4066,7 @@ msgctxt ""
 "bm_id4040955\n"
 "help.text"
 msgid "<bookmark_value>rich text control</bookmark_value>         <bookmark_value>controls;rich text control</bookmark_value>"
-msgstr "<bookmark_value>Rich Text-Steuerelement</bookmark_value>  <bookmark_value>Steuerelemente;für Rich Text</bookmark_value>"
+msgstr "<bookmark_value>Rich Text-Steuerelement</bookmark_value><bookmark_value>Steuerelemente; für Rich Text</bookmark_value>"
 
 #: 01170101.xhp
 msgctxt ""
@@ -4132,7 +4132,7 @@ msgctxt ""
 "par_idN1154E\n"
 "help.text"
 msgid "<ahelp hid=\".\">Specifies if a Push Button behaves as a Toggle Button. If you set Toggle to \"Yes\", you can switch between the \"selected\" and \"not selected\" control states when you click the button or press the spacebar while the control has the focus. A button in the \"selected\" state appears \"pressed in\".</ahelp>"
-msgstr "<ahelp hid=\".\">Legt fest, ob eine Schaltfläche eine Umschaltfunktion auslösen soll. Wenn \"Umschalten\" auf \"Ja\" gesetzt wird, ist das Umschalten zwischen den Zuständen \"ausgewählt\" und \"nicht ausgewählt\" möglich, wenn auf die Schaltfläche geklickt bzw. die Leertaste gedrückt wird, während das Kontrollfeld den Fokus besitzt. Eine Umschaltfläche im Zustand \"ausgewählt\" wird \"eingedrückt\" dargestellt.</ahelp>"
+msgstr "<ahelp hid=\".\">Legt fest, ob eine Schaltfläche eine Umschaltfunktion auslösen soll. Wenn \"Umschalten\" auf \"Ja\" gesetzt wird, ist das Umschalten zwischen den Zuständen \"ausgewählt\" und \"nicht ausgewählt\" möglich, wenn auf die Schaltfläche geklickt beziehungsweise die Leertaste gedrückt wird, während das Kontrollfeld den Fokus besitzt. Eine Umschaltfläche im Zustand \"ausgewählt\" wird \"eingedrückt\" dargestellt.</ahelp>"
 
 #: 01170101.xhp
 msgctxt ""
@@ -4319,7 +4319,7 @@ msgctxt ""
 "bm_id3146325\n"
 "help.text"
 msgid "<bookmark_value>controls; grouping</bookmark_value>         <bookmark_value>groups;of controls</bookmark_value>         <bookmark_value>forms; grouping controls</bookmark_value>"
-msgstr "<bookmark_value>Kontrollfelder;gruppieren</bookmark_value>  <bookmark_value>Gruppen;von Kontrollfeldern</bookmark_value>  <bookmark_value>Formulare;Kontrollfelder gruppieren</bookmark_value>"
+msgstr "<bookmark_value>Kontrollfelder; gruppieren</bookmark_value><bookmark_value>Gruppen; von Kontrollfeldern</bookmark_value><bookmark_value>Formulare; Kontrollfelder gruppieren</bookmark_value>"
 
 #: 01170101.xhp
 msgctxt ""
@@ -4328,7 +4328,7 @@ msgctxt ""
 "192\n"
 "help.text"
 msgid "The name is also used to group different controls that belong together functionally, such as radio buttons. To do so, give the same name to all members of the group: controls with identical names form a group. Grouped controls can be represented visually by using a <link href=\"text/shared/02/01170000.xhp\" name=\"Group Box\">Group Box</link>."
-msgstr "Kontrollfeldnamen dienen auch dazu, verschiedene Kontrollfelder, z. B. Optionsfelder, die funktionell zusammen gehören, in Gruppen zu fassen. Hierzu geben Sie allen Komponenten einer Gruppe denselben Namen: Kontrollfelder mit identischen Namen bilden eine Gruppe. Mithilfe von <link href=\"text/shared/02/01170000.xhp\" name=\"Gruppierungsrahmen\">Gruppierungsrahmen</link> lassen sich gruppierte Kontrollfelder optisch als solche kennzeichnen."
+msgstr "Kontrollfeldnamen dienen auch dazu, verschiedene Kontrollfelder, beispielsweise Optionsfelder, die funktionell zusammen gehören, in Gruppen zu fassen. Hierzu geben Sie allen Komponenten einer Gruppe denselben Namen: Kontrollfelder mit identischen Namen bilden eine Gruppe. Mithilfe von <link href=\"text/shared/02/01170000.xhp\" name=\"Gruppierungsrahmen\">Gruppierungsrahmen</link> lassen sich gruppierte Kontrollfelder optisch als solche kennzeichnen."
 
 #: 01170101.xhp
 msgctxt ""
@@ -4497,7 +4497,7 @@ msgctxt ""
 "37\n"
 "help.text"
 msgid "<ahelp hid=\"HID_PROP_DEFAULT_SELECT_SEQ\" visibility=\"hidden\">Specifies the list box entry to mark as the default entry.</ahelp> Specifies the list box entry to mark as the default entry."
-msgstr "<ahelp hid=\"HID_PROP_DEFAULT_SELECT_SEQ\" visibility=\"hidden\">Hier legen Sie fest, welcher der Listen-Einträge standardmäßig ausgewählt ist.</ahelp> Bei einem Listenfeld legen Sie mit dieser Eigenschaft fest, welcher der Listen-Einträge standardmäßig ausgewählt ist. Beim Laden des Dokuments wird dieser definierte Zustand angenommen. Der erste Listen-Eintrag hat die Nummer 0, der nächste 1 usw."
+msgstr "<ahelp hid=\"HID_PROP_DEFAULT_SELECT_SEQ\" visibility=\"hidden\">Hier legen Sie fest, welcher der Listeneinträge standardmäßig ausgewählt ist.</ahelp> Bei einem Listenfeld legen Sie mit dieser Eigenschaft fest, welcher der Listeneinträge standardmäßig ausgewählt ist. Beim Laden des Dokuments wird dieser definierte Zustand angenommen. Der erste Listeneintrag hat die Nummer 0, der nächste 1 und so weiter."
 
 #: 01170101.xhp
 msgctxt ""
@@ -4679,7 +4679,7 @@ msgctxt ""
 "par_id4563127\n"
 "help.text"
 msgid "<ahelp hid=\".\">Sets the default text for a text box or a combo box.</ahelp>"
-msgstr "<ahelp hid=\".\">Legt den Standardtext für Text- bzw. Kombinationsfelder fest.</ahelp>"
+msgstr "<ahelp hid=\".\">Legt den Standardtext für Text- beziehungsweise Kombinationsfelder fest.</ahelp>"
 
 #: 01170101.xhp
 msgctxt ""
@@ -4697,7 +4697,7 @@ msgctxt ""
 "145\n"
 "help.text"
 msgid "<ahelp hid=\"HID_PROP_DEFAULT_BUTTON\" visibility=\"hidden\">The<emph> Default button</emph> property specifies that the corresponding button will be operated when you press the Return key.</ahelp> The<emph> Default button</emph> property specifies that the corresponding button will be operated when you press the Return key. If you open the dialog or form and do not carry out any further action, the button with this property is the default button."
-msgstr "<ahelp hid=\"HID_PROP_DEFAULT_BUTTON\" visibility=\"hidden\">Wenn Sie die Eigenschaft <emph>Standardschaltfläche</emph> setzen, wird die entsprechende Schaltfläche durch Drücken der Eingabetaste betätigt.</ahelp> Wenn Sie die Eigenschaft <emph>Standardschaltfläche</emph> setzen, wird die entsprechende Schaltfläche durch Drücken der Eingabetaste betätigt. Wird ein Dialog bzw. ein Formular geöffnet und keine weitere Aktion durchgeführt, so ist die Schaltfläche mit dieser Eigenschaft die Standardschaltfläche."
+msgstr "<ahelp hid=\"HID_PROP_DEFAULT_BUTTON\" visibility=\"hidden\">Wenn Sie die Eigenschaft <emph>Standardschaltfläche</emph> setzen, wird die entsprechende Schaltfläche durch Drücken der Eingabetaste betätigt.</ahelp> Wenn Sie die Eigenschaft <emph>Standardschaltfläche</emph> setzen, wird die entsprechende Schaltfläche durch Drücken der Eingabetaste betätigt. Wird ein Dialog beziehungsweise ein Formular geöffnet und keine weitere Aktion durchgeführt, so ist die Schaltfläche mit dieser Eigenschaft die Standardschaltfläche."
 
 #: 01170101.xhp
 msgctxt ""
@@ -4823,7 +4823,7 @@ msgctxt ""
 "8\n"
 "help.text"
 msgid "<ahelp hid=\"HID_PROP_LABEL\" visibility=\"hidden\">The Label property sets the label of the control field that is displayed in the form.</ahelp> The Label property sets the label of the control field that is displayed in the form. This property determines the visible label or the column header of the data field in table control forms."
-msgstr "<ahelp hid=\"HID_PROP_LABEL\" visibility=\"hidden\">Mit der Eigenschaft \"Titel\" geben Sie die im Formular angezeigte Beschriftung des Kontrollfelds an.</ahelp> Mit der Eigenschaft \"Titel\" geben Sie die im Formular angezeigte Beschriftung des Kontrollfelds an. Diese Eigenschaft bestimmt die sichtbare Beschriftung eines Kontrollfelds bzw. die Spaltenüberschrift eines Datenfelds in einem Tabellen-Kontrollfeld."
+msgstr "<ahelp hid=\"HID_PROP_LABEL\" visibility=\"hidden\">Mit der Eigenschaft \"Titel\" geben Sie die im Formular angezeigte Beschriftung des Kontrollfelds an.</ahelp> Mit der Eigenschaft \"Titel\" geben Sie die im Formular angezeigte Beschriftung des Kontrollfelds an. Diese Eigenschaft bestimmt die sichtbare Beschriftung eines Kontrollfelds beziehungsweise die Spaltenüberschrift eines Datenfelds in einem Tabellen-Kontrollfeld."
 
 #: 01170101.xhp
 msgctxt ""
@@ -4832,7 +4832,7 @@ msgctxt ""
 "54\n"
 "help.text"
 msgid "When you create a new control, the description predefined in the <emph>Name</emph> property is used as the default for labeling the control. The label consists of the control field name and an integer numbering the control (for example, CommandButton1). With the <emph>Title</emph> property, you can assign another description to the control so that the label reflects the function of the control. Change this entry in order to assign an expressive label to the control that is visible to the user."
-msgstr "Wenn Sie ein neues Kontrollfeld erstellen, wird standardmäßig die <emph>Name</emph>-Eigenschaft als vordefinierte Bezeichnung zur Beschriftung des Kontrollfelds genommen. Dabei setzt sich die Bezeichnung zusammen aus dem Kontrollfeldnamen und einer Ganzzahl zur Nummerierung des Kontrollfelds, also z. B. Schaltfäche1. Mit der <emph>Titel</emph>-Eigenschaft können Sie dem Kontrollfeld eine andere Bezeichnung zuweisen, so dass die Beschriftung die Funktion des Kontrollfelds wiedergibt. Ändern Sie diesen Eintrag, um dem Kontrollfeld eine aussagekräftige, für den Anwender sichtbare Bezeichnung zu geben."
+msgstr "Wenn Sie ein neues Kontrollfeld erstellen, wird standardmäßig die <emph>Name</emph>-Eigenschaft als vordefinierte Bezeichnung zur Beschriftung des Kontrollfelds genommen. Dabei setzt sich die Bezeichnung zusammen aus dem Kontrollfeldnamen und einer Ganzzahl zur Nummerierung des Kontrollfelds (beispielsweise Schaltfläche1). Mit der <emph>Titel</emph>-Eigenschaft können Sie dem Kontrollfeld eine andere Bezeichnung zuweisen, so dass die Beschriftung die Funktion des Kontrollfelds wiedergibt. Ändern Sie diesen Eintrag, um dem Kontrollfeld eine aussagekräftige, für den Anwender sichtbare Bezeichnung zu geben."
 
 #: 01170101.xhp
 msgctxt ""
@@ -4840,7 +4840,7 @@ msgctxt ""
 "bm_id3163820\n"
 "help.text"
 msgid "<bookmark_value>multi-line titles in forms</bookmark_value>         <bookmark_value>names; multi-line titles</bookmark_value>         <bookmark_value>controls; multi-line titles</bookmark_value>"
-msgstr "<bookmark_value>Mehrzeilige Titel in Formularen</bookmark_value>  <bookmark_value>Namen;mehrzeilige Titel</bookmark_value>  <bookmark_value>Kontrollfelder;mehrzeilige Titel</bookmark_value>"
+msgstr "<bookmark_value>Mehrzeilige Titel in Formularen</bookmark_value><bookmark_value>Namen; mehrzeilige Titel</bookmark_value><bookmark_value>Kontrollfelder; mehrzeilige Titel</bookmark_value>"
 
 #: 01170101.xhp
 msgctxt ""
@@ -5063,7 +5063,7 @@ msgctxt ""
 "171\n"
 "help.text"
 msgid "<ahelp hid=\"HID_PROP_TAG\" visibility=\"hidden\">Specifies additional information or a descriptive text for the control field.</ahelp> In each control field you can specify additional information or a descriptive text for the control field. This property helps the programmer to save additional information that can be used in the program code. This field can be used, for example, for variables or other evaluation parameters."
-msgstr "<ahelp hid=\"HID_PROP_TAG\" visibility=\"hidden\">Hier geben Sie zusätzliche Informationen oder einen beschreibenden Text zum Kontrollfeld ein.</ahelp> Jedes Kontrollfeld kann mit zusätzlichen Informationen oder einer Beschreibung versehen werden. Diese Eigenschaft kann Programmierern zum Speichern zusätzlicher, im Programmcode zu verwendender Informationen nützlich sein. So können hier z. B. Variablen oder andere Auswertungsparameter eingegeben werden."
+msgstr "<ahelp hid=\"HID_PROP_TAG\" visibility=\"hidden\">Hier geben Sie zusätzliche Informationen oder einen beschreibenden Text zum Kontrollfeld ein.</ahelp> Jedes Kontrollfeld kann mit zusätzlichen Informationen oder einer Beschreibung versehen werden. Diese Eigenschaft kann Programmierern zum Speichern zusätzlicher, im Programmcode zu verwendender Informationen nützlich sein. Hier können beispielsweise Variablen oder andere Auswertungsparameter eingegeben werden."
 
 #: 01170101.xhp
 msgctxt ""
@@ -5161,7 +5161,7 @@ msgctxt ""
 "par_idN1215A\n"
 "help.text"
 msgid "<ahelp hid=\"37931\">Specifies to show or hide the filtering and sorting items in a selected Navigation Bar control.</ahelp> Filtering and sorting items are the following: Sort ascending, Sort descending, Sort, Automatic filter, Default filter, Apply filter, Reset filter/sort."
-msgstr "<ahelp hid=\"37931\">Legt fest, ob in einer markierten Navigationsleiste Filter- bzw. Sortierfunktionen ein- oder ausgeblendet sein sollen.</ahelp> Zu den Filter- und Sortierfunktionen gehören: Aufsteigend sortieren, Absteigend sortieren, Sortieren, Automatischer Filter, Standardfilter, Filter anwenden, Filter/Sortierung zurücksetzen."
+msgstr "<ahelp hid=\"37931\">Legt fest, ob in einer markierten Navigationsleiste Filter- beziehungsweise Sortierfunktionen ein- oder ausgeblendet sein sollen.</ahelp> Zu den Filter- und Sortierfunktionen gehören: Aufsteigend sortieren, Absteigend sortieren, Sortieren, Automatischer Filter, Standardfilter, Filter anwenden, Filter/Sortierung zurücksetzen."
 
 #: 01170101.xhp
 msgctxt ""
@@ -5273,7 +5273,7 @@ msgctxt ""
 "bm_id3145641\n"
 "help.text"
 msgid "<bookmark_value>controls; reference by SQL</bookmark_value><bookmark_value>bound fields; controls</bookmark_value><bookmark_value>controls; bound fields/list contents/linked cells</bookmark_value><bookmark_value>lists;data assigned to controls</bookmark_value><bookmark_value>cells;linked to controls</bookmark_value><bookmark_value>links;between cells and controls</bookmark_value><bookmark_value>controls;assigning data sources</bookmark_value>"
-msgstr "<bookmark_value>Kontrollfelder;Referenz nach SQL</bookmark_value>  <bookmark_value>Gebundenes Feld;Kontrollfelder</bookmark_value>  <bookmark_value>Kontrollfelder;gebundene Felder/Listeninhalt/verknüpfte Zellen</bookmark_value>  <bookmark_value>Listen;Kontrollfeldern zugewiesene Daten</bookmark_value>  <bookmark_value>Zellen;mit Kontrollfeldern verknüpft</bookmark_value>  <bookmark_value>Verknüpfungen;zwischen Zellen und Kontrollfeldern</bookmark_value>  <bookmark_value>Kontrollfelder;Datenquellen zuweisen</bookmark_value>"
+msgstr "<bookmark_value>Kontrollfelder; Referenz nach SQL</bookmark_value><bookmark_value>Gebundenes Feld; Kontrollfelder</bookmark_value><bookmark_value>Kontrollfelder; gebundene Felder/Listeninhalt/verknüpfte Zellen</bookmark_value><bookmark_value>Listen; Kontrollfeldern zugewiesene Daten</bookmark_value><bookmark_value>Zellen; mit Kontrollfeldern verknüpft</bookmark_value><bookmark_value>Verknüpfungen; zwischen Zellen und Kontrollfeldern</bookmark_value><bookmark_value>Kontrollfelder; Datenquellen zuweisen</bookmark_value>"
 
 #: 01170102.xhp
 msgctxt ""
@@ -5595,7 +5595,7 @@ msgctxt ""
 "4\n"
 "help.text"
 msgid "<ahelp hid=\"HID_PROP_BOUNDCOLUMN\" visibility=\"hidden\">Use an index to specify the table field or table SQL query to link to the field that is provided under <emph>Data field</emph>. Valid values for this property are 1, 2, 3, and so on.</ahelp>"
-msgstr "<ahelp hid=\"HID_PROP_BOUNDCOLUMN\" visibility=\"hidden\">Geben Sie hier durch einen Index an, mit welchem Tabellenfeld oder welcher SQL-Abfrage das unter <emph>Datenfeld</emph> aufgeführte Feld verknüpft ist. Gültige Werte für diese Eigenschaft sind 1, 2, 3 usw.</ahelp>"
+msgstr "<ahelp hid=\"HID_PROP_BOUNDCOLUMN\" visibility=\"hidden\">Geben Sie hier durch einen Index an, mit welchem Tabellenfeld oder welcher SQL-Abfrage das unter <emph>Datenfeld</emph> aufgeführte Feld verknüpft ist. Gültige Werte für diese Eigenschaft sind 1, 2, 3 und so weiter.</ahelp>"
 
 #: 01170102.xhp
 msgctxt ""
@@ -5621,7 +5621,7 @@ msgctxt ""
 "38\n"
 "help.text"
 msgid "If a list box in the form is to display contents of a table linked to the form table, then define in the <emph>Type of list contents</emph> field if the display is determined by an SQL command or the (linked) table is accessed. With the <emph>Bound field</emph> property, you use an index to specify to which data field of the query or of the table the list field is linked."
-msgstr "Wenn ein Listenfeld im Formular Inhalte einer mit der Formular-Tabelle verknüpften Tabelle anzeigen soll, dann legen Sie im Feld <emph>Art des Listeninhalts</emph> fest, ob die Anzeige über einen SQL-Befehl bestimmt wird oder ob dabei auf die (verknüpfte) Tabelle zurückgegriffen wird. Mit der Eigenschaft <emph>Gebundenes Feld</emph> geben Sie durch einen Index an, mit welchem Datenfeld der Abfrage oder der Tabelle das Listenfeld verknüpft ist. Die möglichen Werte sind 0, 1, 2, 3 usw."
+msgstr "Wenn ein Listenfeld im Formular Inhalte einer mit der Formular-Tabelle verknüpften Tabelle anzeigen soll, dann legen Sie im Feld <emph>Art des Listeninhalts</emph> fest, ob die Anzeige über einen SQL-Befehl bestimmt wird oder ob dabei auf die (verknüpfte) Tabelle zurückgegriffen wird. Mit der Eigenschaft <emph>Gebundenes Feld</emph> geben Sie durch einen Index an, mit welchem Datenfeld der Abfrage oder der Tabelle das Listenfeld verknüpft ist. Die möglichen Werte sind 0, 1, 2, 3 und so weiter."
 
 #: 01170102.xhp
 msgctxt ""
@@ -5891,7 +5891,7 @@ msgctxt ""
 "82\n"
 "help.text"
 msgid "For list boxes, an SQL statement may have the following form:"
-msgstr "Bei Listenfeldern hat ein SQL-Statement z. B. die Form:"
+msgstr "Bei Listenfeldern könnte ein SQL-Statement beispielsweise folgende Form haben:"
 
 #: 01170102.xhp
 msgctxt ""
@@ -5918,7 +5918,7 @@ msgctxt ""
 "85\n"
 "help.text"
 msgid "For combo boxes, an SQL statement may take the following form:"
-msgstr "Bei Kombinationsfeldern hat ein SQL-Statement z. B. die Form:"
+msgstr "Bei Kombinationsfeldern könnte ein SQL-Statement beispielsweise folgende Form haben:"
 
 #: 01170102.xhp
 msgctxt ""
@@ -5972,7 +5972,7 @@ msgctxt ""
 "18\n"
 "help.text"
 msgid "If the value list is to contain an empty string, enter the value \"$$$empty$$$\" under <emph>List content</emph> at the corresponding position (note uppercase/lowercase). $[officename] interprets this input as an empty string and assigns it to the respective list entry."
-msgstr "Soll die Werteliste eine leere Zeichenkette enthalten, dann geben Sie unter <emph>Listeninhalt</emph> an der entsprechenden Position den Wert \"$$$empty$$$\" an (Groß-/Kleinschreibung beachten). $[officename] interpretiert diese Eingabe als eine leere Zeichenkette und weist sie dem entsprechenden Listeneintrag zu."
+msgstr "Soll die Werteliste eine leere Zeichenkette enthalten, dann geben Sie unter <emph>Listeninhalt</emph> an der entsprechenden Position den Wert \"$$$empty$$$\" an (Groß- und Kleinschreibung beachten). $[officename] interpretiert diese Eingabe als eine leere Zeichenkette und weist sie dem entsprechenden Listeneintrag zu."
 
 #: 01170102.xhp
 msgctxt ""
@@ -6193,7 +6193,7 @@ msgctxt ""
 "par_idN10EE7\n"
 "help.text"
 msgid "<ahelp hid=\"HID_PROP_BOUND_CELL\">Specifies the reference to a linked cell on a spreadsheet. The live state or contents of the control are linked to the cell contents.</ahelp> The following tables list the controls and their corresponding link type:"
-msgstr "<ahelp hid=\"HID_PROP_BOUND_CELL\">Gibt die Referenz auf eine verknüpfte Zelle in einem Tabellendokument an. Der aktuelle Zustand bzw. Dateninhalt des Steuerelements ist mit dem Zelleninhalt verknüpft.</ahelp> In der folgenden Tabelle sind die einzelnen Steuerelemente und ihr entsprechender Verknüpfungstyp aufgeführt:"
+msgstr "<ahelp hid=\"HID_PROP_BOUND_CELL\">Gibt die Referenz auf eine verknüpfte Zelle in einem Tabellendokument an. Der aktuelle Zustand beziehungsweise Dateninhalt des Steuerelements ist mit dem Zelleninhalt verknüpft.</ahelp> In der folgenden Tabelle sind die einzelnen Steuerelemente und ihr entsprechender Verknüpfungstyp aufgeführt:"
 
 #: 01170102.xhp
 msgctxt ""
@@ -6273,7 +6273,7 @@ msgctxt ""
 "par_idN10F38\n"
 "help.text"
 msgid "Enter a number or a formula that returns a number in the linked cell"
-msgstr "Eine Zahl bzw. Formel eingeben, die der verknüpften Zelle eine Zahl zurückliefert"
+msgstr "Eine Zahl beziehungsweise Formel eingeben, die der verknüpften Zelle eine Zahl zurückliefert"
 
 #: 01170102.xhp
 msgctxt ""
@@ -6289,7 +6289,7 @@ msgctxt ""
 "par_idN10F47\n"
 "help.text"
 msgid "Clear the linked cell, or enter text, or enter a formula that returns text or an error"
-msgstr "Inhalt der verknüpften Zelle löschen, Text eingeben oder eine Formel eingeben, die Text bzw. einen Fehler zurückliefert"
+msgstr "Inhalt der verknüpften Zelle löschen, Text eingeben oder eine Formel eingeben, die Text beziehungsweise einen Fehler zurückliefert"
 
 #: 01170102.xhp
 msgctxt ""
@@ -6425,7 +6425,7 @@ msgctxt ""
 "par_idN10F8C\n"
 "help.text"
 msgid "Enter a number or a formula that returns a number in the linked cell"
-msgstr "Eine Zahl bzw. Formel eingeben, die der verknüpften Zelle eine Zahl zurückliefert"
+msgstr "Eine Zahl beziehungsweise Formel eingeben, die der verknüpften Zelle eine Zahl zurückliefert"
 
 #: 01170102.xhp
 msgctxt ""
@@ -6441,7 +6441,7 @@ msgctxt ""
 "par_idN10F9B\n"
 "help.text"
 msgid "Clear the linked cell, or enter text, or enter a formula that returns text or an error"
-msgstr "Inhalt der verknüpften Zelle löschen, Text eingeben oder eine Formel eingeben, die Text bzw. einen Fehler zurückliefert"
+msgstr "Inhalt der verknüpften Zelle löschen, Text eingeben oder eine Formel eingeben, die Text beziehungsweise einen Fehler zurückliefert"
 
 #: 01170102.xhp
 msgctxt ""
@@ -6585,7 +6585,7 @@ msgctxt ""
 "par_idN10FE6\n"
 "help.text"
 msgid "Text or number is copied into the text box"
-msgstr "Text bzw. Zahl wird in das Textfeld kopiert"
+msgstr "Text beziehungsweise Zahl wird in das Textfeld kopiert"
 
 #: 01170102.xhp
 msgctxt ""
@@ -6681,7 +6681,7 @@ msgctxt ""
 "par_idN1103F\n"
 "help.text"
 msgid "Enter a number or a formula that returns a number in the linked cell"
-msgstr "Eine Zahl bzw. Formel eingeben, die der verknüpften Zelle eine Zahl zurückliefert"
+msgstr "Eine Zahl beziehungsweise Formel eingeben, die der verknüpften Zelle eine Zahl zurückliefert"
 
 #: 01170102.xhp
 msgctxt ""
@@ -6697,7 +6697,7 @@ msgctxt ""
 "par_idN1104C\n"
 "help.text"
 msgid "Clear the linked cell, or enter text, or enter a formula that returns text or an error"
-msgstr "Inhalt der verknüpften Zelle löschen, Text eingeben oder eine Formel eingeben, die Text bzw. einen Fehler zurückliefert"
+msgstr "Inhalt der verknüpften Zelle löschen, Text eingeben oder eine Formel eingeben, die Text beziehungsweise einen Fehler zurückliefert"
 
 #: 01170102.xhp
 msgctxt ""
@@ -6961,7 +6961,7 @@ msgctxt ""
 "par_idN11126\n"
 "help.text"
 msgid "Text or number is copied into the edit field of the combo box"
-msgstr "Text bzw. Zahl wird in das Eingabefeld des Kombinationsfeldes kopiert"
+msgstr "Text beziehungsweise Zahl wird in das Eingabefeld des Kombinationsfeldes kopiert"
 
 #: 01170102.xhp
 msgctxt ""
@@ -7073,7 +7073,7 @@ msgctxt ""
 "bm_id3148643\n"
 "help.text"
 msgid "<bookmark_value>controls; events</bookmark_value>         <bookmark_value>events; controls</bookmark_value>         <bookmark_value>macros; assigning to events in forms</bookmark_value>"
-msgstr "<bookmark_value>Kontrollfelder;Ereignisse</bookmark_value>  <bookmark_value>Ereignisse;Kontrollfelder</bookmark_value>  <bookmark_value>Makros;Ereignissen in Formularen zuweisen</bookmark_value>"
+msgstr "<bookmark_value>Kontrollfelder; Ereignisse</bookmark_value><bookmark_value>Ereignisse; Kontrollfelder</bookmark_value><bookmark_value>Makros; Ereignissen in Formularen zuweisen</bookmark_value>"
 
 #: 01170103.xhp
 msgctxt ""
@@ -7306,7 +7306,7 @@ msgctxt ""
 "31\n"
 "help.text"
 msgid "<ahelp hid=\"HID_EVT_MOUSEDRAGGED\">The<emph> Mouse moved while key pressed </emph>event takes place when the mouse is dragged while a key is pressed.</ahelp> An example is when, during drag-and-drop, an additional key determines the mode (move or copy)."
-msgstr "<ahelp hid=\"HID_EVT_MOUSEDRAGGED\">Das Ereignis <emph>Mausbewegung bei Tastendruck</emph> findet statt, wenn die Maus gezogen wird, während eine Taste auf der Tastatur gedrückt wird.</ahelp> Als Beispiel hierfür kann das Ziehen und Ablegen mit einer zusätzlichen Modifikatortaste (Bewegen oder Kopieren) angeführt werden."
+msgstr "<ahelp hid=\"HID_EVT_MOUSEDRAGGED\">Das Ereignis <emph>Mausbewegung bei Tastendruck</emph> findet statt, wenn die Maus gezogen wird, während eine Taste auf der Tastatur gedrückt wird.</ahelp> Als Beispiel hierfür kann das Ziehen-und-Ablegen mit einer zusätzlichen Modifikatortaste (Bewegen oder Kopieren) angeführt werden."
 
 #: 01170103.xhp
 msgctxt ""
@@ -7402,7 +7402,7 @@ msgctxt ""
 "bm_id3147285\n"
 "help.text"
 msgid "<bookmark_value>forms; properties</bookmark_value><bookmark_value>properties; forms</bookmark_value>"
-msgstr "<bookmark_value>Formular;Eigenschaften</bookmark_value>  <bookmark_value>Eigenschaften;Formular</bookmark_value>"
+msgstr "<bookmark_value>Formular; Eigenschaften</bookmark_value><bookmark_value>Eigenschaften; Formular</bookmark_value>"
 
 #: 01170200.xhp
 msgctxt ""
@@ -7420,7 +7420,7 @@ msgctxt ""
 "2\n"
 "help.text"
 msgid "<variable id=\"form\"><ahelp hid=\".uno:FormProperties\" visibility=\"visible\">In this dialog you can specify, among others,  the data source and the events for the whole form.</ahelp></variable>"
-msgstr "<variable id=\"form\"><ahelp hid=\".uno:FormProperties\" visibility=\"visible\">In den Formular-Eigenschaften legen Sie u. a. die Datenquelle und die Ereignisse für das ganze Formular fest.</ahelp></variable>"
+msgstr "<variable id=\"form\"><ahelp hid=\".uno:FormProperties\" visibility=\"visible\">In den Formular-Eigenschaften legen Sie unter anderem die Datenquelle und die Ereignisse für das ganze Formular fest.</ahelp></variable>"
 
 #: 01170201.xhp
 msgctxt ""
@@ -7436,7 +7436,7 @@ msgctxt ""
 "bm_id3152551\n"
 "help.text"
 msgid "<bookmark_value>submitting forms</bookmark_value><bookmark_value>get method for form transmissions</bookmark_value><bookmark_value>post method for form transmissions</bookmark_value>"
-msgstr "<bookmark_value>Formulare übermitteln</bookmark_value>  <bookmark_value>get-Methode für Formularübertragungen</bookmark_value>  <bookmark_value>post-Methode für Formularübertragungen</bookmark_value>"
+msgstr "<bookmark_value>Formulare übermitteln</bookmark_value><bookmark_value>get-Methode für Formularübertragungen</bookmark_value><bookmark_value>post-Methode für Formularübertragungen</bookmark_value>"
 
 #: 01170201.xhp
 msgctxt ""
@@ -7731,7 +7731,7 @@ msgctxt ""
 "bm_id3150499\n"
 "help.text"
 msgid "<bookmark_value>forms; events</bookmark_value>         <bookmark_value>events;in forms</bookmark_value>"
-msgstr "<bookmark_value>Formulare;Ereignisse</bookmark_value>  <bookmark_value>Ereignisse;in Formularen</bookmark_value>"
+msgstr "<bookmark_value>Formulare; Ereignisse</bookmark_value><bookmark_value>Ereignisse; in Formularen</bookmark_value>"
 
 #: 01170202.xhp
 msgctxt ""
@@ -7767,7 +7767,7 @@ msgctxt ""
 "29\n"
 "help.text"
 msgid "The following actions can be configured individually, meaning that you can use your own dialogs to depict an action:"
-msgstr "Folgende Aktionen, sind für den Benutzer frei konfigurierbar, d.h. Sie können ihre eigenen Dialoge verwenden um eine Aktion darzustellen:"
+msgstr "Folgende Aktionen sind für den Benutzer frei konfigurierbar, das heißt Sie können ihre eigenen Dialoge verwenden, um eine Aktion darzustellen:"
 
 #: 01170202.xhp
 msgctxt ""
@@ -8196,7 +8196,7 @@ msgctxt ""
 "bm_id3150040\n"
 "help.text"
 msgid "<bookmark_value>forms; data</bookmark_value><bookmark_value>data; forms and subforms</bookmark_value><bookmark_value>forms; subforms</bookmark_value><bookmark_value>subforms; description</bookmark_value>"
-msgstr "<bookmark_value>Formulare;Daten</bookmark_value>  <bookmark_value>Daten;Formulare und Unterformulare</bookmark_value>  <bookmark_value>Formulare;Unterformulare</bookmark_value>  <bookmark_value>Unterformulare;Beschreibung</bookmark_value>"
+msgstr "<bookmark_value>Formulare; Daten</bookmark_value><bookmark_value>Daten; Formulare und Unterformulare</bookmark_value><bookmark_value>Formulare; Unterformulare</bookmark_value><bookmark_value>Unterformulare; Beschreibung</bookmark_value>"
 
 #: 01170203.xhp
 msgctxt ""
@@ -8268,7 +8268,7 @@ msgctxt ""
 "27\n"
 "help.text"
 msgid "If you have selected either \"Table\" or \"Query\" in <emph>Content type</emph>, the box lists all the tables and queries set up in the selected database."
-msgstr "Wenn Sie als <emph>Art des Inhaltes</emph> entweder \"Tabelle\" oder \"Abfrage\" auswählen, werden hier alle Datenquellen der entsprechenden Art aufgeführt, d. h. sämtliche in der Datenbank eingerichteten Tabellen und Abfragen. Soll sich das Formular auf eine Abfrage beziehen, so müssen Sie zunächst die Option \"Abfrage\" als Art des Datenquelleninhalts auswählen."
+msgstr "Wenn Sie als <emph>Art des Inhaltes</emph> entweder \"Tabelle\" oder \"Abfrage\" auswählen, werden hier alle Datenquellen der entsprechenden Art aufgeführt, das heißt sämtliche in der Datenbank eingerichteten Tabellen und Abfragen. Soll sich das Formular auf eine Abfrage beziehen, so müssen Sie zunächst die Option \"Abfrage\" als Art des Datenquelleninhalts auswählen."
 
 #: 01170203.xhp
 msgctxt ""
@@ -8628,7 +8628,7 @@ msgctxt ""
 "30\n"
 "help.text"
 msgid "The database table on which the form is based is, for example, a customer database (\"Customer\"), where every customer has been given a unique number in a data field named \"Cust_ID\". A customer's orders are maintained in another database table. You now want to see each customer's orders after entering them into the form. In order to do this you should create a subform. Under <emph>Link master fields</emph> enter the data field from the customer database which clearly identifies the customer, that is, Cust_ID. Under <emph>Link slave fields</emph> enter the name of a variable which is to accept the data of the field Cust_ID, for example, x."
-msgstr "Die dem Formular zugrunde liegende Datenbanktabelle sei beispielsweise eine Kunden-Datenbank (\"Kunden\"), in der Sie jeden Kunden durch eine eindeutige Nummer kennzeichnen, und zwar mit einem Datenfeld namens \"Kunden_ID\". Die Bestellungen eines Kunden verwalten Sie in einer anderen Datenbanktabelle. Nun möchten Sie zu jedem Kunden, den Sie in dem Formular eingeben, auch seine Bestellungen sehen. Dazu legen Sie sich das Unterformular an und geben unter <emph>Verknüpfen von</emph> das Datenfeld aus der Kunden-Datenbank ein, an dem der Kunde eindeutig identifiziert werden kann, also \"Kunden_ID\" (ohne Anführungszeichen). Unter <emph>Verknüpfen nach</emph> tragen Sie den Namen einer Variablen ein, welche die Daten des Feldes Kunden_ID aufnehmen soll, also z. B. \"x\"."
+msgstr "Die dem Formular zugrunde liegende Datenbanktabelle sei beispielsweise eine Kunden-Datenbank (\"Kunden\"), in der Sie jeden Kunden durch eine eindeutige Nummer kennzeichnen, und zwar mit einem Datenfeld namens \"Kunden_ID\". Die Bestellungen eines Kunden verwalten Sie in einer anderen Datenbanktabelle. Nun möchten Sie zu jedem Kunden, den Sie in dem Formular eingeben, auch seine Bestellungen sehen. Dazu legen Sie sich das Unterformular an und geben unter <emph>Verknüpfen von</emph> das Datenfeld aus der Kunden-Datenbank ein, an dem der Kunde eindeutig identifiziert werden kann, also \"Kunden_ID\" (ohne Anführungszeichen). Unter <emph>Verknüpfen nach</emph> tragen Sie den Namen einer Variablen ein, welche die Daten des Feldes Kunden_ID aufnehmen soll, beispielsweise \"x\"."
 
 #: 01170203.xhp
 msgctxt ""
@@ -8947,7 +8947,7 @@ msgctxt ""
 "4\n"
 "help.text"
 msgid "You can insert a field into the current document by dragging and dropping. A field is then inserted which contains a link to the database."
-msgstr "Sie können ein Feld per Ziehen&Ablegen in das aktuelle Dokument übernehmen. Es wird dann ein entsprechendes Feld im Dokument mit einer Verknüpfung zur Datenbank angelegt."
+msgstr "Sie können ein Feld per Ziehen-und-Ablegen in das aktuelle Dokument übernehmen. Es wird dann ein entsprechendes Feld im Dokument mit einer Verknüpfung zur Datenbank angelegt."
 
 #: 01170400.xhp
 msgctxt ""
@@ -8964,7 +8964,7 @@ msgctxt ""
 "tit\n"
 "help.text"
 msgid "Design Mode On/Off"
-msgstr "Designmodus"
+msgstr "Entwurfsmodus ein/aus"
 
 #: 01170500.xhp
 msgctxt ""
@@ -8973,7 +8973,7 @@ msgctxt ""
 "1\n"
 "help.text"
 msgid "<link href=\"text/shared/02/01170500.xhp\" name=\"Design Mode On/Off\">Design Mode On/Off</link>"
-msgstr "<link href=\"text/shared/02/01170500.xhp\" name=\"Designmodus\">Designmodus</link>"
+msgstr "<link href=\"text/shared/02/01170500.xhp\" name=\"Entwurfsmodus ein/aus\">Entwurfsmodus ein/aus</link>"
 
 #: 01170500.xhp
 msgctxt ""
@@ -9008,7 +9008,7 @@ msgctxt ""
 "tit\n"
 "help.text"
 msgid "Form Navigator"
-msgstr "Formular Navigator"
+msgstr "Formular-Navigator"
 
 #: 01170600.xhp
 msgctxt ""
@@ -9016,7 +9016,7 @@ msgctxt ""
 "bm_id3143284\n"
 "help.text"
 msgid "<bookmark_value>controls;arranging in forms</bookmark_value><bookmark_value>forms;Navigator</bookmark_value><bookmark_value>Form Navigator</bookmark_value><bookmark_value>subforms; creating</bookmark_value><bookmark_value>controls; hidden</bookmark_value><bookmark_value>hidden controls in Form Navigator</bookmark_value>"
-msgstr "<bookmark_value>Kontrollfelder;in Formularen anordnen</bookmark_value>  <bookmark_value>Formulare;Navigator</bookmark_value>  <bookmark_value>Formular-Navigator</bookmark_value>  <bookmark_value>Unterformulare;erzeugen</bookmark_value>  <bookmark_value>Kontrollfelder;ausgeblendete</bookmark_value>  <bookmark_value>Ausgeblendete Kontrollfelder;im Formular-Navigator</bookmark_value>"
+msgstr "<bookmark_value>Kontrollfelder; in Formularen anordnen</bookmark_value><bookmark_value>Formulare; Navigator</bookmark_value><bookmark_value>Formular-Navigator</bookmark_value><bookmark_value>Unterformulare; erzeugen</bookmark_value><bookmark_value>Kontrollfelder; ausgeblendete</bookmark_value><bookmark_value>Ausgeblendete Kontrollfelder; im Formular-Navigator</bookmark_value>"
 
 #: 01170600.xhp
 msgctxt ""
@@ -9061,7 +9061,7 @@ msgctxt ""
 "4\n"
 "help.text"
 msgid "You can change how the different controls are arranged by dragging and dropping them in the <emph>Form Navigator</emph>. Select one or more controls and drag them into another form. Alternatively use <switchinline select=\"sys\"><caseinline select=\"MAC\">Command</caseinline><defaultinline>Ctrl</defaultinline></switchinline>+X or the context menu command <emph>Cut</emph> to move a control to the clipboard and <switchinline select=\"sys\"><caseinline select=\"MAC\">Command</caseinline><defaultinline>Ctrl</defaultinline></switchinline>+V or the command <emph>Insert</emph> to insert the control into another position."
-msgstr "Sie können die Anordnung der verschiedenen Kontrollfelder durch Ziehen&Ablegen im <emph>Formular Navigator</emph>ändern. Wählen sie ein oder mehrere Kontrollfelder aus und ziehen Sie sie in ein anderes Formular. Alternativ können Sie <switchinline select=\"sys\"><caseinline select=\"MAC\">Befehl</caseinline><defaultinline>Strg</defaultinline></switchinline>+X oder das Kommando <emph>Ausschneiden</emph> im Kontextmenü benutzen, um das Kontrollfeld in die Zwischenablage zu kopieren. Mit <switchinline select=\"sys\"><caseinline select=\"MAC\">Befehl</caseinline><defaultinline>Strg</defaultinline></switchinline>+V oder dem Kommando <emph>Einfügen</emph> im Kontextmenü fügen Sie das Kontrollfeld an anderer Stelle wieder ein."
+msgstr "Sie können die Anordnung der verschiedenen Kontrollfelder durch Ziehen-und-Ablegen im <emph>Formular Navigator</emph> ändern. Wählen sie ein oder mehrere Kontrollfelder aus und ziehen Sie sie in ein anderes Formular. Alternativ können Sie <switchinline select=\"sys\"><caseinline select=\"MAC\">Befehl</caseinline><defaultinline>Strg</defaultinline></switchinline>+X oder das Kommando <emph>Ausschneiden</emph> im Kontextmenü benutzen, um das Kontrollfeld in die Zwischenablage zu kopieren. Mit <switchinline select=\"sys\"><caseinline select=\"MAC\">Befehl</caseinline><defaultinline>Strg</defaultinline></switchinline>+V oder dem Kommando <emph>Einfügen</emph> im Kontextmenü fügen Sie das Kontrollfeld an anderer Stelle wieder ein."
 
 #: 01170600.xhp
 msgctxt ""
@@ -9151,7 +9151,7 @@ msgctxt ""
 "19\n"
 "help.text"
 msgid "You can copy controls in the document through the clipboard (shortcut keys <switchinline select=\"sys\"><caseinline select=\"MAC\">Command</caseinline><defaultinline>Ctrl</defaultinline></switchinline>+C for copying and <switchinline select=\"sys\"><caseinline select=\"MAC\">Command</caseinline><defaultinline>Ctrl</defaultinline></switchinline>+V for inserting). You can copy hidden controls in the <emph>Form Navigator</emph> by using drag-and-drop while keeping the <switchinline select=\"sys\"><caseinline select=\"MAC\">Command</caseinline><defaultinline>Ctrl</defaultinline></switchinline> key pressed."
-msgstr "Kontrollfelder lassen sich über die Zwischenablage kopieren (Tastenkombinationen <switchinline select=\"sys\"><caseinline select=\"MAC\">Befehl</caseinline><defaultinline>Strg</defaultinline></switchinline>+C zum Kopieren und <switchinline select=\"sys\"><caseinline select=\"MAC\">Befehl</caseinline><defaultinline>Strg</defaultinline></switchinline>+V zum Einfügen). Versteckte Kontrollelemente können Sie im <emph>Formular-Navigator</emph> per Ziehen&Ablegen bei gedrückter Taste <switchinline select=\"sys\"><caseinline select=\"MAC\">Befehl</caseinline><defaultinline>Strg</defaultinline></switchinline> kopieren."
+msgstr "Kontrollfelder lassen sich über die Zwischenablage kopieren (Tastenkombinationen <switchinline select=\"sys\"><caseinline select=\"MAC\">Befehl</caseinline><defaultinline>Strg</defaultinline></switchinline>+C zum Kopieren und <switchinline select=\"sys\"><caseinline select=\"MAC\">Befehl</caseinline><defaultinline>Strg</defaultinline></switchinline>+V zum Einfügen). Versteckte Kontrollelemente können Sie im <emph>Formular-Navigator</emph> per Ziehen-und-Ablegen bei gedrückter Taste <switchinline select=\"sys\"><caseinline select=\"MAC\">Befehl</caseinline><defaultinline>Strg</defaultinline></switchinline> kopieren."
 
 #: 01170600.xhp
 msgctxt ""
@@ -9160,7 +9160,7 @@ msgctxt ""
 "20\n"
 "help.text"
 msgid "Drag and drop to copy controls within the same document or between documents. Open another form document and drag the hidden control from the <emph>Form Navigator</emph> into the <emph>Form Navigator</emph> of the target document. Click a visible control directly in the document, rest the mouse for a moment so that a copy of the control is added to the drag-and-drop clipboard, then drag the copy into the other document. If you want a copy in the same document, press <switchinline select=\"sys\"><caseinline select=\"MAC\">Command</caseinline><defaultinline>Ctrl</defaultinline></switchinline> while dragging."
-msgstr "Verwenden Sie Ziehen & Ablegen, um Kontrollelemente innerhalb eines Dokuments oder zwischen Dokumenten zu kopieren. Öffnen Sie ein anderes Formular-Dokument und ziehen Sie die versteckten Steuerelement aus dem <emph>Formular-Navigator</emph> in den <emph>Formular-Navigator</emph> des Zieldokuments. Klicken Sie direkt auf ein sichtbares Kontrollelement in einem Dokument und verweilen Sie mit dem Mauszeiger einen Moment, sodass eine Kopie des Steuerelements der Ziehen & Ablegen-Zwischenablage hinzugefügt wird, und ziehen Sie erst dann die Kopie in das andere Dokument. Wenn Sie eine Kopie im gleichen Dokument erzeugen möchten, drücken Sie die <switchinline select=\"sys\"><caseinline select=\"MAC\">Befehl</caseinline><defaultinline>Strg</defaultinline></switchinline>-Taste während des Ziehens."
+msgstr "Verwenden Sie Ziehen-und-Ablegen, um Kontrollelemente innerhalb eines Dokuments oder zwischen Dokumenten zu kopieren. Öffnen Sie ein anderes Formular-Dokument und ziehen Sie das versteckte Steuerelement aus dem <emph>Formular-Navigator</emph> in den <emph>Formular-Navigator</emph> des Zieldokuments. Klicken Sie direkt auf ein sichtbares Kontrollelement in einem Dokument und verweilen Sie mit dem Mauszeiger einen Moment, sodass eine Kopie des Steuerelements der Ziehen-und-Ablegen-Zwischenablage hinzugefügt wird, und ziehen Sie erst dann die Kopie in das andere Dokument. Wenn Sie eine Kopie im gleichen Dokument erzeugen möchten, drücken Sie die <switchinline select=\"sys\"><caseinline select=\"MAC\">Befehl</caseinline><defaultinline>Strg</defaultinline></switchinline>-Taste während des Ziehens."
 
 #: 01170600.xhp
 msgctxt ""
@@ -9232,7 +9232,7 @@ msgctxt ""
 "18\n"
 "help.text"
 msgid "<ahelp hid=\".uno:ShowPropertyBrowser\">Starts the <emph>Properties</emph> dialog for the selected entry.</ahelp> If a form is selected, the <link href=\"text/shared/02/01170200.xhp\" name=\"Form Properties\">Form Properties</link> dialog opens. If a control is selected, the <link href=\"text/shared/02/01170100.xhp\" name=\"Control Properties\">Control Properties</link> dialog opens."
-msgstr "<ahelp hid=\".uno:ShowPropertyBrowser\">Hier wird der Dialog <emph>Eigenschaften</emph> des ausgewählten Eintrags aufgerufen.</ahelp> Wenn ein Formular ausgewählt ist, wird der Dialog <link href=\"text/shared/02/01170200.xhp\" name=\"Formulareigenschaften\">Formulareigenschaften</link> angezeigt. Wenn ein Kontrollfeld ausgewählt wurde, wird der Dialog <link href=\"text/shared/02/01170100.xhp\" name=\"Kontrollfeld-Eigenschaften\">Kontrollfeld-Eigenschaften</link> angezeigt."
+msgstr "<ahelp hid=\".uno:ShowPropertyBrowser\">Hier wird der Dialog <emph>Eigenschaften</emph> des ausgewählten Eintrags aufgerufen.</ahelp> Wenn ein Formular ausgewählt ist, wird der Dialog <link href=\"text/shared/02/01170200.xhp\" name=\"Formular-Eigenschaften\">Formular-Eigenschaften</link> angezeigt. Wenn ein Kontrollfeld ausgewählt wurde, wird der Dialog <link href=\"text/shared/02/01170100.xhp\" name=\"Kontrollfeld-Eigenschaften\">Kontrollfeld-Eigenschaften</link> angezeigt."
 
 #: 01170700.xhp
 msgctxt ""
@@ -9248,7 +9248,7 @@ msgctxt ""
 "bm_id3163829\n"
 "help.text"
 msgid "<bookmark_value>forms; HTML filters</bookmark_value>"
-msgstr "<bookmark_value>Formular;HTML-Filter</bookmark_value>"
+msgstr "<bookmark_value>Formulare; HTML-Filter</bookmark_value>"
 
 #: 01170700.xhp
 msgctxt ""
@@ -9266,7 +9266,7 @@ msgctxt ""
 "2\n"
 "help.text"
 msgid "You can use all control elements and form events in HTML documents. There have been numerous events to date (for example, focus events), which have not been changed. They will continue to be imported and exported as ONFOCUS, ONBLUR, and so on for JavaScript and as SDONFOCUS, SDONBLUR, and so on for $[officename] Basic."
-msgstr "In HTML-Dokumenten können sämtliche Ereignisse für Kontrollelemente und Formulare verwendet werden. Die bereits zuvor zahlreich verfügbaren Ereignisse (z. B. Fokus-Ereignisse) haben sich nicht geändert. Sie werden weiterhin für JavaScript als ONFOCUS, ONBLUR usw. und für $[officename] Basic als SDONFOCUS, SDONBLUR usw. importiert und exportiert."
+msgstr "In HTML-Dokumenten können sämtliche Ereignisse für Kontrollelemente und Formulare verwendet werden. Die bereits zuvor zahlreich verfügbaren Ereignisse (beispielsweise Fokus-Ereignisse) haben sich nicht geändert. Sie werden weiterhin für JavaScript als ONFOCUS, ONBLUR und so weiter und für $[officename] Basic als SDONFOCUS, SDONBLUR und so weiter importiert und exportiert."
 
 #: 01170700.xhp
 msgctxt ""
@@ -9293,7 +9293,7 @@ msgctxt ""
 "5\n"
 "help.text"
 msgid "Note that the XListener- and method components of this option are case sensitive."
-msgstr "Bei der XListener- und method-Komponente dieser Option ist die Groß-/Kleinschreibung zu beachten."
+msgstr "Bei der XListener- und method-Komponente dieser Option ist die Groß- und Kleinschreibung zu beachten."
 
 #: 01170700.xhp
 msgctxt ""
@@ -9302,7 +9302,7 @@ msgctxt ""
 "6\n"
 "help.text"
 msgid "Event handling of controls is performed using the $[officename] API. If you assign an event to a control, an object registers itself internally as a \"Listener\" for a specific control event. To do this, the object must use a specific interface, for example the XFocusListener Interface, so that it can react to focus events. When the event occurs, the control then invokes a special method of the Listener interface when the control receives the focus. The internally registered object then invokes the JavaScript or $[officename] Basic code, which was assigned to the event."
-msgstr "Die Ereignisbehandlung von Kontrollelementen erfolgt über die $[officename]-API. Wenn Sie einem Kontrollelement ein Ereignis zuweisen, meldet sich intern ein Objekt als \"Listener\" für ein spezifisches Kontrollelement-Ereignis an. Dazu benötigt das Objekt eine bestimmte Schnittstelle, z. B. XFocusListener für die Reaktion auf Fokus-Ereignisse. Tritt das Ereignis ein, ruft das Kontrollelement eine spezielle Methode der Listener-Schnittstelle auf, z. B. wenn das Kontrollelement den Fokus erhält. Das intern angemeldete Objekt ruft dann den JavaScript- oder $[officename] Basic-Code auf, der dem Ereignis zugewiesen wurde."
+msgstr "Die Ereignisbehandlung von Kontrollelementen erfolgt über die $[officename]-API. Wenn Sie einem Kontrollelement ein Ereignis zuweisen, meldet sich intern ein Objekt als \"Listener\" für ein spezifisches Kontrollelement-Ereignis an. Dazu benötigt das Objekt eine bestimmte Schnittstelle, beispielsweise XFocusListener für die Reaktion auf Fokus-Ereignisse. Tritt das Ereignis ein, ruft das Kontrollelement eine spezielle Methode der Listener-Schnittstelle auf, beispielsweise wenn das Kontrollelement den Fokus erhält. Das intern angemeldete Objekt ruft dann den JavaScript- oder $[officename] Basic-Code auf, der dem Ereignis zugewiesen wurde."
 
 #: 01170700.xhp
 msgctxt ""
@@ -9409,7 +9409,7 @@ msgctxt ""
 "13\n"
 "help.text"
 msgid "You can use the <link href=\"text/shared/02/01171100.xhp\" name=\"Wizards On/Off\"><emph>Wizards On/Off</emph></link> icon to keep the wizard from starting automatically."
-msgstr "Sie können das automatische Starten des Assistenten mit dem Symbol <link href=\"text/shared/02/01171100.xhp\" name=\"Assistenten an/aus\"><emph>AutoPiloten an/aus</emph></link> unterbinden."
+msgstr "Sie können das automatische Starten des Assistenten mit dem Symbol <link href=\"text/shared/02/01171100.xhp\" name=\"Assistenten ein/aus\"><emph>Assistenten ein/aus</emph></link> unterbinden."
 
 #: 01170801.xhp
 msgctxt ""
@@ -9531,7 +9531,7 @@ msgctxt ""
 "bm_id3159233\n"
 "help.text"
 msgid "<bookmark_value>forms; Combo Box/List Box Wizard</bookmark_value>"
-msgstr "<bookmark_value>Formulare;Kombinationsfeld-/Listenfeld-Assistent</bookmark_value>"
+msgstr "<bookmark_value>Formulare; Kombinationsfeld-/Listenfeld-Assistent</bookmark_value>"
 
 #: 01170900.xhp
 msgctxt ""
@@ -9558,7 +9558,7 @@ msgctxt ""
 "21\n"
 "help.text"
 msgid "You can use the <link href=\"text/shared/02/01171100.xhp\" name=\"Wizards On/Off\"><emph>Wizards On/Off</emph></link> icon to keep the wizard from starting automatically."
-msgstr "Sie können das automatische Starten des Assistenten mit dem Symbol <link href=\"text/shared/02/01171100.xhp\" name=\"Assistenten an/aus\"><emph>Assistenten an/aus</emph></link> unterbinden."
+msgstr "Sie können das automatische Starten des Assistenten mit dem Symbol <link href=\"text/shared/02/01171100.xhp\" name=\"Assistenten ein/aus\"><emph>Assistenten ein/aus</emph></link> unterbinden."
 
 #: 01170900.xhp
 msgctxt ""
@@ -9594,7 +9594,7 @@ msgctxt ""
 "25\n"
 "help.text"
 msgid "As a general rule, the database table that contains the visible list entries in the form is not the table on which the form is based. The list boxes in a form work by using references; that is, references to the visible list entries are located in the form table (values table) and are also entered as such in the values table if the user selects an entry from the list and saves it. Through reference values, list boxes can display data from a table linked to the current form table. Thus the <emph>List Box Wizard</emph> allows two tables of a database to be linked, so that the control field can display a detailed list of a database field that is located in a different table from the one to which the form refers."
-msgstr "Die Datenbanktabelle, die die im Formular sichtbaren Listen-Einträge enthält, ist normalerweise nicht die Tabelle, auf der das Formular basiert. Listenfelder eines Formulares arbeiten daher mit Referenzen, d. h. zu den sichtbaren Listen-Einträgen zugehörige Referenzen befinden sich in der Formular-Tabelle (Wertetabelle) und werden auch als solche in die Wertetabelle eingetragen, wenn der Anwender einen Eintrag aus der Liste auswählt und ihn abspeichert. Über Referenzwerte können Listenfelder Daten aus einer mit der aktuellen Formular-Tabelle verknüpften Tabelle anzeigen (Listentabelle). Daher ermöglicht der <emph>Listenfeld-Assistent</emph> das Verknüpfen zweier Tabellen einer Datenbank, so dass das Kontrollfeld eine Detailliste eines Datenbankfeldes darstellen kann, welches in einer anderen Tabelle enthalten ist als der Tabelle, auf der sich das Formular bezieht."
+msgstr "Die Datenbanktabelle, die die im Formular sichtbaren Listen-Einträge enthält, ist normalerweise nicht die Tabelle, auf der das Formular basiert. Listenfelder eines Formulares arbeiten daher mit Referenzen, das heißt zu den sichtbaren Listen-Einträgen zugehörige Referenzen befinden sich in der Formular-Tabelle (Wertetabelle) und werden auch als solche in die Wertetabelle eingetragen, wenn der Anwender einen Eintrag aus der Liste auswählt und ihn abspeichert. Über Referenzwerte können Listenfelder Daten aus einer mit der aktuellen Formular-Tabelle verknüpften Tabelle anzeigen (Listentabelle). Daher ermöglicht der <emph>Listenfeld-Assistent</emph> das Verknüpfen zweier Tabellen einer Datenbank, so dass das Kontrollfeld eine Detailliste eines Datenbankfeldes darstellen kann, welches in einer anderen Tabelle enthalten ist als der Tabelle, auf der sich das Formular bezieht."
 
 #: 01170900.xhp
 msgctxt ""
@@ -10011,7 +10011,7 @@ msgctxt ""
 "bm_id3156211\n"
 "help.text"
 msgid "<bookmark_value>forms; opening in design mode</bookmark_value><bookmark_value>controls; activating in forms</bookmark_value><bookmark_value>design mode after saving</bookmark_value><bookmark_value>documents; opening in design mode</bookmark_value><bookmark_value>edit mode; after opening</bookmark_value>"
-msgstr "<bookmark_value>Formular;im Entwurfsmodus öffnen</bookmark_value>  <bookmark_value>Kontrollfeld;im Formular aktivieren</bookmark_value>  <bookmark_value>Entwurfsmodus nach dem Speichern</bookmark_value>  <bookmark_value>Dokument;Formular im Entwurfsmodus öffnen</bookmark_value>  <bookmark_value>Bearbeiten-Modus;Formular</bookmark_value>"
+msgstr "<bookmark_value>Formulare; im Entwurfsmodus öffnen</bookmark_value><bookmark_value>Kontrollfelder; im Formular aktivieren</bookmark_value><bookmark_value>Entwurfsmodus nach dem Speichern</bookmark_value><bookmark_value>Dokumente; Formular im Entwurfsmodus öffnen</bookmark_value><bookmark_value>Bearbeiten-Modus; Formular</bookmark_value>"
 
 #: 01171000.xhp
 msgctxt ""
@@ -10038,7 +10038,7 @@ msgctxt ""
 "5\n"
 "help.text"
 msgid "You cannot activate the controls of the form or edit contents of database records in Design Mode. However, you can change the position and size of the controls, edit other properties, and add or delete controls in Design Mode."
-msgstr "Im Entwurfsmodus können Sie keine Kontrollelemente im Formular bedienen oder Datenbankeinträge ändern. Sie können in diesem Modus jedoch Position und Größe der Kontrollelemente verändern und andere Elementeigenschaften anpassen, sowie Elemente zum hinzufügen löschen."
+msgstr "Im Entwurfsmodus können Sie keine Kontrollelemente im Formular bedienen oder Datenbankeinträge ändern. Sie können in diesem Modus jedoch Position und Größe der Kontrollelemente verändern und andere Elementeigenschaften anpassen, sowie Elemente hinzufügen oder löschen."
 
 #: 01171000.xhp
 msgctxt ""
@@ -10073,7 +10073,7 @@ msgctxt ""
 "1\n"
 "help.text"
 msgid "<link href=\"text/shared/02/01171100.xhp\" name=\"Wizards On/Off\">Wizards On/Off</link>"
-msgstr "<link href=\"text/shared/02/01171100.xhp\" name=\"Assistenten an/aus\">Assistenten an/aus</link>"
+msgstr "<link href=\"text/shared/02/01171100.xhp\" name=\"Assistenten ein/aus\">Assistenten ein/aus</link>"
 
 #: 01171100.xhp
 msgctxt ""
@@ -10091,7 +10091,7 @@ msgctxt ""
 "4\n"
 "help.text"
 msgid "There are wizards for inserting a list box or combo box, a table element and group boxes."
-msgstr "Es gibt u.a. Assistenten zum Einfügen eines Listen- oder Kombinationsfelds, eines Tabellenelements und bei Gruppierungsrahmen."
+msgstr "Es gibt unter anderem Assistenten zum Einfügen eines Listen- oder Kombinationsfelds, eines Tabellenelements und für Gruppierungsrahmen."
 
 #: 01171200.xhp
 msgctxt ""
@@ -10228,7 +10228,7 @@ msgctxt ""
 "2\n"
 "help.text"
 msgid "Click the<emph> Navigator On/Off </emph>icon to hide or show the <emph>Navigator</emph>."
-msgstr "Mit einem Klick auf das Symbol <emph>Navigator</emph> schalten den <emph>Navigators</emph> ein oder aus."
+msgstr "Klicken Sie auf das Symbol <emph>Navigator ein/aus</emph>, um den <emph>Navigator</emph> ein- oder auszublenden."
 
 #: 01220000.xhp
 msgctxt ""
@@ -10378,7 +10378,7 @@ msgctxt ""
 "bm_id3148983\n"
 "help.text"
 msgid "<bookmark_value>fonts; specifying several</bookmark_value><bookmark_value>alternative fonts</bookmark_value><bookmark_value>characters; alternative fonts</bookmark_value>"
-msgstr "<bookmark_value>Schriftarten;mehrere angeben</bookmark_value>  <bookmark_value>Alternative Schriftarten</bookmark_value>  <bookmark_value>Zeichen;alternative Schriftarten</bookmark_value>"
+msgstr "<bookmark_value>Schriftarten; mehrere angeben</bookmark_value><bookmark_value>Alternative Schriftarten</bookmark_value><bookmark_value>Zeichen; alternative Schriftarten</bookmark_value>"
 
 #: 02020000.xhp
 msgctxt ""
@@ -10405,7 +10405,7 @@ msgctxt ""
 "10\n"
 "help.text"
 msgid "You can enter several fonts, separated by semicolons. $[officename] uses each named font in succession if the previous fonts are not available."
-msgstr "Mehrere Schriftarten geben Sie durch Semikolons getrennt ein. $[officename] verwendet die Schriftarten dann nach dieser Rangfolge. Wenn also die erste Schrift nicht verfügbar ist, wird die zweite eingesetzt usw."
+msgstr "Mehrere Schriftarten geben Sie durch Semikola getrennt ein. $[officename] verwendet die Schriftarten dann nach dieser Rangfolge. Wenn also die erste Schrift nicht verfügbar ist, wird die zweite eingesetzt und so weiter."
 
 #: 02020000.xhp
 msgctxt ""
@@ -10638,7 +10638,7 @@ msgctxt ""
 "5\n"
 "help.text"
 msgid "<ahelp hid=\".uno:DecrementIndent\">Click the <emph>Decrease Indent</emph> icon to reduce the left indent of the current paragraph or cell content and set it to the previous default tab position.</ahelp>"
-msgstr "<ahelp hid=\".uno:DecrementIndent\">Klicken Sie auf das Symbol <emph>Einzug vermindern</emph>, um den linken Einzug des aktuellen Absatzes bzw. des Zellinhalts zu verkleinern und auf die vorige Standardtabulatorposition zu setzen.</ahelp>"
+msgstr "<ahelp hid=\".uno:DecrementIndent\">Klicken Sie auf das Symbol <emph>Einzug vermindern</emph>, um den linken Einzug des aktuellen Absatzes beziehungsweise des Zellinhalts zu verkleinern und auf die vorige Standardtabulatorposition zu setzen.</ahelp>"
 
 #: 02130000.xhp
 msgctxt ""
@@ -10689,7 +10689,7 @@ msgctxt ""
 "bm_id3148520\n"
 "help.text"
 msgid "<bookmark_value>paragraphs; increasing indents of</bookmark_value>"
-msgstr "<bookmark_value>Absätze;Einzug vergrößern</bookmark_value>"
+msgstr "<bookmark_value>Absätze; Einzug erhöhen</bookmark_value>"
 
 #: 02140000.xhp
 msgctxt ""
@@ -10707,7 +10707,7 @@ msgctxt ""
 "2\n"
 "help.text"
 msgid "<ahelp hid=\".\">Click the Increase Indent icon to increase the left indent of the current paragraph or cell content and set it to the next default tab position.</ahelp>"
-msgstr "<ahelp hid=\".\">Klicken Sie auf das Symbol Einzug erhöhen, um den linken Einzug des aktuellen Absatzes bzw. des Zellinhalts zu vergrößern und auf die nächste Standardtabulatorposition zu setzen.</ahelp>"
+msgstr "<ahelp hid=\".\">Klicken Sie auf das Symbol Einzug erhöhen, um den linken Einzug des aktuellen Absatzes beziehungsweise des Zellinhalts zu vergrößern und auf die nächste Standardtabulatorposition zu setzen.</ahelp>"
 
 #: 02140000.xhp
 msgctxt ""
@@ -10930,7 +10930,7 @@ msgctxt ""
 "par_idN10757\n"
 "help.text"
 msgid "To turn off highlighting, press Esc."
-msgstr "Drücken Sie die (Esc)-Taste, um die Hervorhebung auszuschalten."
+msgstr "Drücken Sie Esc, um die Hervorhebung auszuschalten."
 
 #: 02160000.xhp
 msgctxt ""
@@ -11300,7 +11300,7 @@ msgctxt ""
 "bm_id3153323\n"
 "help.text"
 msgid "<bookmark_value>anchors; changing</bookmark_value>"
-msgstr "<bookmark_value>Verankerung;wechseln</bookmark_value>"
+msgstr "<bookmark_value>Verankerung; wechseln</bookmark_value>"
 
 #: 03200000.xhp
 msgctxt ""
@@ -11785,7 +11785,7 @@ msgctxt ""
 "tit\n"
 "help.text"
 msgid "Bullets On/Off"
-msgstr "Aufzählungsliste an/aus"
+msgstr "Aufzählungsliste ein/aus"
 
 #: 06120000.xhp
 msgctxt ""
@@ -11794,7 +11794,7 @@ msgctxt ""
 "1\n"
 "help.text"
 msgid "<link href=\"text/shared/02/06120000.xhp\" name=\"Bullets On/Off\">Bullets On/Off</link>"
-msgstr "<link href=\"text/shared/02/06120000.xhp\" name=\"Aufzählungsliste an/aus\">Aufzählungsliste an/aus</link>"
+msgstr "<link href=\"text/shared/02/06120000.xhp\" name=\"Aufzählungsliste ein/aus\">Aufzählungsliste ein/aus</link>"
 
 #: 06120000.xhp
 msgctxt ""
@@ -11812,7 +11812,7 @@ msgctxt ""
 "6\n"
 "help.text"
 msgid "<switchinline select=\"appl\"><caseinline select=\"WRITER\">Bullet options such as type and position are defined in the <link href=\"text/shared/01/06050000.xhp\" name=\"Bullets and Numbering\"><emph>Bullets and Numbering</emph></link> dialog. To open this dialog, click the <emph>Bullets and Numbering</emph> icon on the <link href=\"text/swriter/main0206.xhp\" name=\"Bullets and Numbering Bar\">Bullets and Numbering Bar</link></caseinline></switchinline>"
-msgstr "<switchinline select=\"appl\"> <caseinline select=\"WRITER\">Optionen für Aufzählungszeichen, wie z. B. Art und Position, legen Sie im Dialog <link href=\"text/shared/01/06050000.xhp\" name=\"Nummerierung/Aufzählung\"><emph>Nummerierung/Aufzählung</emph></link> fest. Diesen Dialog öffnen Sie mit dem Symbol <emph>Nummerierung bearbeiten</emph> in der <link href=\"text/swriter/main0206.xhp\" name=\"Nummerierungsobjektleiste\">Nummerierungsobjektleiste</link></caseinline> </switchinline>"
+msgstr "<switchinline select=\"appl\"> <caseinline select=\"WRITER\">Optionen für Aufzählungszeichen, wie beispielsweise Art und Position, legen Sie im Dialog <link href=\"text/shared/01/06050000.xhp\" name=\"Nummerierung/Aufzählung\"><emph>Nummerierung/Aufzählung</emph></link> fest. Diesen Dialog öffnen Sie mit dem Symbol <emph>Nummerierung bearbeiten</emph> in der <link href=\"text/swriter/main0206.xhp\" name=\"Nummerierungsobjektleiste\">Nummerierungsobjektleiste</link></caseinline> </switchinline>"
 
 #: 06120000.xhp
 msgctxt ""
@@ -11821,7 +11821,7 @@ msgctxt ""
 "8\n"
 "help.text"
 msgid "<switchinline select=\"appl\"><caseinline select=\"IMPRESS\">Bullet options such as type and position are defined in the <link href=\"text/shared/01/06050000.xhp\" name=\"Bullets and Numbering\">Bullets and Numbering</link> dialog. To open this dialog, click the <emph>Bullets and Numbering</emph> icon on the <emph>Text Formatting</emph> Bar. </caseinline></switchinline>"
-msgstr "<switchinline select=\"appl\"><caseinline select=\"IMPRESS\">Optionen für Aufzählungszeichen, wie z. B. Art und Position, legen Sie im Dialog <link href=\"text/shared/01/06050000.xhp\" name=\"Nummerierung und Aufzählungszeichen\">Nummerierung und Aufzählungszeichen</link> fest. Diesen Dialog öffnen Sie mit dem Symbol <emph>Nummerierung und Aufzählungszeichen</emph> in der <emph>Text Format-Leiste</emph>. </caseinline></switchinline>"
+msgstr "<switchinline select=\"appl\"><caseinline select=\"IMPRESS\">Optionen für Aufzählungszeichen, wie beispielsweise Art und Position, legen Sie im Dialog <link href=\"text/shared/01/06050000.xhp\" name=\"Nummerierung und Aufzählungszeichen\">Nummerierung und Aufzählungszeichen</link> fest. Diesen Dialog öffnen Sie mit dem Symbol <emph>Nummerierung und Aufzählungszeichen</emph> in der <emph>Text Format-Leiste</emph>. </caseinline></switchinline>"
 
 #: 06120000.xhp
 msgctxt ""
@@ -11856,7 +11856,7 @@ msgctxt ""
 "4\n"
 "help.text"
 msgid "Bullets On/Off"
-msgstr "Aufzählungsliste an/aus"
+msgstr "Aufzählungsliste ein/aus"
 
 #: 07010000.xhp
 msgctxt ""
@@ -11906,7 +11906,7 @@ msgctxt ""
 "bm_id3153089\n"
 "help.text"
 msgid "<bookmark_value>reloading; documents</bookmark_value><bookmark_value>documents; reloading</bookmark_value><bookmark_value>loading; reloading</bookmark_value>"
-msgstr "<bookmark_value>Neuladen;Dokumente</bookmark_value>  <bookmark_value>Dokumente;neu laden</bookmark_value>  <bookmark_value>Laden;neu</bookmark_value>"
+msgstr "<bookmark_value>Neuladen; Dokumente</bookmark_value><bookmark_value>Dokumente; neu laden</bookmark_value><bookmark_value>Laden; neu laden</bookmark_value>"
 
 #: 07060000.xhp
 msgctxt ""
@@ -11949,7 +11949,7 @@ msgctxt ""
 "bm_id3153089\n"
 "help.text"
 msgid "<bookmark_value>write protection on/off</bookmark_value><bookmark_value>protected documents</bookmark_value><bookmark_value>documents; read-only</bookmark_value><bookmark_value>read-only documents; editing</bookmark_value><bookmark_value>cursor;in read-only text</bookmark_value><bookmark_value>read-only documents;cursor</bookmark_value><bookmark_value>Edit File icon</bookmark_value>"
-msgstr "<bookmark_value>Schreibschutz aktivieren/deaktivieren</bookmark_value>  <bookmark_value>Geschützte Dokumente</bookmark_value>  <bookmark_value>Dokumente;schreibgeschützt</bookmark_value>  <bookmark_value>Schreibgeschützte Dokumente;bearbeiten</bookmark_value>  <bookmark_value>Cursor;in schreibgeschütztem Text</bookmark_value>  <bookmark_value>Schreibgeschützte Dokumente;Cursor</bookmark_value>  <bookmark_value>Datei bearbeiten (Symbol)</bookmark_value>"
+msgstr "<bookmark_value>Schreibschutz ein/aus</bookmark_value><bookmark_value>Geschützte Dokumente</bookmark_value><bookmark_value>Dokumente; schreibgeschützt</bookmark_value><bookmark_value>Schreibgeschützte Dokumente; bearbeiten</bookmark_value><bookmark_value>Cursor; in schreibgeschütztem Text</bookmark_value><bookmark_value>Schreibgeschützte Dokumente; Cursor</bookmark_value><bookmark_value>Symbol Datei bearbeiten</bookmark_value>"
 
 #: 07070000.xhp
 msgctxt ""
@@ -12018,7 +12018,7 @@ msgctxt ""
 "bm_id3144740\n"
 "help.text"
 msgid "<bookmark_value>read-only documents; database tables on/off </bookmark_value><bookmark_value>protected database tables</bookmark_value><bookmark_value>data; read-only</bookmark_value>"
-msgstr "<bookmark_value>Schreibgeschützte Dokumente;Datenbanktabellen ein/aus </bookmark_value>  <bookmark_value>Geschützte Datenbanktabellen</bookmark_value>  <bookmark_value>Daten;schreibgeschützte</bookmark_value>"
+msgstr "<bookmark_value>Schreibgeschützte Dokumente; Datenbanktabellen ein/aus </bookmark_value><bookmark_value>Geschützte Datenbanktabellen</bookmark_value><bookmark_value>Daten; schreibgeschützte</bookmark_value>"
 
 #: 07070100.xhp
 msgctxt ""
@@ -12087,7 +12087,7 @@ msgctxt ""
 "bm_id3163829\n"
 "help.text"
 msgid "<bookmark_value>records; saving</bookmark_value>"
-msgstr "<bookmark_value>Datensätze;speichern</bookmark_value>"
+msgstr "<bookmark_value>Datensätze; speichern</bookmark_value>"
 
 #: 07070200.xhp
 msgctxt ""
@@ -12606,7 +12606,7 @@ msgctxt ""
 "27\n"
 "help.text"
 msgid "<ahelp hid=\"SVX:IMAGEBUTTON:RID_SVXPAGE_HYPERLINK_NEWDOCUMENT:BTN_SCRIPT\">Opens the <emph>Assign Macro</emph> dialog, in which you can give events such as \"mouse over object\" or \"trigger hyperlink\" their own program codes.</ahelp>"
-msgstr "<ahelp hid=\"SVX:IMAGEBUTTON:RID_SVXPAGE_HYPERLINK_NEWDOCUMENT:BTN_SCRIPT\">Öffnet den Dialog <emph>Makro zuweisen</emph>, in dem Sie Ereignissen wie z. B. \"Maus über Objekt\" oder \"Hyperlink auslösen\" eigenen Programmcode zuweisen können.</ahelp>"
+msgstr "<ahelp hid=\"SVX:IMAGEBUTTON:RID_SVXPAGE_HYPERLINK_NEWDOCUMENT:BTN_SCRIPT\">Öffnet den Dialog <emph>Makro zuweisen</emph>, in dem Sie Ereignissen wie beispielsweise \"Maus über Objekt\" oder \"Hyperlink auslösen\" eigenen Programmcode zuweisen können.</ahelp>"
 
 #: 09070100.xhp
 msgctxt ""
@@ -12624,7 +12624,7 @@ msgctxt ""
 "29\n"
 "help.text"
 msgid "<ahelp hid=\"SVX:EDIT:RID_SVXPAGE_HYPERLINK_NEWDOCUMENT:ED_INDICATION\">Specifies the visible text or button caption for the hyperlink.</ahelp>"
-msgstr "<ahelp hid=\"SVX:EDIT:RID_SVXPAGE_HYPERLINK_NEWDOCUMENT:ED_INDICATION\">Hier geben Sie den sichtbaren Hyperlink-Text bzw. die Beschriftung der Schaltfläche ein.</ahelp>"
+msgstr "<ahelp hid=\"SVX:EDIT:RID_SVXPAGE_HYPERLINK_NEWDOCUMENT:ED_INDICATION\">Hier geben Sie den sichtbaren Hyperlink-Text beziehungsweise die Beschriftung der Schaltfläche ein.</ahelp>"
 
 #: 09070100.xhp
 msgctxt ""
@@ -12711,7 +12711,7 @@ msgctxt ""
 "9\n"
 "help.text"
 msgid "<ahelp hid=\"HID_HYPERDLG_MAIL_PATH\">Specifies the full URL of the addressee, in the form mailto:name@provider.com or news:group.server.com.</ahelp> You can also use drag-and-drop."
-msgstr "<ahelp hid=\"HID_HYPERDLG_MAIL_PATH\">Hier geben Sie die vollständige URL der Adresse im Format mailto:name@internetanbieter.de oder news:gruppe.server.de ein.</ahelp> Sie können hier auch mit Ziehen&Ablegen arbeiten."
+msgstr "<ahelp hid=\"HID_HYPERDLG_MAIL_PATH\">Hier geben Sie die vollständige URL der Adresse im Format mailto:name@internetanbieter.de oder news:gruppe.server.de ein.</ahelp> Sie können hier auch mit Ziehen-und-Ablegen arbeiten."
 
 #: 09070200.xhp
 msgctxt ""
@@ -13290,7 +13290,7 @@ msgctxt ""
 "53\n"
 "help.text"
 msgid "<emph>Establishing a connection</emph> - As soon as you select an individual table or query, a connection to the data source is established. Once the connection is opened, the name of the data source, the Queries or Tables entry, and the name of the query or table selected is shown in bold type."
-msgstr "<emph>Verbindungsaufbau</emph> - Sobald Sie eine bestimmte Tabelle oder Abfrage auswählen, wird eine Verbindung zur Datenquelle hergestellt. Nach dem Verbindungsaufbau werden der Name der Datenquelle, die Einträge \"Abfragen\" oder \"Tabellen\" sowie der Name der ausgewählten Abfrage bzw. Tabelle in fetter Schrift angezeigt."
+msgstr "<emph>Verbindungsaufbau</emph> - Sobald Sie eine bestimmte Tabelle oder Abfrage auswählen, wird eine Verbindung zur Datenquelle hergestellt. Nach dem Verbindungsaufbau werden der Name der Datenquelle, die Einträge \"Abfragen\" oder \"Tabellen\" sowie der Name der ausgewählten Abfrage beziehungsweise Tabelle in Fettschrift angezeigt."
 
 #: 12000000.xhp
 msgctxt ""
@@ -13690,7 +13690,7 @@ msgctxt ""
 "6\n"
 "help.text"
 msgid "<switchinline select=\"appl\"><caseinline select=\"WRITER\">The preferences you set in the<emph> Insert Database Columns </emph>dialog are saved and will be active the next time the dialog is called. This save process is independent of the database and can record the preferences for a maximum of 5 databases.</caseinline></switchinline>"
-msgstr "<switchinline select=\"appl\"><caseinline select=\"WRITER\">Die Einstellungen, die Sie in diesem Dialog zum Einfügen der Daten vornehmen, werden gespeichert und sind beim nächsten Aufruf des Dialogs aktiv. Diese Speicherung ist abhängig von der Datenbank und kann die Einstellungen für maximal fünf Datenbanktabellen aufnehmen.</caseinline> </switchinline>"
+msgstr "<switchinline select=\"appl\"><caseinline select=\"WRITER\">Die Einstellungen, die Sie im Dialog <emph>Datenbankspalten einfügen</emph> zum Einfügen der Daten vornehmen, werden gespeichert und sind beim nächsten Aufruf des Dialogs aktiv. Diese Speicherung ist abhängig von der Datenbank und kann die Einstellungen für maximal fünf Datenbanktabellen aufnehmen.</caseinline> </switchinline>"
 
 #: 12070000.xhp
 msgctxt ""
@@ -13724,7 +13724,7 @@ msgctxt ""
 "bm_id3156183\n"
 "help.text"
 msgid "<bookmark_value>database contents; inserting as tables</bookmark_value>"
-msgstr "<bookmark_value>Datenbankinhalte;als Tabellen einfügen</bookmark_value>"
+msgstr "<bookmark_value>Datenbankinhalte; als Tabellen einfügen</bookmark_value>"
 
 #: 12070100.xhp
 msgctxt ""
@@ -13751,7 +13751,7 @@ msgctxt ""
 "19\n"
 "help.text"
 msgid "In the <emph>Table</emph> area, use the arrow keys to select the columns of the database table that you want to apply to the text table."
-msgstr "Im Bereich <emph>Tabelle</emph> wählen Sie mithilfe der Pfeilschaltflächen die Spalten der Datenbanktabelle aus, die in die Texttabelle übertragen werden sollen."
+msgstr "Im Bereich <emph>Tabelle</emph> wählen Sie mithilfe der Pfeiltasten die Spalten der Datenbanktabelle aus, die in die Texttabelle übertragen werden sollen."
 
 #: 12070100.xhp
 msgctxt ""
@@ -13913,7 +13913,7 @@ msgctxt ""
 "32\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/insertdbcolumnsdialog/numformat\">Specifies a format from the list, if the format information of certain data fields is not accepted.</ahelp> The formats supplied here are only available for certain database fields, such as numeric or Boolean fields. If you select a database field in text format, you will not be able to select any format from the selection list, since the text format will be automatically maintained."
-msgstr "<ahelp hid=\"modules/swriter/ui/insertdbcolumnsdialog/numformat\">Hier wählen Sie ein Format für Datenfelder, deren eigene Formatinformationen nicht akzeptiert werden.</ahelp> Die hier angebotenen Formate sind nur für bestimmte Datenbankfelder, z.B. numerische oder Boolesche Felder, verfügbar. Für Datenbankfelder in Textformat kann keines der Formate in der Liste gewählt werden. In diesem Fall wird das Textformat automatisch beibehalten."
+msgstr "<ahelp hid=\"modules/swriter/ui/insertdbcolumnsdialog/numformat\">Hier wählen Sie ein Format für Datenfelder, deren eigene Formatinformationen nicht akzeptiert werden.</ahelp> Die hier angebotenen Formate sind nur für bestimmte Datenbankfelder, beispielsweise numerische oder Boolesche Felder, verfügbar. Für Datenbankfelder in Textformat kann keines der Formate in der Liste gewählt werden. In diesem Fall wird das Textformat automatisch beibehalten."
 
 #: 12070100.xhp
 msgctxt ""
@@ -14055,7 +14055,7 @@ msgctxt ""
 "bm_id3149987\n"
 "help.text"
 msgid "<bookmark_value>database contents; inserting as fields</bookmark_value>"
-msgstr "<bookmark_value>Datenbankinhalte;als Felder einfügen</bookmark_value>"
+msgstr "<bookmark_value>Datenbankinhalte; als Felder einfügen</bookmark_value>"
 
 #: 12070200.xhp
 msgctxt ""
@@ -14197,7 +14197,7 @@ msgctxt ""
 "bm_id3143284\n"
 "help.text"
 msgid "<bookmark_value>database contents; inserting as text</bookmark_value>"
-msgstr "<bookmark_value>Datenbankinhalte;als Text einfügen</bookmark_value>"
+msgstr "<bookmark_value>Datenbankinhalte; als Text einfügen</bookmark_value>"
 
 #: 12070300.xhp
 msgctxt ""
@@ -14292,7 +14292,7 @@ msgctxt ""
 "bm_id3109850\n"
 "help.text"
 msgid "<bookmark_value>default filters, see standard filters</bookmark_value>         <bookmark_value>databases; standard filters</bookmark_value>         <bookmark_value>standard filters;databases</bookmark_value>"
-msgstr "<bookmark_value>Standardfilter</bookmark_value>  <bookmark_value>Datenbanken;Standardfilter</bookmark_value>  <bookmark_value>Standardfilter;Datenbanken</bookmark_value>"
+msgstr "<bookmark_value>Standardfilter</bookmark_value><bookmark_value>Datenbanken; Standardfilter</bookmark_value><bookmark_value>Standardfilter; Datenbanken</bookmark_value>"
 
 #: 12090000.xhp
 msgctxt ""
@@ -14521,7 +14521,7 @@ msgctxt ""
 "bm_id3148983\n"
 "help.text"
 msgid "<bookmark_value>comparisons;operators in standard filter dialog</bookmark_value>      <bookmark_value>operators;standard filters</bookmark_value>      <bookmark_value>standard filters;comparison operators</bookmark_value>      <bookmark_value>filters; comparison operators</bookmark_value>      <bookmark_value>equal sign, see also operators</bookmark_value>"
-msgstr "<bookmark_value>Vergleiche;Operatoren im Standardfilter-Dialog</bookmark_value>  <bookmark_value>Operatoren;Standardfilter</bookmark_value>  <bookmark_value>Standardfilter;Vergleichsoperatoren</bookmark_value>  <bookmark_value>Filter;Vergleichsoperatoren</bookmark_value>  <bookmark_value>Gleichheitszeichen, siehe auch Operatoren</bookmark_value>"
+msgstr "<bookmark_value>Vergleiche; Operatoren im Standardfilter-Dialog</bookmark_value><bookmark_value>Operatoren; Standardfilter</bookmark_value><bookmark_value>Standardfilter; Vergleichsoperatoren</bookmark_value><bookmark_value>Filter; Vergleichsoperatoren</bookmark_value><bookmark_value>Gleichheitszeichen, siehe auch Operatoren</bookmark_value>"
 
 #: 12090101.xhp
 msgctxt ""
@@ -14787,7 +14787,7 @@ msgctxt ""
 "bm_id3147000\n"
 "help.text"
 msgid "<bookmark_value>sorting; databases</bookmark_value><bookmark_value>databases; sorting</bookmark_value>"
-msgstr "<bookmark_value>Sortieren;Datenbanken</bookmark_value>  <bookmark_value>Datenbanken;sortieren</bookmark_value>"
+msgstr "<bookmark_value>Sortieren; Datenbanken</bookmark_value><bookmark_value>Datenbanken; sortieren</bookmark_value>"
 
 #: 12100100.xhp
 msgctxt ""
@@ -14920,7 +14920,7 @@ msgctxt ""
 "bm_id3146936\n"
 "help.text"
 msgid "<bookmark_value>tables in databases; searching</bookmark_value>      <bookmark_value>forms; browsing</bookmark_value>      <bookmark_value>records; searching in databases</bookmark_value>      <bookmark_value>searching; databases</bookmark_value>      <bookmark_value>databases; searching records</bookmark_value>"
-msgstr "<bookmark_value>Tabellen in Datenbanken;durchsuchen</bookmark_value>  <bookmark_value>Formulare;durchsuchen</bookmark_value>  <bookmark_value>Datensätze;in Datenbanken suchen</bookmark_value>  <bookmark_value>Durchsuchen;Datenbanken</bookmark_value>  <bookmark_value>Datenbanken;Datensätze suchen</bookmark_value>"
+msgstr "<bookmark_value>Tabellen in Datenbanken; durchsuchen</bookmark_value><bookmark_value>Formulare; durchsuchen</bookmark_value><bookmark_value>Datensätze; in Datenbanken suchen</bookmark_value><bookmark_value>Durchsuchen; Datenbanken</bookmark_value><bookmark_value>Datenbanken; Datensätze suchen</bookmark_value>"
 
 #: 12100200.xhp
 msgctxt ""
@@ -15343,7 +15343,7 @@ msgctxt ""
 "83\n"
 "help.text"
 msgid "You have a date field, which is saved in \"DD.MM.YY\" format in the database (for example, 17.02.65). The format of the entry is changed in the data source view to \"DD MMM YYYY\" (17 Feb 1965). Following this example, a record containing February 17 is only found when the <emph>Apply field format</emph> option is on:"
-msgstr "Betrachten wir beispielsweise ein Datumsfeld, das im Format \"TT.MM.JJ\" in der Datenbank gespeichert ist (z. B. 17.02.65). Das Format des Eintrags wird in der Datenquellenansicht in \"TT. MMM JJJJ\" geändert (17. Feb 1965). Danach wird ein Datensatz, der den 17. Februar enthält, nur mit aktivierter Option <emph>Feldformatierung benutzen</emph> gefunden:"
+msgstr "Betrachten wir beispielsweise ein Datumsfeld, das im Format \"TT.MM.JJ\" in der Datenbank gespeichert ist (beispielsweise der 17.02.65). Das Format des Eintrags wird in der Datenquellenansicht in \"TT. MMM JJJJ\" geändert (17. Feb 1965). Danach wird ein Datensatz, der den 17. Februar enthält, nur mit aktivierter Option <emph>Feldformatierung benutzen</emph> gefunden:"
 
 #: 12100200.xhp
 msgctxt ""
@@ -15496,7 +15496,7 @@ msgctxt ""
 "100\n"
 "help.text"
 msgid "In this case, standard formatting is formatting that refers to the internally stored data. It is not always visible to the user, especially if it is used for simulating data types (for example, time fields in dBASE databases). This depends on the database used and the individual data type. Searching with field formatting is appropriate if you only want to find what is actually shown. This includes fields of type Date, Time, Date/Time and Number/Double."
-msgstr "Die Standardformatierungen sind hier Formatierungen, die sich auf die intern gespeicherten Daten beziehen. Sie sind für die Benutzer nicht immer sichtbar, besonders dann nicht, wenn sie zur Simulation von Datentypen (z. B. von Zeitfeldern in dBase-Datenbanken) eingesetzt werden. Im Einzelnen ist dies von der verwendeten Datenbank und dem jeweiligen Datentyp abhängig. Die Suche mit Feldformatierungen bietet sich dann an, wenn Sie nur tatsächlich angezeigte Daten suchen möchten. Das betrifft insbesondere Felder vom Typ Datum, Zeit, Datum/Zeit und Zahl/Double."
+msgstr "Die Standardformatierungen sind hier Formatierungen, die sich auf die intern gespeicherten Daten beziehen. Sie sind für die Benutzer nicht immer sichtbar, besonders dann nicht, wenn sie zur Simulation von Datentypen (beispielsweise von Zeitfeldern in dBase-Datenbanken) eingesetzt werden. Im Einzelnen ist dies von der verwendeten Datenbank und dem jeweiligen Datentyp abhängig. Die Suche mit Feldformatierungen bietet sich dann an, wenn Sie nur tatsächlich angezeigte Daten suchen möchten. Das betrifft insbesondere Felder vom Typ Datum, Zeit, Datum/Zeit und Zahl/Double."
 
 #: 12100200.xhp
 msgctxt ""
@@ -15532,7 +15532,7 @@ msgctxt ""
 "32\n"
 "help.text"
 msgid "Match case"
-msgstr "Groß-/Kleinschreibung"
+msgstr "Groß- und Kleinschreibung beachten"
 
 #: 12100200.xhp
 msgctxt ""
@@ -15541,7 +15541,7 @@ msgctxt ""
 "33\n"
 "help.text"
 msgid "<ahelp hid=\"cui/ui/fmsearchdialog/cbCase\">Specifies that upper and lower case are taken into consideration during the search.</ahelp>"
-msgstr "<ahelp hid=\"cui/ui/fmsearchdialog/cbCase\">Bei der Suche wird die Groß-/Kleinschreibung beachtet.</ahelp>"
+msgstr "<ahelp hid=\"cui/ui/fmsearchdialog/cbCase\">Bei der Suche wird die Groß- und Kleinschreibung beachtet.</ahelp>"
 
 #: 12100200.xhp
 msgctxt ""
@@ -15658,7 +15658,7 @@ msgctxt ""
 "65\n"
 "help.text"
 msgid "\"M?ller\" returns, for example, Miller and Moller"
-msgstr "\"M?ller\" findet z. B. Müller und Möller"
+msgstr "\"M?ller\" findet beispielsweise Müller und Möller"
 
 #: 12100200.xhp
 msgctxt ""
@@ -15694,7 +15694,7 @@ msgctxt ""
 "66\n"
 "help.text"
 msgid "\"M*er\" returns all entries starting with an \"M\" and ending in \"er\" (for example, Miller, Moller, Mather)"
-msgstr "\"M*er\" findet alle Einträge, die mit \"M\" beginnen und mit \"er\" aufhören (z. B. Müller, Möller, Meier)"
+msgstr "\"M*er\" findet alle Einträge, die mit \"M\" beginnen und mit \"er\" aufhören (beispielsweise Müller, Möller, Meier)"
 
 #: 12100200.xhp
 msgctxt ""
@@ -15721,7 +15721,7 @@ msgctxt ""
 "50\n"
 "help.text"
 msgid "<ahelp hid=\"cui/ui/fmsearchdialog/cbRegular\">Searches with regular expressions.</ahelp> The same regular expressions that are supported here are also supported in the <item type=\"productname\">%PRODUCTNAME</item> <link href=\"text/shared/01/02100000.xhp\" name=\"Find & Replace dialog\">Find & Replace dialog</link>."
-msgstr "<ahelp hid=\"cui/ui/fmsearchdialog/cbRegular\">Erlaubt die Suche mit regulären Ausdrücken.</ahelp> Hier sind dieselben regulären Ausdrücke zulässig wie im <item type=\"productname\">%PRODUCTNAME</item> <link href=\"text/shared/01/02100000.xhp\" name=\"Find & Replace dialog\">- Dialog Suchen und Ersetzen</link>."
+msgstr "<ahelp hid=\"cui/ui/fmsearchdialog/cbRegular\">Erlaubt die Suche mit regulären Ausdrücken.</ahelp> Hier sind dieselben regulären Ausdrücke zulässig wie im <item type=\"productname\">%PRODUCTNAME</item> <link href=\"text/shared/01/02100000.xhp\" name=\"Dialog Suchen und Ersetzen\">Dialog Suchen und Ersetzen</link>."
 
 #: 12100200.xhp
 msgctxt ""
@@ -15802,7 +15802,7 @@ msgctxt ""
 "102\n"
 "help.text"
 msgid "The <emph>State</emph> line shows the records returned by the search. If the search reaches the end (or the beginning) of a table, the search is automatically continued at the other end."
-msgstr "Unter <emph>Status</emph> werden die von der Suche gelieferten Datensätze angezeigt. Wenn die Suche das Ende (bzw. den Anfang) der Tabelle erreicht, wird sie automatisch am anderen Ende fortgesetzt."
+msgstr "Unter <emph>Status</emph> werden die von der Suche gelieferten Datensätze angezeigt. Wenn die Suche das Ende (beziehungsweise den Anfang) der Tabelle erreicht, wird sie automatisch am anderen Ende fortgesetzt."
 
 #: 12100200.xhp
 msgctxt ""
@@ -15976,7 +15976,7 @@ msgctxt ""
 "bm_id3152895\n"
 "help.text"
 msgid "<bookmark_value>data sources; as tables</bookmark_value>"
-msgstr "<bookmark_value>Datenquelle;als Tabelle</bookmark_value>"
+msgstr "<bookmark_value>Datenquellen; als Tabelle</bookmark_value>"
 
 #: 12130000.xhp
 msgctxt ""
@@ -16045,7 +16045,7 @@ msgctxt ""
 "bm_id3151262\n"
 "help.text"
 msgid "<bookmark_value>data sources; displaying current</bookmark_value>"
-msgstr "<bookmark_value>Datenquellen;aktuelle anzeigen</bookmark_value>"
+msgstr "<bookmark_value>Datenquellen; aktuelle anzeigen</bookmark_value>"
 
 #: 12140000.xhp
 msgctxt ""
@@ -16140,7 +16140,7 @@ msgctxt ""
 "bm_id3148668\n"
 "help.text"
 msgid "<bookmark_value>margins; setting with the mouse</bookmark_value><bookmark_value>columns; setting with the mouse</bookmark_value><bookmark_value>paragraphs; indents, margins and columns</bookmark_value>"
-msgstr "<bookmark_value>Ränder;mit der Maus einstellen</bookmark_value>  <bookmark_value>Spalten;mit der Maus einstellen</bookmark_value>  <bookmark_value>Absätze;Einzüge, Ränder und Spalten</bookmark_value>"
+msgstr "<bookmark_value>Ränder; mit der Maus einstellen</bookmark_value><bookmark_value>Spalten; mit der Maus einstellen</bookmark_value><bookmark_value>Absätze; Einzüge, Ränder und Spalten</bookmark_value>"
 
 #: 13020000.xhp
 msgctxt ""
@@ -16352,7 +16352,7 @@ msgctxt ""
 "par_idN10621\n"
 "help.text"
 msgid "Choose <emph>View - Preview</emph> to run the query from the menu bar of a query design window."
-msgstr "Wählen Sie <emph>Ansicht - Vorschau</emph>, um die Abfrage aus der Menüleiste eines Abfrageentwurf-Fensters auszuführen."
+msgstr "Wählen Sie <emph>Ansicht - Vorschau</emph>, um die Abfrage aus der Menüleiste eines Abfrageentwurffensters auszuführen."
 
 #: 14010000.xhp
 msgctxt ""
@@ -16428,7 +16428,7 @@ msgctxt ""
 "bm_id3154788\n"
 "help.text"
 msgid "<bookmark_value>tables in databases; adding to queries</bookmark_value>"
-msgstr "<bookmark_value>Tabellen in Datenbanken;zu Abfragen hinzufügen</bookmark_value>"
+msgstr "<bookmark_value>Tabellen in Datenbanken; zu Abfragen hinzufügen</bookmark_value>"
 
 #: 14020100.xhp
 msgctxt ""
@@ -16542,7 +16542,7 @@ msgctxt ""
 "tit\n"
 "help.text"
 msgid "Switch Design View On / Off"
-msgstr "Entwurfsansicht an-/ausschalten"
+msgstr "Entwurfsansicht ein/aus"
 
 #: 14020200.xhp
 msgctxt ""
@@ -16551,7 +16551,7 @@ msgctxt ""
 "1\n"
 "help.text"
 msgid "<link href=\"text/shared/02/14020200.xhp\" name=\"Switch Design View On / Off\">Switch Design View On / Off</link>"
-msgstr "<link href=\"text/shared/02/14020200.xhp\" name=\"Entwurfsansicht an-/ausschalten\">Entwurfsansicht an-/ausschalten</link>"
+msgstr "<link href=\"text/shared/02/14020200.xhp\" name=\"Entwurfsansicht ein/aus\">Entwurfsansicht ein/aus</link>"
 
 #: 14020200.xhp
 msgctxt ""
@@ -16577,7 +16577,7 @@ msgctxt ""
 "3\n"
 "help.text"
 msgid "Switch Design View On / Off"
-msgstr "Entwurfsansicht an-/ausschalten"
+msgstr "Entwurfsansicht ein/aus"
 
 #: 14030000.xhp
 msgctxt ""
@@ -16664,7 +16664,7 @@ msgctxt ""
 "2\n"
 "help.text"
 msgid "<ahelp visibility=\"visible\" hid=\".uno:DBViewFunctions\">Displays the \"Function\" row in the lower part of the design view of the <link href=\"text/shared/explorer/database/02010100.xhp\" name=\"Query Design\">Query Design</link> window.</ahelp>"
-msgstr "<ahelp visibility=\"visible\" hid=\".uno:DBViewFunctions\">Blendet im unteren Fensterbereich des <link href=\"text/shared/explorer/database/02010100.xhp\" name=\"Abfrageentwurfs\">Abfrageentwurfs</link> die Zeile \"Funktion\" ein.</ahelp>"
+msgstr "<ahelp visibility=\"visible\" hid=\".uno:DBViewFunctions\">Blendet im unteren Fensterbereich der Entwurfsansicht des <link href=\"text/shared/explorer/database/02010100.xhp\" name=\"Abfrageentwurfes\">Abfrageentwurfes</link> die Zeile \"Funktion\" ein.</ahelp>"
 
 #: 14040000.xhp
 msgctxt ""
@@ -16707,7 +16707,7 @@ msgctxt ""
 "2\n"
 "help.text"
 msgid "<ahelp hid=\".\">Displays the \"Table\" row in the lower part of the <link href=\"text/shared/explorer/database/02010100.xhp\" name=\"Query Design\">Query Design</link>.</ahelp>"
-msgstr "<ahelp hid=\".\">Blendet im unteren Bereich des <link href=\"text/shared/explorer/database/02010100.xhp\" name=\"Abfrageentwurfs\">Abfrageentwurfs</link> die Zeile \"Tabelle\" ein.</ahelp>"
+msgstr "<ahelp hid=\".\">Blendet im unteren Bereich des <link href=\"text/shared/explorer/database/02010100.xhp\" name=\"Abfrageentwurfes\">Abfrageentwurfes</link> die Zeile \"Tabelle\" ein.</ahelp>"
 
 #: 14050000.xhp
 msgctxt ""
@@ -16750,7 +16750,7 @@ msgctxt ""
 "2\n"
 "help.text"
 msgid "<ahelp visibility=\"visible\" hid=\".uno:DBViewAliases\">Displays the \"Alias\" row in the lower part of the <link href=\"text/shared/explorer/database/02010100.xhp\" name=\"Query Design\">Query Design</link>.</ahelp>"
-msgstr "<ahelp visibility=\"visible\" hid=\".uno:DBViewAliases\">Blendet im unteren Bereich des <link href=\"text/shared/explorer/database/02010100.xhp\" name=\"Abfrageentwurfs\">Abfrageentwurfs</link> die Zeile \"Alias\" ein.</ahelp>"
+msgstr "<ahelp visibility=\"visible\" hid=\".uno:DBViewAliases\">Blendet im unteren Bereich des <link href=\"text/shared/explorer/database/02010100.xhp\" name=\"Abfrageentwurfes\">Abfrageentwurfes</link> die Zeile \"Alias\" ein.</ahelp>"
 
 #: 14060000.xhp
 msgctxt ""
@@ -16783,7 +16783,7 @@ msgctxt ""
 "bm_id3149991\n"
 "help.text"
 msgid "<bookmark_value>SQL; DISTINCT parameter</bookmark_value><bookmark_value>distinct values in SQL queries</bookmark_value>"
-msgstr "<bookmark_value>SQL;DISTINCT (Parameter)</bookmark_value>  <bookmark_value>Eindeutige Werte in SQL-Abfragen</bookmark_value>"
+msgstr "<bookmark_value>SQL; DISTINCT-Parameter</bookmark_value><bookmark_value>Eindeutige Werte in SQL-Abfragen</bookmark_value>"
 
 #: 14070000.xhp
 msgctxt ""
@@ -16896,7 +16896,7 @@ msgctxt ""
 "tit\n"
 "help.text"
 msgid "Automatic Spell Checking On/Off"
-msgstr "Automatische Rechtschreibprüfung"
+msgstr "Automatische Rechtschreibprüfung ein/aus"
 
 #: 18030000.xhp
 msgctxt ""
@@ -16905,7 +16905,7 @@ msgctxt ""
 "1\n"
 "help.text"
 msgid "<link href=\"text/shared/02/18030000.xhp\" name=\"Automatic Spell Checking On/Off\">Automatic Spell Checking On/Off</link>"
-msgstr "<link href=\"text/shared/02/18030000.xhp\" name=\"Automatische Rechtschreibprüfung\">Automatische Rechtschreibprüfung</link>"
+msgstr "<link href=\"text/shared/02/18030000.xhp\" name=\"Automatische Rechtschreibprüfung ein/aus\">Automatische Rechtschreibprüfung ein/aus</link>"
 
 #: 18030000.xhp
 msgctxt ""
@@ -16922,7 +16922,7 @@ msgctxt ""
 "2\n"
 "help.text"
 msgid "Automatic Spell Checking On/Off"
-msgstr "Automatische Rechtschreibprüfung"
+msgstr "Automatische Rechtschreibprüfung ein/aus"
 
 #: 19090000.xhp
 msgctxt ""
@@ -16938,7 +16938,7 @@ msgctxt ""
 "bm_id3154788\n"
 "help.text"
 msgid "<bookmark_value>HTML documents;source text</bookmark_value>"
-msgstr "<bookmark_value>HTML-Dokumente;Quelltext</bookmark_value>"
+msgstr "<bookmark_value>HTML-Dokumente; Quelltext</bookmark_value>"
 
 #: 19090000.xhp
 msgctxt ""
@@ -16978,7 +16978,7 @@ msgctxt ""
 "bm_id3083278\n"
 "help.text"
 msgid "<bookmark_value>page styles;editing/applying with statusbar</bookmark_value>"
-msgstr "<bookmark_value>Seitenvorlagen;mit der Statusleiste bearbeiten/anwenden</bookmark_value>"
+msgstr "<bookmark_value>Seitenvorlagen; mit der Statusleiste bearbeiten/anwenden</bookmark_value>"
 
 #: 20020000.xhp
 msgctxt ""
@@ -17048,7 +17048,7 @@ msgctxt ""
 "bm_id3155619\n"
 "help.text"
 msgid "<bookmark_value>zooming; status bar</bookmark_value>"
-msgstr "<bookmark_value>Maßstab;Statusleiste</bookmark_value>"
+msgstr "<bookmark_value>Maßstab; Statusleiste</bookmark_value>"
 
 #: 20030000.xhp
 msgctxt ""
@@ -17189,7 +17189,7 @@ msgctxt ""
 "bm_id3148668\n"
 "help.text"
 msgid "<bookmark_value>selection modes in text</bookmark_value><bookmark_value>text; selection modes</bookmark_value><bookmark_value>extending selection mode</bookmark_value><bookmark_value>adding selection mode</bookmark_value><bookmark_value>block selection mode</bookmark_value>"
-msgstr "<bookmark_value>Auswahlmodi;Text</bookmark_value>  <bookmark_value>Text;Auswahlmodi</bookmark_value>  <bookmark_value>Erweiterungsmodus</bookmark_value>  <bookmark_value>Ergänzungsmodus</bookmark_value>  <bookmark_value>Blockauswahlmodus</bookmark_value>"
+msgstr "<bookmark_value>Auswahlmodi; Text</bookmark_value><bookmark_value>Text; Auswahlmodi</bookmark_value><bookmark_value>Erweiterungsmodus</bookmark_value><bookmark_value>Ergänzungsmodus</bookmark_value><bookmark_value>Blockauswahlmodus</bookmark_value>"
 
 #: 20050000.xhp
 msgctxt ""
@@ -17312,7 +17312,7 @@ msgctxt ""
 "par_id4441663\n"
 "help.text"
 msgid "On Windows systems, you can hold down the <item type=\"keycode\">Alt</item> key while dragging to select a block of text. You don't need to enter the block selection mode."
-msgstr "Auf Windows Systemen können Sie die <item type=\"keycode\">Alt</item> Taste gedrückt halten, während Sie die Maus ziehen, um einen Textblock auszuwählen. Sie müssen nicht in den Block-Auswahlmodus wechseln."
+msgstr "Auf Windows-Systemen können Sie die <item type=\"keycode\">Alt</item>-Taste gedrückt halten, während Sie die Maus ziehen, um einen Textblock auszuwählen. Sie müssen nicht in den Block-Auswahlmodus wechseln."
 
 #: 20060000.xhp
 msgctxt ""
@@ -17448,7 +17448,7 @@ msgctxt ""
 "5\n"
 "help.text"
 msgid "<ahelp hid=\".uno:GraphicFilterInvert\">Inverts the color values of a color image, or the brightness values of a grayscale image. Apply the filter again to revert the effect.</ahelp>"
-msgstr "<ahelp hid=\".uno:GraphicFilterInvert\">Hiermit kehren Sie die Farbwerte eines Farbbildes bzw. die Helligkeitswerte eines Graustufenbildes um. Wendet den Filter erneut an, um den Effekt umzukehren.</ahelp>"
+msgstr "<ahelp hid=\".uno:GraphicFilterInvert\">Hiermit kehren Sie die Farbwerte eines Farbbildes beziehungsweise die Helligkeitswerte eines Graustufenbildes um. Wendet den Filter erneut an, um den Effekt umzukehren.</ahelp>"
 
 #: 24010000.xhp
 msgctxt ""
@@ -17985,7 +17985,7 @@ msgctxt ""
 "122\n"
 "help.text"
 msgid "<ahelp hid=\"cui/ui/mosaicdialog/edges\">Enhances, or sharpens, the edges of the object.</ahelp>"
-msgstr "<ahelp hid=\"cui/ui/mosaicdialog/edges\">Die Kanten des Objekts werden hervorgehoben, d. h. verschärft.</ahelp>"
+msgstr "<ahelp hid=\"cui/ui/mosaicdialog/edges\">Die Kanten des Objekts werden hervorgehoben, das heißt verschärft.</ahelp>"
 
 #: 24020000.xhp
 msgctxt ""
@@ -18556,7 +18556,7 @@ msgctxt ""
 "bm_id9298379\n"
 "help.text"
 msgid "<bookmark_value>callouts; drawings</bookmark_value><bookmark_value>speech bubbles</bookmark_value>"
-msgstr "<bookmark_value>Legenden;Zeichnungen</bookmark_value>  <bookmark_value>Sprechblasen</bookmark_value>"
+msgstr "<bookmark_value>Legenden; Zeichnungen</bookmark_value><bookmark_value>Sprechblasen</bookmark_value>"
 
 #: callouts.xhp
 msgctxt ""
@@ -18676,7 +18676,7 @@ msgctxt ""
 "par_idN10567\n"
 "help.text"
 msgid "<ahelp hid=\".\">Opens the Fontwork dialog from which you can insert styled text not possible through standard font formatting into your document.</ahelp>"
-msgstr "<ahelp hid=\".\">Öffnet den Dialog Fontwork, über dem Sie formatierten Text in Ihr Dokument einfügen können, der so nicht mittels Standardschriftformatierung möglich ist.</ahelp>"
+msgstr "<ahelp hid=\".\">Öffnet den Dialog Fontwork, über den Sie formatierten Text in Ihr Dokument einfügen können, der so nicht mittels Standardschriftformatierung möglich ist.</ahelp>"
 
 #: fontwork.xhp
 msgctxt ""
@@ -18716,7 +18716,7 @@ msgctxt ""
 "bm_id3149991\n"
 "help.text"
 msgid "<bookmark_value>SQL; LIMIT clause</bookmark_value>"
-msgstr "<bookmark_value>SQL;Limes-Bedingung</bookmark_value>"
+msgstr "<bookmark_value>SQL; Limes-Bedingung</bookmark_value>"
 
 #: limit.xhp
 msgctxt ""
@@ -18748,7 +18748,7 @@ msgctxt ""
 "bm_id5941343\n"
 "help.text"
 msgid "<bookmark_value>more controls</bookmark_value><bookmark_value>group box creation</bookmark_value><bookmark_value>image button creation</bookmark_value><bookmark_value>image control creation</bookmark_value><bookmark_value>file selection button</bookmark_value><bookmark_value>date fields; creating</bookmark_value><bookmark_value>time fields; form functions</bookmark_value><bookmark_value>numerical fields in forms</bookmark_value><bookmark_value>formatted fields; form functions</bookmark_value><bookmark_value>currency field creation</bookmark_value><bookmark_value>pattern fields; form functions</bookmark_value><bookmark_value>table controls; form functions</bookmark_value><bookmark_value>grid controls; form functions</bookmark_value><bookmark_value>controls; focus</bookmark_value><bookmark_value>focus of controls</bookmark_value><bookmark_value>forms; focus after opening</bookmark_value><bookmark_value>automatic control focus</bookmark_value><bookmark_value>spin button creation</bookmark_value><bookmark_value>scrollbars;controls</bookmark_value><bookmark_value>Navigation bar;controls</bookmark_value>"
-msgstr "<bookmark_value>Weitere Steuerelemente</bookmark_value>  <bookmark_value>Gruppenfeld erstellen</bookmark_value>  <bookmark_value>Grafische Schaltfläche erstellen</bookmark_value>  <bookmark_value>Grafisches Kontrollfeld erstellen</bookmark_value>  <bookmark_value>Dateiauswahlschaltfläche</bookmark_value>  <bookmark_value>Datumsfelder;erstellen</bookmark_value>  <bookmark_value>Uhrzeitfelder;Formularfunktionen</bookmark_value>  <bookmark_value>Numerische Felder in Formularen</bookmark_value>  <bookmark_value>Formatierte Felder;Formularfunktionen</bookmark_value>  <bookmark_value>Währungsfeld erstellen</bookmark_value>  <bookmark_value>Maskiertes Feld;Formularfunktion</bookmark_value>  <bookmark_value>Tabellen-Kontrollfelder;Formularfunktionen</bookmark_value>  <bookmark_value>Gitter-Kontrollfelder;Formularfunktionen</bookmark_value>  <bookmark_value>Kontrollfelder;Fokus</bookmark_value>  <bookmark_value>Fokus von Kontrollfeldern</bookmark_value>  <bookmark_value>Formulare;Fokus nach Öffnen</bookmark_value>  <bookmark_value>Automatischer Kontrollelement-Fokus</bookmark_value>  <bookmark_value>Drehfeld erstellen</bookmark_value>  <bookmark_value>Bildlaufleisten;Kontrollfelder</bookmark_value>  <bookmark_value>Navigationsleiste;Kontrollfelder</bookmark_value>"
+msgstr "<bookmark_value>Weitere Steuerelemente</bookmark_value><bookmark_value>Gruppenfeld erstellen</bookmark_value><bookmark_value>Grafische Schaltfläche erstellen</bookmark_value><bookmark_value>Grafisches Kontrollfeld erstellen</bookmark_value> <bookmark_value>Dateiauswahlschaltfläche</bookmark_value><bookmark_value>Datumsfelder; erstellen</bookmark_value><bookmark_value>Uhrzeitfelder; Formularfunktionen</bookmark_value><bookmark_value>Numerische Felder in Formularen</bookmark_value><bookmark_value>Formatierte Felder; Formularfunktionen</bookmark_value><bookmark_value>Währungsfeld erstellen</bookmark_value><bookmark_value>Maskiertes Feld; Formularfunktion</bookmark_value><bookmark_value>Tabellen-Kontrollfelder; Formularfunktionen</bookmark_value><bookmark_value>Gitter-Kontrollfelder; Formularfunktionen</bookmark_value><bookmark_value>Kontrollfelder; Fokus</bookmark_value><bookmark_value>Fokus von Kontrollfeldern</bookmark_value><bookmark_value>Formulare; Fokus nach Öffnen</bookmark_value><bookmark_value>Automatischer Kontrollelement-Fokus</bookmark_value><bookmark_value>Drehfeld erstellen</bookmark_value><bookmark_value>Bildlaufleisten; Kontrollfelder</bookmark_value><bookmark_value>Navigationsleiste; Kontrollfelder</bookmark_value>"
 
 #: more_controls.xhp
 msgctxt ""
@@ -18788,7 +18788,7 @@ msgctxt ""
 "par_idN1057A\n"
 "help.text"
 msgid "<ahelp hid=\".\">First select some text or an object, then click this icon. Then click on or drag across other text or click an object to apply the same formatting.</ahelp>"
-msgstr "<ahelp hid=\".\">Zuerst wählen Sie einigen Text oder einen Text, danach klicken Sie auf das Symbol. Dann klicken Sie auf eine andere Textstelle oder ein anderes Objekt oder fahren mit gedrückter Maustaste über eine andere Textstelle, um dieselbe Formatierung anzuwenden.</ahelp>"
+msgstr "<ahelp hid=\".\">Zuerst wählen Sie einigen Text oder ein Objekt, danach klicken Sie auf das Symbol. Dann klicken Sie auf eine andere Textstelle oder ein anderes Objekt oder fahren mit gedrückter Maustaste über eine andere Textstelle oder ein anderes Objekt, um dieselbe Formatierung anzuwenden.</ahelp>"
 
 #: paintbrush.xhp
 msgctxt ""
@@ -18828,7 +18828,7 @@ msgctxt ""
 "bm_id3154788\n"
 "help.text"
 msgid "<bookmark_value>queries; set properties</bookmark_value>"
-msgstr "<bookmark_value>Suchen;Eigenschaften festlegen</bookmark_value>"
+msgstr "<bookmark_value>Suchen; Eigenschaften festlegen</bookmark_value>"
 
 #: querypropdlg.xhp
 msgctxt ""
@@ -18852,7 +18852,7 @@ msgctxt ""
 "par_id3153761\n"
 "help.text"
 msgid "In the Query Design View, choose <emph>Edit</emph> - <emph>Query Properties</emph>."
-msgstr "In der Abfrageentwurfsansicht wählen Sie <emph>Bearbeiten</emph> - <emph>Abfrageeigenschaften</emph>."
+msgstr "In der Ansicht Abfrageentwurf wählen Sie <emph>Bearbeiten</emph> - <emph>Abfrageeigenschaften</emph>."
 
 #: querypropdlg.xhp
 msgctxt ""

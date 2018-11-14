@@ -80,12 +80,11 @@ public:
     virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
         throw (css::uno::RuntimeException, std::exception) override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.ui.UIConfigurationManager" };
-        return aSeq;
+        return {"com.sun.star.ui.UIConfigurationManager"};
     }
 
     explicit UIConfigurationManager( const css::uno::Reference< css::uno::XComponentContext > & rxContext );
-    virtual ~UIConfigurationManager();
+    virtual ~UIConfigurationManager() override;
 
     // XComponent
     virtual void SAL_CALL dispose() throw (css::uno::RuntimeException, std::exception) override;
@@ -156,12 +155,10 @@ private:
     {
         UIElementType() : bModified( false ),
                           bLoaded( false ),
-                          bDefaultLayer( false ),
                           nElementType( css::ui::UIElementType::UNKNOWN ) {}
 
         bool                                                              bModified;
         bool                                                              bLoaded;
-        bool                                                              bDefaultLayer;
         sal_Int16                                                         nElementType;
         UIElementDataHashMap                                              aElementsHashMap;
         css::uno::Reference< css::embed::XStorage > xStorage;
@@ -185,7 +182,6 @@ private:
     css::uno::Reference< css::embed::XStorage >               m_xDocConfigStorage;
     bool                                                      m_bReadOnly;
     bool                                                      m_bModified;
-    bool                                                      m_bConfigRead;
     bool                                                      m_bDisposed;
     OUString                                                  m_aXMLPostfix;
     OUString                                                  m_aPropUIName;
@@ -671,7 +667,6 @@ void UIConfigurationManager::impl_Initialize()
             m_aUIElements[i].nElementType = i;
             m_aUIElements[i].bModified = false;
             m_aUIElements[i].xStorage = xElementTypeStorage;
-            m_aUIElements[i].bDefaultLayer = false;
         }
     }
     else
@@ -686,7 +681,6 @@ UIConfigurationManager::UIConfigurationManager( const css::uno::Reference< css::
     m_xDocConfigStorage( nullptr )
     , m_bReadOnly( true )
     , m_bModified( false )
-    , m_bConfigRead( false )
     , m_bDisposed( false )
     , m_aXMLPostfix( ".xml" )
     , m_aPropUIName( "UIName" )
@@ -725,7 +719,6 @@ void SAL_CALL UIConfigurationManager::dispose() throw (css::uno::RuntimeExceptio
         m_xImageManager.clear();
         m_aUIElements.clear();
         m_xDocConfigStorage.clear();
-        m_bConfigRead = false;
         m_bModified = false;
         m_bDisposed = true;
     }

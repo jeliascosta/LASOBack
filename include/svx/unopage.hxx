@@ -49,6 +49,7 @@ class SdrObject;
 class SvxShape;
 class SvxShapeGroup;
 class SvxShapeConnector;
+enum class SdrInventor : sal_uInt32;
 
 /**
 * Macros to convert Twips<->100tel mm
@@ -62,7 +63,6 @@ class SVX_DLLPUBLIC SvxDrawPage : public ::cppu::WeakAggImplHelper6< css::drawin
                                                css::lang::XServiceInfo,
                                                css::lang::XUnoTunnel,
                                                css::lang::XComponent>,
-                    public SfxListener,
                     protected SvxMutexHelper
 {
  protected:
@@ -79,7 +79,7 @@ class SVX_DLLPUBLIC SvxDrawPage : public ::cppu::WeakAggImplHelper6< css::drawin
 
  public:
     SvxDrawPage( SdrPage* pPage ) throw();
-    virtual ~SvxDrawPage() throw();
+    virtual ~SvxDrawPage() throw() override;
 
     // Internals
     SdrPage* GetSdrPage() const { return mpPage; }
@@ -89,14 +89,14 @@ class SVX_DLLPUBLIC SvxDrawPage : public ::cppu::WeakAggImplHelper6< css::drawin
     SdrObject *CreateSdrObject( const css::uno::Reference< css::drawing::XShape >& xShape, bool bBeginning = false ) throw();
 
     // Determine Type and Inventor
-    static void GetTypeAndInventor( sal_uInt16& rType, sal_uInt32& rInventor, const OUString& aName ) throw();
+    static void GetTypeAndInventor( sal_uInt16& rType, SdrInventor& rInventor, const OUString& aName ) throw();
 
     // Creating a SdrObject using it's Description.
     // Can be used by derived classes to support their owen Shapes (e.g. Controls).
     virtual SdrObject *CreateSdrObject_( const css::uno::Reference< css::drawing::XShape >& xShape )
         throw (css::uno::RuntimeException, std::exception);
 
-    static SvxShape* CreateShapeByTypeAndInventor( sal_uInt16 nType, sal_uInt32 nInventor, SdrObject *pObj = nullptr, SvxDrawPage *pPage = nullptr, OUString const & referer = OUString() ) throw (css::uno::RuntimeException);
+    static SvxShape* CreateShapeByTypeAndInventor( sal_uInt16 nType, SdrInventor nInventor, SdrObject *pObj, SvxDrawPage *pPage = nullptr, OUString const & referer = OUString() ) throw (css::uno::RuntimeException);
 
     // The following method is called if a SvxShape object is to be created.
     // Derived classes can create a derivation or an SvxShape aggregating object.
@@ -104,9 +104,6 @@ class SVX_DLLPUBLIC SvxDrawPage : public ::cppu::WeakAggImplHelper6< css::drawin
         throw (css::uno::RuntimeException, std::exception);
 
     UNO3_GETIMPLEMENTATION_DECL( SvxDrawPage )
-
-    // SfxListener
-    virtual void Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
     // XInterface
     virtual void SAL_CALL release() throw() override;

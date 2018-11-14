@@ -48,12 +48,6 @@
 
 #include <unotools/fontdefs.hxx>
 
-#ifdef check
-#  //some problem with MacOSX and a check define
-#  undef check
-#endif
-#include <boost/intrusive_ptr.hpp>
-
 #include <com/sun/star/drawing/LineCap.hpp>
 #include <com/sun/star/uno/Reference.h>
 
@@ -99,7 +93,6 @@ class FontSelectPattern;
 class VCLXGraphics;
 class OutDevStateStack;
 struct BitmapSystemData;
-class VclReferenceBase;
 
 namespace vcl
 {
@@ -210,8 +203,7 @@ enum class DrawGridFlags
     NONE                 = 0x0000,
     Dots                 = 0x0001,
     HorzLines            = 0x0002,
-    VertLines            = 0x0004,
-    Lines                = HorzLines | VertLines,
+    VertLines            = 0x0004
 };
 namespace o3tl
 {
@@ -310,7 +302,7 @@ enum OutDevViewType { OUTDEV_VIEWTYPE_DONTKNOW, OUTDEV_VIEWTYPE_PRINTPREVIEW, OU
 
 // OutputDevice
 
-typedef boost::intrusive_ptr< FontCharMap > FontCharMapPtr;
+typedef tools::SvRef<FontCharMap> FontCharMapRef;
 
 BmpMirrorFlags AdjustTwoRect( SalTwoRect& rTwoRect, const Size& rSizePix );
 void AdjustTwoRect( SalTwoRect& rTwoRect, const Rectangle& rValidSrcRect );
@@ -321,7 +313,12 @@ namespace vcl {
     typedef OutputDevice RenderContext;
 }
 
-class VCL_DLLPUBLIC OutputDevice :public VclReferenceBase
+/**
+* Some things multiple-inherit from VclAbstractDialog and OutputDevice,
+* so we need to use virtual inheritance to keep the referencing counting
+* OK.
+*/
+class VCL_DLLPUBLIC OutputDevice : public virtual VclReferenceBase
 {
     friend class Printer;
     friend class VirtualDevice;
@@ -368,14 +365,14 @@ private:
     long                            mnOutHeight;
     sal_Int32                       mnDPIX;
     sal_Int32                       mnDPIY;
-    sal_Int32                       mnDPIScaleFactor; ///< For Hi-DPI displays, we want to draw everything mnDPIScaleFactor-times larger
+    sal_Int32                       mnDPIScalePercentage; ///< For Hi-DPI displays, we want to draw elements for a percentage larger
     /// font specific text alignment offsets in pixel units
     mutable long                    mnTextOffX;
     mutable long                    mnTextOffY;
     mutable long                    mnEmphasisAscent;
     mutable long                    mnEmphasisDescent;
     DrawModeFlags                   mnDrawMode;
-    ComplexTextLayoutMode           mnTextLayoutMode;
+    ComplexTextLayoutFlags           mnTextLayoutMode;
     ImplMapRes                      maMapRes;
     ImplThresholdRes                maThresRes;
     OutDevType                      meOutDevType;
@@ -396,9 +393,7 @@ private:
     AntialiasingFlags               mnAntialiasing;
     LanguageType                    meTextLanguage;
 
-    /// bitfield
     mutable bool                    mbMap : 1;
-    mutable bool                    mbMapIsDefault : 1;
     mutable bool                    mbClipRegion : 1;
     mutable bool                    mbBackground : 1;
     mutable bool                    mbOutput : 1;
@@ -425,7 +420,7 @@ private:
 
 protected:
                                 OutputDevice();
-    virtual                     ~OutputDevice();
+    virtual                     ~OutputDevice() override;
     virtual void                dispose() override;
 
 public:
@@ -538,7 +533,15 @@ public:
     SAL_DLLPRIVATE void         SetDPIX( sal_Int32 nDPIX ) { mnDPIX = nDPIX; }
     SAL_DLLPRIVATE void         SetDPIY( sal_Int32 nDPIY ) { mnDPIY = nDPIY; }
 
-    sal_Int32                   GetDPIScaleFactor() const { return mnDPIScaleFactor; }
+    float GetDPIScaleFactor() const
+    {
+        return mnDPIScalePercentage / 100.0f;
+    }
+
+    sal_Int32 GetDPIScalePercentage() const
+    {
+        return mnDPIScalePercentage;
+    }
 
     OutDevType                  GetOutDevType() const { return meOutDevType; }
 
@@ -576,26 +579,9 @@ public:
                                     const Point& rSrcPt,  const Size& rSrcSize,
                                     bool bWindowInvalidate = false );
 
-    /**
-     * Instantiate across a paint operation to defer flushing
-     * to the end.
-     *
-     * NB. holding a handle avoids problems with
-     * the underlying SalGraphics and it's implementation
-     * changing.
-     */
-#if HAVE_FEATURE_OPENGL || defined(ANDROID)
-    class PaintScope {
-        void *pHandle;
-    public:
-        PaintScope(OutputDevice *);
-        ~PaintScope();
-        void flush();
-    };
-#endif
 protected:
 
-    virtual void                CopyDeviceArea( SalTwoRect& aPosAry, bool bWindowInvalidate = false);
+    virtual void                CopyDeviceArea( SalTwoRect& aPosAry, bool bWindowInvalidate);
 
     SAL_DLLPRIVATE void         drawOutDevDirect ( const OutputDevice* pSrcDev, SalTwoRect& rPosAry );
 
@@ -626,14 +612,14 @@ public:
     bool                        IsOutputEnabled() const { return mbOutput; }
     bool                        IsDeviceOutputNecessary() const { return (mbOutput && mbDevOutput); }
 
-    void                        SetAntialiasing( AntialiasingFlags nMode = AntialiasingFlags::NONE );
+    void                        SetAntialiasing( AntialiasingFlags nMode );
     AntialiasingFlags           GetAntialiasing() const { return mnAntialiasing; }
 
     void                        SetDrawMode( DrawModeFlags nDrawMode );
     DrawModeFlags               GetDrawMode() const { return mnDrawMode; }
 
-    void                        SetLayoutMode( ComplexTextLayoutMode nTextLayoutMode );
-    ComplexTextLayoutMode       GetLayoutMode() const { return mnTextLayoutMode; }
+    void                        SetLayoutMode( ComplexTextLayoutFlags nTextLayoutMode );
+    ComplexTextLayoutFlags       GetLayoutMode() const { return mnTextLayoutMode; }
 
     void                        SetDigitLanguage( LanguageType );
     LanguageType                GetDigitLanguage() const { return meTextLanguage; }
@@ -721,7 +707,7 @@ public:
 
     void                        DrawPixel( const Point& rPt );
     void                        DrawPixel( const Point& rPt, const Color& rColor );
-    void                        DrawPixel( const tools::Polygon& rPts, const Color* pColors = nullptr );
+    void                        DrawPixel( const tools::Polygon& rPts, const Color* pColors );
     void                        DrawPixel( const tools::Polygon& rPts, const Color& rColor );
 
     Color                       GetPixel( const Point& rPt ) const;
@@ -869,7 +855,7 @@ public:
 private:
 
     SAL_DLLPRIVATE void         ImplDrawPolygon( const tools::Polygon& rPoly, const tools::PolyPolygon* pClipPolyPoly = nullptr );
-    SAL_DLLPRIVATE void         ImplDrawPolyPolygon( const tools::PolyPolygon& rPolyPoly, const tools::PolyPolygon* pClipPolyPoly = nullptr );
+    SAL_DLLPRIVATE void         ImplDrawPolyPolygon( const tools::PolyPolygon& rPolyPoly, const tools::PolyPolygon* pClipPolyPoly );
     SAL_DLLPRIVATE void         ImplDrawPolyPolygon( sal_uInt16 nPoly, const tools::PolyPolygon& rPolyPoly );
     // #i101491#
     // Helper who implements the DrawPolyPolygon functionality for basegfx::B2DPolyPolygon
@@ -970,11 +956,11 @@ private:
 public:
     void                        DrawWallpaper( const Rectangle& rRect, const Wallpaper& rWallpaper );
 
-    virtual void                Erase();
-    virtual void                Erase( const Rectangle& rRect ) { DrawWallpaper( rRect, GetBackground() ); }
+    void                        Erase();
+    void                        Erase( const Rectangle& rRect ) { DrawWallpaper( rRect, GetBackground() ); }
 
 protected:
-    virtual void                DrawGradientWallpaper( long nX, long nY, long nWidth, long nHeight, const Wallpaper& rWallpaper );
+    void                        DrawGradientWallpaper( long nX, long nY, long nWidth, long nHeight, const Wallpaper& rWallpaper );
 
 private:
     SAL_DLLPRIVATE void         DrawWallpaper( long nX, long nY, long nWidth, long nHeight, const Wallpaper& rWallpaper );
@@ -1098,7 +1084,7 @@ public:
                                                  sal_uLong nLayoutWidth = 0, const long* pDXArray = nullptr ) const;
 
     bool                        GetTextOutlines( basegfx::B2DPolyPolygonVector &rVector,
-                                                 const OUString& rStr, sal_Int32 nBase = 0, sal_Int32 nIndex = 0,
+                                                 const OUString& rStr, sal_Int32 nBase, sal_Int32 nIndex = 0,
                                                  sal_Int32 nLen = -1, bool bOptimize = true,
                                                  sal_uLong nLayoutWidth = 0, const long* pDXArray = nullptr ) const;
 
@@ -1162,11 +1148,11 @@ public:
     float                       approximate_char_width() const;
 
     void                        DrawTextArray( const Point& rStartPt, const OUString& rStr,
-                                               const long* pDXAry = nullptr,
+                                               const long* pDXAry,
                                                sal_Int32 nIndex = 0,
                                                sal_Int32 nLen = -1,
                                                SalLayoutFlags flags = SalLayoutFlags::NONE);
-    long                        GetTextArray( const OUString& rStr, long* pDXAry = nullptr,
+    long                        GetTextArray( const OUString& rStr, long* pDXAry,
                                               sal_Int32 nIndex = 0, sal_Int32 nLen = -1,
                                               vcl::TextLayoutCache const* = nullptr) const;
 
@@ -1176,15 +1162,17 @@ public:
                                                  const OUString& rStr,
                                                  sal_Int32 nIndex = 0, sal_Int32 nLen = -1);
     sal_Int32                   GetTextBreak( const OUString& rStr, long nTextWidth,
-                                              sal_Int32 nIndex = 0, sal_Int32 nLen = -1,
+                                              sal_Int32 nIndex, sal_Int32 nLen = -1,
                                               long nCharExtra = 0,
                                               vcl::TextLayoutCache const* = nullptr) const;
     sal_Int32                   GetTextBreak( const OUString& rStr, long nTextWidth,
                                               sal_Unicode nExtraChar, sal_Int32& rExtraCharPos,
                                               sal_Int32 nIndex, sal_Int32 nLen,
-                                              long nCharExtra = 0,
+                                              long nCharExtra,
                                               vcl::TextLayoutCache const* = nullptr) const;
     std::shared_ptr<vcl::TextLayoutCache> CreateTextLayoutCache(OUString const&) const;
+
+    static bool                 UseCommonLayout();
 
 private:
     SAL_DLLPRIVATE void         ImplInitTextColor();
@@ -1197,7 +1185,7 @@ private:
     SAL_DLLPRIVATE void         ImplDrawSpecialText( SalLayout& );
     SAL_DLLPRIVATE void         ImplDrawTextRect( long nBaseX, long nBaseY, long nX, long nY, long nWidth, long nHeight );
 
-    SAL_DLLPRIVATE void         ImplDrawWavePixel( long nOriginX, long nOriginY, long nCurX, long nCurY, short nOrientation, SalGraphics* pGraphics, OutputDevice* pOutDev,
+    SAL_DLLPRIVATE static void  ImplDrawWavePixel( long nOriginX, long nOriginY, long nCurX, long nCurY, short nOrientation, SalGraphics* pGraphics, OutputDevice* pOutDev,
                                                    bool bDrawPixAsRect, long nPixWidth, long nPixHeight );
     SAL_DLLPRIVATE void         ImplDrawWaveLine( long nBaseX, long nBaseY, long nStartX, long nStartY, long nWidth, long nHeight, long nLineWidth, short nOrientation, const Color& rColor );
     SAL_DLLPRIVATE void         ImplDrawWaveTextLine( long nBaseX, long nBaseY, long nX, long nY, long nWidth, FontLineStyle eTextLine, Color aColor, bool bIsAbove );
@@ -1232,7 +1220,7 @@ public:
     FontMetric                  GetFontMetric() const;
     FontMetric                  GetFontMetric( const vcl::Font& rFont ) const;
 
-    bool                        GetFontCharMap( FontCharMapPtr& rxFontCharMap ) const;
+    bool                        GetFontCharMap( FontCharMapRef& rxFontCharMap ) const;
     bool                        GetFontCapabilities( vcl::FontCapabilities& rFontCapabilities ) const;
 
     /** Retrieve detailed font information in platform independent structure
@@ -1269,7 +1257,7 @@ public:
     static void                 EndFontSubstitution();
     static void                 AddFontSubstitute( const OUString& rFontName,
                                                    const OUString& rReplaceFontName,
-                                                   AddFontSubstituteFlags nFlags = AddFontSubstituteFlags::NONE );
+                                                   AddFontSubstituteFlags nFlags );
     static void                 RemoveFontSubstitute( sal_uInt16 n );
     static sal_uInt16           GetFontSubstituteCount();
 
@@ -1324,8 +1312,8 @@ private:
 public:
 
     SystemTextLayoutData        GetSysTextLayoutData( const Point& rStartPt, const OUString& rStr,
-                                                      sal_Int32 nIndex = 0, sal_Int32 nLen = -1,
-                                                      const long* pDXAry = nullptr ) const;
+                                                      sal_Int32 nIndex, sal_Int32 nLen,
+                                                      const long* pDXAry ) const;
 
     SAL_DLLPRIVATE bool         ImplIsAntiparallel() const ;
     SAL_DLLPRIVATE void         ReMirror( Point &rPoint ) const;
@@ -1441,12 +1429,12 @@ public:
                         const Image& rImage,
                         sal_uInt16 nStyle = 0)
      */
-    virtual void                DrawImage(
+    void                        DrawImage(
                                     const Point& rPos,
                                     const Image& rImage,
                                     DrawImageFlags nStyle = DrawImageFlags::NONE );
 
-    virtual void                DrawImage(
+    void                        DrawImage(
                                     const Point& rPos,
                                     const Size& rSize,
                                     const Image& rImage,
@@ -1685,11 +1673,11 @@ public:
         pixel, i.e. some output modes such as metafile recordings
         might be completely unaffected by this method! Use with
         care. Furthermore, if the OutputDevice's MapMode is the
-        default (that's MAP_PIXEL), then any pixel offset set is
+        default (that's MapUnit::MapPixel), then any pixel offset set is
         ignored also. This might be unintuitive for cases, but would
         have been far more fragile to implement. What's more, the
         reason why the pixel offset was introduced (avoiding rounding
-        errors) does not apply for MAP_PIXEL, because one can always
+        errors) does not apply for MapUnit::MapPixel, because one can always
         use the MapMode origin then.
 
         @param rOffset
@@ -1960,8 +1948,7 @@ public:
 
     /** Query the native control to determine if it was acted upon
      */
-    bool                        HitTestNativeControl(
-                                    ControlType nType,
+    bool                        HitTestNativeScrollbar(
                                     ControlPart nPart,
                                     const Rectangle& rControlRegion,
                                     const Point& aPos,

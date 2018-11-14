@@ -56,7 +56,7 @@ protected:
     long                        nEndAngle;
 private:
      SVX_DLLPRIVATE basegfx::B2DPolygon ImpCalcXPolyCirc(const SdrObjKind eKind, const Rectangle& rRect1, long nStart, long nEnd) const;
-    SVX_DLLPRIVATE void ImpSetCreateParams(SdrDragStat& rStat) const;
+    SVX_DLLPRIVATE static void ImpSetCreateParams(SdrDragStat& rStat);
     SVX_DLLPRIVATE void ImpSetAttrToCircInfo(); // copy values from pool
     SVX_DLLPRIVATE void ImpSetCircInfoToAttr(); // copy values into pool
 
@@ -76,7 +76,7 @@ public:
     // If nNewStartAngle==nNewEndWink, then arc has an angle of 0 degrees.
     // If nNewStartAngle+36000==nNewEndWink, then the arc has angle of 360 degrees.
     SdrCircObj(SdrObjKind eNewKind, const Rectangle& rRect, long nNewStartAngle, long nNewEndWink);
-    virtual ~SdrCircObj();
+    virtual ~SdrCircObj() override;
 
     virtual void TakeObjInfo(SdrObjTransformInfoRec& rInfo) const override;
     virtual sal_uInt16 GetObjIdentifier() const override;

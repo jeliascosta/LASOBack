@@ -77,7 +77,7 @@ class HwpReader : public WeakImplHelper<XFilter>
 
 public:
     HwpReader();
-    virtual ~HwpReader();
+    virtual ~HwpReader() override;
 
 public:
     /**
@@ -85,7 +85,7 @@ public:
      */
     virtual sal_Bool SAL_CALL filter(const Sequence< PropertyValue >& aDescriptor) throw (RuntimeException, std::exception) override;
     virtual void SAL_CALL cancel() throw(RuntimeException, std::exception) override {}
-    void SAL_CALL setDocumentHandler(Reference< XDocumentHandler > xHandler)
+    void SAL_CALL setDocumentHandler(Reference< XDocumentHandler > const & xHandler)
     {
         m_rxDocumentHandler = xHandler;
     }
@@ -107,9 +107,9 @@ private:
 
     /* -------- Paragraph Parsing --------- */
     void parsePara(HWPPara *para);
-    void make_text_p0(HWPPara *para, bool bParaStart = false);
-    void make_text_p1(HWPPara *para, bool bParaStart = false);
-    void make_text_p3(HWPPara *para, bool bParaStart = false);
+    void make_text_p0(HWPPara *para, bool bParaStart);
+    void make_text_p1(HWPPara *para, bool bParaStart);
+    void make_text_p3(HWPPara *para, bool bParaStart);
 
     /* -------- rDocument->characters(x) --------- */
     void makeChars(hchar_string & rStr);
@@ -153,7 +153,7 @@ class HwpImportFilter : public WeakImplHelper< XFilter, XImporter, XServiceInfo,
 {
 public:
     explicit HwpImportFilter(const Reference< XMultiServiceFactory >& rFact);
-    virtual ~HwpImportFilter();
+    virtual ~HwpImportFilter() override;
 
 public:
     static Sequence< OUString > getSupportedServiceNames_Static() throw();

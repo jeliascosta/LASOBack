@@ -23,7 +23,7 @@
 #include <com/sun/star/report/XImageControl.hpp>
 #include "ReportControlModel.hxx"
 #include <cppuhelper/compbase.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include "ReportHelperDefines.hxx"
 
@@ -37,7 +37,7 @@ namespace reportdesign
      * \ingroup reportdesign_api
      *
      */
-    class OImageControl :   public comphelper::OBaseMutex,
+    class OImageControl :   public cppu::BaseMutex,
                             public ImageControlBase,
                             public ImageControlPropertySet
     {
@@ -75,7 +75,7 @@ namespace reportdesign
             l.notify();
         }
     protected:
-        virtual ~OImageControl();
+        virtual ~OImageControl() override;
     public:
         explicit OImageControl(css::uno::Reference< css::uno::XComponentContext > const & _xContext);
         explicit OImageControl(css::uno::Reference< css::uno::XComponentContext > const & _xContext

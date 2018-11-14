@@ -1,5 +1,7 @@
 cmd/lc_savesimple.png cmd/lc_save.png
 cmd/sc_savesimple.png cmd/sc_save.png
+cmd/lc_underlinesimple.png cmd/lc_underline.png
+cmd/sc_underlinesimple.png cmd/sc_underline.png
 cmd/sc_showsinglepage.png cmd/sc_adddirect.png
 res/sx03129.png dbaccess/res/db.png
 cmd/sc_refresh.png cmd/sc_reload.png
@@ -103,7 +105,9 @@ cmd/sc_pagesetup.png cmd/sc_setdocumentproperties.png
 cmd/lc_closepreview.png cmd/lc_closedoc.png
 cmd/sc_closepreview.png cmd/sc_closedoc.png
 cmd/lc_objectmirrorvertical.png cmd/sc_flipvertical.png
+cmd/sc_objectmirrorvertical.png cmd/sc_flipvertical.png
 cmd/lc_objectmirrorhorizontal.png cmd/sc_fliphorizontal.png
+cmd/sc_objectmirrorhorizontal.png cmd/sc_fliphorizontal.png
 cmd/sc_exporttopdf.png cmd/sc_exportdirecttopdf.png
 cmd/sc_numberformattime.png cmd/sc_timefield.png
 
@@ -174,9 +178,11 @@ cmd/lc_numberformatdate.png cmd/lc_datefield.png
 cmd/sc_datefield.png cmd/sc_numberformatdate.png
 cmd/lc_insertcurrencyfield.png cmd/lc_currencyfield.png
 cmd/lc_numberformatcurrency.png cmd/lc_currencyfield.png
+cmd/lc_numberformatcurrencysimple.png cmd/lc_currencyfield.png
 cmd/sc_inserttimefield.png cmd/sc_timefield.png
 cmd/sc_insertcurrencyfield.png cmd/sc_currencyfield.png
 cmd/sc_numberformatcurrency.png cmd/sc_currencyfield.png
+cmd/sc_numberformatcurrencysimple.png cmd/sc_currencyfield.png
 sfx2/res/favourite_big.png cmd/lc_insertbookmark.png
 sfx2/res/favorite.png cmd/sc_insertbookmark.png
 cmd/lc_hyperlinkdialog.png cmd/lc_inserthyperlink.png
@@ -577,3 +583,21 @@ cmd/sc_lastslide.png cmd/sc_lastpage.png
 cmd/sc_previousslide.png cmd/sc_navigateback.png
 cmd/sc_nextslide.png cmd/sc_navigateforward.png
 cmd/sc_slidesetup.png cmd/sc_setdocumentproperties.png
+
+# just here to smother warnings about missing icons
+cmd/sc_trackchangesbar.png cmd/sc_ok.png
+cmd/sc_setoutline.png cmd/sc_outlineformat.png
+cmd/sc_diagramaxisall.png cmd/sc_diagramtype.png
+cmd/sc_diagramaxisz.png cmd/sc_diagramtype.png
+cmd/sc_diagramarea.png cmd/sc_diagramtype.png
+cmd/sc_insertmenutitles.png cmd/sc_insert.png
+cmd/sc_diagramwall.png cmd/sc_diagramtype.png
+cmd/sc_displaymode.png cmd/sc_ok.png
+cmd/sc_legend.png cmd/sc_ok.png
+cmd/sc_dataranges.png cmd/sc_ok.png
+cmd/sc_jumptospecificpage.png cmd/sc_ok.png
+
+cmd/lc_columnoperations.png cmd/lc_entirecolumn.png
+cmd/sc_columnoperations.png cmd/sc_entirecolumn.png 
+cmd/lc_rowoperations.png cmd/lc_entirerow.png 
+cmd/sc_rowoperations.png cmd/sc_entirerow.png

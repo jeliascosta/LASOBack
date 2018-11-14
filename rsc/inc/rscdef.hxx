@@ -103,7 +103,6 @@ public:
             RscId& operator = ( const RscId& rRscId );
 
     static void SetNames( bool bSet = true );
-    operator sal_Int32() const;   // returns the number
     OString GetName()  const;   // returns the define
     bool    operator <  ( const RscId& rRscId ) const;
     bool    operator >  ( const RscId& rRscId ) const;
@@ -133,11 +132,10 @@ protected:
                            sal_Int32 lDefId );
                 RscDefine( sal_uLong lFileKey, const OString& rDefName,
                            RscExpression * pExpression );
-                virtual ~RscDefine();
+                virtual ~RscDefine() override;
     void        IncRef(){ nRefCount++; }
     void        DecRef();
     void        DefineToNumber();
-    void        SetName(const OString& rNewName) { m_aName = rNewName; }
 
     using StringNode::Search;
 public:
@@ -145,7 +143,6 @@ public:
     sal_uLong   GetFileKey() const { return lFileKey; }
     void        Evaluate();
     sal_Int32   GetNumber() const  { return lId;      }
-    OString     GetMacro();
 };
 
 typedef ::std::vector< RscDefine* > RscSubDefList;
@@ -205,7 +202,6 @@ friend class RscFileTab;
 public:
     bool            bLoaded;    // whether the file is loaded
     bool            bScanned;   // whether the file searches for include
-    bool            bDirty;     // dirty-flag
     OString         aFileName;  // file name
     OString         aPathName;  // file path and name
     RscDefineList   aDefLst;    // list of defines
@@ -213,7 +209,7 @@ public:
 
                     RscFile();
                     ~RscFile();
-    void            InsertDependFile( sal_uLong lDepFile, size_t lPos );
+    void            InsertDependFile( sal_uLong lDepFile );
     bool            Depend( sal_uLong lDepend, sal_uLong lFree );
     void            SetIncFlag(){ bIncFile = true; };
     bool            IsIncFile(){  return bIncFile; };
@@ -258,9 +254,9 @@ public:
                          const RscExpression * pExpDec );
 
     RscDefine * NewDef( Index lKey, const OString& rDefName,
-                        sal_Int32 lId, sal_uLong lPos );
+                        sal_Int32 lId );
     RscDefine * NewDef( Index lKey, const OString& rDefName,
-                        RscExpression *, sal_uLong lPos );
+                        RscExpression * );
 
            // deletes all defines defined in this file
     void        DeleteFileContext( Index lKey );

@@ -22,21 +22,24 @@
 
 #include <sal/config.h>
 
+#include <cstring>
 #include <vector>
 
-#include <string.h>
-#include <formula/opcode.hxx>
-#include <tools/mempool.hxx>
-#include <formula/IFunctionDescription.hxx>
 #include <formula/formuladllapi.h>
+#include <formula/IFunctionDescription.hxx>
+#include <formula/opcode.hxx>
 #include <formula/types.hxx>
-#include <svl/sharedstring.hxx>
 #include <osl/interlck.h>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
+#include <svl/sharedstring.hxx>
+#include <tools/mempool.hxx>
 
 class ScJumpMatrix;
 class ScMatrix;
 struct ScComplexRefData;
 struct ScSingleRefData;
+enum class FormulaError : sal_uInt16;
 
 namespace formula
 {
@@ -66,9 +69,6 @@ enum StackVarEnum
                                         // and/or string result and a formula
                                         // string to be compiled.
 
-    svHybridValueCell,                  // A temporary formula cell with an value
-                                        // and possibily a string representation
-
     svExternalSingleRef,
     svExternalDoubleRef,
     svExternalName,
@@ -88,8 +88,6 @@ typedef sal_uInt8 StackVar;
 // have enum names in debugger
 typedef StackVarEnum StackVar;
 #endif
-
-class FormulaTokenArray;
 
 class FORMULA_DLLPUBLIC FormulaToken : public IFormulaToken
 {
@@ -151,6 +149,7 @@ public:
     virtual void                SetInForceArray( bool b );
     virtual double              GetDouble() const;
     virtual double&             GetDoubleAsReference();
+    virtual short               GetDoubleType() const;
     virtual svl::SharedString   GetString() const;
     virtual void                SetString( const svl::SharedString& rStr );
     virtual sal_uInt16          GetIndex() const;
@@ -160,8 +159,8 @@ public:
     virtual short*              GetJump() const;
     virtual const OUString&     GetExternal() const;
     virtual FormulaToken*       GetFAPOrigToken() const;
-    virtual sal_uInt16          GetError() const;
-    virtual void                SetError( sal_uInt16 );
+    virtual FormulaError        GetError() const;
+    virtual void                SetError( FormulaError );
 
     virtual const ScSingleRefData*  GetSingleRef() const;
     virtual ScSingleRefData*        GetSingleRef();
@@ -270,9 +269,30 @@ public:
     virtual FormulaToken*       Clone() const override { return new FormulaDoubleToken(*this); }
     virtual double              GetDouble() const override;
     virtual double&             GetDoubleAsReference() override;
+    virtual short               GetDoubleType() const override;     ///< always returns 0 for "not typed"
     virtual bool                operator==( const FormulaToken& rToken ) const override;
 
     DECL_FIXEDMEMPOOL_NEWDEL_DLL( FormulaDoubleToken )
+};
+
+class FORMULA_DLLPUBLIC FormulaTypedDoubleToken : public FormulaDoubleToken
+{
+private:
+            short               mnType;     /**< Can hold, for example, a value
+                                              of css::util::NumberFormat, or by
+                                              contract any other
+                                              classification. */
+public:
+                                FormulaTypedDoubleToken( double f, short nType ) :
+                                    FormulaDoubleToken( f ), mnType( nType ) {}
+                                FormulaTypedDoubleToken( const FormulaTypedDoubleToken& r ) :
+                                    FormulaDoubleToken( r ), mnType( r.mnType ) {}
+
+    virtual FormulaToken*       Clone() const override { return new FormulaTypedDoubleToken(*this); }
+    virtual short               GetDoubleType() const override;
+    virtual bool                operator==( const FormulaToken& rToken ) const override;
+
+    DECL_FIXEDMEMPOOL_NEWDEL_DLL( FormulaTypedDoubleToken )
 };
 
 
@@ -385,7 +405,7 @@ public:
                                     pJump = new short[ r.pJump[0] + 1 ];
                                     memcpy( pJump, r.pJump, (r.pJump[0] + 1) * sizeof(short) );
                                 }
-    virtual                     ~FormulaJumpToken();
+    virtual                     ~FormulaJumpToken() override;
     virtual short*              GetJump() const override;
     virtual bool                operator==( const formula::FormulaToken& rToken ) const override;
     virtual FormulaToken*       Clone() const override { return new FormulaJumpToken(*this); }
@@ -409,16 +429,16 @@ public:
 
 class FORMULA_DLLPUBLIC FormulaErrorToken : public FormulaToken
 {
-            sal_uInt16          nError;
+         FormulaError          nError;
 public:
-                                FormulaErrorToken( sal_uInt16 nErr ) :
+                                FormulaErrorToken( FormulaError nErr ) :
                                     FormulaToken( svError ), nError( nErr) {}
                                 FormulaErrorToken( const FormulaErrorToken& r ) :
                                     FormulaToken( r ), nError( r.nError) {}
 
     virtual FormulaToken*       Clone() const override { return new FormulaErrorToken(*this); }
-    virtual sal_uInt16          GetError() const override;
-    virtual void                SetError( sal_uInt16 nErr ) override;
+    virtual FormulaError        GetError() const override;
+    virtual void                SetError( FormulaError nErr ) override;
     virtual bool                operator==( const FormulaToken& rToken ) const override;
 };
 

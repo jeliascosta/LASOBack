@@ -87,7 +87,7 @@ SwFieldPortion::SwFieldPortion( const SwFieldPortion& rField )
     : SwExpandPortion( rField )
     , aExpand( rField.GetExp() )
     , nNextOffset( rField.GetNextOffset() )
-    , nNextScriptChg( rField.GetNextScriptChg() )
+    , nNextScriptChg( rField.nNextScriptChg )
     , nViewWidth( rField.nViewWidth )
     , bFollow( rField.IsFollow() )
     , bLeft( rField.IsLeft() )
@@ -744,7 +744,7 @@ SwBulletPortion::SwBulletPortion( const sal_Unicode cBullet,
                                   const bool bCntr,
                                   const sal_uInt16 nMinDst,
                                   const bool bLabelAlignmentPosAndSpaceModeActive )
-    : SwNumberPortion( OUString(cBullet) + rBulletFollowedBy,
+    : SwNumberPortion( OUStringLiteral1(cBullet) + rBulletFollowedBy,
                        pFont, bLft, bCntr, nMinDst,
                        bLabelAlignmentPosAndSpaceModeActive )
 {
@@ -839,7 +839,7 @@ bool SwGrfNumPortion::Format( SwTextFormatInfo &rInf )
         if( bFly )
         {
             SetLen( 0 );
-            SetNoPaint( true );
+            bNoPaint = true;
             rInf.SetNumDone( false );
             return true;
         }
@@ -881,7 +881,7 @@ bool SwGrfNumPortion::Format( SwTextFormatInfo &rInf )
  */
 void SwGrfNumPortion::Paint( const SwTextPaintInfo &rInf ) const
 {
-    if( DontPaint() )
+    if( bNoPaint )
         return;
     if ( IsHide() && rInf.GetParaPortion() && rInf.GetParaPortion()->GetNext() )
     {

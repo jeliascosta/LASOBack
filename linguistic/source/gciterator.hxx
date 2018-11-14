@@ -136,7 +136,7 @@ class GrammarCheckingIterator:
     void GetConfiguredGCSvcs_Impl();
     css::uno::Reference< css::linguistic2::XProofreader > GetGrammarChecker( const css::lang::Locale & rLocale );
 
-    css::uno::Reference< css::util::XChangesBatch >   GetUpdateAccess() const;
+    css::uno::Reference< css::util::XChangesBatch > const & GetUpdateAccess() const;
 
     GrammarCheckingIterator( const GrammarCheckingIterator & ) = delete;
     GrammarCheckingIterator & operator = ( const GrammarCheckingIterator & ) = delete;
@@ -146,7 +146,7 @@ public:
     void DequeueAndCheck();
 
     explicit GrammarCheckingIterator();
-    virtual ~GrammarCheckingIterator();
+    virtual ~GrammarCheckingIterator() override;
 
     // XProofreadingIterator
     virtual void SAL_CALL startProofreading( const css::uno::Reference< css::uno::XInterface >& xDocument, const css::uno::Reference< css::text::XFlatParagraphIteratorProvider >& xIteratorProvider ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;

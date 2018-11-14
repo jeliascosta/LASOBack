@@ -31,7 +31,6 @@
 #include <unobaseclass.hxx>
 
 class SwDoc;
-class SwModify;
 class SwFormatRefMark;
 
 typedef ::cppu::WeakImplHelper
@@ -51,7 +50,7 @@ private:
     class Impl;
     ::sw::UnoImplPtr<Impl> m_pImpl;
 
-    virtual ~SwXReferenceMark();
+    virtual ~SwXReferenceMark() override;
 
     SwXReferenceMark(SwDoc *const pDoc, SwFormatRefMark *const pMark);
 

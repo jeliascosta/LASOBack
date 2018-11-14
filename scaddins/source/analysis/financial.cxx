@@ -27,7 +27,8 @@ double SAL_CALL AnalysisAddIn::getAmordegrc( const css::uno::Reference< css::bea
     double fCost, sal_Int32 nDate, sal_Int32 nFirstPer, double fRestVal,
     double fPer, double fRate, const css::uno::Any& rOB ) throw( css::uno::RuntimeException, css::lang::IllegalArgumentException, std::exception )
 {
-    if( nDate > nFirstPer || fRate <= 0.0 || fRestVal > fCost )
+    if( nDate > nFirstPer || fRate <= 0.0 || fRestVal > fCost ||
+        fCost <= 0.0 || fRestVal < 0 || fPer < 0 )
         throw css::lang::IllegalArgumentException();
 
     double fRet = GetAmordegrc( GetNullDate( xOpt ), fCost, nDate, nFirstPer, fRestVal, fPer, fRate, getDateMode( xOpt, rOB ) );
@@ -39,7 +40,8 @@ double SAL_CALL AnalysisAddIn::getAmorlinc( const css::uno::Reference< css::bean
     double fCost, sal_Int32 nDate, sal_Int32 nFirstPer, double fRestVal,
     double fPer, double fRate, const css::uno::Any& rOB ) throw( css::uno::RuntimeException, css::lang::IllegalArgumentException, std::exception )
 {
-    if( nDate > nFirstPer || fRate <= 0.0 || fRestVal > fCost )
+    if ( nDate > nFirstPer || fRate <= 0.0 || fRestVal > fCost ||
+         fCost <= 0.0 || fRestVal < 0 || fPer < 0 )
         throw css::lang::IllegalArgumentException();
 
     double fRet = GetAmorlinc( GetNullDate( xOpt ), fCost, nDate, nFirstPer, fRestVal, fPer, fRate, getDateMode( xOpt, rOB ) );
@@ -77,7 +79,7 @@ double SAL_CALL AnalysisAddIn::getAccrintm( const css::uno::Reference< css::bean
 double SAL_CALL AnalysisAddIn::getReceived( const css::uno::Reference< css::beans::XPropertySet >& xOpt,
     sal_Int32 nSettle, sal_Int32 nMat, double fInvest, double fDisc, const css::uno::Any& rOB ) throw( css::uno::RuntimeException, css::lang::IllegalArgumentException, std::exception )
 {
-    if( fInvest <= 0.0 || fDisc <= 0.0 )
+    if( fInvest <= 0.0 || fDisc <= 0.0 || nSettle >= nMat )
         throw css::lang::IllegalArgumentException();
 
     double fRet = fInvest / ( 1.0 - ( fDisc * GetYearDiff( GetNullDate( xOpt ), nSettle, nMat, getDateMode( xOpt, rOB ) ) ) );
@@ -437,7 +439,7 @@ double SAL_CALL AnalysisAddIn::getOddlprice( const css::uno::Reference< css::bea
     sal_Int32 nSettle, sal_Int32 nMat, sal_Int32 nLastInterest,
     double fRate, double fYield, double fRedemp, sal_Int32 nFreq, const css::uno::Any& rOB ) throw( css::uno::RuntimeException, css::lang::IllegalArgumentException, std::exception )
 {
-    if( fRate < 0.0 || fYield < 0.0 || CHK_Freq || nMat <= nSettle || nSettle <= nLastInterest )
+    if( fRate <= 0.0 || fYield < 0.0 || fRedemp <= 0.0 || CHK_Freq || nMat <= nSettle || nSettle <= nLastInterest )
         throw css::lang::IllegalArgumentException();
 
     double fRet = GetOddlprice( GetNullDate( xOpt ), nSettle, nMat, nLastInterest, fRate, fYield, fRedemp, nFreq,
@@ -450,7 +452,7 @@ double SAL_CALL AnalysisAddIn::getOddlyield( const css::uno::Reference< css::bea
     sal_Int32 nSettle, sal_Int32 nMat, sal_Int32 nLastInterest,
     double fRate, double fPrice, double fRedemp, sal_Int32 nFreq, const css::uno::Any& rOB ) throw( css::uno::RuntimeException, css::lang::IllegalArgumentException, std::exception )
 {
-    if( fRate < 0.0 || fPrice <= 0.0 || CHK_Freq || nMat <= nSettle || nSettle <= nLastInterest )
+    if( fRate <= 0.0 || fPrice <= 0.0 || fRedemp <= 0.0 || CHK_Freq || nMat <= nSettle || nSettle <= nLastInterest )
         throw css::lang::IllegalArgumentException();
 
     double fRet = GetOddlyield( GetNullDate( xOpt ), nSettle, nMat, nLastInterest, fRate, fPrice, fRedemp, nFreq,

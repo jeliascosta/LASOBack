@@ -17,6 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <com/sun/star/drawing/PolyPolygonBezierCoords.hpp>
+#include <com/sun/star/drawing/FlagSequence.hpp>
 #include <com/sun/star/lang/DisposedException.hpp>
 #include <com/sun/star/awt/FontSlant.hpp>
 #include <com/sun/star/style/VerticalAlignment.hpp>
@@ -27,12 +29,15 @@
 #include <com/sun/star/drawing/PointSequenceSequence.hpp>
 #include <com/sun/star/drawing/PointSequence.hpp>
 #include <com/sun/star/graphic/XGraphic.hpp>
+#include <o3tl/any.hxx>
 #include <tools/urlobj.hxx>
 #include <vcl/svapp.hxx>
 #include <osl/file.hxx>
 #include <osl/mutex.hxx>
 #include <vcl/fltcall.hxx>
 #include <vcl/graphicfilter.hxx>
+#include <vcl/wmf.hxx>
+#include <vcl/cvtgrf.hxx>
 
 #include <svx/svdpool.hxx>
 
@@ -48,14 +53,20 @@
 #include <svx/svdoashp.hxx>
 #include "svx/svdviter.hxx"
 #include <svx/svdview.hxx>
+#include <svx/svdopath.hxx>
 #include <basegfx/matrix/b2dhommatrix.hxx>
 #include <basegfx/polygon/b2dpolygon.hxx>
 #include <basegfx/point/b2dpoint.hxx>
 #include <basegfx/polygon/b2dpolygontools.hxx>
 #include <basegfx/tools/unotools.hxx>
-
 #include <comphelper/servicehelper.hxx>
-#include <vcl/wmf.hxx>
+#include <com/sun/star/awt/XBitmap.hpp>
+#include <svx/svdograf.hxx>
+#include <sfx2/docfile.hxx>
+#include <sfx2/app.hxx>
+#include <sfx2/fcontnr.hxx>
+#include <toolkit/helper/vclunohelper.hxx>
+
 
 #include <memory>
 
@@ -118,12 +129,6 @@ void SAL_CALL SvxShapeGroup::acquire() throw ( )
 void SAL_CALL SvxShapeGroup::release() throw ( )
 {
     SvxShape::release();
-}
-
-uno::Sequence< uno::Type > SAL_CALL SvxShapeGroup::getTypes()
-    throw (uno::RuntimeException, std::exception)
-{
-    return SvxShape::getTypes();
 }
 
 uno::Sequence< sal_Int8 > SAL_CALL SvxShapeGroup::getImplementationId()
@@ -279,7 +284,7 @@ void SAL_CALL SvxShapeGroup::remove( const uno::Reference< drawing::XShape >& xS
     }
     else
     {
-        DBG_ASSERT( false, "Fatality! SdrObject is not belonging to its SdrObjList! [CL]" );
+        SAL_WARN( "svx", "Fatality! SdrObject is not belonging to its SdrObjList! [CL]" );
     }
 
     if( mpModel )
@@ -358,14 +363,6 @@ sal_Bool SAL_CALL SvxShapeGroup::hasElements() throw( uno::RuntimeException, std
     return mpObj.is() && mpObj->GetSubList() && (mpObj->GetSubList()->GetObjCount() > 0);
 }
 
-
-// css::lang::XServiceInfo
-
-uno::Sequence< OUString > SAL_CALL SvxShapeGroup::getSupportedServiceNames()
-    throw(uno::RuntimeException, std::exception)
-{
-    return SvxShape::getSupportedServiceNames();
-}
 SvxShapeConnector::SvxShapeConnector( SdrObject* pObj )  throw() :
     SvxShapeText( pObj, getSvxMapProvider().GetMap(SVXMAP_CONNECTOR), getSvxMapProvider().GetPropertySet(SVXMAP_CONNECTOR, SdrObject::GetGlobalDrawObjectItemPool()) )
 {
@@ -510,14 +507,6 @@ void SAL_CALL SvxShapeConnector::disconnectEnd( const uno::Reference< drawing::X
         mpModel->SetChanged();
 }
 
-
-// css::lang::XServiceInfo
-
-uno::Sequence< OUString > SAL_CALL SvxShapeConnector::getSupportedServiceNames() throw( uno::RuntimeException, std::exception )
-{
-    return SvxShapeText::getSupportedServiceNames();
-}
-
 SvxShapeControl::SvxShapeControl( SdrObject* pObj )  throw() :
     SvxShapeText( pObj, getSvxMapProvider().GetMap(SVXMAP_CONTROL), getSvxMapProvider().GetPropertySet(SVXMAP_CONTROL, SdrObject::GetGlobalDrawObjectItemPool()) )
 {
@@ -632,12 +621,6 @@ void SAL_CALL SvxShapeControl::setControl( const Reference< awt::XControlModel >
 
     if( mpModel )
         mpModel->SetChanged();
-}
-
-// XServiceInfo
-uno::Sequence< OUString > SAL_CALL SvxShapeControl::getSupportedServiceNames() throw( uno::RuntimeException, std::exception )
-{
-    return SvxShapeText::getSupportedServiceNames();
 }
 
 static struct
@@ -982,11 +965,6 @@ SvxShapeDimensioning::~SvxShapeDimensioning() throw()
 {
 }
 
-// css::lang::XServiceInfo
-uno::Sequence< OUString > SAL_CALL SvxShapeDimensioning::getSupportedServiceNames() throw( uno::RuntimeException, std::exception )
-{
-    return SvxShapeText::getSupportedServiceNames();
-}
 SvxShapeCircle::SvxShapeCircle( SdrObject* pObj ) throw()
 :   SvxShapeText( pObj, getSvxMapProvider().GetMap(SVXMAP_CIRCLE), getSvxMapProvider().GetPropertySet(SVXMAP_CIRCLE, SdrObject::GetGlobalDrawObjectItemPool()) )
 {
@@ -996,15 +974,6 @@ SvxShapeCircle::SvxShapeCircle( SdrObject* pObj ) throw()
 SvxShapeCircle::~SvxShapeCircle() throw()
 {
 }
-
-// css::lang::XServiceInfo
-// XServiceInfo
-uno::Sequence< OUString > SAL_CALL SvxShapeCircle::getSupportedServiceNames() throw( uno::RuntimeException, std::exception )
-{
-    return SvxShapeText::getSupportedServiceNames();
-}
-#include <svx/svdopath.hxx>
-
 
 SvxShapePolyPolygon::SvxShapePolyPolygon( SdrObject* pObj , drawing::PolygonKind eNew )
  throw( css::beans::PropertyVetoException, css::lang::IllegalArgumentException)
@@ -1057,9 +1026,9 @@ bool SvxShapePolyPolygon::setPropertyValueImpl( const OUString& rName, const Sfx
     {
     case OWN_ATTR_VALUE_POLYPOLYGON:
     {
-        if( rValue.getValue() && (rValue.getValueType() == cppu::UnoType<drawing::PointSequenceSequence>::get() ) )
+        if( auto s = o3tl::tryAccess<drawing::PointSequenceSequence>(rValue) )
         {
-            basegfx::B2DPolyPolygon aNewPolyPolygon(ImplSvxPointSequenceSequenceToB2DPolyPolygon( static_cast<drawing::PointSequenceSequence const *>(rValue.getValue())));
+            basegfx::B2DPolyPolygon aNewPolyPolygon(ImplSvxPointSequenceSequenceToB2DPolyPolygon(s));
             SetPolygon(aNewPolyPolygon);
             return true;
         }
@@ -1067,7 +1036,7 @@ bool SvxShapePolyPolygon::setPropertyValueImpl( const OUString& rName, const Sfx
     }
     case OWN_ATTR_BASE_GEOMETRY:
     {
-        if( rValue.getValue() && (rValue.getValueType() == cppu::UnoType<drawing::PointSequenceSequence>::get()))
+        if( auto s = o3tl::tryAccess<drawing::PointSequenceSequence>(rValue) )
         {
             if( mpObj.is() )
             {
@@ -1075,7 +1044,7 @@ bool SvxShapePolyPolygon::setPropertyValueImpl( const OUString& rName, const Sfx
                 basegfx::B2DHomMatrix aNewHomogenMatrix;
 
                 mpObj->TRGetBaseGeometry(aNewHomogenMatrix, aNewPolyPolygon);
-                aNewPolyPolygon = ImplSvxPointSequenceSequenceToB2DPolyPolygon(static_cast<drawing::PointSequenceSequence const *>(rValue.getValue()));
+                aNewPolyPolygon = ImplSvxPointSequenceSequenceToB2DPolyPolygon(s);
                 mpObj->TRSetBaseGeometry(aNewHomogenMatrix, aNewPolyPolygon);
             }
             return true;
@@ -1084,10 +1053,8 @@ bool SvxShapePolyPolygon::setPropertyValueImpl( const OUString& rName, const Sfx
     }
     case OWN_ATTR_VALUE_POLYGON:
     {
-        if( rValue.getValue() && (rValue.getValueType() == cppu::UnoType<drawing::PointSequenceSequence>::get() ))
+        if( auto pSequence = o3tl::tryAccess<drawing::PointSequence>(rValue) )
         {
-            drawing::PointSequence const * pSequence = static_cast<drawing::PointSequence const *>(rValue.getValue());
-
             // prepare new polygon
             basegfx::B2DPolygon aNewPolygon;
 
@@ -1223,7 +1190,7 @@ bool SvxShapePolyPolygon::getPropertyValueImpl( const OUString& rName, const Sfx
     }
     case OWN_ATTR_VALUE_POLYGONKIND:
     {
-        rValue <<= GetPolygonKind();
+        rValue <<= mePolygonKind;
         break;
     }
     default:
@@ -1257,15 +1224,6 @@ basegfx::B2DPolyPolygon SvxShapePolyPolygon::GetPolygon() const throw()
     }
 }
 
-// css::lang::XServiceInfo
-uno::Sequence< OUString > SAL_CALL SvxShapePolyPolygon::getSupportedServiceNames() throw( uno::RuntimeException, std::exception )
-{
-    return SvxShapeText::getSupportedServiceNames();
-}
-
-#include <com/sun/star/drawing/PolyPolygonBezierCoords.hpp>
-#include <com/sun/star/drawing/FlagSequence.hpp>
-
 SvxShapePolyPolygonBezier::SvxShapePolyPolygonBezier( SdrObject* pObj , drawing::PolygonKind eNew ) throw()
 :   SvxShapeText( pObj, getSvxMapProvider().GetMap(SVXMAP_POLYPOLYGONBEZIER), getSvxMapProvider().GetPropertySet(SVXMAP_POLYPOLYGONBEZIER, SdrObject::GetGlobalDrawObjectItemPool()) )
 ,   mePolygonKind( eNew )
@@ -1284,11 +1242,10 @@ bool SvxShapePolyPolygonBezier::setPropertyValueImpl( const OUString& rName, con
     {
     case OWN_ATTR_VALUE_POLYPOLYGONBEZIER:
     {
-        if( rValue.getValue() && (rValue.getValueType() == cppu::UnoType<drawing::PolyPolygonBezierCoords>::get()) )
+        if( auto s = o3tl::tryAccess<drawing::PolyPolygonBezierCoords>(rValue) )
         {
             basegfx::B2DPolyPolygon aNewPolyPolygon(
-                basegfx::unotools::polyPolygonBezierToB2DPolyPolygon(
-                    *static_cast<drawing::PolyPolygonBezierCoords const *>(rValue.getValue())));
+                basegfx::unotools::polyPolygonBezierToB2DPolyPolygon(*s));
             SetPolygon(aNewPolyPolygon);
             return true;
         }
@@ -1296,7 +1253,7 @@ bool SvxShapePolyPolygonBezier::setPropertyValueImpl( const OUString& rName, con
     }
     case OWN_ATTR_BASE_GEOMETRY:
     {
-        if( rValue.getValue() && (rValue.getValueType() == cppu::UnoType<drawing::PolyPolygonBezierCoords>::get()) )
+        if( auto s = o3tl::tryAccess<drawing::PolyPolygonBezierCoords>(rValue) )
         {
             if( mpObj.is() )
             {
@@ -1305,7 +1262,7 @@ bool SvxShapePolyPolygonBezier::setPropertyValueImpl( const OUString& rName, con
 
                 mpObj->TRGetBaseGeometry(aNewHomogenMatrix, aNewPolyPolygon);
                 aNewPolyPolygon = basegfx::unotools::polyPolygonBezierToB2DPolyPolygon(
-                    *static_cast<drawing::PolyPolygonBezierCoords const *>(rValue.getValue()));
+                    *s);
                 mpObj->TRSetBaseGeometry(aNewHomogenMatrix, aNewPolyPolygon);
             }
             return true;
@@ -1348,7 +1305,7 @@ bool SvxShapePolyPolygonBezier::getPropertyValueImpl( const OUString& rName, con
     }
     case OWN_ATTR_VALUE_POLYGONKIND:
     {
-        rValue <<= GetPolygonKind();
+        rValue <<= mePolygonKind;
         break;
     }
     default:
@@ -1381,23 +1338,6 @@ basegfx::B2DPolyPolygon SvxShapePolyPolygonBezier::GetPolygon() const throw()
     }
 }
 
-
-// css::lang::XServiceInfo
-uno::Sequence< OUString > SAL_CALL SvxShapePolyPolygonBezier::getSupportedServiceNames() throw( uno::RuntimeException, std::exception )
-{
-    return SvxShapeText::getSupportedServiceNames();
-}
-
-#include <com/sun/star/awt/XBitmap.hpp>
-#include <vcl/cvtgrf.hxx>
-#include <svx/svdograf.hxx>
-#include <sfx2/docfile.hxx>
-#include <sfx2/app.hxx>
-#include <sfx2/fcontnr.hxx>
-
-#include <toolkit/helper/vclunohelper.hxx>
-
-
 SvxGraphicObject::SvxGraphicObject( SdrObject* pObj, OUString const & referer ) throw()
 :   SvxShapeText( pObj, getSvxMapProvider().GetMap(SVXMAP_GRAPHICOBJECT), getSvxMapProvider().GetPropertySet(SVXMAP_GRAPHICOBJECT, SdrObject::GetGlobalDrawObjectItemPool()) ), referer_(referer)
 {
@@ -1414,21 +1354,17 @@ bool SvxGraphicObject::setPropertyValueImpl( const OUString& rName, const SfxIte
     {
     case OWN_ATTR_VALUE_FILLBITMAP:
     {
-        if( rValue.getValue() )
+        if( auto pSeq = o3tl::tryAccess<uno::Sequence<sal_Int8>>(rValue) )
         {
-            if( rValue.getValueType() == cppu::UnoType<uno::Sequence< sal_Int8 >>::get() )
+            SvMemoryStream  aMemStm;
+            Graphic         aGraphic;
+
+            aMemStm.SetBuffer( const_cast<css::uno::Sequence<sal_Int8> *>(pSeq)->getArray(), pSeq->getLength(), pSeq->getLength() );
+
+            if( GraphicConverter::Import( aMemStm, aGraphic ) == ERRCODE_NONE )
             {
-                uno::Sequence<sal_Int8> const * pSeq( static_cast<uno::Sequence<sal_Int8> const *>(rValue.getValue()) );
-                SvMemoryStream  aMemStm;
-                Graphic         aGraphic;
-
-                aMemStm.SetBuffer( const_cast<css::uno::Sequence<sal_Int8> *>(pSeq)->getArray(), pSeq->getLength(), pSeq->getLength() );
-
-                if( GraphicConverter::Import( aMemStm, aGraphic ) == ERRCODE_NONE )
-                {
-                    static_cast<SdrGrafObj*>(mpObj.get())->SetGraphic(aGraphic);
-                    bOk = true;
-                }
+                static_cast<SdrGrafObj*>(mpObj.get())->SetGraphic(aGraphic);
+                bOk = true;
             }
         }
         else if( (rValue.getValueType() == cppu::UnoType<awt::XBitmap>::get()) || (rValue.getValueType() == cppu::UnoType<graphic::XGraphic>::get()))
@@ -1567,7 +1503,7 @@ bool SvxGraphicObject::getPropertyValueImpl( const OUString& rName, const SfxIte
     {
         const Graphic& rGraphic = static_cast< SdrGrafObj*>( mpObj.get() )->GetGraphic();
 
-        if(rGraphic.GetType() != GRAPHIC_GDIMETAFILE)
+        if(rGraphic.GetType() != GraphicType::GdiMetafile)
         {
             // pack object in a bitmap
             Reference< css::awt::XBitmap >  xBitmap( VCLUnoHelper::CreateBitmap(static_cast< SdrGrafObj*>( mpObj.get() )->GetGraphic().GetBitmapEx()) );
@@ -1664,12 +1600,6 @@ SvxCustomShape::~SvxCustomShape() throw()
 }
 
 
-void SvxCustomShape::Create( SdrObject* pNewObj, SvxDrawPage* pNewPage )
-{
-    SvxShapeText::Create( pNewObj, pNewPage );
-}
-
-
 uno::Any SAL_CALL SvxCustomShape::queryInterface( const uno::Type & rType )
     throw(uno::RuntimeException, std::exception)
 {
@@ -1710,12 +1640,6 @@ uno::Sequence< sal_Int8 > SAL_CALL SvxCustomShape::getImplementationId()
 
 // css::drawing::XShape
 
-
-OUString SAL_CALL SvxCustomShape::getShapeType()
-    throw( uno::RuntimeException, std::exception )
-{
-    return SvxShape::getShapeType();
-}
 
 awt::Point SAL_CALL SvxCustomShape::getPosition() throw(uno::RuntimeException, std::exception)
 {
@@ -1796,25 +1720,6 @@ awt::Point SAL_CALL SvxCustomShape::getPosition() throw(uno::RuntimeException, s
     }
     else
         return SvxShape::getPosition();
-}
-
-
-void SAL_CALL SvxCustomShape::setPosition( const awt::Point& Position ) throw(uno::RuntimeException, std::exception)
-{
-    SvxShapeText::setPosition(Position);
-}
-
-
-awt::Size SAL_CALL SvxCustomShape::getSize() throw(uno::RuntimeException, std::exception)
-{
-    return SvxShapeText::getSize();
-}
-
-
-void SAL_CALL SvxCustomShape::setSize( const awt::Size& rSize )
-    throw(beans::PropertyVetoException, uno::RuntimeException, std::exception)
-{
-    SvxShapeText::setSize( rSize );
 }
 
 

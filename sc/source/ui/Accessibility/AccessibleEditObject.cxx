@@ -103,8 +103,7 @@ ScAccessibleEditObject::~ScAccessibleEditObject()
 void SAL_CALL ScAccessibleEditObject::disposing()
 {
     SolarMutexGuard aGuard;
-    if (mpTextHelper)
-        DELETEZ(mpTextHelper);
+    mpTextHelper.reset();
 
     ScAccessibleContextBase::disposing();
 }
@@ -162,8 +161,7 @@ uno::Reference< XAccessible > SAL_CALL ScAccessibleEditObject::getAccessibleAtPo
          SolarMutexGuard aGuard;
         IsObjectValid();
 
-        if(!mpTextHelper)
-            CreateTextHelper();
+        CreateTextHelper();
 
         xRet = mpTextHelper->GetAt(rPoint);
     }
@@ -240,8 +238,7 @@ sal_Int32 SAL_CALL
 {
     SolarMutexGuard aGuard;
     IsObjectValid();
-    if (!mpTextHelper)
-        CreateTextHelper();
+    CreateTextHelper();
     return mpTextHelper->GetChildCount();
 }
 
@@ -252,8 +249,7 @@ uno::Reference< XAccessible > SAL_CALL
 {
     SolarMutexGuard aGuard;
     IsObjectValid();
-    if (!mpTextHelper)
-        CreateTextHelper();
+    CreateTextHelper();
     return mpTextHelper->GetChild(nIndex);
 }
 
@@ -307,8 +303,7 @@ void SAL_CALL
     ScAccessibleEditObject::addAccessibleEventListener(const uno::Reference<XAccessibleEventListener>& xListener)
         throw (uno::RuntimeException, std::exception)
 {
-    if (!mpTextHelper)
-        CreateTextHelper();
+    CreateTextHelper();
 
     mpTextHelper->AddEventListener(xListener);
 
@@ -319,8 +314,7 @@ void SAL_CALL
     ScAccessibleEditObject::removeAccessibleEventListener(const uno::Reference<XAccessibleEventListener>& xListener)
         throw (uno::RuntimeException, std::exception)
 {
-    if (!mpTextHelper)
-        CreateTextHelper();
+    CreateTextHelper();
 
     mpTextHelper->RemoveEventListener(xListener);
 
@@ -368,7 +362,11 @@ void ScAccessibleEditObject::CreateTextHelper()
             pAccessibleTextData.reset
                 (new ScAccessibleEditLineTextData(nullptr, mpWindow));
         }
-        mpTextHelper = new ::accessibility::AccessibleTextHelper(o3tl::make_unique<ScAccessibilityEditSource>(std::move(pAccessibleTextData)));
+
+        std::unique_ptr<ScAccessibilityEditSource> pEditSrc =
+            o3tl::make_unique<ScAccessibilityEditSource>(std::move(pAccessibleTextData));
+
+        mpTextHelper = o3tl::make_unique<::accessibility::AccessibleTextHelper>(std::move(pEditSrc));
         mpTextHelper->SetEventSource(this);
 
         const ScInputHandler* pInputHdl = SC_MOD()->GetInputHdl();
@@ -387,7 +385,7 @@ void ScAccessibleEditObject::CreateTextHelper()
             // do not activate cell object, if top edit line is active
             if( pInputHdl && !pInputHdl->IsTopMode() )
             {
-                SdrHint aHint( HINT_BEGEDIT );
+                SdrHint aHint( SdrHintKind::BeginEdit );
                 mpTextHelper->GetEditSource().GetBroadcaster().Broadcast( aHint );
             }
         }

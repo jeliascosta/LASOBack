@@ -671,8 +671,8 @@ private:
                                       long nMin, long nMax, long nStart, long nVirTop, long nVirBottom);
     SVT_DLLPRIVATE void ImplDrawBorders(vcl::RenderContext& rRenderContext,
                                         long nMin, long nMax, long nVirTop, long nVirBottom);
-    SVT_DLLPRIVATE void ImplDrawIndent(vcl::RenderContext& rRenderContext,
-                                       const tools::Polygon& rPoly, bool bIsHit = false);
+    SVT_DLLPRIVATE static void ImplDrawIndent(vcl::RenderContext& rRenderContext,
+                                       const tools::Polygon& rPoly, bool bIsHit);
     SVT_DLLPRIVATE void ImplDrawIndents(vcl::RenderContext& rRenderContext,
                                         long nMin, long nMax, long nVirTop, long nVirBottom);
     SVT_DLLPRIVATE void ImplDrawTab(vcl::RenderContext& rRenderContext, const Point& rPos, sal_uInt16 nStyle);
@@ -712,7 +712,7 @@ protected:
 
 public:
             Ruler( vcl::Window* pParent, WinBits nWinStyle = WB_STDRULER );
-    virtual ~Ruler();
+    virtual ~Ruler() override;
     virtual void dispose() override;
 
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
@@ -733,7 +733,7 @@ public:
     void            Activate() override;
     void            Deactivate() override;
 
-    void            SetWinPos( long nOff = 0, long nWidth = 0 );
+    void            SetWinPos( long nOff, long nWidth = 0 );
     long            GetWinOffset() const { return mnWinOff; }
     void            SetPagePos( long nOff = 0, long nWidth = 0 );
     long            GetPageOffset() const;
@@ -750,7 +750,7 @@ public:
     void            SetExtraType( RulerExtra eNewExtraType, sal_uInt16 nStyle = 0 );
 
     bool            StartDocDrag( const MouseEvent& rMEvt,
-                                  RulerType eDragType = RulerType::DontKnow );
+                                  RulerType eDragType );
     RulerType       GetDragType() const { return meDragType; }
     long            GetDragPos() const { return mnDragPos; }
     sal_uInt16      GetDragAryPos() const { return mnDragAryPos; }

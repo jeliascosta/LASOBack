@@ -18,7 +18,7 @@
 #include <svx/svdoole2.hxx>
 #include <editeng/brushitem.hxx>
 #include <editeng/justifyitem.hxx>
-
+#include <formula/errorcodes.hxx>
 #include <cppunit/Asserter.h>
 #include <cppunit/AdditionalMessage.h>
 
@@ -238,7 +238,7 @@ void testFormats(ScBootstrapFixture* pTest, ScDocument* pDoc, sal_Int32 nFormat)
     }
     pPattern = pDoc->GetPattern(1,4,1);
     Color aColor = static_cast<const SvxBrushItem&>(pPattern->GetItem(ATTR_BACKGROUND)).GetColor();
-    CPPUNIT_ASSERT_MESSAGE("background color should be green", aColor == COL_LIGHTGREEN);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("background color should be green", Color(COL_LIGHTGREEN), aColor);
     pPattern = pDoc->GetPattern(2,0,1);
     SvxCellHorJustify eHorJustify = static_cast<SvxCellHorJustify>(static_cast<const SvxHorJustifyItem&>(pPattern->GetItem(ATTR_HOR_JUSTIFY)).GetValue());
     CPPUNIT_ASSERT_EQUAL_MESSAGE("cell content should be aligned centre horizontally", SVX_HOR_JUSTIFY_CENTER, eHorJustify);
@@ -522,7 +522,7 @@ bool isFormulaWithoutError(ScDocument& rDoc, const ScAddress& rPos)
     if (!pFC)
         return false;
 
-    return pFC->GetErrCode() == 0;
+    return pFC->GetErrCode() == FormulaError::NONE;
 }
 
 OUString toString(
@@ -543,12 +543,12 @@ ScDocShellRef ScBootstrapFixture::load( bool bReadWrite,
     std::shared_ptr<const SfxFilter> pFilter(new SfxFilter(
         rFilter,
         OUString(), nFilterFlags, nClipboardID, rTypeName, 0, OUString(),
-        rUserData, OUString("private:factory/scalc*")));
+        rUserData, OUString("private:factory/scalc")));
     const_cast<SfxFilter*>(pFilter.get())->SetVersion(nFilterVersion);
 
     ScDocShellRef xDocShRef = new ScDocShell;
     xDocShRef->GetDocument().EnableUserInteraction(false);
-    SfxMedium* pSrcMed = new SfxMedium(rURL, bReadWrite ? STREAM_STD_READWRITE : STREAM_STD_READ );
+    SfxMedium* pSrcMed = new SfxMedium(rURL, bReadWrite ? StreamMode::STD_READWRITE : StreamMode::STD_READ );
     pSrcMed->SetFilter(pFilter);
     pSrcMed->UseInteractionHandler(false);
     SfxItemSet* pSet = pSrcMed->GetItemSet();
@@ -628,7 +628,7 @@ ScDocShellRef ScBootstrapFixture::saveAndReload(
 {
 
     utl::TempFile aTempFile;
-    SfxMedium aStoreMedium( aTempFile.GetURL(), STREAM_STD_WRITE );
+    SfxMedium aStoreMedium( aTempFile.GetURL(), StreamMode::STD_WRITE );
     SotClipboardFormatId nExportFormat = SotClipboardFormatId::NONE;
     if (nFormatType == ODS_FORMAT_TYPE)
         nExportFormat = SotClipboardFormatId::STARCHART_8;
@@ -673,7 +673,7 @@ std::shared_ptr<utl::TempFile> ScBootstrapFixture::exportTo( ScDocShell* pShell,
 
     std::shared_ptr<utl::TempFile> pTempFile(new utl::TempFile());
     pTempFile->EnableKillingFile();
-    SfxMedium aStoreMedium( pTempFile->GetURL(), STREAM_STD_WRITE );
+    SfxMedium aStoreMedium( pTempFile->GetURL(), StreamMode::STD_WRITE );
     SotClipboardFormatId nExportFormat = SotClipboardFormatId::NONE;
     SfxFilterFlags nFormatType = aFileFormats[nFormat].nFormatType;
     if (nFormatType == ODS_FORMAT_TYPE)
@@ -728,7 +728,7 @@ void ScBootstrapFixture::miscRowHeightsTest( TestParam* aTestValues, unsigned in
                 int nHeight = sc::TwipsToHMM( rDoc.GetRowHeight(nRow, nTab, false) );
                 if ( bCheckOpt )
                 {
-                    bool bOpt = !(rDoc.GetRowFlags( nRow, nTab ) & CR_MANUALSIZE);
+                    bool bOpt = !(rDoc.GetRowFlags( nRow, nTab ) & CRFlags::ManualSize);
                     CPPUNIT_ASSERT_EQUAL(aTestValues[ index ].pData[ i ].bOptimal, bOpt);
                 }
                 CPPUNIT_ASSERT_EQUAL(nExpectedHeight, nHeight);
@@ -747,7 +747,7 @@ std::string to_std_string(const OUString& rStr)
 
 }
 
-void checkFormula(ScDocument& rDoc, const ScAddress& rPos, const char* expected, const char* msg, CppUnit::SourceLine sourceLine)
+void checkFormula(ScDocument& rDoc, const ScAddress& rPos, const char* expected, const char* msg, CppUnit::SourceLine const & sourceLine)
 {
     ScTokenArray* pCode = getTokens(rDoc, rPos);
     if (!pCode)

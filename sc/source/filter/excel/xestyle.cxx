@@ -791,9 +791,9 @@ void XclExpPalette::GetMixedColors(
     return mxImpl->GetMixedColors( rnXclForeIx, rnXclBackIx, rnXclPattern, nForeColorId, nBackColorId );
 }
 
-ColorData XclExpPalette::GetColorData( sal_uInt16 nXclIndex ) const
+Color XclExpPalette::GetColor( sal_uInt16 nXclIndex ) const
 {
-    return mxImpl->GetColorData( nXclIndex );
+    return Color(mxImpl->GetColorData( nXclIndex ));
 }
 
 void XclExpPalette::Save( XclExpStream& rStrm )
@@ -1234,12 +1234,6 @@ sal_uInt16 XclExpFontBuffer::Insert(
 }
 
 sal_uInt16 XclExpFontBuffer::Insert(
-        const vcl::Font& rFont, XclExpColorType eColorType, bool bAppFont )
-{
-    return Insert( XclFontData( rFont ), eColorType, bAppFont );
-}
-
-sal_uInt16 XclExpFontBuffer::Insert(
         const SvxFont& rFont, XclExpColorType eColorType )
 {
     return Insert( XclFontData( rFont ), eColorType );
@@ -1250,7 +1244,7 @@ sal_uInt16 XclExpFontBuffer::Insert( const SfxItemSet& rItemSet,
 {
     // #i17050# script type now provided by caller
     vcl::Font aFont = XclExpFontHelper::GetFontFromItemSet( GetRoot(), rItemSet, nScript );
-    return Insert( aFont, eColorType, bAppFont );
+    return Insert( XclFontData( aFont ), eColorType, bAppFont );
 }
 
 void XclExpFontBuffer::Save( XclExpStream& rStrm )
@@ -1550,7 +1544,7 @@ bool XclExpCellAlign::FillFromItemSet(
         {
             SvxCellJustifyMethod eHorJustMethod = GETITEMVALUE(
                 rItemSet, SvxJustifyMethodItem, ATTR_HOR_JUSTIFY_METHOD, SvxCellJustifyMethod);
-            if (eHorJustMethod == SVX_JUSTIFY_METHOD_DISTRIBUTE)
+            if (eHorJustMethod == SvxCellJustifyMethod::Distribute)
                 mnHorAlign = EXC_XF_HOR_DISTRIB;
         }
 
@@ -1558,7 +1552,7 @@ bool XclExpCellAlign::FillFromItemSet(
         {
             SvxCellJustifyMethod eVerJustMethod = GETITEMVALUE(
                 rItemSet, SvxJustifyMethodItem, ATTR_VER_JUSTIFY_METHOD, SvxCellJustifyMethod);
-            if (eVerJustMethod == SVX_JUSTIFY_METHOD_DISTRIBUTE)
+            if (eVerJustMethod == SvxCellJustifyMethod::Distribute)
                 mnVerAlign = EXC_XF_VER_DISTRIB;
         }
     }
@@ -2847,7 +2841,7 @@ void XclExpXFBuffer::InsertUserStyles()
             InsertStyleXF( *pStyleSheet );
 }
 
-sal_uInt32 XclExpXFBuffer::AppendBuiltInXF( XclExpXFRef xXF, sal_uInt8 nStyleId, sal_uInt8 nLevel )
+sal_uInt32 XclExpXFBuffer::AppendBuiltInXF( XclExpXFRef const & xXF, sal_uInt8 nStyleId, sal_uInt8 nLevel )
 {
     sal_uInt32 nXFId = static_cast< sal_uInt32 >( maXFList.GetSize() );
     maXFList.AppendRecord( xXF );
@@ -2858,7 +2852,7 @@ sal_uInt32 XclExpXFBuffer::AppendBuiltInXF( XclExpXFRef xXF, sal_uInt8 nStyleId,
     return nXFId;
 }
 
-sal_uInt32 XclExpXFBuffer::AppendBuiltInXFWithStyle( XclExpXFRef xXF, sal_uInt8 nStyleId, sal_uInt8 nLevel )
+sal_uInt32 XclExpXFBuffer::AppendBuiltInXFWithStyle( XclExpXFRef const & xXF, sal_uInt8 nStyleId, sal_uInt8 nLevel )
 {
     sal_uInt32 nXFId = AppendBuiltInXF( xXF, nStyleId, nLevel );
     maStyleList.AppendNewRecord( new XclExpStyle( nXFId, nStyleId, nLevel ) );

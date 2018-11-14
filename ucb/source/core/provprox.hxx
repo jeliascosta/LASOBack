@@ -46,7 +46,7 @@ class UcbContentProviderProxyFactory : public cppu::WeakImplHelper <
 public:
     explicit UcbContentProviderProxyFactory(
             const css::uno::Reference< css::lang::XMultiServiceFactory >& rxSMgr );
-    virtual ~UcbContentProviderProxyFactory();
+    virtual ~UcbContentProviderProxyFactory() override;
 
     // XServiceInfo
     virtual OUString SAL_CALL getImplementationName()
@@ -99,7 +99,7 @@ public:
     UcbContentProviderProxy(
             const css::uno::Reference< css::lang::XMultiServiceFactory >& rxSMgr,
             const OUString& Service );
-    virtual ~UcbContentProviderProxy();
+    virtual ~UcbContentProviderProxy() override;
 
     // XInterface
     virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
@@ -122,9 +122,6 @@ public:
         throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
         throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // XContentProviderSupplier
     virtual css::uno::Reference<

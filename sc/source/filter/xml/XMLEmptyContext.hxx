@@ -21,19 +21,16 @@
 
 #include <xmloff/xmlictxt.hxx>
 #include "xmlimprt.hxx"
+#include "importcontext.hxx"
 
 
-class ScXMLEmptyContext : public SvXMLImportContext
+class ScXMLEmptyContext : public ScXMLImportContext
 {
-    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
-    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
-
 public:
-
     ScXMLEmptyContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
                         const OUString& rLName);
 
-    virtual ~ScXMLEmptyContext();
+    virtual ~ScXMLEmptyContext() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,

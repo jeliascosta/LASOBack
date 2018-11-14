@@ -40,6 +40,7 @@
 
 #include <editeng/acorrcfg.hxx>
 #include <comphelper/lok.hxx>
+#include <comphelper/configurationlistener.hxx>
 
 #ifdef DBG_UTIL
 bool SwViewOption::m_bTest9 = false;        //DrawingLayerNotLoading
@@ -66,8 +67,6 @@ Color SwViewOption::m_aHeaderFooterMarkColor(COL_BLUE);
 
 ViewOptFlags SwViewOption::m_nAppearanceFlags = ViewOptFlags::DocBoundaries|ViewOptFlags::ObjectBoundaries;
 sal_uInt16 SwViewOption::m_nPixelTwips = 0;   // one pixel on the screen
-
-static const char aPostItStr[] = "  ";
 
 bool SwViewOption::IsEqualFlags( const SwViewOption &rOpt ) const
 {
@@ -131,7 +130,7 @@ void SwViewOption::DrawRectPrinter( OutputDevice *pOut,
 sal_uInt16 SwViewOption::GetPostItsWidth( const OutputDevice *pOut )
 {
     assert(pOut && "no Outdev");
-    return sal_uInt16(pOut->GetTextWidth( aPostItStr));
+    return sal_uInt16(pOut->GetTextWidth("  "));
 }
 
 void SwViewOption::PaintPostIts( OutputDevice *pOut, const SwRect &rRect, bool bIsScript )
@@ -141,7 +140,7 @@ void SwViewOption::PaintPostIts( OutputDevice *pOut, const SwRect &rRect, bool b
             Color aOldLineColor( pOut->GetLineColor() );
         pOut->SetLineColor( Color(COL_GRAY ) );
         // to make it look nice, we subtract two pixels everywhere
-        sal_uInt16 nPix = GetPixelTwips() * 2;
+        sal_uInt16 nPix = m_nPixelTwips * 2;
         if( rRect.Width() <= 2 * nPix || rRect.Height() <= 2 * nPix )
             nPix = 0;
         const Point aTopLeft(  rRect.Left()  + nPix, rRect.Top()    + nPix );
@@ -561,6 +560,22 @@ void SwViewOption::SetAppearanceFlag(ViewOptFlags nFlag, bool bSet, bool bSaveIn
 bool SwViewOption::IsAppearanceFlag(ViewOptFlags nFlag)
 {
     return bool(m_nAppearanceFlags & nFlag);
+}
+
+namespace{
+rtl::Reference<comphelper::ConfigurationListener> const & getWCOptionListener()
+{
+    static rtl::Reference<comphelper::ConfigurationListener> xListener;
+    if (!xListener.is())
+        xListener.set(new comphelper::ConfigurationListener("/org.openoffice.Office.Writer/Cursor/Option"));
+    return xListener;
+}
+}
+
+bool SwViewOption::IsIgnoreProtectedArea()
+{
+    static comphelper::ConfigurationListenerProperty<bool> gIgnoreProtectedArea(getWCOptionListener(), "IgnoreProtectedArea");
+    return gIgnoreProtectedArea.get();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

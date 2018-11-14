@@ -47,7 +47,7 @@
 
 #include <com/sun/star/ui/XSidebarProvider.hpp>
 #include <sfx2/sidebar/UnoSidebar.hxx>
-
+#include <sfx2/userinputinterception.hxx>
 
 #include <vcl/waitobj.hxx>
 #include <svl/urihelper.hxx>
@@ -195,16 +195,16 @@ OGenericUnoController::OGenericUnoController(const Reference< XComponentContext 
 
 OGenericUnoController::OGenericUnoController()
     :OGenericUnoController_Base( getMutex() )
-    ,m_pView(NULL)
+    ,m_pView(nullptr)
 #ifdef DBG_UTIL
     ,m_bDescribingSupportedFeatures( false )
 #endif
     ,m_aAsyncInvalidateAll(LINK(this, OGenericUnoController, OnAsyncInvalidateAll))
     ,m_aAsyncCloseTask(LINK(this, OGenericUnoController, OnAsyncCloseTask))
     ,m_aCurrentFrame( *this )
-    ,m_bPreview(sal_False)
-    ,m_bReadOnly(sal_False)
-    ,m_bCurrentlyModified(sal_False)
+    ,m_bPreview(false)
+    ,m_bReadOnly(false)
+    ,m_bCurrentlyModified(false)
 {
     SAL_WARN("dbaccess.ui", "OGenericUnoController::OGenericUnoController: illegal call!" );
     // This ctor only exists because the MSVC compiler complained about an unresolved external
@@ -251,7 +251,7 @@ bool OGenericUnoController::Construct(vcl::Window* /*pParent*/)
     return true;
 }
 
-IMPL_LINK_NOARG_TYPED(OGenericUnoController, OnAsyncInvalidateAll, void*, void)
+IMPL_LINK_NOARG(OGenericUnoController, OnAsyncInvalidateAll, void*, void)
 {
     if ( !OGenericUnoController_Base::rBHelper.bInDispose && !OGenericUnoController_Base::rBHelper.bDisposed )
         InvalidateFeature_Impl();
@@ -948,13 +948,12 @@ void OGenericUnoController::stopConnectionListening(const Reference< XConnection
         xComponent->removeEventListener(static_cast<XFrameActionListener*>(this));
 }
 
-Reference< XConnection > OGenericUnoController::connect( const Reference< XDataSource>& _xDataSource,
-    ::dbtools::SQLExceptionInfo* _pErrorInfo )
+Reference< XConnection > OGenericUnoController::connect( const Reference< XDataSource>& _xDataSource )
 {
     WaitObject aWaitCursor( getView() );
 
     ODatasourceConnector aConnector( getORB(), getView(), OUString() );
-    Reference< XConnection > xConnection = aConnector.connect( _xDataSource, _pErrorInfo );
+    Reference< XConnection > xConnection = aConnector.connect( _xDataSource, nullptr );
     startConnectionListening( xConnection );
 
     return xConnection;
@@ -1029,7 +1028,7 @@ void OGenericUnoController::closeTask()
     m_aAsyncCloseTask.Call();
 }
 
-IMPL_LINK_NOARG_TYPED(OGenericUnoController, OnAsyncCloseTask, void*, void)
+IMPL_LINK_NOARG(OGenericUnoController, OnAsyncCloseTask, void*, void)
 {
     if ( !OGenericUnoController_Base::rBHelper.bInDispose )
     {
@@ -1150,7 +1149,7 @@ namespace
                     "com.sun.star.sheet.SpreadsheetDocument", "scalc",
                     "com.sun.star.presentation.PresentationDocument", "simpress",
                     "com.sun.star.drawing.DrawingDocument", "sdraw",
-                    "com.sun.star.formula.FormularProperties", "smath",
+                    "com.sun.star.formula.FormulaProperties", "smath",
                     "com.sun.star.chart.ChartDocument", "schart"
                 };
                 OSL_ENSURE( SAL_N_ELEMENTS( pTransTable ) % 2 == 0,

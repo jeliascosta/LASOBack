@@ -75,10 +75,10 @@ public:
     RepoContent( const css::uno::Reference<
         css::uno::XComponentContext >& rxContext, ContentProvider *pProvider,
         const css::uno::Reference< css::ucb::XContentIdentifier >& Identifier,
-        std::vector< libcmis::RepositoryPtr > aRepos = std::vector< libcmis::RepositoryPtr > ( ) )
+        std::vector< libcmis::RepositoryPtr > const & aRepos = std::vector< libcmis::RepositoryPtr > ( ) )
             throw ( css::ucb::ContentCreationException );
 
-    virtual ~RepoContent();
+    virtual ~RepoContent() override;
 
     virtual css::uno::Sequence< css::beans::Property >
         getProperties( const css::uno::Reference< css::ucb::XCommandEnvironment > & xEnv ) override;
@@ -89,12 +89,6 @@ public:
     virtual OUString getParentURL() override;
 
     // XInterface
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
-        throw( css::uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL acquire()
-        throw() override;
-    virtual void SAL_CALL release()
-        throw() override;
 
     virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId()
         throw( css::uno::RuntimeException, std::exception ) override;

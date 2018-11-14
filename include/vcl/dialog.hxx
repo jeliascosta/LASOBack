@@ -37,11 +37,12 @@ public:
 
 private:
     VclPtr<Dialog>  mpPrevExecuteDlg;
-    DialogImpl*     mpDialogImpl;
+    std::unique_ptr<DialogImpl>     mpDialogImpl;
     long            mnMousePositioned;
     bool            mbInExecute;
     bool            mbInClose;
     bool            mbModalMode;
+    bool            mbPaintComplete;
     InitFlag        mnInitFlag; // used for deferred init
 
     VclPtr<VclButtonBox> mpActionArea;
@@ -55,7 +56,7 @@ private:
     SAL_DLLPRIVATE         Dialog (const Dialog &) = delete;
     SAL_DLLPRIVATE         Dialog & operator= (const Dialog &) = delete;
 
-    DECL_DLLPRIVATE_LINK_TYPED( ImplAsyncCloseHdl, void*, void );
+    DECL_DLLPRIVATE_LINK( ImplAsyncCloseHdl, void*, void );
 
 protected:
     using Window::ImplInit;
@@ -79,7 +80,7 @@ protected:
 public:
     explicit        Dialog( vcl::Window* pParent, WinBits nStyle = WB_STDDIALOG, InitFlag eFlag = InitFlag::Default );
     explicit        Dialog( vcl::Window* pParent, const OUString& rID, const OUString& rUIXMLDescription );
-    virtual         ~Dialog();
+    virtual         ~Dialog() override;
     virtual void    dispose() override;
 
     virtual bool    Notify( NotifyEvent& rNEvt ) override;
@@ -93,8 +94,26 @@ public:
 
     virtual bool    Close() override;
 
+    // try to extract content and return as Bitmap. To do that reliably, a Yield-loop
+    // like in Execute() has to be executed and it is necessary to detect when the
+    // paint is finished
+    virtual void PrePaint(vcl::RenderContext& rRenderContext) override;
+    virtual void PostPaint(vcl::RenderContext& rRenderContext) override;
+
+    // ensureRepaint - triggers Application::Yield until the dialog is
+    // completely repainted. Sometimes needed for dialogs showing progress
+    // during actions
+    void ensureRepaint();
+
+    // Screenshot interface
+    virtual std::vector<OString> getAllPageUIXMLDescriptions() const;
+    virtual bool selectPageByUIXMLDescription(const OString& rUIXMLDescription);
+    Bitmap createScreenshot();
+
     virtual short   Execute();
     bool            IsInExecute() const { return mbInExecute; }
+
+    virtual FactoryFunction GetUITestFactory() const override;
 
     // Dialog::Execute replacement API
 public:
@@ -103,14 +122,13 @@ public:
 private:
     bool            ImplStartExecuteModal();
     static void     ImplEndExecuteModal();
-    bool            ImplHandleCmdEvent ( const CommandEvent& rCEvent );
 public:
 
     // Dialog::Execute replacement API
 
 
     void            EndDialog( long nResult = 0 );
-    static void     EndAllDialogs( vcl::Window* pParent=nullptr );
+    static void     EndAllDialogs( vcl::Window* pParent );
 
     void            GetDrawWindowBorder( sal_Int32& rLeftBorder, sal_Int32& rTopBorder,
                                          sal_Int32& rRightBorder, sal_Int32& rBottomBorder ) const;

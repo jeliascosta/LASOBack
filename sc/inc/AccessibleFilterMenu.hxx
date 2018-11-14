@@ -50,7 +50,7 @@ public:
     explicit ScAccessibleFilterMenu(
         const css::uno::Reference< css::accessibility::XAccessible>& rxParent,
             ScMenuFloatingWindow* pWin, const OUString& rName, size_t nMenuPos);
-    virtual ~ScAccessibleFilterMenu();
+    virtual ~ScAccessibleFilterMenu() override;
 
     virtual bool SAL_CALL isVisible()
         throw (css::uno::RuntimeException, std::exception) override;
@@ -71,9 +71,6 @@ public:
         throw (css::uno::RuntimeException, std::exception) override;
 
     /// XAccessibleContext
-
-    virtual OUString SAL_CALL getAccessibleName()
-        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual sal_Int32 SAL_CALL getAccessibleChildCount()
         throw (css::uno::RuntimeException, std::exception) override;
@@ -158,7 +155,6 @@ protected:
 
 private:
     bool isSelected() const;
-    bool isFocused() const;
 
     void updateStates();
 

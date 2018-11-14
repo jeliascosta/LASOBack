@@ -28,11 +28,11 @@
 
 // PRIVATE METHODES ------------------------------------------------------
 
-IMPL_LINK_NOARG_TYPED( SfxNewStyleDlg, OKClickHdl, Button*, void )
+IMPL_LINK_NOARG( SfxNewStyleDlg, OKClickHdl, Button*, void )
 {
     OKHdl(*m_pColBox);
 }
-IMPL_LINK_NOARG_TYPED( SfxNewStyleDlg, OKHdl, ComboBox&, void )
+IMPL_LINK_NOARG( SfxNewStyleDlg, OKHdl, ComboBox&, void )
 {
     const OUString aName( m_pColBox->GetText() );
     SfxStyleSheetBase* pStyle = rPool.Find( aName, rPool.GetSearchFamily() );
@@ -40,7 +40,7 @@ IMPL_LINK_NOARG_TYPED( SfxNewStyleDlg, OKHdl, ComboBox&, void )
     {
         if ( !pStyle->IsUserDefined() )
         {
-            ScopedVclPtrInstance<MessageDialog>( this, SfxResId( STR_POOL_STYLE_NAME ), VCL_MESSAGE_INFO )->Execute();
+            ScopedVclPtrInstance<MessageDialog>( this, SfxResId( STR_POOL_STYLE_NAME ), VclMessageType::Info )->Execute();
             return;
         }
 
@@ -51,15 +51,15 @@ IMPL_LINK_NOARG_TYPED( SfxNewStyleDlg, OKHdl, ComboBox&, void )
         EndDialog( RET_OK );
 }
 
-IMPL_LINK_TYPED( SfxNewStyleDlg, ModifyHdl, Edit&, rBox, void )
+IMPL_LINK( SfxNewStyleDlg, ModifyHdl, Edit&, rBox, void )
 {
-    m_pOKBtn->Enable( !comphelper::string::remove(rBox.GetText(), ' ').isEmpty() );
+    m_pOKBtn->Enable( !rBox.GetText().replaceAll(" ", "").isEmpty() );
 }
 
 SfxNewStyleDlg::SfxNewStyleDlg( vcl::Window* pParent, SfxStyleSheetBasePool& rInPool )
     : ModalDialog(pParent, "CreateStyleDialog", "sfx/ui/newstyle.ui")
     , aQueryOverwriteBox(VclPtr<MessageDialog>::Create(this, SfxResId(STR_QUERY_OVERWRITE),
-                                           VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO))
+                                           VclMessageType::Question, VCL_BUTTONS_YES_NO))
     , rPool(rInPool)
 {
     get(m_pColBox, "stylename");

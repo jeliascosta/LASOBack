@@ -67,6 +67,13 @@ lo_src_dir="$start_dir/src"
 mkdir -p "$lo_src_dir"
 
 for tarball in $tarballs ; do
+	#ADD LIBRAS
+    tarball_orig="$tarball"
+    tarball=`echo $tarball_orig | sed -e "s/C:/\/cygdrive\/c/"`
+	lo_src_dir_orig="$lo_src_dir"
+	lo_src_dir=`echo $lo_src_dir_orig | sed -e "s/C:/\/cygdrive\/c/"`
+	#END LIBRAS
+ 
     tarname=`basename $tarball | sed -e "s/\.tar\..*//"`
     if test -d $lo_src_dir/$tarname ; then
         echo "Warning: $lo_src_dir/$tarname already exists => skipping"
@@ -86,6 +93,8 @@ for tarball in $tarballs ; do
 
     # create symlinks for module directories; ignore git-hooks directory
     for dir in `find "$lo_src_dir/$tarname" -mindepth 1 -maxdepth 1 -type d -path $lo_src_dir/$tarname/git-hooks -o -printf "$tarname/%f\n"` ; do
-        ln -sf "src/$dir" "$start_dir"
+		echo "MOVENDO..."
+		mv "src/$dir" "$start_dir/"
+        #ln -sf "src/$dir" "$start_dir"
     done
 done

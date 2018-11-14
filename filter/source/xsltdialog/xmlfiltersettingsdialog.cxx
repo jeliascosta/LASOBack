@@ -24,6 +24,7 @@
 #include <com/sun/star/beans/PropertyValue.hpp>
 
 #include "com/sun/star/ui/dialogs/TemplateDescription.hpp"
+#include <tools/resmgr.hxx>
 #include <tools/urlobj.hxx>
 #include <svtools/headbar.hxx>
 #include <unotools/streamwrap.hxx>
@@ -31,6 +32,7 @@
 #include <osl/file.hxx>
 #include <o3tl/enumrange.hxx>
 #include <vcl/msgbox.hxx>
+#include <vcl/svapp.hxx>
 #include <vcl/builderfactory.hxx>
 #include <sfx2/filedlghelper.hxx>
 #include "svtools/treelistentry.hxx"
@@ -38,6 +40,7 @@
 #include <rtl/uri.hxx>
 
 #include <algorithm>
+#include <memory>
 
 #include "xmlfilterdialogstrings.hrc"
 #include "xmlfiltersettingsdialog.hxx"
@@ -55,6 +58,19 @@ using namespace com::sun::star::beans;
 using namespace com::sun::star::util;
 
 using ::rtl::Uri;
+
+namespace {
+
+std::unique_ptr<ResMgr> getXSLTDialogResMgr() {
+    return std::unique_ptr<ResMgr>(
+        ResMgr::CreateResMgr(
+            "xsltdlg", Application::GetSettings().GetUILanguageTag()));
+}
+
+}
+
+#define RESID(x) ResId(x, *getXSLTDialogResMgr().get())
+#define RESIDSTR(x) RESID(x).toString()
 
 XMLFilterSettingsDialog::XMLFilterSettingsDialog(vcl::Window* pParent,
     const css::uno::Reference<css::uno::XComponentContext>& rxContext,
@@ -79,7 +95,6 @@ XMLFilterSettingsDialog::XMLFilterSettingsDialog(vcl::Window* pParent,
     m_pFilterListBox->SetDeselectHdl( LINK( this, XMLFilterSettingsDialog, SelectionChangedHdl_Impl ) );
     m_pFilterListBox->SetDoubleClickHdl( LINK( this, XMLFilterSettingsDialog, DoubleClickHdl_Impl ) );
     m_pFilterListBox->SetAccessibleName(RESIDSTR(STR_XML_FILTER_LISTBOX));
-    m_pCtrlFilterList->SetAccessibleName(RESIDSTR(STR_XML_FILTER_LISTBOX));
     m_pFilterListBox->SetHelpId(m_pCtrlFilterList->GetHelpId());
 
     m_pPBNew->SetClickHdl(LINK( this, XMLFilterSettingsDialog, ClickHdl_Impl ) );
@@ -124,7 +139,7 @@ void XMLFilterSettingsDialog::dispose()
     ModelessDialog::dispose();
 }
 
-IMPL_LINK_TYPED(XMLFilterSettingsDialog, ClickHdl_Impl, Button *, pButton, void )
+IMPL_LINK(XMLFilterSettingsDialog, ClickHdl_Impl, Button *, pButton, void )
 {
     m_bIsClosable = false;
 
@@ -154,18 +169,18 @@ IMPL_LINK_TYPED(XMLFilterSettingsDialog, ClickHdl_Impl, Button *, pButton, void 
     }
     else if (m_pPBClose == pButton)
     {
-        onClose();
+        Close();
     }
 
     m_bIsClosable = true;
 }
 
-IMPL_LINK_NOARG_TYPED(XMLFilterSettingsDialog, SelectionChangedHdl_Impl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(XMLFilterSettingsDialog, SelectionChangedHdl_Impl, SvTreeListBox*, void)
 {
     updateStates();
 }
 
-IMPL_LINK_NOARG_TYPED(XMLFilterSettingsDialog, DoubleClickHdl_Impl, SvTreeListBox*, bool)
+IMPL_LINK_NOARG(XMLFilterSettingsDialog, DoubleClickHdl_Impl, SvTreeListBox*, bool)
 {
     onEdit();
     return false;
@@ -231,7 +246,7 @@ void XMLFilterSettingsDialog::onNew()
     aTempInfo.maDocumentService = "com.sun.star.text.TextDocument";
 
     // execute XML Filter Dialog
-    ScopedVclPtrInstance< XMLFilterTabDialog > aDlg( this, *getXSLTDialogResMgr(), mxContext, &aTempInfo );
+    ScopedVclPtrInstance< XMLFilterTabDialog > aDlg( this, *getXSLTDialogResMgr().get(), mxContext, &aTempInfo );
     if ( aDlg->Execute() == RET_OK )
     {
         // insert the new filter
@@ -250,7 +265,7 @@ void XMLFilterSettingsDialog::onEdit()
         filter_info_impl* pOldInfo = static_cast<filter_info_impl*>(pEntry->GetUserData());
 
         // execute XML Filter Dialog
-        ScopedVclPtrInstance< XMLFilterTabDialog > aDlg( this, *getXSLTDialogResMgr(), mxContext, pOldInfo );
+        ScopedVclPtrInstance< XMLFilterTabDialog > aDlg( this, *getXSLTDialogResMgr().get(), mxContext, pOldInfo );
         if ( aDlg->Execute() == RET_OK )
         {
             filter_info_impl* pNewInfo = aDlg->getNewFilterInfo();
@@ -467,7 +482,7 @@ bool XMLFilterSettingsDialog::insertOrEdit( filter_info_impl* pNewInfo, const fi
     }
 
     // check if we need to copy the template
-    if( !pFilterEntry->maImportTemplate.isEmpty() )
+    if( bOk && !pFilterEntry->maImportTemplate.isEmpty() )
     {
         if( !pFilterEntry->maImportTemplate.matchIgnoreAsciiCase( m_sTemplatePath ) )
         {
@@ -977,11 +992,6 @@ void XMLFilterSettingsDialog::onOpen()
     }
 }
 
-void XMLFilterSettingsDialog::onClose()
-{
-    Close();
-}
-
 bool XMLFilterSettingsDialog::Notify( NotifyEvent& rNEvt )
 {
     // Because of tab control first call the base class.
@@ -1212,28 +1222,29 @@ std::vector< application_info_impl* >& getApplicationInfos()
 
     if( aInfos.empty() )
     {
-        ResId aResId1( STR_APPL_NAME_WRITER, *getXSLTDialogResMgr() );
+        auto resmgr = getXSLTDialogResMgr();
+        ResId aResId1( STR_APPL_NAME_WRITER, *resmgr.get() );
         aInfos.push_back( new application_info_impl(
             "com.sun.star.text.TextDocument",
             aResId1,
             "com.sun.star.comp.Writer.XMLImporter",
             "com.sun.star.comp.Writer.XMLExporter" ) );
 
-        ResId aResId2( STR_APPL_NAME_CALC, *getXSLTDialogResMgr() );
+        ResId aResId2( STR_APPL_NAME_CALC, *resmgr.get() );
         aInfos.push_back( new application_info_impl(
             "com.sun.star.sheet.SpreadsheetDocument",
             aResId2,
             "com.sun.star.comp.Calc.XMLImporter",
             "com.sun.star.comp.Calc.XMLExporter" ) );
 
-        ResId aResId3( STR_APPL_NAME_IMPRESS, *getXSLTDialogResMgr() );
+        ResId aResId3( STR_APPL_NAME_IMPRESS, *resmgr.get() );
         aInfos.push_back( new application_info_impl(
             "com.sun.star.presentation.PresentationDocument",
             aResId3,
             "com.sun.star.comp.Impress.XMLImporter",
             "com.sun.star.comp.Impress.XMLExporter" ) );
 
-        ResId aResId4( STR_APPL_NAME_DRAW, *getXSLTDialogResMgr() );
+        ResId aResId4( STR_APPL_NAME_DRAW, *resmgr.get() );
         aInfos.push_back( new application_info_impl(
             "com.sun.star.drawing.DrawingDocument",
             aResId4,
@@ -1241,28 +1252,28 @@ std::vector< application_info_impl* >& getApplicationInfos()
             "com.sun.star.comp.Draw.XMLExporter" ) );
 
         // --- oasis file formats...
-        ResId aResId5( STR_APPL_NAME_OASIS_WRITER, *getXSLTDialogResMgr() );
+        ResId aResId5( STR_APPL_NAME_OASIS_WRITER, *resmgr.get() );
         aInfos.push_back( new application_info_impl(
             "com.sun.star.text.TextDocument",
             aResId5,
             "com.sun.star.comp.Writer.XMLOasisImporter",
             "com.sun.star.comp.Writer.XMLOasisExporter" ) );
 
-        ResId aResId6( STR_APPL_NAME_OASIS_CALC, *getXSLTDialogResMgr() );
+        ResId aResId6( STR_APPL_NAME_OASIS_CALC, *resmgr.get() );
         aInfos.push_back( new application_info_impl(
             "com.sun.star.sheet.SpreadsheetDocument",
             aResId6,
             "com.sun.star.comp.Calc.XMLOasisImporter",
             "com.sun.star.comp.Calc.XMLOasisExporter" ) );
 
-        ResId aResId7( STR_APPL_NAME_OASIS_IMPRESS, *getXSLTDialogResMgr() );
+        ResId aResId7( STR_APPL_NAME_OASIS_IMPRESS, *resmgr.get() );
         aInfos.push_back( new application_info_impl(
             "com.sun.star.presentation.PresentationDocument",
             aResId7,
             "com.sun.star.comp.Impress.XMLOasisImporter",
             "com.sun.star.comp.Impress.XMLOasisExporter" ) );
 
-        ResId aResId8( STR_APPL_NAME_OASIS_DRAW, *getXSLTDialogResMgr() );
+        ResId aResId8( STR_APPL_NAME_OASIS_DRAW, *resmgr.get() );
         aInfos.push_back( new application_info_impl(
             "com.sun.star.drawing.DrawingDocument",
             aResId8,
@@ -1354,13 +1365,13 @@ void SvxPathControl::Resize()
         m_pHeaderBar->SetItemSize(ITEMID_NAME, nFirstColumnWidth);
         m_pHeaderBar->SetItemSize(ITEMID_TYPE, 0xFFFF);
         long nTabs[] = {2, 0, nFirstColumnWidth};
-        m_pFocusCtrl->SetTabs(&nTabs[0], MAP_PIXEL);
+        m_pFocusCtrl->SetTabs(&nTabs[0], MapUnit::MapPixel);
     }
 }
 
 Size SvxPathControl::GetOptimalSize() const
 {
-    Size aDefSize(LogicToPixel(Size(150, 0), MapMode(MAP_APPFONT)));
+    Size aDefSize(LogicToPixel(Size(150, 0), MapMode(MapUnit::MapAppFont)));
     Size aOptSize(m_pVBox->GetOptimalSize());
     long nRowHeight(GetTextHeight());
     aOptSize.Height() = nRowHeight * 10;
@@ -1413,8 +1424,8 @@ XMLFilterListBox::XMLFilterListBox(Window* pParent, SvxPathControl* pPathControl
 
     static long nTabs[] = {2, 0, nTabSize };
 
-    SetSelectionMode( MULTIPLE_SELECTION );
-    SetTabs( &nTabs[0], MAP_PIXEL );
+    SetSelectionMode( SelectionMode::Multiple );
+    SetTabs( &nTabs[0], MapUnit::MapPixel );
     SetScrolledHdl( LINK( this, XMLFilterListBox, TabBoxScrollHdl_Impl ) );
     SetHighlightRange();
     Show();
@@ -1432,17 +1443,12 @@ void XMLFilterListBox::dispose()
     SvTabListBox::dispose();
 }
 
-void XMLFilterListBox::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
-{
-    SvTabListBox::Paint(rRenderContext, rRect);
-}
-
-IMPL_LINK_NOARG_TYPED( XMLFilterListBox, TabBoxScrollHdl_Impl, SvTreeListBox*, void )
+IMPL_LINK_NOARG( XMLFilterListBox, TabBoxScrollHdl_Impl, SvTreeListBox*, void )
 {
     m_pHeaderBar->SetOffset( -GetXOffset() );
 }
 
-IMPL_LINK_TYPED( XMLFilterListBox, HeaderEndDrag_Impl, HeaderBar*, pBar, void )
+IMPL_LINK( XMLFilterListBox, HeaderEndDrag_Impl, HeaderBar*, pBar, void )
 {
     if ( pBar && !pBar->GetCurItemId() )
         return;
@@ -1465,7 +1471,7 @@ IMPL_LINK_TYPED( XMLFilterListBox, HeaderEndDrag_Impl, HeaderBar*, pBar, void )
             long nW = m_pHeaderBar->GetItemSize(i);
             aSz.Width() =  nW + nTmpSz;
             nTmpSz += nW;
-            SetTab( i, PixelToLogic( aSz, MapMode(MAP_APPFONT) ).Width() );
+            SetTab( i, PixelToLogic( aSz, MapMode(MapUnit::MapAppFont) ).Width() );
         }
     }
 }
@@ -1594,21 +1600,26 @@ Sequence< OUString > filter_info_impl::getFilterUserData() const
 
 OUString string_encode( const OUString & rText )
 {
+    static sal_Bool const uricNoSlash[] = {
+        false, false, false, false, false, false, false, false,
+        false, false, false, false, false, false, false, false,
+        false, false, false, false, false, false, false, false,
+        false, false, false, false, false, false, false, false,
+        false,  true, false, false,  true, false,  true,  true,  //  !"#$%&'
+         true,  true,  true,  true, false,  true,  true, false,  // ()*+,-./
+         true,  true,  true,  true,  true,  true,  true,  true,  // 01234567
+         true,  true,  true, false, false,  true, false,  true,  // 89:;<=>?
+         true,  true,  true,  true,  true,  true,  true,  true,  // @ABCDEFG
+         true,  true,  true,  true,  true,  true,  true,  true,  // HIJKLMNO
+         true,  true,  true,  true,  true,  true,  true,  true,  // PQRSTUVW
+         true,  true,  true, false, false, false, false,  true,  // XYZ[\]^_
+        false,  true,  true,  true,  true,  true,  true,  true,  // `abcdefg
+         true,  true,  true,  true,  true,  true,  true,  true,  // hijklmno
+         true,  true,  true,  true,  true,  true,  true,  true,  // pqrstuvw
+         true,  true,  true, false, false, false,  true, false}; // xyz{|}~
 
-    static sal_Bool const aCharClass[] =
-    {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* UricNoSlash */
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, /* !"#$%&'()*+,-./*/
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, /*0123456789:;<=>?*/
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*@ABCDEFGHIJKLMNO*/
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, /*PQRSTUVWXYZ[\]^_*/
-        0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*`abcdefghijklmno*/
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0  /*pqrstuvwxyz{|}~ */
-    };
 
-
-    return Uri::encode( rText, aCharClass, rtl_UriEncodeCheckEscapes, RTL_TEXTENCODING_UTF8 );
+    return Uri::encode( rText, uricNoSlash, rtl_UriEncodeCheckEscapes, RTL_TEXTENCODING_UTF8 );
 }
 
 OUString string_decode( const OUString & rText )

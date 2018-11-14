@@ -30,7 +30,7 @@
 #include <unotools/streamwrap.hxx>
 #include <svx/xmlgrhlp.hxx>
 
-#include "../../ui/inc/DrawDocShell.hxx"
+#include "DrawDocShell.hxx"
 
 #include "sdxmlwrp.hxx"
 #include "strmname.h"
@@ -77,11 +77,6 @@ using namespace com::sun::star::document;
 using namespace comphelper;
 
 #define SD_XML_READERROR 1234
-
-char const sXML_metaStreamName[] = "meta.xml";
-char const sXML_styleStreamName[] = "styles.xml";
-char const sXML_contentStreamName[] = "content.xml";
-char const sXML_settingsStreamName[] = "settings.xml";
 
 char const sXML_export_impress_meta_oasis_service[] = "com.sun.star.comp.Impress.XMLOasisMetaExporter";
 char const sXML_export_impress_styles_oasis_service[] = "com.sun.star.comp.Impress.XMLOasisStylesExporter";
@@ -363,8 +358,8 @@ sal_Int32 ReadThroughComponent(
 
         Any aAny = xProps->getPropertyValue( "Encrypted" );
 
-        bool bEncrypted = aAny.getValueType() == cppu::UnoType<bool>::get() &&
-                *static_cast<sal_Bool const *>(aAny.getValue());
+        bool bEncrypted = false;
+        aAny >>= bEncrypted;
 
         Reference <io::XInputStream> xInputStream = xStream->getInputStream();
 
@@ -402,16 +397,16 @@ sal_Int32 ReadThroughComponent(
 //numbering level matches that of the outline level it previews
 void fixupOutlinePlaceholderNumberingDepths(SdDrawDocument* pDoc)
 {
-    for (sal_uInt16 i = 0; i < pDoc->GetMasterSdPageCount(PK_STANDARD); ++i)
+    for (sal_uInt16 i = 0; i < pDoc->GetMasterSdPageCount(PageKind::Standard); ++i)
     {
-        SdPage *pMasterPage = pDoc->GetMasterSdPage(i, PK_STANDARD);
+        SdPage *pMasterPage = pDoc->GetMasterSdPage(i, PageKind::Standard);
         SdrObject* pMasterOutline = pMasterPage->GetPresObj(PRESOBJ_OUTLINE);
         if (!pMasterOutline)
             continue;
         OutlinerParaObject* pOutlParaObj = pMasterOutline->GetOutlinerParaObject();
         if (!pOutlParaObj)
             continue;
-        ::sd::Outliner* pOutliner = pDoc->GetInternalOutliner();
+        SdOutliner* pOutliner = pDoc->GetInternalOutliner();
         pOutliner->Clear();
         pOutliner->SetText(*pOutlParaObj);
         bool bInconsistent = false;
@@ -558,12 +553,12 @@ bool SdXMLFilter::Import( ErrCode& nError )
     if( 0 == nRet )
     {
         pGraphicHelper = SvXMLGraphicHelper::Create( xStorage,
-                                                     GRAPHICHELPER_MODE_READ,
+                                                     SvXMLGraphicHelperMode::Read,
                                                      false );
         xGraphicResolver = pGraphicHelper;
         pObjectHelper = SvXMLEmbeddedObjectHelper::Create(
                                     xStorage, *pDoc->GetPersist(),
-                                    EMBEDDEDOBJECTHELPER_MODE_READ,
+                                    SvXMLEmbeddedObjectHelperMode::Read,
                                     false );
         xObjectResolver = pObjectHelper;
     }
@@ -886,10 +881,10 @@ bool SdXMLFilter::Export()
             // create helper for graphic and ole export if we have a storage
             if( xStorage.is() )
             {
-                pObjectHelper = SvXMLEmbeddedObjectHelper::Create( xStorage, *mrDocShell.GetDoc()->GetPersist(), EMBEDDEDOBJECTHELPER_MODE_WRITE, false );
+                pObjectHelper = SvXMLEmbeddedObjectHelper::Create( xStorage, *mrDocShell.GetDoc()->GetPersist(), SvXMLEmbeddedObjectHelperMode::Write, false );
                 xObjectResolver = pObjectHelper;
 
-                pGraphicHelper = SvXMLGraphicHelper::Create( xStorage, GRAPHICHELPER_MODE_WRITE, false );
+                pGraphicHelper = SvXMLGraphicHelper::Create( xStorage, SvXMLGraphicHelperMode::Write, false );
                 xGrfResolver = pGraphicHelper;
             }
 
@@ -918,18 +913,18 @@ bool SdXMLFilter::Export()
 
             XML_SERVICEMAP aServices[5]; sal_uInt16 i = 0;
             aServices[i  ].mpService = pServiceNames->mpStyles;
-            aServices[i++].mpStream  = sXML_styleStreamName;
+            aServices[i++].mpStream  = "styles.xml";
 
             aServices[i  ].mpService = pServiceNames->mpContent;
-            aServices[i++].mpStream  = sXML_contentStreamName;
+            aServices[i++].mpStream  = "content.xml";
 
             aServices[i  ].mpService = pServiceNames->mpSettings;
-            aServices[i++].mpStream  = sXML_settingsStreamName;
+            aServices[i++].mpStream  = "settings.xml";
 
             if( mrDocShell.GetCreateMode() != SfxObjectCreateMode::EMBEDDED )
             {
                 aServices[i  ].mpService = pServiceNames->mpMeta;
-                aServices[i++].mpStream  = sXML_metaStreamName;
+                aServices[i++].mpStream  = "meta.xml";
             };
 
             aServices[i].mpService = nullptr;

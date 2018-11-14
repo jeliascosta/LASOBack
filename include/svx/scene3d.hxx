@@ -90,7 +90,7 @@ protected:
 public:
     E3dScene();
     E3dScene(E3dDefaultAttributes& rDefault);
-    virtual ~E3dScene();
+    virtual ~E3dScene() override;
 
     virtual void SetBoundRectDirty() override;
 
@@ -101,7 +101,7 @@ public:
 
     sal_uInt32 RemapOrdNum(sal_uInt32 nOrdNum) const;
 
-    // Perspective: enum ProjectionType { PR_PARALLEL, PR_PERSPECTIVE }
+    // Perspective: enum ProjectionType { ProjectionType::Parallel, ProjectionType::Perspective }
     ProjectionType GetPerspective() const
         { return (ProjectionType) static_cast<const Svx3DPerspectiveItem&>(GetObjectItemSet().Get(SDRATTR_3DSCENE_PERSPECTIVE)).GetValue(); }
 

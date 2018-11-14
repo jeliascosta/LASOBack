@@ -35,13 +35,13 @@
 #include <com/sun/star/beans/XFastPropertySet.hpp>
 
 #include <unx/salunx.h>
-#include <unx/saldata.hxx>
 #include <unx/saldisp.hxx>
 #include <unx/salgdi.h>
 #include <unx/salbmp.h>
 #include <unx/salinst.h>
 #include <unx/x11/xlimits.hxx>
 
+#include <o3tl/safeint.hxx>
 #include <opengl/salbmp.hxx>
 #include <vcl/opengl/OpenGLHelper.hxx>
 
@@ -83,7 +83,7 @@ void X11SalBitmap::ImplCreateCache()
 
 void X11SalBitmap::ImplDestroyCache()
 {
-    DBG_ASSERT( mnCacheInstCount, "X11SalBitmap::ImplDestroyCache(): underflow" );
+    SAL_WARN_IF( !mnCacheInstCount, "vcl", "X11SalBitmap::ImplDestroyCache(): underflow" );
 
     if( mnCacheInstCount && !--mnCacheInstCount )
     {
@@ -194,7 +194,21 @@ BitmapBuffer* X11SalBitmap::ImplCreateDIB(
 
             pDIB->mnWidth = rSize.Width();
             pDIB->mnHeight = rSize.Height();
-            pDIB->mnScanlineSize = AlignedWidth4Bytes( pDIB->mnWidth * nBitCount );
+            long nScanlineBase;
+            bool bFail = o3tl::checked_multiply<long>(pDIB->mnWidth, nBitCount, nScanlineBase);
+            if (bFail)
+            {
+                SAL_WARN("vcl.gdi", "checked multiply failed");
+                delete pDIB;
+                return nullptr;
+            }
+            pDIB->mnScanlineSize = AlignedWidth4Bytes(nScanlineBase);
+            if (pDIB->mnScanlineSize < nScanlineBase/8)
+            {
+                SAL_WARN("vcl.gdi", "scanline calculation wraparound");
+                delete pDIB;
+                return nullptr;
+            }
             pDIB->mnBitCount = nBitCount;
 
             if( nColors )
@@ -1067,10 +1081,9 @@ struct ImplBmpObj
 {
     X11SalBitmap*   mpBmp;
     sal_uLong       mnMemSize;
-    sal_uLong       mnFlags;
 
-                ImplBmpObj( X11SalBitmap* pBmp, sal_uLong nMemSize, sal_uLong nFlags ) :
-                    mpBmp( pBmp ), mnMemSize( nMemSize ), mnFlags( nFlags ) {}
+                ImplBmpObj( X11SalBitmap* pBmp, sal_uLong nMemSize ) :
+                    mpBmp( pBmp ), mnMemSize( nMemSize ) {}
 };
 
 ImplSalBitmapCache::ImplSalBitmapCache() :
@@ -1104,10 +1117,9 @@ void ImplSalBitmapCache::ImplAdd( X11SalBitmap* pBmp, sal_uLong nMemSize )
     {
         mnTotalSize -= pObj->mnMemSize;
         pObj->mnMemSize = nMemSize;
-        pObj->mnFlags = 0;
     }
     else
-        maBmpList.push_back( new ImplBmpObj( pBmp, nMemSize, 0 ) );
+        maBmpList.push_back( new ImplBmpObj( pBmp, nMemSize ) );
 }
 
 void ImplSalBitmapCache::ImplRemove( X11SalBitmap* pBmp )

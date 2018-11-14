@@ -32,12 +32,10 @@ using namespace ::com::sun::star;
 namespace canvas
 {
     CachedPrimitiveBase::CachedPrimitiveBase( const rendering::ViewState&                   rUsedViewState,
-                                              const uno::Reference< rendering::XCanvas >&   rTarget,
-                                              bool                                          bFailForChangedViewTransform ) :
+                                              const uno::Reference< rendering::XCanvas >&   rTarget ) :
         CachedPrimitiveBase_Base( m_aMutex ),
         maUsedViewState( rUsedViewState ),
-        mxTarget( rTarget ),
-        mbFailForChangedViewTransform( bFailForChangedViewTransform )
+        mxTarget( rTarget )
     {
     }
 
@@ -65,8 +63,7 @@ namespace canvas
 
         const bool bSameViewTransforms( aUsedTransformation == aNewTransformation );
 
-        if( mbFailForChangedViewTransform &&
-            !bSameViewTransforms )
+        if( !bSameViewTransforms )
         {
             // differing transformations, don't try to draft the
             // output, just plain fail here.
@@ -91,9 +88,7 @@ namespace canvas
 
     uno::Sequence< OUString > SAL_CALL CachedPrimitiveBase::getSupportedServiceNames(  ) throw (uno::RuntimeException, std::exception)
     {
-        uno::Sequence< OUString > aRet { "com.sun.star.rendering.CachedBitmap" };
-
-        return aRet;
+        return { "com.sun.star.rendering.CachedBitmap" };
     }
 }
 

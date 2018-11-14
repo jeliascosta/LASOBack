@@ -52,25 +52,18 @@ ImpNodeCache::~ImpNodeCache()
     }
 }
 
-Octree::Octree( const BitmapReadAccess& rReadAcc, sal_uLong nColors ) :
-            nMax        ( nColors ),
-            nLeafCount  ( 0L ),
-            pTree       ( nullptr ),
-            pAcc        ( &rReadAcc )
+Octree::Octree(const BitmapReadAccess& rReadAcc, sal_uLong nColors)
+    : nMax(nColors)
+    , nLeafCount(0)
+    , nLevel(0)
+    , pTree(nullptr)
+    , pColor(nullptr)
+    , pAcc(&rReadAcc)
+    , nPalIndex(0)
 {
     pNodeCache = new ImpNodeCache( nColors );
     memset( pReduce, 0, ( OCTREE_BITS + 1 ) * sizeof( NODE* ) );
-    ImplCreateOctree();
-}
 
-Octree::~Octree()
-{
-    ImplDeleteOctree( &pTree );
-    delete pNodeCache;
-}
-
-void Octree::ImplCreateOctree()
-{
     if( !!*pAcc )
     {
         const long      nWidth = pAcc->Width();
@@ -83,7 +76,7 @@ void Octree::ImplCreateOctree()
                 for( long nX = 0; nX < nWidth; nX++ )
                 {
                     pColor = &(BitmapColor&) pAcc->GetPaletteColor( pAcc->GetPixelIndex( nY, nX ) );
-                    nLevel = 0L;
+                    nLevel = 0;
                     ImplAdd( &pTree );
 
                     while( nLeafCount > nMax )
@@ -102,7 +95,7 @@ void Octree::ImplCreateOctree()
                 for( long nX = 0; nX < nWidth; nX++ )
                 {
                     aColor = pAcc->GetPixel( nY, nX );
-                    nLevel = 0L;
+                    nLevel = 0;
                     ImplAdd( &pTree );
 
                     while( nLeafCount > nMax )
@@ -111,6 +104,12 @@ void Octree::ImplCreateOctree()
             }
         }
     }
+}
+
+Octree::~Octree()
+{
+    ImplDeleteOctree( &pTree );
+    delete pNodeCache;
 }
 
 void Octree::ImplDeleteOctree( NODE** ppNode )
@@ -166,10 +165,10 @@ void Octree::ImplReduce()
 {
     sal_uLong   i;
     NODE*       pNode;
-    sal_uLong   nRedSum = 0L;
-    sal_uLong   nGreenSum = 0L;
-    sal_uLong   nBlueSum = 0L;
-    sal_uLong   nChildren = 0L;
+    sal_uLong   nRedSum = 0;
+    sal_uLong   nGreenSum = 0;
+    sal_uLong   nBlueSum = 0;
+    sal_uLong   nChildren = 0;
 
     for ( i = OCTREE_BITS - 1; i && !pReduce[i]; i-- ) {}
 
@@ -235,11 +234,11 @@ InverseColorMap::InverseColorMap( const BitmapPalette& rPal ) :
             nBits( 8 - OCTREE_BITS )
 {
     const int     nColorMax = 1 << OCTREE_BITS;
-    const unsigned long xsqr = 1L << ( nBits << 1 );
+    const unsigned long xsqr = 1 << ( nBits << 1 );
     const unsigned long xsqr2 = xsqr << 1;
     const int     nColors = rPal.GetEntryCount();
-    const long      x = 1L << nBits;
-    const long      x2 = x >> 1L;
+    const long      x = 1 << nBits;
+    const long      x2 = x >> 1;
     sal_uLong           r, g, b;
     long            rxx, gxx, bxx;
 
@@ -257,9 +256,9 @@ InverseColorMap::InverseColorMap( const BitmapPalette& rPal ) :
         long bdist = cBlue - x2;
         rdist = rdist*rdist + gdist*gdist + bdist*bdist;
 
-        const long crinc = ( xsqr - ( cRed << nBits ) ) << 1L;
-        const long cginc = ( xsqr - ( cGreen << nBits ) ) << 1L;
-        const long cbinc = ( xsqr - ( cBlue << nBits ) ) << 1L;
+        const long crinc = ( xsqr - ( cRed << nBits ) ) << 1;
+        const long cginc = ( xsqr - ( cGreen << nBits ) ) << 1;
+        const long cbinc = ( xsqr - ( cBlue << nBits ) ) << 1;
 
         sal_uLong* cdp = reinterpret_cast<sal_uLong*>(pBuffer);
         sal_uInt8* crgbp = pMap;

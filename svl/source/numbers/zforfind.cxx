@@ -127,7 +127,6 @@ void ImpSvNumberInputScan::Reset()
     nStringScanSign = 0;
     nMatchedAllStrings = nMatchedVirgin;
     nMayBeIso8601 = 0;
-    nTimezonePos = 0;
     nMayBeMonthDate = 0;
     nAcceptedDatePattern = -2;
     nDatePatternStart = 0;
@@ -617,11 +616,6 @@ short ImpSvNumberInputScan::GetLogical( const OUString& rString )
  */
 short ImpSvNumberInputScan::GetMonth( const OUString& rString, sal_Int32& nPos )
 {
-    // #102136# The correct English form of month September abbreviated is
-    // SEPT, but almost every data contains SEP instead.
-    static const char aSeptCorrect[] = "SEPT";
-    static const char aSepShortened[] = "SEP";
-
     short res = 0; // no month found
 
     if (rString.getLength() > nPos) // only if needed
@@ -669,10 +663,11 @@ short ImpSvNumberInputScan::GetMonth( const OUString& rString, sal_Int32& nPos )
                 res = sal::static_int_cast< short >(-(i+1)); // negative
                 break;  // for
             }
-            else if ( i == 8 && pUpperAbbrevMonthText[i] == aSeptCorrect &&
-                    StringContainsWord( aSepShortened, rString, nPos ) )
-            {   // #102136# SEPT/SEP
-                nPos = nPos + strlen(aSepShortened);
+            else if ( i == 8 && pUpperAbbrevMonthText[i] == "SEPT" &&
+                    StringContainsWord( "SEP", rString, nPos ) )
+            {   // #102136# The correct English form of month September abbreviated is
+                // SEPT, but almost every data contains SEP instead.
+                nPos = nPos + 3;
                 res = sal::static_int_cast< short >(-(i+1)); // negative
                 break;  // for
             }
@@ -918,23 +913,6 @@ bool ImpSvNumberInputScan::GetTimeRef( double& fOutNumber,
     sal_uInt16 nSecond = 0;
     double fSecond100 = 0.0;
     sal_uInt16 nStartIndex = nIndex;
-
-    if (nTimezonePos)
-    {
-        // find first timezone number index and adjust count
-        for (sal_uInt16 j=0; j<nAnzNums; ++j)
-        {
-            if (nNums[j] == nTimezonePos)
-            {
-                // nAnz is not total count, but count of time relevant strings.
-                if (nStartIndex < j && j - nStartIndex < nAnz)
-                {
-                    nAnz = j - nStartIndex;
-                }
-                break;  // for
-            }
-        }
-    }
 
     if (nDecPos == 2 && (nAnz == 3 || nAnz == 2)) // 20:45.5 or 45.5
     {
@@ -2933,7 +2911,7 @@ bool ImpSvNumberInputScan::ScanStringNumFor( const OUString& rString,       // S
              !bFirst && (nSign < 0) && pFormat->IsSecondSubformatRealNegative() )
         {
             // simply negated twice? --1
-            aString = comphelper::string::remove(aString, ' ');
+            aString = aString.replaceAll(" ", "");
             if ( (aString.getLength() == 1) && (aString[0] == '-') )
             {
                 bFound = true;
@@ -3424,7 +3402,7 @@ void ImpSvNumberInputScan::InvalidateDateAcceptancePatterns()
 
 void ImpSvNumberInputScan::ChangeNullDate( const sal_uInt16 Day,
                                            const sal_uInt16 Month,
-                                           const sal_uInt16 Year )
+                                           const sal_Int16 Year )
 {
     if ( pNullDate )
     {

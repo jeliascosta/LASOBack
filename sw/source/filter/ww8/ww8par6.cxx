@@ -599,7 +599,7 @@ void wwSectionManager::SetPageULSpaceItems(SwFrameFormat &rFormat,
             else
             {
                 // #i48832# - set correct spacing between header and body.
-                const SwTwips nHdLowerSpace( std::abs(rSection.maSep.dyaTop) - rData.nSwUp - rData.nSwHLo );
+                const sal_Int32 nHdLowerSpace( std::abs(rSection.maSep.dyaTop) - rData.nSwUp - rData.nSwHLo );
                 pHdFormat->SetFormatAttr(SwFormatFrameSize(ATT_FIX_SIZE, 0, rData.nSwHLo + nHdLowerSpace));
                 aHdUL.SetLower( static_cast< sal_uInt16 >(nHdLowerSpace) );
                 pHdFormat->SetFormatAttr(SwHeaderAndFooterEatSpacingItem(
@@ -758,7 +758,6 @@ wwSection::wwSection(const SwPosition &rPos) : maStart(rPos.nNode)
     , mpSection(nullptr)
     , mpPage(nullptr)
     , meDir(FRMDIR_HORI_LEFT_TOP)
-    , mLinkId(0)
     , nPgWidth(SvxPaperInfo::GetPaperSize(PAPER_A4).Width())
     , nPgLeft(MM_250)
     , nPgRight(MM_250)
@@ -807,7 +806,7 @@ void wwSectionManager::CreateSep(const long nTextPos, bool /*bMustHaveBreak*/)
     {
         bool insert = true;
         SwPaM pam( *mrReader.m_pLastAnchorPos );
-        if( pam.Move(fnMoveBackward, fnGoNode))
+        if( pam.Move(fnMoveBackward, GoInNode))
             if( SwTextNode* txtNode = pam.GetPoint()->nNode.GetNode().GetTextNode())
                 if( txtNode->Len() == 0 )
                     insert = false;
@@ -842,7 +841,7 @@ void wwSectionManager::CreateSep(const long nTextPos, bool /*bMustHaveBreak*/)
         aLastSection = maSegments.back();
 
     //Here
-    sal_uInt16 nLIdx = ( ( mrReader.m_pWwFib->lid & 0xff ) == 0x9 ) ? 1 : 0;
+    sal_uInt16 nLIdx = ( ( mrReader.m_pWwFib->m_lid & 0xff ) == 0x9 ) ? 1 : 0;
 
     //BEGIN read section values
     wwSection aNewSection(*mrReader.m_pPaM->GetPoint());
@@ -1022,7 +1021,7 @@ void wwSectionManager::CreateSep(const long nTextPos, bool /*bMustHaveBreak*/)
 
     // 2pages in 1sheet hackery ?
     // #i31806# but only swap if 2page in 1sheet is enabled.
-    // its not clear if dmOrientPage is the correct member to
+    // it's not clear if dmOrientPage is the correct member to
     // decide on this.
     if(mrReader.m_pWDop->doptypography.f2on1 &&
             aNewSection.maSep.dmOrientPage == 2)
@@ -1327,7 +1326,7 @@ static sal_uInt8 lcl_ReadBorders(bool bVer67, WW8_BRCVer9* brc, WW8PLCFx_Cp_FKP*
 
 void GetLineIndex(SvxBoxItem &rBox, short nLineThickness, short nSpace,
     sal_uInt32 cv, short nIdx, SvxBoxItemLine nOOIndex, sal_uInt16 nWWIndex,
-    short *pSize=nullptr)
+    short *pSize)
 {
     // LO cannot handle outset/inset (new in WW9 BRC) so fall back same as WW8
     if ( nIdx == 0x1A || nIdx == 0x1B )
@@ -1621,7 +1620,7 @@ void WW8FlyPara::ReadFull(sal_uInt8 nOrigSp29, SwWW8ImplReader* pIo)
     do{             // block for quick exit
         if( nSp45 != 0 /* || nSp28 != 0 */ )
             break;                      // bGrafApo only automatic for height
-        if( pIo->m_pWwFib->fComplex )
+        if( pIo->m_pWwFib->m_fComplex )
             break;                      // (*pPap)++ does not work for FastSave
                                         // -> for FastSave, no test for graphics APO
         SvStream* pIoStrm = pIo->m_pStrm;
@@ -1656,7 +1655,7 @@ void WW8FlyPara::ReadFull(sal_uInt8 nOrigSp29, SwWW8ImplReader* pIo)
             WW8FlyPara *pNowStyleApo=nullptr;
             sal_uInt16 nColl = pPap->GetIstd();
             ww::sti eSti = eVer < ww::eWW6 ? ww::GetCanonicalStiFromStc( static_cast< sal_uInt8 >(nColl) ) : static_cast<ww::sti>(nColl);
-            while (eSti != ww::stiNil && nColl < pIo->m_vColl.size() && nullptr == (pNowStyleApo = pIo->m_vColl[nColl].m_pWWFly))
+            while (eSti != ww::stiNil && nColl < pIo->m_vColl.size() && nullptr == (pNowStyleApo = pIo->m_vColl[nColl].m_xWWFly.get()))
             {
                 nColl = pIo->m_vColl[nColl].m_nBase;
                 eSti = eVer < ww::eWW6 ? ww::GetCanonicalStiFromStc( static_cast< sal_uInt8 >(nColl) ) : static_cast<ww::sti>(nColl);
@@ -2149,12 +2148,8 @@ WW8DupProperties::WW8DupProperties(SwDoc &rDoc, SwWW8FltControlStack *pStack)
 
 void WW8DupProperties::Insert(const SwPosition &rPos)
 {
-    const SfxItemSet *pSet=&aChrSet;
-    for(int i=0;i<2;i++)
+    for (const SfxItemSet* pSet : {&aChrSet, &aParSet})
     {
-        if (i==1)
-            pSet = &aParSet;
-
         if( pSet->Count() )
         {
             SfxItemIter aIter( *pSet );
@@ -2312,9 +2307,7 @@ bool SwWW8ImplReader::IsDropCap()
     return false;
 }
 
-bool SwWW8ImplReader::StartApo(const ApoTestResults &rApo,
-    const WW8_TablePos *pTabPos,
-    SvxULSpaceItem* pULSpaceItem)
+bool SwWW8ImplReader::StartApo(const ApoTestResults &rApo, const WW8_TablePos *pTabPos)
 {
     if (nullptr == (m_pWFlyPara = ConstructApo(rApo, pTabPos)))
         return false;
@@ -2349,22 +2342,6 @@ bool SwWW8ImplReader::StartApo(const ApoTestResults &rApo,
         if (pTabPos && pTabPos->bNoFly)
         {
             m_pSFlyPara->pFlyFormat = nullptr;
-            if (pULSpaceItem)
-            {
-                // Word positioned tables can have a position (like a
-                // fly-frame), but they also support flowing across multiple
-                // pages. If we decide to import this as a normal table (so it
-                // can flow across multiple pages), then turn the vertical
-                // orientation position of the fly into a table upper margin.
-                const SfxPoolItem* pItem = nullptr;
-                if (aFlySet.HasItem(RES_VERT_ORIENT, &pItem))
-                {
-                    const SwFormatVertOrient* pOrient = static_cast<const SwFormatVertOrient*>(pItem);
-                    SwTwips nPos = pOrient->GetPos();
-                    if( 0 < nPos && nPos <= SAL_MAX_UINT16 )
-                        pULSpaceItem->SetUpper( sal_uInt16(nPos) );
-                }
-            }
         }
         else
         {
@@ -2414,7 +2391,7 @@ bool SwWW8ImplReader::StartApo(const ApoTestResults &rApo,
 void wwSectionManager::JoinNode(const SwPosition &rPos, const SwNode &rNode)
 {
     if ((!maSegments.empty()) && (maSegments.back().maStart == rPos.nNode))
-        maSegments.back().maStart = SwNodeIndex(rNode);
+        maSegments.back().maStart.Assign(rNode);
 }
 
 bool SwWW8ImplReader::JoinNode(SwPaM &rPam, bool bStealAttr)
@@ -2559,7 +2536,7 @@ void SwWW8ImplReader::StopApo()
                 SwFormatFrameSize( m_pSFlyPara->eHeightFix, nW, m_pSFlyPara->nHeight ) );
         }
         /*
-        Word set *no* width meaning its an automatic width. The
+        Word set *no* width meaning it's an automatic width. The
         SwFlyPara reader will have already set a fallback width of the
         printable regions width, so we should reuse it. Despite the related
         problems with layout addressed with a hack in WW8FlyPara's constructor
@@ -2947,6 +2924,83 @@ void SwWW8ImplReader::Read_Bidi(sal_uInt16, const sal_uInt8* pData, short nLen)
         m_bBidi = true;
         sal_uInt8 nBidi = *pData;
         NewAttr( SfxInt16Item( RES_CHRATR_BIDIRTL, (nBidi!=0)? 1 : 0 ) );
+    }
+}
+
+/*
+ tdf#91916, #i8726, #i42685# there is an ambiguity
+ around certain properties as to what they mean,
+ which appears to be a problem with different versions
+ of the file format where properties conflict, i.e.
+
+ooo40606-2.doc, magic is a699
+    : 0x6f 0x4 0x0 0x71 0x4 0x0
+ooo40635-1.doc, magic is a699
+    : 0x6f 0x4 0x0 0x71 0x4 0x0
+ooo31093/SIMPCHIN.doc, magic is a699
+    : 0x6f 0x2 0x0 0x70 0x0 0x0 0x71 0x2 0x0
+    : 0x6f 0x5 0x0 0x70 0x5 0x0
+ooo31093/TRADCHIN.doc, magic is a699
+    : 0x6f 0x1 0x0 0x70 0x0 0x0 0x71 0x1 0x0
+ooo31093/JAPANESE.doc, magic is a697
+    : 0x6f 0x2 0x0 0x70 0x0 0x0 0x71 0x2 0x0
+ooo31093/KOREAN.doc, magic is a698
+    : 0x6f 0x2 0x0 0x70 0x0 0x0 0x71 0x2 0x0
+ooo31093-1.doc, magic is a698
+    : 0x6f 0x5 0x0 0x70 0x5 0x0
+ooo31093-1.doc, magic is a698
+    : 0x6f 0x5 0x0 0x70 0x5 0x0
+
+meanwhile...
+
+ooo27954-1.doc, magic is a5dc
+    : 0x6f 0x1 0x81 0x71 0x2 0x4 0x0 0x74 0x2 0x20 0x0
+
+ooo33251-1.doc, magic is a5dc
+    : 0x6f 0x1 0x81 0x71 0x2 0x3 0x0 0x74 0x2 0x1c 0x0
+
+---
+
+So we have the same sprm values, but different payloads, where
+the a5dc versions appear to use a len argument, followed by len
+bytes, while the a698<->a699 versions use a 2byte argument
+
+commit c2213db9ed70c1fd546482d22e36e4029c10aa45
+
+    INTEGRATION: CWS tl28 (1.169.24); FILE MERGED
+    2006/10/25 13:40:41 tl 1.169.24.2: RESYNC: (1.169-1.170); FILE MERGED
+    2006/09/20 11:55:50 hbrinkm 1.169.24.1: #i42685# applied patch
+
+changed 0x6f and 0x70 from Read_BoldBiDiUsw to Read_FontCode for all versions.
+
+In the Word for Window 2 spec we have...
+ 78   //sprmCMajority
+ 80   //sprmCFBoldBi
+ 81   //sprmCFItalicBi
+ 82   //sprmCFtcBi
+ 83   //sprmClidBi
+ 84   //sprmCIcoBi
+ 85   //sprmCHpsBi
+as see in GetWW2SprmDispatcher, different numbers, but the sequence starts with
+the same sprmCMajority as appears before 0x6f in word 6/95
+
+I think the easiest explanation is that the CJK Word for Window 95, or whatever
+the product was went rogue, and did their own things with at least first three
+slots after sprmCMajority to do a different thing. I have no reason to think Tono
+was wrong with what they do in the a698<->a699 versions versions, but with magic
+a5dc they probably did mean sprmCFBoldBi, sprmCFItalicBi cause they have that 0x81
+pattern which has significance for those types of properties.
+*/
+void SwWW8ImplReader::Read_AmbiguousSPRM(sal_uInt16 nId, const sal_uInt8* pData,
+    short nLen)
+{
+    if (m_pWwFib->m_wIdent >= 0xa697 && m_pWwFib->m_wIdent <= 0xa699)
+    {
+        Read_FontCode(nId, pData, nLen);
+    }
+    else
+    {
+        Read_BoldBiDiUsw(nId, pData, nLen);
     }
 }
 
@@ -3475,11 +3529,6 @@ bool SwWW8ImplReader::GetFontParams( sal_uInt16 nFCode, FontFamily& reFamily,
         else
             reCharSet = rtl_getTextEncodingFromWindowsCharset( pF->chs );
     }
-
-    // Make sure charset is not set in case of Symbol, otherwise in case a
-    // character is missing in our OpenSymbol, the character won't be replaced.
-    if (reCharSet == RTL_TEXTENCODING_SYMBOL && rName == "Symbol")
-        reCharSet = RTL_TEXTENCODING_DONTKNOW;
 
     // make sure Font Family Code is set correctly
     // at least for the most important fonts
@@ -4106,14 +4155,14 @@ void SwWW8ImplReader::Read_LineSpace( sal_uInt16, const sal_uInt8* pData, short 
     short nSpace = SVBT16ToShort( pData );
     short nMulti = (eVersion <= ww::eWW2) ? 1 : SVBT16ToShort( pData + 2 );
 
-    SvxLineSpace eLnSpc;
+    SvxLineSpaceRule eLnSpc;
     if( 0 > nSpace )
     {
         nSpace = -nSpace;
-        eLnSpc = SVX_LINE_SPACE_FIX;
+        eLnSpc = SvxLineSpaceRule::Fix;
     }
     else
-        eLnSpc = SVX_LINE_SPACE_MIN;
+        eLnSpc = SvxLineSpaceRule::Min;
 
     // WW has implicit additional paragraph spacing depending on
     // the line spacing. It is, for "exactly", 0.8 * line spacing "before"
@@ -4145,7 +4194,7 @@ void SwWW8ImplReader::Read_LineSpace( sal_uInt16, const sal_uInt8* pData, short 
         // for negative space, the distance is "exact", otherwise "at least"
         nSpaceTw = (sal_uInt16)nSpace;
         aLSpc.SetLineHeight( nSpaceTw );
-        aLSpc.GetLineSpaceRule() = eLnSpc;
+        aLSpc.SetLineSpaceRule( eLnSpc);
     }
     NewAttr( aLSpc );
     if( m_pSFlyPara )
@@ -4279,14 +4328,14 @@ void SwWW8ImplReader::Read_IdctHint( sal_uInt16, const sal_uInt8* pData, short n
     // this property determines what font and language the character will use.
     // when this value is 0, text properties bias towards non-far east properties.
     // when this value is 1, text properties bias towards far east properties.
+    // when this value is 2, text properties bias towards complex properties.
     if (nLen < 1)  //Property end
     {
         m_pCtrlStck->SetAttr(*m_pPaM->GetPoint(),RES_CHRATR_IDCTHINT);
     }
     else    //Property start
     {
-        sal_uInt8 nVal = *pData;
-        NewAttr( SfxInt16Item( RES_CHRATR_IDCTHINT, (nVal!=0)? 1 : 0 ) );
+        NewAttr(SfxInt16Item(RES_CHRATR_IDCTHINT, *pData));
     }
 }
 
@@ -4500,13 +4549,13 @@ void SwWW8ImplReader::Read_Relief( sal_uInt16 nId, const sal_uInt8* pData, short
 
             const SvxCharReliefItem* pOld = static_cast<const SvxCharReliefItem*>(
                                             GetFormatAttr( RES_CHRATR_RELIEF ));
-            FontRelief nNewValue = 0x854 == nId ? RELIEF_ENGRAVED
-                                        : ( 0x858 == nId ? RELIEF_EMBOSSED
-                                                         : RELIEF_NONE );
+            FontRelief nNewValue = 0x854 == nId ? FontRelief::Engraved
+                                        : ( 0x858 == nId ? FontRelief::Embossed
+                                                         : FontRelief::NONE );
             if( pOld->GetValue() == nNewValue )
             {
-                if( RELIEF_NONE != nNewValue )
-                    nNewValue = RELIEF_NONE;
+                if( FontRelief::NONE != nNewValue )
+                    nNewValue = FontRelief::NONE;
             }
             NewAttr( SvxCharReliefItem( nNewValue, RES_CHRATR_RELIEF ));
         }
@@ -4930,29 +4979,30 @@ void SwWW8ImplReader::Read_AlignFont( sal_uInt16, const sal_uInt8* pData, short 
     else
     {
         sal_uInt16 nVal = SVBT16ToShort( pData );
+        SvxParaVertAlignItem::Align nAlign;
         switch (nVal)
         {
             case 0:
-                nVal = SvxParaVertAlignItem::TOP;
+                nAlign = SvxParaVertAlignItem::Align::Top;
                 break;
             case 1:
-                nVal = SvxParaVertAlignItem::CENTER;
+                nAlign = SvxParaVertAlignItem::Align::Center;
                 break;
             case 2:
-                nVal = SvxParaVertAlignItem::BASELINE;
+                nAlign = SvxParaVertAlignItem::Align::Baseline;
                 break;
             case 3:
-                nVal = SvxParaVertAlignItem::BOTTOM;
+                nAlign = SvxParaVertAlignItem::Align::Bottom;
                 break;
             case 4:
-                nVal = SvxParaVertAlignItem::AUTOMATIC;
+                nAlign = SvxParaVertAlignItem::Align::Automatic;
                 break;
             default:
-                nVal = SvxParaVertAlignItem::AUTOMATIC;
+                nAlign = SvxParaVertAlignItem::Align::Automatic;
                 OSL_ENSURE(false,"Unknown paragraph vertical align");
                 break;
         }
-        NewAttr( SvxParaVertAlignItem( nVal, RES_PARATR_VERTALIGN ) );
+        NewAttr( SvxParaVertAlignItem( nAlign, RES_PARATR_VERTALIGN ) );
     }
 }
 
@@ -4978,7 +5028,7 @@ void SwWW8ImplReader::Read_BreakBefore( sal_uInt16, const sal_uInt8* pData, shor
         m_pCtrlStck->SetAttr( *m_pPaM->GetPoint(), RES_BREAK );
     else
         NewAttr( SvxFormatBreakItem(
-                ( *pData & 1 ) ? SVX_BREAK_PAGE_BEFORE : SVX_BREAK_NONE, RES_BREAK ) );
+                ( *pData & 1 ) ? SvxBreak::PageBefore : SvxBreak::NONE, RES_BREAK ) );
 }
 
 void SwWW8ImplReader::Read_ApoPPC( sal_uInt16, const sal_uInt8* pData, short )
@@ -4986,13 +5036,12 @@ void SwWW8ImplReader::Read_ApoPPC( sal_uInt16, const sal_uInt8* pData, short )
     if (m_pAktColl && m_nAktColl < m_vColl.size()) // only for Styledef, sonst anders geloest
     {
         SwWW8StyInf& rSI = m_vColl[m_nAktColl];
-        WW8FlyPara* pFly = rSI.m_pWWFly ? rSI.m_pWWFly : new WW8FlyPara(m_bVer67);
-        m_vColl[m_nAktColl].m_pWWFly = pFly;
-        pFly->Read(*pData, m_pStyles);
-        if (pFly->IsEmpty())
+        if (!rSI.m_xWWFly)
+            rSI.m_xWWFly.reset(new WW8FlyPara(m_bVer67));
+        rSI.m_xWWFly->Read(*pData, m_pStyles);
+        if (rSI.m_xWWFly->IsEmpty())
         {
-            delete m_vColl[m_nAktColl].m_pWWFly;
-            m_vColl[m_nAktColl].m_pWWFly = nullptr;
+            m_vColl[m_nAktColl].m_xWWFly.reset();
         }
     }
 }
@@ -5448,12 +5497,12 @@ const wwSprmDispatcher *GetWW6SprmDispatcher()
                                                      //percentage to grow hps short
         {110, nullptr},                                    //"sprmCCondHyhen", chp.ysri
                                                      //ysri short
-        {111, &SwWW8ImplReader::Read_FontCode},      //ww7 font
-        {112, &SwWW8ImplReader::Read_FontCode},      //ww7 CJK font
-        {113, &SwWW8ImplReader::Read_FontCode},      //ww7 rtl font
-        {114, &SwWW8ImplReader::Read_Language},      //ww7 lid
-        {115, &SwWW8ImplReader::Read_TextColor},      //ww7 rtl colour ?
-        {116, &SwWW8ImplReader::Read_FontSize},
+        {111, &SwWW8ImplReader::Read_AmbiguousSPRM}, //sprmCFBoldBi or font code
+        {112, &SwWW8ImplReader::Read_AmbiguousSPRM}, //sprmCFItalicBi or font code
+        {113, &SwWW8ImplReader::Read_FontCode},      //sprmCFtcBi
+        {114, &SwWW8ImplReader::Read_Language},      //sprmClidBi
+        {115, &SwWW8ImplReader::Read_TextColor},     //sprmCIcoBi
+        {116, &SwWW8ImplReader::Read_FontSize},      //sprmCHpsBi
         {117, &SwWW8ImplReader::Read_Special},       //"sprmCFSpec", chp.fSpec 1
                                                      //or 0 bit
         {118, &SwWW8ImplReader::Read_Obj},           //"sprmCFObj", chp.fObj 1 or 0
@@ -6090,12 +6139,12 @@ const wwSprmDispatcher *GetWW8SprmDispatcher()
         {0x9602, nullptr},                                 //"sprmTDxaGapHalf"
                                                      //tap.dxaGapHalf,
                                                      //tap.rgdxaCenter; dxa; word;
-        {0x3403, nullptr},                                 //"sprmTFCantSplit"
-                                                     //tap.fCantSplit;1 or 0;byte;
+        {0x3403, nullptr},                                 //"sprmTFCantSplit90"
+                                                     //tap.fCantSplit90;1 or 0;byte;
         {0x3404, nullptr},                                 //"sprmTTableHeader"
                                                      //tap.fTableHeader;1 or 0;byte;
-        {0x3466, nullptr},                                 //"sprmTFCantSplit90"
-                                                     //tap.fCantSplit90;1 or 0;byte;
+        {0x3466, nullptr},                                 //"sprmTFCantSplit"
+                                                     //tap.fCantSplit;1 or 0;byte;
         {0xD605, nullptr},                                 //"sprmTTableBorders80"
                                                      //tap.rgbrcTable;complex;
                                                      //24 bytes;
@@ -6252,7 +6301,7 @@ void SwWW8ImplReader::EndSprm( sal_uInt16 nId )
         (this->*rSprm.pReadFnc)( nId, nullptr, -1 );
 }
 
-short SwWW8ImplReader::ImportSprm(const sal_uInt8* pPos,sal_uInt16 nId)
+short SwWW8ImplReader::ImportSprm(const sal_uInt8* pPos, sal_Int32 nMemLen, sal_uInt16 nId)
 {
     if (!nId)
         nId = m_pSprmParser->GetSprmId(pPos);
@@ -6262,7 +6311,7 @@ short SwWW8ImplReader::ImportSprm(const sal_uInt8* pPos,sal_uInt16 nId)
     const SprmReadInfo& rSprm = GetSprmReadInfo(nId);
 
     sal_uInt16 nFixedLen = m_pSprmParser->DistanceToData(nId);
-    sal_uInt16 nL = m_pSprmParser->GetSprmSize(nId, pPos);
+    sal_uInt16 nL = m_pSprmParser->GetSprmSize(nId, pPos, nMemLen);
 
     if (rSprm.pReadFnc)
         (this->*rSprm.pReadFnc)(nId, pPos + nFixedLen, nL - nFixedLen);

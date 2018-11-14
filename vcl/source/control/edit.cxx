@@ -27,6 +27,7 @@
 #include <vcl/layout.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
+#include <vcl/uitest/uiobject.hxx>
 
 #include <window.h>
 #include <svdata.hxx>
@@ -168,19 +169,6 @@ Edit::Edit( vcl::Window* pParent, WinBits nStyle )
     ImplInit( pParent, nStyle );
 }
 
-Edit::Edit( vcl::Window* pParent, const ResId& rResId )
-    : Control( WINDOW_EDIT )
-{
-    rResId.SetRT( RSC_EDIT );
-    WinBits nStyle = ImplInitRes( rResId );
-    ImplInitEditData();
-    ImplInit( pParent, nStyle );
-    ImplLoadRes( rResId );
-
-    if ( !(nStyle & WB_HIDE) )
-        Show();
-}
-
 void Edit::SetWidthInChars(sal_Int32 nWidthInChars)
 {
     if (mnWidthInChars != nWidthInChars)
@@ -295,7 +283,6 @@ void Edit::ImplInitEditData()
     mnMaxTextLen            = EDIT_NOLIMIT;
     mnWidthInChars          = -1;
     mnMaxWidthChars         = -1;
-    meAutocompleteAction    = AutocompleteAction::KeyInput;
     mbModified              = false;
     mbInternModified        = false;
     mbReadOnly              = false;
@@ -460,7 +447,7 @@ OUString Edit::ImplGetText() const
         if ( mcEchoChar )
             cEchoChar = mcEchoChar;
         else
-            cEchoChar = '*';
+            cEchoChar = sal_Unicode(0x2022);
         OUStringBuffer aText;
         comphelper::string::padToLength(aText, maText.getLength(), cEchoChar);
         return aText.makeStringAndClear();
@@ -768,16 +755,15 @@ void Edit::ImplDelete( const Selection& rSelection, sal_uInt8 nDirection, sal_uI
     mbInternModified = true;
 }
 
-OUString Edit::ImplGetValidString( const OUString& rString ) const
+OUString Edit::ImplGetValidString( const OUString& rString )
 {
     OUString aValidString( rString );
-    aValidString = comphelper::string::remove(aValidString, '\n');
-    aValidString = comphelper::string::remove(aValidString, '\r');
+    aValidString = aValidString.replaceAll("\n", "").replaceAll("\r", "");
     aValidString = aValidString.replace('\t', ' ');
     return aValidString;
 }
 
-uno::Reference < i18n::XBreakIterator > Edit::ImplGetBreakIterator() const
+uno::Reference < i18n::XBreakIterator > Edit::ImplGetBreakIterator()
 {
     //!! since we don't want to become incompatible in the next minor update
     //!! where this code will get integrated into, xISC will be a local
@@ -786,7 +772,7 @@ uno::Reference < i18n::XBreakIterator > Edit::ImplGetBreakIterator() const
     return i18n::BreakIterator::create(xContext);
 }
 
-uno::Reference < i18n::XExtendedInputSequenceChecker > Edit::ImplGetInputSequenceChecker()
+uno::Reference < i18n::XExtendedInputSequenceChecker > const & Edit::ImplGetInputSequenceChecker()
 {
     if ( !mxISC.is() )
     {
@@ -801,7 +787,7 @@ void Edit::ShowTruncationWarning( vcl::Window* pParent )
     ResMgr* pResMgr = ImplGetResMgr();
     if( pResMgr )
     {
-        ScopedVclPtrInstance< MessageDialog > aBox( pParent, ResId(SV_EDIT_WARNING_STR, *pResMgr), VCL_MESSAGE_WARNING );
+        ScopedVclPtrInstance< MessageDialog > aBox( pParent, ResId(SV_EDIT_WARNING_STR, *pResMgr), VclMessageType::Warning );
         aBox->Execute();
     }
 }
@@ -836,7 +822,7 @@ void Edit::ImplInsertText( const OUString& rStr, const Selection* pNewSel, bool 
     // take care of input-sequence-checking now
     if (bIsUserInput && !rStr.isEmpty())
     {
-        DBG_ASSERT( rStr.getLength() == 1, "unexpected string length. User input is expected to provide 1 char only!" );
+        SAL_WARN_IF( rStr.getLength() != 1, "vcl", "unexpected string length. User input is expected to provide 1 char only!" );
 
         // determine if input-sequence-checking should be applied or not
 
@@ -1280,15 +1266,6 @@ void Edit::ImplSetCursorPos( sal_Int32 nChar, bool bSelect )
     ImplSetSelection( aSelection );
 }
 
-void Edit::ImplLoadRes( const ResId& rResId )
-{
-    Control::ImplLoadRes( rResId );
-
-    sal_uInt16 nTextLength = ReadShortRes();
-    if ( nTextLength )
-        SetMaxTextLen( nTextLength );
-}
-
 void Edit::ImplCopyToSelectionClipboard()
 {
     if ( GetSelection().Len() )
@@ -1641,7 +1618,6 @@ bool Edit::ImplHandleKeyEvent( const KeyEvent& rKEvt )
                     {
                         if ( (maSelection.Min() == maSelection.Max()) && (maSelection.Min() == maText.getLength()) )
                         {
-                            meAutocompleteAction = AutocompleteAction::KeyInput;
                             maAutocompleteHdl.Call(*this);
                         }
                     }
@@ -1703,32 +1679,6 @@ bool Edit::ImplHandleKeyEvent( const KeyEvent& rKEvt )
             }
             break;
 
-            /* #i101255# disable autocomplete tab forward/backward
-               users expect tab/shift-tab to move the focus to other controls
-               not suddenly to cycle the autocompletion
-            case KEY_TAB:
-            {
-                if ( !mbReadOnly && !autocompleteSignal.empty() &&
-                     maSelection.Min() && (maSelection.Min() == maText.Len()) &&
-                     !rKEvt.GetKeyCode().IsMod1() && !rKEvt.GetKeyCode().IsMod2() )
-                {
-                    // Kein Autocomplete wenn alles Selektiert oder Edit leer, weil dann
-                    // keine vernuenftige Tab-Steuerung!
-                    if ( rKEvt.GetKeyCode().IsShift() )
-                        meAutocompleteAction = AutocompleteAction::TabBackward;
-                    else
-                        meAutocompleteAction = AutocompleteAction::TabForward;
-
-                    autocompleteSignal( this );
-
-                    // Wurde nichts veraendert, dann TAB fuer DialogControl
-                    if ( GetSelection().Len() )
-                        bDone = true;
-                }
-            }
-            break;
-            */
-
             default:
             {
                 if ( IsCharInput( rKEvt ) )
@@ -1741,7 +1691,6 @@ bool Edit::ImplHandleKeyEvent( const KeyEvent& rKEvt )
                         {
                             if ( (maSelection.Min() == maSelection.Max()) && (maSelection.Min() == maText.getLength()) )
                             {
-                                meAutocompleteAction = AutocompleteAction::KeyInput;
                                 maAutocompleteHdl.Call(*this);
                             }
                         }
@@ -1840,11 +1789,24 @@ void Edit::Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, DrawF
         }
     }
 
+    const long nOnePixel = GetDrawPixel( pDev, 1 );
+    const long nOffX = 3*nOnePixel;
+    DrawTextFlags nTextStyle = DrawTextFlags::VCenter;
+    Rectangle aTextRect( aPos, aSize );
+
+    if ( GetStyle() & WB_CENTER )
+        nTextStyle |= DrawTextFlags::Center;
+    else if ( GetStyle() & WB_RIGHT )
+        nTextStyle |= DrawTextFlags::Right;
+    else
+        nTextStyle |= DrawTextFlags::Left;
+
+    aTextRect.Left() += nOffX;
+    aTextRect.Right() -= nOffX;
+
     OUString    aText = ImplGetText();
     long        nTextHeight = pDev->GetTextHeight();
     long        nTextWidth = pDev->GetTextWidth( aText );
-    long        nOnePixel = GetDrawPixel( pDev, 1 );
-    long        nOffX = 3*nOnePixel;
     long        nOffY = (aSize.Height() - nTextHeight) / 2;
 
     // Clipping?
@@ -1858,18 +1820,7 @@ void Edit::Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, DrawF
         pDev->IntersectClipRegion( aClip );
     }
 
-    if ( GetStyle() & WB_CENTER )
-    {
-        aPos.X() += (aSize.Width() - nTextWidth) / 2;
-        nOffX = 0;
-    }
-    else if ( GetStyle() & WB_RIGHT )
-    {
-        aPos.X() += aSize.Width() - nTextWidth;
-        nOffX = -nOffX;
-    }
-
-    pDev->DrawText( Point( aPos.X() + nOffX, aPos.Y() + nOffY ), aText );
+    pDev->DrawText( aTextRect, aText, nTextStyle );
     pDev->Pop();
 
     if ( GetSubEdit() )
@@ -1975,7 +1926,7 @@ void Edit::Command( const CommandEvent& rCEvt )
 {
     if ( rCEvt.GetCommand() == CommandEventId::ContextMenu )
     {
-        PopupMenu* pPopup = Edit::CreatePopupMenu();
+        VclPtr<PopupMenu> pPopup = Edit::CreatePopupMenu();
 
         if ( !maSelection.Len() )
         {
@@ -2035,7 +1986,7 @@ void Edit::Command( const CommandEvent& rCEvt )
             aPos = Point( aSize.Width()/2, aSize.Height()/2 );
         }
         sal_uInt16 n = pPopup->Execute( this, aPos );
-        Edit::DeletePopupMenu( pPopup );
+        pPopup.disposeAndClear();
         SetSelection( aSaveSel );
         switch ( n )
         {
@@ -2099,7 +2050,6 @@ void Edit::Command( const CommandEvent& rCEvt )
         {
             if ( (maSelection.Min() == maSelection.Max()) && (maSelection.Min() == maText.getLength()) )
             {
-                meAutocompleteAction = AutocompleteAction::KeyInput;
                 maAutocompleteHdl.Call(*this);
             }
         }
@@ -2245,12 +2195,12 @@ void Edit::StateChanged( StateChangedType nType )
             if (GetParent()->GetStyle() & WB_LEFT)
                 mnAlign = EDIT_ALIGN_RIGHT;
             if (nType == StateChangedType::Mirroring)
-                SetLayoutMode(TEXT_LAYOUT_BIDI_RTL | TEXT_LAYOUT_TEXTORIGIN_LEFT);
+                SetLayoutMode(ComplexTextLayoutFlags::BiDiRtl | ComplexTextLayoutFlags::TextOriginLeft);
         }
         else if (mbIsSubEdit && !GetParent()->IsRTLEnabled())
         {
             if (nType == StateChangedType::Mirroring)
-                SetLayoutMode(TEXT_LAYOUT_TEXTORIGIN_LEFT);
+                SetLayoutMode(ComplexTextLayoutFlags::TextOriginLeft);
         }
 
         if (nStyle & WB_RIGHT)
@@ -2358,7 +2308,7 @@ OUString TextFilter::filter(const OUString &rText)
     OUString sTemp(rText);
     for (sal_Int32 i = 0; i < sForbiddenChars.getLength(); ++i)
     {
-        sTemp = comphelper::string::remove(sTemp, sForbiddenChars[i]);
+        sTemp = sTemp.replaceAll(OUStringLiteral1(sForbiddenChars[i]), "");
     }
     return sTemp;
 }
@@ -2417,7 +2367,7 @@ void Edit::UpdateData()
     maUpdateDataHdl.Call( *this );
 }
 
-IMPL_LINK_NOARG_TYPED(Edit, ImplUpdateDataHdl, Timer *, void)
+IMPL_LINK_NOARG(Edit, ImplUpdateDataHdl, Timer *, void)
 {
     UpdateData();
 }
@@ -2831,19 +2781,19 @@ FncGetSpecialChars Edit::GetGetSpecialCharsFunction()
     return pImplFncGetSpecialChars;
 }
 
-PopupMenu* Edit::CreatePopupMenu()
+VclPtr<PopupMenu> Edit::CreatePopupMenu()
 {
     ResMgr* pResMgr = ImplGetResMgr();
     if( ! pResMgr )
-        return new PopupMenu();
+        return VclPtr<PopupMenu>::Create();
 
-    PopupMenu* pPopup = new PopupMenu( ResId( SV_RESID_MENU_EDIT, *pResMgr ) );
+    VclPtrInstance<PopupMenu> pPopup( ResId( SV_RESID_MENU_EDIT, *pResMgr ) );
     const StyleSettings& rStyleSettings = Application::GetSettings().GetStyleSettings();
     if ( rStyleSettings.GetHideDisabledMenuItems() )
         pPopup->SetMenuFlags( MenuFlags::HideDisabledEntries );
     else
         pPopup->SetMenuFlags ( MenuFlags::AlwaysShowDisabledEntries );
-    if ( rStyleSettings.GetAcceleratorsInContextMenus() )
+    if ( rStyleSettings.GetContextMenuShortcuts() )
     {
         pPopup->SetAccelKey( SV_MENU_EDIT_UNDO, vcl::KeyCode( KeyFuncType::UNDO ) );
         pPopup->SetAccelKey( SV_MENU_EDIT_CUT, vcl::KeyCode( KeyFuncType::CUT ) );
@@ -2854,11 +2804,6 @@ PopupMenu* Edit::CreatePopupMenu()
         pPopup->SetAccelKey( SV_MENU_EDIT_INSERTSYMBOL, vcl::KeyCode( KEY_S, true, true, false, false ) );
     }
     return pPopup;
-}
-
-void Edit::DeletePopupMenu( PopupMenu* pMenu )
-{
-    delete pMenu;
 }
 
 // css::datatransfer::dnd::XDragGestureListener
@@ -3050,6 +2995,11 @@ OUString Edit::GetSurroundingText() const
 Selection Edit::GetSurroundingTextSelection() const
 {
   return GetSelection();
+}
+
+FactoryFunction Edit::GetUITestFactory() const
+{
+    return EditUIObject::create;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

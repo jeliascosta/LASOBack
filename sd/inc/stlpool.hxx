@@ -120,10 +120,7 @@ public:
     virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL acquire() throw () override;
-    virtual void SAL_CALL release() throw () override;
 protected:
-    void RenameAndCopySheets(SdStyleSheetPool& rSourcePool, SfxStyleFamily eFamily, SdStyleSheetVector& rCreatedSheets, OUString &rRenameSuffix);
     void CopySheets(SdStyleSheetPool& rSourcePool, SfxStyleFamily eFamily );
     void CopySheets(SdStyleSheetPool& rSourcePool, SfxStyleFamily eFamily, SdStyleSheetVector& rCreatedSheets );
     void CopySheets(SdStyleSheetPool& rSourcePool, SfxStyleFamily eFamily, SdStyleSheetVector& rCreatedSheets, OUString &rRenameSuffix );
@@ -131,7 +128,7 @@ protected:
     virtual SfxStyleSheetBase* Create(const OUString& rName, SfxStyleFamily eFamily, sal_uInt16 nMask) override;
 
     using  SfxStyleSheetPool::Create;
-    virtual ~SdStyleSheetPool();
+    virtual ~SdStyleSheetPool() override;
 
     void AddStyleFamily( const SdPage* pPage );
     void RemoveStyleFamily( const SdPage* pPage );

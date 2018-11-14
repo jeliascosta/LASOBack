@@ -44,6 +44,7 @@
 #include "com/sun/star/util/XCloseBroadcaster.hpp"
 
 #include "tdoc_docmgr.hxx"
+#include "tdoc_provider.hxx"
 
 using namespace com::sun::star;
 using namespace tdoc_ucp;
@@ -92,7 +93,7 @@ void SAL_CALL OfficeDocumentsManager::OfficeDocumentsCloseListener::disposing(
 
 OfficeDocumentsManager::OfficeDocumentsManager(
             const uno::Reference< uno::XComponentContext > & rxContext,
-            OfficeDocumentsEventListener * pDocEventListener )
+            ContentProvider * pDocEventListener )
 : m_xContext( rxContext ),
   m_xDocEvtNotifier( frame::theGlobalEventBroadcaster::get( rxContext ) ),
   m_pDocEventListener( pDocEventListener ),
@@ -173,7 +174,8 @@ void SAL_CALL OfficeDocumentsManager::documentEventOccured(
     throw ( uno::RuntimeException, std::exception )
 {
 /*
-    Events documentation: OOo Developer's Guide / Writing UNO Components / Jobs
+    Events documentation: OOo Developer's Guide / Writing UNO Components /
+    Integrating Components into OpenOffice.org / Jobs
 */
 
     if ( Event.EventName == "OnLoadFinished" // document loaded
@@ -181,25 +183,33 @@ void SAL_CALL OfficeDocumentsManager::documentEventOccured(
     {
         if ( isOfficeDocument( Event.Source ) )
         {
-            osl::MutexGuard aGuard( m_aMtx );
-
-            uno::Reference< frame::XModel >
-                 xModel( Event.Source, uno::UNO_QUERY );
+            uno::Reference<frame::XModel> const xModel(
+                    Event.Source, uno::UNO_QUERY );
             OSL_ENSURE( xModel.is(), "Got no frame::XModel!" );
 
-            DocumentList::const_iterator it = m_aDocs.begin();
-            while ( it != m_aDocs.end() )
+            bool found(false);
+
             {
-                if ( (*it).second.xModel == xModel )
+                osl::MutexGuard aGuard( m_aMtx );
+
+                DocumentList::const_iterator it = m_aDocs.begin();
+                while ( it != m_aDocs.end() )
                 {
-                    // already known.
-                    break;
+                    if ( (*it).second.xModel == xModel )
+                    {
+                        // already known.
+                        found = true;
+                        break;
+                    }
+                    ++it;
                 }
-                ++it;
             }
 
-            if ( it == m_aDocs.end() )
+            if (!found)
             {
+                // no mutex to avoid deadlocks!
+                // need no lock to access const members, ContentProvider is safe
+
                 // new document
 
                 uno::Reference< document::XStorageBasedDocument >
@@ -214,7 +224,10 @@ void SAL_CALL OfficeDocumentsManager::documentEventOccured(
                 rtl:: OUString aTitle = comphelper::DocumentInfo::getDocumentTitle(
                     uno::Reference< frame::XModel >( Event.Source, uno::UNO_QUERY ) );
 
-                m_aDocs[ aDocId ] = StorageInfo( aTitle, xStorage, xModel );
+                {
+                    osl::MutexGuard g(m_aMtx);
+                    m_aDocs[ aDocId ] = StorageInfo( aTitle, xStorage, xModel );
+                }
 
                 uno::Reference< util::XCloseBroadcaster > xCloseBroadcaster(
                     Event.Source, uno::UNO_QUERY );
@@ -245,45 +258,46 @@ void SAL_CALL OfficeDocumentsManager::documentEventOccured(
             // document from TDOC docs list on XCloseListener::notifyClosing.
             // See OfficeDocumentsManager::OfficeDocumentsListener::notifyClosing.
 
-            osl::MutexGuard aGuard( m_aMtx );
-
             uno::Reference< frame::XModel >
                  xModel( Event.Source, uno::UNO_QUERY );
             OSL_ENSURE( xModel.is(), "Got no frame::XModel!" );
 
-            DocumentList::iterator it = m_aDocs.begin();
-            while ( it != m_aDocs.end() )
-            {
-                if ( (*it).second.xModel == xModel )
-                {
-                    // Propagate document closure.
-                    OSL_ENSURE( m_pDocEventListener,
-                        "OnUnload event: no owner for close event propagation!" );
+            bool found(false);
+            OUString aDocId;
 
-                    if ( m_pDocEventListener )
+            {
+                osl::MutexGuard aGuard( m_aMtx );
+
+                for (auto it = m_aDocs.begin(); it != m_aDocs.end(); ++it)
+                {
+                    if ( (*it).second.xModel == xModel )
                     {
-                        OUString aDocId( (*it).first );
-                        m_pDocEventListener->notifyDocumentClosed( aDocId );
+                        aDocId = (*it).first;
+                        found = true;
+                        m_aDocs.erase( it );
+                        break;
                     }
-                    break;
                 }
-                ++it;
             }
 
-            OSL_ENSURE( it != m_aDocs.end(),
+            OSL_ENSURE( found,
                         "OnUnload event notified for unknown document!" );
 
-            if ( it != m_aDocs.end() )
+            if (found)
             {
+                // Propagate document closure.
+                OSL_ENSURE( m_pDocEventListener,
+                    "OnUnload event: no owner for close event propagation!" );
+                if (m_pDocEventListener)
+                {
+                    m_pDocEventListener->notifyDocumentClosed(aDocId);
+                }
                 uno::Reference< util::XCloseBroadcaster > xCloseBroadcaster(
                     Event.Source, uno::UNO_QUERY );
                 OSL_ENSURE( xCloseBroadcaster.is(),
                     "OnUnload event: got no XCloseBroadcaster from XModel" );
-
                 if ( xCloseBroadcaster.is() )
                     xCloseBroadcaster->removeCloseListener(m_xDocCloseListener.get());
-
-                m_aDocs.erase( it );
             }
         }
     }
@@ -291,27 +305,26 @@ void SAL_CALL OfficeDocumentsManager::documentEventOccured(
     {
         if ( isOfficeDocument( Event.Source ) )
         {
-            osl::MutexGuard aGuard( m_aMtx );
+            // Storage gets exchanged while saving.
+            uno::Reference<document::XStorageBasedDocument> const xDoc(
+                    Event.Source, uno::UNO_QUERY );
+            OSL_ENSURE( xDoc.is(),
+                        "Got no document::XStorageBasedDocument!" );
+            uno::Reference<embed::XStorage> const xStorage(
+                xDoc->getDocumentStorage());
+            OSL_ENSURE( xStorage.is(), "Got no document storage!" );
 
             uno::Reference< frame::XModel >
                  xModel( Event.Source, uno::UNO_QUERY );
             OSL_ENSURE( xModel.is(), "Got no frame::XModel!" );
+
+            osl::MutexGuard aGuard( m_aMtx );
 
             DocumentList::iterator it = m_aDocs.begin();
             while ( it != m_aDocs.end() )
             {
                 if ( (*it).second.xModel == xModel )
                 {
-                    // Storage gets exchanged while saving.
-                    uno::Reference< document::XStorageBasedDocument >
-                        xDoc( Event.Source, uno::UNO_QUERY );
-                    OSL_ENSURE( xDoc.is(),
-                                "Got no document::XStorageBasedDocument!" );
-
-                    uno::Reference< embed::XStorage > xStorage
-                        = xDoc->getDocumentStorage();
-                    OSL_ENSURE( xStorage.is(), "Got no document storage!" );
-
                     (*it).second.xStorage = xStorage;
                     break;
                 }
@@ -326,31 +339,32 @@ void SAL_CALL OfficeDocumentsManager::documentEventOccured(
     {
         if ( isOfficeDocument( Event.Source ) )
         {
-            osl::MutexGuard aGuard( m_aMtx );
+            // Storage gets exchanged while saving.
+            uno::Reference<document::XStorageBasedDocument> const xDoc(
+                    Event.Source, uno::UNO_QUERY );
+            OSL_ENSURE( xDoc.is(),
+                        "Got no document::XStorageBasedDocument!" );
+            uno::Reference<embed::XStorage> const xStorage(
+                xDoc->getDocumentStorage());
+            OSL_ENSURE( xStorage.is(), "Got no document storage!" );
 
             uno::Reference< frame::XModel >
                  xModel( Event.Source, uno::UNO_QUERY );
             OSL_ENSURE( xModel.is(), "Got no frame::XModel!" );
+
+            OUString const title(comphelper::DocumentInfo::getDocumentTitle(xModel));
+
+            osl::MutexGuard aGuard( m_aMtx );
 
             DocumentList::iterator it = m_aDocs.begin();
             while ( it != m_aDocs.end() )
             {
                 if ( (*it).second.xModel == xModel )
                 {
-                    // Storage gets exchanged while saving.
-                    uno::Reference< document::XStorageBasedDocument >
-                        xDoc( Event.Source, uno::UNO_QUERY );
-                    OSL_ENSURE( xDoc.is(),
-                                "Got no document::XStorageBasedDocument!" );
-
-                    uno::Reference< embed::XStorage > xStorage
-                        = xDoc->getDocumentStorage();
-                    OSL_ENSURE( xStorage.is(), "Got no document storage!" );
-
                     (*it).second.xStorage = xStorage;
 
                     // Adjust title.
-                    (*it).second.aTitle = comphelper::DocumentInfo::getDocumentTitle( xModel );
+                    (*it).second.aTitle = title;
                     break;
                 }
                 ++it;
@@ -360,15 +374,29 @@ void SAL_CALL OfficeDocumentsManager::documentEventOccured(
                         "OnSaveAsDone event notified for unknown document!" );
         }
     }
-    else if ( Event.EventName == "OnTitleChanged" )
+    else if ( Event.EventName == "OnTitleChanged"
+           || Event.EventName == "OnStorageChanged" )
     {
         if ( isOfficeDocument( Event.Source ) )
         {
-            osl::MutexGuard aGuard( m_aMtx );
+            // Storage gets exchanged while saving.
+            uno::Reference<document::XStorageBasedDocument> const xDoc(
+                    Event.Source, uno::UNO_QUERY );
+            OSL_ENSURE( xDoc.is(),
+                        "Got no document::XStorageBasedDocument!" );
+            uno::Reference<embed::XStorage> const xStorage(
+                xDoc->getDocumentStorage());
+            OSL_ENSURE( xStorage.is(), "Got no document storage!" );
 
             uno::Reference< frame::XModel >
                  xModel( Event.Source, uno::UNO_QUERY );
             OSL_ENSURE( xModel.is(), "Got no frame::XModel!" );
+
+            OUString const aTitle(comphelper::DocumentInfo::getDocumentTitle(xModel));
+
+            OUString const aDocId(getDocumentId(Event.Source));
+
+            osl::MutexGuard aGuard( m_aMtx );
 
             DocumentList::iterator it = m_aDocs.begin();
             while ( it != m_aDocs.end() )
@@ -376,19 +404,7 @@ void SAL_CALL OfficeDocumentsManager::documentEventOccured(
                 if ( (*it).second.xModel == xModel )
                 {
                     // Adjust title.
-                    rtl:: OUString aTitle = comphelper::DocumentInfo::getDocumentTitle( xModel );
                     (*it).second.aTitle = aTitle;
-
-                    // Adjust storage.
-                    uno::Reference< document::XStorageBasedDocument >
-                        xDoc( Event.Source, uno::UNO_QUERY );
-                    OSL_ENSURE( xDoc.is(), "Got no document::XStorageBasedDocument!" );
-
-                    uno::Reference< embed::XStorage > xStorage
-                        = xDoc->getDocumentStorage();
-                    OSL_ENSURE( xDoc.is(), "Got no document storage!" );
-
-                    rtl:: OUString aDocId = getDocumentId( Event.Source );
 
                     m_aDocs[ aDocId ] = StorageInfo( aTitle, xStorage, xModel );
                     break;
@@ -428,8 +444,6 @@ void OfficeDocumentsManager::buildDocumentsList()
     uno::Reference< container::XEnumeration > xEnum
         = m_xDocEvtNotifier->createEnumeration();
 
-    osl::MutexGuard aGuard( m_aMtx );
-
     while ( xEnum->hasMoreElements() )
     {
         uno::Any aValue = xEnum->nextElement();
@@ -445,18 +459,25 @@ void OfficeDocumentsManager::buildDocumentsList()
             {
                 if ( isOfficeDocument( xModel ) )
                 {
-                    DocumentList::const_iterator it = m_aDocs.begin();
-                    while ( it != m_aDocs.end() )
+                    bool found(false);
+
                     {
-                        if ( (*it).second.xModel == xModel )
+                        osl::MutexGuard aGuard( m_aMtx );
+
+                        DocumentList::const_iterator it = m_aDocs.begin();
+                        while ( it != m_aDocs.end() )
                         {
-                            // already known.
-                            break;
+                            if ( (*it).second.xModel == xModel )
+                            {
+                                // already known.
+                                found = true;
+                                break;
+                            }
+                            ++it;
                         }
-                        ++it;
                     }
 
-                    if ( it == m_aDocs.end() )
+                    if (!found)
                     {
                         // new document
                         OUString aDocId = getDocumentId( xModel );
@@ -471,8 +492,11 @@ void OfficeDocumentsManager::buildDocumentsList()
                             = xDoc->getDocumentStorage();
                         OSL_ENSURE( xDoc.is(), "Got no document storage!" );
 
-                        m_aDocs[ aDocId ]
-                            = StorageInfo( aTitle, xStorage, xModel );
+                        {
+                            osl::MutexGuard aGuard( m_aMtx );
+                            m_aDocs[ aDocId ]
+                                = StorageInfo( aTitle, xStorage, xModel );
+                        }
 
                         uno::Reference< util::XCloseBroadcaster > xCloseBroadcaster(
                             xModel, uno::UNO_QUERY );

@@ -91,6 +91,7 @@ $(eval $(call gb_UIConfig_add_toolbarfiles,modules/simpress,\
 	sd/uiconfig/simpress/toolbar/rectanglesbar \
 	sd/uiconfig/simpress/toolbar/slideviewobjectbar \
 	sd/uiconfig/simpress/toolbar/slideviewtoolbar \
+	sd/uiconfig/simpress/toolbar/singlemode \
 	sd/uiconfig/simpress/toolbar/standardbar \
 	sd/uiconfig/simpress/toolbar/starshapes \
 	sd/uiconfig/simpress/toolbar/symbolshapes \
@@ -103,8 +104,8 @@ $(eval $(call gb_UIConfig_add_toolbarfiles,modules/simpress,\
 ))
 
 $(eval $(call gb_UIConfig_add_uifiles,modules/simpress,\
-	sd/uiconfig/simpress/ui/assistentdialog \
 	sd/uiconfig/simpress/ui/customanimationspanel \
+	sd/uiconfig/simpress/ui/customanimationspanelhorizontal \
 	sd/uiconfig/simpress/ui/customanimationproperties \
 	sd/uiconfig/simpress/ui/customanimationeffecttab \
 	sd/uiconfig/simpress/ui/customanimationtimingtab \
@@ -119,7 +120,9 @@ $(eval $(call gb_UIConfig_add_uifiles,modules/simpress,\
 	sd/uiconfig/simpress/ui/interactiondialog \
 	sd/uiconfig/simpress/ui/interactionpage \
 	sd/uiconfig/simpress/ui/masterlayoutdlg \
+	sd/uiconfig/simpress/ui/navigatorpanel \
 	sd/uiconfig/simpress/ui/notebookbar \
+	sd/uiconfig/simpress/ui/notebookbar_groups \
 	sd/uiconfig/simpress/ui/optimpressgeneralpage \
 	sd/uiconfig/simpress/ui/photoalbum \
 	sd/uiconfig/simpress/ui/presentationdialog \
@@ -131,7 +134,9 @@ $(eval $(call gb_UIConfig_add_uifiles,modules/simpress,\
 	sd/uiconfig/simpress/ui/sidebarslidebackground \
 	sd/uiconfig/simpress/ui/slidedesigndialog \
 	sd/uiconfig/simpress/ui/slidetransitionspanel \
+	sd/uiconfig/simpress/ui/slidetransitionspanelhorizontal \
 	sd/uiconfig/simpress/ui/tabledesignpanel \
+	sd/uiconfig/simpress/ui/tabledesignpanelhorizontal \
 	sd/uiconfig/simpress/ui/templatedialog \
 ))
 

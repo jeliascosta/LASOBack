@@ -151,7 +151,7 @@ class VCL_DLLPUBLIC SystemWindow
     class ImplData;
 
 private:
-    MenuBar*        mpMenuBar;
+    VclPtr<MenuBar> mpMenuBar;
     Size            maOrgSize;
     Size            maRollUpOutSize;
     Size            maMinOutSize;
@@ -162,7 +162,6 @@ private:
     bool            mbHideBtn;
     bool            mbSysChild;
     bool            mbIsCalculatingInitialLayoutSize;
-    bool            mbInitialLayoutDone;
     MenuBarMode     mnMenuBarMode;
     sal_uInt16      mnIcon;
     ImplData*       mpImplData;
@@ -177,10 +176,9 @@ public:
     SAL_DLLPRIVATE bool isDeferredInit() const { return mbIsDefferedInit; }
 
 private:
-    SAL_DLLPRIVATE void Init();
     SAL_DLLPRIVATE void ImplMoveToScreen( long& io_rX, long& io_rY, long i_nWidth, long i_nHeight, vcl::Window* i_pConfigureWin );
-    virtual void setPosSizeOnContainee(Size aSize, Window &rBox);
-    DECL_DLLPRIVATE_LINK_TYPED( ImplHandleLayoutTimerHdl, Idle*, void );
+    SAL_DLLPRIVATE void setPosSizeOnContainee(Size aSize, Window &rBox);
+    DECL_DLLPRIVATE_LINK( ImplHandleLayoutTimerHdl, Idle*, void );
 
 protected:
     // Single argument ctors shall be explicit.
@@ -193,7 +191,7 @@ protected:
 
     SAL_DLLPRIVATE void DoInitialLayout();
 public:
-    virtual         ~SystemWindow();
+    virtual         ~SystemWindow() override;
     virtual void    dispose() override;
 
     virtual bool    Notify( NotifyEvent& rNEvt ) override;
@@ -201,8 +199,6 @@ public:
 
     virtual bool    Close();
     virtual void    TitleButtonClick( TitleButton nButton );
-    virtual void    Pin();
-    virtual void    Roll();
     virtual void    Resizing( Size& rSize );
     virtual void    Resize() override;
     virtual Size    GetOptimalSize() const override;
@@ -217,7 +213,7 @@ public:
     // separately from the window title
     void            SetRepresentedURL( const OUString& );
 
-    void            ShowTitleButton( TitleButton nButton, bool bVisible = true );
+    void            ShowTitleButton( TitleButton nButton, bool bVisible );
     bool            IsTitleButtonVisible( TitleButton nButton ) const;
 
     void            SetPin( bool bPin );
@@ -243,6 +239,7 @@ public:
     void            SetMenuBarMode( MenuBarMode nMode );
 
     void            SetNotebookBar(const OUString& rUIXMLDescription, const css::uno::Reference<css::frame::XFrame>& rFrame);
+    void            CloseNotebookBar();
     VclPtr<NotebookBar> GetNotebookBar() const;
 
     TaskPaneList*   GetTaskPaneList();

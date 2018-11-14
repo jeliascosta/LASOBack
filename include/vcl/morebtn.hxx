@@ -32,8 +32,6 @@ class VCL_DLLPUBLIC MoreButton : public PushButton
 {
 private:
     ImplMoreButtonData* mpMBData;
-    sal_uLong           mnDelta;
-    MapUnit             meUnit;
     bool                mbState;
 
                         MoreButton( const MoreButton & ) = delete;
@@ -45,16 +43,13 @@ protected:
     SAL_DLLPRIVATE void ImplInit( vcl::Window* pParent, WinBits nStyle );
 
 public:
-    explicit            MoreButton( vcl::Window* pParent, WinBits nStyle = 0 );
-    virtual             ~MoreButton();
+    explicit            MoreButton( vcl::Window* pParent, WinBits nStyle );
+    virtual             ~MoreButton() override;
     virtual void        dispose() override;
 
     void                Click() override;
 
     using PushButton::SetState;
-
-    void                SetText( const OUString& rNewText ) override;
-    OUString            GetText() const override;
 };
 
 #endif // INCLUDED_VCL_MOREBTN_HXX

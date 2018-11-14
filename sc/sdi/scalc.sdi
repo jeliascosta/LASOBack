@@ -721,7 +721,7 @@ SfxInt16Item Column SID_RANGE_COL
 
 
 SfxUInt16Item ColumnWidth FID_COL_WIDTH
-
+(SfxUInt16Item Column FN_PARAM_1,SfxUInt16Item Width FN_PARAM_2)
 [
     AutoUpdate = FALSE,
     FastCall = FALSE,
@@ -971,6 +971,20 @@ SfxVoidItem CreateSWDrawView SID_CREATE_SW_DRAWVIEW
     GroupId = GID_INSERT;
 ]
 
+SfxVoidItem ColumnOperations SID_COLUMN_OPERATIONS
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = FALSE,
+    Toggle = FALSE,
+    Container = FALSE,
+    NoRecord;
+
+    AccelConfig = FALSE,
+    MenuConfig = TRUE,
+    ToolBoxConfig = TRUE,
+    GroupId = GID_OPTIONS;
+]
 
 SfxObjectItem CurrentRegion SID_RANGE_REGION
 
@@ -1245,7 +1259,7 @@ SfxVoidItem DataSelect SID_DATA_SELECT
 
 
 SfxVoidItem DataSort SID_SORT
-(SfxBoolItem ByRows SID_SORT_BYROW,SfxBoolItem HasHeader SID_SORT_HASHEADER,SfxBoolItem CaseSensitive SID_SORT_CASESENS,SfxBoolItem NaturalSort SID_SORT_NATURALSORT,SfxBoolItem IncludeAttribs SID_SORT_ATTRIBS,SfxUInt16Item UserDefIndex SID_SORT_USERDEF,SfxInt32Item Col1 FN_PARAM_1,SfxBoolItem Ascending1 FN_PARAM_2,SfxInt32Item Col2 FN_PARAM_3,SfxBoolItem Ascending2 FN_PARAM_4,SfxInt32Item Col3 FN_PARAM_5,SfxBoolItem Ascending3 FN_PARAM_6)
+(SfxBoolItem ByRows SID_SORT_BYROW,SfxBoolItem HasHeader SID_SORT_HASHEADER,SfxBoolItem CaseSensitive SID_SORT_CASESENS,SfxBoolItem NaturalSort SID_SORT_NATURALSORT,SfxBoolItem IncludeAttribs SID_SORT_ATTRIBS,SfxUInt16Item UserDefIndex SID_SORT_USERDEF,SfxInt32Item Col1 FN_PARAM_1,SfxBoolItem Ascending1 FN_PARAM_2,SfxInt32Item Col2 FN_PARAM_3,SfxBoolItem Ascending2 FN_PARAM_4,SfxInt32Item Col3 FN_PARAM_5,SfxBoolItem Ascending3 FN_PARAM_6,SfxBoolItem IncludeComments SID_SORT_INCCOMMENTS)
 [
     AutoUpdate = FALSE,
     FastCall = FALSE,
@@ -2334,6 +2348,21 @@ SfxVoidItem RegressionDialog SID_REGRESSION_DIALOG
     RecordPerSet;
 
     AccelConfig = TRUE,
+    MenuConfig = TRUE,
+    ToolBoxConfig = TRUE,
+    GroupId = GID_OPTIONS;
+]
+
+SfxVoidItem RowOperations SID_ROW_OPERATIONS
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = FALSE,
+    Toggle = FALSE,
+    Container = FALSE,
+    NoRecord;
+
+    AccelConfig = FALSE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
     GroupId = GID_OPTIONS;
@@ -3744,7 +3773,7 @@ SfxVoidItem NumberFormatCurrency SID_NUMBER_CURRENCY
     Container = FALSE,
     RecordAbsolute = FALSE,
     RecordPerSet;
-    SlotType = SfxUInt32Item
+    SlotType = SfxBoolItem
 
     AccelConfig = TRUE,
     MenuConfig = TRUE,
@@ -4432,7 +4461,7 @@ SfxInt32Item Row SID_RANGE_ROW
 
 
 SfxUInt16Item RowHeight FID_ROW_HEIGHT
-
+(SfxUInt16Item Row FN_PARAM_1,SfxUInt16Item Height FN_PARAM_2)
 [
     AutoUpdate = FALSE,
     FastCall = FALSE,
@@ -6553,7 +6582,7 @@ SfxVoidItem Ungroup SID_OUTLINE_REMOVE
 ]
 
 SfxVoidItem EnterString SID_ENTER_STRING
-(SfxStringItem StringName SID_ENTER_STRING)
+(SfxStringItem StringName SID_ENTER_STRING,SfxBoolItem DontCommit FN_PARAM_1)
 [
     AutoUpdate = FALSE,
     FastCall = FALSE,
@@ -6600,6 +6629,24 @@ SfxUInt16Item NumberFormatType SID_NUMBER_TYPE_FORMAT
 
     AccelConfig = FALSE,
     MenuConfig = FALSE,
-    ToolBoxConfig = FALSE,
+    ToolBoxConfig = TRUE,
     GroupId = GID_FORMAT;
+]
+
+
+SfxVoidItem AutoSum SID_AUTO_SUM
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = TRUE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = TRUE,
+    GroupId = GID_INTERN;
 ]

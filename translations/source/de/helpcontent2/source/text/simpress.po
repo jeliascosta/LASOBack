@@ -4,8 +4,8 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
 "POT-Creation-Date: 2016-04-16 21:40+0200\n"
-"PO-Revision-Date: 2017-03-10 05:45+0000\n"
-"Last-Translator: Christian Kühl <kuehl.christian@googlemail.com>\n"
+"PO-Revision-Date: 2017-10-21 12:43+0000\n"
+"Last-Translator: Sophia Schröder <sophia.schroeder@outlook.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Accelerator-Marker: ~\n"
 "X-Generator: Pootle 2.8\n"
-"X-POOTLE-MTIME: 1489124710.000000\n"
+"X-POOTLE-MTIME: 1508589828.000000\n"
 
 #: main0000.xhp
 msgctxt ""
@@ -322,7 +322,7 @@ msgctxt ""
 "par_id3146971\n"
 "help.text"
 msgid "<ahelp hid=\".\">This menu contains the commands that are used to insert new elements into the document, for example, graphics, objects, special characters and other files.</ahelp>"
-msgstr "<ahelp hid=\".\">In diesem Menü sind alle Befehle zusammengefasst, die zum Einfügen neuer Elemente in das Dokument dienen, wie z.B. Grafiken, Objekte, Symbole und andere Dateien.</ahelp>"
+msgstr "<ahelp hid=\".\">In diesem Menü sind alle Befehle zusammengefasst, die zum Einfügen neuer Elemente in das Dokument dienen, wie beispielsweise Grafiken, Objekte, Symbole und andere Dateien.</ahelp>"
 
 #: main0104.xhp
 msgctxt ""
@@ -554,7 +554,7 @@ msgctxt ""
 "par_id3155064\n"
 "help.text"
 msgid "<ahelp hid=\".\">Contains spelling tools, a gallery of object art that you can add to your document, as well as tools for configuring menus, and setting program preferences.</ahelp>"
-msgstr "<ahelp hid=\".\">Enthält Rechtschreibfunktionen, eine Gallerie mit Grafiken, die Sie in das Dokument einfügen können, sowie Funktionen zum Konfigurieren von Menüs und Programmvoreinstellungen.</ahelp>"
+msgstr "<ahelp hid=\".\">Enthält Rechtschreibfunktionen, eine Gallery mit Grafiken, die Sie in das Dokument einfügen können, sowie Funktionen zum Konfigurieren von Menüs und Programmvoreinstellungen.</ahelp>"
 
 #: main0106.xhp
 msgctxt ""
@@ -1038,7 +1038,7 @@ msgctxt ""
 "bm_id3153191\n"
 "help.text"
 msgid "<bookmark_value>rulers; in presentations</bookmark_value><bookmark_value>origin of rulers</bookmark_value>"
-msgstr "<bookmark_value>Lineale; Präsentation</bookmark_value><bookmark_value>Ursprung von Linealen</bookmark_value>"
+msgstr "<bookmark_value>Lineale; in Präsentationen</bookmark_value><bookmark_value>Ursprung von Linealen</bookmark_value>"
 
 #: main0209.xhp
 msgctxt ""
@@ -1136,7 +1136,7 @@ msgctxt ""
 "1\n"
 "help.text"
 msgid "<link href=\"text/simpress/main0210.xhp\" name=\"Drawing Bar\">Drawing Bar</link>"
-msgstr "<link href=\"text/simpress/main0210.xhp\" name=\"Symbolleiste Zeichnnung\">Symbolleiste Zeichnnung</link>"
+msgstr "<link href=\"text/simpress/main0210.xhp\" name=\"Symbolleiste Zeichnung\">Symbolleiste Zeichnung</link>"
 
 #: main0210.xhp
 msgctxt ""
@@ -1255,7 +1255,7 @@ msgctxt ""
 "par_idN106FA\n"
 "help.text"
 msgid "Draws a text box where you click or drag in the current document. Click anywhere in the document, and then type or paste your text."
-msgstr "Zeichnet an der Stelle, an der Sie im Dokument klicken und ziehen, einen Textrahmen. Klicken Sie auf eine beliebige Stelle im Textrahmen, und geben Sie den gewünschten Text ein bzw. fügen Sie ihn ein."
+msgstr "Zeichnet an der Stelle, an der Sie im Dokument klicken und ziehen, einen Textrahmen. Klicken Sie auf eine beliebige Stelle im Textrahmen, und geben oder fügen Sie den gewünschten Text ein."
 
 #: main0210.xhp
 msgctxt ""
@@ -1345,7 +1345,7 @@ msgctxt ""
 "par_idN1080F\n"
 "help.text"
 msgid "Switches the 3D effects on and off for the selected objects."
-msgstr "Schaltet die 3D-Effekte für die gewählten Objekte ein bzw. aus."
+msgstr "Schaltet die 3D-Effekte für die gewählten Objekte ein beziehungsweise aus."
 
 #: main0210.xhp
 msgctxt ""
@@ -1655,7 +1655,7 @@ msgctxt ""
 "16\n"
 "help.text"
 msgid "Several views or pages are available when you design a slide show. For example, the Slide Sorter displays an overview of your slides in thumbnail form, while the Handout page contains both the slide and the text you want to distribute to the audience."
-msgstr "Beim Erstellen einer Präsentation stehen Ihnen mehrere Ansichten zur Verfügung. Die Foliensortierungsansicht zeigt Ihnen z.B. die Folien im Überblick, während die Handzettelansicht Ihnen zusätzlich zur Folie begleitenden Text für die Zuschauer anzeigt."
+msgstr "Beim Erstellen einer Präsentation stehen Ihnen mehrere Ansichten zur Verfügung. Die Foliensortierungsansicht zeigt Ihnen beispielsweise die Folien im Überblick, während die Handzettelansicht Ihnen zusätzlich zur Folie begleitenden Text für die Zuschauer anzeigt."
 
 #: main0503.xhp
 msgctxt ""

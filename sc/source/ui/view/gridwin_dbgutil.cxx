@@ -17,6 +17,7 @@
 #include "patattr.hxx"
 #include <svl/poolitem.hxx>
 #include "userdat.hxx"
+#include <dpobject.hxx>
 
 namespace {
 
@@ -46,7 +47,7 @@ void ScGridWindow::dumpColumnInformationPixel()
     for (SCCOL nCol = 0; nCol <= 20; ++nCol)
     {
         sal_uInt16 nWidth = pDoc->GetColWidth(nCol, nTab);
-        long nPixel = LogicToPixel(Point(nWidth, 0), MapMode(MAP_TWIP)).getX();
+        long nPixel = LogicToPixel(Point(nWidth, 0), MapMode(MapUnit::MapTwip)).getX();
         std::cout << "Column: " << nCol << ", Width: " << nPixel << "px" << std::endl;
     }
 }
@@ -58,7 +59,7 @@ void ScGridWindow::dumpColumnInformationHmm()
     for (SCCOL nCol = 0; nCol <= 20; ++nCol)
     {
         sal_uInt16 nWidth = pDoc->GetColWidth(nCol, nTab);
-        long nPixel = LogicToLogic(Point(nWidth, 0), MAP_TWIP, MAP_100TH_MM).getX();
+        long nPixel = LogicToLogic(Point(nWidth, 0), MapUnit::MapTwip, MapUnit::Map100thMM).getX();
         std::cout << "Column: " << nCol << ", Width: " << nPixel << "hmm" << std::endl;
     }
 }
@@ -74,6 +75,8 @@ void ScGridWindow::dumpCellProperties()
 
     OString aOutputFile("dump.xml");
     xmlTextWriterPtr writer = xmlNewTextWriterFilename( aOutputFile.getStr(), 0 );
+    xmlTextWriterSetIndent(writer,1);
+    xmlTextWriterSetIndentString(writer, BAD_CAST("  "));
 
     xmlTextWriterStartDocument( writer, nullptr, nullptr, nullptr );
 
@@ -108,6 +111,25 @@ void ScGridWindow::dumpGraphicInformation()
             }
         }
     }
+}
+
+void ScGridWindow::dumpColumnCellStorage()
+{
+    // Get the current cursor position.
+    ScAddress aCurPos = pViewData->GetCurPos();
+
+    ScDocument* pDoc = pViewData->GetDocument();
+    const ScDPObject* pDP = pDoc->GetDPAtCursor(aCurPos.Col(), aCurPos.Row(), aCurPos.Tab());
+    if (pDP)
+    {
+        // Dump the pivot table info if the cursor is over a pivot table.
+        pDP->Dump();
+        pDP->DumpCache();
+        return;
+    }
+
+    // Dump the column cell storage info.
+    pDoc->DumpColumnStorage(aCurPos.Tab(), aCurPos.Col());
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

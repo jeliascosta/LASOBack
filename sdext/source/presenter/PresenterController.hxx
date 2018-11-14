@@ -95,7 +95,7 @@ public:
         const css::uno::Reference<css::presentation::XSlideShowController>& rxSlideShowController,
         const rtl::Reference<PresenterPaneContainer>& rpPaneContainer,
         const css::uno::Reference<css::drawing::framework::XResourceId>& rxMainPaneId);
-    virtual ~PresenterController();
+    virtual ~PresenterController() override;
 
     virtual void SAL_CALL disposing() override;
 
@@ -244,8 +244,6 @@ private:
             The modifier bit field as provided by the key up event.
     */
     void HandleNumericKeyPress (const sal_Int32 nKey, const sal_Int32 nModifiers);
-
-    void ThrowIfDisposed() const throw (css::lang::DisposedException);
 };
 
 } } // end of namespace ::sdext::presenter

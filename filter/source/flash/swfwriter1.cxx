@@ -39,15 +39,14 @@
 #include <memory>
 
 using namespace ::swf;
-using namespace ::std;
 using namespace ::com::sun::star::i18n;
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::io;
 using namespace ::com::sun::star::beans;
 
-static MapMode aTWIPSMode( MAP_TWIP );
-static MapMode a100thmmMode( MAP_100TH_MM );
+static MapMode aTWIPSMode( MapUnit::MapTwip );
+static MapMode a100thmmMode( MapUnit::Map100thMM );
 
 
 Point Writer::map( const Point& rPoint ) const
@@ -175,7 +174,7 @@ void Writer::Impl_addShapeRecordChange( BitStream& rBits, sal_Int16 dx, sal_Int1
     rBits.writeUB( bFilled ? 1 : 0, 1 );        // StateFillStyle1
     rBits.writeUB( 1, 1 );          // StateMoveTo
 
-    sal_uInt16 nMoveBits = max( getMaxBitsSigned( dx ), getMaxBitsSigned( dy ) );
+    sal_uInt16 nMoveBits = std::max( getMaxBitsSigned( dx ), getMaxBitsSigned( dy ) );
 
     rBits.writeUB( nMoveBits, 5 );  // Number of bits per value
                                     // TODO: Optimize horizontal and vertical lines
@@ -193,7 +192,7 @@ void Writer::Impl_addStraightEdgeRecord( BitStream& rBits, sal_Int16 dx, sal_Int
     rBits.writeUB( 1, 1 );          // TypeFlag
     rBits.writeUB( 1, 1 );          // StraightFlag
 
-    sal_uInt16 nBits = max( getMaxBitsSigned( dx ), getMaxBitsSigned( dy ) );
+    sal_uInt16 nBits = std::max( getMaxBitsSigned( dx ), getMaxBitsSigned( dy ) );
 
     rBits.writeUB( nBits - 2, 4 );  // Number of bits per value
 
@@ -227,10 +226,10 @@ void Writer::Impl_addCurvedEdgeRecord( BitStream& rBits, sal_Int16 control_dx, s
     rBits.writeUB( 0, 1 );          // CurvedFlag
 
     sal_uInt8 nBits = static_cast<sal_uInt8>(
-        max( getMaxBitsSigned( control_dx ),
-            max( getMaxBitsSigned( control_dy ),
-                max( getMaxBitsSigned( anchor_dx ),
-                    max( getMaxBitsSigned( anchor_dy ), (sal_uInt16)3 ) ) ) ) );
+        std::max( getMaxBitsSigned( control_dx ),
+            std::max( getMaxBitsSigned( control_dy ),
+                std::max( getMaxBitsSigned( anchor_dx ),
+                    std::max( getMaxBitsSigned( anchor_dy ), (sal_uInt16)3 ) ) ) ) );
 
     rBits.writeUB( nBits - 2, 4 );  // Number of bits per value
 
@@ -317,7 +316,7 @@ void Writer::Impl_writeGradientEx( const tools::PolyPolygon& rPolyPoly, const Gr
         tools::PolyPolygon aPolyPolygon( rPolyPoly );
         map( aPolyPolygon );
 
-        if( (rGradient.GetStyle() == GradientStyle_LINEAR && rGradient.GetAngle() == 900) || (rGradient.GetStyle() == GradientStyle_RADIAL)  )
+        if( (rGradient.GetStyle() == GradientStyle::Linear && rGradient.GetAngle() == 900) || (rGradient.GetStyle() == GradientStyle::Radial)  )
         {
             const Rectangle aBoundRect( aPolyPolygon.GetBoundRect() );
 
@@ -388,7 +387,7 @@ void Writer::Impl_writeText( const Point& rPos, const OUString& rText, const lon
 {
     const FontMetric aMetric( mpVDev->GetFontMetric() );
 
-    bool bTextSpecial = aMetric.IsShadow() || aMetric.IsOutline() || (aMetric.GetRelief() != RELIEF_NONE);
+    bool bTextSpecial = aMetric.IsShadow() || aMetric.IsOutline() || (aMetric.GetRelief() != FontRelief::NONE);
 
     if( !bTextSpecial )
     {
@@ -396,7 +395,7 @@ void Writer::Impl_writeText( const Point& rPos, const OUString& rText, const lon
     }
     else
     {
-        if( aMetric.GetRelief() != RELIEF_NONE )
+        if( aMetric.GetRelief() != FontRelief::NONE )
         {
             Color aReliefColor( COL_LIGHTGRAY );
             Color aTextColor( mpVDev->GetTextColor() );
@@ -411,7 +410,7 @@ void Writer::Impl_writeText( const Point& rPos, const OUString& rText, const lon
             Point aPos( rPos );
             Point aOffset( 6,6 );
 
-            if ( aMetric.GetRelief() == RELIEF_ENGRAVED )
+            if ( aMetric.GetRelief() == FontRelief::Engraved )
             {
                 aPos -= aOffset;
             }
@@ -479,7 +478,7 @@ void Writer::Impl_writeText( const Point& rPos, const OUString& rText, const lon
     if( !nLen )
         return;
 
-    const bool bRTL = bool(mpVDev->GetLayoutMode() & TEXT_LAYOUT_BIDI_RTL);
+    const bool bRTL = bool(mpVDev->GetLayoutMode() & ComplexTextLayoutFlags::BiDiRtl);
 
     sal_Int16 nScriptType = ScriptType::LATIN;
     Reference < XBreakIterator > xBI( Impl_GetBreakIterator() );
@@ -794,7 +793,7 @@ sal_uInt16 Writer::defineBitmap( const BitmapEx &bmpSource, sal_Int32 nJPEGQuali
 #ifdef DBG_UTIL
     if(compress2(pCompressed.get(), &compressed_size, pImageData, raw_size, Z_BEST_COMPRESSION) != Z_OK)
     {
-        DBG_ASSERT( false, "compress2 failed!" ); ((void)0);
+        SAL_WARN( "filter.flash", "compress2 failed!" ); ((void)0);
     }
 #else
     compress2(pCompressed.get(), &compressed_size, pImageData, raw_size, Z_BEST_COMPRESSION);
@@ -812,7 +811,7 @@ sal_uInt16 Writer::defineBitmap( const BitmapEx &bmpSource, sal_Int32 nJPEGQuali
 #ifdef DBG_UTIL
         if(compress2(pAlphaCompressed.get(), &alpha_compressed_size, pAlphaData, width * height, Z_BEST_COMPRESSION) != Z_OK)
         {
-            DBG_ASSERT( false, "compress2 failed!" ); ((void)0);
+            SAL_WARN( "filter.flash", "compress2 failed!" ); ((void)0);
         }
 #else
         compress2(pAlphaCompressed.get(), &alpha_compressed_size, pAlphaData, width * height, Z_BEST_COMPRESSION);
@@ -963,7 +962,7 @@ void Writer::Impl_writeBmp( sal_uInt16 nBitmapId, sal_uInt32 width, sal_uInt32 h
     mpTag->addUI16( uInt16_(width) );
     mpTag->addUI16( uInt16_(height) );
 
-    mpTag->Write( pCompressed, compressed_size );
+    mpTag->WriteBytes(pCompressed, compressed_size);
 
     endTag();
 }
@@ -1030,8 +1029,8 @@ void Writer::Impl_writeJPEG(sal_uInt16 nBitmapId, const sal_uInt8* pJpgData, sal
         {
         case 0xD8:
         case 0xD9:
-            EncodingTableStream.Write( pJpgSearch, nLength );
-            ImageBitsStream.Write( pJpgSearch, nLength );
+            EncodingTableStream.WriteBytes(pJpgSearch, nLength);
+            ImageBitsStream.WriteBytes(pJpgSearch, nLength);
             break;
 
         case 0x01:
@@ -1039,7 +1038,7 @@ void Writer::Impl_writeJPEG(sal_uInt16 nBitmapId, const sal_uInt8* pJpgData, sal
         case 0xDC:
         case 0xDD:
         case 0xC4:
-            EncodingTableStream.Write( pJpgSearch, nLength );
+            EncodingTableStream.WriteBytes(pJpgSearch, nLength);
             break;
 
         case 0xC0:
@@ -1058,7 +1057,7 @@ void Writer::Impl_writeJPEG(sal_uInt16 nBitmapId, const sal_uInt8* pJpgData, sal
         case 0xCF:
         case 0xDA:
         case 0xE0:
-            ImageBitsStream.Write( pJpgSearch, nLength );
+            ImageBitsStream.WriteBytes(pJpgSearch, nLength);
             break;
 
         default:
@@ -1084,10 +1083,10 @@ void Writer::Impl_writeJPEG(sal_uInt16 nBitmapId, const sal_uInt8* pJpgData, sal
 
         mpTag->addUI32( nEncodingTableSize + nImageBitsSize );
 
-        mpTag->Write(EncodingTableStream.GetData(), nEncodingTableSize);
-        mpTag->Write(ImageBitsStream.GetData(), nImageBitsSize);
+        mpTag->WriteBytes(EncodingTableStream.GetData(), nEncodingTableSize);
+        mpTag->WriteBytes(ImageBitsStream.GetData(), nImageBitsSize);
 
-        mpTag->Write( pAlphaCompressed, alpha_compressed_size );
+        mpTag->WriteBytes(pAlphaCompressed, alpha_compressed_size);
 
         endTag();
     }
@@ -1097,8 +1096,8 @@ void Writer::Impl_writeJPEG(sal_uInt16 nBitmapId, const sal_uInt8* pJpgData, sal
 
         mpTag->addUI16( nBitmapId );
 
-        mpTag->Write(EncodingTableStream.GetData(), nEncodingTableSize);
-        mpTag->Write(ImageBitsStream.GetData(), nImageBitsSize);
+        mpTag->WriteBytes(EncodingTableStream.GetData(), nEncodingTableSize);
+        mpTag->WriteBytes(ImageBitsStream.GetData(), nImageBitsSize);
 
         endTag();
     }
@@ -1988,7 +1987,7 @@ void Writer::Impl_quadBezierApprox( BitStream& rBits,
     }
 }
 
-Reference < XBreakIterator > Writer::Impl_GetBreakIterator()
+Reference < XBreakIterator > const & Writer::Impl_GetBreakIterator()
 {
     if ( !mxBreakIterator.is() )
     {

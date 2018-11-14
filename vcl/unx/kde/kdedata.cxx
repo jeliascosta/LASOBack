@@ -75,7 +75,7 @@ SalKDEDisplay::~SalKDEDisplay()
     // clean up own members
     doDestruct();
     // prevent SalDisplay from closing KApplication's display
-    pDisp_ = NULL;
+    pDisp_ = nullptr;
 }
 
 /***************************************************************************
@@ -104,8 +104,8 @@ KDEXLib::~KDEXLib()
 
 void KDEXLib::Init()
 {
-    SalI18N_InputMethod* pInputMethod = new SalI18N_InputMethod;
-    pInputMethod->SetLocale();
+    m_pInputMethod = new SalI18N_InputMethod;
+    m_pInputMethod->SetLocale();
     XrmInitialize();
 
     KAboutData *kAboutData = new KAboutData( "LibreOffice",
@@ -163,12 +163,7 @@ void KDEXLib::Init()
     m_pApplication = new VCLKDEApplication();
     kapp->disableSessionManagement();
 
-    Display* pDisp = QPaintDevice::x11AppDisplay();
-
-    SalX11Display *pSalDisplay = new SalKDEDisplay( pDisp );
-
-    pInputMethod->CreateMethod( pDisp );
-    pSalDisplay->SetupInput( pInputMethod );
+    m_pDisplay = QPaintDevice::x11AppDisplay();
 }
 
 void KDEXLib::doStartup()
@@ -224,7 +219,7 @@ extern "C" {
         if( nMajor != 3 || nMinor < 2 || (nMinor == 2 && nMicro < 2) )
         {
             SAL_INFO( "vcl.kde", "unsuitable qt version " << nMajor << "." << nMinor << "." << nMicro );
-            return NULL;
+            return nullptr;
         }
 
         KDESalInstance* pInstance = new KDESalInstance( new SalYieldMutex() );

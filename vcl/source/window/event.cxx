@@ -101,15 +101,17 @@ bool Window::Notify( NotifyEvent& rNEvt )
     // check for docking window
     // but do nothing if window is docked and locked
     ImplDockingWindowWrapper *pWrapper = ImplGetDockingManager()->GetDockingWindowWrapper( this );
-    if( pWrapper && !( !pWrapper->IsFloatingMode() && pWrapper->IsLocked() ) )
+    if (pWrapper && !( !pWrapper->IsFloatingMode() && pWrapper->IsLocked() ))
     {
+        const bool bDockingSupportCrippled = !StyleSettings::GetDockingFloatsSupported();
+
         if ( rNEvt.GetType() == MouseNotifyEvent::MOUSEBUTTONDOWN )
         {
             const MouseEvent* pMEvt = rNEvt.GetMouseEvent();
             bool bHit = pWrapper->GetDragArea().IsInside( pMEvt->GetPosPixel() );
             if ( pMEvt->IsLeft() )
             {
-                if ( pMEvt->IsMod1() && (pMEvt->GetClicks() == 2) )
+                if (!bDockingSupportCrippled && pMEvt->IsMod1() && (pMEvt->GetClicks() == 2))
                 {
                     // ctrl double click toggles floating mode
                     pWrapper->SetFloatingMode( !pWrapper->IsFloatingMode() );
@@ -149,8 +151,8 @@ bool Window::Notify( NotifyEvent& rNEvt )
         else if( rNEvt.GetType() == MouseNotifyEvent::KEYINPUT )
         {
             const vcl::KeyCode& rKey = rNEvt.GetKeyEvent()->GetKeyCode();
-            if( rKey.GetCode() == KEY_F10 && rKey.GetModifier() &&
-                rKey.IsShift() && rKey.IsMod1() )
+            if (rKey.GetCode() == KEY_F10 && rKey.GetModifier() &&
+                rKey.IsShift() && rKey.IsMod1() && !bDockingSupportCrippled)
             {
                 pWrapper->SetFloatingMode( !pWrapper->IsFloatingMode() );
                 /* At this point the floating toolbar frame does not have the
@@ -173,7 +175,7 @@ bool Window::Notify( NotifyEvent& rNEvt )
         if ( (rNEvt.GetType() == MouseNotifyEvent::KEYINPUT) || (rNEvt.GetType() == MouseNotifyEvent::KEYUP) )
         {
             if ( ImplIsOverlapWindow() ||
-                 ((getNonLayoutRealParent(this)->GetStyle() & (WB_DIALOGCONTROL | WB_NODIALOGCONTROL)) != WB_DIALOGCONTROL) )
+                 ((getNonLayoutParent(this)->GetStyle() & (WB_DIALOGCONTROL | WB_NODIALOGCONTROL)) != WB_DIALOGCONTROL) )
             {
                 bRet = ImplDlgCtrl( *rNEvt.GetKeyEvent(), rNEvt.GetType() == MouseNotifyEvent::KEYINPUT );
             }
@@ -343,9 +345,9 @@ ImplSVEvent * Window::PostUserEvent( const Link<void*,void>& rLink, void* pCalle
 
 void Window::RemoveUserEvent( ImplSVEvent * nUserEvent )
 {
-    DBG_ASSERT( nUserEvent->mpWindow.get() == this,
+    SAL_WARN_IF( nUserEvent->mpWindow.get() != this, "vcl",
                 "Window::RemoveUserEvent(): Event doesn't send to this window or is already removed" );
-    DBG_ASSERT( nUserEvent->mbCall,
+    SAL_WARN_IF( !nUserEvent->mbCall, "vcl",
                 "Window::RemoveUserEvent(): Event is already removed" );
 
     if ( nUserEvent->mpWindow )
@@ -359,7 +361,7 @@ void Window::RemoveUserEvent( ImplSVEvent * nUserEvent )
 
 static MouseEvent ImplTranslateMouseEvent( const MouseEvent& rE, vcl::Window* pSource, vcl::Window* pDest )
 {
-    // the mouse event occured in a different window, we need to translate the coordinates of
+    // the mouse event occurred in a different window, we need to translate the coordinates of
     // the mouse cursor within that (source) window to the coordinates the mouse cursor would
     // be in the destination window
     Point aPos = pSource->OutputToScreenPixel( rE.GetPosPixel() );
@@ -390,7 +392,7 @@ void Window::ImplNotifyKeyMouseCommandEventListeners( NotifyEvent& rNEvt )
                 }
                 else
                 {
-                    // the mouse event occured in a different window, we need to translate the coordinates of
+                    // the mouse event occurred in a different window, we need to translate the coordinates of
                     // the mouse cursor within that window to the coordinates the mouse cursor would be in the
                     // current window
                     vcl::Window* pSource = rNEvt.GetWindow();
@@ -653,7 +655,6 @@ NotifyEvent::NotifyEvent( MouseNotifyEvent nEventType, vcl::Window* pWindow,
     mpWindow    = pWindow;
     mpData      = const_cast<void*>(pEvent);
     mnEventType  = nEventType;
-    mnRetValue  = 0;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

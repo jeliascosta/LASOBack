@@ -127,7 +127,7 @@ void ScTabViewShell::ActivateObject( SdrOle2Obj* pObj, long nVerb )
 
             Size aDrawSize = aRect.GetSize();
 
-            MapMode aMapMode( MAP_100TH_MM );
+            MapMode aMapMode( MapUnit::Map100thMM );
             Size aOleSize = pObj->GetOrigObjSize( &aMapMode );
 
             if ( pClient->GetAspect() != embed::Aspects::MSOLE_ICON
@@ -139,7 +139,7 @@ void ScTabViewShell::ActivateObject( SdrOle2Obj* pObj, long nVerb )
                 {
                     MapUnit aUnit = VCLUnoHelper::UnoEmbed2VCLMapUnit( xObj->getMapUnit( pClient->GetAspect() ) );
                     aOleSize = OutputDevice::LogicToLogic( aDrawSize,
-                                            MAP_100TH_MM, aUnit );
+                                            MapUnit::Map100thMM, aUnit );
                     awt::Size aSz( aOleSize.Width(), aOleSize.Height() );
                     xObj->setVisualAreaSize( pClient->GetAspect(), aSz );
                 }
@@ -355,12 +355,12 @@ void ScTabViewShell::ExecDrawIns(SfxRequest& rReq)
         case SID_LINKS:
             {
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-                SfxAbstractLinksDialog* pDlg = pFact->CreateLinksDialog( pWin, rDoc.GetLinkManager() );
+                ScopedVclPtr<SfxAbstractLinksDialog> pDlg(pFact->CreateLinksDialog( pWin, rDoc.GetLinkManager() ));
                 if ( pDlg )
                 {
                     pDlg->Execute();
                     rBindings.Invalidate( nSlot );
-                    SfxGetpApp()->Broadcast( SfxSimpleHint( SC_HINT_AREALINKS_CHANGED ) );     // Navigator
+                    SfxGetpApp()->Broadcast( SfxHint( SC_HINT_AREALINKS_CHANGED ) );     // Navigator
                     rReq.Done();
                 }
             }
@@ -400,7 +400,7 @@ void ScTabViewShell::ExecDrawIns(SfxRequest& rReq)
                                 pNewDBField->NbcSetLayer(SC_LAYER_FRONT);
                             if (dynamic_cast<const SdrObjGroup*>( pNewDBField) !=  nullptr)
                             {
-                                SdrObjListIter aIter( *pNewDBField, IM_DEEPWITHGROUPS );
+                                SdrObjListIter aIter( *pNewDBField, SdrIterMode::DeepWithGroups );
                                 SdrObject* pSubObj = aIter.Next();
                                 while (pSubObj)
                                 {

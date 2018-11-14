@@ -206,12 +206,6 @@ public:
 };
 
 
-enum PasswordState {
-    no_password,
-    entered,
-    cancelled
-};
-
 class PasswordContainer : public ::cppu::WeakImplHelper<
         css::task::XPasswordContainer2,
         css::lang::XServiceInfo,
@@ -260,7 +254,7 @@ css::task::UrlRecord find(
                     css::task::PasswordRequestMode aRMode,
                     const css::uno::Reference< css::task::XInteractionHandler >& xHandler );
 
-    OUString GetMasterPassword( const css::uno::Reference< css::task::XInteractionHandler >& Handler )
+    OUString const & GetMasterPassword( const css::uno::Reference< css::task::XInteractionHandler >& Handler )
                                                         throw(css::uno::RuntimeException, std::exception);
 
     void UpdateVector( const OUString& url, ::std::list< NamePassRecord >& toUpdate, NamePassRecord& rec, bool writeFile )
@@ -274,14 +268,14 @@ css::task::UrlRecord find(
                                                         throw(css::uno::RuntimeException, std::exception);
 
     static ::std::vector< OUString > DecodePasswords( const OUString& aLine, const OUString& aMasterPassword )
-                                                        throw(css::uno::RuntimeException);
+                                                        throw(css::uno::RuntimeException, std::exception);
 
     static OUString EncodePasswords(const std::vector< OUString >& lines, const OUString& aMasterPassword )
                                                         throw(css::uno::RuntimeException);
 
 public:
     PasswordContainer( const css::uno::Reference< css::lang::XMultiServiceFactory >& );
-    virtual ~PasswordContainer();
+    virtual ~PasswordContainer() override;
 
     virtual void SAL_CALL add( const OUString& aUrl,
                                const OUString& aUserName,
@@ -327,7 +321,7 @@ public:
     static css::uno::Reference< css::lang::XSingleServiceFactory > SAL_CALL
                     impl_createFactory( const css::uno::Reference< css::lang::XMultiServiceFactory >& ServiceManager ) throw(css::uno::RuntimeException);
     static css::uno::Reference< css::uno::XInterface > SAL_CALL
-                    impl_createInstance( const css::uno::Reference< css::lang::XMultiServiceFactory >& xServiceManager ) throw( css::uno::RuntimeException );
+                    impl_createInstance( const css::uno::Reference< css::lang::XMultiServiceFactory >& xServiceManager ) throw( css::uno::RuntimeException, std::exception );
 
     // XServiceInfo
     virtual OUString SAL_CALL    getImplementationName(  ) throw(css::uno::RuntimeException, std::exception) override;

@@ -68,7 +68,7 @@ public:
     virtual void SAL_CALL setFastPropertyValue_NoBroadcast(sal_Int32 nHandle, const css::uno::Any& rValue) throw ( css::uno::Exception, std::exception) override;
 
     virtual sal_Bool SAL_CALL convertFastPropertyValue(css::uno::Any& rConvertedValue, css::uno::Any& rOldValue, sal_Int32 nHandle, const css::uno::Any& rValue )
-        throw(css::lang::IllegalArgumentException) override;
+        throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
     // UNO Anbindung
     DECLARE_UNO3_AGG_DEFAULTS(OImageControlModel, OBoundControlModel)
@@ -80,9 +80,6 @@ public:
     { return OUString("com.sun.star.form.OImageControlModel"); }
 
     virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() throw(std::exception) override;
-
-    // OComponentHelper
-    virtual void SAL_CALL disposing() override;
 
     // XPersistObject
     virtual OUString SAL_CALL getServiceName() throw ( css::uno::RuntimeException, std::exception) override;
@@ -139,7 +136,7 @@ protected:
     */
     bool    impl_updateStreamForURL_lck( const OUString& _rURL, ValueChangeInstigator _eInstigator );
 
-    DECL_LINK_TYPED( OnImageImportDone, ::Graphic*, void );
+    DECL_LINK( OnImageImportDone, ::Graphic*, void );
 };
 
 typedef ::cppu::ImplHelper2 <   css::awt::XMouseListener

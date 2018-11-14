@@ -212,7 +212,7 @@ void SVTXGridControl::setProperty( const OUString& PropertyName, const Any& aVal
             sal_Int32 columnHeaderHeight = 0;
             if ( !aValue.hasValue() )
             {
-                columnHeaderHeight = pTable->PixelToLogic( Size( 0, pTable->GetTextHeight() + 3 ), MAP_APPFONT ).Height();
+                columnHeaderHeight = pTable->PixelToLogic( Size( 0, pTable->GetTextHeight() + 3 ), MapUnit::MapAppFont ).Height();
             }
             else
             {
@@ -252,7 +252,7 @@ void SVTXGridControl::setProperty( const OUString& PropertyName, const Any& aVal
             sal_Int32 rowHeight = 0;
             if ( !aValue.hasValue() )
             {
-                rowHeight = pTable->PixelToLogic( Size( 0, pTable->GetTextHeight() + 3 ), MAP_APPFONT ).Height();
+                rowHeight = pTable->PixelToLogic( Size( 0, pTable->GetTextHeight() + 3 ), MapUnit::MapAppFont ).Height();
             }
             else
             {
@@ -290,10 +290,10 @@ void SVTXGridControl::setProperty( const OUString& PropertyName, const Any& aVal
                 SelectionMode eSelMode;
                 switch( eSelectionType )
                 {
-                case SelectionType_SINGLE:  eSelMode = SINGLE_SELECTION; break;
-                case SelectionType_RANGE:   eSelMode = RANGE_SELECTION; break;
-                case SelectionType_MULTI:   eSelMode = MULTIPLE_SELECTION; break;
-                default:                    eSelMode = NO_SELECTION; break;
+                case SelectionType_SINGLE:  eSelMode = SelectionMode::Single; break;
+                case SelectionType_RANGE:   eSelMode = SelectionMode::Range; break;
+                case SelectionType_MULTI:   eSelMode = SelectionMode::Multiple; break;
+                default:                    eSelMode = SelectionMode::NONE; break;
                 }
                 if( pTable->getSelEngine()->GetSelectionMode() != eSelMode )
                     pTable->getSelEngine()->SetSelectionMode( eSelMode );
@@ -485,9 +485,9 @@ Any SVTXGridControl::getProperty( const OUString& PropertyName ) throw(RuntimeEx
         SelectionMode eSelMode = pTable->getSelEngine()->GetSelectionMode();
         switch( eSelMode )
         {
-            case SINGLE_SELECTION:  eSelectionType = SelectionType_SINGLE; break;
-            case RANGE_SELECTION:   eSelectionType = SelectionType_RANGE; break;
-            case MULTIPLE_SELECTION:eSelectionType = SelectionType_MULTI; break;
+            case SelectionMode::Single:  eSelectionType = SelectionType_SINGLE; break;
+            case SelectionMode::Range:   eSelectionType = SelectionType_RANGE; break;
+            case SelectionMode::Multiple:eSelectionType = SelectionType_MULTI; break;
             default:                eSelectionType = SelectionType_NONE; break;
         }
         aPropertyValue <<= eSelectionType;
@@ -853,7 +853,7 @@ void SVTXGridControl::setEnable( sal_Bool bEnable ) throw(css::uno::RuntimeExcep
     SolarMutexGuard aGuard;
 
     m_xTableModel->setEnabled( bEnable );
-    vcl::Window * pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if ( pWindow )
     {
         pWindow->Enable( bEnable );

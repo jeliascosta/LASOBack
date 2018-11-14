@@ -259,8 +259,6 @@ File gid_File_extras_newfiles
     Name = "extras_newfiles.filelist";
 End
 
-#endif
-
 //ADD LIBRAS
 File gid_File_laso_files
     TXT_FILE_BODY;
@@ -269,6 +267,8 @@ File gid_File_laso_files
     Name = "laso_files.filelist";
 End
 //END LIBRAS
+
+#endif
 
 #if defined UNX && ! defined MACOSX
 
@@ -424,6 +424,15 @@ End
 File gid_File_Extension_Dictionary_Bn
 	Dir = FILELIST_DIR;
 	Name = "Dictionary/dict-bn.filelist";
+	Styles = (PACKED, FORCELANGUAGEPACK, FILELIST);
+	TXT_FILE_BODY;
+End
+#endif
+
+#if defined WITH_MYSPELL_DICTS
+File gid_File_Extension_Dictionary_Bo
+	Dir = FILELIST_DIR;
+	Name = "Dictionary/dict-bo.filelist";
 	Styles = (PACKED, FORCELANGUAGEPACK, FILELIST);
 	TXT_FILE_BODY;
 End

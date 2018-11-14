@@ -88,7 +88,6 @@ namespace frm
 
 class OGroupComp
 {
-    OUString m_aName;
     css::uno::Reference< css::beans::XPropertySet>    m_xComponent;
     css::uno::Reference< css::awt::XControlModel>     m_xControlModel;
     sal_Int32   m_nPos;
@@ -127,11 +126,10 @@ public:
 
     bool operator==( const OGroupCompAcc& rCompAcc ) const;
 
-    inline const css::uno::Reference< css::beans::XPropertySet>&  GetComponent() const { return m_xComponent; }
     const OGroupComp&   GetGroupComponent() const { return m_aGroupComp; }
 };
 
-class OGroup
+class OGroup final
 {
     OGroupCompArr              m_aCompArray;
     std::vector<OGroupCompAcc> m_aCompAccArray;
@@ -143,7 +141,7 @@ class OGroup
 
 public:
     explicit OGroup(const OUString& rGroupName);
-    virtual ~OGroup();
+    ~OGroup();
 
     const OUString& GetGroupName() const { return m_aGroupName; }
     css::uno::Sequence< css::uno::Reference< css::awt::XControlModel>  > GetControlModels() const;
@@ -175,7 +173,7 @@ class OGroupManager : public ::cppu::WeakImplHelper< css::beans::XPropertyChange
 
 public:
     explicit OGroupManager(const css::uno::Reference< css::container::XContainer >& _rxContainer);
-    virtual ~OGroupManager();
+    virtual ~OGroupManager() override;
 
 // css::lang::XEventListener
     virtual void SAL_CALL disposing(const css::lang::EventObject& _rSource) throw(css::uno::RuntimeException, std::exception) override;

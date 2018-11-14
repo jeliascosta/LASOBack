@@ -68,6 +68,8 @@
 #include "bento.hxx"
 
 #include "lwpglobalmgr.hxx"
+#include "lwpframelayout.hxx"
+
 #include "xfilter/xfframe.hxx"
 #include "xfilter/xfimage.hxx"
 #include "xfilter/xfimagestyle.hxx"
@@ -239,8 +241,6 @@ void LwpGraphicObject::XFConvert (XFContentContainer* pCont)
     }
 }
 
-#include "lwpframelayout.hxx"
-
 /**
  * @descr   judge if the graphic format is what we can support: bmp, jpg, wmf, gif, tgf(tif). other format will be filtered to
  *  these formats by Word Pro.
@@ -375,7 +375,7 @@ sal_uInt32 LwpGraphicObject::GetRawGrafData(sal_uInt8*& pGrafData)
         // read image data
         sal_uInt32 nDataLen = pMemGrafStream->GetEndOfData();
         pGrafData = new sal_uInt8 [nDataLen];
-        pMemGrafStream->Read(pGrafData, nDataLen);
+        pMemGrafStream->ReadBytes(pGrafData, nDataLen);
 
         delete pMemGrafStream;
         pMemGrafStream = nullptr;
@@ -426,7 +426,7 @@ sal_uInt32 LwpGraphicObject::GetGrafData(sal_uInt8*& pGrafData)
         pGrafStream->Seek(nPos);
 
         pGrafData = new sal_uInt8 [nDataLen];
-        pMemGrafStream->Read(pGrafData, nDataLen);
+        pMemGrafStream->ReadBytes(pGrafData, nDataLen);
 
         delete pMemGrafStream;
         pMemGrafStream = nullptr;
@@ -688,17 +688,23 @@ void LwpGraphicObject::XFConvertEquation(XFContentContainer * pCont)
         //                                18,12,0,0,0,0,0.
         //                                 .TCIformat{2}
         //total head length = 45
+        bool bOk = true;
         sal_uInt32 nBegin = 45;
-        sal_uInt32 nEnd = nDataLen -1;
+        sal_uInt32 nEnd = 0;
+        if (nDataLen >= 1)
+            nEnd = nDataLen - 1;
+        else
+            bOk = false;
 
-        if(pGrafData[nEnd] == '$' && pGrafData[nEnd-1]!= '\\')
+        if (bOk && pGrafData[nEnd] == '$' && nEnd > 0 && pGrafData[nEnd-1] != '\\')
         {
             //equation body is contained by '$';
             nBegin++;
             nEnd--;
         }
 
-        if(nEnd >= nBegin)
+        bOk &= nEnd >= nBegin;
+        if (bOk)
         {
             sal_uInt8* pEquData = new sal_uInt8[nEnd - nBegin + 1];
             for(sal_uInt32 nIndex = 0; nIndex < nEnd - nBegin +1 ; nIndex++)

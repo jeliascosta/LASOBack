@@ -60,11 +60,10 @@ class OColumnControlModel :  public ::comphelper::OMutexAndBroadcastHelper
     sal_Int32                   m_nWidth;
 // [properties]
 
-    const css::uno::Reference< css::lang::XMultiServiceFactory>& getORB() const { return m_xORB; }
     void registerProperties();
 protected:
 
-    virtual ~OColumnControlModel();
+    virtual ~OColumnControlModel() override;
     OColumnControlModel(const OColumnControlModel* _pSource
                         ,const css::uno::Reference< css::lang::XMultiServiceFactory>& _rxFactory);
 public:

@@ -30,6 +30,9 @@
 #include <rtl/tencinfo.h>
 #include <vcl/virdev.hxx>
 #include <o3tl/make_unique.hxx>
+#include "officecfg/Setup.hxx"
+#include "officecfg/Office/Linguistic.hxx"
+#include "unotools/wincodepage.hxx"
 
 #if OSL_DEBUG_LEVEL > 1
 #define EMFP_DEBUG(x) x
@@ -142,11 +145,27 @@ void WinMtfPathObj::ClosePath()
     bClosed = true;
 }
 
+namespace {
+
+OUString getLODefaultLanguage()
+{
+    OUString result(officecfg::Office::Linguistic::General::DefaultLocale::get());
+    if (result.isEmpty())
+        result = officecfg::Setup::L10N::ooSetupSystemLocale::get();
+    return result;
+}
+
+}
+
 WinMtfFontStyle::WinMtfFontStyle( LOGFONTW& rFont )
 {
     rtl_TextEncoding eCharSet;
-    if ( ( rFont.lfCharSet == OEM_CHARSET ) || ( rFont.lfCharSet == DEFAULT_CHARSET ) )
-        eCharSet = osl_getThreadTextEncoding();
+    if ((rFont.alfFaceName == "Symbol")
+     || (rFont.alfFaceName == "MT Extra"))
+        eCharSet = RTL_TEXTENCODING_SYMBOL;
+    else if ((rFont.lfCharSet == DEFAULT_CHARSET) || (rFont.lfCharSet == OEM_CHARSET))
+        eCharSet = utl_getWinTextEncodingFromLangStr(getLODefaultLanguage().toUtf8().getStr(),
+                                                     rFont.lfCharSet == OEM_CHARSET);
     else
         eCharSet = rtl_getTextEncodingFromWindowsCharset( rFont.lfCharSet );
     if ( eCharSet == RTL_TEXTENCODING_DONTKNOW )
@@ -198,7 +217,9 @@ WinMtfFontStyle::WinMtfFontStyle( LOGFONTW& rFont )
     aFont.SetPitch( ePitch );
 
     FontWeight eWeight;
-    if( rFont.lfWeight <= FW_THIN )
+    if (rFont.lfWeight == 0) // default weight SHOULD be used
+        eWeight = WEIGHT_DONTKNOW;
+    else if (rFont.lfWeight <= FW_THIN)
         eWeight = WEIGHT_THIN;
     else if( rFont.lfWeight <= FW_ULTRALIGHT )
         eWeight = WEIGHT_ULTRALIGHT;
@@ -227,10 +248,7 @@ WinMtfFontStyle::WinMtfFontStyle( LOGFONTW& rFont )
     if( rFont.lfStrikeOut )
         aFont.SetStrikeout( STRIKEOUT_SINGLE );
 
-    if ( rFont.lfOrientation )
-        aFont.SetOrientation( (short)rFont.lfOrientation );
-    else
-        aFont.SetOrientation( (short)rFont.lfEscapement );
+    aFont.SetOrientation( (short)rFont.lfEscapement );
 
     Size aFontSize( Size( rFont.lfWidth, rFont.lfHeight ) );
     if ( rFont.lfHeight > 0 )
@@ -614,7 +632,7 @@ void WinMtfOutput::SelectObject( sal_Int32 nIndex )
     }
 }
 
-void WinMtfOutput::SetTextLayoutMode( ComplexTextLayoutMode nTextLayoutMode )
+void WinMtfOutput::SetTextLayoutMode( ComplexTextLayoutFlags nTextLayoutMode )
 {
     mnTextLayoutMode = nTextLayoutMode;
 }
@@ -725,7 +743,7 @@ void WinMtfOutput::CreateObjectIndexed( sal_Int32 nIndex, std::unique_ptr<GDIObj
                 Size aSize(pLineStyle->aLineInfo.GetWidth(), 0);
                 pLineStyle->aLineInfo.SetWidth( ImplMap(aSize).Width() );
 
-                if ( pLineStyle->aLineInfo.GetStyle() == LINE_DASH )
+                if ( pLineStyle->aLineInfo.GetStyle() == LineStyle::Dash )
                 {
                     aSize.Width() += 1;
                     long nDotLen = ImplMap( aSize ).Width();
@@ -740,10 +758,6 @@ void WinMtfOutput::CreateObjectIndexed( sal_Int32 nIndex, std::unique_ptr<GDIObj
 
         vGDIObj[ nIndex ] = std::move(pObject);
     }
-}
-
-GDIObj::~GDIObj()
-{
 }
 
 void WinMtfOutput::DeleteObject( sal_Int32 nIndex )
@@ -805,12 +819,12 @@ WinMtfOutput::WinMtfOutput( GDIMetaFile& rGDIMetaFile ) :
     mnTextAlign         ( TA_LEFT | TA_TOP | TA_NOUPDATECP ),
     maLatestBkColor     ( 0x12345678 ),
     maBkColor           ( COL_WHITE ),
-    mnLatestTextLayoutMode( TEXT_LAYOUT_DEFAULT ),
-    mnTextLayoutMode    ( TEXT_LAYOUT_DEFAULT ),
+    mnLatestTextLayoutMode( ComplexTextLayoutFlags::Default ),
+    mnTextLayoutMode    ( ComplexTextLayoutFlags::Default ),
     mnLatestBkMode      ( BkMode::NONE ),
     mnBkMode            ( BkMode::OPAQUE ),
-    meLatestRasterOp    ( ROP_INVERT ),
-    meRasterOp          ( ROP_OVERPAINT ),
+    meLatestRasterOp    ( RasterOp::Invert ),
+    meRasterOp          ( RasterOp::OverPaint ),
     maActPos            ( Point() ),
     mbNopMode           ( false ),
     mbFillStyleSelected ( false ),
@@ -846,14 +860,15 @@ WinMtfOutput::WinMtfOutput( GDIMetaFile& rGDIMetaFile ) :
     maLatestLineStyle.aLineColor = Color( 0x12, 0x34, 0x56 );
     maLatestFillStyle.aFillColor = Color( 0x12, 0x34, 0x56 );
 
-    mnRop = R2_BLACK + 1;
-    SetRasterOp( R2_BLACK );
+    mnRop = WMFRasterOp::Black;
+    meRasterOp = RasterOp::OverPaint;
+    mpGDIMetaFile->AddAction( new MetaRasterOpAction( RasterOp::OverPaint ) );
 }
 
 WinMtfOutput::~WinMtfOutput()
 {
     mpGDIMetaFile->AddAction( new MetaPopAction() );
-    mpGDIMetaFile->SetPrefMapMode( MAP_100TH_MM );
+    mpGDIMetaFile->SetPrefMapMode( MapUnit::Map100thMM );
     if ( mrclFrame.IsEmpty() )
         mpGDIMetaFile->SetPrefSize( Size( mnDevWidth, mnDevHeight ) );
     else
@@ -917,32 +932,32 @@ void WinMtfOutput::UpdateFillStyle()
     }
 }
 
-sal_uInt32 WinMtfOutput::SetRasterOp( sal_uInt32 nRasterOp )
+WMFRasterOp WinMtfOutput::SetRasterOp( WMFRasterOp nRasterOp )
 {
-    sal_uInt32 nRetROP = mnRop;
+    WMFRasterOp nRetROP = mnRop;
     if ( nRasterOp != mnRop )
     {
         mnRop = nRasterOp;
 
-        if ( mbNopMode && ( nRasterOp != R2_NOP ) )
-        {   // changing modes from R2_NOP so set pen and brush
+        if ( mbNopMode && ( nRasterOp != WMFRasterOp::Nop ) )
+        {   // changing modes from WMFRasterOp::Nop so set pen and brush
             maFillStyle = m_NopFillStyle;
             maLineStyle = m_NopLineStyle;
             mbNopMode = false;
         }
         switch( nRasterOp )
         {
-            case R2_NOT:
-                meRasterOp = ROP_INVERT;
+            case WMFRasterOp::Not:
+                meRasterOp = RasterOp::Invert;
             break;
 
-            case R2_XORPEN:
-                meRasterOp = ROP_XOR;
+            case WMFRasterOp::XorPen:
+                meRasterOp = RasterOp::Xor;
             break;
 
-            case R2_NOP:
+            case WMFRasterOp::Nop:
             {
-                meRasterOp = ROP_OVERPAINT;
+                meRasterOp = RasterOp::OverPaint;
                 if( !mbNopMode )
                 {
                     m_NopFillStyle = maFillStyle;
@@ -955,7 +970,7 @@ sal_uInt32 WinMtfOutput::SetRasterOp( sal_uInt32 nRasterOp )
             break;
 
             default:
-                meRasterOp = ROP_OVERPAINT;
+                meRasterOp = RasterOp::OverPaint;
             break;
         }
     }
@@ -1046,7 +1061,7 @@ void WinMtfOutput::DrawRect( const Rectangle& rRect, bool bEdge )
     {
         if ( bEdge )
         {
-            if ( maLineStyle.aLineInfo.GetWidth() || ( maLineStyle.aLineInfo.GetStyle() == LINE_DASH ) )
+            if ( maLineStyle.aLineInfo.GetWidth() || ( maLineStyle.aLineInfo.GetStyle() == LineStyle::Dash ) )
             {
                 ImplSetNonPersistentLineColorTransparenz();
                 mpGDIMetaFile->AddAction( new MetaRectAction( ImplMap( rRect ) ) );
@@ -1080,7 +1095,7 @@ void WinMtfOutput::DrawEllipse( const Rectangle& rRect )
     UpdateClipRegion();
     UpdateFillStyle();
 
-    if ( maLineStyle.aLineInfo.GetWidth() || ( maLineStyle.aLineInfo.GetStyle() == LINE_DASH ) )
+    if ( maLineStyle.aLineInfo.GetWidth() || ( maLineStyle.aLineInfo.GetStyle() == LineStyle::Dash ) )
     {
         Point aCenter( ImplMap( rRect.Center() ) );
         Size  aRad( ImplMap( Size( rRect.GetWidth() / 2, rRect.GetHeight() / 2 ) ) );
@@ -1107,7 +1122,7 @@ void WinMtfOutput::DrawArc( const Rectangle& rRect, const Point& rStart, const P
     Point       aStart( ImplMap( rStart ) );
     Point       aEnd( ImplMap( rEnd ) );
 
-    if ( maLineStyle.aLineInfo.GetWidth() || ( maLineStyle.aLineInfo.GetStyle() == LINE_DASH ) )
+    if ( maLineStyle.aLineInfo.GetWidth() || ( maLineStyle.aLineInfo.GetStyle() == LineStyle::Dash ) )
     {
         if ( aStart == aEnd )
         {   // SJ: #i53768# if start & end is identical, then we have to draw a full ellipse
@@ -1135,7 +1150,7 @@ void WinMtfOutput::DrawPie( const Rectangle& rRect, const Point& rStart, const P
     Point       aStart( ImplMap( rStart ) );
     Point       aEnd( ImplMap( rEnd ) );
 
-    if ( maLineStyle.aLineInfo.GetWidth() || ( maLineStyle.aLineInfo.GetStyle() == LINE_DASH ) )
+    if ( maLineStyle.aLineInfo.GetWidth() || ( maLineStyle.aLineInfo.GetStyle() == LineStyle::Dash ) )
     {
         ImplSetNonPersistentLineColorTransparenz();
         mpGDIMetaFile->AddAction( new MetaPieAction( aRect, aStart, aEnd ) );
@@ -1158,7 +1173,7 @@ void WinMtfOutput::DrawChord( const Rectangle& rRect, const Point& rStart, const
     Point       aStart( ImplMap( rStart ) );
     Point       aEnd( ImplMap( rEnd ) );
 
-    if ( maLineStyle.aLineInfo.GetWidth() || ( maLineStyle.aLineInfo.GetStyle() == LINE_DASH ) )
+    if ( maLineStyle.aLineInfo.GetWidth() || ( maLineStyle.aLineInfo.GetStyle() == LineStyle::Dash ) )
     {
         ImplSetNonPersistentLineColorTransparenz();
         mpGDIMetaFile->AddAction( new MetaChordAction( aRect, aStart, aEnd ) );
@@ -1191,7 +1206,7 @@ void WinMtfOutput::DrawPolygon( tools::Polygon& rPolygon, bool bRecordPath )
         }
         else
         {
-            if ( maLineStyle.aLineInfo.GetWidth() || ( maLineStyle.aLineInfo.GetStyle() == LINE_DASH ) )
+            if ( maLineStyle.aLineInfo.GetWidth() || ( maLineStyle.aLineInfo.GetStyle() == LineStyle::Dash ) )
             {
                 sal_uInt16 nCount = rPolygon.GetSize();
                 if ( nCount )
@@ -1266,7 +1281,7 @@ void WinMtfOutput::DrawPolyPolygon( tools::PolyPolygon& rPolyPolygon, bool bReco
         {
             UpdateLineStyle();
             mpGDIMetaFile->AddAction( new MetaPolyPolygonAction( rPolyPolygon ) );
-            if (maLineStyle.aLineInfo.GetWidth() > 0 || maLineStyle.aLineInfo.GetStyle() == LINE_DASH)
+            if (maLineStyle.aLineInfo.GetWidth() > 0 || maLineStyle.aLineInfo.GetStyle() == LineStyle::Dash)
             {
                 for (sal_uInt16 nPoly = 0; nPoly < rPolyPolygon.Count(); ++nPoly)
                 {
@@ -1440,7 +1455,7 @@ void WinMtfOutput::DrawText( Point& rPosition, OUString& rText, long* pDXArry, b
         SolarMutexGuard aGuard;
         ScopedVclPtrInstance< VirtualDevice > pVDev;
         sal_Int32 nTextWidth;
-        pVDev->SetMapMode( MapMode( MAP_100TH_MM ) );
+        pVDev->SetMapMode( MapMode( MapUnit::Map100thMM ) );
         pVDev->SetFont( maFont );
         const sal_uInt32 nLen = pDXArry ? rText.getLength() : 0;
         if (nLen)
@@ -1488,7 +1503,7 @@ void WinMtfOutput::DrawText( Point& rPosition, OUString& rText, long* pDXArry, b
             SolarMutexGuard aGuard;
             ScopedVclPtrInstance< VirtualDevice > pVDev;
             pDX = new long[ rText.getLength() ];
-            pVDev->SetMapMode( MAP_100TH_MM );
+            pVDev->SetMapMode( MapUnit::Map100thMM );
             pVDev->SetFont( maLatestFont );
             pVDev->GetTextArray( rText, pDX, 0, rText.getLength());
         }
@@ -1505,7 +1520,7 @@ void WinMtfOutput::ImplDrawBitmap( const Point& rPos, const Size& rSize, const B
     if ( mbComplexClip )
     {
         VclPtrInstance< VirtualDevice > pVDev;
-        MapMode aMapMode( MAP_100TH_MM );
+        MapMode aMapMode( MapUnit::Map100thMM );
         aMapMode.SetOrigin( Point( -rPos.X(), -rPos.Y() ) );
         const Size aOutputSizePixel( pVDev->LogicToPixel( rSize, aMapMode ) );
         const Size aSizePixel( rBitmap.GetSizePixel() );
@@ -1591,7 +1606,7 @@ void WinMtfOutput::ImplDrawBitmap( const Point& rPos, const Size& rSize, const B
         mpGDIMetaFile->AddAction( new MetaBmpScaleAction( rPos, rSize, aBmpEx.GetBitmap() ) );
 }
 
-void WinMtfOutput::ResolveBitmapActions( BSaveStructList_impl& rSaveList )
+void WinMtfOutput::ResolveBitmapActions( std::vector<std::unique_ptr<BSaveStruct>>& rSaveList )
 {
     UpdateClipRegion();
 
@@ -1637,7 +1652,7 @@ void WinMtfOutput::ResolveBitmapActions( BSaveStructList_impl& rSaveList )
 
             if ( (nUsed & 1) && (( nUsed & 2 ) == 0) && nWinRop != PATINVERT )
             {   // patterns aren't well supported yet
-                sal_uInt32 nOldRop = SetRasterOp( ROP_OVERPAINT );  // in this case nRasterOperation is either 0 or 0xff
+                WMFRasterOp nOldRop = SetRasterOp( WMFRasterOp::NONE );  // in this case nRasterOperation is either 0 or 0xff
                 UpdateFillStyle();
                 DrawRect( aRect, false );
                 SetRasterOp( nOldRop );
@@ -1695,7 +1710,7 @@ void WinMtfOutput::ResolveBitmapActions( BSaveStructList_impl& rSaveList )
                 if ( !bDrawn )
                 {
                     Push();
-                    sal_uInt32  nOldRop = SetRasterOp( R2_COPYPEN );
+                    WMFRasterOp nOldRop = SetRasterOp( WMFRasterOp::CopyPen );
                     Bitmap      aBitmap( pSave->aBmpEx.GetBitmap() );
                     sal_uInt32  nOperation = ( nRasterOperation & 0xf );
                     switch( nOperation )
@@ -1709,16 +1724,16 @@ void WinMtfOutput::ResolveBitmapActions( BSaveStructList_impl& rSaveList )
                             }
                             else
                             {
-                                SetRasterOp( R2_XORPEN );
+                                SetRasterOp( WMFRasterOp::XorPen );
                                 ImplDrawBitmap( aPos, aSize, aBitmap );
-                                SetRasterOp( R2_COPYPEN );
+                                SetRasterOp( WMFRasterOp::CopyPen );
                                 Bitmap  aMask( aBitmap );
                                 aMask.Invert();
                                 BitmapEx aBmpEx( aBitmap, aMask );
                                 ImplDrawBitmap( aPos, aSize, aBmpEx );
                                 if ( nOperation == 0x1 )
                                 {
-                                    SetRasterOp( R2_NOT );
+                                    SetRasterOp( WMFRasterOp::Not );
                                     DrawRect( aRect, false );
                                 }
                             }
@@ -1737,7 +1752,7 @@ void WinMtfOutput::ResolveBitmapActions( BSaveStructList_impl& rSaveList )
                             ImplDrawBitmap( aPos, aSize, aBmpEx );
                             if ( nOperation == 0x7 )
                             {
-                                SetRasterOp( R2_NOT );
+                                SetRasterOp( WMFRasterOp::Not );
                                 DrawRect( aRect, false );
                             }
                         }
@@ -1746,18 +1761,18 @@ void WinMtfOutput::ResolveBitmapActions( BSaveStructList_impl& rSaveList )
                         case 0x4 :
                         case 0xb :
                         {
-                            SetRasterOp( R2_NOT );
+                            SetRasterOp( WMFRasterOp::Not );
                             DrawRect( aRect, false );
-                            SetRasterOp( R2_COPYPEN );
+                            SetRasterOp( WMFRasterOp::CopyPen );
                             Bitmap  aMask( aBitmap );
                             aBitmap.Invert();
                             BitmapEx aBmpEx( aBitmap, aMask );
                             ImplDrawBitmap( aPos, aSize, aBmpEx );
-                            SetRasterOp( R2_XORPEN );
+                            SetRasterOp( WMFRasterOp::XorPen );
                             ImplDrawBitmap( aPos, aSize, aBitmap );
                             if ( nOperation == 0xb )
                             {
-                                SetRasterOp( R2_NOT );
+                                SetRasterOp( WMFRasterOp::Not );
                                 DrawRect( aRect, false );
                             }
                         }
@@ -1770,11 +1785,11 @@ void WinMtfOutput::ResolveBitmapActions( BSaveStructList_impl& rSaveList )
                             aMask.Invert();
                             BitmapEx aBmpEx( aBitmap, aMask );
                             ImplDrawBitmap( aPos, aSize, aBmpEx );
-                            SetRasterOp( R2_XORPEN );
+                            SetRasterOp( WMFRasterOp::XorPen );
                             ImplDrawBitmap( aPos, aSize, aBitmap );
                             if ( nOperation == 0xd )
                             {
-                                SetRasterOp( R2_NOT );
+                                SetRasterOp( WMFRasterOp::Not );
                                 DrawRect( aRect, false );
                             }
                         }
@@ -1782,11 +1797,11 @@ void WinMtfOutput::ResolveBitmapActions( BSaveStructList_impl& rSaveList )
                         case 0x6 :
                         case 0x9 :
                         {
-                            SetRasterOp( R2_XORPEN );
+                            SetRasterOp( WMFRasterOp::XorPen );
                             ImplDrawBitmap( aPos, aSize, aBitmap );
                             if ( nOperation == 0x9 )
                             {
-                                SetRasterOp( R2_NOT );
+                                SetRasterOp( WMFRasterOp::Not );
                                 DrawRect( aRect, false );
                             }
                         }
@@ -1812,7 +1827,7 @@ void WinMtfOutput::ResolveBitmapActions( BSaveStructList_impl& rSaveList )
 
                         case 0x5 :  // only destination is used
                         {
-                            SetRasterOp( R2_NOT );
+                            SetRasterOp( WMFRasterOp::Not );
                             DrawRect( aRect, false );
                         }
                         break;
@@ -2055,7 +2070,7 @@ void WinMtfOutput::ModifyWorldTransform( const XForm& rXForm, sal_uInt32 nMode )
 void WinMtfOutput::Push()                       // !! to be able to access the original ClipRegion it
 {                                               // is not allowed to use the MetaPushAction()
     UpdateClipRegion();                         // (the original clip region is on top of the stack) (SJ)
-    SaveStructPtr pSave( new SaveStruct );
+    std::shared_ptr<SaveStruct> pSave( new SaveStruct );
 
     pSave->aLineStyle = maLineStyle;
     pSave->aFillStyle = maFillStyle;
@@ -2095,7 +2110,7 @@ void WinMtfOutput::Pop()
     if( !vSaveStack.empty() )
     {
         // Backup the current data on the stack
-        SaveStructPtr pSave( vSaveStack.back() );
+        std::shared_ptr<SaveStruct> pSave( vSaveStack.back() );
 
         maLineStyle = pSave->aLineStyle;
         maFillStyle = pSave->aFillStyle;

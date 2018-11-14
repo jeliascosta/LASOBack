@@ -50,7 +50,7 @@ class ToggleButtonToolbarController : public ComplexToolbarController
                                        sal_uInt16 nID,
                                        Style eStyle,
                                        const OUString& aCommand );
-        virtual ~ToggleButtonToolbarController();
+        virtual ~ToggleButtonToolbarController() override;
 
         // XComponent
         virtual void SAL_CALL dispose() throw ( css::uno::RuntimeException, std::exception ) override;
@@ -63,7 +63,7 @@ class ToggleButtonToolbarController : public ComplexToolbarController
         virtual css::uno::Sequence< css::beans::PropertyValue> getExecuteArgs(sal_Int16 KeyModifier) const override;
 
     private:
-        DECL_LINK_TYPED( MenuSelectHdl, Menu *, bool);
+        DECL_LINK( MenuSelectHdl, Menu *, bool);
 
         Style                   m_eStyle;
         OUString                m_aCurrentSelection;

@@ -24,11 +24,13 @@
 #include <comphelper/processfactory.hxx>
 #include <comphelper/storagehelper.hxx>
 #include <comphelper/string.hxx>
+#include <comphelper/simplefileaccessinteraction.hxx>
 #include <sot/storinfo.hxx>
 #include <com/sun/star/embed/XStorage.hpp>
 #include <com/sun/star/embed/ElementModes.hpp>
 #include <com/sun/star/embed/XTransactedObject.hpp>
 #include <com/sun/star/io/XStream.hpp>
+#include <com/sun/star/task/InteractionHandler.hpp>
 
 #include <com/sun/star/ucb/XCommandEnvironment.hpp>
 #include <svl/urihelper.hxx>
@@ -37,6 +39,7 @@
 #include <sfx2/linkmgr.hxx>
 
 #include <ucbhelper/content.hxx>
+#include <ucbhelper/commandenvironment.hxx>
 
 #include <com/sun/star/i18n/ScriptType.hpp>
 #include <hintids.hxx>
@@ -484,7 +487,7 @@ short SwWW8ImplReader::GetTimeDatePara(OUString& rStr, sal_uInt32& rFormat,
 
     sal_uLong nFormatIdx =
         sw::ms::MSDateTimeFormatToSwFormat(sParams, pFormatter, rLang, bHijri,
-                GetFib().lid);
+                GetFib().m_lid);
     short nNumFormatType = css::util::NumberFormat::UNDEFINED;
     if (nFormatIdx)
         nNumFormatType = pFormatter->GetType(nFormatIdx);
@@ -607,6 +610,9 @@ sal_uInt16 SwWW8ImplReader::End_Field()
                                 ODF_UNHANDLED );
                     if ( pFieldmark )
                     {
+                        // adapt redline positions to inserted field mark start
+                        // dummy char (assume not necessary for end dummy char)
+                        m_pRedlineStack->MoveAttrs(*aFieldPam.Start());
                         const IFieldmark::parameter_map_t& rParametersToAdd = m_aFieldStack.back().getParameters();
                         pFieldmark->GetParameters()->insert(rParametersToAdd.begin(), rParametersToAdd.end());
                         OUString sFieldId = OUString::number( m_aFieldStack.back().mnFieldId );
@@ -638,7 +644,7 @@ sal_uInt16 SwWW8ImplReader::End_Field()
 
                                 if ( xObjDst.Is() )
                                 {
-                                    xSrc1->CopyTo( xObjDst );
+                                    xSrc1->CopyTo( xObjDst.get() );
 
                                     if ( !xObjDst->GetError() )
                                         xObjDst->Commit();
@@ -909,6 +915,14 @@ long SwWW8ImplReader::Read_Field(WW8PLCFManResult* pRes)
         if (nRet == -2 && !aReadParam.GetResult().isEmpty())
             // Single numeric argument: this can be handled by SwChapterField.
             bHasHandler = rtl::isAsciiDigit(aReadParam.GetResult()[0]);
+
+        if (bHasHandler)
+        {
+            nRet = aReadParam.SkipToNextToken();
+            // Handle using SwChapterField only in case there is no \[a-z]
+            // switch after the field argument.
+            bHasHandler = nRet < 0 || nRet == '*';
+        }
     }
 
     // keine Routine vorhanden
@@ -1273,7 +1287,7 @@ SwFltStackEntry *SwWW8FltRefStack::RefToVar(const SwField* pField,
     {
         //Get the name of the ref field, and see if actually a variable
         const OUString sName = pField->GetPar1();
-        ::std::map<OUString, OUString, SwWW8::ltstr>::const_iterator
+        std::map<OUString, OUString, SwWW8::ltstr>::const_iterator
             aResult = aFieldVarNames.find(sName);
 
         if (aResult != aFieldVarNames.end())
@@ -1297,7 +1311,7 @@ OUString SwWW8ImplReader::GetMappedBookmark(const OUString &rOrigName)
 
     //See if there has been a variable set with this name, if so get
     //the pseudo bookmark name that was set with it.
-    ::std::map<OUString, OUString, SwWW8::ltstr>::const_iterator aResult =
+    std::map<OUString, OUString, SwWW8::ltstr>::const_iterator aResult =
             m_pReffingStck->aFieldVarNames.find(sName);
 
     return (aResult == m_pReffingStck->aFieldVarNames.end())
@@ -1501,7 +1515,7 @@ eF_ResT SwWW8ImplReader::Read_F_DocInfo( WW8FieldDesc* pF, OUString& rStr )
             }
         }
 
-        aDocProperty = comphelper::string::remove(aDocProperty, '"');
+        aDocProperty = aDocProperty.replaceAll("\"", "");
 
         /*
         There are up to 26 fields that may be meant by 'DocumentProperty'.
@@ -1691,7 +1705,7 @@ eF_ResT SwWW8ImplReader::Read_F_DocInfo( WW8FieldDesc* pF, OUString& rStr )
             }
         }
 
-        aData = comphelper::string::remove(aData, '"');
+        aData = aData.replaceAll("\"", "");
     }
 
     SwDocInfoField aField( static_cast<SwDocInfoFieldType*>(
@@ -2151,7 +2165,7 @@ eF_ResT SwWW8ImplReader::Read_F_PgRef( WW8FieldDesc*, OUString& rStr )
             SwFormatINetFormat aURL( sURL, sTarget );
             const OUString sLinkStyle("Index Link");
             const sal_uInt16 nPoolId =
-                SwStyleNameMapper::GetPoolIdFromUIName( sLinkStyle, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT );
+                SwStyleNameMapper::GetPoolIdFromUIName( sLinkStyle, SwGetPoolIdFromName::ChrFmt );
             aURL.SetVisitedFormatAndId( sLinkStyle, nPoolId);
             aURL.SetINetFormatAndId( sLinkStyle, nPoolId );
             m_pCtrlStck->NewAttr( *m_pPaM->GetPoint(), aURL );
@@ -2313,13 +2327,33 @@ bool CanUseRemoteLink(const OUString &rGrfName)
     bool bUseRemote = false;
     try
     {
-        ::ucbhelper::Content aCnt(rGrfName,
-            uno::Reference< ucb::XCommandEnvironment >(),
-            comphelper::getProcessComponentContext() );
-        OUString   aTitle;
+        // Related: tdf#102499, add a default css::ucb::XCommandEnvironment
+        // in order to have https protocol manage certificates correctly
+        uno::Reference< task::XInteractionHandler > xIH(
+            task::InteractionHandler::createWithParent(comphelper::getProcessComponentContext(), nullptr));
 
-        aCnt.getPropertyValue("Title") >>= aTitle;
-        bUseRemote = !aTitle.isEmpty();
+        uno::Reference< ucb::XProgressHandler > xProgress;
+        ::ucbhelper::CommandEnvironment* pCommandEnv =
+              new ::ucbhelper::CommandEnvironment(new comphelper::SimpleFileAccessInteraction( xIH ), xProgress);
+
+        ::ucbhelper::Content aCnt(rGrfName,
+                                  static_cast< ucb::XCommandEnvironment* >(pCommandEnv),
+                                  comphelper::getProcessComponentContext());
+
+        if ( !INetURLObject( rGrfName ).isAnyKnownWebDAVScheme() )
+        {
+            OUString   aTitle;
+            aCnt.getPropertyValue("Title") >>= aTitle;
+            bUseRemote = !aTitle.isEmpty();
+        }
+        else
+        {
+            // is a link to a WebDAV resource
+            // need to use MediaType to check for link usability
+            OUString   aMediaType;
+            aCnt.getPropertyValue("MediaType") >>= aMediaType;
+            bUseRemote = !aMediaType.isEmpty();
+        }
     }
     catch ( ... )
     {
@@ -2427,9 +2461,8 @@ eF_ResT SwWW8ImplReader::Read_F_IncludeText( WW8FieldDesc* /*pF*/, OUString& rSt
     {
         // Bereich aus Quelle ( kein Switch ) ?
         ConvertUFName(aBook);
-        aPara += OUString(sfx2::cTokenSeparator);
-        aPara += OUString(sfx2::cTokenSeparator);
-        aPara += aBook;
+        aPara += OUStringLiteral1(sfx2::cTokenSeparator)
+            + OUStringLiteral1(sfx2::cTokenSeparator) + aBook;
     }
 
     /*
@@ -2825,7 +2858,7 @@ static void lcl_toxMatchTSwitch(SwWW8ImplReader& rReader, SwTOXBase& rBase,
 
                     OUString sStyles( rBase.GetStyleNames( nLevel ) );
                     if( !sStyles.isEmpty() )
-                        sStyles += OUStringLiteral1<TOX_STYLE_DELIMITER>();
+                        sStyles += OUStringLiteral1(TOX_STYLE_DELIMITER);
                     sStyles += sTemplate;
                     rBase.SetStyleNames( sStyles, nLevel );
                 }
@@ -2983,7 +3016,7 @@ eF_ResT SwWW8ImplReader::Read_F_Tox( WW8FieldDesc* pF, OUString& rStr )
                                             --aIt;
 
                                             if(0x09 == sDelimiter[0])
-                                                aIt->eTabAlign = SVX_TAB_ADJUST_END;
+                                                aIt->eTabAlign = SvxTabAdjust::End;
                                             else
                                             {
                                                 SwFormToken aToken(TOKEN_TEXT);
@@ -3496,7 +3529,7 @@ eF_ResT SwWW8ImplReader::Read_F_Hyperlink( WW8FieldDesc* /*pF*/, OUString& rStr 
     {
         OUString sLinkStyle("Index Link");
         sal_uInt16 nPoolId =
-            SwStyleNameMapper::GetPoolIdFromUIName( sLinkStyle, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT );
+            SwStyleNameMapper::GetPoolIdFromUIName( sLinkStyle, SwGetPoolIdFromName::ChrFmt );
         aURL.SetVisitedFormatAndId( sLinkStyle, nPoolId );
         aURL.SetINetFormatAndId( sLinkStyle, nPoolId );
     }

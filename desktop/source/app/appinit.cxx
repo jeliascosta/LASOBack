@@ -53,6 +53,7 @@
 #include <unotools/tempfile.hxx>
 #include <vcl/svapp.hxx>
 #include <unotools/pathoptions.hxx>
+#include <sfx2/safemode.hxx>
 #include <map>
 
 using namespace desktop;
@@ -184,7 +185,8 @@ class enable
     }
 };
 
-void Desktop::enableAcceptors()
+// enable acceptors
+IMPL_STATIC_LINK_NOARG(Desktop, EnableAcceptors_Impl, void*, void)
 {
     if (!bAccept)
     {

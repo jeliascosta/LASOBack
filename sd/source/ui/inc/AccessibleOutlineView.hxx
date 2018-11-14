@@ -44,7 +44,7 @@ public:
         const css::uno::Reference<css::frame::XController>& rxController,
         const css::uno::Reference<css::accessibility::XAccessible>& rxParent);
 
-    virtual ~AccessibleOutlineView();
+    virtual ~AccessibleOutlineView() override;
 
     /** Complete the initialization begun in the constructor.
     */
@@ -52,8 +52,7 @@ public:
 
     //=====  IAccessibleViewForwarderListener  ================================
 
-    virtual void ViewForwarderChanged (ChangeType aChangeType,
-        const IAccessibleViewForwarder* pViewForwarder) override;
+    virtual void ViewForwarderChanged() override;
 
     //=====  XAccessibleContext  ==============================================
 
@@ -89,9 +88,7 @@ public:
 
     //=====  lang::XEventListener  ============================================
 
-    virtual void SAL_CALL
-        disposing (const css::lang::EventObject& rEventObject)
-        throw (css::uno::RuntimeException, std::exception) override;
+    using AccessibleDocumentViewBase::disposing;
 
     //=====  XPropertyChangeListener  =========================================
 

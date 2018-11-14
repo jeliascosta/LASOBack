@@ -38,21 +38,21 @@ class SW_DLLPUBLIC NumFormatListBox : public ListBox
                                               //to be shown in the number format dialog
     bool                bUseAutomaticLanguage;//determine whether language is automatically assigned
 
-    DECL_DLLPRIVATE_LINK_TYPED( SelectHdl, ListBox&, void );
+    DECL_DLLPRIVATE_LINK( SelectHdl, ListBox&, void );
 
-    SAL_DLLPRIVATE double          GetDefValue(const short nFormatType) const;
-    SAL_DLLPRIVATE void            Init(short nFormatType);
+    SAL_DLLPRIVATE static double   GetDefValue(const short nFormatType);
+    SAL_DLLPRIVATE void            Init();
     SAL_DLLPRIVATE SwView*         GetView();
 
 public:
     NumFormatListBox(vcl::Window* pWin, WinBits nStyle);
 
-    virtual ~NumFormatListBox();
+    virtual ~NumFormatListBox() override;
     virtual void    dispose() override;
 
     void            Clear();
 
-    inline void     SetOneArea(bool bOnlyOne = true) { bOneArea = bOnlyOne; }
+    inline void     SetOneArea(bool bOnlyOne) { bOneArea = bOnlyOne; }
 
     void            SetFormatType(const short nFormatType);
     inline short    GetFormatType() const { return nCurrFormatType; }

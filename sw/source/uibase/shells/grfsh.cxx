@@ -31,7 +31,7 @@
 #include <editeng/sizeitem.hxx>
 #include <editeng/protitem.hxx>
 #include <sfx2/request.hxx>
-#include <sfx2/sidebar/EnumContext.hxx>
+#include <vcl/EnumContext.hxx>
 #include <svl/srchitem.hxx>
 #include <sfx2/htmlmode.hxx>
 #include <svx/sdgluitm.hxx>
@@ -86,7 +86,7 @@ class SwGrfShell::SwExternalToolEdit
 {
 private:
     SwWrtShell *const m_pShell;
-    ::std::shared_ptr<SwUnoCursor> const m_pCursor;
+    std::shared_ptr<SwUnoCursor> const m_pCursor;
 
 public:
     explicit SwExternalToolEdit(SwWrtShell *const pShell)
@@ -236,7 +236,7 @@ void SwGrfShell::Execute(SfxRequest &rReq)
                 //UUUU items to hand over XPropertyList things like
                 // XColorList, XHatchList, XGradientList and XBitmapList
                 // to the Area TabPage
-                SID_COLOR_TABLE,        SID_BITMAP_LIST,                        // [10179
+                SID_COLOR_TABLE,        SID_PATTERN_LIST,                        // [10179
 
                 SID_HTML_MODE,SID_HTML_MODE,                                    // [10414
                 FN_GET_PRINT_AREA,FN_GET_PRINT_AREA,                            // [21032
@@ -255,6 +255,7 @@ void SwGrfShell::Execute(SfxRequest &rReq)
             aSet.Put(SvxGradientListItem(pDrawModel->GetGradientList(), SID_GRADIENT_LIST));
             aSet.Put(SvxHatchListItem(pDrawModel->GetHatchList(), SID_HATCH_LIST));
             aSet.Put(SvxBitmapListItem(pDrawModel->GetBitmapList(), SID_BITMAP_LIST));
+            aSet.Put(SvxPatternListItem(pDrawModel->GetPatternList(), SID_PATTERN_LIST));
 
             sal_uInt16 nHtmlMode = ::GetHtmlMode(GetView().GetDocShell());
             aSet.Put(SfxUInt16Item(SID_HTML_MODE, nHtmlMode));
@@ -336,7 +337,7 @@ void SwGrfShell::Execute(SfxRequest &rReq)
             aSet.Put(SfxBoolItem(FN_KEEP_ASPECT_RATIO, aUsrPref.IsKeepRatio()));
             aSet.Put(SfxBoolItem( SID_ATTR_GRAF_KEEP_ZOOM, aUsrPref.IsGrfKeepZoom()));
 
-            aSet.Put(SfxFrameItem( SID_DOCFRAME, &GetView().GetViewFrame()->GetTopFrame()));
+            aSet.Put(SfxFrameItem( SID_DOCFRAME, &GetView().GetViewFrame()->GetFrame()));
 
             SfxObjectShell * sh = rSh.GetDoc()->GetPersist();
             if (sh != nullptr && sh->HasName())
@@ -347,7 +348,7 @@ void SwGrfShell::Execute(SfxRequest &rReq)
 
             SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
             OSL_ENSURE(pFact, "no dialog factory!");
-            std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateFrameTabDialog("PictureDialog",
+            ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateFrameTabDialog("PictureDialog",
                                                     GetView().GetViewFrame(),
                                                     GetView().GetWindow(),
                                                     aSet, false));
@@ -480,7 +481,7 @@ void SwGrfShell::Execute(SfxRequest &rReq)
         case SID_OBJECT_CROP:
         {
             GraphicObject const *pGraphicObject = rSh.GetGraphicObj();
-            if (nullptr != pGraphicObject  && SDRDRAG_CROP != rSh.GetDragMode()) {
+            if (nullptr != pGraphicObject  && SdrDragMode::Crop != rSh.GetDragMode()) {
                 rSh.StartCropImage();
             }
         }
@@ -494,10 +495,10 @@ void SwGrfShell::Execute(SfxRequest &rReq)
 
 void SwGrfShell::ExecAttr( SfxRequest &rReq )
 {
-    sal_uInt16 nGrfType;
+    GraphicType nGrfType;
     if( CNT_GRF == GetShell().GetCntType() &&
-        ( GRAPHIC_BITMAP == ( nGrfType = GetShell().GetGraphicType()) ||
-          GRAPHIC_GDIMETAFILE == nGrfType ))
+        ( GraphicType::Bitmap == ( nGrfType = GetShell().GetGraphicType()) ||
+          GraphicType::GdiMetafile == nGrfType ))
     {
         SfxItemSet aGrfSet( GetShell().GetAttrPool(), RES_GRFATR_BEGIN,
                                                       RES_GRFATR_END -1 );
@@ -620,7 +621,7 @@ void SwGrfShell::ExecAttr( SfxRequest &rReq )
         case SID_GRFFILTER_POPART:
         case SID_GRFFILTER_SEPIA:
         case SID_GRFFILTER_SOLARIZE:
-            if( GRAPHIC_BITMAP == nGrfType )
+            if( GraphicType::Bitmap == nGrfType )
             {
                 // #119353# - robust
                 const GraphicObject* pFilterObj( GetShell().GetGraphicObj() );
@@ -676,7 +677,7 @@ void SwGrfShell::GetAttrState(SfxItemSet &rSet)
 
         case SID_SAVE_GRAPHIC:
         case SID_EXTERNAL_EDIT:
-            if( rSh.GetGraphicType() == GRAPHIC_NONE )
+            if( rSh.GetGraphicType() == GraphicType::NONE )
                 bDisable = true;
             break;
 
@@ -758,7 +759,7 @@ void SwGrfShell::GetAttrState(SfxItemSet &rSet)
                 if ( pGrafObj )
                 {
                     if( pGrafObj->IsAnimated() ||
-                        GRAPHIC_GDIMETAFILE == pGrafObj->GetType() )
+                        GraphicType::GdiMetafile == pGrafObj->GetType() )
                         bDisable = true;
                     else
                         rSet.Put( SfxUInt16Item( nWhich, static_cast<const SwTransparencyGrf&>(
@@ -797,9 +798,9 @@ void SwGrfShell::GetAttrState(SfxItemSet &rSet)
                 // #i59688# load graphic only if type is unknown
                 else
                 {
-                    const sal_uInt16 eGraphicType( rSh.GetGraphicType() );
-                    if ( ( eGraphicType == GRAPHIC_NONE ||
-                           eGraphicType == GRAPHIC_DEFAULT ) &&
+                    const GraphicType eGraphicType( rSh.GetGraphicType() );
+                    if ( ( eGraphicType == GraphicType::NONE ||
+                           eGraphicType == GraphicType::Default ) &&
                          rSh.IsLinkedGrfSwapOut() )
                     {
                         rSet.DisableItem( nWhich );
@@ -808,7 +809,7 @@ void SwGrfShell::GetAttrState(SfxItemSet &rSet)
                     }
                     else
                     {
-                        bDisable = eGraphicType != GRAPHIC_BITMAP;
+                        bDisable = eGraphicType != GraphicType::Bitmap;
                     }
                 }
             }
@@ -817,7 +818,7 @@ void SwGrfShell::GetAttrState(SfxItemSet &rSet)
         case SID_OBJECT_CROP:
             {
                 bDisable = FlyProtectFlags::NONE != rSh.IsSelObjProtected( FlyProtectFlags::Content|FlyProtectFlags::Parent );
-                if( rSh.GetGraphicType() == GRAPHIC_NONE )
+                if( rSh.GetGraphicType() == GraphicType::NONE )
                     bDisable = true;
             }
             break;
@@ -909,7 +910,7 @@ void SwGrfShell::GetAttrStateForRotation(SfxItemSet &rSet)
         {
         case SID_ROTATE_GRAPHIC_LEFT:
         case SID_ROTATE_GRAPHIC_RIGHT:
-            if( rShell.GetGraphicType() == GRAPHIC_NONE )
+            if( rShell.GetGraphicType() == GraphicType::NONE )
             {
                 bDisable = true;
             }
@@ -943,7 +944,7 @@ SwGrfShell::SwGrfShell(SwView &_rView) :
 {
     SetName("Graphic");
     SetHelpId(SW_GRFSHELL);
-    SfxShell::SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_Graphic));
+    SfxShell::SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context_Graphic));
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

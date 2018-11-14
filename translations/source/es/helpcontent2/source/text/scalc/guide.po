@@ -4,7 +4,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
 "POT-Creation-Date: 2016-12-10 23:39+0100\n"
-"PO-Revision-Date: 2017-03-25 22:05+0000\n"
+"PO-Revision-Date: 2017-10-18 19:09+0000\n"
 "Last-Translator: Adolfo Jayme Barrientos <fito@libreoffice.org>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: es\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Accelerator-Marker: ~\n"
 "X-Generator: Pootle 2.8\n"
-"X-POOTLE-MTIME: 1490479558.000000\n"
+"X-POOTLE-MTIME: 1508353789.000000\n"
 
 #: address_auto.xhp
 msgctxt ""
@@ -1242,7 +1242,7 @@ msgctxt ""
 "par_id3149207\n"
 "help.text"
 msgid "The time since your date of birth will be calculated and displayed in the various units. The values are calculated as of the exact moment when you entered the last formula and pressed the Enter key. This value is not automatically updated, although \"Now\" continuously changes. In the <emph>Data</emph> menu, the menu item <emph>Calculate - AutoCalculate</emph> is normally active; however, automatic calculation does not apply to the function NOW. This ensures that your computer is not solely occupied with updating the sheet."
-msgstr ""
+msgstr "Se calculará el tiempo transcurrido desde su fecha de nacimiento y se mostrará en las diversas unidades. Los valores se calculan desde el momento exacto en que introdujo la última fórmula y oprimió la tecla Intro. Este valor no se actualiza automáticamente, aunque «Ahora» cambie continuamente. En el menú <emph>Datos</emph>, el elemento <emph>Calcular ▸ Cálculo automático</emph> está activado por lo regular; sin embargo, el cálculo automático no se aplica a la función AHORA. Esto asegura que el equipo no esté ocupado únicamente en actualizar la hoja."
 
 #: calc_series.xhp
 msgctxt ""
@@ -1872,7 +1872,7 @@ msgctxt ""
 "par_idN106C0\n"
 "help.text"
 msgid "To protect the cells from being changed / viewed / printed according to your settings in the <emph>Format - Cells</emph> dialog, choose <item type=\"menuitem\">Tools - Protect Sheet</item>."
-msgstr ""
+msgstr "Para evitar la modificación, la visualización o la impresión de las celdas en función de los parámetros que haya definido en el cuadro de diálogo <emph>Formato ▸ Celdas</emph>, sírvase de la opción <item type=\"menuitem\">Herramientas ▸ Proteger hoja</item>."
 
 #: cell_protect.xhp
 msgctxt ""
@@ -1880,7 +1880,7 @@ msgctxt ""
 "par_idN106C7\n"
 "help.text"
 msgid "To protect the structure of the document, for example the count, <link href=\"text/scalc/guide/rename_table.xhp\">names</link>, and order of the sheets, from being changed, choose <item type=\"menuitem\">Tools - Protect Spreadsheet</item>."
-msgstr ""
+msgstr "Para proteger la estructura del documento e impedir la modificación, por ejemplo, de la cantidad, <link href=\"text/scalc/guide/rename_table.xhp\">los nombres</link> y el orden de las hojas, seleccione <item type=\"menuitem\">Herramientas ▸ Proteger libro</item>."
 
 #: cell_protect.xhp
 msgctxt ""
@@ -1947,7 +1947,7 @@ msgctxt ""
 "par_id3149656\n"
 "help.text"
 msgid "Select <emph>Tools - Protect Sheet</emph> or <emph>Tools - Protect Spreadsheet</emph> to remove the check mark indicating the protected status."
-msgstr ""
+msgstr "Utilice <emph>Herramientas ▸ Proteger hoja</emph> o <emph>Herramientas ▸ Proteger libro</emph> para quitar la marca de selección que indica el estado de protección."
 
 #: cell_unprotect.xhp
 msgctxt ""
@@ -2398,7 +2398,7 @@ msgctxt ""
 "40\n"
 "help.text"
 msgid "Choose <item type=\"menuitem\">Sheet - Link to External Data</item>. The <link href=\"text/scalc/01/04090000.xhp\" name=\"External Data\"><item type=\"menuitem\">External Data</item></link> dialog appears."
-msgstr ""
+msgstr "Diríjase a <item type=\"menuitem\">Hoja ▸ Enlazar con datos externos</item>. Verá el cuadro de diálogo <link href=\"text/scalc/01/04090000.xhp\" name=\"Datos externos\"><item type=\"menuitem\">Datos externos</item></link>."
 
 #: cellreferences_url.xhp
 msgctxt ""
@@ -3173,7 +3173,7 @@ msgctxt ""
 "20\n"
 "help.text"
 msgid "To consolidate by row labels or column labels, the label must be contained in the selected source ranges."
-msgstr "Para consolidar por títulos de fila o de columna la etiqueta debe contenerse en los rangos fuentes seleccionados."
+msgstr "Para consolidar por etiquetas de fila o de columna, la etiqueta debe estar incluida en los intervalos de origen seleccionados."
 
 #: consolidate.xhp
 msgctxt ""
@@ -3312,7 +3312,7 @@ msgctxt ""
 "par_idN108BB\n"
 "help.text"
 msgid "You can preview the layout of the imported data at the bottom of the <item type=\"menuitem\">Text Import</item> dialog."
-msgstr "En la parte inferior del diálogo <item type=\"menuitem\">Importar texto</item> obtendrá una vista previa del diseño de los datos importados."
+msgstr "En la parte inferior del diálogo <item type=\"menuitem\">Importar texto</item> obtendrá una previsualización de la disposición de los datos importados."
 
 #: csv_files.xhp
 msgctxt ""
@@ -4137,7 +4137,7 @@ msgctxt ""
 "bm_id3150448\n"
 "help.text"
 msgid "<bookmark_value>pivot table function; introduction</bookmark_value><bookmark_value>DataPilot, see pivot table function</bookmark_value>"
-msgstr "<bookmark_value>Piloto de datos;introducción</bookmark_value><bookmark_value>tabla dinámica, véase Piloto de datos</bookmark_value>"
+msgstr "<bookmark_value>función de tabla dinámica; introducción</bookmark_value><bookmark_value>Piloto de datos, consulte función Tabla dinámica</bookmark_value>"
 
 #: datapilot.xhp
 msgctxt ""
@@ -4164,7 +4164,7 @@ msgctxt ""
 "9\n"
 "help.text"
 msgid "A table that has been created as a <link href=\"text/scalc/01/12090000.xhp\" name=\"pivot table\">pivot table</link> is an interactive table. Data can be arranged, rearranged or summarized according to different points of view."
-msgstr "Las tablas creadas mediante el <link href=\"text/scalc/01/12090000.xhp\" name=\"DataPilot\">Piloto de datos</link> son interactivas. Los datos se pueden disponer, redistribuir o resumir según distintos puntos de vista."
+msgstr "Las <link href=\"text/scalc/01/12090000.xhp\" name=\"tablas dinámicas\">tablas dinámicas</link> son interactivas. Los datos se pueden disponer, redistribuir o resumir según distintos puntos de vista."
 
 #: datapilot_createtable.xhp
 msgctxt ""
@@ -4446,7 +4446,7 @@ msgctxt ""
 "par_id3150441\n"
 "help.text"
 msgid "Click the <emph>Filter</emph> button in the sheet to call up the dialog for the filter conditions. Alternatively, call up the context menu of the pivot table and select the <emph>Filter</emph> command. The <link href=\"text/scalc/01/12090103.xhp\" name=\"Filter\"><emph>Filter</emph></link> dialog appears. Here you can filter the pivot table."
-msgstr "Haga clic en el botón <emph>Filtro</emph> de la hoja para abrir el diálogo de condiciones de filtro. Otra posibilidad es abrir el menú contextual de la tabla del Piloto de datos y seleccionar el comando <emph>Filtrar</emph>. Se abre el diálogo <link href=\"text/scalc/01/12090103.xhp\" name=\"Filtro\"><emph>Filtro</emph></link>. Puede utilizar dicho diálogo para filtrar la tabla del Piloto de datos."
+msgstr "Pulse en el botón <emph>Filtro</emph> de la hoja para abrir el cuadro de diálogo de condiciones de filtro. Otra posibilidad es abrir el menú contextual de la tabla dinámica y seleccionar la orden <emph>Filtrar</emph>. Se abrirá el cuadro de diálogo <link href=\"text/scalc/01/12090103.xhp\" name=\"Filtro\"><emph>Filtro</emph></link>. Puede utilizar dicho cuadro para filtrar la tabla dinámica."
 
 #: datapilot_filtertable.xhp
 msgctxt ""
@@ -4550,7 +4550,7 @@ msgctxt ""
 "par_idN10643\n"
 "help.text"
 msgid "<variable id=\"datapilot_grouping\"><link href=\"text/scalc/guide/datapilot_grouping.xhp\">Grouping Pivot Tables</link></variable>"
-msgstr "<variable id=\"datapilot_grouping\"><link href=\"text/scalc/guide/datapilot_grouping.xhp\">Agrupar tablas del Piloto de datos</link></variable>"
+msgstr "<variable id=\"datapilot_grouping\"><link href=\"text/scalc/guide/datapilot_grouping.xhp\">Agrupar tablas dinámicas</link></variable>"
 
 #: datapilot_grouping.xhp
 msgctxt ""
@@ -4558,7 +4558,7 @@ msgctxt ""
 "par_idN10661\n"
 "help.text"
 msgid "The resulting pivot table can contain many different entries. By grouping the entries, you can improve the visible result."
-msgstr "La tabla del Piloto de datos resultante puede contener múltiples entradas distintas. Al agrupar las entradas, puede mejorar el resultado visible."
+msgstr "La tabla dinámica resultante puede contener múltiples entradas distintas. Al agrupar las entradas, puede mejorar el resultado visible."
 
 #: datapilot_grouping.xhp
 msgctxt ""
@@ -4582,7 +4582,7 @@ msgctxt ""
 "par_idN1066E\n"
 "help.text"
 msgid "Depending on the format of the selected cells, either a new group field is added to the pivot table, or you see one of the two <link href=\"text/scalc/01/12090400.xhp\">Grouping</link> dialogs, either for numeric values, or for date values."
-msgstr "En función del formato de las celdas seleccionadas, se agrega un nuevo campo de grupo a la tabla del Piloto de datos, o se muestra uno de los dos diálogos <link href=\"text/scalc/01/12090400.xhp\">Agrupación</link>, para valores numéricos o para valores de datos."
+msgstr "En función del formato de las celdas seleccionadas, se añade un campo de grupo nuevo a la tabla dinámica, o se muestra uno de los dos cuadros de diálogo <link href=\"text/scalc/01/12090400.xhp\">Agrupación</link>, bien para valores numéricos o para valores de datos."
 
 #: datapilot_grouping.xhp
 msgctxt ""
@@ -4641,7 +4641,7 @@ msgctxt ""
 "21\n"
 "help.text"
 msgid "You can select a named range in which the pivot table is to be created, from the <emph>Results to</emph> box. If the results range does not have a name, enter the coordinates of the upper left cell of the range into the field to the right of the <emph>Results to</emph> box. You can also click on the appropriate cell to have the coordinates entered accordingly."
-msgstr "En el listado <emph>Resultado en</emph> es posible seleccionar un área ya dotada de nombre en la cual colocar la hoja de cálculo del Piloto de datos. Si esta área carece de nombre, escriba las coordenadas de la celda superior izquierda del área en el campo que se muestra a la derecha del listado <emph>Resultado en</emph>. También puede pulsar en la celda para insertar directamente las coordenadas."
+msgstr "En el listado <emph>Resultado en</emph> es posible seleccionar un intervalo ya dotado de nombre en el cual colocar la tabla dinámica. Si este intervalo carece de nombre, escriba las coordenadas de la celda superior izquierda del intervalo en el campo que se muestra a la derecha del listado <emph>Resultado en</emph>. También puede pulsar en la celda para insertar directamente las coordenadas."
 
 #: datapilot_tipps.xhp
 msgctxt ""
@@ -4650,7 +4650,7 @@ msgctxt ""
 "23\n"
 "help.text"
 msgid "If you mark the <emph>Ignore empty rows</emph> check box, they will not be taken into account when the pivot table is created."
-msgstr "Si selecciona la casilla de verificación <emph>Ignorar las filas vacías</emph>, éstas no se tendrán en cuenta para la creación de la tabla de Piloto de datos."
+msgstr "Si activa la casilla <emph>Ignorar filas vacías</emph>, estas no se tendrán en cuenta para la creación de la tabla dinámica."
 
 #: datapilot_tipps.xhp
 msgctxt ""
@@ -4659,7 +4659,7 @@ msgctxt ""
 "24\n"
 "help.text"
 msgid "If the <emph>Identify categories</emph> check box is marked, the categories will be identified by their headings and assigned accordingly when the pivot table is created."
-msgstr "Si selecciona la casilla <emph>Identificar las categorías</emph>, éstas quedarán identificadas mediante sus encabezados y asignadas según corresponda al crear la tabla de Piloto de datos."
+msgstr "Si selecciona la casilla <emph>Identificar categorías</emph>, estas quedarán identificadas mediante sus títulos y asignadas según corresponda al crear la tabla dinámica."
 
 #: datapilot_updatetable.xhp
 msgctxt ""
@@ -6046,7 +6046,7 @@ msgctxt ""
 "3\n"
 "help.text"
 msgid "After entering the required values, press Enter or click <emph>Accept</emph> to insert the result in the active cell. If you want to clear your entry in the input line, press Escape or click <emph>Cancel</emph>."
-msgstr "Finalice la entrada de datos pulsando sobre la tecla Entrar o sobre el símbolo (con la marca verde) <emph>Aplicar</emph>. Para interrumpir la entrada de datos y rechazar el contenido de la línea de entrada, pulse (Esc) o el símbolo (de cruz roja) <emph>Rechazar</emph>."
+msgstr "Tras finalizar la entrada de los datos solicitados, oprima Intro o pulse en <emph>Aceptar</emph> para insertar el resultado en la celda activa. Si quiere vaciar el contenido del cuadro de entrada, oprima Esc o pulse en <emph>Cancelar</emph>."
 
 #: formula_enter.xhp
 msgctxt ""
@@ -7311,7 +7311,7 @@ msgctxt ""
 "20\n"
 "help.text"
 msgid "Click, then Shift-click the cell."
-msgstr "Pulse sobre la celda y a continuación pulse la tecla Mayús."
+msgstr "Pulse y, a continuación, pulse en la celda mientras oprime la tecla Mayús."
 
 #: mark_cells.xhp
 msgctxt ""
@@ -7868,7 +7868,7 @@ msgctxt ""
 "5\n"
 "help.text"
 msgid "<variable id=\"multioperation\"><link href=\"text/scalc/guide/multioperation.xhp\" name=\"Applying Multiple Operations\">Applying Multiple Operations</link></variable>"
-msgstr "<variable id=\"multioperation\"><link href=\"text/scalc/guide/multioperation.xhp\" name=\"Aplicar una operación múltiple\">Aplicar una operación múltiple</link></variable>"
+msgstr "<variable id=\"multioperation\"><link href=\"text/scalc/guide/multioperation.xhp\" name=\"Aplicar operaciones múltiples\">Aplicar operaciones múltiples</link></variable>"
 
 #: multioperation.xhp
 msgctxt ""
@@ -7965,7 +7965,7 @@ msgctxt ""
 "45\n"
 "help.text"
 msgid "Choose <emph>Data - Multiple operations</emph>."
-msgstr "Active el diálogo <emph>Datos - Operaciones múltiples</emph>."
+msgstr "Vaya a <emph>Datos ▸ Operaciones múltiples</emph>."
 
 #: multioperation.xhp
 msgctxt ""
@@ -8037,7 +8037,7 @@ msgctxt ""
 "53\n"
 "help.text"
 msgid "Choose <emph>Data - Multiple Operations</emph>."
-msgstr "Active el diálogo <emph>Datos - Operaciones múltiples</emph>."
+msgstr "Vaya a <emph>Datos ▸ Operaciones múltiples</emph>."
 
 #: multioperation.xhp
 msgctxt ""
@@ -8127,7 +8127,7 @@ msgctxt ""
 "96\n"
 "help.text"
 msgid "Choose <emph>Data - Multiple Operations</emph>."
-msgstr "Active el diálogo <emph>Datos - Operaciones múltiples</emph>."
+msgstr "Vaya a <emph>Datos ▸ Operaciones múltiples</emph>."
 
 #: multioperation.xhp
 msgctxt ""
@@ -8444,7 +8444,7 @@ msgctxt ""
 "par_id0908200901265127\n"
 "help.text"
 msgid "Calc converts text inside cells to the respective numeric values if an unambiguous conversion is possible. If no conversion is possible, Calc returns a #VALUE! error."
-msgstr "Calc convierte el texto en las celdas a los valores numéricos respectivos si es posible una conversión sin ambigüedades. Si no es posible realizar ninguna conversión, Calc muestra un error #VALOR!"
+msgstr "Calc convierte el texto en las celdas a los valores numéricos respectivos si es posible una conversión sin ambigüedades. Si no es posible realizar ninguna conversión, Calc muestra un error #¡VALOR!"
 
 #: numbers_text.xhp
 msgctxt ""
@@ -10146,7 +10146,7 @@ msgctxt ""
 "par_id3424481\n"
 "help.text"
 msgid "To hide the border of a set of cells that are part of a scenario, open the <emph>Properties</emph> dialog for each scenario that affects the cells and clear the Display border checkbox. Hiding the border also removes the listbox on the sheet where you can choose the scenarios."
-msgstr "Para esconder los bordes de un conjnto de celdas que son parte de un escenario, abre el dialogo de <emph>Propiedades</emph> para cada escenario que afecte la celda y desactiva la cajada de verificación de mostrar bordes. Escondiendo el borde tambien quita de la hoja la lista que te permite escoger los escenarios."
+msgstr "Para ocultar el borde de un conjunto de celdas que forman parte de un escenario, abra el cuadro <emph>Propiedades</emph> de cada escenario que afecte las celdas y desmarque la casilla «Mostrar borde». Ocultar el borde elimina también el cuadro de lista de la hoja donde puede escoger los escenarios."
 
 #: scenario.xhp
 msgctxt ""
@@ -10708,7 +10708,7 @@ msgctxt ""
 "68\n"
 "help.text"
 msgid "Choose <emph>Data - Filter - Advanced Filter</emph>, and then select the range A20:E22. After you click OK, only the filtered rows will be displayed. The other rows will be hidden from view."
-msgstr "Elija <emph>Datos - Filtro - Filtro especial</emph> y a continuación seleccione el área A20:E22. Después de pulsar Aceptar se mostrarán únicamente las filas filtradas. El resto de filas quedarán ocultas."
+msgstr "Diríjase a <emph>Datos ▸ Filtro ▸ Filtro avanzado</emph> y, a continuación, seleccione el intervalo A20:E22. Después de pulsar en Aceptar se mostrarán únicamente las filas filtradas. El resto de las filas quedará oculto."
 
 #: super_subscript.xhp
 msgctxt ""
@@ -11258,7 +11258,7 @@ msgctxt ""
 "bm_id3155411\n"
 "help.text"
 msgid "<bookmark_value>functions; user-defined</bookmark_value><bookmark_value>user-defined functions</bookmark_value><bookmark_value>Basic IDE for user-defined functions</bookmark_value><bookmark_value>IDE; Basic IDE</bookmark_value><bookmark_value>programming;functions</bookmark_value>"
-msgstr "<bookmark_value>funciones;del usuario</bookmark_value><bookmark_value>funciones del usuario</bookmark_value><bookmark_value>IDE de Basic para funciones del usuario</bookmark_value><bookmark_value>IDE;IDE de Basic</bookmark_value><bookmark_value>programar;funciones</bookmark_value>"
+msgstr "<bookmark_value>funciones;del usuario</bookmark_value><bookmark_value>funciones del usuario</bookmark_value><bookmark_value>EID de Basic para funciones del usuario</bookmark_value><bookmark_value>EID;EID de Basic</bookmark_value><bookmark_value>programar;funciones</bookmark_value>"
 
 #: userdefined_function.xhp
 msgctxt ""
@@ -11285,7 +11285,7 @@ msgctxt ""
 "4\n"
 "help.text"
 msgid "You can define your own functions using the Basic-IDE. This method requires a basic knowledge of programming."
-msgstr "Mediante la IDE de Basic se pueden definir funciones propias, aun sin tener conocimientos avanzados de programación."
+msgstr "Mediante el EID de Basic se pueden definir funciones propias, aun sin tener conocimientos avanzados de programación."
 
 #: userdefined_function.xhp
 msgctxt ""
@@ -11312,7 +11312,7 @@ msgctxt ""
 "7\n"
 "help.text"
 msgid "Choose <item type=\"menuitem\">Tools - Macros - Organize Macros - %PRODUCTNAME Basic</item>."
-msgstr "Seleccione <item type=\"menuitem\">Herramientas - Macros - Organizar macros - %PRODUCTNAME Basic</item>."
+msgstr "Vaya a <item type=\"menuitem\">Herramientas ▸ Macros ▸ Organizar macros ▸ %PRODUCTNAME Basic</item>."
 
 #: userdefined_function.xhp
 msgctxt ""
@@ -11339,7 +11339,7 @@ msgctxt ""
 "10\n"
 "help.text"
 msgid "Close the Basic-IDE window."
-msgstr "Cierre la ventana de la IDE de Basic."
+msgstr "Cierre la ventana del EID de Basic."
 
 #: userdefined_function.xhp
 msgctxt ""
@@ -11384,7 +11384,7 @@ msgctxt ""
 "21\n"
 "help.text"
 msgid "Choose <item type=\"menuitem\">Tools - Macros - Organize Macros - %PRODUCTNAME Basic</item> ."
-msgstr "Seleccione <item type=\"menuitem\">Herramientas - Macros - Organizar macros - %PRODUCTNAME Basic</item>."
+msgstr "Vaya a <item type=\"menuitem\">Herramientas ▸ Macros ▸ Organizar macros ▸ %PRODUCTNAME Basic</item>."
 
 #: userdefined_function.xhp
 msgctxt ""
@@ -11402,7 +11402,7 @@ msgctxt ""
 "23\n"
 "help.text"
 msgid "In the Basic-IDE, select the source of your user-defined function and copy it to the clipboard."
-msgstr "En la IDE de Basic, seleccione el origen de la función definida por el usuario y cópielo en el portapapeles."
+msgstr "En el EID de Basic, seleccione el origen de la función definida por el usuario y cópielo en el portapapeles."
 
 #: userdefined_function.xhp
 msgctxt ""
@@ -11410,7 +11410,7 @@ msgctxt ""
 "par_idN1081D\n"
 "help.text"
 msgid "Close the Basic-IDE."
-msgstr "Cierre la IDE de Basic."
+msgstr "Cierre el EID de Basic."
 
 #: userdefined_function.xhp
 msgctxt ""
@@ -11419,7 +11419,7 @@ msgctxt ""
 "24\n"
 "help.text"
 msgid "Choose <item type=\"menuitem\">Tools - Macros - Organize Macros - %PRODUCTNAME Basic</item> ."
-msgstr "Seleccione <item type=\"menuitem\">Herramientas - Macros - Organizar macros - %PRODUCTNAME Basic</item>."
+msgstr "Vaya a <item type=\"menuitem\">Herramientas ▸ Macros ▸ Organizar macros ▸ %PRODUCTNAME Basic</item>."
 
 #: userdefined_function.xhp
 msgctxt ""

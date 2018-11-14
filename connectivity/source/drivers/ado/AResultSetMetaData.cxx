@@ -68,7 +68,7 @@ sal_Int32 SAL_CALL OResultSetMetaData::getColumnCount(  ) throw(SQLException, Ru
     if ( !m_pRecordSet )
         return 0;
 
-    ADOFields* pFields  = NULL;
+    ADOFields* pFields  = nullptr;
     m_pRecordSet->get_Fields(&pFields);
     WpOLEAppendCollection<ADOFields, ADOField, WpADOField>  aFields(pFields);
     m_nColCount = aFields.GetItemCount();
@@ -78,13 +78,13 @@ sal_Int32 SAL_CALL OResultSetMetaData::getColumnCount(  ) throw(SQLException, Ru
 
 sal_Bool SAL_CALL OResultSetMetaData::isCaseSensitive( sal_Int32 column ) throw(SQLException, RuntimeException)
 {
-    sal_Bool bRet = sal_False;
+    bool bRet = false;
     WpADOField aField = ADOS::getField(m_pRecordSet,column);
     if ( aField.IsValid() )
     {
         WpADOProperties aProps( aField.get_Properties() );
         if ( aProps.IsValid() )
-            bRet = OTools::getValue( aProps, OUString("ISCASESENSITIVE") );
+            bRet = OTools::getValue( aProps, OUString("ISCASESENSITIVE") ).getBool();
     }
     return bRet;
 }
@@ -114,7 +114,7 @@ OUString SAL_CALL OResultSetMetaData::getTableName( sal_Int32 column ) throw(SQL
     {
         WpADOProperties aProps( aField.get_Properties() );
         if ( aProps.IsValid() )
-            sTableName = OTools::getValue( aProps, OUString("BASETABLENAME") );
+            sTableName = OTools::getValue( aProps, OUString("BASETABLENAME") ).getString();
     }
     return sTableName;
 }
@@ -147,20 +147,20 @@ sal_Bool SAL_CALL OResultSetMetaData::isCurrency( sal_Int32 column ) throw(SQLEx
     {
         return ((aField.GetAttributes() & adFldFixed) == adFldFixed) && (aField.GetADOType() == adCurrency);
     }
-    return sal_False;
+    return false;
 }
 
 
 sal_Bool SAL_CALL OResultSetMetaData::isAutoIncrement( sal_Int32 column ) throw(SQLException, RuntimeException)
 {
-    sal_Bool bRet = sal_False;
+    bool bRet = false;
     WpADOField aField = ADOS::getField(m_pRecordSet,column);
     if ( aField.IsValid() )
     {
         WpADOProperties aProps( aField.get_Properties() );
         if ( aProps.IsValid() )
         {
-            bRet = OTools::getValue( aProps, OUString("ISAUTOINCREMENT") );
+            bRet = OTools::getValue( aProps, OUString("ISAUTOINCREMENT") ).getBool();
         }
     }
     return bRet;
@@ -175,7 +175,7 @@ sal_Bool SAL_CALL OResultSetMetaData::isSigned( sal_Int32 column ) throw(SQLExce
         DataTypeEnum eType = aField.GetADOType();
         return !(eType == adUnsignedBigInt || eType == adUnsignedInt || eType == adUnsignedSmallInt || eType == adUnsignedTinyInt);
     }
-    return sal_False;
+    return false;
 }
 
 sal_Int32 SAL_CALL OResultSetMetaData::getPrecision( sal_Int32 column ) throw(SQLException, RuntimeException)
@@ -186,7 +186,7 @@ sal_Int32 SAL_CALL OResultSetMetaData::getPrecision( sal_Int32 column ) throw(SQ
     return 0;
 }
 
-sal_Int32 SAL_CALL OResultSetMetaData::getScale( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException)
+sal_Int32 SAL_CALL OResultSetMetaData::getScale( sal_Int32 column ) throw(css::sdbc::SQLException, css::uno::RuntimeException)
 {
     WpADOField aField = ADOS::getField(m_pRecordSet,column);
     if(aField.IsValid())
@@ -200,15 +200,15 @@ sal_Int32 SAL_CALL OResultSetMetaData::isNullable( sal_Int32 column ) throw(SQLE
     WpADOField aField = ADOS::getField(m_pRecordSet,column);
     if(aField.IsValid())
     {
-        return (aField.GetAttributes() & adFldIsNullable) == adFldIsNullable;
+        return sal_Int32((aField.GetAttributes() & adFldIsNullable) == adFldIsNullable);
     }
-    return sal_False;
+    return sal_Int32(false);
 }
 
 
 sal_Bool SAL_CALL OResultSetMetaData::isSearchable( sal_Int32 /*column*/ ) throw(SQLException, RuntimeException)
 {
-    return sal_True;
+    return true;
 }
 
 
@@ -219,7 +219,7 @@ sal_Bool SAL_CALL OResultSetMetaData::isReadOnly( sal_Int32 column ) throw(SQLEx
     {
         //  return (aField.GetStatus() & adFieldReadOnly) == adFieldReadOnly;
     }
-    return sal_False;
+    return false;
 }
 
 
@@ -230,7 +230,7 @@ sal_Bool SAL_CALL OResultSetMetaData::isDefinitelyWritable( sal_Int32 column ) t
     {
         return (aField.GetAttributes() & adFldUpdatable) == adFldUpdatable;
     }
-    return sal_False;
+    return false;
 ;
 }
 

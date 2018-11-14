@@ -83,14 +83,14 @@ SvStream* XclEscherExGlobal::ImplQueryPictureStream()
     if( mxPicTempFile->IsValid() )
     {
         mxPicTempFile->EnableKillingFile();
-        mxPicStrm.reset( ::utl::UcbStreamHelper::CreateStream( mxPicTempFile->GetURL(), STREAM_STD_READWRITE ) );
+        mxPicStrm.reset( ::utl::UcbStreamHelper::CreateStream( mxPicTempFile->GetURL(), StreamMode::STD_READWRITE ) );
         mxPicStrm->SetEndian( SvStreamEndian::LITTLE );
     }
     return mxPicStrm.get();
 }
 
 XclEscherEx::XclEscherEx( const XclExpRoot& rRoot, XclExpObjectManager& rObjMgr, SvStream& rStrm, const XclEscherEx* pParent ) :
-    EscherEx( pParent ? pParent->mxGlobal : EscherExGlobalRef( new XclEscherExGlobal( rRoot ) ), &rStrm ),
+    EscherEx( pParent ? pParent->mxGlobal : std::shared_ptr<EscherExGlobal>( new XclEscherExGlobal( rRoot ) ), &rStrm ),
     XclExpRoot( rRoot ),
     mrObjMgr( rObjMgr ),
     pCurrXclObj( nullptr ),
@@ -405,7 +405,7 @@ void XclEscherEx::EndDocument()
     mpOutStrm->Seek( 0 );
 }
 
-std::unique_ptr<XclExpOcxControlObj> XclEscherEx::CreateOCXCtrlObj( Reference< XShape > xShape, const Rectangle* pChildAnchor )
+std::unique_ptr<XclExpOcxControlObj> XclEscherEx::CreateOCXCtrlObj( Reference< XShape > const & xShape, const Rectangle* pChildAnchor )
 {
     ::std::unique_ptr< XclExpOcxControlObj > xOcxCtrl;
 
@@ -435,7 +435,7 @@ std::unique_ptr<XclExpOcxControlObj> XclEscherEx::CreateOCXCtrlObj( Reference< X
     return xOcxCtrl;
 }
 
-std::unique_ptr<XclExpTbxControlObj> XclEscherEx::CreateTBXCtrlObj( Reference< XShape > xShape, const Rectangle* pChildAnchor )
+std::unique_ptr<XclExpTbxControlObj> XclEscherEx::CreateTBXCtrlObj( Reference< XShape > const & xShape, const Rectangle* pChildAnchor )
 {
     ::std::unique_ptr< XclExpTbxControlObj > xTbxCtrl( new XclExpTbxControlObj( mrObjMgr, xShape, pChildAnchor ) );
     if( xTbxCtrl->GetObjType() == EXC_OBJTYPE_UNKNOWN )
@@ -450,7 +450,7 @@ std::unique_ptr<XclExpTbxControlObj> XclEscherEx::CreateTBXCtrlObj( Reference< X
     return xTbxCtrl;
 }
 
-void XclEscherEx::ConvertTbxMacro( XclExpTbxControlObj& rTbxCtrlObj, Reference< XControlModel > xCtrlModel )
+void XclEscherEx::ConvertTbxMacro( XclExpTbxControlObj& rTbxCtrlObj, Reference< XControlModel > const & xCtrlModel )
 {
     SdrPage* pSdrPage = GetSdrPage( GetCurrScTab() );
     if( xCtrlModel.is() && GetDocShell() && pSdrPage ) try
@@ -568,7 +568,7 @@ ShapeInteractionHelper::PopulateShapeInteractionInfo( XclExpObjectManager& rObjM
          hExpHlink.WriteEmbeddedData( tmpStream );
       }
       if ( !sHyperLink.isEmpty() || !sMacro.isEmpty() )
-          rHostAppData.SetInteractionInfo( new InteractionInfo( pMemStrm, true ) );
+          rHostAppData.SetInteractionInfo( new InteractionInfo( pMemStrm ) );
    }
    catch( Exception& )
    {

@@ -27,7 +27,7 @@ class MorkDriverTest: public test::BootstrapFixture
 public:
     MorkDriverTest() : test::BootstrapFixture(false, false) {};
 
-    void checkAcceptsURL(Reference< XDriver> xDriver, const char* url, bool expected);
+    void checkAcceptsURL(Reference< XDriver> const & xDriver, const char* url, bool expected);
     void test_metadata();
     void test_select_default_all();
     void test_select_list_table_joe_doe_5();
@@ -47,7 +47,7 @@ private:
     Reference<XConnection> m_xConnection;
 };
 
-void MorkDriverTest::checkAcceptsURL(Reference< XDriver> xDriver, const char* url, bool expected)
+void MorkDriverTest::checkAcceptsURL(Reference< XDriver> const & xDriver, const char* url, bool expected)
 {
     bool res = xDriver->acceptsURL(OUString::createFromAscii(url));
     if (res != expected)
@@ -96,7 +96,7 @@ void MorkDriverTest::setUp()
 void MorkDriverTest::tearDown()
 {
 // how to make dispose() work?
-// Reference< com::sun::star::lang::XComponent >( m_xMorkComponent, UNO_QUERY_THROW )->dispose();
+// Reference< css::lang::XComponent >( m_xMorkComponent, UNO_QUERY_THROW )->dispose();
     m_xConnection->close();
     test::BootstrapFixture::tearDown();
 }
@@ -149,17 +149,17 @@ void MorkDriverTest::test_select_default_all()
     bool result = xResultSet->first();
     CPPUNIT_ASSERT_MESSAGE("fetch first row failed!", result);
     OUString mail = xDelegatorRow->getString(1);
-    CPPUNIT_ASSERT_MESSAGE("first row is not john@doe.org!", mail == "john@doe.org");
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("first row is not john@doe.org!", OUString("john@doe.org"), mail);
 
     result = xResultSet->next();
     CPPUNIT_ASSERT_MESSAGE("fetch second row failed!", result);
     mail = xDelegatorRow->getString(1);
-    CPPUNIT_ASSERT_MESSAGE("second row is not john@doe10.org!", mail == "john@doe10.org");
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("second row is not john@doe10.org!", OUString("john@doe10.org"), mail);
 
     result = xResultSet->last();
     CPPUNIT_ASSERT_MESSAGE("fetch last row failed!", result);
     mail = xDelegatorRow->getString(1);
-    CPPUNIT_ASSERT_MESSAGE("last row is not john@doe9.org!", mail == "john@doe9.org");
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("last row is not john@doe9.org!", OUString("john@doe9.org"), mail);
 
     css::uno::Reference<css::sdbc::XCloseable>(
         xStatement, css::uno::UNO_QUERY_THROW)->close();
@@ -189,7 +189,7 @@ void MorkDriverTest::test_select_list_table_joe_doe_5()
     bool result = xResultSet->first();
     CPPUNIT_ASSERT_MESSAGE("fetch first row failed!", result);
     OUString mail = xDelegatorRow->getString(1);
-    CPPUNIT_ASSERT_MESSAGE("last row is not john@doe5.org!", mail == "john@doe5.org");
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("last row is not john@doe5.org!", OUString("john@doe5.org"), mail);
 
     css::uno::Reference<css::sdbc::XCloseable>(
         xStatement, css::uno::UNO_QUERY_THROW)->close();

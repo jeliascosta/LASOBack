@@ -92,17 +92,4 @@ SdXMLNotesContext::~SdXMLNotesContext()
 {
 }
 
-SvXMLImportContext *SdXMLNotesContext::CreateChildContext( sal_uInt16 nPrefix,
-    const OUString& rLocalName,
-    const uno::Reference< xml::sax::XAttributeList>& xAttrList )
-{
-    // no own context in notes, call parent
-    return SdXMLGenericPageContext::CreateChildContext(nPrefix, rLocalName, xAttrList);
-}
-
-void SdXMLNotesContext::EndElement()
-{
-    SdXMLGenericPageContext::EndElement();
-}
-
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

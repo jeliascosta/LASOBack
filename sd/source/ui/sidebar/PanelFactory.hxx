@@ -49,11 +49,8 @@ class PanelFactory
       public PanelFactoryInterfaceBase
 {
 public:
-    static css::uno::Reference<css::uno::XInterface> SAL_CALL createInstance (
-        const css::uno::Reference<css::lang::XMultiServiceFactory>& rxFactory);
-
     explicit PanelFactory (const css::uno::Reference<css::uno::XComponentContext>& rxContext);
-    virtual ~PanelFactory();
+    virtual ~PanelFactory() override;
     PanelFactory(const PanelFactory&) = delete;
     PanelFactory& operator=(const PanelFactory&) = delete;
 

@@ -59,28 +59,22 @@ using namespace cppu;
 
 class SvxEditEngineSourceImpl;
 
-class SvxEditEngineSourceImpl
+class SvxEditEngineSourceImpl : public salhelper::SimpleReferenceObject
 {
 private:
-    oslInterlockedCount maRefCount;
-
     EditEngine*             mpEditEngine;
     SvxTextForwarder*       mpTextForwarder;
 
-    ~SvxEditEngineSourceImpl();
+    virtual ~SvxEditEngineSourceImpl() override;
 
 public:
     explicit SvxEditEngineSourceImpl( EditEngine* pEditEngine );
-
-    void SAL_CALL acquire();
-    void SAL_CALL release();
 
     SvxTextForwarder*       GetTextForwarder();
 };
 
 SvxEditEngineSourceImpl::SvxEditEngineSourceImpl( EditEngine* pEditEngine )
-: maRefCount(0),
-  mpEditEngine( pEditEngine ),
+: mpEditEngine( pEditEngine ),
   mpTextForwarder(nullptr)
 {
 }
@@ -88,17 +82,6 @@ SvxEditEngineSourceImpl::SvxEditEngineSourceImpl( EditEngine* pEditEngine )
 SvxEditEngineSourceImpl::~SvxEditEngineSourceImpl()
 {
     delete mpTextForwarder;
-}
-
-void SAL_CALL SvxEditEngineSourceImpl::acquire()
-{
-    osl_atomic_increment( &maRefCount );
-}
-
-void SAL_CALL SvxEditEngineSourceImpl::release()
-{
-    if( ! osl_atomic_decrement( &maRefCount ) )
-        delete this;
 }
 
 SvxTextForwarder* SvxEditEngineSourceImpl::GetTextForwarder()
@@ -111,30 +94,27 @@ SvxTextForwarder* SvxEditEngineSourceImpl::GetTextForwarder()
 
 // SvxTextEditSource
 SvxEditEngineSource::SvxEditEngineSource( EditEngine* pEditEngine )
+   : mxImpl( new SvxEditEngineSourceImpl( pEditEngine ) )
 {
-    mpImpl = new SvxEditEngineSourceImpl( pEditEngine );
-    mpImpl->acquire();
 }
 
 SvxEditEngineSource::SvxEditEngineSource( SvxEditEngineSourceImpl* pImpl )
+   : mxImpl(pImpl)
 {
-    mpImpl = pImpl;
-    mpImpl->acquire();
 }
 
 SvxEditEngineSource::~SvxEditEngineSource()
 {
-    mpImpl->release();
 }
 
 SvxEditSource* SvxEditEngineSource::Clone() const
 {
-    return new SvxEditEngineSource( mpImpl );
+    return new SvxEditEngineSource( mxImpl.get() );
 }
 
 SvxTextForwarder* SvxEditEngineSource::GetTextForwarder()
 {
-    return mpImpl->GetTextForwarder();
+    return mxImpl->GetTextForwarder();
 }
 
 
@@ -150,7 +130,7 @@ class SvxSimpleUnoModel : public cppu::WeakAggImplHelper4<
 {
 public:
     SvxSimpleUnoModel();
-    virtual ~SvxSimpleUnoModel();
+    virtual ~SvxSimpleUnoModel() override;
 
 
     // XMultiServiceFactory
@@ -321,7 +301,7 @@ public:
         const OUString& rFileName,
         const css::uno::Reference< css::xml::sax::XDocumentHandler >& rHandler );
 
-    virtual ~SvxXMLTextExportComponent();
+    virtual ~SvxXMLTextExportComponent() override;
 
     // methods without content:
     virtual void ExportAutoStyles_() override;
@@ -395,7 +375,7 @@ void SvxWriteXML( EditEngine& rEditEngine, SvStream& rStream, const ESelection& 
 
             // SvxXMLTextExportComponent aExporter( &rEditEngine, rSel, aName, xHandler );
             uno::Reference< xml::sax::XDocumentHandler > xHandler(xWriter, UNO_QUERY_THROW);
-            uno::Reference< SvxXMLTextExportComponent > xExporter( new SvxXMLTextExportComponent( xContext, &rEditEngine, rSel, aName, xHandler ) );
+            rtl::Reference< SvxXMLTextExportComponent > xExporter( new SvxXMLTextExportComponent( xContext, &rEditEngine, rSel, aName, xHandler ) );
 
             xExporter->exportDoc();
 

@@ -19,6 +19,7 @@ $(eval $(call gb_UnpackedTarball_fix_end_of_line,curl,\
 
 $(eval $(call gb_UnpackedTarball_add_patches,curl,\
 	external/curl/curl-msvc.patch.1 \
+	external/curl/curl-msvc-disable-protocols.patch.1 \
 	external/curl/curl-msvc-schannel.patch.1 \
 	external/curl/curl-7.26.0_mingw.patch \
 	external/curl/curl-7.26.0_win-proxy.patch \
@@ -31,10 +32,12 @@ $(eval $(call gb_UnpackedTarball_add_patches,curl,\
 ))
 endif
 
-ifeq ($(OS),ANDROID)
+ifeq ($(OS),MACOSX)
+ifneq ($(filter 1080 1090 101000,$(MAC_OS_X_VERSION_MIN_REQUIRED)),)
 $(eval $(call gb_UnpackedTarball_add_patches,curl,\
-	external/curl/curl-android.patch \
+	external/curl/curl-osx.patch.1 \
 ))
+endif
 endif
 
 # vim: set noet sw=4 ts=4:

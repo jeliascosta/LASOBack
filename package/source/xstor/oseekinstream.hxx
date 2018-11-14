@@ -32,15 +32,15 @@ protected:
 
 public:
     OInputSeekStream( OWriteStream_Impl& pImpl,
-                      css::uno::Reference < css::io::XInputStream > xStream,
+                      css::uno::Reference < css::io::XInputStream > const & xStream,
                       const css::uno::Sequence< css::beans::PropertyValue >& aProps,
                       sal_Int32 nStorageType );
 
-    OInputSeekStream( css::uno::Reference < css::io::XInputStream > xStream,
+    OInputSeekStream( css::uno::Reference < css::io::XInputStream > const & xStream,
                       const css::uno::Sequence< css::beans::PropertyValue >& aProps,
                       sal_Int32 nStorageType );
 
-    virtual ~OInputSeekStream();
+    virtual ~OInputSeekStream() override;
 
     virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() throw (css::uno::RuntimeException, std::exception) override;
 

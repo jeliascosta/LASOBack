@@ -182,18 +182,16 @@ class SwPostItMgr: public SfxListener
         sal_Int32       GetScrollSize() const;
         sal_Int32       GetSpaceBetween() const;
         void            SetReadOnlyState();
-        DECL_LINK_TYPED( CalcHdl, void*, void);
+        DECL_LINK( CalcHdl, void*, void);
 
         sw::sidebarwindows::SwSidebarWin* GetSidebarWin(const SfxBroadcaster* pBroadcaster) const;
 
         void            InsertItem( SfxBroadcaster* pItem, bool bCheckExistance, bool bFocus);
         void            RemoveItem( SfxBroadcaster* pBroadcast );
 
-        void            Sort();
-
     public:
         SwPostItMgr(SwView* aDoc);
-        virtual ~SwPostItMgr();
+        virtual ~SwPostItMgr() override;
 
         typedef std::list< SwSidebarItem* >::const_iterator const_iterator;
         const_iterator begin()  const { return mvPostItFields.begin(); }
@@ -212,7 +210,6 @@ class SwPostItMgr: public SfxListener
         bool IsShowAnchor() { return mbIsShowAnchor;}
         unsigned long GetSidebarWidth(bool bPx = false) const;
         unsigned long GetSidebarBorderWidth(bool bPx = false) const;
-        unsigned long GetNoteWidth();
 
         void PrepareView(bool bIgnoreCount = false);
 
@@ -289,8 +286,6 @@ class SwPostItMgr: public SfxListener
 
         void DrawNotesForPage(OutputDevice *pOutDev, sal_uInt32 nPage);
         void PaintTile(OutputDevice& rRenderContext, const Rectangle& rRect);
-        /// Informs already created annotations about a newly registered LOK callback.
-        void registerLibreOfficeKitCallback(OutlinerSearchable* pSearchable);
 };
 
 #endif

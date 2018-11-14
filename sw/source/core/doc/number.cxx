@@ -209,7 +209,7 @@ SwNumFormat::SwNumFormat(const SvxNumberFormat& rNumFormat, SwDoc* pDoc)
         if( !pCFormat )
         {
             sal_uInt16 nId = SwStyleNameMapper::GetPoolIdFromUIName( rCharStyleName,
-                                            nsSwGetPoolIdFromName::GET_POOLID_CHRFMT );
+                                            SwGetPoolIdFromName::ChrFmt );
             pCFormat = nId != USHRT_MAX
                         ? pDoc->getIDocumentStylePoolAccess().GetCharFormatFromPool( nId )
                         : pDoc->MakeCharFormat( rCharStyleName, nullptr );
@@ -301,11 +301,6 @@ void SwNumFormat::Modify( const SfxPoolItem* pOld, const SfxPoolItem* pNew )
         CheckRegistration( pOld, pNew );
 }
 
-void SwNumFormat::SetCharFormatName(const OUString& rSet)
-{
-    SvxNumberFormat::SetCharFormatName(rSet);
-}
-
 OUString SwNumFormat::GetCharFormatName() const
 {
     if(static_cast<const SwCharFormat*>(GetRegisteredIn()))
@@ -320,16 +315,6 @@ void    SwNumFormat::SetGraphicBrush( const SvxBrushItem* pBrushItem, const Size
     if(pOrient)
         m_pVertOrient->SetVertOrient( *pOrient );
     SvxNumberFormat::SetGraphicBrush( pBrushItem, pSize, pOrient);
-}
-
-void    SwNumFormat::SetVertOrient(sal_Int16 eSet)
-{
-    SvxNumberFormat::SetVertOrient(eSet);
-}
-
-sal_Int16   SwNumFormat::GetVertOrient() const
-{
-    return SvxNumberFormat::GetVertOrient();
 }
 
 void SwNumFormat::UpdateNumNodes( SwDoc* pDoc )
@@ -1026,7 +1011,7 @@ void SwNumRule::RemoveParagraphStyle( SwTextFormatColl& rTextFormatColl )
 
 void SwNumRule::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swNumRule"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwNumRule"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("msName"), BAD_CAST(msName.toUtf8().getStr()));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("mnPoolFormatId"), BAD_CAST(OString::number(mnPoolFormatId).getStr()));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("mbAutoRuleFlag"), BAD_CAST(OString::boolean(mbAutoRuleFlag).getStr()));
@@ -1086,7 +1071,7 @@ namespace numfunc
             }
 
             SwDefBulletConfig();
-            virtual ~SwDefBulletConfig();
+            virtual ~SwDefBulletConfig() override;
 
         private:
             /** sets internal default bullet configuration data to default values */
@@ -1429,7 +1414,7 @@ namespace numfunc
 
 void SwNumRuleTable::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swNumRuleTable"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwNumRuleTable"));
     for (SwNumRule* pNumRule : *this)
         pNumRule->dumpAsXml(pWriter);
     xmlTextWriterEndElement(pWriter);

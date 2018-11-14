@@ -74,7 +74,7 @@ struct FSStorage_Impl
     uno::Reference< uno::XComponentContext > m_xContext;
 
 
-    FSStorage_Impl( const ::ucbhelper::Content& aContent, sal_Int32 nMode, uno::Reference< uno::XComponentContext > xContext )
+    FSStorage_Impl( const ::ucbhelper::Content& aContent, sal_Int32 nMode, uno::Reference< uno::XComponentContext > const & xContext )
     : m_aURL( aContent.getURL() )
     , m_pContent( new ::ucbhelper::Content( aContent ) )
     , m_nMode( nMode )
@@ -101,7 +101,7 @@ FSStorage_Impl::~FSStorage_Impl()
 
 FSStorage::FSStorage( const ::ucbhelper::Content& aContent,
                     sal_Int32 nMode,
-                    uno::Reference< uno::XComponentContext > xContext )
+                    uno::Reference< uno::XComponentContext > const & xContext )
 : m_pImpl( new FSStorage_Impl( aContent, nMode, xContext ) )
 {
     // TODO: use properties
@@ -255,7 +255,7 @@ uno::Any SAL_CALL FSStorage::queryInterface( const uno::Type& rType )
         throw( uno::RuntimeException, std::exception )
 {
     uno::Any aReturn;
-    aReturn <<= ::cppu::queryInterface
+    aReturn = ::cppu::queryInterface
                 (   rType
                 ,   static_cast<lang::XTypeProvider*> ( this )
                 ,   static_cast<embed::XStorage*> ( this )
@@ -406,7 +406,7 @@ uno::Reference< io::XStream > SAL_CALL FSStorage::openStreamElement(
             {
                 // TODO: test whether it really works for http and fwp
                 SvStream* pStream = ::utl::UcbStreamHelper::CreateStream( aFileURL.GetMainURL( INetURLObject::NO_DECODE ),
-                                                                          STREAM_STD_WRITE );
+                                                                          StreamMode::STD_WRITE );
                 if ( pStream )
                 {
                     if ( !pStream->GetError() )
@@ -1354,7 +1354,7 @@ uno::Reference< embed::XExtendedStorageStream > SAL_CALL FSStorage::openStreamEl
             {
                 // TODO: test whether it really works for http and fwp
                 SvStream* pStream = ::utl::UcbStreamHelper::CreateStream( aFileURL,
-                                                                          STREAM_STD_WRITE );
+                                                                          StreamMode::STD_WRITE );
                 if ( pStream )
                 {
                     if ( !pStream->GetError() )

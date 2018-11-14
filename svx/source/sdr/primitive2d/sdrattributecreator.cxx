@@ -156,20 +156,20 @@ namespace drawinglayer
             }
         }
 
-        basegfx::B2DVector RectPointToB2DVector(RECT_POINT eRectPoint)
+        basegfx::B2DVector RectPointToB2DVector(RectPoint eRectPoint)
         {
             basegfx::B2DVector aRetval(0.0, 0.0);
 
             // position changes X
             switch(eRectPoint)
             {
-                case RP_LT: case RP_LM: case RP_LB:
+                case RectPoint::LT: case RectPoint::LM: case RectPoint::LB:
                 {
                     aRetval.setX(-1.0);
                     break;
                 }
 
-                case RP_RT: case RP_RM: case RP_RB:
+                case RectPoint::RT: case RectPoint::RM: case RectPoint::RB:
                 {
                     aRetval.setX(1.0);
                     break;
@@ -184,13 +184,13 @@ namespace drawinglayer
             // position changes Y
             switch(eRectPoint)
             {
-                case RP_LT: case RP_MT: case RP_RT:
+                case RectPoint::LT: case RectPoint::MT: case RectPoint::RT:
                 {
                     aRetval.setY(-1.0);
                     break;
                 }
 
-                case RP_LB: case RP_MB: case RP_RB:
+                case RectPoint::LB: case RectPoint::MB: case RectPoint::RB:
                 {
                     aRetval.setY(1.0);
                     break;
@@ -517,7 +517,6 @@ namespace drawinglayer
             const SdrTextObj& rTextObj = rText.GetObject();
 
             // Save chaining attributes
-            bool bToBeChained = rTextObj.IsToBeChained();
             bool bChainable = rTextObj.IsChainable();
 
 
@@ -580,7 +579,6 @@ namespace drawinglayer
                     bInEditMode,
                     static_cast<const SdrTextFixedCellHeightItem&>(rSet.Get(SDRATTR_TEXT_USEFIXEDCELLHEIGHT)).GetValue(),
                     bWrongSpell,
-                    bToBeChained,
                     bChainable);
             }
 
@@ -629,7 +627,7 @@ namespace drawinglayer
         {
             Graphic aGraphic(static_cast<const XFillBitmapItem&>(rSet.Get(XATTR_FILLBITMAP)).GetGraphicObject().GetGraphic());
 
-            if(!(GRAPHIC_BITMAP == aGraphic.GetType() || GRAPHIC_GDIMETAFILE == aGraphic.GetType()))
+            if(!(GraphicType::Bitmap == aGraphic.GetType() || GraphicType::GdiMetafile == aGraphic.GetType()))
             {
                 // no content if not bitmap or metafile
                 OSL_ENSURE(false, "No fill graphic in SfxItemSet (!)");
@@ -641,10 +639,10 @@ namespace drawinglayer
             if(!aPrefSize.Width() || !aPrefSize.Height())
             {
                 // if there is no logical size, create a size from pixel size and set MapMode accordingly
-                if(GRAPHIC_BITMAP == aGraphic.GetType())
+                if(GraphicType::Bitmap == aGraphic.GetType())
                 {
                     aGraphic.SetPrefSize(aGraphic.GetBitmapEx().GetSizePixel());
-                    aGraphic.SetPrefMapMode(MAP_PIXEL);
+                    aGraphic.SetPrefMapMode(MapUnit::MapPixel);
                 }
             }
 
@@ -661,11 +659,11 @@ namespace drawinglayer
 
             if(aGraphic.GetPrefMapMode() != aDestinationMapUnit)
             {
-                // #i100360# for MAP_PIXEL, LogicToLogic will not work properly,
+                // #i100360# for MapUnit::MapPixel, LogicToLogic will not work properly,
                 // so fallback to Application::GetDefaultDevice()
                 Size aNewSize(0, 0);
 
-                if(MAP_PIXEL == aGraphic.GetPrefMapMode().GetMapUnit())
+                if(MapUnit::MapPixel == aGraphic.GetPrefMapMode().GetMapUnit())
                 {
                     aNewSize = Application::GetDefaultDevice()->PixelToLogic(
                         aGraphic.GetPrefSize(),
@@ -702,7 +700,7 @@ namespace drawinglayer
                 aOffset,
                 aOffsetPosition,
                 RectPointToB2DVector(
-                    (RECT_POINT)static_cast<const SfxEnumItem&>(rSet.Get(XATTR_FILLBMP_POS)).GetValue()),
+                    (RectPoint)static_cast<const SfxEnumItem&>(rSet.Get(XATTR_FILLBMP_POS)).GetValue()),
                     static_cast<const SfxBoolItem&>(rSet.Get(XATTR_FILLBMP_TILE)).GetValue(),
                     static_cast<const SfxBoolItem&>(rSet.Get(XATTR_FILLBMP_STRETCH)).GetValue(),
                     static_cast<const SfxBoolItem&>(rSet.Get(XATTR_FILLBMP_SIZELOG)).GetValue());

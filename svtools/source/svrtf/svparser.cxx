@@ -71,7 +71,6 @@ SvParser::SvParser( SvStream& rIn, sal_uInt8 nStackSize )
     , eSrcEnc( RTL_TEXTENCODING_DONTKNOW )
     , nNextChPos(0)
     , nNextCh(0)
-    , bDownloadingFile(false)
     , bUCS2BSrcEnc(false)
     , bSwitchToUCS2(false)
     , bRTF_InTextRead(false)
@@ -105,7 +104,6 @@ void SvParser::ClearTxtConvContext()
 
 void SvParser::SetSrcEncoding( rtl_TextEncoding eEnc )
 {
-
     if( eEnc != eSrcEnc )
     {
         if( pImplData && pImplData->hConv )
@@ -134,7 +132,7 @@ void SvParser::SetSrcEncoding( rtl_TextEncoding eEnc )
         }
         else
         {
-            DBG_ASSERT( false,
+            SAL_WARN( "svtools",
                         "SvParser::SetSrcEncoding: invalid source encoding" );
             eSrcEnc = RTL_TEXTENCODING_DONTKNOW;
         }
@@ -199,7 +197,7 @@ sal_uInt32 SvParser::GetNextChar()
                         bErr = rInput.IsEof() || rInput.GetError();
                         if( !bErr && ( 0xbf == c3 ) )
                         {
-                            eSrcEnc = RTL_TEXTENCODING_UTF8;
+                            SetSrcEncoding(RTL_TEXTENCODING_UTF8);
                             bSeekBack = false;
                         }
                     }
@@ -392,7 +390,8 @@ sal_uInt32 SvParser::GetNextChar()
         while( 0 == nChars  && !bErr );
     }
 
-    if ( ! rtl::isUnicodeCodePoint( c ) )
+    // Note: ImplConvertUtf8ToUnicode() may produce a surrogate!
+    if (!rtl::isUnicodeCodePoint(c) || rtl::isHighSurrogate(c) || rtl::isLowSurrogate(c))
         c = (sal_uInt32) '?' ;
 
     if( bErr )
@@ -616,16 +615,11 @@ void SvParser::BuildWhichTable( std::vector<sal_uInt16> &rWhichMap,
 }
 
 
-IMPL_LINK_NOARG_TYPED( SvParser, NewDataRead, LinkParamNone*, void )
+IMPL_LINK_NOARG( SvParser, NewDataRead, LinkParamNone*, void )
 {
     switch( eState )
     {
     case SVPAR_PENDING:
-        // if file is loaded we are not allowed to continue
-        // instead should ignore the call.
-        if( IsDownloadingFile() )
-            break;
-
         eState = SVPAR_WORKING;
         RestoreState();
 

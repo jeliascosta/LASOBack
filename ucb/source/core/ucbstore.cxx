@@ -28,6 +28,7 @@
 #include <unordered_map>
 #include <osl/diagnose.h>
 #include <rtl/ustrbuf.hxx>
+#include <rtl/ref.hxx>
 #include <cppuhelper/interfacecontainer.hxx>
 #include <comphelper/interfacecontainer2.hxx>
 #include <com/sun/star/beans/PropertyAttribute.hpp>
@@ -117,7 +118,7 @@ class PropertySetInfo_Impl : public cppu::WeakImplHelper < XPropertySetInfo >
 
 public:
     explicit PropertySetInfo_Impl(PersistentPropertySet* pOwner);
-    virtual ~PropertySetInfo_Impl();
+    virtual ~PropertySetInfo_Impl() override;
 
     // XPropertySetInfo
     virtual Sequence< Property > SAL_CALL getProperties()
@@ -185,7 +186,7 @@ UcbStore::createPropertySetRegistry( const OUString& )
     {
         osl::Guard< osl::Mutex > aGuard( m_pImpl->m_aMutex );
         if ( !m_pImpl->m_xTheRegistry.is() )
-            m_pImpl->m_xTheRegistry = new PropertySetRegistry( m_xContext, getInitArgs() );
+            m_pImpl->m_xTheRegistry = new PropertySetRegistry( m_xContext, m_pImpl->m_aInitArgs );
     }
 
     return m_pImpl->m_xTheRegistry;
@@ -203,11 +204,6 @@ void SAL_CALL UcbStore::initialize( const Sequence< Any >& aArguments )
     m_pImpl->m_aInitArgs = aArguments;
 }
 
-
-const Sequence< Any >& UcbStore::getInitArgs() const
-{
-    return m_pImpl->m_aInitArgs;
-}
 
 
 // PropertySetRegistry_Impl.
@@ -253,9 +249,23 @@ PropertySetRegistry::~PropertySetRegistry()
 // XServiceInfo methods.
 
 
-XSERVICEINFO_NOFACTORY_IMPL_1( PropertySetRegistry,
-                                OUString( "com.sun.star.comp.ucb.PropertySetRegistry" ),
-                                PROPSET_REG_SERVICE_NAME );
+OUString SAL_CALL PropertySetRegistry::getImplementationName()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return OUString( "com.sun.star.comp.ucb.PropertySetRegistry" );
+}
+
+sal_Bool SAL_CALL PropertySetRegistry::supportsService( const OUString& ServiceName )
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return cppu::supportsService( this, ServiceName );
+}
+
+css::uno::Sequence< OUString > SAL_CALL PropertySetRegistry::getSupportedServiceNames()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return { PROPSET_REG_SERVICE_NAME };
+}
 
 
 // XPropertySetRegistry methods.
@@ -1063,8 +1073,8 @@ typedef OMultiTypeInterfaceContainerHelperVar<OUString> PropertyListeners_Impl;
 
 struct PersistentPropertySet_Impl
 {
-    PropertySetRegistry*        m_pCreator;
-    PropertySetInfo_Impl*       m_pInfo;
+    rtl::Reference<PropertySetRegistry>  m_pCreator;
+    rtl::Reference<PropertySetInfo_Impl> m_pInfo;
     OUString                    m_aKey;
     OUString                    m_aFullKey;
     osl::Mutex                  m_aMutex;
@@ -1078,16 +1088,10 @@ struct PersistentPropertySet_Impl
       m_pDisposeEventListeners( nullptr ), m_pPropSetChangeListeners( nullptr ),
       m_pPropertyChangeListeners( nullptr )
     {
-        m_pCreator->acquire();
     }
 
     ~PersistentPropertySet_Impl()
     {
-        m_pCreator->release();
-
-        if ( m_pInfo )
-            m_pInfo->release();
-
         delete m_pDisposeEventListeners;
         delete m_pPropSetChangeListeners;
         delete m_pPropertyChangeListeners;
@@ -1117,10 +1121,24 @@ PersistentPropertySet::~PersistentPropertySet()
 
 // XServiceInfo methods.
 
+OUString SAL_CALL PersistentPropertySet::getImplementationName()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return OUString( "com.sun.star.comp.ucb.PersistentPropertySet" );
+}
 
-XSERVICEINFO_NOFACTORY_IMPL_1( PersistentPropertySet,
-                                OUString( "com.sun.star.comp.ucb.PersistentPropertySet" ),
-                                PERS_PROPSET_SERVICE_NAME );
+sal_Bool SAL_CALL PersistentPropertySet::supportsService( const OUString& ServiceName )
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return cppu::supportsService( this, ServiceName );
+}
+
+css::uno::Sequence< OUString > SAL_CALL
+PersistentPropertySet::getSupportedServiceNames()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return { PERS_PROPSET_SERVICE_NAME };
+}
 
 
 // XComponent methods.
@@ -1189,13 +1207,11 @@ Reference< XPropertySetInfo > SAL_CALL PersistentPropertySet::getPropertySetInfo
 {
     osl::Guard< osl::Mutex > aGuard( m_pImpl->m_aMutex );
 
-    PropertySetInfo_Impl*& rpInfo = m_pImpl->m_pInfo;
-    if ( !rpInfo )
+    if ( !m_pImpl->m_pInfo.is() )
     {
-        rpInfo = new PropertySetInfo_Impl( this );
-        rpInfo->acquire();
+        m_pImpl->m_pInfo = new PropertySetInfo_Impl( this );
     }
-    return Reference< XPropertySetInfo >( rpInfo );
+    return Reference< XPropertySetInfo >( m_pImpl->m_pInfo.get() );
 }
 
 
@@ -1410,7 +1426,7 @@ void SAL_CALL PersistentPropertySet::removeVetoableChangeListener(
 Reference< XPropertySetRegistry > SAL_CALL PersistentPropertySet::getRegistry()
     throw( RuntimeException, std::exception )
 {
-    return Reference< XPropertySetRegistry >( m_pImpl->m_pCreator );
+    return Reference< XPropertySetRegistry >( m_pImpl->m_pCreator.get() );
 }
 
 
@@ -1549,7 +1565,7 @@ void SAL_CALL PersistentPropertySet::addProperty(
                 xBatch->commitChanges();
 
                 // Property set info is invalid.
-                if ( m_pImpl->m_pInfo )
+                if ( m_pImpl->m_pInfo.is() )
                     m_pImpl->m_pInfo->reset();
 
                 // Notify propertyset info change listeners.
@@ -1717,7 +1733,7 @@ void SAL_CALL PersistentPropertySet::removeProperty( const OUString& Name )
                 xBatch->commitChanges();
 
                 // Property set info is invalid.
-                if ( m_pImpl->m_pInfo )
+                if ( m_pImpl->m_pInfo.is() )
                     m_pImpl->m_pInfo->reset();
 
                 // Notify propertyset info change listeners.

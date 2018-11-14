@@ -55,7 +55,10 @@ enum
 
 }
 
-void ValueSet::ImplInit()
+ValueSet::ValueSet( vcl::Window* pParent, WinBits nWinStyle ) :
+    Control( pParent, nWinStyle ),
+    maVirDev( VclPtr<VirtualDevice>::Create(*this) ),
+    maColor( COL_TRANSPARENT )
 {
     mpNoneItem.reset(nullptr);
     mxScrollBar.reset(nullptr);
@@ -95,34 +98,8 @@ void ValueSet::ImplInit()
     ImplInitSettings( true, true, true );
 }
 
-ValueSet::ValueSet( vcl::Window* pParent, WinBits nWinStyle ) :
-    Control( pParent, nWinStyle ),
-    maVirDev( VclPtr<VirtualDevice>::Create(*this) ),
-    maColor( COL_TRANSPARENT )
-{
-    ImplInit();
-    mbIsTransientChildrenDisabled = false;
-}
 
-VCL_BUILDER_DECL_FACTORY(ValueSet)
-{
-    WinBits nWinBits = WB_TABSTOP;
-
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-       nWinBits |= WB_BORDER;
-
-    rRet = VclPtr<ValueSet>::Create(pParent, nWinBits);
-}
-
-ValueSet::ValueSet( vcl::Window* pParent, const ResId& rResId ) :
-    Control( pParent, rResId ),
-    maVirDev( VclPtr<VirtualDevice>::Create(*this) ),
-    maColor( COL_TRANSPARENT )
-{
-    ImplInit();
-    mbIsTransientChildrenDisabled = false;
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(ValueSet, WB_TABSTOP)
 
 ValueSet::~ValueSet()
 {
@@ -152,7 +129,7 @@ void ValueSet::ImplDeleteItems()
             Any aOldAny;
             Any aNewAny;
 
-            aOldAny <<= pItem->GetAccessible( mbIsTransientChildrenDisabled );
+            aOldAny <<= pItem->GetAccessible( false/*bIsTransientChildrenDisabled*/ );
             ImplFireAccessibleEvent(AccessibleEventId::CHILD, aOldAny, aNewAny);
         }
 
@@ -368,7 +345,7 @@ void ValueSet::ImplFormatItem(vcl::RenderContext& rRenderContext, ValueSetItem* 
 
 Reference<XAccessible> ValueSet::CreateAccessible()
 {
-    return new ValueSetAcc( this, mbIsTransientChildrenDisabled );
+    return new ValueSetAcc( this );
 }
 
 void ValueSet::Format(vcl::RenderContext& rRenderContext)
@@ -653,7 +630,7 @@ void ValueSet::Format(vcl::RenderContext& rRenderContext)
                     Any aOldAny;
                     Any aNewAny;
 
-                    aNewAny <<= pItem->GetAccessible(mbIsTransientChildrenDisabled);
+                    aNewAny <<= pItem->GetAccessible(false/*bIsTransientChildrenDisabled*/);
                     ImplFireAccessibleEvent(AccessibleEventId::CHILD, aOldAny, aNewAny);
                 }
 
@@ -675,7 +652,7 @@ void ValueSet::Format(vcl::RenderContext& rRenderContext)
                     Any aOldAny;
                     Any aNewAny;
 
-                    aOldAny <<= pItem->GetAccessible(mbIsTransientChildrenDisabled);
+                    aOldAny <<= pItem->GetAccessible(false/*bIsTransientChildrenDisabled*/);
                     ImplFireAccessibleEvent(AccessibleEventId::CHILD, aOldAny, aNewAny);
                 }
 
@@ -1131,7 +1108,7 @@ bool ValueSet::ImplHasAccessibleListeners()
     return( pAcc && pAcc->HasAccessibleListeners() );
 }
 
-IMPL_LINK_TYPED( ValueSet,ImplScrollHdl, ScrollBar*, pScrollBar, void )
+IMPL_LINK( ValueSet,ImplScrollHdl, ScrollBar*, pScrollBar, void )
 {
     sal_uInt16 nNewFirstLine = (sal_uInt16)pScrollBar->GetThumbPos();
     if ( nNewFirstLine != mnFirstLine )
@@ -1142,7 +1119,7 @@ IMPL_LINK_TYPED( ValueSet,ImplScrollHdl, ScrollBar*, pScrollBar, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ValueSet, ImplTimerHdl, Timer *, void)
+IMPL_LINK_NOARG(ValueSet, ImplTimerHdl, Timer *, void)
 {
     ImplTracking( GetPointerPosPixel(), true );
 }
@@ -1234,7 +1211,7 @@ void ValueSet::MouseButtonDown( const MouseEvent& rMouseEvent )
                     StartTracking( StartTrackingFlags::ScrollRepeat );
                 }
                 else if ( rMouseEvent.GetClicks() == 2 )
-                    DoubleClick();
+                    maDoubleClickHdl.Call( this );
 
                 return;
             }
@@ -1581,11 +1558,6 @@ void ValueSet::Select()
     maSelectHdl.Call( this );
 }
 
-void ValueSet::DoubleClick()
-{
-    maDoubleClickHdl.Call( this );
-}
-
 void ValueSet::UserDraw( const UserDrawEvent& )
 {
 }
@@ -1905,22 +1877,14 @@ void ValueSet::SelectItem( sal_uInt16 nItemId )
                 if( nPos != VALUESET_ITEM_NOTFOUND )
                 {
                     ValueItemAcc* pItemAcc = ValueItemAcc::getImplementation(
-                        mItemList[nPos]->GetAccessible( mbIsTransientChildrenDisabled ) );
+                        mItemList[nPos]->GetAccessible( false/*bIsTransientChildrenDisabled*/ ) );
 
                     if( pItemAcc )
                     {
                         Any aOldAny;
                         Any aNewAny;
-                        if( !mbIsTransientChildrenDisabled )
-                        {
-                            aOldAny <<= Reference<XInterface>(static_cast<cppu::OWeakObject*>(pItemAcc));
-                            ImplFireAccessibleEvent(AccessibleEventId::ACTIVE_DESCENDANT_CHANGED, aOldAny, aNewAny );
-                        }
-                        else
-                        {
-                            aOldAny <<= AccessibleStateType::FOCUSED;
-                            pItemAcc->FireAccessibleEvent(AccessibleEventId::STATE_CHANGED, aOldAny, aNewAny);
-                        }
+                        aOldAny <<= Reference<XInterface>(static_cast<cppu::OWeakObject*>(pItemAcc));
+                        ImplFireAccessibleEvent(AccessibleEventId::ACTIVE_DESCENDANT_CHANGED, aOldAny, aNewAny );
                     }
                 }
             }
@@ -1936,22 +1900,14 @@ void ValueSet::SelectItem( sal_uInt16 nItemId )
 
             ValueItemAcc* pItemAcc = nullptr;
             if (pItem != nullptr)
-                pItemAcc = ValueItemAcc::getImplementation( pItem->GetAccessible( mbIsTransientChildrenDisabled ) );
+                pItemAcc = ValueItemAcc::getImplementation( pItem->GetAccessible( false/*bIsTransientChildrenDisabled*/ ) );
 
             if( pItemAcc )
             {
                 Any aOldAny;
                 Any aNewAny;
-                if( !mbIsTransientChildrenDisabled )
-                {
-                    aNewAny <<= Reference<XInterface>(static_cast<cppu::OWeakObject*>(pItemAcc));
-                    ImplFireAccessibleEvent(AccessibleEventId::ACTIVE_DESCENDANT_CHANGED, aOldAny, aNewAny);
-                }
-                else
-                {
-                    aNewAny <<= AccessibleStateType::FOCUSED;
-                    pItemAcc->FireAccessibleEvent(AccessibleEventId::STATE_CHANGED, aOldAny, aNewAny);
-                }
+                aNewAny <<= Reference<XInterface>(static_cast<cppu::OWeakObject*>(pItemAcc));
+                ImplFireAccessibleEvent(AccessibleEventId::ACTIVE_DESCENDANT_CHANGED, aOldAny, aNewAny);
             }
 
             // selection event
@@ -2098,7 +2054,7 @@ void ValueSet::SetItemText(sal_uInt16 nItemId, const OUString& rText)
 
     if (ImplHasAccessibleListeners())
     {
-        Reference<XAccessible> xAccessible(pItem->GetAccessible( mbIsTransientChildrenDisabled));
+        Reference<XAccessible> xAccessible(pItem->GetAccessible( false/*bIsTransientChildrenDisabled*/));
         ValueItemAcc* pValueItemAcc = static_cast<ValueItemAcc*>(xAccessible.get());
         pValueItemAcc->FireAccessibleEvent(AccessibleEventId::NAME_CHANGED, aOldName, aNewName);
     }

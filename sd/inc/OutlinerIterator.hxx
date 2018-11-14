@@ -28,11 +28,11 @@
 #include <vector>
 
 class SdDrawDocument;
+class SdOutliner;
 
 namespace sd {
 
 class ViewShell;
-class Outliner;
 
 namespace outliner {
 
@@ -50,16 +50,6 @@ class IteratorPosition;
     page.</li></ul>
 */
 enum IteratorLocation {BEGIN,END,CURRENT};
-
-/** Use this enum to specify the type of iterator when creating a new
-    iterator:
-    <ul><li>SELECTION for iteration over all objects that belong to the
-    current mark list.</li>
-    <li>SINGLE_VIEW for iteration over all objects in the current view.</li>
-    <li>DOCUMENT for iteration over all object in all relevant
-    views.</li></ul>
-*/
-enum IteratorType {SELECTION,SINGLE_VIEW,DOCUMENT};
 
 /** This iterator can be used to iterate over all <type>SdrObject</type>
     objects of one of three set denoted by the <type>IteratorType</type>:
@@ -91,6 +81,7 @@ public:
         implementation object.
     */
     Iterator (const Iterator& rIterator);
+    Iterator (Iterator&& rIterator);
 
     /** Create a new iterator with the implementation object being the
         provided one.
@@ -107,6 +98,8 @@ public:
             The iterator which to assign from.
     */
     Iterator& operator= (const Iterator& rIterator);
+    Iterator& operator= (Iterator&& rIterator);
+
     /** Return the current position of the iterator.
         @return
             Returns a reference to the current position.  Therefore this
@@ -145,17 +138,17 @@ public:
 
 private:
     /// The implementation object to which most of the methods are forwarded.
-    IteratorImplBase* mpIterator;
+    std::unique_ptr<IteratorImplBase> mxIterator;
 };
 
-/** This class wraps the <type>Outliner</type> class and represents it as
+/** This class wraps the <type>SdOutliner</type> class and represents it as
     a container of <type>SdrObject</type> objects.  Its main purpose is to
     provide iterators for certain sub-sets of those objects.  These sub-sets
     are a) the set of the currently selected objects, b) all objects in the
     current view, and c) all objects in all views.
 
     <p>The direction of the returned iterators depends on the underlying
-    <type>Outliner</type> object and is usually set in the search
+    <type>SdOutliner</type> object and is usually set in the search
     dialog.</p>
 */
 class OutlinerContainer
@@ -166,7 +159,7 @@ public:
             The outliner that is represented by the new object as
             <type>SdrObject</type> container.
     */
-    OutlinerContainer (::sd::Outliner* pOutliner);
+    OutlinerContainer (SdOutliner* pOutliner);
 
     /** Return an iterator that points to the first object of one of the
         sets described above.  This takes also into account the direction of
@@ -200,7 +193,7 @@ public:
 
 private:
     /// The wrapped outliner that is represented as object container.
-    ::sd::Outliner* mpOutliner;
+    SdOutliner* mpOutliner;
 
     /** Create an iterator.  The object pointed to depends on the search
         direction retrieved from the outliner object
@@ -234,8 +227,8 @@ private:
         const ::std::vector<SdrObjectWeakRef>& rObjectList,
         SdDrawDocument* pDocument,
         const std::shared_ptr<ViewShell>& rpViewShell,
-        bool bDirectionIsForward=true,
-        IteratorLocation aLocation=BEGIN);
+        bool bDirectionIsForward,
+        IteratorLocation aLocation);
 
     /** Create an iterator that iterates over all <type>SdrObjects</type>
         objects of the <member>mpOutliner</member> outliner.
@@ -251,8 +244,8 @@ private:
     static Iterator CreateDocumentIterator (
         SdDrawDocument* pDocument,
         const std::shared_ptr<ViewShell>& rpViewShell,
-        bool bDirectionIsForward=true,
-        IteratorLocation aLocation=BEGIN);
+        bool bDirectionIsForward,
+        IteratorLocation aLocation);
 
     /** Return the index of a page that contains an object that a new
         iterator shall point to.  This page index depends primarily on the
@@ -303,16 +296,6 @@ public:
     */
     IteratorPosition (const IteratorPosition& aPosition);
 
-    /// The destructor is a no-op at the moment.
-    ~IteratorPosition();
-    /** Assign the content of the given position to this one.
-        @param aPosition
-            This is the position object from which to take the values of all
-            data members.
-        @return
-            Returns a reference to this object.
-    */
-    IteratorPosition& operator= (const IteratorPosition& aPosition);
     /** Compare two positions for equality.
         @return
             <TRUE/> is returned only when all data members have the same

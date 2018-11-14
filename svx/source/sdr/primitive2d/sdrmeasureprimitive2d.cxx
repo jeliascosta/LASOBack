@@ -25,6 +25,7 @@
 #include <basegfx/polygon/b2dpolypolygontools.hxx>
 #include <basegfx/tools/canvastools.hxx>
 #include <drawinglayer/primitive2d/groupprimitive2d.hxx>
+#include <rtl/ref.hxx>
 #include <svx/sdr/primitive2d/svx_primitivetypes2d.hxx>
 #include <basegfx/matrix/b2dhommatrixtools.hxx>
 #include <drawinglayer/primitive2d/hiddengeometryprimitive2d.hxx>
@@ -81,10 +82,10 @@ namespace drawinglayer
                 aLineStartEnd);
         }
 
-        Primitive2DContainer SdrMeasurePrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& aViewInformation) const
+        void SdrMeasurePrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& aViewInformation) const
         {
             Primitive2DContainer aRetval;
-            css::uno::Reference<SdrBlockTextPrimitive2D> xBlockText;
+            rtl::Reference<SdrBlockTextPrimitive2D> xBlockText;
             basegfx::B2DRange aTextRange;
             const basegfx::B2DVector aLine(getEnd() - getStart());
             const double fDistance(aLine.getLength());
@@ -433,7 +434,7 @@ namespace drawinglayer
                     getSdrLSTAttribute().getShadow());
             }
 
-            return aRetval;
+            rContainer.insert(rContainer.end(), aRetval.begin(), aRetval.end());
         }
 
         SdrMeasurePrimitive2D::SdrMeasurePrimitive2D(

@@ -21,6 +21,7 @@
 #define INCLUDED_DBACCESS_SOURCE_SDBTOOLS_CONNECTION_OBJECTNAMES_HXX
 
 #include "connectiondependent.hxx"
+#include "module_sdbt.hxx"
 
 #include <com/sun/star/sdb/tools/XObjectNames.hpp>
 
@@ -34,14 +35,13 @@ namespace sdbtools
     // ObjectNames
     typedef ::cppu::WeakImplHelper<   css::sdb::tools::XObjectNames
                                   >   ObjectNames_Base;
-    struct ObjectNames_Impl;
     /** default implementation for XObjectNames
     */
     class ObjectNames   :public ObjectNames_Base
                         ,public ConnectionDependentComponent
     {
     private:
-        ::std::unique_ptr< ObjectNames_Impl >   m_pImpl;
+        SdbtClient  m_aModuleClient;    // keep the module alive as long as this instance lives
 
     public:
         /** constructs the instance
@@ -67,7 +67,7 @@ namespace sdbtools
         virtual void SAL_CALL checkNameForCreate( ::sal_Int32 CommandType, const OUString& Name ) throw (css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
 
     protected:
-        virtual ~ObjectNames();
+        virtual ~ObjectNames() override;
 
     private:
         ObjectNames( const ObjectNames& ) = delete;

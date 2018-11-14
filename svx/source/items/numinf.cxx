@@ -32,7 +32,7 @@
 
 SvxNumberInfoItem::SvxNumberInfoItem( const sal_uInt16 nId ) :
 
-    INIT( nullptr, SVX_VALUE_TYPE_UNDEFINED, 0, "" )
+    INIT( nullptr, SvxNumberValueType::Undefined, 0, "" )
 
 {
 }
@@ -41,7 +41,7 @@ SvxNumberInfoItem::SvxNumberInfoItem( const sal_uInt16 nId ) :
 SvxNumberInfoItem::SvxNumberInfoItem( SvNumberFormatter* pNumFormatter,
                                       const sal_uInt16 nId ) :
 
-    INIT( pNumFormatter, SVX_VALUE_TYPE_UNDEFINED, 0, "" )
+    INIT( pNumFormatter, SvxNumberValueType::Undefined, 0, "" )
 
 {
 }
@@ -50,7 +50,7 @@ SvxNumberInfoItem::SvxNumberInfoItem( SvNumberFormatter* pNumFormatter,
 SvxNumberInfoItem::SvxNumberInfoItem( SvNumberFormatter* pNumFormatter,
                                       const OUString& rVal, const sal_uInt16 nId ) :
 
-    INIT( pNumFormatter, SVX_VALUE_TYPE_STRING, 0, rVal )
+    INIT( pNumFormatter, SvxNumberValueType::String, 0, rVal )
 
 {
 }
@@ -59,7 +59,7 @@ SvxNumberInfoItem::SvxNumberInfoItem( SvNumberFormatter* pNumFormatter,
 SvxNumberInfoItem::SvxNumberInfoItem( SvNumberFormatter* pNumFormatter,
                                       const double& rVal, const sal_uInt16 nId ) :
 
-    INIT( pNumFormatter, SVX_VALUE_TYPE_NUMBER, rVal, "" )
+    INIT( pNumFormatter, SvxNumberValueType::Number, rVal, "" )
 
 {
 }
@@ -69,7 +69,7 @@ SvxNumberInfoItem::SvxNumberInfoItem( SvNumberFormatter* pNumFormatter,
                                       const double& rVal, const OUString& rValueStr,
                                       const sal_uInt16 nId ) :
 
-    INIT( pNumFormatter, SVX_VALUE_TYPE_NUMBER, rVal, rValueStr )
+    INIT( pNumFormatter, SvxNumberValueType::Number, rVal, rValueStr )
 
 {
 }
@@ -108,8 +108,8 @@ SvxNumberInfoItem::~SvxNumberInfoItem()
 bool SvxNumberInfoItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -120,7 +120,7 @@ bool SvxNumberInfoItem::GetPresentation
 
 bool SvxNumberInfoItem::operator==( const SfxPoolItem& rItem ) const
 {
-    DBG_ASSERT( SfxPoolItem::operator==( rItem ), "unequal which or type" );
+    assert(SfxPoolItem::operator==(rItem));
 
     const SvxNumberInfoItem& rOther = static_cast<const SvxNumberInfoItem&>(rItem);
 

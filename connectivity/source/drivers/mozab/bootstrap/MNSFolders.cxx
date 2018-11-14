@@ -68,9 +68,9 @@ namespace
     static const char* DefaultProductDir[NB_PRODUCTS][NB_CANDIDATES] =
     {
     #if defined(_WIN32)
-        { "Mozilla/SeaMonkey/", NULL, NULL, NULL },
-        { "Mozilla/Firefox/", NULL, NULL, NULL },
-        { "Thunderbird/", "Mozilla/Thunderbird/", NULL, NULL }
+        { "Mozilla/SeaMonkey/", nullptr, nullptr, nullptr },
+        { "Mozilla/Firefox/", nullptr, nullptr, nullptr },
+        { "Thunderbird/", "Mozilla/Thunderbird/", nullptr, nullptr }
     #elif defined(MACOSX)
         { "../Mozilla/SeaMonkey/", nullptr, nullptr, nullptr },
         { "Firefox/", nullptr, nullptr, nullptr },
@@ -90,7 +90,7 @@ namespace
     };
 
 
-    OUString lcl_guessProfileRoot( MozillaProductType _product )
+    OUString const & lcl_guessProfileRoot( MozillaProductType _product )
     {
         size_t productIndex = _product - 1;
 

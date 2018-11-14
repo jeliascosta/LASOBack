@@ -108,9 +108,9 @@ void SwWrtShell::SelPara(const Point *pPt )
     {
         SwMvContext aMvContext(this);
         ClearMark();
-        SwCursorShell::MovePara( fnParaCurr, fnParaStart );
+        SwCursorShell::MovePara( GoCurrPara, fnParaStart );
         SttSelect();
-        SwCursorShell::MovePara( fnParaCurr, fnParaEnd );
+        SwCursorShell::MovePara( GoCurrPara, fnParaEnd );
     }
     EndSelect();
     if(pPt)
@@ -147,9 +147,9 @@ long SwWrtShell::SelAll()
                 pEndPos.reset(new SwPosition( *pTmpCursor->GetMark() ));
             }
             Push();
-            bool bIsFullSel = !MoveSection( fnSectionCurr, fnSectionStart);
+            bool bIsFullSel = !MoveSection( GoCurrSection, fnSectionStart);
             SwapPam();
-            bIsFullSel &= !MoveSection( fnSectionCurr, fnSectionEnd);
+            bIsFullSel &= !MoveSection( GoCurrSection, fnSectionEnd);
             Pop(false);
             GoStart(true, &bMoveTable, false, !bIsFullSel);
         }
@@ -214,7 +214,7 @@ sal_uLong SwWrtShell::SearchPattern( const SearchOptions2& rSearchOpt, bool bSea
                                 FindRanges eFlags, bool bReplace )
 {
         // no enhancement of existing selections
-    if(!(eFlags & FND_IN_SEL))
+    if(!(eFlags & FindRanges::InSel))
         ClearMark();
     bool bCancel = false;
     sal_uLong nRet = Find( rSearchOpt, bSearchInNotes, eStt, eEnd, bCancel, eFlags, bReplace );
@@ -233,7 +233,7 @@ sal_uLong SwWrtShell::SearchTempl( const OUString &rTempl,
                                FindRanges eFlags, const OUString* pReplTempl )
 {
         // no enhancement of existing selections
-    if(!(eFlags & FND_IN_SEL))
+    if(!(eFlags & FindRanges::InSel))
         ClearMark();
     SwTextFormatColl *pColl = GetParaStyle(rTempl, SwWrtShell::GETSTYLE_CREATESOME);
     SwTextFormatColl *pReplaceColl = nullptr;
@@ -259,7 +259,7 @@ sal_uLong SwWrtShell::SearchAttr( const SfxItemSet& rFindSet, bool bNoColls,
                                 const SfxItemSet* pReplaceSet )
 {
     // no enhancement of existing selections
-    if (!(eFlags & FND_IN_SEL))
+    if (!(eFlags & FindRanges::InSel))
         ClearMark();
 
     // Searching
@@ -438,7 +438,7 @@ long SwWrtShell::ExtSelWrd(const Point *pPt, bool )
     SwCursorShell::Push();                    // save the cursor
     SwCursorShell::SetCursor( *pPt );           // and check the direction
 
-    switch( SwCursorShell::CompareCursor( StackMkCurrPt ))
+    switch( SwCursorShell::CompareCursorStackMkCurrPt())
     {
     case -1:    bToTop = false;     break;
     case 1:     bToTop = true;      break;
@@ -649,9 +649,9 @@ void SwWrtShell::SetInsMode( bool bOn )
     Invalidate();
 }
 //Overwrite mode is incompatible with red-lining
-void SwWrtShell::SetRedlineModeAndCheckInsMode( sal_uInt16 eMode )
+void SwWrtShell::SetRedlineFlagsAndCheckInsMode( RedlineFlags eMode )
 {
-   SetRedlineMode( eMode );
+   SetRedlineFlags( eMode );
    if (IsRedlineOn())
        SetInsMode();
 }
@@ -702,7 +702,7 @@ void SwWrtShell::LeaveSelFrameMode()
 
 // Description: execute framebound macro
 
-IMPL_LINK_TYPED( SwWrtShell, ExecFlyMac, const SwFlyFrameFormat*, pFlyFormat, void )
+IMPL_LINK( SwWrtShell, ExecFlyMac, const SwFlyFrameFormat*, pFlyFormat, void )
 {
     const SwFrameFormat *pFormat = pFlyFormat ? static_cast<const SwFrameFormat*>(pFlyFormat) : GetFlyFrameFormat();
     OSL_ENSURE(pFormat, "no frame format");

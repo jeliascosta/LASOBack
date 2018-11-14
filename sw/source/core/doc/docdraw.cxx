@@ -212,7 +212,7 @@ SwDrawContact* SwDoc::GroupSelection( SdrView& rDrawView )
 
         SwUndoDrawGroup *const pUndo = (!GetIDocumentUndoRedo().DoesUndo())
                                  ? nullptr
-                                 : new SwUndoDrawGroup( (sal_uInt16)rMrkList.GetMarkCount() );
+                                 : new SwUndoDrawGroup( (sal_uInt16)rMrkList.GetMarkCount() , this);
 
         // #i53320#
         bool bGroupMembersNotPositioned( false );
@@ -237,7 +237,7 @@ SwDrawContact* SwDoc::GroupSelection( SdrView& rDrawView )
 
             pFormat = static_cast<SwDrawFrameFormat*>(pContact->GetFormat());
             // Deletes itself!
-            pContact->Changed(*pObj, SDRUSERCALL_DELETE, pObj->GetLastBoundRect() );
+            pContact->Changed(*pObj, SdrUserCallType::Delete, pObj->GetLastBoundRect() );
             pObj->SetUserCall( nullptr );
 
             if( pUndo )
@@ -330,7 +330,7 @@ void SwDoc::UnGroupSelection( SdrView& rDrawView )
                     SwUndoDrawUnGroup* pUndo = nullptr;
                     if( bUndo )
                     {
-                        pUndo = new SwUndoDrawUnGroup( static_cast<SdrObjGroup*>(pObj) );
+                        pUndo = new SwUndoDrawUnGroup( static_cast<SdrObjGroup*>(pObj), this );
                         GetIDocumentUndoRedo().AppendUndo(pUndo);
                     }
 
@@ -360,7 +360,7 @@ void SwDoc::UnGroupSelection( SdrView& rDrawView )
         SwUndoDrawUnGroupConnectToLayout* pUndo = nullptr;
         if( bUndo )
         {
-            pUndo = new SwUndoDrawUnGroupConnectToLayout();
+            pUndo = new SwUndoDrawUnGroupConnectToLayout(this);
             GetIDocumentUndoRedo().AppendUndo(pUndo);
         }
 
@@ -433,7 +433,7 @@ bool SwDoc::DeleteSelection( SwDrawView& rDrawView )
                 SwUndoDrawDelete *const pUndo =
                     (!GetIDocumentUndoRedo().DoesUndo())
                         ? nullptr
-                            : new SwUndoDrawDelete( (sal_uInt16)rMrkList.GetMarkCount() );
+                            : new SwUndoDrawDelete( (sal_uInt16)rMrkList.GetMarkCount(), this );
 
                 // Destroy ContactObjects, save formats.
                 for( size_t i = 0; i < rMrkList.GetMarkCount(); ++i )
@@ -453,7 +453,7 @@ bool SwDoc::DeleteSelection( SwDrawView& rDrawView )
                             OSL_FAIL( "<SwDrawVirtObj> is still marked for delete. application will crash!" );
                         }
                         // Deletes itself!
-                        pContact->Changed(*pObj, SDRUSERCALL_DELETE, pObj->GetLastBoundRect() );
+                        pContact->Changed(*pObj, SdrUserCallType::Delete, pObj->GetLastBoundRect() );
                         pObj->SetUserCall( nullptr );
 
                         if( pUndo )
@@ -521,7 +521,7 @@ void SwDoc::SetCalcFieldValueHdl(Outliner* pOutliner)
 }
 
 /// Recognise fields/URLs in the Outliner and set how they are displayed.
-IMPL_LINK_TYPED(SwDoc, CalcFieldValueHdl, EditFieldInfo*, pInfo, void)
+IMPL_LINK(SwDoc, CalcFieldValueHdl, EditFieldInfo*, pInfo, void)
 {
     if (!pInfo)
         return;
@@ -603,7 +603,7 @@ namespace docfunc
         {
             const SdrPage& rSdrPage( *(p_rDoc.getIDocumentDrawModelAccess().GetDrawModel()->GetPage( 0 )) );
 
-            SdrObjListIter aIter( rSdrPage, IM_FLAT );
+            SdrObjListIter aIter( rSdrPage, SdrIterMode::Flat );
             while( aIter.IsMore() )
             {
                 SdrObject* pObj( aIter.Next() );
@@ -628,7 +628,7 @@ namespace docfunc
         {
             const SdrPage& rSdrPage( *(p_rDoc.getIDocumentDrawModelAccess().GetDrawModel()->GetPage( 0 )) );
 
-            SdrObjListIter aIter( rSdrPage, IM_FLAT );
+            SdrObjListIter aIter( rSdrPage, SdrIterMode::Flat );
             while( aIter.IsMore() )
             {
                 SdrObject* pObj( aIter.Next() );

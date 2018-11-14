@@ -281,11 +281,9 @@ public:
 
     // methods for directories
 
-    bool    UpdateOrInsertTOX(const SwTOXDescription& rDesc, SwTOXBase** ppBase = nullptr, const SfxItemSet* pSet = nullptr);
+    bool    UpdateOrInsertTOX(const SwTOXDescription& rDesc, SwTOXBase** ppBase, const SfxItemSet* pSet);
 
     const SwTOXType*    GetTOXType(TOXTypes eTyp) const;
-    const SwTOXBase*    GetCurTOX();
-
 };
 
 // inlines

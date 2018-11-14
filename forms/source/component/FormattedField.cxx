@@ -27,6 +27,7 @@
 #include <comphelper/numbers.hxx>
 #include <connectivity/dbtools.hxx>
 #include <connectivity/dbconversion.hxx>
+#include <o3tl/any.hxx>
 #include <svl/zforlist.hxx>
 #include <svl/numuno.hxx>
 #include <vcl/svapp.hxx>
@@ -84,7 +85,7 @@ public:
     using SvNumberFormatsSupplierObj::operator delete;
 protected:
     StandardFormatsSupplier(const Reference< XComponentContext >& _rxFactory,LanguageType _eSysLanguage);
-    virtual ~StandardFormatsSupplier();
+    virtual ~StandardFormatsSupplier() override;
 protected:
     virtual bool    queryTermination() const override;
     virtual void    notifyTermination() override;
@@ -233,7 +234,7 @@ void OFormattedControl::keyReleased(const css::awt::KeyEvent& /*e*/) throw ( css
 {
 }
 
-IMPL_LINK_NOARG_TYPED(OFormattedControl, OnKeyPressed, void*, void)
+IMPL_LINK_NOARG(OFormattedControl, OnKeyPressed, void*, void)
 {
     m_nKeyEvent = nullptr;
     Reference<XFormComponent>  xFComp(getModel(), UNO_QUERY);
@@ -251,11 +252,6 @@ css::uno::Sequence<OUString>  OFormattedControl::getSupportedServiceNames() thro
     pArray[aSupported.getLength()-2] = FRM_SUN_CONTROL_FORMATTEDFIELD;
     pArray[aSupported.getLength()-1] = STARDIV_ONE_FORM_CONTROL_FORMATTEDFIELD;
     return aSupported;
-}
-
-void OFormattedControl::setDesignMode(sal_Bool bOn) throw ( css::uno::RuntimeException, std::exception)
-{
-    OBoundControl::setDesignMode(bOn);
 }
 
 void OFormattedModel::implConstruct()
@@ -368,22 +364,6 @@ void OFormattedModel::describeAggregateProperties( Sequence< Property >& _rAggre
     // no strict format property for formatted fields: it does not make sense, 'cause
     // there is no general way to decide which characters/sub strings are allowed during the input of an
     // arbitrary formatted control
-}
-
-void OFormattedModel::getFastPropertyValue(Any& rValue, sal_Int32 nHandle) const
-{
-    OEditBaseModel::getFastPropertyValue(rValue, nHandle);
-}
-
-void OFormattedModel::setFastPropertyValue_NoBroadcast(sal_Int32 nHandle, const Any& rValue) throw ( css::uno::Exception, std::exception)
-{
-    OEditBaseModel::setFastPropertyValue_NoBroadcast(nHandle, rValue);
-}
-
-sal_Bool OFormattedModel::convertFastPropertyValue(Any& rConvertedValue, Any& rOldValue, sal_Int32 nHandle, const Any& rValue)
-                                                        throw( IllegalArgumentException )
-{
-    return OEditBaseModel::convertFastPropertyValue(rConvertedValue, rOldValue, nHandle, rValue);
 }
 
 void OFormattedModel::setPropertyToDefaultByHandle(sal_Int32 nHandle)
@@ -683,9 +663,8 @@ void OFormattedModel::write(const Reference<XObjectOutputStream>& _rxOutStream) 
         {
             Any aLocale = xFormat->getPropertyValue(s_aLocaleProp);
             DBG_ASSERT(aLocale.has<Locale>(), "OFormattedModel::write : invalid language property !");
-            if (aLocale.has<Locale>())
+            if (auto pLocale = o3tl::tryAccess<Locale>(aLocale))
             {
-                Locale const * pLocale = static_cast<Locale const *>(aLocale.getValue());
                 eFormatLanguage = LanguageTag::convertToLanguageType( *pLocale, false);
             }
         }
@@ -782,7 +761,7 @@ void OFormattedModel::read(const Reference<XObjectInputStream>& _rxInStream) thr
                             aEffectiveValue <<= _rxInStream->readUTF();
                             break;
                         case 1: // double
-                            aEffectiveValue <<= (double)_rxInStream->readDouble();
+                            aEffectiveValue <<= _rxInStream->readDouble();
                             break;
                         case 2:
                             break;
@@ -1019,7 +998,7 @@ Sequence< Type > OFormattedModel::getSupportedBindingTypes()
         aTypes.push_front(cppu::UnoType< sal_Bool >::get() );
         break;
     }
-    return comphelper::containerToSequence<Type>(aTypes);
+    return comphelper::containerToSequence(aTypes);
 }
 
 Any OFormattedModel::getDefaultForReset() const

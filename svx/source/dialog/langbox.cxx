@@ -129,12 +129,12 @@ VCL_BUILDER_DECL_FACTORY(SvxLanguageComboBox)
     rRet = pLanguageBox;
 }
 
-SvxLanguageBoxBase::SvxLanguageBoxBase( bool bCheck )
+SvxLanguageBoxBase::SvxLanguageBoxBase()
     : m_pSpellUsedLang(nullptr)
     , m_nLangList(SvxLanguageListFlags::EMPTY)
     , m_bHasLangNone(false)
     , m_bLangNoneIsLangAll(false)
-    , m_bWithCheckmark(bCheck)
+    , m_bWithCheckmark(false)
 {
 }
 
@@ -216,13 +216,13 @@ void SvxLanguageBoxBase::SetLanguageList( SvxLanguageListFlags nLangList,
         }
         if (SvxLanguageListFlags::SPELL_USED & nLangList)
         {
-            Reference< XSpellChecker1 > xTmp1( SvxGetSpellChecker(), UNO_QUERY );
+            Reference< XSpellChecker1 > xTmp1( LinguMgr::GetSpellChecker(), UNO_QUERY );
             if (xTmp1.is())
                 aSpellUsedLang = xTmp1->getLanguages();
         }
         if (SvxLanguageListFlags::HYPH_USED  & nLangList)
         {
-            Reference< XHyphenator > xTmp( SvxGetHyphenator() );
+            Reference< XHyphenator > xTmp( LinguMgr::GetHyphenator() );
             if (xTmp.is()) {
                 Sequence < css::lang::Locale > aLocaleSequence( xTmp->getLocales() );
                 aHyphUsedLang = lcl_LocaleSeqToLangSeq( aLocaleSequence );
@@ -230,7 +230,7 @@ void SvxLanguageBoxBase::SetLanguageList( SvxLanguageListFlags nLangList,
         }
         if (SvxLanguageListFlags::THES_USED  & nLangList)
         {
-            Reference< XThesaurus > xTmp( SvxGetThesaurus() );
+            Reference< XThesaurus > xTmp( LinguMgr::GetThesaurus() );
             if (xTmp.is()) {
                 Sequence < css::lang::Locale > aLocaleSequence( xTmp->getLocales() );
                 aThesUsedLang = lcl_LocaleSeqToLangSeq( aLocaleSequence );
@@ -341,7 +341,7 @@ sal_Int32 SvxLanguageBoxBase::ImplInsertLanguage( const LanguageType nLangType, 
 
         if (!m_pSpellUsedLang)
         {
-            Reference< XSpellChecker1 > xSpell( SvxGetSpellChecker(), UNO_QUERY );
+            Reference< XSpellChecker1 > xSpell( LinguMgr::GetSpellChecker(), UNO_QUERY );
             if ( xSpell.is() )
                 m_pSpellUsedLang = new Sequence< sal_Int16 >( xSpell->getLanguages() );
         }
@@ -487,7 +487,7 @@ sal_Int32 SvxLanguageBoxBase::GetSavedValueLBB() const
 
 SvxLanguageBox::SvxLanguageBox( vcl::Window* pParent, WinBits nBits )
     : ListBox( pParent, nBits )
-    , SvxLanguageBoxBase( false )
+    , SvxLanguageBoxBase()
 {
     // display entries sorted
     SetStyle( GetStyle() | WB_SORT );
@@ -497,9 +497,9 @@ SvxLanguageBox::SvxLanguageBox( vcl::Window* pParent, WinBits nBits )
 
 SvxLanguageComboBox::SvxLanguageComboBox( vcl::Window* pParent, WinBits nBits )
     : ComboBox( pParent, nBits )
-    , SvxLanguageBoxBase( false )
+    , SvxLanguageBoxBase()
     , mnSavedValuePos( COMBOBOX_ENTRY_NOTFOUND )
-    , meEditedAndValid( EDITED_NO )
+    , meEditedAndValid( EditedAndValid::No )
 {
     // display entries sorted
     SetStyle( GetStyle() | WB_SORT );
@@ -677,12 +677,12 @@ sal_Int32 SvxLanguageComboBox::ImplGetSavedValue() const
 }
 
 
-IMPL_LINK_NOARG_TYPED( SvxLanguageComboBox, EditModifyHdl, Edit&, void )
+IMPL_LINK_NOARG( SvxLanguageComboBox, EditModifyHdl, Edit&, void )
 {
     EditedAndValid eOldState = meEditedAndValid;
     OUString aStr( vcl::I18nHelper::filterFormattingChars( GetText()));
     if (aStr.isEmpty())
-        meEditedAndValid = EDITED_INVALID;
+        meEditedAndValid = EditedAndValid::Invalid;
     else
     {
         const sal_Int32 nPos = GetEntryPos( aStr);
@@ -721,13 +721,13 @@ IMPL_LINK_NOARG_TYPED( SvxLanguageComboBox, EditModifyHdl, Edit&, void )
             if (bSetEditSelection)
                 SetSelection( aSel);
 
-            meEditedAndValid = EDITED_NO;
+            meEditedAndValid = EditedAndValid::No;
         }
         else
         {
             OUString aCanonicalized;
             bool bValid = LanguageTag::isValidBcp47( aStr, &aCanonicalized, true);
-            meEditedAndValid = (bValid ? EDITED_VALID : EDITED_INVALID);
+            meEditedAndValid = (bValid ? EditedAndValid::Valid : EditedAndValid::Invalid);
             if (bValid && aCanonicalized != aStr)
             {
                 SetText( aCanonicalized);
@@ -737,7 +737,7 @@ IMPL_LINK_NOARG_TYPED( SvxLanguageComboBox, EditModifyHdl, Edit&, void )
     }
     if (eOldState != meEditedAndValid)
     {
-        if (meEditedAndValid == EDITED_INVALID)
+        if (meEditedAndValid == EditedAndValid::Invalid)
         {
 #if 0
             //! Gives white on white!?! instead of white on reddish.
@@ -758,7 +758,7 @@ IMPL_LINK_NOARG_TYPED( SvxLanguageComboBox, EditModifyHdl, Edit&, void )
 
 sal_Int32 SvxLanguageComboBox::SaveEditedAsEntry()
 {
-    if (meEditedAndValid != EDITED_VALID)
+    if (meEditedAndValid != EditedAndValid::Valid)
         return COMBOBOX_ENTRY_NOTFOUND;
 
     LanguageTag aLanguageTag( vcl::I18nHelper::filterFormattingChars( GetText()));

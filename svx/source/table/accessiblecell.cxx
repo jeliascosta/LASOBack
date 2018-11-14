@@ -385,18 +385,6 @@ awt::Size SAL_CALL AccessibleCell::getSize() throw (RuntimeException, std::excep
 }
 
 
-void SAL_CALL AccessibleCell::addFocusListener ( const css::uno::Reference< css::awt::XFocusListener >& xListener) throw (css::uno::RuntimeException)
-{
-    AccessibleComponentBase::addFocusListener( xListener );
-}
-
-
-void SAL_CALL AccessibleCell::removeFocusListener (const css::uno::Reference< css::awt::XFocusListener >& xListener ) throw (css::uno::RuntimeException)
-{
-    AccessibleComponentBase::removeFocusListener( xListener );
-}
-
-
 void SAL_CALL AccessibleCell::grabFocus() throw (css::uno::RuntimeException, std::exception)
 {
     AccessibleComponentBase::grabFocus();
@@ -504,7 +492,7 @@ Sequence<OUString> SAL_CALL AccessibleCell::getSupportedServiceNames() throw (Ru
 // IAccessibleViewForwarderListener
 
 
-void AccessibleCell::ViewForwarderChanged (ChangeType /*aChangeType*/, const IAccessibleViewForwarder* /*pViewForwarder*/)
+void AccessibleCell::ViewForwarderChanged()
 {
     // Inform all listeners that the graphical representation (i.e. size
     // and/or position) of the shape has changed.
@@ -540,7 +528,7 @@ void AccessibleCell::disposing()
     // Cleanup.  Remove references to objects to allow them to be
     // destroyed.
     mxCell.clear();
-    maShapeTreeInfo = AccessibleShapeTreeInfo();
+    maShapeTreeInfo.dispose();
 
     // Call base classes.
     AccessibleContextBase::dispose ();

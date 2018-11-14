@@ -38,8 +38,6 @@
 #pragma warning(pop)
 #endif
 
-// namespace directives
-
 using namespace osl;
 using namespace std;
 using namespace cppu;
@@ -50,15 +48,15 @@ using namespace com::sun::star::datatransfer::clipboard;
 using namespace com::sun::star::datatransfer::clipboard::RenderingCapabilities;
 
 // definition of static members
-CWinClipbImpl* CWinClipbImpl::s_pCWinClipbImpl = NULL;
+CWinClipbImpl* CWinClipbImpl::s_pCWinClipbImpl = nullptr;
 osl::Mutex     CWinClipbImpl::s_aMutex;
 
 CWinClipbImpl::CWinClipbImpl( const OUString& aClipboardName, CWinClipboard* theWinClipboard ) :
     m_itsName( aClipboardName ),
     m_pWinClipboard( theWinClipboard ),
-    m_pCurrentClipContent( NULL )
+    m_pCurrentClipContent( nullptr )
 {
-    OSL_ASSERT( NULL != m_pWinClipboard );
+    OSL_ASSERT( nullptr != m_pWinClipboard );
 
     // necessary to reassociate from
     // the static callback function
@@ -69,13 +67,11 @@ CWinClipbImpl::CWinClipbImpl( const OUString& aClipboardName, CWinClipboard* the
 CWinClipbImpl::~CWinClipbImpl( )
 {
     ClearableMutexGuard aGuard( s_aMutex );
-    s_pCWinClipbImpl = NULL;
+    s_pCWinClipbImpl = nullptr;
     aGuard.clear( );
 
     unregisterClipboardViewer( );
 }
-
-// getContent
 
 Reference< XTransferable > SAL_CALL CWinClipbImpl::getContents( ) throw( RuntimeException )
 {
@@ -83,7 +79,7 @@ Reference< XTransferable > SAL_CALL CWinClipbImpl::getContents( ) throw( Runtime
     // system clipboard
     ClearableMutexGuard aGuard( m_ClipContentMutex );
 
-    if ( NULL != m_pCurrentClipContent )
+    if ( nullptr != m_pCurrentClipContent )
     {
         return m_pCurrentClipContent->m_XTransferable;
     }
@@ -110,8 +106,6 @@ Reference< XTransferable > SAL_CALL CWinClipbImpl::getContents( ) throw( Runtime
 
     return rClipContent;
 }
-
-// setContent
 
 void SAL_CALL CWinClipbImpl::setContents(
     const Reference< XTransferable >& xTransferable,
@@ -158,9 +152,9 @@ void SAL_CALL CWinClipbImpl::flushClipboard( ) throw( RuntimeException )
     // The request is needed to prevent flushing if we are not clipboard owner (it is
     // not known what happens if we flush but aren't clipoard owner).
     // It may be possible to move the request to the clipboard STA thread by saving the
-    // DataObject and call OleIsCurrentClipboard bevore flushing.
+    // DataObject and call OleIsCurrentClipboard before flushing.
 
-    if ( NULL != m_pCurrentClipContent )
+    if ( nullptr != m_pCurrentClipContent )
         m_MtaOleClipboard.flushClipboard( );
 }
 
@@ -171,7 +165,7 @@ void SAL_CALL CWinClipbImpl::registerClipboardViewer( )
 
 void SAL_CALL CWinClipbImpl::unregisterClipboardViewer( )
 {
-    m_MtaOleClipboard.registerClipViewer( NULL );
+    m_MtaOleClipboard.registerClipViewer( nullptr );
 }
 
 void SAL_CALL CWinClipbImpl::dispose() throw( RuntimeException )
@@ -184,13 +178,13 @@ void WINAPI CWinClipbImpl::onClipboardContentChanged()
     MutexGuard aGuard( s_aMutex );
 
     // reassocition to instance through static member
-    if ( NULL != s_pCWinClipbImpl )
+    if ( nullptr != s_pCWinClipbImpl )
         s_pCWinClipbImpl->m_pWinClipboard->notifyAllClipboardListener( );
 }
 
 void SAL_CALL CWinClipbImpl::onReleaseDataObject( CXNotifyingDataObject* theCaller )
 {
-    OSL_ASSERT( NULL != theCaller );
+    OSL_ASSERT( nullptr != theCaller );
 
     if ( theCaller )
         theCaller->lostOwnership( );
@@ -201,7 +195,7 @@ void SAL_CALL CWinClipbImpl::onReleaseDataObject( CXNotifyingDataObject* theCall
     MutexGuard aGuard( m_ClipContentMutex );
 
     if ( m_pCurrentClipContent == theCaller )
-        m_pCurrentClipContent = NULL;
+        m_pCurrentClipContent = nullptr;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

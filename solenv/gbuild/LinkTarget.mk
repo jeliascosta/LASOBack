@@ -44,8 +44,8 @@ gb_LinkTarget__debug_enabled = \
 
 # debug flags, if ENABLE_DEBUG is set and the LinkTarget is named
 # in the list of libraries of ENABLE_DEBUGINFO_FOR
-gb_LinkTarget__get_debugcflags=$(if $(call gb_LinkTarget__debug_enabled,$(1)),$(gb_COMPILERNOOPTFLAGS) $(gb_DEBUG_CFLAGS),$(gb_COMPILEROPTFLAGS))
-gb_LinkTarget__get_debugcxxflags=$(if $(call gb_LinkTarget__debug_enabled,$(1)),$(gb_COMPILERNOOPTFLAGS) $(gb_DEBUG_CFLAGS) $(gb_DEBUG_CXXFLAGS),$(gb_COMPILEROPTFLAGS))
+gb_LinkTarget__get_debugcflags=$(if $(call gb_LinkTarget__debug_enabled,$(1)),$(gb_COMPILERNOOPTFLAGS) $(gb_DEBUG_CFLAGS),$(gb_COMPILEROPTFLAGS)) $(if $(filter $(true),$(gb_SYMBOL)),$(gb_DEBUGINFO_FLAGS))
+gb_LinkTarget__get_debugcxxflags=$(if $(call gb_LinkTarget__debug_enabled,$(1)),$(gb_COMPILERNOOPTFLAGS) $(gb_DEBUG_CFLAGS) $(gb_DEBUG_CXXFLAGS),$(gb_COMPILEROPTFLAGS)) $(if $(filter $(true),$(gb_SYMBOL)),$(gb_DEBUGINFO_FLAGS))
 
 # similar for LDFLAGS, use linker optimization flags in non-debug case,
 # but moreover strip debug from libraries for which debuginfo is not wanted
@@ -135,7 +135,7 @@ $(call gb_CObject_get_target,%) : $(call gb_CObject_get_source,$(SRCDIR),%) $(gb
 	$(call gb_CObject__tool_command,$*,$<)
 else
 $(call gb_CObject_get_target,%) : $(call gb_CObject_get_source,$(SRCDIR),%)
-	$(call gb_Output_announce,$*.c,$(true),C  ,3)
+	$(call gb_Output_announce,$*.c,$(true),$(if $(COMPILER_TEST),C? ,C  ),3)
 	$(call gb_CObject__command_pattern,$@,$(T_CFLAGS) $(T_CFLAGS_APPEND),$<,$(call gb_CObject_get_dep_target,$*),$(COMPILER_PLUGINS))
 endif
 
@@ -186,7 +186,7 @@ $(call gb_CxxObject_get_target,%) : $(call gb_CxxObject_get_source,$(SRCDIR),%) 
 	$(call gb_CxxObject__tool_command,$*,$<)
 else
 $(call gb_CxxObject_get_target,%) : $(call gb_CxxObject_get_source,$(SRCDIR),%)
-	$(call gb_Output_announce,$*.cxx,$(true),CXX,3)
+	$(call gb_Output_announce,$*.cxx,$(true),$(if $(COMPILER_TEST),C??,CXX),3)
 	$(eval $(gb_CxxObject__set_pchflags))
 	$(call gb_CObject__command_pattern,$@,$(T_CXXFLAGS) $(T_CXXFLAGS_APPEND),$<,$(call gb_CxxObject_get_dep_target,$*),$(COMPILER_PLUGINS))
 endif
@@ -320,7 +320,7 @@ $(call gb_ObjCxxObject_get_target,%) : $(call gb_ObjCxxObject_get_source,$(SRCDI
 	$(call gb_ObjCxxObject__tool_command,$*,$<)
 else
 $(call gb_ObjCxxObject_get_target,%) : $(call gb_ObjCxxObject_get_source,$(SRCDIR),%)
-	$(call gb_Output_announce,$*.mm,$(true),OCX,3)
+	$(call gb_Output_announce,$*.mm,$(true),$(if $(COMPILER_TEST),O?X,OCX),3)
 	$(call gb_CObject__command_pattern,$@,$(T_OBJCXXFLAGS) $(T_OBJCXXFLAGS_APPEND),$<,$(call gb_ObjCxxObject_get_dep_target,$*),$(COMPILER_PLUGINS))
 endif
 
@@ -347,7 +347,7 @@ $(call gb_ObjCObject_get_target,%) : $(call gb_ObjCObject_get_source,$(SRCDIR),%
 	$(call gb_ObjCObject__tool_command,$*,$<)
 else
 $(call gb_ObjCObject_get_target,%) : $(call gb_ObjCObject_get_source,$(SRCDIR),%)
-	$(call gb_Output_announce,$*.m,$(true),OCC,3)
+	$(call gb_Output_announce,$*.m,$(true),$(if $(COMPILER_TEST),O?C,OCC),3)
 	$(call gb_CObject__command_pattern,$@,$(T_OBJCFLAGS) $(T_OBJCFLAGS_APPEND),$<,$(call gb_ObjCObject_get_dep_target,$*),$(COMPILER_PLUGINS))
 endif
 
@@ -488,7 +488,8 @@ define gb_LinkTarget__command_impl
 			$(call gb_LinkTarget__command,$(1),$(2)),\
 			mkdir -p $(dir $(1)) && echo invalid - merged lib > $(1) \
 			$(if $(SOVERSIONSCRIPT),&& echo invalid - merged lib > $(WORKDIR)/LinkTarget/$(2))),\
-		$(call gb_LinkTarget__command,$(1),$(2)))
+		$(if $(filter-out CompilerTest,$(TARGETTYPE)), \
+			$(call gb_LinkTarget__command,$(1),$(2))))
 	$(call gb_LinkTarget__command_objectlist,$(WORKDIR)/LinkTarget/$(2).objectlist)
 endef
 
@@ -614,6 +615,7 @@ $(call gb_LinkTarget_get_target,$(1)) : WARNINGS_NOT_ERRORS :=
 $(call gb_LinkTarget_get_target,$(1)) : PLUGIN_WARNINGS_AS_ERRORS :=
 $(call gb_LinkTarget_get_target,$(1)) : EXTERNAL_CODE :=
 $(call gb_LinkTarget_get_target,$(1)) : SOVERSIONSCRIPT :=
+$(call gb_LinkTarget_get_target,$(1)) : COMPILER_TEST :=
 
 ifeq ($(gb_FULLDEPS),$(true))
 ifeq (depcache:,$(filter depcache,$(.FEATURES)):$(gb_PARTIAL_BUILD))

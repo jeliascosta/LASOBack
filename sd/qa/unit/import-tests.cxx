@@ -75,6 +75,9 @@
 #include <comphelper/sequenceashashmap.hxx>
 #include <vcl/pngread.hxx>
 #include <vcl/bitmapaccess.hxx>
+#include <sfx2/frame.hxx>
+#include <com/sun/star/frame/XModel2.hpp>
+#include <com/sun/star/frame/XController2.hpp>
 
 using namespace ::com::sun::star;
 
@@ -124,6 +127,7 @@ public:
     void testTdf93097();
     void testTdf62255();
     void testTdf93124();
+    void testTdf99729();
     void testTdf89927();
     void testTdf93868();
     void testTdf95932();
@@ -137,6 +141,8 @@ public:
     void testTdf104015();
     void testTdf104201();
     void testTdf104445();
+    void testTdf108925();
+    void testTdf109223();
 
     CPPUNIT_TEST_SUITE(SdImportTest);
 
@@ -182,6 +188,7 @@ public:
     CPPUNIT_TEST(testTdf93097);
     CPPUNIT_TEST(testTdf62255);
     CPPUNIT_TEST(testTdf93124);
+    CPPUNIT_TEST(testTdf99729);
     CPPUNIT_TEST(testTdf89927);
     CPPUNIT_TEST(testTdf93868);
     CPPUNIT_TEST(testTdf95932);
@@ -195,6 +202,8 @@ public:
     CPPUNIT_TEST(testTdf104015);
     CPPUNIT_TEST(testTdf104201);
     CPPUNIT_TEST(testTdf104445);
+    CPPUNIT_TEST(testTdf108925);
+    CPPUNIT_TEST(testTdf109223);
 
     CPPUNIT_TEST_SUITE_END();
 };
@@ -255,7 +264,7 @@ void SdImportTest::testDocumentLayout()
 
         sd::DrawDocShellRef xDocShRef = loadURL( m_directories.getURLFromSrc( "/sd/qa/unit/data/" ) + OUString::createFromAscii( aFilesToCompare[i].pInput ), aFilesToCompare[i].nFormat );
         if( aFilesToCompare[i].nExportType >= 0 )
-            xDocShRef = saveAndReload( xDocShRef, aFilesToCompare[i].nExportType );
+            xDocShRef = saveAndReload( xDocShRef.get(), aFilesToCompare[i].nExportType );
         compareWithShapesDump( xDocShRef,
                 m_directories.getPathFromSrc( "/sd/qa/unit/data/" ) + OUString::createFromAscii( aFilesToCompare[i].pDump ),
                 i == nUpdateMe );
@@ -271,7 +280,7 @@ void SdImportTest::testSmoketest()
 
     // cf. SdrModel svx/svdmodel.hxx ...
 
-    CPPUNIT_ASSERT_MESSAGE( "wrong page count", pDoc->GetPageCount() == 3);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "wrong page count", static_cast<sal_uInt16>(3), pDoc->GetPageCount());
 
     const SdrPage *pPage = pDoc->GetPage (1);
     CPPUNIT_ASSERT_MESSAGE( "no page", pPage != nullptr );
@@ -307,7 +316,7 @@ void SdImportTest::testN759180()
         const EditTextObject& aEdit = pTxtObj->GetOutlinerParaObject()->GetTextObject();
         const SvxULSpaceItem *pULSpace = dynamic_cast<const SvxULSpaceItem *>(aEdit.GetParaAttribs(0).GetItem(EE_PARA_ULSPACE));
         CPPUNIT_ASSERT(pULSpace);
-        CPPUNIT_ASSERT_MESSAGE( "Para bottom spacing is wrong!", pULSpace->GetLower() == 0 );
+        CPPUNIT_ASSERT_EQUAL_MESSAGE( "Para bottom spacing is wrong!", static_cast<sal_uInt16>(0), pULSpace->GetLower());
         aEdit.GetCharAttribs(1, rLst);
         for( std::vector<EECharAttrib>::reverse_iterator it = rLst.rbegin(); it!=rLst.rend(); ++it)
         {
@@ -316,7 +325,7 @@ void SdImportTest::testN759180()
             {
                 // nStart == 9
                 // font height = 5 => 5*2540/72
-                CPPUNIT_ASSERT_MESSAGE( "Font height is wrong", pFontHeight->GetHeight() == 176 );
+                CPPUNIT_ASSERT_EQUAL_MESSAGE( "Font height is wrong", static_cast<sal_uInt32>(176), pFontHeight->GetHeight() );
                 break;
             }
         }
@@ -357,7 +366,7 @@ void SdImportTest::testN862510_2()
         CPPUNIT_ASSERT( pGrpObj );
         SdrObjCustomShape *pObj = dynamic_cast<SdrObjCustomShape *>( pGrpObj->GetSubList()->GetObj( 0 ) );
         CPPUNIT_ASSERT( pObj );
-        CPPUNIT_ASSERT_MESSAGE( "Wrong Text Rotation!", pObj->GetExtraTextRotation( true ) == 90 );
+        CPPUNIT_ASSERT_EQUAL_MESSAGE( "Wrong Text Rotation!", 90.0, pObj->GetExtraTextRotation( true ) );
     }
 
     xDocShRef->DoClose();
@@ -394,8 +403,8 @@ void SdImportTest::testN828390_2()
     SdrTextObj *pTxtObj = dynamic_cast<SdrTextObj *>( pObj );
     CPPUNIT_ASSERT( pTxtObj );
     const EditTextObject& aEdit = pTxtObj->GetOutlinerParaObject()->GetTextObject();
-    CPPUNIT_ASSERT(aEdit.GetText(0) == "Linux  ");
-    CPPUNIT_ASSERT(aEdit.GetText(1) == "Standard Platform");
+    CPPUNIT_ASSERT_EQUAL(OUString("Linux  "), aEdit.GetText(0));
+    CPPUNIT_ASSERT_EQUAL(OUString("Standard Platform"), aEdit.GetText(1));
 
     xDocShRef->DoClose();
 }
@@ -550,7 +559,7 @@ void SdImportTest::testFdo68594()
     const SvxColorItem *pC = dynamic_cast<const SvxColorItem *>(&pTxtObj->GetMergedItem(EE_CHAR_COLOR));
     CPPUNIT_ASSERT_MESSAGE( "no color item", pC != nullptr);
     // Color should be black
-    CPPUNIT_ASSERT_MESSAGE( "Placeholder color mismatch", pC->GetValue().GetColor() == 0);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "Placeholder color mismatch", static_cast<ColorData>(0), pC->GetValue().GetColor());
 
     xDocShRef->DoClose();
 }
@@ -573,13 +582,6 @@ void SdImportTest::testFdo72998()
     }
 
     xDocShRef->DoClose();
-}
-
-// FIXME copypasta
-std::ostream& operator<<(std::ostream& rStrm, const Color& rColor)
-{
-    rStrm << "Color: R:" << rColor.GetRed() << " G:" << rColor.GetGreen() << " B: " << rColor.GetBlue();
-    return rStrm;
 }
 
 void SdImportTest::testFdo77027()
@@ -650,11 +652,11 @@ void SdImportTest::testFdo64512()
 
     uno::Reference< drawing::XDrawPagesSupplier > xDoc(
         xDocShRef->GetDoc()->getUnoModel(), uno::UNO_QUERY_THROW );
-    CPPUNIT_ASSERT_MESSAGE( "not exactly one page", xDoc->getDrawPages()->getCount() == 1 );
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "not exactly one page", static_cast<sal_Int32>(1), xDoc->getDrawPages()->getCount() );
 
     uno::Reference< drawing::XDrawPage > xPage(
         xDoc->getDrawPages()->getByIndex(0), uno::UNO_QUERY_THROW );
-    CPPUNIT_ASSERT_MESSAGE( "no exactly three shapes", xPage->getCount() == 3 );
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "no exactly three shapes", static_cast<sal_Int32>(3), xPage->getCount() );
 
     uno::Reference< beans::XPropertySet > xConnectorShape(
         xPage->getByIndex(2), uno::UNO_QUERY );
@@ -674,7 +676,7 @@ void SdImportTest::testFdo64512()
         xAnimNodeSupplier->getAnimationNode() );
     std::vector< uno::Reference< animations::XAnimationNode > > aAnimVector;
     anim::create_deep_vector(xRootNode, aAnimVector);
-    CPPUNIT_ASSERT_MESSAGE( "not 8 animation nodes", aAnimVector.size() == 8 );
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "not 8 animation nodes", static_cast<std::size_t>(8), aAnimVector.size() );
 
     uno::Reference< animations::XAnimate > xNode(
         aAnimVector[7], uno::UNO_QUERY_THROW );
@@ -710,16 +712,16 @@ void SdImportTest::testFdo71075()
     uno::Reference< chart2::XDataSeriesContainer > xDSCnt( xCTCnt->getChartTypes()[0], uno::UNO_QUERY );
     CPPUNIT_ASSERT_MESSAGE( "failed to load data series", xDSCnt.is() );
     uno::Sequence< uno::Reference< chart2::XDataSeries > > aSeriesSeq( xDSCnt->getDataSeries());
-    CPPUNIT_ASSERT_MESSAGE( "Invalid Series count", aSeriesSeq.getLength() == 1);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "Invalid Series count", static_cast<sal_Int32>(1), aSeriesSeq.getLength() );
     uno::Reference< chart2::data::XDataSource > xSource( aSeriesSeq[0], uno::UNO_QUERY );
     uno::Sequence< uno::Reference< chart2::data::XLabeledDataSequence > > aSeqCnt(xSource->getDataSequences());
-    CPPUNIT_ASSERT_MESSAGE( "Invalid Series count", aSeqCnt.getLength() == 1);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "Invalid Series count", static_cast<sal_Int32>(1), aSeqCnt.getLength());
     uno::Reference< chart2::data::XDataSequence > xValueSeq( aSeqCnt[0]->getValues() );
-    CPPUNIT_ASSERT_MESSAGE( "Invalid Data count", xValueSeq->getData().getLength() == sizeof(values)/(sizeof(double)));
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "Invalid Data count", static_cast<sal_Int32>(sizeof(values)/(sizeof(double))), xValueSeq->getData().getLength());
     uno::Reference< chart2::data::XNumericalDataSequence > xNumSeq( xValueSeq, uno::UNO_QUERY );
     uno::Sequence< double > aValues( xNumSeq->getNumericalData());
     for(sal_Int32 i=0;i<xValueSeq->getData().getLength();i++)
-        CPPUNIT_ASSERT_MESSAGE( "Invalid Series count", aValues.getConstArray()[i] == values[i]);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE( "Invalid Series count", values[i], aValues.getConstArray()[i]);
 
     xDocShRef->DoClose();
 }
@@ -1153,7 +1155,7 @@ void SdImportTest::testPDFImport()
     CPPUNIT_ASSERT_MESSAGE( "no document", pDoc != nullptr );
     uno::Reference< drawing::XDrawPagesSupplier > xDoc(xDocShRef->GetDoc()->getUnoModel(), uno::UNO_QUERY_THROW );
     uno::Reference< drawing::XDrawPage > xPage(xDoc->getDrawPages()->getByIndex(0), uno::UNO_QUERY_THROW );
-    CPPUNIT_ASSERT_MESSAGE( "no exactly two shapes", xPage->getCount() == 2 );
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "no exactly two shapes", static_cast<sal_Int32>(2), xPage->getCount() );
 
     uno::Reference< beans::XPropertySet > xShape( getShape( 0, xPage ) );
     uno::Reference<text::XText> xText = uno::Reference<text::XTextRange>(xShape, uno::UNO_QUERY)->getText();
@@ -1172,7 +1174,7 @@ void SdImportTest::testPDFImportSkipImages()
     CPPUNIT_ASSERT_MESSAGE( "no document", pDoc != nullptr );
     uno::Reference< drawing::XDrawPagesSupplier > xDoc(xDocShRef->GetDoc()->getUnoModel(), uno::UNO_QUERY_THROW );
     uno::Reference< drawing::XDrawPage > xPage(xDoc->getDrawPages()->getByIndex(0), uno::UNO_QUERY_THROW );
-    CPPUNIT_ASSERT_MESSAGE( "no exactly one shape", xPage->getCount() == 1 );
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "no exactly one shape", static_cast<sal_Int32>(1), xPage->getCount() );
 
     uno::Reference< drawing::XShape > xShape(xPage->getByIndex(0), uno::UNO_QUERY_THROW );
     CPPUNIT_ASSERT_MESSAGE( "failed to load shape", xShape.is() );
@@ -1340,6 +1342,81 @@ void SdImportTest::testTdf93124()
         CPPUNIT_ASSERT_MESSAGE("Tdf93124: vertical alignment of text is incorrect!", nNonWhiteCount>50);
     }
     xDocShRef->DoClose();
+}
+
+void SdImportTest::testTdf99729()
+{
+    const char* filenames[] = { "/sd/qa/unit/data/odp/tdf99729-new.odp", "/sd/qa/unit/data/odp/tdf99729-legacy.odp" };
+    int nonwhitecounts[] = { 0, 0 };
+    for (unsigned int i = 0; i < sizeof(filenames)/sizeof(filenames[0]); ++i)
+    {
+        // 1st check for new behaviour - having AnchoredTextOverflowLegacy compatibility flag set to false in settings.xml
+        sd::DrawDocShellRef xDocShRef = loadURL(m_directories.getURLFromSrc(filenames[i]), ODP);
+
+        const css::uno::Reference< css::frame::XFrame > xFrame = SfxFrame::CreateBlankFrame();
+        CPPUNIT_ASSERT(xFrame.is());
+        const css::uno::Reference< css::frame::XModel2 > xModel(xDocShRef->GetModel(), css::uno::UNO_QUERY);
+        CPPUNIT_ASSERT(xModel.is());
+        const css::uno::Reference< css::frame::XController2 > xController(xModel->createViewController(
+            "Default",
+            css::uno::Sequence< css::beans::PropertyValue >(),
+            xFrame
+            ), css::uno::UNO_QUERY);
+        CPPUNIT_ASSERT(xController.is());
+        xController->attachModel(xModel.get());
+        xModel->connectController(xController.get());
+        xFrame->setComponent(xController->getComponentWindow(), xController.get());
+        xController->attachFrame(xFrame);
+        xModel->setCurrentController(xController.get());
+
+        uno::Reference < uno::XComponentContext > xContext = ::comphelper::getProcessComponentContext();
+        CPPUNIT_ASSERT(xContext.is());
+        uno::Reference< drawing::XGraphicExportFilter > xGraphicExporter = drawing::GraphicExportFilter::create(xContext);
+        CPPUNIT_ASSERT(xGraphicExporter.is());
+
+        uno::Sequence< beans::PropertyValue > aFilterData(2);
+        aFilterData[0].Name = "PixelWidth";
+        aFilterData[0].Value <<= (sal_Int32)(320);
+        aFilterData[1].Name = "PixelHeight";
+        aFilterData[1].Value <<= (sal_Int32)(240);
+
+        utl::TempFile aTempFile;
+        aTempFile.EnableKillingFile();
+
+        uno::Sequence< beans::PropertyValue > aDescriptor(3);
+        aDescriptor[0].Name = "URL";
+        aDescriptor[0].Value <<= aTempFile.GetURL();
+        aDescriptor[1].Name = "FilterName";
+        aDescriptor[1].Value <<= OUString("PNG");
+        aDescriptor[2].Name = "FilterData";
+        aDescriptor[2].Value <<= aFilterData;
+
+        uno::Reference< lang::XComponent > xPage(getPage(0, xDocShRef), uno::UNO_QUERY);
+        xGraphicExporter->setSourceDocument(xPage);
+        xGraphicExporter->filter(aDescriptor);
+
+        SvFileStream aFileStream(aTempFile.GetURL(), StreamMode::READ);
+        vcl::PNGReader aPNGReader(aFileStream);
+        BitmapEx aBMPEx = aPNGReader.Read();
+        Bitmap aBMP = aBMPEx.GetBitmap();
+        BitmapReadAccess* pRead = aBMP.AcquireReadAccess();
+        for (long nX = 154; nX < (154 + 12); ++nX)
+        {
+            for (long nY = 16; nY < (16 + 96); ++nY)
+            {
+                const Color aColor = pRead->GetColor(nY, nX);
+                if ((aColor.GetRed() != 0xff) || (aColor.GetGreen() != 0xff) || (aColor.GetBlue() != 0xff))
+                    ++nonwhitecounts[i];
+            }
+        }
+        xController->dispose();
+        xFrame->dispose();
+    }
+    // The numbers 1-9 should be above the Text Box in rectangle 154,16 - 170,112.
+    // If text alignment is wrong, the rectangle will be white.
+    CPPUNIT_ASSERT_MESSAGE("Tdf99729: vertical alignment of text is incorrect!", nonwhitecounts[0]>100); // it is 134 with cleartype disabled
+    // The numbers 1-9 should be below the Text Box -> rectangle 154,16 - 170,112 should be white.
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Tdf99729: legacy vertical alignment of text is incorrect!", 0, nonwhitecounts[1]);
 }
 
 void SdImportTest::testTdf89927()
@@ -1694,6 +1771,55 @@ void SdImportTest::testTdf104445()
                 CPPUNIT_ASSERT_EQUAL(sal_Int32(635), rProp.Value.get<sal_Int32>());
         }
     }
+    xDocShRef->DoClose();
+}
+
+void SdImportTest::testTdf108925()
+{
+    // Test document contains bulleting with too small bullet size (1%) which breaks the lower constraint
+    // So it should be converted to the lowest allowed value (25%).
+    sd::DrawDocShellRef xDocShRef = loadURL(m_directories.getURLFromSrc("sd/qa/unit/data/odp/tdf108925.odp"), ODP);
+    const SdrPage *pPage = GetPage(1, xDocShRef);
+    SdrTextObj *pTxtObj = dynamic_cast<SdrTextObj *>(pPage->GetObj(0));
+    CPPUNIT_ASSERT_MESSAGE("No text object", pTxtObj != nullptr);
+    const EditTextObject& aEdit = pTxtObj->GetOutlinerParaObject()->GetTextObject();
+
+    const SvxNumBulletItem *pNumFmt = dynamic_cast<const SvxNumBulletItem *>(aEdit.GetParaAttribs(0).GetItem(EE_PARA_NUMBULLET));
+    CPPUNIT_ASSERT(pNumFmt);
+    CPPUNIT_ASSERT_EQUAL(pNumFmt->GetNumRule()->GetLevel(0).GetBulletRelSize(), sal_uInt16(25));
+
+    xDocShRef->DoClose();
+}
+
+void SdImportTest::testTdf109223()
+{
+    // In the test document flipV attribute is defined for a group shape
+    // This transformation is not applied on child shapes
+    // To make the text direction right at least I added an additional text rotation when parent shape is flipped.
+    sd::DrawDocShellRef xDocShRef = loadURL(m_directories.getURLFromSrc("sd/qa/unit/data/pptx/tdf109223.pptx"), PPTX);
+    uno::Reference< container::XIndexAccess > xGroupShape(getShapeFromPage(0, 0, xDocShRef), uno::UNO_QUERY_THROW);
+    uno::Reference< beans::XPropertySet > xShape(xGroupShape->getByIndex(1), uno::UNO_QUERY);
+
+    // Check the shape text to make sure we test the right shape
+    OUString sText = uno::Reference<text::XTextRange>(xShape, uno::UNO_QUERY)->getString();
+    CPPUNIT_ASSERT_EQUAL(OUString("Tested child shape"), sText);
+
+    // Check the attribute inherited from parent shape
+    bool bAttributeFound = false;
+    uno::Sequence<beans::PropertyValue> aProps;
+    CPPUNIT_ASSERT(xShape->getPropertyValue("CustomShapeGeometry") >>= aProps);
+    for (sal_Int32 i = 0; i < aProps.getLength(); ++i)
+    {
+        const beans::PropertyValue& rProp = aProps[i];
+        if (rProp.Name == "TextPreRotateAngle")
+        {
+            CPPUNIT_ASSERT_EQUAL(sal_Int32(180), rProp.Value.get<sal_Int32>());
+            bAttributeFound = true;
+            break;
+        }
+    }
+
+    CPPUNIT_ASSERT_EQUAL(true, bAttributeFound);
     xDocShRef->DoClose();
 }
 

@@ -29,11 +29,11 @@ namespace chart
 
 class DrawModelWrapper;
 
-class ViewElementListProvider
+class ViewElementListProvider final
 {
 public:
     ViewElementListProvider( DrawModelWrapper* pDrawModelWrapper );
-    virtual ~ViewElementListProvider();
+    ~ViewElementListProvider();
 
     XColorListRef     GetColorTable() const;
     XDashListRef      GetDashList() const;
@@ -41,6 +41,7 @@ public:
     XGradientListRef  GetGradientList() const;
     XHatchListRef     GetHatchList() const;
     XBitmapListRef    GetBitmapList() const;
+    XPatternListRef   GetPatternList() const;
 
     //create chartspecific symbols for linecharts
     SdrObjList*     GetSymbolList() const;

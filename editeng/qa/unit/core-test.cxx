@@ -27,7 +27,6 @@
 #include "editeng/editobj.hxx"
 #include "editeng/flditem.hxx"
 #include "svl/srchitem.hxx"
-#include "rtl/strbuf.hxx"
 
 #include <com/sun/star/text/textfield/Type.hpp>
 
@@ -110,7 +109,7 @@ void Test::testUnoTextFields()
 {
     {
         // DATE
-        uno::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::DATE));
+        rtl::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::DATE));
         uno::Sequence<OUString> aSvcs = xField->getSupportedServiceNames();
         bool bGood = includes(aSvcs, "com.sun.star.text.textfield.DateTime");
         CPPUNIT_ASSERT_MESSAGE("expected service is not present.", bGood);
@@ -118,7 +117,7 @@ void Test::testUnoTextFields()
 
     {
         // URL
-        uno::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::URL));
+        rtl::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::URL));
         uno::Sequence<OUString> aSvcs = xField->getSupportedServiceNames();
         bool bGood = includes(aSvcs, "com.sun.star.text.textfield.URL");
         CPPUNIT_ASSERT_MESSAGE("expected service is not present.", bGood);
@@ -126,7 +125,7 @@ void Test::testUnoTextFields()
 
     {
         // PAGE
-        uno::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::PAGE));
+        rtl::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::PAGE));
         uno::Sequence<OUString> aSvcs = xField->getSupportedServiceNames();
         bool bGood = includes(aSvcs, "com.sun.star.text.textfield.PageNumber");
         CPPUNIT_ASSERT_MESSAGE("expected service is not present.", bGood);
@@ -134,7 +133,7 @@ void Test::testUnoTextFields()
 
     {
         // PAGES
-        uno::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::PAGES));
+        rtl::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::PAGES));
         uno::Sequence<OUString> aSvcs = xField->getSupportedServiceNames();
         bool bGood = includes(aSvcs, "com.sun.star.text.textfield.PageCount");
         CPPUNIT_ASSERT_MESSAGE("expected service is not present.", bGood);
@@ -142,7 +141,7 @@ void Test::testUnoTextFields()
 
     {
         // TIME
-        uno::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::TIME));
+        rtl::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::TIME));
         uno::Sequence<OUString> aSvcs = xField->getSupportedServiceNames();
         bool bGood = includes(aSvcs, "com.sun.star.text.textfield.DateTime");
         CPPUNIT_ASSERT_MESSAGE("expected service is not present.", bGood);
@@ -150,7 +149,7 @@ void Test::testUnoTextFields()
 
     {
         // FILE
-        uno::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::DOCINFO_TITLE));
+        rtl::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::DOCINFO_TITLE));
         uno::Sequence<OUString> aSvcs = xField->getSupportedServiceNames();
         bool bGood = includes(aSvcs, "com.sun.star.text.textfield.docinfo.Title");
         CPPUNIT_ASSERT_MESSAGE("expected service is not present.", bGood);
@@ -158,7 +157,7 @@ void Test::testUnoTextFields()
 
     {
         // TABLE
-        uno::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::TABLE));
+        rtl::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::TABLE));
         uno::Sequence<OUString> aSvcs = xField->getSupportedServiceNames();
         bool bGood = includes(aSvcs, "com.sun.star.text.textfield.SheetName");
         CPPUNIT_ASSERT_MESSAGE("expected service is not present.", bGood);
@@ -166,7 +165,7 @@ void Test::testUnoTextFields()
 
     {
         // EXTENDED TIME
-        uno::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::EXTENDED_TIME));
+        rtl::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::EXTENDED_TIME));
         uno::Sequence<OUString> aSvcs = xField->getSupportedServiceNames();
         bool bGood = includes(aSvcs, "com.sun.star.text.textfield.DateTime");
         CPPUNIT_ASSERT_MESSAGE("expected service is not present.", bGood);
@@ -174,7 +173,7 @@ void Test::testUnoTextFields()
 
     {
         // EXTENDED FILE
-        uno::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::EXTENDED_FILE));
+        rtl::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::EXTENDED_FILE));
         uno::Sequence<OUString> aSvcs = xField->getSupportedServiceNames();
         bool bGood = includes(aSvcs, "com.sun.star.text.textfield.FileName");
         CPPUNIT_ASSERT_MESSAGE("expected service is not present.", bGood);
@@ -182,7 +181,7 @@ void Test::testUnoTextFields()
 
     {
         // AUTHOR
-        uno::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::AUTHOR));
+        rtl::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::AUTHOR));
         uno::Sequence<OUString> aSvcs = xField->getSupportedServiceNames();
         bool bGood = includes(aSvcs, "com.sun.star.text.textfield.Author");
         CPPUNIT_ASSERT_MESSAGE("expected service is not present.", bGood);
@@ -190,7 +189,7 @@ void Test::testUnoTextFields()
 
     {
         // MEASURE
-        uno::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::MEASURE));
+        rtl::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::MEASURE));
         uno::Sequence<OUString> aSvcs = xField->getSupportedServiceNames();
         bool bGood = includes(aSvcs, "com.sun.star.text.textfield.Measure");
         CPPUNIT_ASSERT_MESSAGE("expected service is not present.", bGood);
@@ -198,7 +197,7 @@ void Test::testUnoTextFields()
 
     {
         // PRESENTATION HEADER
-        uno::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::PRESENTATION_HEADER));
+        rtl::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::PRESENTATION_HEADER));
         uno::Sequence<OUString> aSvcs = xField->getSupportedServiceNames();
         bool bGood = includes(aSvcs, "com.sun.star.presentation.textfield.Header");
         CPPUNIT_ASSERT_MESSAGE("expected service is not present.", bGood);
@@ -206,7 +205,7 @@ void Test::testUnoTextFields()
 
     {
         // PRESENTATION FOOTER
-        uno::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::PRESENTATION_FOOTER));
+        rtl::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::PRESENTATION_FOOTER));
         uno::Sequence<OUString> aSvcs = xField->getSupportedServiceNames();
         bool bGood = includes(aSvcs, "com.sun.star.presentation.textfield.Footer");
         CPPUNIT_ASSERT_MESSAGE("expected service is not present.", bGood);
@@ -214,7 +213,7 @@ void Test::testUnoTextFields()
 
     {
         // PRESENTATION DATE TIME
-        uno::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::PRESENTATION_DATE_TIME));
+        rtl::Reference<SvxUnoTextField> xField(new SvxUnoTextField(text::textfield::Type::PRESENTATION_DATE_TIME));
         uno::Sequence<OUString> aSvcs = xField->getSupportedServiceNames();
         bool bGood = includes(aSvcs, "com.sun.star.presentation.textfield.DateTime");
         CPPUNIT_ASSERT_MESSAGE("expected service is not present.", bGood);
@@ -315,7 +314,7 @@ void Test::testAutocorrect()
         TestAutoCorrDoc aFoo(sInput, LANGUAGE_ENGLISH_US);
         aAutoCorrect.DoAutoCorrect(aFoo, sInput, sInput.getLength(), cNextChar, true);
 
-        CPPUNIT_ASSERT_MESSAGE("autocorrect", aFoo.getResult() == sExpected);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("autocorrect", sExpected, aFoo.getResult());
     }
 
     {
@@ -326,7 +325,7 @@ void Test::testAutocorrect()
         TestAutoCorrDoc aFoo(sInput, LANGUAGE_ENGLISH_US);
         aAutoCorrect.DoAutoCorrect(aFoo, sInput, sInput.getLength(), cNextChar, true);
 
-        CPPUNIT_ASSERT_MESSAGE("autocorrect", aFoo.getResult() == sExpected);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("autocorrect", sExpected, aFoo.getResult());
     }
 
     {
@@ -339,6 +338,28 @@ void Test::testAutocorrect()
         aAutoCorrect.DoAutoCorrect(aFoo, sInput, sInput.getLength(), cNextChar, true);
 
         CPPUNIT_ASSERT_EQUAL(sExpected, aFoo.getResult());
+    }
+
+    {
+        OUString sInput("Test. test");
+        sal_Unicode cNextChar(' ');
+        OUString sExpected("Test. Test ");
+
+        TestAutoCorrDoc aFoo(sInput, LANGUAGE_ENGLISH_US);
+        aAutoCorrect.DoAutoCorrect(aFoo, sInput, sInput.getLength(), cNextChar, true);
+
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("autocorrect", sExpected, aFoo.getResult());
+    }
+
+    {
+        OUString sInput("Test. \x01 test");
+        sal_Unicode cNextChar(' ');
+        OUString sExpected("Test. \x01 test ");
+
+        TestAutoCorrDoc aFoo(sInput, LANGUAGE_ENGLISH_US);
+        aAutoCorrect.DoAutoCorrect(aFoo, sInput, sInput.getLength(), cNextChar, true);
+
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("autocorrect", sExpected, aFoo.getResult());
     }
 }
 
@@ -365,7 +386,7 @@ void Test::testHyperlinkSearch()
     OUString aSampleText = "Please write email to . if you find a fish(not a dog).";
     aEngine.SetText(aSampleText);
 
-    CPPUNIT_ASSERT_MESSAGE("set text", rDoc.GetParaAsString(sal_Int32(0)) == aSampleText);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("set text", aSampleText, rDoc.GetParaAsString(sal_Int32(0)));
 
     ContentNode *pNode = rDoc.GetObject(0);
     EditSelection aSel(EditPaM(pNode, 22), EditPaM(pNode, 22));
@@ -377,13 +398,13 @@ void Test::testHyperlinkSearch()
     aEngine.UpdateFields();
 
     OUString aContent = pNode->GetExpandedText();
-    CPPUNIT_ASSERT_MESSAGE("get text", aContent ==
-                           "Please write email to jim@bob.com. if you find a fish(not a dog).");
-    CPPUNIT_ASSERT_MESSAGE("wrong length", rDoc.GetTextLen() == (sal_uLong)aContent.getLength());
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("get text", OUString("Please write email to jim@bob.com. if you find a fish(not a dog)."),
+                           aContent);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("wrong length", (sal_uLong)aContent.getLength(), rDoc.GetTextLen());
 
     // Check expansion and positioning re-work
-    CPPUNIT_ASSERT_MESSAGE("wrong length", pNode->GetExpandedLen() ==
-                           (sal_uLong)aContent.getLength());
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("wrong length", (sal_uLong)aContent.getLength(),
+                           pNode->GetExpandedLen());
     for (sal_Int32 n = 0; n < aContent.getLength(); n++)
     {
         sal_Int32 nStart = n, nEnd = n;
@@ -407,15 +428,12 @@ void Test::testHyperlinkSearch()
         sal_Int32 nEnd = aTrickyOnes[n].mnEnd;
         pNode->UnExpandPositions(nStart,nEnd);
 
-        rtl::OStringBuffer aBuf;
-        aBuf = "bound check start is ";
-        aBuf.append(nStart).append(" but should be ").append(aTrickyOnes[n].mnNewStart);
-        aBuf.append(" in row ").append((sal_Int32)n);
-        CPPUNIT_ASSERT_MESSAGE(aBuf.getStr(), nStart == aTrickyOnes[n].mnNewStart);
-        aBuf = "bound check end is ";
-        aBuf.append(nEnd).append(" but should be ").append(aTrickyOnes[n].mnNewEnd);
-        aBuf.append(" in row ").append((sal_Int32)n);
-        CPPUNIT_ASSERT_MESSAGE(aBuf.getStr(), nEnd == aTrickyOnes[n].mnNewEnd);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE(
+            OString("in row " + OString::number(n)).getStr(),
+            aTrickyOnes[n].mnNewStart, nStart);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE(
+            OString("in row " + OString::number(n)).getStr(),
+            aTrickyOnes[n].mnNewEnd, nEnd);
     }
 
     SvxSearchItem aItem(1); //SID_SEARCH_ITEM);
@@ -473,11 +491,11 @@ void Test::testSectionAttributes()
         OUString aParaText = "aaabbbccc";
         aEngine.SetText(aParaText);
         pSet->Put(aBold);
-        CPPUNIT_ASSERT_MESSAGE("There should be exactly one item.", pSet->Count() == 1);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("There should be exactly one item.", static_cast<sal_uInt16>(1), pSet->Count());
         aEngine.QuickSetAttribs(*pSet, ESelection(0,0,0,6)); // 'aaabbb' - end point is not inclusive.
         pSet.reset(new SfxItemSet(aEngine.GetEmptyItemSet()));
         pSet->Put(aItalic);
-        CPPUNIT_ASSERT_MESSAGE("There should be exactly one item.", pSet->Count() == 1);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("There should be exactly one item.", static_cast<sal_uInt16>(1), pSet->Count());
 
         aEngine.QuickSetAttribs(*pSet, ESelection(0,3,0,9)); // 'bbbccc'
         std::unique_ptr<EditTextObject> pEditText(aEngine.CreateTextObject());
@@ -486,7 +504,7 @@ void Test::testSectionAttributes()
         pEditText->GetAllSections(aAttrs);
 
         // Now, we should have a total of 3 sections.
-        CPPUNIT_ASSERT_MESSAGE("There should be 3 sections.", aAttrs.size() == 3);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("There should be 3 sections.", static_cast<size_t>(3), aAttrs.size());
 
         // First section should be 0-3 of paragraph 0, and it should only have boldness applied.
         const editeng::Section* pSecAttr = &aAttrs[0];
@@ -525,7 +543,7 @@ void Test::testSectionAttributes()
         // Apply boldness to paragraphs 1, 3, 5 only. Leave 2 and 4 unformatted.
         pSet.reset(new SfxItemSet(aEngine.GetEmptyItemSet()));
         pSet->Put(aBold);
-        CPPUNIT_ASSERT_MESSAGE("There should be exactly one item.", pSet->Count() == 1);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("There should be exactly one item.", static_cast<sal_uInt16>(1), pSet->Count());
         aEngine.QuickSetAttribs(*pSet, ESelection(0,0,0,3));
         aEngine.QuickSetAttribs(*pSet, ESelection(2,0,2,3));
         aEngine.QuickSetAttribs(*pSet, ESelection(4,0,4,5));

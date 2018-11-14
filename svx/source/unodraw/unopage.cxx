@@ -67,9 +67,6 @@ SvxDrawPage::SvxDrawPage( SdrPage* pInPage ) throw()
     // register at broadcaster
     if( mpPage )
         mpModel = mpPage->GetModel();
-    if( mpModel )
-        StartListening( *mpModel );
-
 
     // create (hidden) view
     mpView = new SdrView( mpModel );
@@ -80,7 +77,7 @@ SvxDrawPage::~SvxDrawPage() throw()
 {
     if( !mrBHelper.bDisposed )
     {
-        SAL_WARN("svx", "SvxDrawPage must be disposed!");
+        assert("SvxDrawPage must be disposed!");
         acquire();
         dispose();
     }
@@ -97,7 +94,6 @@ void SvxDrawPage::disposing() throw()
 {
     if( mpModel )
     {
-        EndListening( *mpModel );
         mpModel = nullptr;
     }
 
@@ -124,13 +120,13 @@ void SvxDrawPage::dispose()
     // Remark: It is an error to call dispose more than once
     bool bDoDispose = false;
     {
-    osl::MutexGuard aGuard( mrBHelper.rMutex );
-    if( !mrBHelper.bDisposed && !mrBHelper.bInDispose )
-    {
-        // only one call go into this section
-        mrBHelper.bInDispose = true;
-        bDoDispose = true;
-    }
+        osl::MutexGuard aGuard( mrBHelper.rMutex );
+        if( !mrBHelper.bDisposed && !mrBHelper.bInDispose )
+        {
+            // only one call go into this section
+            mrBHelper.bInDispose = true;
+            bDoDispose = true;
+        }
     }
 
     // Do not hold the mutex because we are broadcasting
@@ -153,13 +149,13 @@ void SvxDrawPage::dispose()
             // catch exception and throw again but signal that
             // the object was disposed. Dispose should be called
             // only once.
+            osl::MutexGuard aGuard( mrBHelper.rMutex );
             mrBHelper.bDisposed = true;
             mrBHelper.bInDispose = false;
             throw;
         }
 
-        // the values bDispose and bInDisposing must set in this order.
-        // No multithread call overcome the "!rBHelper.bDisposed && !rBHelper.bInDispose" guard.
+        osl::MutexGuard aGuard( mrBHelper.rMutex );
         mrBHelper.bDisposed = true;
         mrBHelper.bInDispose = false;
     }
@@ -184,11 +180,6 @@ void SAL_CALL SvxDrawPage::removeEventListener( const css::uno::Reference< css::
         throw lang::DisposedException();
 
     mrBHelper.removeListener( cppu::UnoType<decltype(aListener)>::get() , aListener );
-}
-
-// SfxListener
-void SvxDrawPage::Notify( SfxBroadcaster&, const SfxHint& /*rHint*/ )
-{
 }
 
 void SAL_CALL SvxDrawPage::add( const uno::Reference< drawing::XShape >& xShape )
@@ -299,7 +290,7 @@ void SAL_CALL SvxDrawPage::remove( const Reference< drawing::XShape >& xShape )
                     if (bUndoEnabled)
                     {
                         mpModel->BegUndo(ImpGetResStr(STR_EditDelete),
-                            pObj->TakeObjNameSingul(), SDRREPFUNC_OBJ_DELETE);
+                            pObj->TakeObjNameSingul(), SdrRepeatFunc::Delete);
 
                         SdrUndoAction * pAction = mpModel->GetSdrUndoFactory().CreateUndoDeleteObject(*pObj);
                         mpModel->AddUndo(pAction);
@@ -491,7 +482,7 @@ SdrObject *SvxDrawPage::CreateSdrObject_(const Reference< drawing::XShape > & xS
     throw (css::uno::RuntimeException, std::exception)
 {
     sal_uInt16 nType = 0;
-    sal_uInt32 nInventor = 0;
+    SdrInventor nInventor;
 
     GetTypeAndInventor( nType, nInventor, xShape->getShapeType() );
     if (!nType)
@@ -557,7 +548,7 @@ SdrObject *SvxDrawPage::CreateSdrObject_(const Reference< drawing::XShape > & xS
     return pNewObj;
 }
 
-void SvxDrawPage::GetTypeAndInventor( sal_uInt16& rType, sal_uInt32& rInventor, const OUString& aName ) throw()
+void SvxDrawPage::GetTypeAndInventor( sal_uInt16& rType, SdrInventor& rInventor, const OUString& aName ) throw()
 {
     sal_uInt32 nTempType = UHashMap::getId( aName );
 
@@ -566,25 +557,25 @@ void SvxDrawPage::GetTypeAndInventor( sal_uInt16& rType, sal_uInt32& rInventor, 
         if( aName == "com.sun.star.drawing.TableShape" ||
             aName == "com.sun.star.presentation.TableShape" )
         {
-            rInventor = SdrInventor;
+            rInventor = SdrInventor::Default;
             rType = OBJ_TABLE;
         }
 #if HAVE_FEATURE_AVMEDIA
         else if ( aName == "com.sun.star.presentation.MediaShape" )
         {
-            rInventor = SdrInventor;
+            rInventor = SdrInventor::Default;
             rType = OBJ_MEDIA;
         }
 #endif
     }
     else if(nTempType & E3D_INVENTOR_FLAG)
     {
-        rInventor = E3dInventor;
+        rInventor = SdrInventor::E3d;
         rType = (sal_uInt16)(nTempType & ~E3D_INVENTOR_FLAG);
     }
     else
     {
-        rInventor = SdrInventor;
+        rInventor = SdrInventor::Default;
         rType = (sal_uInt16)nTempType;
 
         switch( rType )
@@ -598,13 +589,13 @@ void SvxDrawPage::GetTypeAndInventor( sal_uInt16& rType, sal_uInt32& rInventor, 
     }
 }
 
-SvxShape* SvxDrawPage::CreateShapeByTypeAndInventor( sal_uInt16 nType, sal_uInt32 nInventor, SdrObject *pObj, SvxDrawPage *mpPage, OUString const & referer )
+SvxShape* SvxDrawPage::CreateShapeByTypeAndInventor( sal_uInt16 nType, SdrInventor nInventor, SdrObject *pObj, SvxDrawPage *mpPage, OUString const & referer )
     throw (css::uno::RuntimeException)
 {
     SvxShape* pRet = nullptr;
     switch( nInventor )
     {
-        case E3dInventor:
+        case SdrInventor::E3d:
         {
             switch( nType )
             {
@@ -633,7 +624,7 @@ SvxShape* SvxDrawPage::CreateShapeByTypeAndInventor( sal_uInt16 nType, sal_uInt3
             }
             break;
         }
-        case SdrInventor:
+        case SdrInventor::Default:
         {
             switch( nType )
             {
@@ -794,7 +785,7 @@ SvxShape* SvxDrawPage::CreateShapeByTypeAndInventor( sal_uInt16 nType, sal_uInt3
     {
         sal_uInt32 nObjId = nType;
 
-        if( nInventor == E3dInventor )
+        if( nInventor == SdrInventor::E3d )
             nObjId |= E3D_INVENTOR_FLAG;
 
         switch(nObjId)
@@ -867,7 +858,7 @@ uno::Sequence< OUString > SAL_CALL SvxDrawPage::getSupportedServiceNames() throw
     return aSeq;
 }
 
-SvxShape* CreateSvxShapeByTypeAndInventor(sal_uInt16 nType, sal_uInt32 nInventor, OUString const & referer)
+SvxShape* CreateSvxShapeByTypeAndInventor(sal_uInt16 nType, SdrInventor nInventor, OUString const & referer)
     throw (css::uno::RuntimeException, std::exception)
 {
     return SvxDrawPage::CreateShapeByTypeAndInventor( nType, nInventor, nullptr, nullptr, referer );
@@ -877,12 +868,6 @@ void SvxDrawPage::ChangeModel( SdrModel* pNewModel )
 {
     if( pNewModel != mpModel )
     {
-        if( mpModel )
-            EndListening( *mpModel );
-
-        if( pNewModel )
-            StartListening( *pNewModel );
-
         mpModel = pNewModel;
 
         if( mpView )

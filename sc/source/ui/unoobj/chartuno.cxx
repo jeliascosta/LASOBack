@@ -66,7 +66,7 @@ static SdrOle2Obj* lcl_FindChartObj( ScDocShell* pDocShell, SCTAB nTab, const OU
             OSL_ENSURE(pPage, "Page nicht gefunden");
             if (pPage)
             {
-                SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
+                SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
                 SdrObject* pObject = aIter.Next();
                 while (pObject)
                 {
@@ -107,8 +107,7 @@ void ScChartsObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
     //! Referenz-Update
 
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
     {
         pDocShell = nullptr;       // ungueltig geworden
     }
@@ -128,7 +127,7 @@ ScChartObj* ScChartsObj::GetObjectByIndex_Impl(long nIndex) const
             if (pPage)
             {
                 long nPos = 0;
-                SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
+                SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
                 SdrObject* pObject = aIter.Next();
                 while (pObject)
                 {
@@ -232,7 +231,7 @@ void SAL_CALL ScChartsObj::addNewByName( const OUString& rName,
             sal_Int64 nAspect(embed::Aspects::MSOLE_CONTENT);
             MapUnit aMapUnit(VCLUnoHelper::UnoEmbed2VCLMapUnit( xObj->getMapUnit( nAspect ) ));
             Size aSize(aInsRect.GetSize());
-            aSize = vcl::Window::LogicToLogic( aSize, MapMode( MAP_100TH_MM ), MapMode( aMapUnit ) );
+            aSize = vcl::Window::LogicToLogic( aSize, MapMode( MapUnit::Map100thMM ), MapMode( aMapUnit ) );
             awt::Size aSz;
             aSz.Width = aSize.Width();
             aSz.Height = aSize.Height();
@@ -340,7 +339,7 @@ sal_Int32 SAL_CALL ScChartsObj::getCount() throw(uno::RuntimeException, std::exc
             OSL_ENSURE(pPage, "Page nicht gefunden");
             if (pPage)
             {
-                SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
+                SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
                 SdrObject* pObject = aIter.Next();
                 while (pObject)
                 {
@@ -409,7 +408,7 @@ uno::Sequence<OUString> SAL_CALL ScChartsObj::getElementNames() throw(uno::Runti
             OSL_ENSURE(pPage, "Page nicht gefunden");
             if (pPage)
             {
-                SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
+                SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
                 SdrObject* pObject = aIter.Next();
                 while (pObject)
                 {
@@ -450,10 +449,10 @@ ScChartObj::ScChartObj(ScDocShell* pDocSh, SCTAB nT, const OUString& rN)
 {
     pDocShell->GetDocument().AddUnoObject(*this);
 
-    uno::Sequence< table::CellRangeAddress > aInitialPropValue;
     registerPropertyNoMember( "RelatedCellRanges",
         PROP_HANDLE_RELATED_CELLRANGES, beans::PropertyAttribute::MAYBEVOID,
-        cppu::UnoType<decltype(aInitialPropValue)>::get(), &aInitialPropValue );
+        cppu::UnoType<uno::Sequence<table::CellRangeAddress>>::get(),
+        css::uno::Any(uno::Sequence<table::CellRangeAddress>()) );
 }
 
 ScChartObj::~ScChartObj()
@@ -468,8 +467,7 @@ void ScChartObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
     //! Referenz-Update
 
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
     {
         pDocShell = nullptr;       // ungueltig geworden
     }
@@ -650,13 +648,6 @@ IMPLEMENT_FORWARD_XINTERFACE2( ScChartObj, ScChartObj_Base, ScChartObj_PBase )
 // XTypeProvider
 
 IMPLEMENT_FORWARD_XTYPEPROVIDER2( ScChartObj, ScChartObj_Base, ScChartObj_PBase )
-
-// XComponent
-
-void ScChartObj::disposing()
-{
-    ScChartObj_Base::disposing();
-}
 
 // XTableChart
 

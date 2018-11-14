@@ -48,7 +48,7 @@ StgInternalStream::~StgInternalStream()
     delete m_pStrm;
 }
 
-sal_uLong StgInternalStream::GetData( void* pData, sal_uLong nSize )
+std::size_t StgInternalStream::GetData(void* pData, std::size_t nSize)
 {
     if( m_pStrm )
     {
@@ -60,7 +60,7 @@ sal_uLong StgInternalStream::GetData( void* pData, sal_uLong nSize )
         return 0;
 }
 
-sal_uLong StgInternalStream::PutData( const void* pData, sal_uLong nSize )
+std::size_t StgInternalStream::PutData(const void* pData, std::size_t nSize)
 {
     if( m_pStrm )
     {
@@ -123,7 +123,7 @@ bool StgCompObjStream::Load()
 
             std::unique_ptr<sal_Char[]> p(new sal_Char[ nStrLen+1 ]);
             p[nStrLen] = 0;
-            if( Read( p.get(), nStrLen ) == nStrLen )
+            if (ReadBytes( p.get(), nStrLen ) == nStrLen)
             {
                 //The encoding here is "ANSI", which is pretty useless seeing as
                 //the actual codepage used doesn't seem to be specified/stored
@@ -163,10 +163,9 @@ bool StgCompObjStream::Store()
 
 /////////////////////////// class StgOleStream
 
-StgOleStream::StgOleStream( BaseStorage& rStg, bool bWr )
-    : StgInternalStream( rStg, OUString("\1Ole"), bWr )
+StgOleStream::StgOleStream( BaseStorage& rStg )
+    : StgInternalStream( rStg, OUString("\1Ole"), true )
 {
-    m_nFlags = 0;
 }
 
 bool StgOleStream::Store()
@@ -176,7 +175,7 @@ bool StgOleStream::Store()
 
     Seek( 0L );
     WriteInt32( 0x02000001 );         // OLE version, format
-    WriteInt32( m_nFlags );             // Object flags
+    WriteInt32( 0 );             // Object flags
     WriteInt32( 0 );                  // Update Options
     WriteInt32( 0 );                  // reserved
     WriteInt32( 0 );                 // Moniker 1

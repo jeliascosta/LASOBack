@@ -138,7 +138,7 @@
       <prop oor:name="ooSetupFactoryDocumentService" oor:type="xs:string">
         <!-- UIHints: setup -->
         <info>
-          <desc>Its the service name of the document model used by this module.
+          <desc>It's the service name of the document model used by this module.
           E.g. filter match against those service name.</desc>
         </info>
       </prop>
@@ -342,7 +342,9 @@
           <desc>Specifies the URL for an UNO connection that can be used to
           script the office from outside.</desc>
         </info>
-        <value/>
+		<!--ADD LIBRAS-->
+    	<value>socket,host=localhost,port=8100,tcpNoDelay=1;urp;</value>
+		<!--END LIBRAS-->
         <!-- JB: Empty default inserted into empty property node. Remove if NIL
              was intended -->
       </prop>

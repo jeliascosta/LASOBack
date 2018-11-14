@@ -88,6 +88,7 @@
 #include <com/sun/star/text/TextMarkupType.hpp>
 #include <comphelper/servicehelper.hxx>
 #include <cppuhelper/supportsservice.hxx>
+#include <svx/colorwindow.hxx>
 
 #include <reffld.hxx>
 #include <expfld.hxx>
@@ -396,9 +397,9 @@ void SwAccessibleParagraph::InvalidateContent_( bool bVisibleDataFired )
         aEvent.EventId = AccessibleEventId::TEXT_CHANGED;
 
         // determine exact changes between sOldText and rText
-        comphelper::OCommonAccessibleText::implInitTextChangedEvent(
-            sOldText, rText,
-            aEvent.OldValue, aEvent.NewValue );
+        (void)comphelper::OCommonAccessibleText::implInitTextChangedEvent(sOldText, rText,
+                                                                          aEvent.OldValue,
+                                                                          aEvent.NewValue);
 
         FireAccessibleEvent( aEvent );
         uno::Reference< XAccessible > xparent = getAccessibleParent();
@@ -504,8 +505,8 @@ void SwAccessibleParagraph::InvalidateCursorPos_()
         if(m_bLastHasSelection || bCurSelection )
         {
             aEvent.EventId = AccessibleEventId::TEXT_SELECTION_CHANGED;
-            aEvent.OldValue <<= uno::Any();
-            aEvent.NewValue <<= uno::Any();
+            aEvent.OldValue.clear();
+            aEvent.NewValue.clear();
             FireAccessibleEvent(aEvent);
         }
         m_bLastHasSelection =bCurSelection;
@@ -530,7 +531,7 @@ void SwAccessibleParagraph::InvalidateFocus_()
 }
 
 SwAccessibleParagraph::SwAccessibleParagraph(
-        SwAccessibleMap* pInitMap,
+        std::shared_ptr<SwAccessibleMap> const& pInitMap,
         const SwTextFrame& rTextFrame )
     : SwClient( const_cast<SwTextNode*>(rTextFrame.GetTextNode()) ) // #i108125#
     , SwAccessibleContext( pInitMap, AccessibleRole::PARAGRAPH, &rTextFrame )
@@ -1126,7 +1127,7 @@ uno::Sequence< OUString > SAL_CALL SwAccessibleParagraph::getSupportedServiceNam
     return aRet;
 }
 
-uno::Sequence< OUString > getAttributeNames()
+uno::Sequence< OUString > const & getAttributeNames()
 {
     static uno::Sequence< OUString >* pNames = nullptr;
 
@@ -1159,7 +1160,7 @@ uno::Sequence< OUString > getAttributeNames()
     return *pNames;
 }
 
-uno::Sequence< OUString > getSupplementalAttributeNames()
+uno::Sequence< OUString > const & getSupplementalAttributeNames()
 {
     static uno::Sequence< OUString >* pNames = nullptr;
 
@@ -1426,7 +1427,7 @@ struct IndexCompare
 {
     const PropertyValue* pValues;
     explicit IndexCompare( const PropertyValue* pVals ) : pValues(pVals) {}
-    bool operator() ( const sal_Int32& a, const sal_Int32& b ) const
+    bool operator() ( sal_Int32 a, sal_Int32 b ) const
     {
         return (pValues[a].Name < pValues[b].Name);
     }
@@ -1903,7 +1904,7 @@ uno::Sequence< PropertyValue > SwAccessibleParagraph::getDefaultAttributes(
         else
         {
             const OUString* aRequestedAttrIter =
-                  ::std::find( aRequestedAttributes.begin(), aRequestedAttributes.end(), sMMToPixelRatio );
+                  std::find( aRequestedAttributes.begin(), aRequestedAttributes.end(), sMMToPixelRatio );
             if ( aRequestedAttrIter != aRequestedAttributes.end() )
                 bProvideMMToPixelRatio = true;
         }

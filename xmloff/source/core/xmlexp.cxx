@@ -103,7 +103,6 @@ using namespace ::com::sun::star::xml::sax;
 using namespace ::com::sun::star::io;
 using namespace ::xmloff::token;
 
-sal_Char const sXML_1_1[] = "1.1";
 sal_Char const sXML_1_2[] = "1.2";
 
 #define XML_MODEL_SERVICE_WRITER    "com.sun.star.text.TextDocument"
@@ -213,7 +212,7 @@ private:
 
 public:
     explicit SvXMLExportEventListener(SvXMLExport* pExport);
-    virtual                 ~SvXMLExportEventListener();
+    virtual                 ~SvXMLExportEventListener() override;
 
                             // XEventListener
     virtual void SAL_CALL disposing(const lang::EventObject& rEventObject) throw(css::uno::RuntimeException, std::exception) override;
@@ -851,7 +850,7 @@ sal_Bool SAL_CALL SvXMLExport::filter( const uno::Sequence< beans::PropertyValue
     }
 
     // return true only if no error occurred
-    return (GetErrorFlags() & (SvXMLErrorFlags::DO_NOTHING|SvXMLErrorFlags::ERROR_OCCURRED)) == SvXMLErrorFlags::NO;
+    return (mnErrorFlags & (SvXMLErrorFlags::DO_NOTHING|SvXMLErrorFlags::ERROR_OCCURRED)) == SvXMLErrorFlags::NO;
 }
 
 void SAL_CALL SvXMLExport::cancel() throw(uno::RuntimeException, std::exception)
@@ -1297,7 +1296,7 @@ sal_uInt32 SvXMLExport::exportDoc( enum ::xmloff::token::XMLTokenEnum eClass )
     {
         try
         {
-            ::comphelper::PropertyMapEntry const aInfoMap[] =
+            static ::comphelper::PropertyMapEntry const aInfoMap[] =
             {
                 { OUString("Class"), 0,
                     ::cppu::UnoType<OUString>::get(),
@@ -1363,7 +1362,7 @@ sal_uInt32 SvXMLExport::exportDoc( enum ::xmloff::token::XMLTokenEnum eClass )
     case SvtSaveOptions::ODFVER_LATEST: pVersion = sXML_1_2; break;
     case SvtSaveOptions::ODFVER_012_EXT_COMPAT: pVersion = sXML_1_2; break;
     case SvtSaveOptions::ODFVER_012: pVersion = sXML_1_2; break;
-    case SvtSaveOptions::ODFVER_011: pVersion = sXML_1_1; break;
+    case SvtSaveOptions::ODFVER_011: pVersion = "1.1"; break;
     case SvtSaveOptions::ODFVER_010: break;
 
     default:
@@ -1641,7 +1640,7 @@ void SvXMLExport::ExportStyles_( bool )
                         {
                             uno::Any aValue = xBitmap->getByName( rStrName );
 
-                            aImageStyle.exportXML( rStrName, aValue, *this );
+                            XMLImageStyle::exportXML( rStrName, aValue, *this );
                         }
                         catch(const container::NoSuchElementException&)
                         {
@@ -2026,7 +2025,7 @@ XMLEventExport& SvXMLExport::GetEventExport()
     if( nullptr == mpEventExport)
     {
         // create EventExport on demand
-        mpEventExport = new XMLEventExport(*this, nullptr);
+        mpEventExport = new XMLEventExport(*this);
 
         // and register standard handlers + names
         OUString sStarBasic("StarBasic");
@@ -2365,11 +2364,6 @@ SvtSaveOptions::ODFSaneDefaultVersion SvXMLExport::getSaneDefaultVersion() const
     return SvtSaveOptions::ODFSVER_LATEST;
 }
 
-OUString SvXMLExport::GetStreamName() const
-{
-    return mpImpl->mStreamName;
-}
-
 void
 SvXMLExport::AddAttributeIdLegacy(
         sal_uInt16 const nLegacyPrefix, OUString const& rValue)
@@ -2403,7 +2397,7 @@ SvXMLExport::AddAttributeXmlId(uno::Reference<uno::XInterface> const & i_xIfc)
         const beans::StringPair mdref( xMeta->getMetadataReference() );
         if ( !mdref.Second.isEmpty() )
         {
-            const OUString streamName( GetStreamName() );
+            const OUString streamName = mpImpl->mStreamName;
             if ( !streamName.isEmpty() )
             {
                 if ( streamName.equals(mdref.First) )

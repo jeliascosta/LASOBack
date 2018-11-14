@@ -73,8 +73,8 @@ using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::text;
 using namespace ::std;
 
-typedef ::std::pair< TextRangeList_t * const, SwTextAttr const * const > PortionList_t;
-typedef ::std::stack< PortionList_t > PortionStack_t;
+typedef std::pair< TextRangeList_t * const, SwTextAttr const * const > PortionList_t;
+typedef std::stack< PortionList_t > PortionStack_t;
 
 static void lcl_CreatePortions(
     TextRangeList_t & i_rPortions,
@@ -367,7 +367,7 @@ SwXTextPortionEnumeration::SwXTextPortionEnumeration(
     // find all frames, graphics and OLEs that are bound AT character in para
     FrameClientSortList_t frames;
     ::CollectFrameAtNode(m_pUnoCursor->GetPoint()->nNode, frames, true);
-    lcl_CreatePortions(m_Portions, xParentText, &GetCursor(), frames, nStart, nEnd);
+    lcl_CreatePortions(m_Portions, xParentText, &*m_pUnoCursor, frames, nStart, nEnd);
 }
 
 SwXTextPortionEnumeration::SwXTextPortionEnumeration(
@@ -407,7 +407,7 @@ throw( container::NoSuchElementException, lang::WrappedTargetException,
     return any;
 }
 
-typedef ::std::deque< sal_Int32 > FieldMarks_t;
+typedef std::deque< sal_Int32 > FieldMarks_t;
 
 static void
 lcl_FillFieldMarkArray(FieldMarks_t & rFieldMarks, SwUnoCursor const & rUnoCursor,
@@ -419,7 +419,7 @@ lcl_FillFieldMarkArray(FieldMarks_t & rFieldMarks, SwUnoCursor const & rUnoCurso
 
     const sal_Unicode fld[] = {
         CH_TXT_ATR_FIELDSTART, CH_TXT_ATR_FIELDEND, CH_TXT_ATR_FORMELEMENT, 0 };
-    sal_Int32 pos = ::std::max(static_cast<const sal_Int32>(0), i_nStartPos);
+    sal_Int32 pos = std::max(static_cast<const sal_Int32>(0), i_nStartPos);
     while ((pos = ::comphelper::string::indexOfAny(pTextNode->GetText(), fld, pos)) != -1)
     {
         rFieldMarks.push_back(pos);
@@ -580,7 +580,7 @@ static uno::Reference<text::XTextRange>
 lcl_CreateMetaPortion(
     uno::Reference<text::XText> const& xParent,
     const SwUnoCursor * const pUnoCursor,
-    SwTextAttr & rAttr, ::std::unique_ptr<TextRangeList_t const> && pPortions)
+    SwTextAttr & rAttr, std::unique_ptr<TextRangeList_t const> && pPortions)
 {
     const uno::Reference<rdf::XMetadatable> xMeta( SwXMeta::CreateXMeta(
             *static_cast<SwFormatMeta &>(rAttr.GetAttr()).GetMeta(),
@@ -716,8 +716,7 @@ lcl_ExportHints(
     const sal_Int32 nCurrentIndex,
     const bool bRightMoveForbidden,
     bool & o_rbCursorMoved,
-    sal_Int32 & o_rNextAttrPosition,
-    std::set<const SwFrameFormat*>& rTextBoxes)
+    sal_Int32 & o_rNextAttrPosition)
 {
     // if the attribute has a dummy character, then xRef is set (except META)
     // otherwise, the portion for the attribute is inserted into rPortions!
@@ -788,7 +787,7 @@ lcl_ExportHints(
                         }
                         else
                         {
-                            ::std::unique_ptr<const TextRangeList_t>
+                            std::unique_ptr<const TextRangeList_t>
                                 pCurrentPortions(Top.first);
                             rPortionStack.pop();
                             const uno::Reference<text::XTextRange> xPortion(
@@ -887,7 +886,7 @@ lcl_ExportHints(
                             break; // Robust #i81708 content in covered cells
 
                         // Do not expose inline anchored textboxes.
-                        if (rTextBoxes.find(pAttr->GetFlyCnt().GetFrameFormat()) != rTextBoxes.end())
+                        if (SwTextBoxHelper::isTextBox(pAttr->GetFlyCnt().GetFrameFormat(), RES_FLYFRMFMT))
                             break;
 
                         pUnoCursor->Exchange();
@@ -961,7 +960,7 @@ lcl_ExportHints(
                             if ((i_nEndPos < 0) ||
                                 (*pAttr->GetEnd() <= i_nEndPos))
                             {
-                                rPortionStack.push( ::std::make_pair(
+                                rPortionStack.push( std::make_pair(
                                         new TextRangeList_t, pAttr ));
                             }
                         }
@@ -1272,8 +1271,6 @@ static void lcl_CreatePortions(
     PortionStack_t PortionStack;
     PortionStack.push( PortionList_t(&i_rPortions, nullptr) );
 
-    std::set<const SwFrameFormat*> aTextBoxes = SwTextBoxHelper::findTextBoxes(pUnoCursor->GetNode());
-
     bool bAtEnd( false );
     while (!bAtEnd) // every iteration consumes at least current character!
     {
@@ -1324,7 +1321,7 @@ static void lcl_CreatePortions(
             // N.B.: side-effects nNextAttrIndex, bCursorMoved; may move cursor
             xRef = lcl_ExportHints(PortionStack, i_xParentText, pUnoCursor,
                         pHints, i_nStartPos, i_nEndPos, nCurrentIndex, bAtEnd,
-                        bCursorMoved, nNextAttrIndex, aTextBoxes);
+                        bCursorMoved, nNextAttrIndex);
             if (PortionStack.empty())
             {
                 OSL_FAIL("CreatePortions: stack underflow");

@@ -27,6 +27,7 @@
 #include <com/sun/star/beans/XPropertySetInfo.hpp>
 #include <cppuhelper/implbase.hxx>
 #include <comphelper/comphelperdllapi.h>
+#include <memory>
 
 namespace comphelper
 {
@@ -56,12 +57,12 @@ class COMPHELPER_DLLPUBLIC PropertySetInfo
     : public PropertySetInfo_BASE
 {
 private:
-    PropertyMapImpl* mpMap;
+    std::unique_ptr<PropertyMapImpl> mpImpl;
 public:
     PropertySetInfo() throw();
     PropertySetInfo( PropertyMapEntry const * pMap ) throw();
     PropertySetInfo(css::uno::Sequence<css::beans::Property> const &) throw();
-    virtual ~PropertySetInfo() throw();
+    virtual ~PropertySetInfo() throw() override;
 
     /** returns a stl map with all PropertyMapEntry pointer.<p>
         The key is the property name.

@@ -76,20 +76,8 @@ OUString SAL_CALL LogarithmicScaling::getServiceName()
     return OUString(lcl_aServiceName_Logarithmic);
 }
 
-uno::Sequence< OUString > LogarithmicScaling::getSupportedServiceNames_Static()
-{
-    uno::Sequence< OUString > aSeq { lcl_aServiceName_Logarithmic };
-    return aSeq;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL LogarithmicScaling::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
-{
-    return getImplementationName_Static();
-}
-
-OUString LogarithmicScaling::getImplementationName_Static()
 {
     return OUString(lcl_aServiceName_Logarithmic);
 }
@@ -103,7 +91,7 @@ sal_Bool SAL_CALL LogarithmicScaling::supportsService( const OUString& rServiceN
 css::uno::Sequence< OUString > SAL_CALL LogarithmicScaling::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return { lcl_aServiceName_Logarithmic };
 }
 
 ExponentialScaling::ExponentialScaling() :
@@ -143,20 +131,8 @@ OUString SAL_CALL ExponentialScaling::getServiceName()
     return OUString(lcl_aServiceName_Exponential);
 }
 
-uno::Sequence< OUString > ExponentialScaling::getSupportedServiceNames_Static()
-{
-    uno::Sequence< OUString > aSeq { lcl_aServiceName_Exponential };
-    return aSeq;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL ExponentialScaling::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
-{
-    return getImplementationName_Static();
-}
-
-OUString ExponentialScaling::getImplementationName_Static()
 {
     return OUString(lcl_aServiceName_Exponential);
 }
@@ -170,7 +146,7 @@ sal_Bool SAL_CALL ExponentialScaling::supportsService( const OUString& rServiceN
 css::uno::Sequence< OUString > SAL_CALL ExponentialScaling::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return { lcl_aServiceName_Exponential };
 }
 
 LinearScaling::LinearScaling() :
@@ -214,20 +190,8 @@ OUString SAL_CALL LinearScaling::getServiceName()
     return OUString(lcl_aServiceName_Linear);
 }
 
-uno::Sequence< OUString > LinearScaling::getSupportedServiceNames_Static()
-{
-    uno::Sequence< OUString > aSeq { lcl_aServiceName_Linear };
-    return aSeq;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL LinearScaling::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
-{
-    return getImplementationName_Static();
-}
-
-OUString LinearScaling::getImplementationName_Static()
 {
     return OUString(lcl_aServiceName_Linear) ;
 }
@@ -241,7 +205,7 @@ sal_Bool SAL_CALL LinearScaling::supportsService( const OUString& rServiceName )
 css::uno::Sequence< OUString > SAL_CALL LinearScaling::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return { lcl_aServiceName_Linear };
 }
 
 PowerScaling::PowerScaling() :
@@ -284,20 +248,8 @@ PowerScaling::getServiceName()
     return OUString(lcl_aServiceName_Power);
 }
 
-uno::Sequence< OUString > PowerScaling::getSupportedServiceNames_Static()
-{
-    uno::Sequence< OUString > aSeq { lcl_aServiceName_Power };
-    return aSeq;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL PowerScaling::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
-{
-    return getImplementationName_Static();
-}
-
-OUString PowerScaling::getImplementationName_Static()
 {
     return OUString(lcl_aServiceName_Power);
 }
@@ -311,7 +263,7 @@ sal_Bool SAL_CALL PowerScaling::supportsService( const OUString& rServiceName )
 css::uno::Sequence< OUString > SAL_CALL PowerScaling::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return { lcl_aServiceName_Power };
 }
 
 } //namespace chart

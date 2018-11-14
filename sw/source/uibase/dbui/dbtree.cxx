@@ -67,11 +67,11 @@ class SwDBTreeList_Impl : public cppu::WeakImplHelper < XContainerListener >
     SwWrtShell* m_pWrtShell;
 
     public:
-        explicit SwDBTreeList_Impl(SwWrtShell* pShell)
-            : m_pWrtShell(pShell)
+        explicit SwDBTreeList_Impl()
+            : m_pWrtShell(nullptr)
         {
         }
-        virtual ~SwDBTreeList_Impl();
+        virtual ~SwDBTreeList_Impl() override;
 
     virtual void SAL_CALL elementInserted( const ContainerEvent& Event ) throw (RuntimeException, std::exception) override;
     virtual void SAL_CALL elementRemoved( const ContainerEvent& Event ) throw (RuntimeException, std::exception) override;
@@ -147,24 +147,17 @@ SwDBTreeList::SwDBTreeList(vcl::Window *pParent, WinBits nStyle)
     , aImageList(SW_RES(ILIST_DB_DLG))
     , bInitialized(false)
     , bShowColumns(false)
-    , pImpl(new SwDBTreeList_Impl(nullptr))
+    , pImpl(new SwDBTreeList_Impl)
 {
     if (IsVisible())
         InitTreeList();
 }
 
-VCL_BUILDER_DECL_FACTORY(SwDBTreeList)
-{
-    WinBits nStyle = WB_TABSTOP;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-        nStyle |= WB_BORDER;
-    rRet = VclPtr<SwDBTreeList>::Create(pParent, nStyle);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(SwDBTreeList, WB_TABSTOP)
 
 Size SwDBTreeList::GetOptimalSize() const
 {
-    return LogicToPixel(Size(100, 62), MapMode(MAP_APPFONT));
+    return LogicToPixel(Size(100, 62), MapMode(MapUnit::MapAppFont));
 }
 
 SwDBTreeList::~SwDBTreeList()
@@ -183,7 +176,7 @@ void SwDBTreeList::InitTreeList()
 {
     if(!pImpl->HasContext() && pImpl->GetWrtShell())
         return;
-    SetSelectionMode(SINGLE_SELECTION);
+    SetSelectionMode(SelectionMode::Single);
     SetStyle(GetStyle()|WB_HASLINES|WB_CLIPCHILDREN|WB_HASBUTTONS|WB_HASBUTTONSATROOT|WB_HSCROLL);
     // don't set font, so that the Control's font is being applied!
     SetSpaceBetweenEntries(0);
@@ -378,7 +371,7 @@ void  SwDBTreeList::RequestingChildren(SvTreeListEntry* pParent)
     }
 }
 
-IMPL_LINK_TYPED( SwDBTreeList, DBCompare, const SvSortData&, rData, sal_Int32 )
+IMPL_LINK( SwDBTreeList, DBCompare, const SvSortData&, rData, sal_Int32 )
 {
     SvTreeListEntry* pRight = const_cast<SvTreeListEntry*>(rData.pRight);
 
@@ -465,7 +458,7 @@ void SwDBTreeList::StartDrag( sal_Int8 /*nAction*/, const Point& /*rPosPixel*/ )
         if( !sColumnName.isEmpty() )
         {
             // drag database field
-            uno::Reference< svx::OColumnTransferable > xColTransfer( new svx::OColumnTransferable(
+            rtl::Reference< svx::OColumnTransferable > xColTransfer( new svx::OColumnTransferable(
                             sDBName,
                             OUString(),
                             sTableName,

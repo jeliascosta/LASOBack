@@ -129,7 +129,7 @@ uno::Reference< XResultSet > SAL_CALL OStatement::executeQuery(const OUString& s
                                   m_aMutex,
                                   uno::Reference< XInterface >(*this),
                                   m_aStatementHandle,
-                                  m_pSqlda);
+                                  m_pSqlda );
 
     // TODO: deal with cleanup
 
@@ -180,11 +180,6 @@ uno::Sequence< Type > SAL_CALL OStatement::getTypes()
 {
     return concatSequences(OStatement_Base::getTypes(),
                            OStatementCommonBase::getTypes());
-}
-
-void SAL_CALL OStatement::close() throw(SQLException, RuntimeException, std::exception)
-{
-    OStatementCommonBase::close();
 }
 
 void SAL_CALL OStatement::disposing()

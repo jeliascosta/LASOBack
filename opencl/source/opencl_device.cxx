@@ -338,7 +338,8 @@ ds_status evaluateScoreForDevice(ds_device& rDevice, std::unique_ptr<LibreOffice
         timer kernelTime;
         timerStart(&kernelTime);
 
-        for (unsigned long j = 0; j < testData->outputSize; j++)
+        unsigned long j;
+        for (j = 0; j < testData->outputSize; j++)
         {
             double fAverage = 0.0f;
             double fMin = DBL_MAX;
@@ -351,15 +352,25 @@ ds_status evaluateScoreForDevice(ds_device& rDevice, std::unique_ptr<LibreOffice
             }
             fAverage /= testData->inputSize;
             testData->output[j] = fAverage + (fMin * fSoP);
+            // Don't run for much longer than one second
+            if (j > 0 && j % 100 == 0)
+            {
+                rDevice.fTime = timerCurrent(&kernelTime);
+                if (rDevice.fTime >= 1)
+                    break;
+            }
         }
+
+        rDevice.fTime = timerCurrent(&kernelTime);
+
+        // Scale time to how long it would have taken to go all the way to outputSize
+        rDevice.fTime /= ((double) j / testData->outputSize);
 
         // InterpretTail - the S/W fallback is nothing like as efficient
         // as any good openCL implementation: no SIMD, tons of branching
         // in the inner loops etc. Generously characterise it as only 10x
         // slower than the above.
         float fInterpretTailFactor = 10.0;
-
-        rDevice.fTime = timerCurrent(&kernelTime);
         rDevice.fTime *= fInterpretTailFactor;
         rDevice.bErrors = false;
     }
@@ -476,7 +487,7 @@ class LogWriter
 private:
     SvFileStream maStream;
 public:
-    LogWriter(OUString aFileName)
+    explicit LogWriter(OUString const & aFileName)
         : maStream(aFileName, StreamMode::WRITE)
     {}
 
@@ -506,7 +517,7 @@ public:
 };
 
 
-void writeDevicesLog(std::unique_ptr<ds_profile>& rProfile, OUString sProfilePath, int nSelectedIndex)
+void writeDevicesLog(std::unique_ptr<ds_profile>& rProfile, OUString const & sProfilePath, int nSelectedIndex)
 {
     OUString aCacheFile(sProfilePath + "opencl_devices.log");
     LogWriter aWriter(aCacheFile);
@@ -544,7 +555,7 @@ void writeDevicesLog(std::unique_ptr<ds_profile>& rProfile, OUString sProfilePat
 
 } // end anonymous namespace
 
-ds_device getDeviceSelection(
+ds_device const & getDeviceSelection(
     OUString const & sProfilePath, bool bForceSelection)
 {
     /* Run only if device is not yet selected */

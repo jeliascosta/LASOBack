@@ -35,7 +35,7 @@ namespace abp
 
     public:
         explicit FieldMappingPage(OAddressBookSourcePilot* _pParent);
-        virtual ~FieldMappingPage();
+        virtual ~FieldMappingPage() override;
         virtual void dispose() override;
     protected:
         // OWizardPage overridables
@@ -43,10 +43,9 @@ namespace abp
 
         // TabDialog overridables
         virtual void        ActivatePage() override;
-        virtual void        DeactivatePage() override;
 
     private:
-        DECL_LINK_TYPED( OnInvokeDialog, Button*, void );
+        DECL_LINK( OnInvokeDialog, Button*, void );
 
         void implUpdateHint();
     };

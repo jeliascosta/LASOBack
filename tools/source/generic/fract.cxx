@@ -62,6 +62,10 @@ Fraction::Fraction( const Fraction& rFrac ) : mpImpl(new Impl)
         mpImpl->value.assign( rFrac.mpImpl->value.numerator(), rFrac.mpImpl->value.denominator() );
 }
 
+Fraction::Fraction( Fraction&& rFrac ) : mpImpl(std::move(rFrac.mpImpl))
+{
+}
+
 // Initialized by setting nNum as nominator and nDen as denominator
 // Negative values in the denominator are invalid and cause the
 // inversion of both nominator and denominator signs
@@ -182,7 +186,6 @@ Fraction& Fraction::operator *= ( const Fraction& rVal )
     if ( HasOverflowValue() )
     {
         mpImpl->valid = false;
-        SAL_WARN( "tools.fraction", "'operator *=' detected overflow" );
     }
 
     return *this;
@@ -269,6 +272,12 @@ Fraction& Fraction::operator=( const Fraction& rFrac )
 
     Fraction tmp(rFrac);
     std::swap(mpImpl, tmp.mpImpl);
+    return *this;
+}
+
+Fraction& Fraction::operator=( Fraction&& rFrac )
+{
+    mpImpl = std::move(rFrac.mpImpl);
     return *this;
 }
 
@@ -363,7 +372,7 @@ bool operator > ( const Fraction& rVal1, const Fraction& rVal2 )
     return rVal1.mpImpl->value > rVal2.mpImpl->value;
 }
 
-SvStream& ReadFraction( SvStream& rIStream, Fraction& rFract )
+SvStream& ReadFraction( SvStream& rIStream, Fraction const & rFract )
 {
     sal_Int32 num(0), den(0);
     rIStream.ReadInt32( num );

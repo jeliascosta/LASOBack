@@ -55,7 +55,7 @@ class SwXFlatParagraph
 {
 public:
     SwXFlatParagraph( SwTextNode& rTextNode, const OUString& aExpandText, const ModelToViewHelper& rConversionMap );
-    virtual ~SwXFlatParagraph();
+    virtual ~SwXFlatParagraph() override;
 
     // XPropertySet
     virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL
@@ -143,7 +143,7 @@ class SwXFlatParagraphIterator:
 {
 public:
     SwXFlatParagraphIterator( SwDoc& rDoc, sal_Int32 nType, bool bAutomatic );
-    virtual ~SwXFlatParagraphIterator();
+    virtual ~SwXFlatParagraphIterator() override;
 
     // text::XFlatParagraphIterator:
     virtual css::uno::Reference< css::text::XFlatParagraph > SAL_CALL getFirstPara() throw (css::uno::RuntimeException, std::exception) override;
@@ -168,9 +168,7 @@ private:
     const bool mbAutomatic;
 
     sal_uLong mnCurrentNode;    // used for non-automatic mode
-    sal_uLong mnStartNode;      // used for non-automatic mode
     sal_uLong mnEndNode;        // used for non-automatic mode
-    bool mbWrapped;     // used for non-automatic mode
 };
 
 #endif

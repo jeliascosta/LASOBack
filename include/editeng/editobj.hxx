@@ -68,9 +68,6 @@ class EDITENG_DLLPUBLIC EditTextObject : public SfxItemPoolUser
 
     EditTextObject( SfxItemPool* pPool );
 
-    void StoreData( SvStream& rStrm ) const;
-    void CreateData( SvStream& rStrm );
-
 public:
     EditTextObject( const EditTextObject& r );
     virtual ~EditTextObject();
@@ -110,7 +107,7 @@ public:
 
     void GetCharAttribs( sal_Int32 nPara, std::vector<EECharAttrib>& rLst ) const;
 
-    bool RemoveCharAttribs( sal_uInt16 nWhich = 0 );
+    bool RemoveCharAttribs( sal_uInt16 nWhich );
 
     /**
      * Get all text sections in this content.  Sections are non-overlapping

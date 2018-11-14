@@ -17,24 +17,24 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgio/svgreader/svgstyleattributes.hxx>
+#include <svgstyleattributes.hxx>
 #include <drawinglayer/primitive2d/transformprimitive2d.hxx>
 #include <drawinglayer/primitive2d/polypolygonprimitive2d.hxx>
-#include <svgio/svgreader/svgnode.hxx>
-#include <svgio/svgreader/svgdocument.hxx>
+#include <svgnode.hxx>
+#include <svgdocument.hxx>
 #include <drawinglayer/primitive2d/svggradientprimitive2d.hxx>
-#include <svgio/svgreader/svggradientnode.hxx>
+#include <svggradientnode.hxx>
 #include <drawinglayer/primitive2d/unifiedtransparenceprimitive2d.hxx>
 #include <basegfx/vector/b2enums.hxx>
 #include <drawinglayer/processor2d/linegeometryextractor2d.hxx>
 #include <drawinglayer/processor2d/textaspolygonextractor2d.hxx>
 #include <basegfx/polygon/b2dpolypolygoncutter.hxx>
-#include <svgio/svgreader/svgclippathnode.hxx>
-#include <svgio/svgreader/svgmasknode.hxx>
+#include <svgclippathnode.hxx>
+#include <svgmasknode.hxx>
 #include <basegfx/polygon/b2dpolypolygontools.hxx>
-#include <svgio/svgreader/svgmarkernode.hxx>
+#include <svgmarkernode.hxx>
 #include <basegfx/curve/b2dcubicbezier.hxx>
-#include <svgio/svgreader/svgpatternnode.hxx>
+#include <svgpatternnode.hxx>
 #include <drawinglayer/primitive2d/patternfillprimitive2d.hxx>
 #include <basegfx/polygon/b2dpolygontools.hxx>
 #include <drawinglayer/primitive2d/maskprimitive2d.hxx>
@@ -664,54 +664,75 @@ namespace svgio
 
                     if(basegfx::fTools::more(fStrokeWidth, 0.0))
                     {
-                        // get LineJoin, LineCap and stroke array
-                        const basegfx::B2DLineJoin aB2DLineJoin(StrokeLinejoinToB2DLineJoin(getStrokeLinejoin()));
-                        const css::drawing::LineCap aLineCap(StrokeLinecapToDrawingLineCap(getStrokeLinecap()));
-                        ::std::vector< double > aDashArray;
-
-                        if(!getStrokeDasharray().empty())
-                        {
-                            aDashArray = solveSvgNumberVector(getStrokeDasharray(), mrOwner);
-                        }
-
-                        // todo: Handle getStrokeDashOffset()
-
-                        // convert svg:stroke-miterlimit to LineAttrute:mfMiterMinimumAngle
-                        // The default needs to be set explicitely, because svg default <> Draw default
-                        double fMiterMinimumAngle;
-                        if (getStrokeMiterLimit().isSet())
-                        {
-                            fMiterMinimumAngle = 2.0 * asin(1.0/getStrokeMiterLimit().getNumber());
-                        }
-                        else
-                        {
-                            fMiterMinimumAngle = 2.0 * asin(0.25); // 1.0/default 4.0
-                        }
-
-                        // prepare line attribute
                         drawinglayer::primitive2d::Primitive2DReference aNewLinePrimitive;
 
-                        const drawinglayer::attribute::LineAttribute aLineAttribute(
-                            pStroke ? *pStroke : basegfx::BColor(0.0, 0.0, 0.0),
-                            fStrokeWidth,
-                            aB2DLineJoin,
-                            aLineCap,
-                            fMiterMinimumAngle);
-
-                        if(aDashArray.empty())
+                        // if we have a line with two identical points it is not really a line,
+                        // but used by SVG sometimes to paint a single dot.In that case, create
+                        // the geometry for a single dot
+                        if(1 == rPath.count())
                         {
-                            aNewLinePrimitive = new drawinglayer::primitive2d::PolyPolygonStrokePrimitive2D(
-                                rPath,
-                                aLineAttribute);
+                            const basegfx::B2DPolygon aSingle(rPath.getB2DPolygon(0));
+
+                            if(2 == aSingle.count() && aSingle.getB2DPoint(0).equal(aSingle.getB2DPoint(1)))
+                            {
+                                aNewLinePrimitive = new drawinglayer::primitive2d::PolyPolygonColorPrimitive2D(
+                                    basegfx::B2DPolyPolygon(
+                                        basegfx::tools::createPolygonFromCircle(
+                                            aSingle.getB2DPoint(0),
+                                            fStrokeWidth * (1.44 * 0.5))),
+                                    pStroke ? *pStroke : basegfx::BColor(0.0, 0.0, 0.0));
+                            }
                         }
-                        else
-                        {
-                            const drawinglayer::attribute::StrokeAttribute aStrokeAttribute(aDashArray);
 
-                            aNewLinePrimitive = new drawinglayer::primitive2d::PolyPolygonStrokePrimitive2D(
-                                rPath,
-                                aLineAttribute,
-                                aStrokeAttribute);
+                        if(!aNewLinePrimitive.is())
+                        {
+                            // get LineJoin, LineCap and stroke array
+                            const basegfx::B2DLineJoin aB2DLineJoin(StrokeLinejoinToB2DLineJoin(getStrokeLinejoin()));
+                            const css::drawing::LineCap aLineCap(StrokeLinecapToDrawingLineCap(getStrokeLinecap()));
+                            ::std::vector< double > aDashArray;
+
+                            if(!getStrokeDasharray().empty())
+                            {
+                                aDashArray = solveSvgNumberVector(getStrokeDasharray(), mrOwner);
+                            }
+
+                            // convert svg:stroke-miterlimit to LineAttrute:mfMiterMinimumAngle
+                            // The default needs to be set explicitely, because svg default <> Draw default
+                            double fMiterMinimumAngle;
+                            if (getStrokeMiterLimit().isSet())
+                            {
+                                fMiterMinimumAngle = 2.0 * asin(1.0/getStrokeMiterLimit().getNumber());
+                            }
+                            else
+                            {
+                                fMiterMinimumAngle = 2.0 * asin(0.25); // 1.0/default 4.0
+                            }
+
+                            // todo: Handle getStrokeDashOffset()
+
+                            // prepare line attribute
+                            const drawinglayer::attribute::LineAttribute aLineAttribute(
+                                pStroke ? *pStroke : basegfx::BColor(0.0, 0.0, 0.0),
+                                fStrokeWidth,
+                                aB2DLineJoin,
+                                aLineCap,
+                                fMiterMinimumAngle);
+
+                            if(aDashArray.empty())
+                            {
+                                aNewLinePrimitive = new drawinglayer::primitive2d::PolyPolygonStrokePrimitive2D(
+                                    rPath,
+                                    aLineAttribute);
+                            }
+                            else
+                            {
+                                const drawinglayer::attribute::StrokeAttribute aStrokeAttribute(aDashArray);
+
+                                aNewLinePrimitive = new drawinglayer::primitive2d::PolyPolygonStrokePrimitive2D(
+                                    rPath,
+                                    aLineAttribute,
+                                    aStrokeAttribute);
+                            }
                         }
 
                         if(pStrokeGradient || pStrokePattern)
@@ -1280,11 +1301,11 @@ namespace svgio
                         {
                             if(SVGTokenLinearGradient == pNode->getType() || SVGTokenRadialGradient == pNode->getType())
                             {
-                                setSvgGradientNodeFill(static_cast< const SvgGradientNode* >(pNode));
+                                mpSvgGradientNodeFill = static_cast< const SvgGradientNode* >(pNode);
                             }
                             else if(SVGTokenPattern == pNode->getType())
                             {
-                                setSvgPatternNodeFill(static_cast< const SvgPatternNode* >(pNode));
+                                mpSvgPatternNodeFill = static_cast< const SvgPatternNode* >(pNode);
                             }
                         }
                     }
@@ -1296,7 +1317,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setFillOpacity(SvgNumber(basegfx::clamp(aNum.getNumber(), 0.0, 1.0), aNum.getUnit(), aNum.isSet()));
+                        maFillOpacity = SvgNumber(basegfx::clamp(aNum.getNumber(), 0.0, 1.0), aNum.getUnit(), aNum.isSet());
                     }
                     break;
                 }
@@ -1323,7 +1344,7 @@ namespace svgio
 
                     if(readSvgPaint(aContent, aSvgPaint, aURL, bCaseIndependent, aOpacity))
                     {
-                        setStroke(aSvgPaint);
+                        maStroke = aSvgPaint;
                         if(aOpacity.isSet())
                         {
                             setOpacity(SvgNumber(basegfx::clamp(aOpacity.getNumber(), 0.0, 1.0)));
@@ -1337,11 +1358,11 @@ namespace svgio
                         {
                             if(SVGTokenLinearGradient == pNode->getType() || SVGTokenRadialGradient  == pNode->getType())
                             {
-                                setSvgGradientNodeStroke(static_cast< const SvgGradientNode* >(pNode));
+                                mpSvgGradientNodeStroke = static_cast< const SvgGradientNode* >(pNode);
                             }
                             else if(SVGTokenPattern == pNode->getType())
                             {
-                                setSvgPatternNodeStroke(static_cast< const SvgPatternNode* >(pNode));
+                                mpSvgPatternNodeStroke = static_cast< const SvgPatternNode* >(pNode);
                             }
                         }
                     }
@@ -1359,11 +1380,11 @@ namespace svgio
                             // in the sense that *when* it is set, the parent shall not
                             // be used. Before this was only dependent on the array being
                             // empty
-                            setStrokeDasharraySet(true);
+                            mbStrokeDasharraySet = true;
                         }
                         else if(readSvgNumberVector(aContent, aVector))
                         {
-                            setStrokeDasharray(aVector);
+                            maStrokeDasharray = aVector;
                         }
                     }
                     break;
@@ -1376,7 +1397,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            setStrokeDashOffset(aNum);
+                            maStrokeDashOffset = aNum;
                         }
                     }
                     break;
@@ -1427,7 +1448,7 @@ namespace svgio
                     {
                         if(basegfx::fTools::moreOrEqual(aNum.getNumber(), 1.0))
                         { //readSingleNumber sets Unit_px as default, if unit is missing. Correct it here.
-                            setStrokeMiterLimit(SvgNumber(aNum.getNumber(), Unit_none));
+                            maStrokeMiterLimit = SvgNumber(aNum.getNumber(), Unit_none);
                         }
                     }
                     break;
@@ -1439,7 +1460,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setStrokeOpacity(SvgNumber(basegfx::clamp(aNum.getNumber(), 0.0, 1.0), aNum.getUnit(), aNum.isSet()));
+                        maStrokeOpacity = SvgNumber(basegfx::clamp(aNum.getNumber(), 0.0, 1.0), aNum.getUnit(), aNum.isSet());
                     }
                     break;
                 }
@@ -1451,7 +1472,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            setStrokeWidth(aNum);
+                            maStrokeWidth = aNum;
                         }
                     }
                     break;
@@ -1464,7 +1485,7 @@ namespace svgio
 
                     if(readSvgPaint(aContent, aSvgPaint, aURL, bCaseIndependent, aOpacity))
                     {
-                        setStopColor(aSvgPaint);
+                        maStopColor = aSvgPaint;
                         if(aOpacity.isSet())
                         {
                             setOpacity(SvgNumber(basegfx::clamp(aOpacity.getNumber(), 0.0, 1.0)));
@@ -1480,7 +1501,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            setStopOpacity(aNum);
+                            maStopOpacity = aNum;
                         }
                     }
                     break;
@@ -1495,7 +1516,7 @@ namespace svgio
 
                     if(readSvgStringVector(aContent, aSvgStringVector))
                     {
-                        setFontFamily(aSvgStringVector);
+                        maFontFamily = aSvgStringVector;
                     }
                     break;
                 }
@@ -1549,7 +1570,7 @@ namespace svgio
 
                             if(readSingleNumber(aContent, aNum))
                             {
-                                setFontSizeNumber(aNum);
+                                maFontSizeNumber = aNum;
                             }
                         }
                     }
@@ -1788,7 +1809,7 @@ namespace svgio
 
                     if(readSvgPaint(aContent, aSvgPaint, aURL, bCaseIndependent, aOpacity))
                     {
-                        setColor(aSvgPaint);
+                        maColor = aSvgPaint;
                         if(aOpacity.isSet())
                         {
                             setOpacity(SvgNumber(basegfx::clamp(aOpacity.getNumber(), 0.0, 1.0)));
@@ -1831,12 +1852,12 @@ namespace svgio
                 }
                 case SVGTokenTitle:
                 {
-                    setTitle(aContent);
+                    maTitle = aContent;
                     break;
                 }
                 case SVGTokenDesc:
                 {
-                    setDesc(aContent);
+                    maDesc = aContent;
                     break;
                 }
                 case SVGTokenClipPathProperty:
@@ -1916,7 +1937,7 @@ namespace svgio
                         }
                         else if(readSingleNumber(aContent, aNum))
                         {
-                            setBaselineShiftNumber(aNum);
+                            maBaselineShiftNumber = aNum;
 
                             if(Unit_percent == aNum.getUnit())
                             {
@@ -1930,7 +1951,7 @@ namespace svgio
                         else
                         {
                             // no BaselineShift or inherit (which is automatically)
-                            setBaselineShift();
+                            setBaselineShift(BaselineShift_Baseline);
                         }
                     }
                     break;
@@ -2235,7 +2256,7 @@ namespace svgio
             {
                 return maStrokeDasharray;
             }
-            else if(getStrokeDasharraySet())
+            else if(mbStrokeDasharraySet)
             {
                 // #121221# is set to empty *by purpose*, do not visit parent styles
                 return maStrokeDasharray;
@@ -2656,24 +2677,7 @@ namespace svgio
 
         OUString SvgStyleAttributes::getClipPathXLink() const
         {
-            if(mbIsClipPathContent)
-            {
-                return maClipPathXLink;
-            }
-
-            if(!maClipPathXLink.isEmpty())
-            {
-                return maClipPathXLink;
-            }
-
-            const SvgStyleAttributes* pSvgStyleAttributes = getParentStyle();
-
-            if(pSvgStyleAttributes && !pSvgStyleAttributes->maClipPathXLink.isEmpty())
-            {
-                return pSvgStyleAttributes->getClipPathXLink();
-            }
-
-            return OUString();
+            return maClipPathXLink;
         }
 
         const SvgClipPathNode* SvgStyleAttributes::accessClipPathXLink() const

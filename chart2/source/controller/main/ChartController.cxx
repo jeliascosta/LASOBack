@@ -101,7 +101,6 @@ using ::com::sun::star::uno::Sequence;
 ChartController::ChartController(uno::Reference<uno::XComponentContext> const & xContext) :
     m_aLifeTimeManager( nullptr ),
     m_bSuspended( false ),
-    m_bCanClose( true ),
     m_xCC(xContext), //@todo is it allowed to hold this context??
     m_xFrame( nullptr ),
     m_aModelMutex(),
@@ -111,7 +110,7 @@ ChartController::ChartController(uno::Reference<uno::XComponentContext> const & 
     m_xChartView(),
     m_pDrawModelWrapper(),
     m_pDrawViewWrapper(nullptr),
-    m_eDragMode(SDRDRAG_MOVE),
+    m_eDragMode(SdrDragMode::Move),
     m_bWaitingForDoubleClick(false),
     m_bWaitingForMouseUp(false),
     m_bConnectingToView(false),
@@ -121,7 +120,7 @@ ChartController::ChartController(uno::Reference<uno::XComponentContext> const & 
     m_eDrawMode( CHARTDRAW_SELECT ),
     mpSelectionChangeHandler(new svx::sidebar::SelectionChangeHandler(
             [this]() { return this->GetContextName(); },
-                this, sfx2::sidebar::EnumContext::Context_Cell))
+                this, vcl::EnumContext::Context_Cell))
 {
     m_aDoubleClickTimer.SetTimeoutHdl( LINK( this, ChartController, DoubleClickWaitingHdl ) );
 }
@@ -142,11 +141,6 @@ ChartController::TheModel::TheModel( const uno::Reference< frame::XModel > & xMo
 
 ChartController::TheModel::~TheModel()
 {
-}
-
-void ChartController::TheModel::SetOwnership( bool bGetsOwnership )
-{
-    m_bOwnership                = bGetsOwnership;
 }
 
 void ChartController::TheModel::addListener( ChartController* pController )
@@ -317,8 +311,6 @@ OUString ChartController::GetContextName()
         return OUString("Chart");
 
     ObjectType eObjectID = ObjectIdentifier::getObjectType(aCID);
-
-    css::uno::Reference<css::chart2::XChartType> xChartType = getChartType(css::uno::Reference<css::chart2::XChartDocument>(getModel(), uno::UNO_QUERY));
     switch (eObjectID)
     {
         case OBJECTTYPE_DATA_SERIES:
@@ -333,9 +325,12 @@ OUString ChartController::GetContextName()
         case OBJECTTYPE_GRID:
             return OUString("Grid");
         case OBJECTTYPE_DIAGRAM:
-            if (xChartType.is() && xChartType->getChartType() == "com.sun.star.chart2.PieChartType")
-                return OUString("ChartElements");
-            break;
+            {
+                css::uno::Reference<css::chart2::XChartType> xChartType = getChartType(css::uno::Reference<css::chart2::XChartDocument>(getModel(), uno::UNO_QUERY));
+                if (xChartType.is() && xChartType->getChartType() == "com.sun.star.chart2.PieChartType")
+                    return OUString("ChartElements");
+                break;
+            }
         case OBJECTTYPE_DATA_CURVE:
         case OBJECTTYPE_DATA_AVERAGE_LINE:
             return OUString("Trendline");
@@ -366,11 +361,6 @@ bool ChartController::impl_isDisposedOrSuspended() const
 OUString SAL_CALL ChartController::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString ChartController::getImplementationName_Static()
-{
     return OUString(CHART_CONTROLLER_SERVICE_IMPLEMENTATION_NAME);
 }
 
@@ -383,16 +373,11 @@ sal_Bool SAL_CALL ChartController::supportsService( const OUString& rServiceName
 css::uno::Sequence< OUString > SAL_CALL ChartController::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
-}
-
-uno::Sequence< OUString > ChartController::getSupportedServiceNames_Static()
-{
-    uno::Sequence< OUString > aSNS( 2 );
-    aSNS.getArray()[ 0 ] = CHART_CONTROLLER_SERVICE_NAME;
-    aSNS.getArray()[ 1 ] = "com.sun.star.frame.Controller";
-    //// @todo : add additional services if you support any further
-    return aSNS;
+    return {
+        CHART_CONTROLLER_SERVICE_NAME,
+        "com.sun.star.frame.Controller"
+        //// @todo : add additional services if you support any further
+    };
 }
 
 namespace {
@@ -950,7 +935,7 @@ void SAL_CALL ChartController::removeEventListener(
 // util::XCloseListener
 void SAL_CALL ChartController::queryClosing(
     const lang::EventObject& rSource,
-    sal_Bool bGetsOwnership )
+    sal_Bool /*bGetsOwnership*/ )
         throw(util::CloseVetoException, uno::RuntimeException, std::exception)
 {
     //do not use the m_aControllerMutex here because this call is not allowed to block
@@ -966,19 +951,7 @@ void SAL_CALL ChartController::queryClosing(
         return;
     }
 
-    if( !m_bCanClose )//@todo try acquire mutex
-    {
-        if( bGetsOwnership )
-        {
-            aModelRef->SetOwnership( bGetsOwnership );
-        }
-
-        throw util::CloseVetoException();
-    }
-    else
-    {
-        //@ todo prepare to closing model -> don't start any further hindering actions
-    }
+    //@ todo prepare to closing model -> don't start any further hindering actions
 }
 
 void SAL_CALL ChartController::notifyClosing(
@@ -1066,7 +1039,7 @@ void SAL_CALL ChartController::layoutEvent(
 namespace
 {
 
-bool lcl_isFormatObjectCommand( const OString& aCommand )
+bool lcl_isFormatObjectCommand( const OUString& aCommand )
 {
     if(    aCommand == "MainTitle"
         || aCommand == "SubTitle"
@@ -1162,8 +1135,7 @@ void SAL_CALL ChartController::dispatch(
     const uno::Sequence< beans::PropertyValue >& rArgs )
         throw (uno::RuntimeException, std::exception)
 {
-    //@todo avoid OString
-    OString aCommand( OUStringToOString( rURL.Path, RTL_TEXTENCODING_ASCII_US ) );
+    OUString aCommand = rURL.Path;
 
     if(aCommand == "Paste")
         this->executeDispatch_Paste();
@@ -1398,7 +1370,7 @@ void ChartController::executeDispatch_SourceData()
     if( !xChartDoc.is())
         return;
 
-    UndoLiveUpdateGuard aUndoGuard = UndoLiveUpdateGuard(
+    UndoLiveUpdateGuard aUndoGuard(
         SCH_RESSTR(STR_ACTION_EDIT_DATA_RANGES), m_xUndoManager );
     if( xChartDoc.is())
     {
@@ -1423,7 +1395,7 @@ void ChartController::executeDispatch_MoveSeries( bool bForward )
 
     UndoGuardWithSelection aUndoGuard(
         ActionDescriptionProvider::createDescription(
-            (bForward ? ActionDescriptionProvider::MOVE_TOTOP : ActionDescriptionProvider::MOVE_TOBOTTOM),
+            (bForward ? ActionDescriptionProvider::ActionType::MoveToTop : ActionDescriptionProvider::ActionType::MoveToBottom),
             SCH_RESSTR(STR_OBJECT_DATASERIES)),
         m_xUndoManager );
 
@@ -1476,7 +1448,7 @@ void SAL_CALL ChartController::modified(
     //todo? update menu states ?
 }
 
-IMPL_LINK_TYPED( ChartController, NotifyUndoActionHdl, SdrUndoAction*, pUndoAction, void )
+IMPL_LINK( ChartController, NotifyUndoActionHdl, SdrUndoAction*, pUndoAction, void )
 {
     ENSURE_OR_RETURN_VOID( pUndoAction, "invalid Undo action" );
 

@@ -80,7 +80,7 @@ private:
             const css::uno::Reference< css::ucb::XCommandEnvironment >& xEnv );
 
     libcmis::Session* getSession( const css::uno::Reference< css::ucb::XCommandEnvironment >& xEnv );
-    libcmis::ObjectTypePtr getObjectType( const css::uno::Reference< css::ucb::XCommandEnvironment >& xEnv );
+    libcmis::ObjectTypePtr const & getObjectType( const css::uno::Reference< css::ucb::XCommandEnvironment >& xEnv );
 
 private:
     typedef rtl::Reference< Content > ContentRef;
@@ -128,7 +128,7 @@ public:
     Content( const css::uno::Reference< css::uno::XComponentContext >& rxContext,
         ContentProvider *pProvider,
         const css::uno::Reference< css::ucb::XContentIdentifier >& Identifier,
-        libcmis::ObjectPtr pObject = libcmis::ObjectPtr( ) )
+        libcmis::ObjectPtr const & pObject = libcmis::ObjectPtr( ) )
             throw ( css::ucb::ContentCreationException );
 
     Content( const css::uno::Reference< css::uno::XComponentContext >& rxContext,
@@ -137,7 +137,7 @@ public:
         bool bIsFolder)
             throw ( css::ucb::ContentCreationException );
 
-    virtual ~Content();
+    virtual ~Content() override;
 
     virtual css::uno::Sequence< css::beans::Property >
         getProperties( const css::uno::Reference< css::ucb::XCommandEnvironment > & xEnv ) override;
@@ -199,7 +199,7 @@ public:
 
     virtual std::list< css::uno::Reference< css::ucb::XContent > > getChildren( ) override;
 
-    libcmis::ObjectPtr getObject( const css::uno::Reference< css::ucb::XCommandEnvironment >& xEnv ) throw (css::uno::RuntimeException, css::ucb::CommandFailedException, libcmis::Exception);
+    libcmis::ObjectPtr const & getObject( const css::uno::Reference< css::ucb::XCommandEnvironment >& xEnv ) throw (css::uno::RuntimeException, css::ucb::CommandFailedException, libcmis::Exception);
 };
 
 }

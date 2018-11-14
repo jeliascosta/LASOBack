@@ -34,10 +34,9 @@ namespace vcl { class Window; }
 
 struct ImplToolItem
 {
-    VclPtr<vcl::Window> mpWindow;
+    VclPtr<vcl::Window> mpWindow; //don't dispose mpWindow - we get copied around
     void*               mpUserData;
     Image               maImage;
-    Image               maImageOriginal;
     long                mnImageAngle;
     bool                mbMirrorMode;
     OUString            maText;
@@ -75,10 +74,6 @@ struct ImplToolItem
                         ImplToolItem( sal_uInt16 nItemId, const Image& rImage,
                                       const OUString& rTxt,
                                       ToolBoxItemBits nItemBits );
-                        ~ImplToolItem();
-
-    ImplToolItem( const ImplToolItem& );
-    ImplToolItem& operator=(const ImplToolItem&);
 
     // returns the size of a item, taking toolbox orientation into account
     // the default size is the precomputed size for standard items
@@ -110,7 +105,6 @@ namespace vcl
 struct ToolBoxLayoutData : public ControlLayoutData
 {
     std::vector< sal_uInt16 >               m_aLineItemIds;
-    std::vector< sal_uInt16 >               m_aLineItemPositions;
 };
 
 } /* namespace vcl */
@@ -123,7 +117,7 @@ struct ImplToolBoxPrivateData
     ImplToolBoxPrivateData();
     ~ImplToolBoxPrivateData();
 
-    void ImplClearLayoutData() { delete m_pLayoutData; m_pLayoutData = NULL; }
+    void ImplClearLayoutData() { delete m_pLayoutData; m_pLayoutData = nullptr; }
 
     // called when dropdown items are clicked
     Link<ToolBox *, void> maDropdownClickHdl;
@@ -133,7 +127,7 @@ struct ImplToolBoxPrivateData
     ToolBoxButtonSize   meButtonSize;
 
     // the optional custom menu
-    PopupMenu*      mpMenu;
+    VclPtr<PopupMenu>   mpMenu;
     ToolBoxMenuType maMenuType;
     ImplSVEvent *   mnEventId;
 

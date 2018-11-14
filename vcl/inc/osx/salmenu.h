@@ -53,7 +53,7 @@ private:
     static void statusLayout();
 public:
     AquaSalMenu( bool bMenuBar );
-    virtual ~AquaSalMenu();
+    virtual ~AquaSalMenu() override;
 
     virtual bool VisibleMenuBar() override;
     // must return true to actually display native menu bars
@@ -88,7 +88,7 @@ public:
 
     bool                    mbMenuBar;          // true - Menubar, false - Menu
     NSMenu*                 mpMenu;             // The Carbon reference to this menu
-    Menu*                   mpVCLMenu;          // the corresponding vcl Menu object
+    VclPtr<Menu>            mpVCLMenu;          // the corresponding vcl Menu object
     const AquaSalFrame*     mpFrame;            // the frame to dispatch the menu events to
     AquaSalMenu*            mpParentSalMenu;    // the parent menu that contains us (and perhaps has a frame)
 
@@ -100,10 +100,10 @@ class AquaSalMenuItem : public SalMenuItem
 {
 public:
     AquaSalMenuItem( const SalItemParams* );
-    virtual ~AquaSalMenuItem();
+    virtual ~AquaSalMenuItem() override;
 
     sal_uInt16          mnId;                 // Item ID
-    Menu*               mpVCLMenu;            // VCL Menu into which this MenuItem is inserted
+    VclPtr<Menu>        mpVCLMenu;            // VCL Menu into which this MenuItem is inserted
     AquaSalMenu*        mpParentMenu;         // The menu in which this menu item is inserted
     AquaSalMenu*        mpSubMenu;            // Sub menu of this item (if defined)
     NSMenuItem*         mpMenuItem;           // The NSMenuItem

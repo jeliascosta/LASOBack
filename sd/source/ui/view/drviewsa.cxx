@@ -20,7 +20,6 @@
 #include "DrawViewShell.hxx"
 #include <com/sun/star/scanner/ScannerManager.hpp>
 #include <cppuhelper/implbase.hxx>
-#include <comphelper/lok.hxx>
 #include <comphelper/processfactory.hxx>
 #include <editeng/sizeitem.hxx>
 #include <svx/svdlayer.hxx>
@@ -73,7 +72,7 @@
 
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
-using sfx2::sidebar::EnumContext;
+using vcl::EnumContext;
 
 namespace sd {
 
@@ -89,7 +88,7 @@ private:
 public:
 
                             explicit ScannerEventListener( DrawViewShell* pParent ) : mpParent( pParent )  {}
-                            virtual ~ScannerEventListener();
+                            virtual ~ScannerEventListener() override;
 
     // XEventListener
     virtual void SAL_CALL   disposing( const lang::EventObject& rEventObject ) throw (uno::RuntimeException, std::exception) override;
@@ -115,7 +114,7 @@ DrawViewShell::DrawViewShell( SfxViewFrame* pFrame, ViewShellBase& rViewShellBas
     , mpSelectionChangeHandler(new svx::sidebar::SelectionChangeHandler(
           [this] () { return this->GetSidebarContextName(); },
           uno::Reference<frame::XController>(&rViewShellBase.GetDrawController()),
-          sfx2::sidebar::EnumContext::Context_Default))
+          vcl::EnumContext::Context_Default))
 {
     if (pFrameViewArgument != nullptr)
         mpFrameView = pFrameViewArgument;
@@ -128,10 +127,15 @@ DrawViewShell::DrawViewShell( SfxViewFrame* pFrame, ViewShellBase& rViewShellBas
     SetContextName(GetSidebarContextName());
 
     doShow();
+
+    ConfigureAppBackgroundColor();
+    SD_MOD()->GetColorConfig().AddListener(this);
 }
 
 DrawViewShell::~DrawViewShell()
 {
+    SD_MOD()->GetColorConfig().RemoveListener(this);
+
     mpSelectionChangeHandler->Disconnect();
 
     mpAnnotationManager.reset();
@@ -177,11 +181,11 @@ DrawViewShell::~DrawViewShell()
         }
     }
 
-    if ( mpClipEvtLstnr )
+    if ( mxClipEvtLstnr.is() )
     {
-        mpClipEvtLstnr->AddRemoveListener( GetActiveWindow(), false );
-        mpClipEvtLstnr->ClearCallbackLink();        // prevent callback if another thread is waiting
-        mpClipEvtLstnr->release();
+        mxClipEvtLstnr->RemoveListener( GetActiveWindow() );
+        mxClipEvtLstnr->ClearCallbackLink();        // prevent callback if another thread is waiting
+        mxClipEvtLstnr.clear();
     }
 
     delete mpDrawView;
@@ -201,14 +205,9 @@ void DrawViewShell::Construct(DrawDocShell* pDocSh, PageKind eInitialPageKind)
     mpActualPage = nullptr;
     mbMousePosFreezed = false;
     mbReadOnly = GetDocSh()->IsReadOnly();
-    mpClipEvtLstnr = nullptr;
+    mxClipEvtLstnr.clear();
     mbPastePossible = false;
     mbIsLayerModeActive = false;
-
-    svtools::ColorConfig aColorConfig;
-    mnAppBackgroundColor = Color( aColorConfig.GetColorValue( svtools::APPBACKGROUND ).nColor );
-    if (comphelper::LibreOfficeKit::isActive())
-        mnAppBackgroundColor = COL_TRANSPARENT;
 
     mpFrameView->Connect();
 
@@ -226,19 +225,19 @@ void DrawViewShell::Construct(DrawDocShell* pDocSh, PageKind eInitialPageKind)
     // to set it in order to resync frame view and this view.
     mpFrameView->SetPageKind(eInitialPageKind);
     mePageKind = eInitialPageKind;
-    meEditMode = EM_PAGE;
+    meEditMode = EditMode::Page;
     DocumentType eDocType = GetDoc()->GetDocumentType(); // RTTI does not work here
     switch (mePageKind)
     {
-        case PK_STANDARD:
+        case PageKind::Standard:
             meShellType = ST_IMPRESS;
             break;
 
-        case PK_NOTES:
+        case PageKind::Notes:
             meShellType = ST_NOTES;
             break;
 
-        case PK_HANDOUT:
+        case PageKind::Handout:
             meShellType = ST_HANDOUT;
             break;
     }
@@ -265,26 +264,26 @@ void DrawViewShell::Construct(DrawDocShell* pDocSh, PageKind eInitialPageKind)
 
     /* In order to set the correct EditMode of the FrameView, we select another
        one (small trick).  */
-    if (mpFrameView->GetViewShEditMode(/*mePageKind*/) == EM_PAGE)
+    if (mpFrameView->GetViewShEditMode(/*mePageKind*/) == EditMode::Page)
     {
-        meEditMode = EM_MASTERPAGE;
+        meEditMode = EditMode::MasterPage;
     }
     else
     {
-        meEditMode = EM_PAGE;
+        meEditMode = EditMode::Page;
     }
 
     // Use configuration of FrameView
     ReadFrameViewData(mpFrameView);
 
-    if( eDocType == DOCUMENT_TYPE_DRAW )
+    if( eDocType == DocumentType::Draw )
     {
         SetHelpId( SD_IF_SDGRAPHICVIEWSHELL );
         GetActiveWindow()->SetHelpId( HID_SDGRAPHICVIEWSHELL );
     }
     else
     {
-        if (mePageKind == PK_NOTES)
+        if (mePageKind == PageKind::Notes)
         {
             SetHelpId( SID_NOTES_MODE );
             GetActiveWindow()->SetHelpId( CMD_SID_NOTES_MODE );
@@ -292,7 +291,7 @@ void DrawViewShell::Construct(DrawDocShell* pDocSh, PageKind eInitialPageKind)
             // AutoLayouts have to be created
             GetDoc()->StopWorkStartupDelay();
         }
-        else if (mePageKind == PK_HANDOUT)
+        else if (mePageKind == PageKind::Handout)
         {
             SetHelpId( SID_HANDOUT_MASTER_MODE );
             GetActiveWindow()->SetHelpId( CMD_SID_HANDOUT_MASTER_MODE );
@@ -362,7 +361,7 @@ void DrawViewShell::Shutdown()
     if(SlideShow::IsRunning( GetViewShellBase() ) )
     {
         // Turn off effects.
-        GetDrawView()->SetAnimationMode(SDR_ANIMATION_DISABLE);
+        GetDrawView()->SetAnimationMode(SdrAnimationMode::Disable);
     }
 }
 
@@ -456,9 +455,9 @@ void DrawViewShell::SetupPage (Size &rSize,
                 pPage->SetLwrBorder(nLower);
             }
 
-            if ( mePageKind == PK_STANDARD )
+            if ( mePageKind == PageKind::Standard )
             {
-                GetDoc()->GetMasterSdPage(i, PK_NOTES)->CreateTitleAndLayout();
+                GetDoc()->GetMasterSdPage(i, PageKind::Notes)->CreateTitleAndLayout();
             }
 
             pPage->CreateTitleAndLayout();
@@ -488,9 +487,9 @@ void DrawViewShell::SetupPage (Size &rSize,
                 pPage->SetLwrBorder(nLower);
             }
 
-            if ( mePageKind == PK_STANDARD )
+            if ( mePageKind == PageKind::Standard )
             {
-                SdPage* pNotesPage = GetDoc()->GetSdPage(i, PK_NOTES);
+                SdPage* pNotesPage = GetDoc()->GetSdPage(i, PageKind::Notes);
                 pNotesPage->SetAutoLayout( pNotesPage->GetAutoLayout() );
             }
 
@@ -498,9 +497,9 @@ void DrawViewShell::SetupPage (Size &rSize,
         }
     }
 
-    if ( mePageKind == PK_STANDARD )
+    if ( mePageKind == PageKind::Standard )
     {
-        SdPage* pHandoutPage = GetDoc()->GetSdPage(0, PK_HANDOUT);
+        SdPage* pHandoutPage = GetDoc()->GetSdPage(0, PageKind::Handout);
         pHandoutPage->CreateTitleAndLayout(true);
     }
 
@@ -729,8 +728,7 @@ void DrawViewShell::GetStatusBarState(SfxItemSet& rSet)
 
 void DrawViewShell::Notify (SfxBroadcaster&, const SfxHint& rHint)
 {
-    const SfxSimpleHint* pSimple = dynamic_cast< const SfxSimpleHint* >(&rHint);
-    if (pSimple!=nullptr && pSimple->GetId()==SFX_HINT_MODECHANGED)
+    if (rHint.GetId()==SFX_HINT_MODECHANGED)
     {
         // Change to selection when turning on read-only mode.
         if(GetDocSh()->IsReadOnly() && dynamic_cast< FuSelection* >( GetCurrentFunction().get() ) )
@@ -766,20 +764,20 @@ void DrawViewShell::GetAnnotationState (SfxItemSet& rItemSet )
 
 ::rtl::OUString DrawViewShell::GetSidebarContextName() const
 {
-    svx::sidebar::SelectionAnalyzer::ViewType eViewType (svx::sidebar::SelectionAnalyzer::VT_Standard);
+    svx::sidebar::SelectionAnalyzer::ViewType eViewType (svx::sidebar::SelectionAnalyzer::ViewType::Standard);
     switch (mePageKind)
     {
-        case PK_HANDOUT:
-            eViewType = svx::sidebar::SelectionAnalyzer::VT_Handout;
+        case PageKind::Handout:
+            eViewType = svx::sidebar::SelectionAnalyzer::ViewType::Handout;
             break;
-        case PK_NOTES:
-            eViewType = svx::sidebar::SelectionAnalyzer::VT_Notes;
+        case PageKind::Notes:
+            eViewType = svx::sidebar::SelectionAnalyzer::ViewType::Notes;
             break;
-        case PK_STANDARD:
-            if (meEditMode == EM_MASTERPAGE)
-                eViewType = svx::sidebar::SelectionAnalyzer::VT_Master;
+        case PageKind::Standard:
+            if (meEditMode == EditMode::MasterPage)
+                eViewType = svx::sidebar::SelectionAnalyzer::ViewType::Master;
             else
-                eViewType = svx::sidebar::SelectionAnalyzer::VT_Standard;
+                eViewType = svx::sidebar::SelectionAnalyzer::ViewType::Standard;
             break;
     }
     return EnumContext::GetContextName(

@@ -4,7 +4,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
 "POT-Creation-Date: 2016-12-27 21:51+0100\n"
-"PO-Revision-Date: 2017-03-06 16:13+0000\n"
+"PO-Revision-Date: 2017-10-07 23:09+0000\n"
 "Last-Translator: Adolfo Jayme Barrientos <fito@libreoffice.org>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: es\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Accelerator-Marker: ~\n"
 "X-Generator: Pootle 2.8\n"
-"X-POOTLE-MTIME: 1488816816.000000\n"
+"X-POOTLE-MTIME: 1507417776.000000\n"
 
 #: BaseWindowState.xcu
 msgctxt ""
@@ -6809,7 +6809,7 @@ msgctxt ""
 "TooltipLabel\n"
 "value.text"
 msgid "Show Glue Points Functions"
-msgstr ""
+msgstr "Mostrar funciones de puntos de adhesión"
 
 #: DrawImpressCommands.xcu
 msgctxt ""
@@ -7106,7 +7106,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "Duplicate ~Slide"
-msgstr "Duplicar ~diapositiva"
+msgstr "~Duplicar diapositiva"
 
 #: DrawImpressCommands.xcu
 msgctxt ""
@@ -7538,7 +7538,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "New Slid~e"
-msgstr "~Diapositiva nueva"
+msgstr "Diapositiva ~nueva"
 
 #: DrawImpressCommands.xcu
 msgctxt ""
@@ -17899,7 +17899,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "Hangul/Hanja Conversion..."
-msgstr "Conversión hangul / hanja…"
+msgstr "Conversión hangul/hanja…"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -19573,7 +19573,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "~AutoCorrect Options..."
-msgstr "Opciones de ~autocorrección..."
+msgstr "~Opciones de corrección automática…"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -21103,7 +21103,7 @@ msgctxt ""
 "ContextLabel\n"
 "value.text"
 msgid "~E-mail Document..."
-msgstr "Documento de correo electrónico…"
+msgstr "Enviar documento por correo…"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -22255,7 +22255,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "Non-br~eaking hyphen"
-msgstr "Guion de no ~separación"
+msgstr "Guion indivisible"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -22264,7 +22264,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "S~oft hyphen"
-msgstr "Guion de separación"
+msgstr "Guion discrecional"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -22273,7 +22273,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "~Non-breaking space"
-msgstr "~Espacio de no separación"
+msgstr "~Espacio indivisible"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -22381,7 +22381,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "%PRODUCTNAME Basic Macro Organizer..."
-msgstr "Organizador de macros de %PRODUCTNAME Basic..."
+msgstr "Organizador de macros de %PRODUCTNAME Basic…"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -26170,7 +26170,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "Links Active"
-msgstr ""
+msgstr "Enlaces activos"
 
 #: WriterCommands.xcu
 msgctxt ""
@@ -27268,7 +27268,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "To End of Line"
-msgstr "Ir al final de la línea"
+msgstr "Ir al final del renglón"
 
 #: WriterCommands.xcu
 msgctxt ""
@@ -28312,7 +28312,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "~Break Across Pages"
-msgstr "Dividir páginas horizontalmente"
+msgstr "Dividir entre páginas"
 
 #: WriterCommands.xcu
 msgctxt ""
@@ -29158,7 +29158,7 @@ msgctxt ""
 "Label\n"
 "value.text"
 msgid "~Strong Emphasis"
-msgstr "Muy destacado"
+msgstr "Destaque mayor"
 
 #: WriterCommands.xcu
 msgctxt ""

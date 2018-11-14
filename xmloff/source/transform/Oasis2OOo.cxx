@@ -1150,7 +1150,7 @@ public:
     XMLTableTransformerContext_Impl( XMLTransformerBase& rTransformer,
                            const OUString& rQName );
 
-    virtual ~XMLTableTransformerContext_Impl();
+    virtual ~XMLTableTransformerContext_Impl() override;
 
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
     virtual void EndElement() override;
@@ -1248,7 +1248,7 @@ public:
     XMLBodyOASISTransformerContext_Impl( XMLTransformerBase& rTransformer,
                            const OUString& rQName );
 
-    virtual ~XMLBodyOASISTransformerContext_Impl();
+    virtual ~XMLBodyOASISTransformerContext_Impl() override;
 
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
 
@@ -1304,7 +1304,7 @@ public:
     XMLTabStopOASISTContext_Impl( XMLTransformerBase& rTransformer,
                            const OUString& rQName );
 
-    virtual ~XMLTabStopOASISTContext_Impl();
+    virtual ~XMLTabStopOASISTContext_Impl() override;
 
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
 };
@@ -1434,7 +1434,7 @@ public:
     XMLConfigItemTContext_Impl( XMLTransformerBase& rTransformer,
                            const OUString& rQName );
 
-    virtual ~XMLConfigItemTContext_Impl();
+    virtual ~XMLConfigItemTContext_Impl() override;
 
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
     virtual void EndElement() override;
@@ -1515,8 +1515,7 @@ void XMLConfigItemTContext_Impl::EndElement()
             GetTransformer().GetPropertySet();
         if( rPropSet.is() )
         {
-            const sal_Char sRedlineProtectionKey[] = "RedlineProtectionKey";
-            OUString aPropName(sRedlineProtectionKey);
+            OUString aPropName("RedlineProtectionKey");
             Reference< XPropertySetInfo > xPropSetInfo(
                         rPropSet->getPropertySetInfo() );
             if( xPropSetInfo.is() &&
@@ -1542,7 +1541,7 @@ public:
                                sal_uInt16 nPrefix,
                             XMLTokenEnum eToken );
 
-    virtual ~XMLTrackedChangesOASISTContext_Impl();
+    virtual ~XMLTrackedChangesOASISTContext_Impl() override;
 
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
 };
@@ -1570,8 +1569,7 @@ void XMLTrackedChangesOASISTContext_Impl::StartElement(
         GetTransformer().GetPropertySet();
     if( rPropSet.is() )
     {
-        const sal_Char sRedlineProtectionKey[] = "RedlineProtectionKey";
-        OUString aPropName(sRedlineProtectionKey);
+        OUString aPropName("RedlineProtectionKey");
         Reference< XPropertySetInfo > xPropSetInfo(
                     rPropSet->getPropertySetInfo() );
         if( xPropSetInfo.is() &&
@@ -1954,18 +1952,13 @@ namespace
     class theOasis2OOoTransformerUnoTunnelId : public rtl::Static< UnoTunnelIdInit, theOasis2OOoTransformerUnoTunnelId> {};
 }
 
-const Sequence< sal_Int8 > & Oasis2OOoTransformer::getUnoTunnelId() throw()
-{
-    return theOasis2OOoTransformerUnoTunnelId::get().getSeq();
-}
-
 // XUnoTunnel
 sal_Int64 SAL_CALL Oasis2OOoTransformer::getSomething( const Sequence< sal_Int8 >& rId )
     throw(RuntimeException, std::exception)
 {
     if( rId.getLength() == 16
-        && 0 == memcmp( getUnoTunnelId().getConstArray(),
-                                        rId.getConstArray(), 16 ) )
+        && 0 == memcmp( theOasis2OOoTransformerUnoTunnelId::get().getSeq().getConstArray(),
+                        rId.getConstArray(), 16 ) )
     {
         return reinterpret_cast< sal_Int64 >( this );
     }

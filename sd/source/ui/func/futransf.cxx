@@ -63,7 +63,7 @@ void FuTransform::DoExecute( SfxRequest& rReq )
             const SdrMarkList& rMarkList = mpView->GetMarkedObjectList();
             SdrObject* pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();
             if( rMarkList.GetMarkCount() == 1 &&
-                pObj->GetObjInventor() == SdrInventor &&
+                pObj->GetObjInventor() == SdrInventor::Default &&
                 pObj->GetObjIdentifier() == OBJ_CAPTION )
             {
                 // --------- itemset for caption --------
@@ -73,7 +73,7 @@ void FuTransform::DoExecute( SfxRequest& rReq )
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                 if ( pFact )
                 {
-                    std::unique_ptr< SfxAbstractTabDialog > pDlg( pFact->CreateCaptionDialog( nullptr, mpView ) );
+                    ScopedVclPtr< SfxAbstractTabDialog > pDlg( pFact->CreateCaptionDialog( nullptr, mpView ) );
 
                     const sal_uInt16* pRange = pDlg->GetInputRanges( *aNewAttr.GetPool() );
                     SfxItemSet aCombSet( *aNewAttr.GetPool(), pRange );
@@ -93,7 +93,7 @@ void FuTransform::DoExecute( SfxRequest& rReq )
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                 if(pFact)
                 {
-                    std::unique_ptr< SfxAbstractTabDialog > pDlg( pFact->CreateSvxTransformTabDialog( nullptr, &aSet, mpView ) );
+                    ScopedVclPtr< SfxAbstractTabDialog > pDlg( pFact->CreateSvxTransformTabDialog( nullptr, &aSet, mpView ) );
                     if( pDlg.get() && (pDlg->Execute() == RET_OK) )
                     {
                         rReq.Done( *( pDlg->GetOutputItemSet() ) );

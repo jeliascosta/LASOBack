@@ -267,7 +267,7 @@ class ODatabaseDocument :public ModelDependentComponent             // ModelDepe
     // ModelDependentComponent overridables
     virtual css::uno::Reference< css::uno::XInterface > getThis() const override;
 
-    css::uno::Reference< css::frame::XTitle >             impl_getTitleHelper_throw();
+    css::uno::Reference< css::frame::XTitle > const &     impl_getTitleHelper_throw();
     css::uno::Reference< css::frame::XUntitledNumbers >   impl_getUntitledHelper_throw(
         const css::uno::Reference< css::uno::XInterface >& _xComponent = css::uno::Reference< css::uno::XInterface >());
 
@@ -281,7 +281,7 @@ private:
 protected:
     virtual void SAL_CALL disposing() override;
 
-    virtual ~ODatabaseDocument();
+    virtual ~ODatabaseDocument() override;
 
 public:
     struct FactoryAccess { friend class ODatabaseModelImpl; private: FactoryAccess() { } };
@@ -466,7 +466,7 @@ public:
     }
 
 private:
-    css::uno::Reference< css::ui::XUIConfigurationManager2 > getUIConfigurationManager2() throw (css::uno::RuntimeException);
+    css::uno::Reference< css::ui::XUIConfigurationManager2 > const & getUIConfigurationManager2() throw (css::uno::RuntimeException);
 
     /** returns whether the model is currently being initialized
     */
@@ -488,7 +488,7 @@ private:
         determines if the ownership should be transferred to the component which
         possibly vetos the closing
 
-    @raises css::util::CloseVetoException
+    @throws css::util::CloseVetoException
         if the closing was vetoed by any instance
     */
     void    impl_closeControllerFrames_nolck_throw( bool _bDeliverOwnership );
@@ -506,9 +506,9 @@ private:
 
     /** retrieves the forms or reports contained, creates and initializes it, if necessary
 
-        @raises DisposedException
+        @throws DisposedException
             if the instance is already disposed
-        @raises IllegalArgumentException
+        @throws IllegalArgumentException
             if <arg>_eType</arg> is not ODatabaseModelImpl::E_FORM and not ODatabaseModelImpl::E_REPORT
     */
     css::uno::Reference< css::container::XNameAccess >

@@ -31,7 +31,6 @@ SbiScanner::SbiScanner( const OUString& rBuf, StarBASIC* p ) : aBuf( rBuf )
     eScanType = SbxVARIANT;
     nErrors  = 0;
     nBufPos  = 0;
-    nCurCol1 = 0;
     nSavedCol1 = 0;
     nColLock = 0;
     nLine    = 0;
@@ -422,7 +421,7 @@ bool SbiScanner::NextSym()
     }
 
     // Hex/octal number? Read in and convert:
-    else if(nCol < aLine.getLength() && aLine[nCol] == '&')
+    else if(aLine.getLength() - nCol > 1 && aLine[nCol] == '&')
     {
         ++pLine; ++nCol;
         sal_Unicode base = 16;
@@ -570,7 +569,7 @@ eoln:
     {
         pLine = nullptr;
         bool bRes = NextSym();
-        if( bVBASupportOn && aSym[0] == '.' )
+        if( bVBASupportOn && aSym.startsWith(".") )
         {
             // object _
             //    .Method

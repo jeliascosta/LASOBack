@@ -393,10 +393,6 @@ Resource RID_GLOBSTR
     {
         Text [ en-US ] = "The query '#' could not be opened." ;
     };
-    String STR_DATABASE_ABORTED
-    {
-        Text [ en-US ] = "Database import terminated." ;
-    };
     String STR_PROGRESS_IMPORT
     {
         Text [ en-US ] = "# records imported..." ;
@@ -537,50 +533,6 @@ Resource RID_GLOBSTR
     {
         Text [ en-US ] = "Group" ;
     };
-    String STR_PIVOTFUNC_SUM
-    {
-        Text [ en-US ] = "SUM" ;
-    };
-    String STR_PIVOTFUNC_COUNT
-    {
-        Text [ en-US ] = "COUNT" ;
-    };
-    String STR_PIVOTFUNC_AVG
-    {
-        Text [ en-US ] = "AVERAGE" ;
-    };
-    String STR_PIVOTFUNC_MAX
-    {
-        Text [ en-US ] = "MAX" ;
-    };
-    String STR_PIVOTFUNC_MIN
-    {
-        Text [ en-US ] = "MIN" ;
-    };
-    String STR_PIVOTFUNC_PROD
-    {
-        Text [ en-US ] = "PRODUCT" ;
-    };
-    String STR_PIVOTFUNC_COUNT2
-    {
-        Text [ en-US ] = "COUNTA" ;
-    };
-    String STR_PIVOTFUNC_STDDEV
-    {
-        Text [ en-US ] = "STDEV" ;
-    };
-    String STR_PIVOTFUNC_STDDEV2
-    {
-        Text [ en-US ] = "STDEVP" ;
-    };
-    String STR_PIVOTFUNC_VAR
-    {
-        Text [ en-US ] = "VAR" ;
-    };
-    String STR_PIVOTFUNC_VAR2
-    {
-        Text [ en-US ] = "VARP" ;
-    };
     String STR_TABLE
     {
         Text [ en-US ] = "Sheet" ;
@@ -705,6 +657,10 @@ Resource RID_GLOBSTR
     String STR_FUN_TEXT_AVG
     {
         Text [ en-US ] = "Average" ;
+    };
+    String STR_FUN_TEXT_MEDIAN
+    {
+        Text [ en-US ] = "Median" ;
     };
     String STR_FUN_TEXT_MAX
     {
@@ -1968,6 +1924,10 @@ Resource RID_GLOBSTR
     {
         Text [ en-US ] = "next year";
     };
+    String STR_COND_AND
+    {
+        Text [ en-US ] = "and";
+    };
     String STR_ERR_CONDFORMAT_PROTECTED
     {
         Text [ en-US ] = "Conditional Formats can not be created, deleted or changed in protected sheets!";
@@ -2108,6 +2068,46 @@ Resource RID_GLOBSTR
     String STR_FUNCTIONS_FOUND
     {
         Text [ en-US ] = "%1 and %2 more";
+    };
+    String STR_GENERAL
+    {
+        Text [ en-US ] = "General";
+    };
+    String STR_NUMBER
+    {
+        Text [ en-US ] = "Number";
+    };
+    String STR_PERCENT
+    {
+        Text [ en-US ] = "Percent";
+    };
+    String STR_CURRENCY
+    {
+        Text [ en-US ] = "Currency";
+    };
+    String STR_DATE
+    {
+        Text [ en-US ] = "Date";
+    };
+    String STR_TIME
+    {
+        Text [ en-US ] = "Time";
+    };
+    String STR_SCIENTIFIC
+    {
+        Text [ en-US ] = "Scientific";
+    };
+    String STR_FRACTION
+    {
+        Text [ en-US ] = "Fraction";
+    };
+    String STR_BOOLEAN_VALUE
+    {
+        Text [ en-US ] = "Boolean Value";
+    };
+    String STR_TEXT
+    {
+        Text [ en-US ] = "Text";
     };
 };
 

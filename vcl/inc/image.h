@@ -45,15 +45,13 @@ struct ImageAryData
 
 struct ImplImageList
 {
-    typedef std::vector<ImageAryData *> ImageAryDataVec;
     typedef std::unordered_map< OUString, ImageAryData *, OUStringHash >
         ImageAryDataNameHash;
 
-    ImageAryDataVec        maImages;
+    std::vector<ImageAryData *>        maImages;
     ImageAryDataNameHash   maNameHash;
     OUString               maPrefix;
     Size                   maImageSize;
-    sal_uIntPtr            mnRefCount;
 
     ImplImageList();
     ImplImageList( const ImplImageList &aSrc );
@@ -66,8 +64,6 @@ struct ImplImageList
 
 struct ImplImage
 {
-    sal_uIntPtr mnRefCount;
-
     BitmapChecksum maBitmapChecksum;
 
     std::unique_ptr<BitmapEx> mpBitmapEx;

@@ -81,7 +81,7 @@ public:
   AquaClipboard(NSPasteboard* pasteboard = nullptr,
                 bool bUseSystemClipboard = true);
 
-  virtual ~AquaClipboard();
+  virtual ~AquaClipboard() override;
   AquaClipboard(const AquaClipboard&) = delete;
   AquaClipboard& operator=(const AquaClipboard&) = delete;
 
@@ -131,8 +131,8 @@ public:
 
   /* Notify the current clipboard owner that he is no longer the clipboard owner.
    */
-  void fireLostClipboardOwnershipEvent(css::uno::Reference< css::datatransfer::clipboard::XClipboardOwner> oldOwner,
-                                       css::uno::Reference< css::datatransfer::XTransferable > oldContent);
+  void fireLostClipboardOwnershipEvent(css::uno::Reference< css::datatransfer::clipboard::XClipboardOwner> const & oldOwner,
+                                       css::uno::Reference< css::datatransfer::XTransferable > const & oldContent);
 
   void pasteboardChangedOwner();
 

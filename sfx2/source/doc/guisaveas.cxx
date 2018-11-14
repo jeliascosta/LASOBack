@@ -116,7 +116,6 @@
 const char aFilterNameString[] = "FilterName";
 const char aFilterOptionsString[] = "FilterOptions";
 const char aFilterDataString[] = "FilterData";
-const char aFilterFlagsString[] = "FilterFlags";
 
 using namespace ::com::sun::star;
 using namespace css::system;
@@ -140,7 +139,7 @@ sal_uInt16 getSlotIDFromMode( sal_Int8 nStoreMode )
     else if ( nStoreMode == SAVEASREMOTE_REQUESTED )
         nResult = SID_SAVEASREMOTE;
     else {
-        DBG_ASSERT( false, "Unacceptable slot name is provided!\n" );
+        SAL_WARN( "sfx", "Unacceptable slot name is provided!\n" );
     }
 
     return nResult;
@@ -275,9 +274,9 @@ public:
 
     void FreeDocumentProps();
 
-    uno::Reference< frame::XModel > GetModel();
-    uno::Reference< frame::XStorable > GetStorable();
-    uno::Reference< frame::XStorable2 > GetStorable2();
+    uno::Reference< frame::XModel > const & GetModel();
+    uno::Reference< frame::XStorable > const & GetStorable();
+    uno::Reference< frame::XStorable2 > const & GetStorable2();
 
     ::comphelper::SequenceAsHashMap& GetMediaDescr() { return m_aMediaDescrHM; }
 
@@ -285,7 +284,7 @@ public:
 
     const ::comphelper::SequenceAsHashMap& GetDocProps();
 
-    OUString GetModuleName();
+    OUString const & GetModuleName();
     const ::comphelper::SequenceAsHashMap& GetModuleProps();
 
     void CheckInteractionHandler();
@@ -382,7 +381,7 @@ void ModelData_Impl::FreeDocumentProps()
 }
 
 
-uno::Reference< frame::XModel > ModelData_Impl::GetModel()
+uno::Reference< frame::XModel > const & ModelData_Impl::GetModel()
 {
     if ( !m_xModel.is() )
         throw uno::RuntimeException();
@@ -391,7 +390,7 @@ uno::Reference< frame::XModel > ModelData_Impl::GetModel()
 }
 
 
-uno::Reference< frame::XStorable > ModelData_Impl::GetStorable()
+uno::Reference< frame::XStorable > const & ModelData_Impl::GetStorable()
 {
     if ( !m_xStorable.is() )
     {
@@ -404,7 +403,7 @@ uno::Reference< frame::XStorable > ModelData_Impl::GetStorable()
 }
 
 
-uno::Reference< frame::XStorable2 > ModelData_Impl::GetStorable2()
+uno::Reference< frame::XStorable2 > const & ModelData_Impl::GetStorable2()
 {
     if ( !m_xStorable2.is() )
     {
@@ -426,7 +425,7 @@ const ::comphelper::SequenceAsHashMap& ModelData_Impl::GetDocProps()
 }
 
 
-OUString ModelData_Impl::GetModuleName()
+OUString const & ModelData_Impl::GetModuleName()
 {
     if ( m_aModuleName.isEmpty() )
     {
@@ -654,7 +653,7 @@ sal_Int8 ModelData_Impl::CheckSaveAcceptable( sal_Int8 nCurStatus )
             // notify the user that SaveAs is going to be done
             vcl::Window* pWin = SfxStoringHelper::GetModelWindow( m_xModel );
             ScopedVclPtrInstance<MessageDialog> aMessageBox(pWin, SfxResId(STR_NEW_FILENAME_SAVE),
-                                      VCL_MESSAGE_QUESTION, VCL_BUTTONS_OK_CANCEL);
+                                      VclMessageType::Question, VCL_BUTTONS_OK_CANCEL);
             if ( aMessageBox->Execute() == RET_OK )
                 nResult = STATUS_SAVEAS;
             else
@@ -677,6 +676,7 @@ sal_Int8 ModelData_Impl::CheckStateForSave()
 
     OUString aVersionCommentString("VersionComment");
     OUString aAuthorString("Author");
+    OUString aDontTerminateEdit("DontTerminateEdit");
     OUString aInteractionHandlerString("InteractionHandler");
     OUString aStatusIndicatorString("StatusIndicator");
     OUString aFailOnWarningString("FailOnWarning");
@@ -685,6 +685,8 @@ sal_Int8 ModelData_Impl::CheckStateForSave()
         aAcceptedArgs[ aVersionCommentString ] = GetMediaDescr()[ aVersionCommentString ];
     if ( GetMediaDescr().find( aAuthorString ) != GetMediaDescr().end() )
         aAcceptedArgs[ aAuthorString ] = GetMediaDescr()[ aAuthorString ];
+    if ( GetMediaDescr().find( aDontTerminateEdit ) != GetMediaDescr().end() )
+        aAcceptedArgs[ aDontTerminateEdit ] = GetMediaDescr()[ aDontTerminateEdit ];
     if ( GetMediaDescr().find( aInteractionHandlerString ) != GetMediaDescr().end() )
         aAcceptedArgs[ aInteractionHandlerString ] = GetMediaDescr()[ aInteractionHandlerString ];
     if ( GetMediaDescr().find( aStatusIndicatorString ) != GetMediaDescr().end() )
@@ -1262,7 +1264,7 @@ SfxStoringHelper::SfxStoringHelper()
 }
 
 
-uno::Reference< container::XNameAccess > SfxStoringHelper::GetFilterConfiguration()
+uno::Reference< container::XNameAccess > const & SfxStoringHelper::GetFilterConfiguration()
 {
     if ( !m_xFilterCFG.is() )
     {
@@ -1277,7 +1279,7 @@ uno::Reference< container::XNameAccess > SfxStoringHelper::GetFilterConfiguratio
 }
 
 
-uno::Reference< container::XContainerQuery > SfxStoringHelper::GetFilterQuery()
+uno::Reference< container::XContainerQuery > const & SfxStoringHelper::GetFilterQuery()
 {
     if ( !m_xFilterQuery.is() )
     {
@@ -1290,7 +1292,7 @@ uno::Reference< container::XContainerQuery > SfxStoringHelper::GetFilterQuery()
 }
 
 
-uno::Reference< css::frame::XModuleManager2 > SfxStoringHelper::GetModuleManager()
+uno::Reference< css::frame::XModuleManager2 > const & SfxStoringHelper::GetModuleManager()
 {
     if ( !m_xModuleManager.is() )
     {
@@ -1397,7 +1399,7 @@ bool SfxStoringHelper::GUIStoreModel( const uno::Reference< frame::XModel >& xMo
            || SignatureState::PARTIAL_OK == nDocumentSignatureState)
         {
             if (ScopedVclPtrInstance<MessageDialog>(nullptr, SfxResId(RID_SVXSTR_XMLSEC_QUERY_LOSINGSIGNATURE),
-                              VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO)->Execute() != RET_YES)
+                              VclMessageType::Question, VCL_BUTTONS_YES_NO)->Execute() != RET_YES)
             {
                 // the user has decided not to store the document
                 throw task::ErrorCodeIOException(
@@ -1462,7 +1464,7 @@ bool SfxStoringHelper::GUIStoreModel( const uno::Reference< frame::XModel >& xMo
 
     const OUString sFilterOptionsString(aFilterOptionsString);
     const OUString sFilterDataString(aFilterDataString);
-    const OUString sFilterFlagsString(aFilterFlagsString);
+    const OUString sFilterFlagsString("FilterFlags");
 
     if ( ( nStoreMode & EXPORT_REQUESTED ) && ( nStoreMode & PDFEXPORT_REQUESTED ) && !( nStoreMode & PDFDIRECTEXPORT_REQUESTED ) )
     {
@@ -1597,7 +1599,7 @@ bool SfxStoringHelper::GUIStoreModel( const uno::Reference< frame::XModel >& xMo
     }
     else
     {
-        DBG_ASSERT( false, "This code must be unreachable!\n" );
+        SAL_WARN( "sfx", "This code must be unreachable!\n" );
         throw task::ErrorCodeIOException(
             "SfxStoringHelper::GUIStoreModel: ERRCODE_IO_INVALIDPARAMETER",
             uno::Reference< uno::XInterface >(), ERRCODE_IO_INVALIDPARAMETER);

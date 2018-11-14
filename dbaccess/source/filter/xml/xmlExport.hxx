@@ -154,23 +154,21 @@ class ODBExport : public SvXMLExport
 
     static OUString         implConvertAny(const Any& _rValue);
 
-    rtl::Reference < XMLPropertySetMapper > GetTableStylesPropertySetMapper() const;
+    rtl::Reference < XMLPropertySetMapper > const & GetTableStylesPropertySetMapper() const;
 
                             ODBExport() = delete;
 protected:
 
-    virtual void                    ExportStyles_( bool bUsed ) override;
     virtual void                    ExportAutoStyles_() override;
     virtual void                    ExportContent_() override;
     virtual void                    ExportMasterStyles_() override;
     virtual void                    ExportFontDecls_() override;
-    virtual sal_uInt32              exportDoc( enum ::xmloff::token::XMLTokenEnum eClass ) override;
     virtual SvXMLAutoStylePoolP*    CreateAutoStylePool() override;
 
     virtual void GetViewSettings(css::uno::Sequence<css::beans::PropertyValue>& aProps) override;
     virtual void GetConfigurationSettings(css::uno::Sequence<css::beans::PropertyValue>& aProps) override;
 
-    virtual                 ~ODBExport(){};
+    virtual                 ~ODBExport() override {};
 public:
 
     ODBExport(const Reference< XComponentContext >& _rxContext, OUString const & implementationName, SvXMLExportFlags nExportFlag = SvXMLExportFlags::CONTENT | SvXMLExportFlags::AUTOSTYLES | SvXMLExportFlags::PRETTY | SvXMLExportFlags::FONTDECLS | SvXMLExportFlags::SCRIPTS );
@@ -184,8 +182,8 @@ public:
     static css::uno::Reference<css::uno::XInterface> SAL_CALL Create(
         css::uno::Reference<css::lang::XMultiServiceFactory> const & _rxORB);
 
-    rtl::Reference < XMLPropertySetMapper > GetColumnStylesPropertySetMapper() const;
-    rtl::Reference < XMLPropertySetMapper > GetCellStylesPropertySetMapper() const;
+    rtl::Reference < XMLPropertySetMapper > const & GetColumnStylesPropertySetMapper() const;
+    rtl::Reference < XMLPropertySetMapper > const & GetCellStylesPropertySetMapper() const;
 
     // XExporter
     virtual void SAL_CALL setSourceDocument( const css::uno::Reference< css::lang::XComponent >& xDoc ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;

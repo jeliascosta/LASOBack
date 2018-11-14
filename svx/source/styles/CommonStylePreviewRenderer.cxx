@@ -88,7 +88,7 @@ bool CommonStylePreviewRenderer::recalculate()
     }
     if ((pItem = pItemSet->GetItem(SID_ATTR_CHAR_RELIEF)) != nullptr)
     {
-        pFont->SetRelief(static_cast<FontRelief>(static_cast<const SvxCharReliefItem*>(pItem)->GetValue()));
+        pFont->SetRelief(static_cast<const SvxCharReliefItem*>(pItem)->GetValue());
     }
     if ((pItem = pItemSet->GetItem(SID_ATTR_CHAR_UNDERLINE)) != nullptr)
     {
@@ -133,6 +133,8 @@ bool CommonStylePreviewRenderer::recalculate()
     if ((pItem = pItemSet->GetItem(SID_ATTR_CHAR_FONT)) != nullptr)
     {
         const SvxFontItem* pFontItem = static_cast<const SvxFontItem*>(pItem);
+        if (IsStarSymbol(pFontItem->GetFamilyName()))
+            return false;
         pFont->SetFamilyName(pFontItem->GetFamilyName());
         pFont->SetStyleName(pFontItem->GetStyleName());
     }

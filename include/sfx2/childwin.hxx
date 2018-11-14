@@ -137,7 +137,8 @@ public:
 
     FloatingWindow*     GetFloatingWindow() const;
 
-    virtual void        Resizing( Size& rSize );
+    static FloatingWindow* GetFloatingWindow(vcl::Window *pParent);
+
     static void         RegisterChildWindowContext(SfxModule*, sal_uInt16, SfxChildWinContextFactory*);
 };
 
@@ -192,7 +193,6 @@ public:
     static SfxChildWindow* CreateChildWindow( sal_uInt16, vcl::Window*, SfxBindings*, SfxChildWinInfo&);
     void                SetHideNotDelete( bool bOn );
     bool                IsHideNotDelete() const;
-    bool                IsHideAtToggle() const;
     bool                IsVisible() const;
     void                SetWantsFocus( bool );
     bool                WantsFocus() const;
@@ -205,7 +205,6 @@ public:
     void                SetVisible_Impl( bool bVis );
     SAL_DLLPRIVATE void SetWorkWindow_Impl( SfxWorkWindow* );
     SAL_DLLPRIVATE void Activate_Impl();
-    SAL_DLLPRIVATE void Deactivate_Impl();
 
     SAL_DLLPRIVATE SfxChildWindowContext*
                         GetContext_Impl() const

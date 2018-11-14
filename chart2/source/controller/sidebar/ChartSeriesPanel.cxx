@@ -17,7 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sfx2/sidebar/ResourceDefinitions.hrc>
 #include <sfx2/sidebar/ControlFactory.hxx>
 
 #include <com/sun/star/chart2/DataPointLabel.hpp>
@@ -167,7 +166,7 @@ void setTrendlineVisible(const css::uno::Reference<css::frame::XModel>&
         /* code */
         uno::Reference< chart2::XRegressionCurve > xCurve =
             RegressionCurveHelper::addRegressionCurve(
-                    CHREGRESS_LINEAR,
+                    SvxChartRegress::Linear,
                     xRegressionCurveContainer,
                     comphelper::getProcessComponentContext());
     }
@@ -200,7 +199,7 @@ void setErrorBarVisible(const css::uno::Reference<css::frame::XModel>&
 
     if (bVisible)
     {
-                StatisticsHelper::addErrorBars( xSeries, comphelper::getProcessComponentContext(),
+        StatisticsHelper::addErrorBars( xSeries,
                     css::chart::ErrorBarStyle::STANDARD_DEVIATION,
                     bYError);
     }
@@ -408,7 +407,7 @@ void ChartSeriesPanel::DataChanged(
 }
 
 void ChartSeriesPanel::HandleContextChange(
-    const ::sfx2::sidebar::EnumContext& )
+    const vcl::EnumContext& )
 {
     updateData();
 }
@@ -456,7 +455,7 @@ void ChartSeriesPanel::SelectionInvalid()
 {
 }
 
-IMPL_LINK_TYPED(ChartSeriesPanel, CheckBoxHdl, Button*, pButton, void)
+IMPL_LINK(ChartSeriesPanel, CheckBoxHdl, Button*, pButton, void)
 {
     CheckBox* pCheckBox = static_cast<CheckBox*>(pButton);
     bool bChecked = pCheckBox->IsChecked();
@@ -471,7 +470,7 @@ IMPL_LINK_TYPED(ChartSeriesPanel, CheckBoxHdl, Button*, pButton, void)
         setErrorBarVisible(mxModel, aCID, true, bChecked);
 }
 
-IMPL_LINK_NOARG_TYPED(ChartSeriesPanel, RadioBtnHdl, RadioButton&, void)
+IMPL_LINK_NOARG(ChartSeriesPanel, RadioBtnHdl, RadioButton&, void)
 {
     OUString aCID = getCID(mxModel);
     bool bChecked = mpRBPrimaryAxis->IsChecked();
@@ -479,7 +478,7 @@ IMPL_LINK_NOARG_TYPED(ChartSeriesPanel, RadioBtnHdl, RadioButton&, void)
     setAttachedAxisType(mxModel, aCID, bChecked);
 }
 
-IMPL_LINK_NOARG_TYPED(ChartSeriesPanel, ListBoxHdl, ListBox&, void)
+IMPL_LINK_NOARG(ChartSeriesPanel, ListBoxHdl, ListBox&, void)
 {
     OUString aCID = getCID(mxModel);
 

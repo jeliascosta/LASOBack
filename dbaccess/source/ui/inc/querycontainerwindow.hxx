@@ -46,10 +46,10 @@ namespace dbaui
         VclPtr<Splitter>    m_pSplitter;
         css::uno::Reference< css::frame::XFrame2 > m_xBeamer;
 
-        DECL_LINK_TYPED( SplitHdl, Splitter*, void );
+        DECL_LINK( SplitHdl, Splitter*, void );
     public:
         OQueryContainerWindow(vcl::Window* pParent, OQueryController& _rController,const css::uno::Reference< css::uno::XComponentContext >&);
-        virtual ~OQueryContainerWindow();
+        virtual ~OQueryContainerWindow() override;
         virtual void dispose() override;
 
         virtual void Construct() override;
@@ -84,7 +84,7 @@ namespace dbaui
 
         void    initialize() override                                                { m_pViewSwitch->initialize(); }
         void    SaveUIConfig()                                              { m_pViewSwitch->SaveUIConfig(); }
-        void    reset( ::dbtools::SQLExceptionInfo* _pErrorInfo )           { m_pViewSwitch->reset( _pErrorInfo ); }
+        void    reset()                                                     { m_pViewSwitch->reset( nullptr ); }
 
         bool    switchView( ::dbtools::SQLExceptionInfo* _pErrorInfo );
         void    forceInitialView();

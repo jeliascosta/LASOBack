@@ -129,14 +129,14 @@ public:
     SchXMLExportHelper_Impl( SvXMLExport& rExport,
                         SvXMLAutoStylePoolP& rASPool );
 
-    virtual ~SchXMLExportHelper_Impl();
+    ~SchXMLExportHelper_Impl();
 
     SchXMLExportHelper_Impl(const SchXMLExportHelper_Impl&) = delete;
     SchXMLExportHelper_Impl& operator=(const SchXMLExportHelper_Impl&) = delete;
 
     // auto-styles
     /// parse chart and collect all auto-styles used in current pool
-    void collectAutoStyles( css::uno::Reference< css::chart::XChartDocument > rChartDoc );
+    void collectAutoStyles( css::uno::Reference< css::chart::XChartDocument > const & rChartDoc );
 
     /// write the styles collected into the current pool as <style:style> elements
     void exportAutoStyles();
@@ -152,7 +152,7 @@ public:
         which is the outer element of a chart. So these attributes can easily
         be parsed again by the container
      */
-    void exportChart( css::uno::Reference< css::chart::XChartDocument > rChartDoc,
+    void exportChart( css::uno::Reference< css::chart::XChartDocument > const & rChartDoc,
                       bool bIncludeTable );
 
     const rtl::Reference<XMLPropertySetMapper>& GetPropertySetMapper() const;
@@ -181,7 +181,7 @@ public:
     { return mrAutoStylePool; }
 
     /// if bExportContent is false the auto-styles are collected
-    void parseDocument( css::uno::Reference< css::chart::XChartDocument >& rChartDoc,
+    void parseDocument( css::uno::Reference< css::chart::XChartDocument > const & rChartDoc,
                         bool bExportContent,
                         bool bIncludeTable = false );
     void exportTable();
@@ -386,7 +386,7 @@ Sequence< Reference< chart2::data::XLabeledDataSequence > > lcl_getAllSeriesSequ
         }
     }
 
-    return comphelper::containerToSequence< Reference< chart2::data::XLabeledDataSequence > >( aContainer );
+    return comphelper::containerToSequence( aContainer );
 }
 
 Reference< chart2::data::XLabeledDataSequence >
@@ -1031,7 +1031,7 @@ SchXMLExportHelper_Impl::SchXMLExportHelper_Impl(
         mbHasSeriesLabels( false ),
         mbHasCategoryLabels( false ),
         mbRowSourceColumns( true ),
-        msCLSID( OUString( SvGlobalName( SO3_SCH_CLASSID ).GetHexName()))
+        msCLSID( SvGlobalName( SO3_SCH_CLASSID ).GetHexName() )
 {
     msTableName = "local-table";
 
@@ -1070,12 +1070,12 @@ SchXMLExportHelper_Impl::~SchXMLExportHelper_Impl()
 {
 }
 
-void SchXMLExportHelper_Impl::collectAutoStyles( Reference< chart::XChartDocument > rChartDoc )
+void SchXMLExportHelper_Impl::collectAutoStyles( Reference< chart::XChartDocument > const & rChartDoc )
 {
     parseDocument( rChartDoc, false );
 }
 
-void SchXMLExportHelper_Impl::exportChart( Reference< chart::XChartDocument > rChartDoc,
+void SchXMLExportHelper_Impl::exportChart( Reference< chart::XChartDocument > const & rChartDoc,
                                       bool bIncludeTable )
 {
     parseDocument( rChartDoc, true, bIncludeTable );
@@ -1106,7 +1106,7 @@ static OUString lcl_GetStringFromNumberSequence( const css::uno::Sequence< sal_I
 }
 
 /// if bExportContent is false the auto-styles are collected
-void SchXMLExportHelper_Impl::parseDocument( Reference< chart::XChartDocument >& rChartDoc,
+void SchXMLExportHelper_Impl::parseDocument( Reference< chart::XChartDocument > const & rChartDoc,
                                         bool bExportContent,
                                         bool bIncludeTable )
 {
@@ -3547,11 +3547,6 @@ sal_uInt32 SchXMLExport::exportDoc( enum ::xmloff::token::XMLTokenEnum eClass )
     Reference< chart2::XChartDocument > xChartDoc( GetModel(), uno::UNO_QUERY );
     maExportHelper->m_pImpl->InitRangeSegmentationProperties( xChartDoc );
     return SvXMLExport::exportDoc( eClass );
-}
-
-void SchXMLExport::ExportStyles_( bool bUsed )
-{
-    SvXMLExport::ExportStyles_( bUsed );
 }
 
 void SchXMLExport::ExportMasterStyles_()

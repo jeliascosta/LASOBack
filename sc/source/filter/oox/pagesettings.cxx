@@ -29,6 +29,7 @@
 #include <com/sun/star/text/XText.hpp>
 #include <com/sun/star/text/XTextContent.hpp>
 #include <com/sun/star/text/XTextCursor.hpp>
+#include <osl/diagnose.h>
 #include <rtl/strbuf.hxx>
 #include <rtl/ustrbuf.hxx>
 #include <sax/tools/converter.hxx>
@@ -40,7 +41,6 @@
 #include <oox/token/namespaces.hxx>
 #include <oox/token/properties.hxx>
 #include <oox/token/tokens.hxx>
-#include "biffinputstream.hxx"
 #include "excelhandlers.hxx"
 #include "stylesbuffer.hxx"
 #include "unitconverter.hxx"
@@ -393,8 +393,6 @@ private:
 
     /** Returns the current line height of the specified portion. */
     double              getCurrHeight( HFPortionId ePortion ) const;
-    /** Returns the current line height. */
-    double              getCurrHeight() const;
 
     /** Updates the current line height of the specified portion, using the current font size. */
     void                updateCurrHeight( HFPortionId ePortion );
@@ -427,15 +425,14 @@ private:
 
 private:
     typedef ::std::vector< HFPortionInfo >  HFPortionInfoVec;
-    typedef ::std::set< OString >           OStringSet;
 
     const OUString      maPageNumberService;
     const OUString      maPageCountService;
     const OUString      maSheetNameService;
     const OUString      maFileNameService;
     const OUString      maDateTimeService;
-    const OStringSet    maBoldNames;            /// All names for bold font style in lowercase UTF-8.
-    const OStringSet    maItalicNames;          /// All names for italic font style in lowercase UTF-8.
+    const std::set< OString >    maBoldNames;            /// All names for bold font style in lowercase UTF-8.
+    const std::set< OString >    maItalicNames;          /// All names for italic font style in lowercase UTF-8.
     HFPortionInfoVec    maPortions;
     HFPortionId         meCurrPortion;          /// Identifier of current H/F portion.
     OUStringBuffer      maBuffer;               /// Text data to append to current text range.
@@ -474,8 +471,8 @@ HeaderFooterParser::HeaderFooterParser( const WorkbookHelper& rHelper ) :
     maSheetNameService( "com.sun.star.text.TextField.SheetName" ),
     maFileNameService( "com.sun.star.text.TextField.FileName" ),
     maDateTimeService( "com.sun.star.text.TextField.DateTime" ),
-    maBoldNames( sppcBoldNames, ::std::end(sppcBoldNames) ),
-    maItalicNames( sppcItalicNames, ::std::end(sppcItalicNames) ),
+    maBoldNames( sppcBoldNames, sppcBoldNames + SAL_N_ELEMENTS(sppcBoldNames) ),
+    maItalicNames( sppcItalicNames, sppcItalicNames + SAL_N_ELEMENTS(sppcItalicNames) ),
     maPortions( static_cast< size_t >( HF_COUNT ) ),
     meCurrPortion( HF_CENTER )
 {
@@ -566,18 +563,17 @@ double HeaderFooterParser::parse( const Reference<sheet::XHeaderFooterContent>& 
                     }
                     break;
                     case 'Z':   // file path (without file name), OOXML, BIFF12, and BIFF8 only
-                        if( (getFilterType() == FILTER_OOXML) || ((getFilterType() == FILTER_BIFF) && (getBiff() == BIFF8)) )
-                        {
-                            Reference<text::XTextContent> xContent = createField( maFileNameService );
-                            PropertySet aPropSet( xContent );
-                            // FilenameDisplayFormat::PATH not supported by Calc
-                            aPropSet.setProperty( PROP_FileFormat, css::text::FilenameDisplayFormat::FULL );
-                            appendField( xContent );
-                            /*  path only is not supported -- if we find a '&Z&F'
-                                combination for path/name, skip the '&F' part */
-                            if( (pcChar + 2 < pcEnd) && (pcChar[ 1 ] == '&') && ((pcChar[ 2 ] == 'f') || (pcChar[ 2 ] == 'F')) )
-                                pcChar += 2;
-                        }
+                    {
+                        Reference<text::XTextContent> xContent = createField( maFileNameService );
+                        PropertySet aPropSet( xContent );
+                        // FilenameDisplayFormat::PATH not supported by Calc
+                        aPropSet.setProperty( PROP_FileFormat, css::text::FilenameDisplayFormat::FULL );
+                        appendField( xContent );
+                        /*  path only is not supported -- if we find a '&Z&F'
+                            combination for path/name, skip the '&F' part */
+                        if( (pcChar + 2 < pcEnd) && (pcChar[ 1 ] == '&') && ((pcChar[ 2 ] == 'f') || (pcChar[ 2 ] == 'F')) )
+                            pcChar += 2;
+                    }
                     break;
                     case 'D':   // date
                     {
@@ -634,7 +630,7 @@ double HeaderFooterParser::parse( const Reference<sheet::XHeaderFooterContent>& 
                     break;
 
                     case 'K':   // text color (not in BIFF)
-                        if( (getFilterType() == FILTER_OOXML) && (pcChar + 6 < pcEnd) )
+                        if( pcChar + 6 < pcEnd )
                         {
                             setAttributes();
                             // eat the following 6 characters
@@ -737,11 +733,6 @@ double HeaderFooterParser::getCurrHeight( HFPortionId ePortion ) const
     return (fMaxHt == 0.0) ? maFontModel.mfHeight : fMaxHt;
 }
 
-double HeaderFooterParser::getCurrHeight() const
-{
-    return getCurrHeight( meCurrPortion );
-}
-
 void HeaderFooterParser::updateCurrHeight( HFPortionId ePortion )
 {
     double& rfMaxHt = maPortions[ ePortion ].mfCurrHeight;
@@ -783,7 +774,7 @@ void HeaderFooterParser::appendLineBreak()
 {
     getEndPos()->gotoEnd( false );
     getEndPos()->setString( OUString( '\n' ) );
-    getPortion().mfTotalHeight += getCurrHeight();
+    getPortion().mfTotalHeight += getCurrHeight( meCurrPortion ); // add the current line height.
     getPortion().mfCurrHeight = 0;
 }
 
@@ -920,7 +911,7 @@ void PageSettingsConverter::writePageSettingsProperties(
     else
     {
         // scale may be 0 which indicates uninitialized
-        sal_Int16 nScale = (rModel.mbValidSettings && (rModel.mnScale > 0)) ? getLimitedValue< sal_Int16, sal_Int32 >( rModel.mnScale, 10, 400 ) : 100;
+        sal_Int16 nScale = (rModel.mnScale > 0) ? getLimitedValue< sal_Int16, sal_Int32 >( rModel.mnScale, 10, 400 ) : 100;
         rPropSet.setProperty( PROP_PageScale, nScale );
     }
 

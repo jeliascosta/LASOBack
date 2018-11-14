@@ -85,15 +85,12 @@ SetGetExpField::SetGetExpField(
 }
 
 SetGetExpField::SetGetExpField( const SwNodeIndex& rNdIdx,
-                            const SwTextINetFormat& rINet, const SwIndex* pIdx )
+                            const SwTextINetFormat& rINet )
 {
     eSetGetExpFieldType = TEXTINET;
     CNTNT.pTextINet = &rINet;
     nNode = rNdIdx.GetIndex();
-    if( pIdx )
-        nContent = pIdx->GetIndex();
-    else
-        nContent = rINet.GetStart();
+    nContent = rINet.GetStart();
 }
 
 // Extension for Sections:
@@ -117,41 +114,29 @@ SetGetExpField::SetGetExpField( const SwSectionNode& rSectNd,
     }
 }
 
-SetGetExpField::SetGetExpField( const SwTableBox& rTBox, const SwPosition* pPos )
+SetGetExpField::SetGetExpField( const SwTableBox& rTBox )
 {
     eSetGetExpFieldType = TABLEBOX;
     CNTNT.pTBox = &rTBox;
 
-    if( pPos )
+    nNode = 0;
+    nContent = 0;
+    if( rTBox.GetSttNd() )
     {
-        nNode = pPos->nNode.GetIndex();
-        nContent = pPos->nContent.GetIndex();
-    }
-    else
-    {
-        nNode = 0;
-        nContent = 0;
-        if( rTBox.GetSttNd() )
-        {
-            SwNodeIndex aIdx( *rTBox.GetSttNd() );
-            const SwContentNode* pNd = aIdx.GetNode().GetNodes().GoNext( &aIdx );
-            if( pNd )
-                nNode = pNd->GetIndex();
-        }
+        SwNodeIndex aIdx( *rTBox.GetSttNd() );
+        const SwContentNode* pNd = aIdx.GetNode().GetNodes().GoNext( &aIdx );
+        if( pNd )
+            nNode = pNd->GetIndex();
     }
 }
 
 SetGetExpField::SetGetExpField( const SwNodeIndex& rNdIdx,
-                                const SwTextTOXMark& rTOX,
-                                const SwIndex* pIdx )
+                                const SwTextTOXMark& rTOX )
 {
     eSetGetExpFieldType = TEXTTOXMARK;
     CNTNT.pTextTOX = &rTOX;
     nNode = rNdIdx.GetIndex();
-    if( pIdx )
-        nContent = pIdx->GetIndex();
-    else
-        nContent = rTOX.GetStart();
+    nContent = rTOX.GetStart();
 }
 
 SetGetExpField::SetGetExpField( const SwPosition& rPos )
@@ -418,8 +403,8 @@ void SwDoc::SetInitDBFields( bool b )
 /// Get all databases that are used by fields
 static OUString lcl_DBDataToString(const SwDBData& rData)
 {
-    return rData.sDataSource + OUString(DB_DELIM)
-        + rData.sCommand + OUString(DB_DELIM)
+    return rData.sDataSource + OUStringLiteral1(DB_DELIM)
+        + rData.sCommand + OUStringLiteral1(DB_DELIM)
         + OUString::number(rData.nCommandType);
 }
 
@@ -515,7 +500,7 @@ void SwDoc::GetAllDBNames( std::vector<OUString>& rAllDBNames )
     const SwDSParams_t& rArr = pMgr->GetDSParamArray();
     for (const auto& pParam : rArr)
     {
-        rAllDBNames.push_back(pParam->sDataSource + OUString(DB_DELIM) + pParam->sCommand);
+        rAllDBNames.push_back(pParam->sDataSource + OUStringLiteral1(DB_DELIM) + pParam->sCommand);
     }
 #endif
 }
@@ -543,7 +528,7 @@ std::vector<OUString>& SwDoc::FindUsedDBs( const std::vector<OUString>& rAllDBNa
             const sal_Int32 nEndPos = sFormula.indexOf('.', nPos);
             if( nEndPos>=0 )
             {
-                rUsedDBNames.push_back(sItem + OUString( DB_DELIM ) + sFormula.copy( nPos, nEndPos - nPos ));
+                rUsedDBNames.push_back(sItem + OUStringLiteral1(DB_DELIM) + sFormula.copy( nPos, nEndPos - nPos ));
             }
         }
     }
@@ -691,7 +676,7 @@ namespace
 
 inline OUString lcl_CutOffDBCommandType(const OUString& rName)
 {
-    return rName.replaceFirst(OUString(DB_DELIM), ".").getToken(0, DB_DELIM);
+    return rName.replaceFirst(OUStringLiteral1(DB_DELIM), ".").getToken(0, DB_DELIM);
 }
 
 }

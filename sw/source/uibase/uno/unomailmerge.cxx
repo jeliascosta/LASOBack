@@ -200,7 +200,7 @@ namespace
                              const OUString& _rTemporaryFile );
 
     protected:
-        virtual ~DelayedFileDeletion( );
+        virtual ~DelayedFileDeletion( ) override;
 
         // XCloseListener
         virtual void SAL_CALL queryClosing( const EventObject& _rSource, sal_Bool _bGetsOwnership ) throw (util::CloseVetoException, RuntimeException, std::exception) override;
@@ -211,7 +211,7 @@ namespace
 
     private:
         void implTakeOwnership( );
-        DECL_LINK_TYPED( OnTryDeleteFile, Timer*, void );
+        DECL_LINK( OnTryDeleteFile, Timer*, void );
     };
 
     DelayedFileDeletion::DelayedFileDeletion( const Reference< XModel >& _rxModel, const OUString& _rTemporaryFile )
@@ -240,7 +240,7 @@ namespace
         osl_atomic_decrement( &m_refCount );
     }
 
-    IMPL_LINK_NOARG_TYPED(DelayedFileDeletion, OnTryDeleteFile, Timer *, void)
+    IMPL_LINK_NOARG(DelayedFileDeletion, OnTryDeleteFile, Timer *, void)
     {
         ::osl::ClearableMutexGuard aGuard( m_aMutex );
 
@@ -599,7 +599,7 @@ uno::Any SAL_CALL SwXMailMerge::execute(
         aCurSelection = aTranslated;
     }
 
-    SfxViewFrame*   pFrame = SfxViewFrame::GetFirst( xCurDocSh, false);
+    SfxViewFrame*   pFrame = SfxViewFrame::GetFirst( xCurDocSh.get(), false);
     SwView *pView = pFrame ? dynamic_cast<SwView*>( pFrame->GetViewShell()  ) : nullptr;
     if (!pView)
         throw RuntimeException();
@@ -654,14 +654,14 @@ uno::Any SAL_CALL SwXMailMerge::execute(
 
     svx::ODataAccessDescriptor aDescriptor;
     aDescriptor.setDataSource(aCurDataSourceName);
-    aDescriptor[ svx::daConnection ]         <<= xCurConnection;
-    aDescriptor[ svx::daCommand ]            <<= aCurDataCommand;
-    aDescriptor[ svx::daCommandType ]        <<= nCurDataCommandType;
-    aDescriptor[ svx::daEscapeProcessing ]   <<= bCurEscapeProcessing;
-    aDescriptor[ svx::daCursor ]             <<= xCurResultSet;
-    // aDescriptor[ svx::daColumnName ]      not used
-    // aDescriptor[ svx::daColumnObject ]    not used
-    aDescriptor[ svx::daSelection ]          <<= aCurSelection;
+    aDescriptor[ svx::DataAccessDescriptorProperty::Connection ]         <<= xCurConnection;
+    aDescriptor[ svx::DataAccessDescriptorProperty::Command ]            <<= aCurDataCommand;
+    aDescriptor[ svx::DataAccessDescriptorProperty::CommandType ]        <<= nCurDataCommandType;
+    aDescriptor[ svx::DataAccessDescriptorProperty::EscapeProcessing ]   <<= bCurEscapeProcessing;
+    aDescriptor[ svx::DataAccessDescriptorProperty::Cursor ]             <<= xCurResultSet;
+    // aDescriptor[ svx::DataAccessDescriptorProperty::ColumnName ]      not used
+    // aDescriptor[ svx::DataAccessDescriptorProperty::ColumnObject ]    not used
+    aDescriptor[ svx::DataAccessDescriptorProperty::Selection ]          <<= aCurSelection;
 
     DBManagerOptions nMergeType;
     switch (nCurOutputType)
@@ -694,7 +694,6 @@ uno::Any SAL_CALL SwXMailMerge::execute(
             rIDDA.setPrintData( aPrtData );
             // #i25686# printing should not be done asynchronously to prevent dangling offices
             // when mail merge is called as command line macro
-            aMergeDesc.bPrintAsync = false;
             aMergeDesc.aPrintOptions = m_aPrintSettings;
             aMergeDesc.bCreateSingleFile = false;
         }
@@ -804,9 +803,9 @@ uno::Any SAL_CALL SwXMailMerge::execute(
     OSL_ENSURE( !pOldSrc || pOldSrc == this, "Ooops... different event source already set." );
     pMgr->SetMailMergeEvtSrc( this );   // launch events for listeners
 
-    SfxGetpApp()->NotifyEvent(SfxEventHint(SW_EVENT_MAIL_MERGE, SwDocShell::GetEventName(STR_SW_EVENT_MAIL_MERGE), xCurDocSh));
+    SfxGetpApp()->NotifyEvent(SfxEventHint(SW_EVENT_MAIL_MERGE, SwDocShell::GetEventName(STR_SW_EVENT_MAIL_MERGE), xCurDocSh.get()));
     bool bSucc = pMgr->Merge( aMergeDesc );
-    SfxGetpApp()->NotifyEvent(SfxEventHint(SW_EVENT_MAIL_MERGE_END, SwDocShell::GetEventName(STR_SW_EVENT_MAIL_MERGE_END), xCurDocSh));
+    SfxGetpApp()->NotifyEvent(SfxEventHint(SW_EVENT_MAIL_MERGE_END, SwDocShell::GetEventName(STR_SW_EVENT_MAIL_MERGE_END), xCurDocSh.get()));
 
     pMgr->SetMailMergeEvtSrc( pOldSrc );
 

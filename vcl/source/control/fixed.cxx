@@ -23,7 +23,7 @@
 #include <vcl/dialog.hxx>
 #include <vcl/event.hxx>
 #include <vcl/fixed.hxx>
-#include <vcl/implimagetree.hxx>
+#include <vcl/ImageTree.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
 
@@ -37,7 +37,7 @@
                                  WB_LEFT | WB_CENTER | WB_RIGHT |   \
                                  WB_TOP | WB_VCENTER | WB_BOTTOM |  \
                                  WB_WORDBREAK | WB_NOLABEL |        \
-                                 WB_INFO | WB_PATHELLIPSIS)
+                                 WB_PATHELLIPSIS)
 #define FIXEDLINE_VIEW_STYLE    (WB_3DLOOK | WB_NOLABEL)
 #define FIXEDBITMAP_VIEW_STYLE  (WB_3DLOOK |                        \
                                  WB_LEFT | WB_CENTER | WB_RIGHT |   \
@@ -96,12 +96,12 @@ WinBits FixedText::ImplInitStyle( WinBits nStyle )
 
 const vcl::Font& FixedText::GetCanonicalFont( const StyleSettings& _rStyle ) const
 {
-    return ( GetStyle() & WB_INFO ) ? _rStyle.GetInfoFont() : _rStyle.GetLabelFont();
+    return _rStyle.GetLabelFont();
 }
 
 const Color& FixedText::GetCanonicalTextColor( const StyleSettings& _rStyle ) const
 {
-    return ( GetStyle() & WB_INFO ) ? _rStyle.GetInfoTextColor() : _rStyle.GetLabelTextColor();
+    return _rStyle.GetLabelTextColor();
 }
 
 FixedText::FixedText( vcl::Window* pParent, WinBits nStyle )
@@ -111,21 +111,6 @@ FixedText::FixedText( vcl::Window* pParent, WinBits nStyle )
     , m_pMnemonicWindow(nullptr)
 {
     ImplInit( pParent, nStyle );
-}
-
-FixedText::FixedText( vcl::Window* pParent, const ResId& rResId )
-    : Control(WINDOW_FIXEDTEXT)
-    , m_nMaxWidthChars(-1)
-    , m_nMinWidthChars(-1)
-    , m_pMnemonicWindow(nullptr)
-{
-    rResId.SetRT( RSC_TEXT );
-    WinBits nStyle = ImplInitRes( rResId );
-    ImplInit( pParent, nStyle );
-    ImplLoadRes( rResId );
-
-    if ( !(nStyle & WB_HIDE) )
-        Show();
 }
 
 DrawTextFlags FixedText::ImplGetTextStyle( WinBits nWinStyle )
@@ -588,18 +573,6 @@ FixedLine::FixedLine( vcl::Window* pParent, WinBits nStyle ) :
     SetSizePixel( Size( 2, 2 ) );
 }
 
-FixedLine::FixedLine( vcl::Window* pParent, const ResId& rResId ) :
-    Control( WINDOW_FIXEDLINE )
-{
-    rResId.SetRT( RSC_FIXEDLINE );
-    WinBits nStyle = ImplInitRes( rResId );
-    ImplInit( pParent, nStyle );
-    ImplLoadRes( rResId );
-
-    if ( !(nStyle & WB_HIDE) )
-        Show();
-}
-
 void FixedLine::FillLayoutData() const
 {
     mpControlData->mpLayoutData = new vcl::ControlLayoutData();
@@ -842,7 +815,6 @@ void FixedBitmap::SetBitmap( const Bitmap& rBitmap )
 void FixedImage::ImplInit( vcl::Window* pParent, WinBits nStyle )
 {
     nStyle = ImplInitStyle( nStyle );
-    mbInUserDraw = false;
     Control::ImplInit( pParent, nStyle, nullptr );
     ApplySettings(*this);
 }
@@ -854,35 +826,10 @@ WinBits FixedImage::ImplInitStyle( WinBits nStyle )
     return nStyle;
 }
 
-void FixedImage::ImplLoadRes( const ResId& rResId )
-{
-    Control::ImplLoadRes( rResId );
-
-    sal_uLong nObjMask = ReadLongRes();
-
-    if ( RSC_FIXEDIMAGE_IMAGE & nObjMask )
-    {
-        maImage = Image( ResId( static_cast<RSHEADER_TYPE*>(GetClassRes()), *rResId.GetResMgr() ) );
-        IncrementRes( GetObjSizeRes( static_cast<RSHEADER_TYPE*>(GetClassRes()) ) );
-    }
-}
-
 FixedImage::FixedImage( vcl::Window* pParent, WinBits nStyle ) :
     Control( WINDOW_FIXEDIMAGE )
 {
     ImplInit( pParent, nStyle );
-}
-
-FixedImage::FixedImage( vcl::Window* pParent, const ResId& rResId ) :
-    Control( WINDOW_FIXEDIMAGE )
-{
-    rResId.SetRT( RSC_FIXEDIMAGE );
-    WinBits nStyle = ImplInitRes( rResId );
-    ImplInit( pParent, nStyle );
-    ImplLoadRes( rResId );
-
-    if ( !(nStyle & WB_HIDE) )
-        Show();
 }
 
 void FixedImage::ImplDraw( OutputDevice* pDev, DrawFlags nDrawFlags,
@@ -1027,14 +974,7 @@ bool FixedImage::SetModeImage( const Image& rImage )
 
 Image FixedImage::loadThemeImage(const OString &rFileName)
 {
-    OUString sIconTheme =
-        Application::GetSettings().GetStyleSettings().DetermineIconTheme();
-    const OUString sFileName(OStringToOUString(rFileName, RTL_TEXTENCODING_UTF8));
-    BitmapEx aBitmap;
-    bool bSuccess = ImplImageTree::get().loadImage(
-        sFileName, sIconTheme, aBitmap, true);
-    SAL_WARN_IF(!bSuccess, "vcl.layout", "Unable to load " << sFileName
-        << " from theme " << sIconTheme);
+    BitmapEx aBitmap(OStringToOUString(rFileName, RTL_TEXTENCODING_UTF8));
     return Image(aBitmap);
 }
 
@@ -1042,7 +982,7 @@ bool FixedImage::set_property(const OString &rKey, const OString &rValue)
 {
     if (rKey == "pixbuf")
     {
-        SetImage(FixedImage::loadThemeImage(rValue));
+        SetImage(loadThemeImage(rValue));
     }
     else
         return Control::set_property(rKey, rValue);

@@ -36,7 +36,6 @@
 #include <osl/file.hxx>
 #include <osl/thread.h>
 #include <memory>
-#include <algorithm>
 
 class FilterConfigItem;
 
@@ -132,17 +131,17 @@ static void MakeAsMeta(Graphic &rGraphic)
 
     if( !aSize.Width() || !aSize.Height() )
         aSize = Application::GetDefaultDevice()->PixelToLogic(
-            aBmp.GetSizePixel(), MAP_100TH_MM );
+            aBmp.GetSizePixel(), MapUnit::Map100thMM );
     else
         aSize = OutputDevice::LogicToLogic( aSize,
-            aBmp.GetPrefMapMode(), MAP_100TH_MM );
+            aBmp.GetPrefMapMode(), MapUnit::Map100thMM );
 
     pVDev->EnableOutput( false );
     aMtf.Record( pVDev );
     pVDev->DrawBitmap( Point(), aSize, rGraphic.GetBitmap() );
     aMtf.Stop();
     aMtf.WindStart();
-    aMtf.SetPrefMapMode( MAP_100TH_MM );
+    aMtf.SetPrefMapMode( MapUnit::Map100thMM );
     aMtf.SetPrefSize( aSize );
     rGraphic = aMtf;
 }
@@ -178,7 +177,7 @@ static oslProcessError runProcessWithPathSearch(const OUString &rProgName,
 
     result = osl_executeProcess_WithRedirectedIO(url.pData,
     pArgs, nArgs, osl_Process_HIDDEN,
-        pSecurity, 0, 0, 0, pProcess, pIn, pOut, pErr);
+        pSecurity, nullptr, nullptr, 0, pProcess, pIn, pOut, pErr);
 #else
     result = osl_executeProcess_WithRedirectedIO(rProgName.pData,
         pArgs, nArgs, osl_Process_SEARCHPATH | osl_Process_HIDDEN,
@@ -206,7 +205,7 @@ static bool RenderAsEMF(const sal_uInt8* pBuf, sal_uInt32 nBytesRead, Graphic &r
     osl::FileBase::getSystemPathFromFileURL(aTempInput.GetURL(), input);
 
     SvStream* pInputStream = aTempInput.GetStream(StreamMode::WRITE);
-    sal_uInt64 nCount = pInputStream->Write(pBuf, nBytesRead);
+    sal_uInt64 nCount = pInputStream->WriteBytes(pBuf, nBytesRead);
     aTempInput.CloseStream();
 
     //fdo#64161 pstoedit under non-windows uses libEMF to output the EMF, but
@@ -319,7 +318,7 @@ static bool RenderAsBMPThroughHelper(const sal_uInt8* pBuf, sal_uInt32 nBytesRea
         oslFileError eFileErr = osl_readFile(pOut, aBuf, 32000, &nCount);
         while (eFileErr == osl_File_E_None && nCount)
         {
-            aMemStm.Write(aBuf, sal::static_int_cast< sal_Size >(nCount));
+            aMemStm.WriteBytes(aBuf, sal::static_int_cast<std::size_t>(nCount));
             eFileErr = osl_readFile(pOut, aBuf, 32000, &nCount);
         }
 
@@ -431,14 +430,14 @@ void CreateMtfReplacementAction( GDIMetaFile& rMtf, SvStream& rStrm, sal_uInt32 
         if (nSizeWMF && checkSeek(rStrm, nOrigPos + nPosWMF) && rStrm.remainingSize() >= nSizeWMF)
         {
             std::unique_ptr<sal_uInt8[]> pBuf(new sal_uInt8[ nSizeWMF ]);
-            rStrm.Read(pBuf.get(), nSizeWMF);
-            aReplacement.Write(pBuf.get(), nSizeWMF);
+            rStrm.ReadBytes(pBuf.get(), nSizeWMF);
+            aReplacement.WriteBytes(pBuf.get(), nSizeWMF);
         }
         if (nSizeTIFF && checkSeek(rStrm, nOrigPos + nPosTIFF) && rStrm.remainingSize() >= nSizeTIFF)
         {
             std::unique_ptr<sal_uInt8[]> pBuf(new sal_uInt8[ nSizeTIFF ]);
-            rStrm.Read(pBuf.get(), nSizeTIFF);
-            aReplacement.Write(pBuf.get(), nSizeTIFF);
+            rStrm.ReadBytes(pBuf.get(), nSizeTIFF);
+            aReplacement.WriteBytes(pBuf.get(), nSizeTIFF);
         }
         rMtf.AddAction( static_cast<MetaAction*>( new MetaCommentAction( aComment, 0, static_cast<const sal_uInt8*>(aReplacement.GetData()), aReplacement.Tell() ) ) );
     }
@@ -549,7 +548,7 @@ void MakePreview(sal_uInt8* pBuf, sal_uInt32 nBytesRead,
     pVDev->Pop();
     aMtf.Stop();
     aMtf.WindStart();
-    aMtf.SetPrefMapMode( MAP_POINT );
+    aMtf.SetPrefMapMode( MapUnit::MapPoint );
     aMtf.SetPrefSize( Size( nWidth, nHeight ) );
     rGraphic = aMtf;
 }
@@ -614,7 +613,7 @@ ipsGraphicImport( SvStream & rStream, Graphic & rGraphic, FilterConfigItem* )
 
     std::unique_ptr<sal_uInt8[]> pHeader( new sal_uInt8[ 22 ] );
     rStream.Seek( nPSStreamPos );
-    rStream.Read(pHeader.get(), 22); // check PostScript header
+    rStream.ReadBytes(pHeader.get(), 22); // check PostScript header
     bool bOk = ImplSearchEntry(pHeader.get(), reinterpret_cast<sal_uInt8 const *>("%!PS-Adobe"), 10, 10) &&
                ImplSearchEntry(&pHeader[ 15 ], reinterpret_cast<sal_uInt8 const *>("EPS"), 3, 3);
     if (bOk)
@@ -628,7 +627,7 @@ ipsGraphicImport( SvStream & rStream, Graphic & rGraphic, FilterConfigItem* )
         std::unique_ptr<sal_uInt8[]> pBuf( new sal_uInt8[ nPSSize ] );
 
         sal_uInt32 nBufStartPos = rStream.Tell();
-        sal_uInt32 nBytesRead = rStream.Read( pBuf.get(), nPSSize );
+        sal_uInt32 nBytesRead = rStream.ReadBytes(pBuf.get(), nPSSize);
         if ( nBytesRead == nPSSize )
         {
             sal_uInt32 nSecurityCount = 32;
@@ -637,15 +636,17 @@ ipsGraphicImport( SvStream & rStream, Graphic & rGraphic, FilterConfigItem* )
             if (!bHasPreview && nBytesRead >= nSecurityCount)
             {
                 sal_uInt8* pDest = ImplSearchEntry( pBuf.get(), reinterpret_cast<sal_uInt8 const *>("%%BeginPreview:"), nBytesRead - nSecurityCount, 15 );
-                if ( pDest  )
+                sal_uInt32 nRemainingBytes = pDest ? (nBytesRead - (pDest - pBuf.get())) : 0;
+                if (nRemainingBytes >= 15)
                 {
                     pDest += 15;
+                    nSecurityCount = nRemainingBytes - 15;
                     long nWidth = ImplGetNumber(pDest, nSecurityCount);
                     long nHeight = ImplGetNumber(pDest, nSecurityCount);
                     long nBitDepth = ImplGetNumber(pDest, nSecurityCount);
                     long nScanLines = ImplGetNumber(pDest, nSecurityCount);
-                    pDest = ImplSearchEntry( pDest, reinterpret_cast<sal_uInt8 const *>("%"), 16, 1 );       // go to the first Scanline
-                    if ( nSecurityCount && pDest && nWidth && nHeight && ( ( nBitDepth == 1 ) || ( nBitDepth == 8 ) ) && nScanLines )
+                    pDest = ImplSearchEntry(pDest, reinterpret_cast<sal_uInt8 const *>("%"), nSecurityCount, 1);       // go to the first Scanline
+                    if (pDest && nWidth && nHeight && ( ( nBitDepth == 1 ) || ( nBitDepth == 8 ) ) && nScanLines)
                     {
                         rStream.Seek( nBufStartPos + ( pDest - pBuf.get() ) );
 
@@ -719,13 +720,13 @@ ipsGraphicImport( SvStream & rStream, Graphic & rGraphic, FilterConfigItem* )
                                 aMtf.Record( pVDev );
                                 aSize = aBitmap.GetPrefSize();
                                 if( !aSize.Width() || !aSize.Height() )
-                                    aSize = Application::GetDefaultDevice()->PixelToLogic( aBitmap.GetSizePixel(), MAP_100TH_MM );
+                                    aSize = Application::GetDefaultDevice()->PixelToLogic( aBitmap.GetSizePixel(), MapUnit::Map100thMM );
                                 else
-                                    aSize = OutputDevice::LogicToLogic( aSize, aBitmap.GetPrefMapMode(), MAP_100TH_MM );
+                                    aSize = OutputDevice::LogicToLogic( aSize, aBitmap.GetPrefMapMode(), MapUnit::Map100thMM );
                                 pVDev->DrawBitmap( Point(), aSize, aBitmap );
                                 aMtf.Stop();
                                 aMtf.WindStart();
-                                aMtf.SetPrefMapMode( MAP_100TH_MM );
+                                aMtf.SetPrefMapMode( MapUnit::Map100thMM );
                                 aMtf.SetPrefSize( aSize );
                                 aGraphic = aMtf;
                                 bHasPreview = bRetValue = true;
@@ -770,13 +771,12 @@ ipsGraphicImport( SvStream & rStream, Graphic & rGraphic, FilterConfigItem* )
                             aGraphic);
                     }
 
-                    GfxLink     aGfxLink( pBuf.get(), nPSSize, GFX_LINK_TYPE_EPS_BUFFER ) ;
-                    pBuf.release();
+                    GfxLink     aGfxLink( std::move(pBuf), nPSSize, GfxLinkType::EpsBuffer ) ;
                     aMtf.AddAction( static_cast<MetaAction*>( new MetaEPSAction( Point(), Size( nWidth, nHeight ),
                                                                       aGfxLink, aGraphic.GetGDIMetaFile() ) ) );
                     CreateMtfReplacementAction( aMtf, rStream, nOrigPos, nPSSize, nPosWMF, nSizeWMF, nPosTIFF, nSizeTIFF );
                     aMtf.WindStart();
-                    aMtf.SetPrefMapMode( MAP_POINT );
+                    aMtf.SetPrefMapMode( MapUnit::MapPoint );
                     aMtf.SetPrefSize( Size( nWidth, nHeight ) );
                     rGraphic = aMtf;
                     bRetValue = true;

@@ -42,6 +42,9 @@ RscTypCont::RscTypCont( RscError * pErrHdl,
     : nSourceCharSet( RTL_TEXTENCODING_UTF8 )
     , nByteOrder( nOrder )
     , aSearchPath( rSearchPath )
+    , nUniqueId(256)
+    , nFilePos( 0 )
+    , nPMId(RSC_VERSIONCONTROL +1) // at least one more
     , aBool( pHS->getID( "sal_Bool" ), RSC_NOTYPE )
     , aShort( pHS->getID( "short" ), RSC_NOTYPE )
     , aUShort( pHS->getID( "sal_uInt16" ), RSC_NOTYPE )
@@ -53,16 +56,11 @@ RscTypCont::RscTypCont( RscError * pErrHdl,
     , aIdLong( pHS->getID( "IDLONG" ), RSC_NOTYPE )
     , aString( pHS->getID( "Chars" ), RSC_NOTYPE )
     , aStringLiteral( pHS->getID( "Chars" ), RSC_NOTYPE )
-    , aWinBits( pHS->getID( "WinBits" ), RSC_NOTYPE )
     , aLangType()
     , aLangString( pHS->getID( "Lang_Chars" ), RSC_NOTYPE, &aString, &aLangType )
-    , aLangShort( pHS->getID( "Lang_short" ), RSC_NOTYPE, &aShort, &aLangType )
-    , nAcceleratorType( 0 )
+    , pEH(pErrHdl)
     , nFlags( nFlagsP )
 {
-    nUniqueId = 256;
-    nPMId = RSC_VERSIONCONTROL +1; // at least one more
-    pEH = pErrHdl;
     Init();
 }
 
@@ -89,9 +87,9 @@ OString RscTypCont::ChangeLanguage(const OString& rNewLang)
 
     aLangFallbacks.clear();
 
-    for (::std::vector< OUString >::const_iterator it( aFallbacks.begin()); it != aFallbacks.end(); ++it)
+    for (OUString& rItem : aFallbacks)
     {
-        OString aLang( OUStringToOString( *it, RTL_TEXTENCODING_ASCII_US));
+        OString aLang(OUStringToOString(rItem, RTL_TEXTENCODING_ASCII_US));
         sal_uInt32 nID = GetLangId( aLang );
         bool bAdd = (nID == 0);
         if ( bAdd )
@@ -175,8 +173,8 @@ RscTypCont::~RscTypCont()
 
     // all classes are still valid, destroy each instance
     // of base types
-    for ( size_t i = 0, n = aBaseLst.size(); i < n; ++i )
-        aBaseLst[ i ]->Pre_dtor();
+    for (RscTop* pItem : aBaseLst)
+        pItem->Pre_dtor();
 
     aBool.Pre_dtor();
     aShort.Pre_dtor();
@@ -186,7 +184,6 @@ RscTypCont::~RscTypCont()
     aNoZeroShort.Pre_dtor();
     aIdLong.Pre_dtor();
     aString.Pre_dtor();
-    aWinBits.Pre_dtor();
     aVersion.pClass->Pre_dtor();
     // sub-types
     Pre_dtorTree( pRoot );
@@ -195,83 +192,37 @@ RscTypCont::~RscTypCont()
     delete aVersion.pClass;
     DestroyTree( pRoot );
 
-    for ( size_t i = 0, n = aBaseLst.size(); i < n; ++i )
-        delete aBaseLst[ i ];
+    for (RscTop* pItem : aBaseLst)
+        delete pItem;
 
-    aBaseLst.clear();
-
-    for ( size_t i = 0, n = aSysLst.size(); i < n; ++i )
-        delete aSysLst[ i ];
-
-    aSysLst.clear();
+    for (RscSysEntry* pItem: aSysLst)
+        delete pItem;
 }
 
 void RscTypCont::ClearSysNames()
 {
-    for ( size_t i = 0, n = aSysLst.size(); i < n; ++i )
-        delete aSysLst[ i ];
+    for (RscSysEntry* pItem: aSysLst)
+        delete pItem;
 
     aSysLst.clear();
 }
 
-RscTop * RscTypCont::SearchType( Atom nId )
-{
-    /*  [Description]
-
-        Search for base type nId;
-    */
-    if( nId == InvalidAtom )
-        return nullptr;
-
-#define ELSE_IF( a )                \
-    else if( a.GetId() == nId ) \
-        return &a;                  \
-
-    if( aBool.GetId() == nId )
-        return &aBool;
-    ELSE_IF( aShort )
-    ELSE_IF( aUShort )
-    ELSE_IF( aLong )
-    ELSE_IF( aEnumLong )
-    ELSE_IF( aIdUShort )
-    ELSE_IF( aIdNoZeroUShort )
-    ELSE_IF( aNoZeroShort )
-    ELSE_IF( aIdLong )
-    ELSE_IF( aString )
-    ELSE_IF( aWinBits )
-    ELSE_IF( aLangType )
-    ELSE_IF( aLangString )
-    ELSE_IF( aLangShort )
-// al least to not pollute
-#undef ELSE_IF
-
-    for ( size_t i = 0, n = aBaseLst.size(); i < n; ++i )
-    {
-        RscTop* pEle = aBaseLst[ i ];
-        if( pEle->GetId() == nId )
-            return pEle;
-    }
-    return nullptr;
-}
-
 sal_uInt32 RscTypCont::PutSysName( sal_uInt32 nRscTyp, char * pFileName )
 {
-    RscSysEntry *pSysEntry;
     RscSysEntry *pFoundEntry = nullptr;
 
-    for ( size_t i = 0, n = aSysLst.size(); i < n; ++i )
+    for (RscSysEntry* pItem: aSysLst)
     {
-        pSysEntry = aSysLst[ i ];
-        if( !strcmp( pSysEntry->aFileName.getStr(), pFileName ) )
-            if(  pSysEntry->nRscTyp == nRscTyp &&
-                 pSysEntry->nTyp    == 0 &&
-                 pSysEntry->nRefId  == 0)
-            {
-                pFoundEntry = pSysEntry;
-                break;
-            }
+        if( !strcmp( pItem->aFileName.getStr(), pFileName ) &&
+            pItem->nRscTyp == nRscTyp &&
+            pItem->nTyp    == 0 &&
+            pItem->nRefId  == 0)
+        {
+            pFoundEntry = pItem;
+            break;
+        }
     }
-    pSysEntry = pFoundEntry;
+    RscSysEntry *pSysEntry = pFoundEntry;
 
     if ( !pSysEntry )
     {
@@ -298,8 +249,16 @@ private:
     sal_uLong   lFileKey;   // what source file
     RscTop *    pClass;
 
-    DECL_LINK_TYPED( CallBackWriteRc, const NameNode&, void );
-    DECL_LINK_TYPED( CallBackWriteSrc, const NameNode&, void );
+    RscEnumerateObj(RscTypCont* pTC, FILE* pOutputFile)
+        :pTypCont(pTC)
+        ,fOutput(pOutputFile)
+        ,lFileKey(0)
+        ,pClass(nullptr)
+    {
+    }
+
+    DECL_LINK( CallBackWriteRc, const NameNode&, void );
+    DECL_LINK( CallBackWriteSrc, const NameNode&, void );
 
     void WriteRc( RscTop * pCl, ObjNode * pRoot )
     {
@@ -307,17 +266,16 @@ private:
         if( pRoot )
             pRoot->EnumNodes( LINK( this, RscEnumerateObj, CallBackWriteRc ) );
     }
-    ERRTYPE WriteSrc( RscTop * pCl, ObjNode * pRoot ){
+    void WriteSrc( RscTop * pCl, ObjNode * pRoot ){
         pClass = pCl;
         if( pRoot )
             pRoot->EnumNodes( LINK( this, RscEnumerateObj, CallBackWriteSrc ) );
-        return aError;
     }
 public:
     void WriteRcFile( RscWriteRc & rMem, FILE * fOutput );
 };
 
-IMPL_LINK_TYPED( RscEnumerateObj, CallBackWriteRc, const NameNode&, rNode, void )
+IMPL_LINK( RscEnumerateObj, CallBackWriteRc, const NameNode&, rNode, void )
 {
     const ObjNode& rObjNode = static_cast<const ObjNode&>(rNode);
     RscWriteRc     aMem( pTypCont->GetByteOrder() );
@@ -331,7 +289,7 @@ IMPL_LINK_TYPED( RscEnumerateObj, CallBackWriteRc, const NameNode&, rNode, void 
     WriteRcFile( aMem, fOutput );
 }
 
-IMPL_LINK_TYPED( RscEnumerateObj, CallBackWriteSrc, const NameNode&, rNode, void )
+IMPL_LINK( RscEnumerateObj, CallBackWriteSrc, const NameNode&, rNode, void )
 {
     const ObjNode& rObjNode = static_cast<const ObjNode&>(rNode);
     if( rObjNode.GetFileKey() == lFileKey )
@@ -368,13 +326,12 @@ void RscEnumerateObj::WriteRcFile( RscWriteRc & rMem, FILE * fOut )
         sal_uInt32 nSize = (nCount * (sizeof(sal_uInt64)+sizeof(sal_Int32))) + sizeof(sal_Int32);
 
         rMem.Put( nCount ); // save the count
-        for( std::map< sal_uInt64, sal_uLong >::const_iterator it =
-             pTypCont->aIdTranslator.begin(); it != pTypCont->aIdTranslator.end(); ++it )
+        for (auto& rItem : pTypCont->aIdTranslator)
         {
             // save the key
-            rMem.Put( it->first );
+            rMem.Put( rItem.first );
             // save the object id or position
-            rMem.Put( (sal_Int32)it->second );
+            rMem.Put( static_cast<sal_Int32>(rItem.second) );
         }
         rMem.Put( nSize ); // save the size next
     }
@@ -393,25 +350,22 @@ class RscEnumerateRef
 private:
     RscTop *        pRoot;
 
-    DECL_LINK_TYPED( CallBackWriteRc, const NameNode&, void );
-    DECL_LINK_TYPED( CallBackWriteSrc, const NameNode&, void );
+    DECL_LINK( CallBackWriteRc, const NameNode&, void );
+    DECL_LINK( CallBackWriteSrc, const NameNode&, void );
 public:
     RscEnumerateObj aEnumObj;
 
-    RscEnumerateRef( RscTypCont * pTC, RscTop * pR,
-                     FILE * fOutput )
+    RscEnumerateRef(RscTypCont* pTC, RscTop* pR, FILE* fOutput)
+        : pRoot(pR), aEnumObj(pTC, fOutput)
         {
-            aEnumObj.pTypCont = pTC;
-            aEnumObj.fOutput  = fOutput;
-            pRoot             = pR;
         }
-    ERRTYPE WriteRc()
+    ERRTYPE const & WriteRc()
         {
             aEnumObj.aError.Clear();
             pRoot->EnumNodes( LINK( this, RscEnumerateRef, CallBackWriteRc ) );
             return aEnumObj.aError;
         }
-    ERRTYPE WriteSrc( sal_uLong lFileKey )
+    ERRTYPE const & WriteSrc( sal_uLong lFileKey )
         {
             aEnumObj.lFileKey = lFileKey;
 
@@ -421,13 +375,13 @@ public:
         }
 };
 
-IMPL_LINK_TYPED( RscEnumerateRef, CallBackWriteRc, const NameNode&, rNode, void )
+IMPL_LINK( RscEnumerateRef, CallBackWriteRc, const NameNode&, rNode, void )
 {
     const RscTop& rRef = static_cast<const RscTop&>(rNode);
     aEnumObj.WriteRc( const_cast<RscTop*>(&rRef), rRef.GetObjNode() );
 }
 
-IMPL_LINK_TYPED( RscEnumerateRef, CallBackWriteSrc, const NameNode&, rNode, void )
+IMPL_LINK( RscEnumerateRef, CallBackWriteSrc, const NameNode&, rNode, void )
 {
     const RscTop& rRef = static_cast<const RscTop&>(rNode);
     aEnumObj.WriteSrc( const_cast<RscTop*>(&rRef), rRef.GetObjNode() );
@@ -478,19 +432,19 @@ void RscTypCont::WriteSrc( FILE * fOutput, RscFileTab::Index nFileKey )
 class RscDel
 {
     sal_uLong lFileKey;
-    DECL_LINK_TYPED( Delete, const NameNode&, void );
+    DECL_LINK( Delete, const NameNode&, void );
 public:
     RscDel( RscTop * pRoot, sal_uLong lKey );
 };
 
 
 inline RscDel::RscDel( RscTop * pRoot, sal_uLong lKey )
+    : lFileKey(lKey)
 {
-    lFileKey = lKey;
     pRoot->EnumNodes( LINK( this, RscDel, Delete ) );
 }
 
-IMPL_LINK_TYPED( RscDel, Delete, const NameNode&, r, void )
+IMPL_LINK( RscDel, Delete, const NameNode&, r, void )
 {
     RscTop* pNode = const_cast<RscTop*>(static_cast<const RscTop*>(&r));
     if( pNode->GetObjNode() )

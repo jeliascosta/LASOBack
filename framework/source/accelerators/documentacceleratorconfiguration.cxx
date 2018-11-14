@@ -70,7 +70,7 @@ public:
             const css::uno::Reference< css::uno::XComponentContext >& xContext,
             const css::uno::Sequence< css::uno::Any >& lArguments);
 
-    virtual ~DocumentAcceleratorConfiguration();
+    virtual ~DocumentAcceleratorConfiguration() override;
 
     virtual OUString SAL_CALL getImplementationName()
         throw (css::uno::RuntimeException, std::exception) override
@@ -87,8 +87,7 @@ public:
     virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
         throw (css::uno::RuntimeException, std::exception) override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.ui.DocumentAcceleratorConfiguration" };
-        return aSeq;
+        return {"com.sun.star.ui.DocumentAcceleratorConfiguration"};
     }
 
     // XUIConfigurationStorage
@@ -100,12 +99,6 @@ public:
 
     /** read all data into the cache. */
     void fillCache();
-
-private:
-
-    /** forget all currently cached data AND(!)
-        forget all currently used storages. */
-    void clearCache();
 };
 
 DocumentAcceleratorConfiguration::DocumentAcceleratorConfiguration(
@@ -148,7 +141,8 @@ void SAL_CALL DocumentAcceleratorConfiguration::setStorage(const css::uno::Refer
     }
 
     if (bForgetOldStorages)
-        clearCache();
+        /* forget all currently cached data AND(!) forget all currently used storages. */
+        m_aPresetHandler.forgetCachedStorages();
 
     if (xStorage.is())
         fillCache();
@@ -199,11 +193,6 @@ void DocumentAcceleratorConfiguration::fillCache()
     }
     catch(const css::uno::Exception&)
     {}
-}
-
-void DocumentAcceleratorConfiguration::clearCache()
-{
-    m_aPresetHandler.forgetCachedStorages();
 }
 
 } // namespace framework

@@ -80,6 +80,8 @@ public:
     EditCharAttrib(const EditCharAttrib&) = delete;
     EditCharAttrib& operator=(const EditCharAttrib&) = delete;
 
+    void                dumpAsXml(struct _xmlTextWriter* pWriter) const;
+
     sal_uInt16          Which() const   { return pItem->Which(); }
     const SfxPoolItem*  GetItem() const { return pItem; }
 
@@ -369,7 +371,7 @@ class EditCharAttribField: public EditCharAttrib
 public:
     EditCharAttribField( const SvxFieldItem& rAttr, sal_uInt16 nPos );
     EditCharAttribField( const EditCharAttribField& rAttr );
-    virtual ~EditCharAttribField();
+    virtual ~EditCharAttribField() override;
 
     bool operator == ( const EditCharAttribField& rAttr ) const;
     bool operator != ( const EditCharAttribField& rAttr ) const

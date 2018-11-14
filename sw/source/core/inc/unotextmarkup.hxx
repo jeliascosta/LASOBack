@@ -39,7 +39,6 @@ namespace com { namespace sun { namespace star { namespace text {
 
 class SwTextNode;
 class ModelToViewHelper;
-class SfxPoolItem;
 
 /** Implementation of the css::text::XTextMarkup interface
  */
@@ -52,7 +51,7 @@ class SwXTextMarkup
 public:
     SwXTextMarkup(SwTextNode *const rTextNode,
             const ModelToViewHelper& rConversionMap);
-    virtual ~SwXTextMarkup();
+    virtual ~SwXTextMarkup() override;
 
     // css::text::XTextMarkup:
     virtual css::uno::Reference< css::container::XStringKeyMap > SAL_CALL getMarkupInfoContainer() throw (css::uno::RuntimeException, std::exception) override;
@@ -100,7 +99,7 @@ private:
     SwXStringKeyMap(SwXStringKeyMap &) = delete;
     void operator =(SwXStringKeyMap &) = delete;
 
-    virtual ~SwXStringKeyMap() {}
+    virtual ~SwXStringKeyMap() override {}
 
     std::map< OUString, css::uno::Any > maMap;
 };

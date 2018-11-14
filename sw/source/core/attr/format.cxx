@@ -308,7 +308,7 @@ void SwFormat::Modify( const SfxPoolItem* pOldValue, const SfxPoolItem* pNewValu
         break;
     case RES_RESET_FMTWRITTEN:
         {
-            ResetWritten();
+            m_bWritten = false;
 
             // mba: here we don't use the additional stuff from NotifyClients().
             // should we?!
@@ -719,11 +719,6 @@ sal_uInt16 SwFormat::ResetAllFormatAttr()
         ModifyNotification( &aChgOld, &aChgNew ); // send all modified ones
     }
     return aNew.Count();
-}
-
-bool SwFormat::GetInfo( SfxPoolItem& rInfo ) const
-{
-    return SwModify::GetInfo( rInfo );
 }
 
 void SwFormat::DelDiffs( const SfxItemSet& rSet )

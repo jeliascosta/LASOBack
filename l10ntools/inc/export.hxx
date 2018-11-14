@@ -128,7 +128,6 @@ private:
     bool bNextMustBeDefineEOL;          ///< define but no \ at lineend
     std::size_t nLevel; // res. recursive? how deep?
     ExportListType nList;                       ///< cur. res. is List
-    std::size_t nListIndex;
     std::size_t nListLevel;
     bool bMergeMode;
     OString sMergeSrc;
@@ -162,8 +161,6 @@ private:
     void SetChildWithText();
 
     static void CutComment( OString &rText );
-
-    void WriteUTF8ByteOrderMarkToOutput() { *aOutput.mSimple << '\xEF' << '\xBB' << '\xBF'; }
 
 public:
     Export( const OString &rOutput );
@@ -257,7 +254,7 @@ class MergeDataHashMap
         typedef HashMap_t::const_iterator const_iterator;
 
         std::pair<iterator,bool> insert(const OString& rKey, MergeData* pMergeData);
-        iterator find(const OString& rKey);
+        iterator const & find(const OString& rKey);
 
         iterator begin() {return m_aHashMap.begin();}
         iterator end() {return m_aHashMap.end();}
@@ -306,7 +303,7 @@ class MergeDataFile
         MergeDataHashMap aMap;
         std::set<OString> aLanguageSet;
 
-        MergeData *GetMergeData( ResData *pResData , bool bCaseSensitve = false );
+        MergeData *GetMergeData( ResData *pResData , bool bCaseSensitive = false );
         void InsertEntry(const OString &rTYP, const OString &rGID,
             const OString &rLID, const OString &nLang,
             const OString &rTEXT, const OString &rQHTEXT,
@@ -326,7 +323,7 @@ class MergeDataFile
         MergeEntrys *GetMergeEntrysCaseSensitive( ResData *pResData );
 
         static OString CreateKey(const OString& rTYP, const OString& rGID,
-            const OString& rLID, const OString& rFilename , bool bCaseSensitive = false);
+            const OString& rLID, const OString& rFilename, bool bCaseSensitive);
 };
 
 

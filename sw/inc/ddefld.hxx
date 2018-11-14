@@ -42,8 +42,8 @@ class SW_DLLPUBLIC SwDDEFieldType : public SwFieldType
 
 public:
     SwDDEFieldType( const OUString& rName, const OUString& rCmd,
-                    SfxLinkUpdateMode = SfxLinkUpdateMode::ONCALL );
-    virtual ~SwDDEFieldType();
+                    SfxLinkUpdateMode );
+    virtual ~SwDDEFieldType() override;
 
     const OUString& GetExpansion() const               { return aExpansion; }
     void SetExpansion( const OUString& rStr )   { aExpansion = rStr;
@@ -64,7 +64,6 @@ public:
     bool IsDeleted() const          { return bDeleted; }
     void SetDeleted( bool b )       { bDeleted = b; }
 
-    void UpdateNow()                { refLink->Update(); }
     void Disconnect()               { refLink->Disconnect(); }
 
     const ::sfx2::SvBaseLink& GetBaseLink() const    { return *refLink; }
@@ -77,7 +76,7 @@ public:
     void IncRefCnt() {  if( !nRefCnt++ && pDoc ) RefCntChgd(); }
     void DecRefCnt() {  if( !--nRefCnt && pDoc ) RefCntChgd(); }
 
-    void SetCRLFDelFlag( bool bFlag = true )    { bCRLFFlag = bFlag; }
+    void SetCRLFDelFlag( bool bFlag )    { bCRLFFlag = bFlag; }
 };
 
 // DDE-field
@@ -89,7 +88,7 @@ private:
 
 public:
     SwDDEField(SwDDEFieldType*);
-    virtual ~SwDDEField();
+    virtual ~SwDDEField() override;
 
     /** Get parameter via types.
      Name cannot be changed. */

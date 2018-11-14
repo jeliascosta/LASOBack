@@ -446,8 +446,7 @@ public:
 
     void includes(sal_uInt32 nChar);
 
-    rtl_TextEncoding getPreferredEncoding(rtl_TextEncoding eDefault
-                                              = RTL_TEXTENCODING_DONTKNOW)
+    rtl_TextEncoding getPreferredEncoding(rtl_TextEncoding eDefault)
         const;
 
     void reset();
@@ -667,15 +666,15 @@ bool parseParameters(ParameterList const & rInput,
                     if (pNext->m_bExtended)
                     {
                         for (sal_Int32 i = 0; i < pNext->m_aValue.getLength(); ++i)
-                            aValue += OUString(sal_Unicode(
+                            aValue += OUStringLiteral1(
                                 sal_Unicode(
                                     static_cast<unsigned char>(pNext->m_aValue[i]))
-                                | 0xF800));
+                                | 0xF800);
                     }
                     else
                     {
                         for (sal_Int32 i = 0; i < pNext->m_aValue.getLength(); ++i)
-                            aValue += OUString( sal_Unicode(static_cast<unsigned char>(pNext->m_aValue[i])) );
+                            aValue += OUStringLiteral1( static_cast<unsigned char>(pNext->m_aValue[i]) );
                     }
                     pNext = pNext->m_pNext;
                     if (!pNext || pNext->m_nSection == 0)

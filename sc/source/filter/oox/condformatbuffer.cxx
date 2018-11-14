@@ -20,20 +20,19 @@
 #include "condformatbuffer.hxx"
 
 #include <com/sun/star/sheet/ConditionOperator2.hpp>
-#include <com/sun/star/table/CellAddress.hpp>
 #include <com/sun/star/table/CellRangeAddress.hpp>
 #include <rtl/ustrbuf.hxx>
 #include <osl/diagnose.h>
 #include <svl/intitem.hxx>
 #include <svl/sharedstringpool.hxx>
 #include <oox/core/filterbase.hxx>
+#include <oox/helper/binaryinputstream.hxx>
 #include <oox/helper/attributelist.hxx>
 #include <oox/helper/containerhelper.hxx>
 #include <oox/helper/propertyset.hxx>
 #include <oox/token/properties.hxx>
 #include <oox/token/tokens.hxx>
 #include "addressconverter.hxx"
-#include "biffinputstream.hxx"
 #include "stylesbuffer.hxx"
 #include "themebuffer.hxx"
 
@@ -368,7 +367,7 @@ namespace {
 ScIconSetType getType(const OUString& rName)
 {
     ScIconSetType eIconSetType = IconSet_3TrafficLights1;
-    ScIconSetMap* pIconSetMap = ScIconSetFormat::getIconSetMap();
+    const ScIconSetMap* pIconSetMap = ScIconSetFormat::g_IconSetMap;
     for(size_t i = 0; pIconSetMap[i].pName; ++i)
     {
         if(OUString::createFromAscii(pIconSetMap[i].pName) == rName)
@@ -1080,7 +1079,7 @@ CondFormatRuleRef CondFormat::createRule()
     return std::make_shared<CondFormatRule>( *this, mpFormat );
 }
 
-void CondFormat::insertRule( CondFormatRuleRef xRule )
+void CondFormat::insertRule( CondFormatRuleRef const & xRule )
 {
     if( xRule.get() && (xRule->getPriority() > 0) )
     {

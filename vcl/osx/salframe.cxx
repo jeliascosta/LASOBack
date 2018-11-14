@@ -107,7 +107,7 @@ AquaSalFrame::~AquaSalFrame()
     pSalData->maFrameCheck.erase( this );
     pSalData->maPresentationFrames.remove( this );
 
-    DBG_ASSERT( this != s_pCaptureFrame, "capture frame destroyed" );
+    SAL_WARN_IF( this == s_pCaptureFrame, "vcl", "capture frame destroyed" );
     if( this == s_pCaptureFrame )
         s_pCaptureFrame = nullptr;
 
@@ -151,6 +151,12 @@ void AquaSalFrame::initWindowAndView()
     maGeometry.nHeight = static_cast<unsigned int>(aVisibleRect.size.height * 0.8);
 
     // calculate style mask
+SAL_WNODEPRECATED_DECLARATIONS_PUSH
+        // 'NSBorderlessWindowMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSClosableWindowMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSMiniaturizableWindowMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSResizableWindowMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSTitledWindowMask' is deprecated: first deprecated in macOS 10.12
     if( (mnStyle & SalFrameStyleFlags::FLOAT) ||
         (mnStyle & SalFrameStyleFlags::OWNERDRAWDECORATION) )
         mnStyleMask = NSBorderlessWindowMask;
@@ -184,6 +190,7 @@ void AquaSalFrame::initWindowAndView()
         if( mnStyleMask != 0 )
             mnStyleMask |= NSTitledWindowMask;
     }
+SAL_WNODEPRECATED_DECLARATIONS_POP
 
     // #i91990# support GUI-less (daemon) execution
     @try
@@ -277,7 +284,7 @@ SalGraphics* AquaSalFrame::AcquireGraphics()
 void AquaSalFrame::ReleaseGraphics( SalGraphics *pGraphics )
 {
     (void)pGraphics;
-    DBG_ASSERT( pGraphics == mpGraphics, "graphics released on wrong frame" );
+    SAL_WARN_IF( pGraphics != mpGraphics, "vcl", "graphics released on wrong frame" );
     mbGraphics = FALSE;
 }
 
@@ -1176,7 +1183,6 @@ void AquaSalFrame::UpdateSettings( AllSettings& rSettings )
 
     vcl::Font aLabelFont( getFont( [NSFont labelFontOfSize: 0], nDPIY, aAppFont ) );
     aStyleSettings.SetLabelFont( aLabelFont );
-    aStyleSettings.SetInfoFont( aLabelFont );
     aStyleSettings.SetRadioCheckFont( aLabelFont );
     aStyleSettings.SetFieldFont( aLabelFont );
     aStyleSettings.SetGroupFont( aLabelFont );
@@ -1213,11 +1219,14 @@ void AquaSalFrame::UpdateSettings( AllSettings& rSettings )
     getAppleScrollBarVariant(aStyleSettings);
 
     // set scrollbar size
+SAL_WNODEPRECATED_DECLARATIONS_PUSH
+        // 'NSRegularControlSize' is deprecated: first deprecated in macOS 10.12
     aStyleSettings.SetScrollBarSize( static_cast<long int>([NSScroller scrollerWidthForControlSize:NSRegularControlSize scrollerStyle:NSScrollerStyleLegacy]) );
+SAL_WNODEPRECATED_DECLARATIONS_POP
     // images in menus false for MacOSX
     aStyleSettings.SetPreferredUseImagesInMenus( false );
     aStyleSettings.SetHideDisabledMenuItems( true );
-    aStyleSettings.SetAcceleratorsInContextMenus( false );
+    aStyleSettings.SetPreferredContextMenuShortcuts( false );
 
     rSettings.SetStyleSettings( aStyleSettings );
 
@@ -1364,6 +1373,17 @@ SalPointerState AquaSalFrame::GetPointerState()
     if( pCur )
     {
         bMouseEvent = true;
+SAL_WNODEPRECATED_DECLARATIONS_PUSH
+    // 'NSLeftMouseDown' is deprecated: first deprecated in macOS 10.12
+    // 'NSLeftMouseDragged' is deprecated: first deprecated in macOS 10.12
+    // 'NSLeftMouseUp' is deprecated: first deprecated in macOS 10.12
+    // 'NSMouseMoved' is deprecated: first deprecated in macOS 10.12
+    // 'NSOtherMouseDown' is deprecated: first deprecated in macOS 10.12
+    // 'NSOtherMouseDragged' is deprecated: first deprecated in macOS 10.12
+    // 'NSOtherMouseUp' is deprecated: first deprecated in macOS 10.12
+    // 'NSRightMouseDown' is deprecated: first deprecated in macOS 10.12
+    // 'NSRightMouseDragged' is deprecated: first deprecated in macOS 10.12
+    // 'NSRightMouseUp' is deprecated: first deprecated in macOS 10.12
         switch( [pCur type] )
         {
         case NSLeftMouseDown:       state.mnState |= MOUSE_LEFT; break;
@@ -1381,10 +1401,16 @@ SalPointerState AquaSalFrame::GetPointerState()
             bMouseEvent = false;
             break;
         }
+SAL_WNODEPRECATED_DECLARATIONS_POP
     }
     if( bMouseEvent )
     {
         unsigned int nMask = (unsigned int)[pCur modifierFlags];
+SAL_WNODEPRECATED_DECLARATIONS_PUSH
+    // 'NSAlternateKeyMask' is deprecated: first deprecated in macOS 10.12
+    // 'NSCommandKeyMask' is deprecated: first deprecated in macOS 10.12
+    // 'NSControlKeyMask' is deprecated: first deprecated in macOS 10.12
+    // 'NSShiftKeyMask' is deprecated: first deprecated in macOS 10.12
         if( (nMask & NSShiftKeyMask) != 0 )
             state.mnState |= KEY_SHIFT;
         if( (nMask & NSControlKeyMask) != 0 )
@@ -1393,6 +1419,7 @@ SalPointerState AquaSalFrame::GetPointerState()
             state.mnState |= KEY_MOD2;
         if( (nMask & NSCommandKeyMask) != 0 )
             state.mnState |= KEY_MOD1;
+SAL_WNODEPRECATED_DECLARATIONS_POP
 
     }
     else
@@ -1470,7 +1497,7 @@ void AquaSalFrame::SetMenu( SalMenu* pSalMenu )
     SalData::ensureThreadAutoreleasePool();
 
     AquaSalMenu* pMenu = static_cast<AquaSalMenu*>(pSalMenu);
-    DBG_ASSERT( ! pMenu || pMenu->mbMenuBar, "setting non menubar on frame" );
+    SAL_WARN_IF( pMenu && !pMenu->mbMenuBar, "vcl", "setting non menubar on frame" );
     mpMenu = pMenu;
     if( mpMenu  )
         mpMenu->setMainMenu();

@@ -56,9 +56,7 @@ class OCommandDefinition   : public OComponentDefinition
                             ,public OCommandDefinition_PROP
 {
 protected:
-    virtual ~OCommandDefinition();
-
-    inline       OCommandDefinition_Impl& getCommandDefinition()       { return dynamic_cast<       OCommandDefinition_Impl& >( *m_pImpl.get() ); }
+    virtual ~OCommandDefinition() override;
 
 public:
     OCommandDefinition(const css::uno::Reference< css::uno::XComponentContext >& ,

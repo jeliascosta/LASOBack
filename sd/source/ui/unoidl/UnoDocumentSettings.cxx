@@ -43,8 +43,8 @@
 #include "optsitem.hxx"
 #include <sfx2/printer.hxx>
 #include "sdattr.hxx"
-#include "../inc/ViewShell.hxx"
-#include "../inc/FrameView.hxx"
+#include "ViewShell.hxx"
+#include "FrameView.hxx"
 #include "Outliner.hxx"
 #include <xmloff/settingsstore.hxx>
 #include <editeng/editstat.hxx>
@@ -72,7 +72,7 @@ namespace sd
     {
     public:
         explicit DocumentSettings( SdXImpressDocument* pModel );
-        virtual ~DocumentSettings() throw();
+        virtual ~DocumentSettings() throw() override;
 
         // XInterface
         virtual Any SAL_CALL queryInterface( const Type& aType ) throw (RuntimeException, std::exception) override;
@@ -268,12 +268,12 @@ static struct {
     const char *pName;
     XPropertyListType t;
 } aURLPropertyNames[] = {
-    { "ColorTableURL", XCOLOR_LIST },
-    { "DashTableURL", XDASH_LIST },
-    { "LineEndTableURL", XLINE_END_LIST },
-    { "HatchTableURL", XHATCH_LIST },
-    { "GradientTableURL", XGRADIENT_LIST },
-    { "BitmapTableURL", XBITMAP_LIST }
+    { "ColorTableURL", XPropertyListType::Color },
+    { "DashTableURL", XPropertyListType::Dash },
+    { "LineEndTableURL", XPropertyListType::LineEnd },
+    { "HatchTableURL", XPropertyListType::Hatch },
+    { "GradientTableURL", XPropertyListType::Gradient },
+    { "BitmapTableURL", XPropertyListType::Bitmap }
 };
 
 static XPropertyListType getTypeOfName( const OUString &aName )
@@ -282,7 +282,7 @@ static XPropertyListType getTypeOfName( const OUString &aName )
         if( aName.equalsAscii( rURLPropertyName.pName ) )
             return rURLPropertyName.t;
     }
-    return UNKNOWN_XPROPERTYLISTTYPE;
+    return XPropertyListType::Unknown;
 }
 
 static OUString getNameOfType( XPropertyListType t )
@@ -307,7 +307,7 @@ uno::Sequence<beans::PropertyValue>
     for( sal_Int32 i = 0; i < aConfigProps.getLength(); i++ )
     {
         XPropertyListType t = getTypeOfName( aConfigProps[i].Name );
-        if (t == UNKNOWN_XPROPERTYLISTTYPE)
+        if (t == XPropertyListType::Unknown)
             aRet[nRet++] = aConfigProps[i];
         else
         {
@@ -351,7 +351,7 @@ uno::Sequence<beans::PropertyValue>
         {
             XPropertyListType t = getTypeOfName( aConfigProps[i].Name );
             aRet[i] = aConfigProps[i];
-            if (t >= 0) {
+            if (t != XPropertyListType::Unknown) {
                 XPropertyListRef pList = pDoc->GetPropertyList( t );
                 if( !pList.is() || !pList->IsEmbedInDocument() )
                     continue; // no change ...
@@ -412,7 +412,7 @@ throw (UnknownPropertyException, PropertyVetoException,
     bool bValue = false;
     bool bOk, bChanged = false, bOptionsChanged = false;
 
-    SdOptionsPrintItem aOptionsPrintItem( ATTR_OPTIONS_PRINT );
+    SdOptionsPrintItem aOptionsPrintItem;
 
     SfxPrinter* pPrinter = pDocSh->GetPrinter( false );
     if( pPrinter )
@@ -434,27 +434,27 @@ throw (UnknownPropertyException, PropertyVetoException,
         switch( (*ppEntries)->mnHandle )
         {
             case HANDLE_COLORTABLEURL:
-                AssignURL( XCOLOR_LIST, pValues, &bOk, &bChanged );
+                AssignURL( XPropertyListType::Color, pValues, &bOk, &bChanged );
                 break;
 
             case HANDLE_DASHTABLEURL:
-                AssignURL( XDASH_LIST, pValues, &bOk, &bChanged );
+                AssignURL( XPropertyListType::Dash, pValues, &bOk, &bChanged );
                 break;
 
             case HANDLE_LINEENDTABLEURL:
-                AssignURL( XLINE_END_LIST, pValues, &bOk, &bChanged );
+                AssignURL( XPropertyListType::LineEnd, pValues, &bOk, &bChanged );
                 break;
 
             case HANDLE_HATCHTABLEURL:
-                AssignURL( XHATCH_LIST, pValues, &bOk, &bChanged );
+                AssignURL( XPropertyListType::Hatch, pValues, &bOk, &bChanged );
                 break;
 
             case HANDLE_GRADIENTTABLEURL:
-                AssignURL( XGRADIENT_LIST, pValues, &bOk, &bChanged );
+                AssignURL( XPropertyListType::Gradient, pValues, &bOk, &bChanged );
                 break;
 
             case HANDLE_BITMAPTABLEURL:
-                AssignURL( XBITMAP_LIST, pValues, &bOk, &bChanged );
+                AssignURL( XPropertyListType::Bitmap, pValues, &bOk, &bChanged );
                 break;
 
             case HANDLE_FORBIDDENCHARS:
@@ -711,7 +711,7 @@ throw (UnknownPropertyException, PropertyVetoException,
             case HANDLE_PAGENUMFMT:
                 {
                     sal_Int32 nValue = 0;
-                    if( (*pValues >>= nValue ) && (nValue >= SVX_CHARS_UPPER_LETTER ) && (nValue <= SVX_PAGEDESC) )
+                    if( (*pValues >>= nValue ) && (nValue >= css::style::NumberingType::CHARS_UPPER_LETTER ) && (nValue <= css::style::NumberingType::PAGE_DESCRIPTOR) )
                     {
                         pDoc->SetPageNumType((SvxNumType)nValue);
                         bOk = true;
@@ -766,7 +766,7 @@ throw (UnknownPropertyException, PropertyVetoException,
                             pPrinter = SfxPrinter::Create ( aStream, pItemSet );
 
                             MapMode aMM (pPrinter->GetMapMode());
-                            aMM.SetMapUnit(MAP_100TH_MM);
+                            aMM.SetMapUnit(MapUnit::Map100thMM);
                             pPrinter->SetMapMode(aMM);
 
                             pDocSh->SetPrinter( pPrinter );
@@ -784,7 +784,7 @@ throw (UnknownPropertyException, PropertyVetoException,
                 {
                     bOk = true;
                     bChanged = true;
-                    if ( pDoc->GetDocumentType() == DOCUMENT_TYPE_IMPRESS )
+                    if ( pDoc->GetDocumentType() == DocumentType::Impress )
                     {
                         EEControlBits nSum = bIsSummationOfParagraphs ? EEControlBits::ULSPACESUMMATION : EEControlBits::NONE;
                         EEControlBits nCntrl;
@@ -794,7 +794,7 @@ throw (UnknownPropertyException, PropertyVetoException,
                         SdrOutliner& rOutl = pDocument->GetDrawOutliner();
                         nCntrl = rOutl.GetControlWord() &~ EEControlBits::ULSPACESUMMATION;
                         rOutl.SetControlWord( nCntrl | nSum );
-                        ::sd::Outliner* pOutl = pDocument->GetOutliner( false );
+                        SdOutliner* pOutl = pDocument->GetOutliner( false );
                         if( pOutl )
                         {
                             nCntrl = pOutl->GetControlWord() &~ EEControlBits::ULSPACESUMMATION;
@@ -822,7 +822,7 @@ throw (UnknownPropertyException, PropertyVetoException,
                     SdDrawDocument* pDocument = pDocSh->GetDoc();
                     SdrOutliner& rOutl = pDocument->GetDrawOutliner();
                     rOutl.SetAsianCompressionMode( (sal_uInt16)nCharCompressType );
-                    ::sd::Outliner* pOutl = pDocument->GetOutliner( false );
+                    SdOutliner* pOutl = pDocument->GetOutliner( false );
                     if( pOutl )
                     {
                         pOutl->SetAsianCompressionMode( (sal_uInt16)nCharCompressType );
@@ -847,7 +847,7 @@ throw (UnknownPropertyException, PropertyVetoException,
                     SdDrawDocument* pDocument = pDocSh->GetDoc();
                     SdrOutliner& rOutl = pDocument->GetDrawOutliner();
                     rOutl.SetKernAsianPunctuation( bAsianPunct );
-                    ::sd::Outliner* pOutl = pDocument->GetOutliner( false );
+                    SdOutliner* pOutl = pDocument->GetOutliner( false );
                     if( pOutl )
                     {
                         pOutl->SetKernAsianPunctuation( bAsianPunct );
@@ -992,7 +992,7 @@ throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::
                 static_cast<OWeakObject *>(this));
     }
 
-    SdOptionsPrintItem aOptionsPrintItem( ATTR_OPTIONS_PRINT );
+    SdOptionsPrintItem aOptionsPrintItem;
 
     SfxPrinter* pPrinter = pDocSh->GetPrinter( false );
     if( pPrinter )
@@ -1012,22 +1012,22 @@ throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::
         switch( (*ppEntries)->mnHandle )
         {
             case HANDLE_COLORTABLEURL:
-                ExtractURL( XCOLOR_LIST, pValue );
+                ExtractURL( XPropertyListType::Color, pValue );
                 break;
             case HANDLE_DASHTABLEURL:
-                ExtractURL( XDASH_LIST, pValue );
+                ExtractURL( XPropertyListType::Dash, pValue );
                 break;
             case HANDLE_LINEENDTABLEURL:
-                ExtractURL( XLINE_END_LIST, pValue );
+                ExtractURL( XPropertyListType::LineEnd, pValue );
                 break;
             case HANDLE_HATCHTABLEURL:
-                ExtractURL( XHATCH_LIST, pValue );
+                ExtractURL( XPropertyListType::Hatch, pValue );
                 break;
             case HANDLE_GRADIENTTABLEURL:
-                ExtractURL( XGRADIENT_LIST, pValue );
+                ExtractURL( XPropertyListType::Gradient, pValue );
                 break;
             case HANDLE_BITMAPTABLEURL:
-                ExtractURL( XBITMAP_LIST, pValue );
+                ExtractURL( XPropertyListType::Bitmap, pValue );
                 break;
             case HANDLE_FORBIDDENCHARS:
                 *pValue <<= mxModel->getForbiddenCharsTable();

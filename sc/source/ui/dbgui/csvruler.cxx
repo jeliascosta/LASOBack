@@ -118,24 +118,24 @@ void ScCsvRuler::setPosSizePixel(
 
 void ScCsvRuler::ApplyLayout( const ScCsvLayoutData& rOldData )
 {
-    ScCsvDiff nDiff = GetLayoutData().GetDiff( rOldData ) & (CSV_DIFF_HORIZONTAL | CSV_DIFF_RULERCURSOR);
-    if( nDiff == CSV_DIFF_EQUAL ) return;
+    ScCsvDiff nDiff = GetLayoutData().GetDiff( rOldData ) & (ScCsvDiff::HorizontalMask | ScCsvDiff::RulerCursor);
+    if( nDiff == ScCsvDiff::Equal ) return;
 
     DisableRepaint();
-    if( nDiff & CSV_DIFF_HORIZONTAL )
+    if( nDiff & ScCsvDiff::HorizontalMask )
     {
         InitSizeData();
         if( GetRulerCursorPos() >= GetPosCount() )
             MoveCursor( GetPosCount() - 1 );
     }
-    if( nDiff & CSV_DIFF_RULERCURSOR )
+    if( nDiff & ScCsvDiff::RulerCursor )
     {
         ImplInvertCursor( rOldData.mnPosCursor );
         ImplInvertCursor( GetRulerCursorPos() );
     }
     EnableRepaint();
 
-    if( nDiff & CSV_DIFF_POSOFFSET )
+    if( nDiff & ScCsvDiff::PosOffset )
         AccSendVisibleEvent();
 }
 
@@ -530,7 +530,10 @@ void ScCsvRuler::ImplRedraw()
             ImplDrawRulerDev();
         }
         DrawOutDev( Point(), maWinSize, Point(), maWinSize, *maRulerDev.get() );
-        ImplDrawTrackingRect();
+        /* Draws directly tracking rectangle to the column with the specified index. */
+        if( HasFocus() )
+            InvertTracking( Rectangle( 0, 0, GetWidth() - 1, GetHeight() - 2 ),
+                ShowTrackFlags::Small | ShowTrackFlags::TrackWindow );
     }
 }
 
@@ -634,13 +637,6 @@ void ScCsvRuler::ImplInvertCursor( sal_Int32 nPos )
         if( HasSplit( nPos ) )
             ImplDrawSplit( nPos );
     }
-}
-
-void ScCsvRuler::ImplDrawTrackingRect()
-{
-    if( HasFocus() )
-        InvertTracking( Rectangle( 0, 0, GetWidth() - 1, GetHeight() - 2 ),
-            ShowTrackFlags::Small | ShowTrackFlags::TrackWindow );
 }
 
 void ScCsvRuler::ImplSetMousePointer( sal_Int32 nPos )

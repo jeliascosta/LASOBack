@@ -56,23 +56,21 @@ uno::Reference< media::XPlayer > SAL_CALL Manager::createPlayer( const ::rtl::OU
 ::rtl::OUString SAL_CALL Manager::getImplementationName(  )
     throw (uno::RuntimeException)
 {
-    return ::rtl::OUString( RTL_CONSTASCII_USTRINGPARAM( AVMEDIA_MACAVF_MANAGER_IMPLEMENTATIONNAME ) );
+    return ::rtl::OUString( AVMEDIA_MACAVF_MANAGER_IMPLEMENTATIONNAME );
 }
 
 
 sal_Bool SAL_CALL Manager::supportsService( const ::rtl::OUString& ServiceName )
     throw (uno::RuntimeException)
 {
-    return ServiceName.equalsAsciiL( RTL_CONSTASCII_STRINGPARAM ( AVMEDIA_MACAVF_MANAGER_SERVICENAME ) );
+    return ServiceName == AVMEDIA_MACAVF_MANAGER_SERVICENAME;
 }
 
 
 uno::Sequence< ::rtl::OUString > SAL_CALL Manager::getSupportedServiceNames(  )
     throw (uno::RuntimeException)
 {
-    uno::Sequence< ::rtl::OUString > aRet { AVMEDIA_MACAVF_MANAGER_SERVICENAME };
-
-    return aRet;
+    return { AVMEDIA_MACAVF_MANAGER_SERVICENAME };
 }
 
 } // namespace macavf

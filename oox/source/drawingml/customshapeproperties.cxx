@@ -147,7 +147,7 @@ void CustomShapeProperties::pushToPropSet( const ::oox::core::FilterBase& /* rFi
 
             aPropertyMap = maPresetDataMap[mnShapePresetType];
 #ifdef DEBUG
-            aPropertyMap.dumpCode();
+            aPropertyMap.dumpCode( aPropertyMap.makePropertySet() );
 #endif
         }
 
@@ -174,7 +174,7 @@ void CustomShapeProperties::pushToPropSet( const ::oox::core::FilterBase& /* rFi
                     OUString presetTextWarp;
                     if ( aGeoPropSeq[ i ].Value >>= presetTextWarp )
                     {
-                        aPropertyMap.setProperty( PROP_PresetTextWarp, Any( presetTextWarp ) );
+                        aPropertyMap.setProperty( PROP_PresetTextWarp, presetTextWarp );
                     }
                 }
             }
@@ -328,7 +328,25 @@ void CustomShapeProperties::pushToPropSet( const ::oox::core::FilterBase& /* rFi
             // adjustment value is decisive
             if ( maAdjustHandleList[ i ].polar )
             {
+                // Polar handles in DrawingML
+                // 1. don't have reference center, so PROP_Polar isn't needed.
+                // 2. position always use planar coordinates.
+                // 3. use RefAngle and RefR to specify adjustment value to be updated.
+                // 4. The unit of angular adjustment values are 6000th degree.
+
                 aHandle.setProperty( PROP_Position, maAdjustHandleList[ i ].pos);
+                if ( maAdjustHandleList[ i ].gdRef1.has() )
+                {
+                    sal_Int32 nIndex = GetCustomShapeGuideValue( maAdjustmentGuideList, maAdjustHandleList[ i ].gdRef1.get() );
+                    if ( nIndex >= 0 )
+                        aHandle.setProperty( PROP_RefR, nIndex);
+                }
+                if ( maAdjustHandleList[ i ].gdRef2.has() )
+                {
+                    sal_Int32 nIndex = GetCustomShapeGuideValue( maAdjustmentGuideList, maAdjustHandleList[ i ].gdRef2.get() );
+                    if ( nIndex >= 0 )
+                        aHandle.setProperty( PROP_RefAngle, nIndex);
+                }
                 if ( maAdjustHandleList[ i ].min1.has() )
                     aHandle.setProperty( PROP_RadiusRangeMinimum, maAdjustHandleList[ i ].min1.get());
                 if ( maAdjustHandleList[ i ].max1.has() )
@@ -373,10 +391,10 @@ void CustomShapeProperties::pushToPropSet( const ::oox::core::FilterBase& /* rFi
 
 #ifdef DEBUG
         SAL_INFO("oox.cscode", "==cscode== begin");
-        aPropertyMap.dumpCode();
+        aPropertyMap.dumpCode( aPropertyMap.makePropertySet() );
         SAL_INFO("oox.cscode", "==cscode== end");
         SAL_INFO("oox.csdata", "==csdata== begin");
-        aPropertyMap.dumpData();
+        aPropertyMap.dumpData( aPropertyMap.makePropertySet() );
         SAL_INFO("oox.csdata", "==csdata== end");
 #endif
         // converting the vector to a sequence

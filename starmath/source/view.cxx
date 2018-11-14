@@ -36,6 +36,7 @@
 #include <sfx2/docfilt.hxx>
 #include <sfx2/docinsert.hxx>
 #include <sfx2/filedlghelper.hxx>
+#include <sfx2/infobar.hxx>
 #include <sfx2/msg.hxx>
 #include <sfx2/objface.hxx>
 #include <sfx2/printer.hxx>
@@ -104,7 +105,7 @@ SmGraphicWindow::SmGraphicWindow(SmViewShell* pShell)
     Hide();
 
     const Fraction aFraction(1, 1);
-    SetMapMode(MapMode(MAP_100TH_MM, Point(), aFraction, aFraction));
+    SetMapMode(MapMode(MapUnit::Map100thMM, Point(), aFraction, aFraction));
 
     SetTotalSize();
 
@@ -142,12 +143,6 @@ void SmGraphicWindow::ApplyColorConfigValues(const svtools::ColorConfig &rColorC
     // Note: SetTextColor not necessary since the nodes that
     // get painted have the color information.
     SetBackground(Color(static_cast<ColorData>(rColorCfg.GetColorValue(svtools::DOCCOLOR).nColor)));
-}
-
-
-void SmGraphicWindow::DataChanged( const DataChangedEvent& rEvt )
-{
-    ScrollableWindow::DataChanged( rEvt );
 }
 
 
@@ -263,7 +258,7 @@ void SmGraphicWindow::RepaintViewShellDoc()
         pDoc->Repaint();
 }
 
-IMPL_LINK_NOARG_TYPED(SmGraphicWindow, CaretBlinkTimerHdl, Timer *, void)
+IMPL_LINK_NOARG(SmGraphicWindow, CaretBlinkTimerHdl, Timer *, void)
 {
     if (IsCursorVisible())
         SetIsCursorVisible(false);
@@ -385,7 +380,7 @@ void SmGraphicWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle&
 
     rDoc.DrawFormula(rRenderContext, aPoint, true);  //! modifies aPoint to be the topleft
                                 //! corner of the formula
-    SetFormulaDrawPos(aPoint);
+    aFormulaDrawPos = aPoint;
     if (IsInlineEditEnabled())
     {
         //Draw cursor if any...
@@ -590,7 +585,7 @@ void SmGraphicWindow::SetZoom(sal_uInt16 Factor)
 {
     nZoom = std::min(std::max(Factor, MINZOOM), MAXZOOM);
     Fraction   aFraction (nZoom, 100);
-    SetMapMode( MapMode(MAP_100TH_MM, Point(), aFraction, aFraction) );
+    SetMapMode( MapMode(MapUnit::Map100thMM, Point(), aFraction, aFraction) );
     SetTotalSize();
     SmViewShell *pViewSh = GetView();
     if (pViewSh)
@@ -607,7 +602,7 @@ void SmGraphicWindow::ZoomToFitInWindow()
     SmDocShell &rDoc = *pViewShell->GetDoc();
 
     // set defined mapmode before calling 'LogicToPixel' below
-    SetMapMode(MapMode(MAP_100TH_MM));
+    SetMapMode(MapMode(MapUnit::Map100thMM));
 
     Size       aSize (LogicToPixel(rDoc.GetSize()));
     Size       aWindowSize (GetSizePixel());
@@ -681,7 +676,7 @@ SmCmdBoxWindow::SmCmdBoxWindow(SfxBindings *pBindings_, SfxChildWindow *pChildWi
     bExiting    (false)
 {
     SetHelpId( HID_SMA_COMMAND_WIN );
-    SetSizePixel(LogicToPixel(Size(292 , 94), MapMode(MAP_APPFONT)));
+    SetSizePixel(LogicToPixel(Size(292 , 94), MapMode(MapUnit::MapAppFont)));
     SetText(SM_RESSTR(STR_CMDBOXWINDOW));
 
     Hide();
@@ -786,7 +781,7 @@ void SmCmdBoxWindow::StateChanged( StateChangedType nStateChange )
     SfxDockingWindow::StateChanged( nStateChange );
 }
 
-IMPL_LINK_NOARG_TYPED( SmCmdBoxWindow, InitialFocusTimerHdl, Timer *, void )
+IMPL_LINK_NOARG( SmCmdBoxWindow, InitialFocusTimerHdl, Timer *, void )
 {
     // We want to have the focus in the edit window once Math has been opened
     // to allow for immediate typing.
@@ -885,6 +880,7 @@ void SmViewShell::InitInterface_Impl()
 
     GetStaticInterface()->RegisterChildWindow(SmCmdBoxWrapper::GetChildWindowId());
     GetStaticInterface()->RegisterChildWindow(SmElementsDockingWindowWrapper::GetChildWindowId());
+    GetStaticInterface()->RegisterChildWindow(SfxInfoBarContainerChild::GetChildWindowId());
 }
 
 SFX_IMPL_NAMED_VIEWFACTORY(SmViewShell, "Default")
@@ -897,12 +893,12 @@ void SmViewShell::AdjustPosSizePixel(const Point &rPos, const Size &rSize)
     aGraphic->SetPosSizePixel(rPos, rSize);
 }
 
-void SmViewShell::InnerResizePixel(const Point &rOfs, const Size &rSize)
+void SmViewShell::InnerResizePixel(const Point &rOfs, const Size &rSize, bool)
 {
     Size aObjSize = GetObjectShell()->GetVisArea().GetSize();
     if ( aObjSize.Width() > 0 && aObjSize.Height() > 0 )
     {
-        Size aProvidedSize = GetWindow()->PixelToLogic( rSize, MAP_100TH_MM );
+        Size aProvidedSize = GetWindow()->PixelToLogic( rSize, MapUnit::Map100thMM );
         SfxViewShell::SetZoomFactor( Fraction( aProvidedSize.Width(), aObjSize.Width() ),
                         Fraction( aProvidedSize.Height(), aObjSize.Height() ) );
     }
@@ -970,7 +966,7 @@ Size SmViewShell::GetTextSize(OutputDevice& rDevice, const OUString& rText, long
     do
     {
         OUString aLine = rText.getToken(0, '\n', nPos);
-        aLine = comphelper::string::remove(aLine, '\r');
+        aLine = aLine.replaceAll("\r", "");
 
         aSize = GetTextLineSize(rDevice, aLine);
 
@@ -1054,7 +1050,7 @@ void SmViewShell::DrawText(OutputDevice& rDevice, const Point& rPosition, const 
     do
     {
         OUString aLine = rText.getToken(0, '\n', nPos);
-        aLine = comphelper::string::remove(aLine, '\r');
+        aLine = aLine.replaceAll("\r", "");
         aSize = GetTextLineSize(rDevice, aLine);
         if (aSize.Width() > MaxWidth)
         {
@@ -1204,44 +1200,44 @@ void SmViewShell::Impl_Print(OutputDevice &rOutDev, const SmPrintUIOptions &rPri
     switch (ePrintSize)
     {
         case PRINT_SIZE_NORMAL:
-            OutputMapMode = MapMode(MAP_100TH_MM);
+            OutputMapMode = MapMode(MapUnit::Map100thMM);
             break;
 
         case PRINT_SIZE_SCALED:
             if ((aSize.Width() > 0) && (aSize.Height() > 0))
             {
                 Size     OutputSize (rOutDev.LogicToPixel(Size(aOutRect.GetWidth(),
-                                                            aOutRect.GetHeight()), MapMode(MAP_100TH_MM)));
-                Size     GraphicSize (rOutDev.LogicToPixel(aSize, MapMode(MAP_100TH_MM)));
+                                                            aOutRect.GetHeight()), MapMode(MapUnit::Map100thMM)));
+                Size     GraphicSize (rOutDev.LogicToPixel(aSize, MapMode(MapUnit::Map100thMM)));
                 sal_uInt16 nZ = sal::static_int_cast<sal_uInt16>(std::min(long(Fraction(OutputSize.Width()  * 100L, GraphicSize.Width())),
                                                                           long(Fraction(OutputSize.Height() * 100L, GraphicSize.Height()))));
                 nZ -= 10;
                 Fraction aFraction (std::max(MINZOOM, std::min(MAXZOOM, nZ)), 100);
 
-                OutputMapMode = MapMode(MAP_100TH_MM, aZeroPoint, aFraction, aFraction);
+                OutputMapMode = MapMode(MapUnit::Map100thMM, aZeroPoint, aFraction, aFraction);
             }
             else
-                OutputMapMode = MapMode(MAP_100TH_MM);
+                OutputMapMode = MapMode(MapUnit::Map100thMM);
             break;
 
         case PRINT_SIZE_ZOOMED:
         {
             Fraction aFraction( nZoomFactor, 100 );
 
-            OutputMapMode = MapMode(MAP_100TH_MM, aZeroPoint, aFraction, aFraction);
+            OutputMapMode = MapMode(MapUnit::Map100thMM, aZeroPoint, aFraction, aFraction);
             break;
         }
     }
 
     aSize = rOutDev.PixelToLogic(rOutDev.LogicToPixel(aSize, OutputMapMode),
-                                   MapMode(MAP_100TH_MM));
+                                   MapMode(MapUnit::Map100thMM));
 
     Point aPos (aOutRect.Left() + (aOutRect.GetWidth()  - aSize.Width())  / 2,
                 aOutRect.Top()  + (aOutRect.GetHeight() - aSize.Height()) / 2);
 
-    aPos     = rOutDev.PixelToLogic(rOutDev.LogicToPixel(aPos, MapMode(MAP_100TH_MM)),
+    aPos     = rOutDev.PixelToLogic(rOutDev.LogicToPixel(aPos, MapMode(MapUnit::Map100thMM)),
                                           OutputMapMode);
-    aOutRect   = rOutDev.PixelToLogic(rOutDev.LogicToPixel(aOutRect, MapMode(MAP_100TH_MM)),
+    aOutRect   = rOutDev.PixelToLogic(rOutDev.LogicToPixel(aOutRect, MapMode(MapUnit::Map100thMM)),
                                           OutputMapMode);
 
     rOutDev.SetMapMode(OutputMapMode);
@@ -1367,7 +1363,7 @@ void SmViewShell::Insert( SfxMedium& rMedium )
         }
 
         pDoc->Parse();
-        pDoc->SetModified(true);
+        pDoc->SetModified();
 
         SfxBindings &rBnd = GetViewFrame()->GetBindings();
         rBnd.Invalidate(SID_GAPHIC_SM);
@@ -1402,7 +1398,7 @@ void SmViewShell::InsertFrom(SfxMedium &rMedium)
             SAL_WARN( "starmath", "EditWindow missing" );
 
         pDoc->Parse();
-        pDoc->SetModified(true);
+        pDoc->SetModified();
 
         SfxBindings& rBnd = GetViewFrame()->GetBindings();
         rBnd.Invalidate(SID_GAPHIC_SM);
@@ -1734,52 +1730,23 @@ void SmViewShell::Execute(SfxRequest& rReq)
         {
             if ( !GetViewFrame()->GetFrame().IsInPlace() )
             {
-                std::unique_ptr<AbstractSvxZoomDialog> xDlg;
                 const SfxItemSet *pSet = rReq.GetArgs();
-                if ( !pSet )
+                if ( pSet )
+                {
+                    ZoomByItemSet(pSet);
+                }
+                else
                 {
                     SfxItemSet aSet( SmDocShell::GetPool(), SID_ATTR_ZOOM, SID_ATTR_ZOOM);
                     aSet.Put( SvxZoomItem( SvxZoomType::PERCENT, aGraphic->GetZoom()));
                     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                     if(pFact)
                     {
-                        xDlg.reset(pFact->CreateSvxZoomDialog(&GetViewFrame()->GetWindow(), aSet));
+                        ScopedVclPtr<AbstractSvxZoomDialog> xDlg(pFact->CreateSvxZoomDialog(&GetViewFrame()->GetWindow(), aSet));
                         assert(xDlg);
                         xDlg->SetLimits( MINZOOM, MAXZOOM );
                         if (xDlg->Execute() != RET_CANCEL)
-                            pSet = xDlg->GetOutputItemSet();
-                    }
-                }
-                if ( pSet )
-                {
-                    const SvxZoomItem &rZoom = static_cast<const SvxZoomItem &>(pSet->Get(SID_ATTR_ZOOM));
-                    switch( rZoom.GetType() )
-                    {
-                        case SvxZoomType::PERCENT:
-                            aGraphic->SetZoom(sal::static_int_cast<sal_uInt16>(rZoom.GetValue ()));
-                            break;
-
-                        case SvxZoomType::OPTIMAL:
-                            aGraphic->ZoomToFitInWindow();
-                            break;
-
-                        case SvxZoomType::PAGEWIDTH:
-                        case SvxZoomType::WHOLEPAGE:
-                        {
-                            const MapMode aMap( MAP_100TH_MM );
-                            SfxPrinter *pPrinter = GetPrinter( true );
-                            Point aPoint;
-                            Rectangle  OutputRect(aPoint, pPrinter->GetOutputSize());
-                            Size       OutputSize(pPrinter->LogicToPixel(Size(OutputRect.GetWidth(),
-                                                                              OutputRect.GetHeight()), aMap));
-                            Size       GraphicSize(pPrinter->LogicToPixel(GetDoc()->GetSize(), aMap));
-                            sal_uInt16 nZ = sal::static_int_cast<sal_uInt16>(std::min(long(Fraction(OutputSize.Width()  * 100L, GraphicSize.Width())),
-                                                                                      long(Fraction(OutputSize.Height() * 100L, GraphicSize.Height()))));
-                            aGraphic->SetZoom (nZ);
-                            break;
-                        }
-                        default:
-                            break;
+                            ZoomByItemSet(xDlg->GetOutputItemSet());
                     }
                 }
             }
@@ -2015,7 +1982,7 @@ void SmViewShell::Activate( bool bIsMDIActivate )
     }
 }
 
-IMPL_LINK_TYPED( SmViewShell, DialogClosedHdl, sfx2::FileDialogHelper*, _pFileDlg, void )
+IMPL_LINK( SmViewShell, DialogClosedHdl, sfx2::FileDialogHelper*, _pFileDlg, void )
 {
     assert(_pFileDlg && "SmViewShell::DialogClosedHdl(): no file dialog");
     assert(pImpl->pDocInserter && "ScDocShell::DialogClosedHdl(): no document inserter");
@@ -2047,24 +2014,54 @@ IMPL_LINK_TYPED( SmViewShell, DialogClosedHdl, sfx2::FileDialogHelper*, _pFileDl
 
 void SmViewShell::Notify( SfxBroadcaster& , const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint )
+    switch( rHint.GetId() )
     {
-        switch( pSimpleHint->GetId() )
-        {
-            case SFX_HINT_MODECHANGED:
-            case SFX_HINT_DOCCHANGED:
-                GetViewFrame()->GetBindings().InvalidateAll(false);
-                break;
-            default:
-                break;
-        }
+        case SFX_HINT_MODECHANGED:
+        case SFX_HINT_DOCCHANGED:
+            GetViewFrame()->GetBindings().InvalidateAll(false);
+        break;
+        default:
+        break;
     }
 }
 
 bool SmViewShell::IsInlineEditEnabled() const
 {
     return pImpl->aOpts.IsExperimentalMode();
+}
+
+void SmViewShell::ZoomByItemSet(const SfxItemSet *pSet)
+{
+    assert(pSet);
+    const SvxZoomItem &rZoom = static_cast<const SvxZoomItem &>(pSet->Get(SID_ATTR_ZOOM));
+    switch( rZoom.GetType() )
+    {
+        case SvxZoomType::PERCENT:
+            aGraphic->SetZoom(sal::static_int_cast<sal_uInt16>(rZoom.GetValue ()));
+            break;
+
+        case SvxZoomType::OPTIMAL:
+            aGraphic->ZoomToFitInWindow();
+            break;
+
+        case SvxZoomType::PAGEWIDTH:
+        case SvxZoomType::WHOLEPAGE:
+        {
+            const MapMode aMap( MapUnit::Map100thMM );
+            SfxPrinter *pPrinter = GetPrinter( true );
+            Point aPoint;
+            Rectangle  OutputRect(aPoint, pPrinter->GetOutputSize());
+            Size       OutputSize(pPrinter->LogicToPixel(Size(OutputRect.GetWidth(),
+                                                              OutputRect.GetHeight()), aMap));
+            Size       GraphicSize(pPrinter->LogicToPixel(GetDoc()->GetSize(), aMap));
+            sal_uInt16 nZ = sal::static_int_cast<sal_uInt16>(std::min(long(Fraction(OutputSize.Width()  * 100L, GraphicSize.Width())),
+                                                                      long(Fraction(OutputSize.Height() * 100L, GraphicSize.Height()))));
+            aGraphic->SetZoom (nZ);
+            break;
+        }
+        default:
+            break;
+    }
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

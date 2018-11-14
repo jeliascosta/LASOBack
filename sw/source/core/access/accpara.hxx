@@ -176,7 +176,7 @@ protected:
     virtual void InvalidateCursorPos_() override;
     virtual void InvalidateFocus_() override;
 
-    virtual ~SwAccessibleParagraph();
+    virtual ~SwAccessibleParagraph() override;
 
     // handling of data for the text portions
 
@@ -236,7 +236,7 @@ protected:
 
 public:
 
-    SwAccessibleParagraph( SwAccessibleMap* pInitMap,
+    SwAccessibleParagraph( std::shared_ptr<SwAccessibleMap> const& pInitMap,
                            const SwTextFrame& rTextFrame );
 
     inline operator css::accessibility::XAccessibleText *();

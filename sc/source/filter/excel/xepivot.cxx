@@ -274,7 +274,7 @@ sal_uInt16 XclExpPCField::GetItemIndex( const OUString& rItemName ) const
     return EXC_PC_NOITEM;
 }
 
-sal_Size XclExpPCField::GetIndexSize() const
+std::size_t XclExpPCField::GetIndexSize() const
 {
     return Has16BitIndexes() ? 2 : 1;
 }
@@ -530,7 +530,7 @@ void XclExpPCField::InsertNumDateGroupItems( const ScDPObject& rDPObj, const ScD
             const ScDPItemData* pData = aDPData.GetMemberById(nDim, nMemberId);
             if ( pData )
             {
-                OUString aStr = pCache->GetFormattedString(nDim, *pData);
+                OUString aStr = pCache->GetFormattedString(nDim, *pData, false);
                 InsertGroupItem(new XclExpPCItem(aStr));
             }
         }
@@ -723,11 +723,6 @@ void XclExpPivotCache::SaveXml( XclExpXmlStream& /*rStrm*/ )
 {
 }
 
-XclExpPCField* XclExpPivotCache::GetFieldAcc( sal_uInt16 nFieldIdx )
-{
-    return maFieldList.GetRecord( nFieldIdx ).get();
-}
-
 void XclExpPivotCache::AddFields( const ScDPObject& rDPObj )
 {
     AddStdFields( rDPObj );
@@ -760,7 +755,7 @@ void XclExpPivotCache::AddGroupFields( const ScDPObject& rDPObj )
             // loop over all existing standard fields to find their group fields
             for( sal_uInt16 nFieldIdx = 0; nFieldIdx < maPCInfo.mnStdFields; ++nFieldIdx )
             {
-                if( XclExpPCField* pCurrStdField = GetFieldAcc( nFieldIdx ) )
+                if( XclExpPCField* pCurrStdField = maFieldList.GetRecord( nFieldIdx ).get() )
                 {
                     const ScDPSaveGroupDimension* pGroupDim = pSaveDimData->GetGroupDimForBase( pCurrStdField->GetFieldName() );
                     XclExpPCField* pLastGroupField = pCurrStdField;
@@ -844,7 +839,7 @@ void XclExpPivotCache::WriteSxindexlistList( XclExpStream& rStrm ) const
 {
     if( HasItemIndexList() )
     {
-        sal_Size nRecSize = 0;
+        std::size_t nRecSize = 0;
         size_t nPos, nSize = maFieldList.GetSize();
         for( nPos = 0; nPos < nSize; ++nPos )
             nRecSize += maFieldList.GetRecord( nPos )->GetIndexSize();
@@ -1491,7 +1486,7 @@ void XclExpPivotTable::WriteSxli( XclExpStream& rStrm, sal_uInt16 nLineCount, sa
 {
     if( nLineCount > 0 )
     {
-        sal_Size nLineSize = 8 + 2 * nIndexCount;
+        std::size_t nLineSize = 8 + 2 * nIndexCount;
         rStrm.StartRecord( EXC_ID_SXLI, nLineSize * nLineCount );
 
         /*  Excel expects the records to be filled completely, do not
@@ -1559,19 +1554,12 @@ void XclExpPivotTable::WriteQsiSxTag( XclExpStream& rStrm ) const
 #endif
     rStrm << nOptions;
 
-    enum ExcelVersion
-    {
-        Excel2000 = 0,
-        ExcelXP   = 1,
-        Excel2003 = 2,
-        Excel2007 = 3
-    };
-    ExcelVersion eXclVer = Excel2000;
+    sal_uInt8 eXclVer = 0; // Excel2000
     sal_uInt8 nOffsetBytes = 16;
-    rStrm << static_cast<sal_uInt8>(eXclVer)  // version table last refreshed
-          << static_cast<sal_uInt8>(eXclVer)  // minimum version to refresh
+    rStrm << eXclVer  // version table last refreshed
+          << eXclVer  // minimum version to refresh
           << nOffsetBytes
-          << static_cast<sal_uInt8>(eXclVer); // first version created
+          << eXclVer; // first version created
 
     rStrm << XclExpString(maPTInfo.maTableName);
     rStrm << static_cast<sal_uInt16>(0x0001); // no idea what this is for.
@@ -1623,8 +1611,7 @@ void XclExpPivotRecWrapper::Save( XclExpStream& rStrm )
 } // namespace
 
 XclExpPivotTableManager::XclExpPivotTableManager( const XclExpRoot& rRoot ) :
-    XclExpRoot( rRoot ),
-    mbShareCaches( true )
+    XclExpRoot( rRoot )
 {
 }
 
@@ -1671,22 +1658,19 @@ const XclExpPivotCache* XclExpPivotTableManager::CreatePivotCache( const ScDPObj
         (i.e. grouping info, calculated fields). If the passed DataPilot object
         or the found cache contains this data, do not share the cache with
         multiple pivot tables. */
-    if( mbShareCaches )
+    if( const ScDPSaveData* pSaveData = rDPObj.GetSaveData() )
     {
-        if( const ScDPSaveData* pSaveData = rDPObj.GetSaveData() )
+        const ScDPDimensionSaveData* pDimSaveData = pSaveData->GetExistingDimensionData();
+        // no dimension save data at all or save data does not contain grouping info
+        if( !pDimSaveData || !pDimSaveData->HasGroupDimensions() )
         {
-            const ScDPDimensionSaveData* pDimSaveData = pSaveData->GetExistingDimensionData();
-            // no dimension save data at all or save data does not contain grouping info
-            if( !pDimSaveData || !pDimSaveData->HasGroupDimensions() )
+            // check all existing pivot caches
+            for( size_t nPos = 0, nSize = maPCacheList.GetSize(); nPos < nSize; ++nPos )
             {
-                // check all existing pivot caches
-                for( size_t nPos = 0, nSize = maPCacheList.GetSize(); nPos < nSize; ++nPos )
-                {
-                    XclExpPivotCacheRef xPCache = maPCacheList.GetRecord( nPos );
-                    // pivot cache does not have grouping info and source data is equal
-                    if( !xPCache->HasAddFields() && xPCache->HasEqualDataSource( rDPObj ) )
-                        return xPCache.get();
-                }
+                XclExpPivotCacheRef xPCache = maPCacheList.GetRecord( nPos );
+                // pivot cache does not have grouping info and source data is equal
+                if( !xPCache->HasAddFields() && xPCache->HasEqualDataSource( rDPObj ) )
+                    return xPCache.get();
             }
         }
     }

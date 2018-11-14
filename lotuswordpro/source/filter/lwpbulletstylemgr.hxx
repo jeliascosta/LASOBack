@@ -75,11 +75,11 @@ class LwpPara;
 class LwpIndentOverride;
 class LwpBulletOverride;
 
-class LwpBulletStyleMgr
+class LwpBulletStyleMgr final
 {
 public:
     LwpBulletStyleMgr();
-    virtual ~LwpBulletStyleMgr();
+    ~LwpBulletStyleMgr();
     OUString RegisterBulletStyle(LwpPara* pPara, LwpBulletOverride* pBullOver,
         LwpIndentOverride* pIndent);
     inline void SetFoundry(LwpFoundry* pFoundry);
@@ -93,7 +93,6 @@ private:
     std::vector <OUString> m_vStyleNameList;
     std::vector <OverridePair> m_vIDsPairList;
     LwpFoundry* m_pFoundry;
-    XFList* m_pBulletList;
     bool m_bContinue;
     bool m_bIsBulletSkipped;
     LwpObjectID m_aCurrentNumberingID;

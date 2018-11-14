@@ -34,9 +34,8 @@ using namespace ::com::sun::star;
 |* Ctor
 |*
 \************************************************************************/
-SdCustomShow::SdCustomShow(SdDrawDocument* pDrawDoc)
-  : maPages(),
-  pDoc(pDrawDoc)
+SdCustomShow::SdCustomShow()
+  : maPages()
 {
 }
 
@@ -49,12 +48,10 @@ SdCustomShow::SdCustomShow( const SdCustomShow& rShow )
     : maPages(rShow.maPages)
 {
     aName = rShow.GetName();
-    pDoc = rShow.GetDoc();
 }
 
-SdCustomShow::SdCustomShow(SdDrawDocument* pDrawDoc, css::uno::Reference< css::uno::XInterface > xShow )
+SdCustomShow::SdCustomShow(css::uno::Reference< css::uno::XInterface > const & xShow )
   : maPages(),
-  pDoc(pDrawDoc),
   mxUnoCustomShow( xShow )
 {
 }
@@ -89,7 +86,7 @@ void SdCustomShow::ReplacePage( const SdPage* pOldPage, const SdPage* pNewPage )
 {
     if( !pNewPage )
     {
-        RemovePage(pOldPage);
+        maPages.erase(::std::remove(maPages.begin(), maPages.end(), pOldPage), maPages.end());
     }
     else
     {
@@ -97,12 +94,7 @@ void SdCustomShow::ReplacePage( const SdPage* pOldPage, const SdPage* pNewPage )
     }
 }
 
-void SdCustomShow::RemovePage( const SdPage* pPage )
-{
-    maPages.erase(::std::remove(maPages.begin(), maPages.end(), pPage), maPages.end());
-}
-
-void   SdCustomShow::SetName(const OUString& rName)
+void SdCustomShow::SetName(const OUString& rName)
 {
     aName = rName;
 }

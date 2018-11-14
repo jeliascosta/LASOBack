@@ -234,7 +234,7 @@ eF_ResT SwWW8ImplReader::Read_F_FormListBox( WW8FieldDesc* pF, OUString& rStr)
 {
     WW8FormulaListBox aFormula(*this);
 
-    if (rStr[pF->nLCode-1]==0x01)
+    if (pF->nLCode > 0 && rStr.getLength() >= pF->nLCode && rStr[pF->nLCode-1] == 0x01)
         ImportFormulaControl(aFormula,pF->nSCode+pF->nLCode-1, WW8_CT_DROPDOWN);
 
     const SvtFilterOptions& rOpt = SvtFilterOptions::Get();
@@ -291,7 +291,7 @@ eF_ResT SwWW8ImplReader::Read_F_FormListBox( WW8FieldDesc* pF, OUString& rStr)
             if ( pFieldmark != nullptr )
             {
                 uno::Sequence< OUString > vListEntries(aFormula.maListEntries.size());
-                ::std::copy(aFormula.maListEntries.begin(), aFormula.maListEntries.end(), vListEntries.begin());
+                std::copy(aFormula.maListEntries.begin(), aFormula.maListEntries.end(), vListEntries.begin());
                 (*pFieldmark->GetParameters())[ODF_FORMDROPDOWN_LISTENTRY] = uno::makeAny(vListEntries);
                 sal_Int32 nIndex = aFormula.mfDropdownIndex  < aFormula.maListEntries.size() ? aFormula.mfDropdownIndex : 0;
                 (*pFieldmark->GetParameters())[ODF_FORMDROPDOWN_RESULT] = uno::makeAny(nIndex);
@@ -487,7 +487,7 @@ static void lcl_CopyGreaterEight(OUString &rDest, OUString &rSrc,
     {
         sal_Unicode nChar = rSrc[nI];
         if (nChar > WW8ListManager::nMaxLevel)
-            rDest += OUString(nChar);
+            rDest += OUStringLiteral1(nChar);
     }
 }
 
@@ -575,7 +575,7 @@ bool WW8ListManager::ReadLVL(SwNumFormat& rNumFormat, SfxItemSet*& rpItemSet,
     if( aLVL.nLenGrpprlPapx )
     {
         sal_uInt8 aGrpprlPapx[ 255 ];
-        if(aLVL.nLenGrpprlPapx != rSt.Read(&aGrpprlPapx,aLVL.nLenGrpprlPapx))
+        if (aLVL.nLenGrpprlPapx != rSt.ReadBytes(&aGrpprlPapx, aLVL.nLenGrpprlPapx))
             return false;
         // "sprmPDxaLeft"  pap.dxaLeft;dxa;word;
         sal_uInt8* pSprm;
@@ -675,7 +675,7 @@ bool WW8ListManager::ReadLVL(SwNumFormat& rNumFormat, SfxItemSet*& rpItemSet,
     {
         sal_uInt8 aGrpprlChpx[ 255 ];
         memset(&aGrpprlChpx, 0, sizeof( aGrpprlChpx ));
-        if(aLVL.nLenGrpprlChpx != rSt.Read(&aGrpprlChpx, aLVL.nLenGrpprlChpx))
+        if (aLVL.nLenGrpprlChpx != rSt.ReadBytes(&aGrpprlChpx, aLVL.nLenGrpprlChpx))
             return false;
 
         //For i120928,parse the graphic info of bullets
@@ -714,7 +714,7 @@ bool WW8ListManager::ReadLVL(SwNumFormat& rNumFormat, SfxItemSet*& rpItemSet,
             maSprmParser);
         while (const sal_uInt8* pSprm = aSprmIter.GetSprms())
         {
-            rReader.ImportSprm(pSprm);
+            rReader.ImportSprm(pSprm, aSprmIter.GetRemLen(), aSprmIter.GetAktId());
             aSprmIter.advance();
         }
 
@@ -812,13 +812,21 @@ bool WW8ListManager::ReadLVL(SwNumFormat& rNumFormat, SfxItemSet*& rpItemSet,
     for(nLevelB = 0; nLevelB < nMaxLevel; ++nLevelB)
         aOfsNumsXCH.push_back(aLVL.aOfsNumsXCH[nLevelB]);
 
+    // nLevelB is an index in the aOfsNumsXCH array.
     for(nLevelB = 0; nLevelB <= nLevel; ++nLevelB)
     {
+        // nPos is a one-based character offset to a level placeholder in
+        // sNumString.
         sal_uInt8 nPos = aOfsNumsXCH[nLevelB];
-        if (nPos && nPos < sNumString.getLength()  && sNumString[nPos-1] < nMaxLevel)
+        if (nPos && nPos < sNumString.getLength())
         {
-            if (rNotReallyThere[nLevelB])
-                aOfsNumsXCH[nLevelB] = 0;
+            // nPosValue is the actual numbering level.
+            sal_Unicode nPosValue = sNumString[nPos-1];
+            if (nPosValue < nMaxLevel)
+            {
+                if (rNotReallyThere[nPosValue])
+                    aOfsNumsXCH[nLevelB] = 0;
+            }
         }
     }
     myIter aIter = std::remove(aOfsNumsXCH.begin(), aOfsNumsXCH.end(), 0);
@@ -1136,7 +1144,7 @@ SwNumRule* WW8ListManager::GetNumRule(size_t i)
 // oeffentliche Methoden
 
 WW8ListManager::WW8ListManager(SvStream& rSt_, SwWW8ImplReader& rReader_)
-    : maSprmParser(rReader_.GetFib().GetFIBVersion()), rReader(rReader_)
+    : maSprmParser(rReader_.GetFib()), rReader(rReader_)
     , rDoc(rReader.GetDoc())
     , rFib(rReader.GetFib()), rSt(rSt_)
     , nUniqueList(1)
@@ -1144,10 +1152,10 @@ WW8ListManager::WW8ListManager(SvStream& rSt_, SwWW8ImplReader& rReader_)
 {
 
     // LST und LFO gibts erst ab WW8
-    if(    ( 8 > rFib.nVersion )
-            || ( rFib.fcPlcfLst == rFib.fcPlfLfo )
-            || ( rFib.lcbPlcfLst < 2 )
-            || ( rFib.lcbPlfLfo < 2) ) return; // offensichtlich keine Listen da
+    if(    ( 8 > rFib.m_nVersion )
+            || ( rFib.m_fcPlcfLst == rFib.m_fcPlfLfo )
+            || ( rFib.m_lcbPlcfLst < 2 )
+            || ( rFib.m_lcbPlfLfo < 2) ) return; // offensichtlich keine Listen da
 
     // Arrays anlegen
     bool bLVLOk = true;
@@ -1156,12 +1164,12 @@ WW8ListManager::WW8ListManager(SvStream& rSt_, SwWW8ImplReader& rReader_)
 
     // 1. PLCF LST auslesen und die Listen Vorlagen im Writer anlegen
 
-    bool bOk = checkSeek(rSt, rFib.fcPlcfLst);
+    bool bOk = checkSeek(rSt, rFib.m_fcPlcfLst);
 
     if (!bOk)
         return;
 
-    sal_uInt32 nRemainingPlcfLst = rFib.lcbPlcfLst;
+    sal_uInt32 nRemainingPlcfLst = rFib.m_lcbPlcfLst;
 
     sal_uInt16 nListCount(0);
     rSt.ReadUInt16( nListCount );
@@ -1278,7 +1286,7 @@ WW8ListManager::WW8ListManager(SvStream& rSt_, SwWW8ImplReader& rReader_)
 
     // 2. PLF LFO auslesen und speichern
 
-    bOk = checkSeek(rSt, rFib.fcPlfLfo);
+    bOk = checkSeek(rSt, rFib.m_fcPlfLfo);
 
     if (!bOk)
         return;
@@ -1900,7 +1908,7 @@ void SwWW8ImplReader::RegisterNumFormatOnTextNode(sal_uInt16 nActLFO,
                     sal_uInt8* pSprms1  = &aParaSprms[0];
                     while (0 < nLen)
                     {
-                        sal_uInt16 nL1 = ImportSprm(pSprms1);
+                        sal_uInt16 nL1 = ImportSprm(pSprms1, nLen);
                         nLen = nLen - nL1;
                         pSprms1 += nL1;
                     }
@@ -2365,8 +2373,8 @@ awt::Size SwWW8ImplReader::MiserableDropDownFormHack(const OUString &rString,
                             static_cast<const SvxFontHeightItem*>(pItem)->GetHeight() );
                 aTmp <<= ((float)aSize.Height()) / 20.0;
 
-                aFont.SetFontSize(OutputDevice::LogicToLogic(aSize, MAP_TWIP,
-                    MAP_100TH_MM));
+                aFont.SetFontSize(OutputDevice::LogicToLogic(aSize, MapUnit::MapTwip,
+                    MapUnit::Map100thMM));
             }
             break;
 
@@ -2405,7 +2413,7 @@ awt::Size SwWW8ImplReader::MiserableDropDownFormHack(const OUString &rString,
     if (pOut)
     {
         pOut->Push( PushFlags::FONT | PushFlags::MAPMODE );
-        pOut->SetMapMode( MapMode( MAP_100TH_MM ));
+        pOut->SetMapMode( MapMode( MapUnit::Map100thMM ));
         pOut->SetFont( aFont );
         aRet.Width  = pOut->GetTextWidth(rString);
         aRet.Width += 500; //plus size of button, total hack territory
@@ -2485,7 +2493,7 @@ WW8FormulaCheckBox::WW8FormulaCheckBox(SwWW8ImplReader &rR)
 }
 
 static void lcl_AddToPropertyContainer
-(uno::Reference<beans::XPropertySet> xPropSet,
+(uno::Reference<beans::XPropertySet> const & xPropSet,
  const OUString & rPropertyName, const OUString & rValue)
 {
     uno::Reference<beans::XPropertySetInfo> xPropSetInfo =
@@ -2596,7 +2604,7 @@ bool SwMSConvertControls::InsertControl(
     uno::Reference< text::XTextRange >  xTextRg =
         new SwXTextRange( *pPaM, xDummyTextRef );
 
-    aTmp.setValue(&xTextRg, cppu::UnoType<text::XTextRange>::get());
+    aTmp <<= xTextRg;
     xShapePropSet->setPropertyValue("TextRange", aTmp );
 
     // Das Control-Model am Control-Shape setzen

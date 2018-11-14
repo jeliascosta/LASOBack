@@ -38,6 +38,10 @@ SfxBluetoothModel::SendMailResult SfxBluetoothModel::SaveAndSend( const css::uno
 
 SfxBluetoothModel::SendMailResult SfxBluetoothModel::Send( const css::uno::Reference< css::frame::XFrame >& /*xFrame*/ )
 {
+#ifndef LINUX
+    (void) this; // avoid loplugin:staticmethods
+    return SEND_MAIL_ERROR;
+#else
     char bthsend[300];
     SendMailResult eResult = SEND_MAIL_OK;
     OUString aFileName = maAttachedDocuments[0];
@@ -45,6 +49,7 @@ SfxBluetoothModel::SendMailResult SfxBluetoothModel::Send( const css::uno::Refer
     if( !system( bthsend ) )
         eResult = SEND_MAIL_ERROR;
     return eResult;
+#endif
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

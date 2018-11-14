@@ -178,8 +178,6 @@ struct FrameSelectorImpl : public Resource
 
     /** Draws selection arrows for the specified frame border. */
     void                DrawArrows( const FrameBorder& rBorder );
-    /** Draws arrows in current selection state for all enabled frame borders. */
-    void                DrawAllArrows();
 
     /** Returns the color that has to be used to draw a frame border. */
     Color               GetDrawLineColor( const Color& rColor ) const;
@@ -230,7 +228,7 @@ struct FrameBorderDummy_Pred
 /** Predicate for frame border iterators to use only visible borders in a container. */
 struct FrameBorderVisible_Pred
 {
-    inline bool operator()( const FrameBorder* pBorder ) const { return pBorder->GetState() == FRAMESTATE_SHOW; }
+    inline bool operator()( const FrameBorder* pBorder ) const { return pBorder->GetState() == FrameBorderState::Show; }
 };
 
 /** Predicate for frame border iterators to use only selected borders in a container. */

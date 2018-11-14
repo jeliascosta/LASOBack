@@ -19,6 +19,7 @@
 
 #include "excelvbahelper.hxx"
 
+#include <basic/basmgr.hxx>
 #include <comphelper/processfactory.hxx>
 #include <com/sun/star/sheet/XSheetCellRange.hpp>
 #include <com/sun/star/sheet/GlobalSheetSettings.hpp>
@@ -108,7 +109,7 @@ class PasteCellsWarningReseter
 {
 private:
     bool bInitialWarningState;
-    static uno::Reference< sheet::XGlobalSheetSettings > getGlobalSheetSettings() throw ( uno::RuntimeException )
+    static uno::Reference< sheet::XGlobalSheetSettings > const & getGlobalSheetSettings() throw ( uno::RuntimeException )
     {
         static uno::Reference< sheet::XGlobalSheetSettings > xProps = sheet::GlobalSheetSettings::create( comphelper::getProcessComponentContext() );
         return xProps;

@@ -70,7 +70,7 @@ public:
         bool      bSet;
         TCell(  sal_Int32 _nColSpan,
                 sal_Int32 _nRowSpan,
-                Reference<XReportComponent> _xElement = Reference<XReportComponent>()) :
+                Reference<XReportComponent> const & _xElement = Reference<XReportComponent>()) :
         nColSpan(_nColSpan)
         ,nRowSpan(_nRowSpan)
         ,xElement(_xElement)
@@ -149,11 +149,10 @@ protected:
     virtual void                    ExportContent_() override;
     virtual void                    ExportMasterStyles_() override;
     virtual void                    ExportFontDecls_() override;
-    virtual sal_uInt32              exportDoc( enum ::xmloff::token::XMLTokenEnum eClass ) override;
     virtual SvXMLAutoStylePoolP*    CreateAutoStylePool() override;
     virtual XMLShapeExport*         CreateShapeExport() override;
 
-    virtual                 ~ORptExport(){};
+    virtual                 ~ORptExport() override {};
 public:
 
     ORptExport(const Reference< XComponentContext >& _rxContext, OUString const & implementationName, SvXMLExportFlags nExportFlag);

@@ -24,12 +24,14 @@ namespace vcl
 
 enum class ImageType
 {
-    Color = 0,
-    Color_Large,
-    LAST = Color_Large
+    Size16,
+    Size26,
+    Size32,
+    Small = Size16,
+    LAST = Size32,
 };
 
-class VCL_DLLPUBLIC CommandImageResolver
+class VCL_DLLPUBLIC CommandImageResolver final
 {
 private:
     typedef std::unordered_map<OUString, OUString, OUStringHash > CommandToImageNameMap;
@@ -45,7 +47,7 @@ private:
 
 public:
     CommandImageResolver();
-    virtual ~CommandImageResolver();
+    ~CommandImageResolver();
 
     bool registerCommands(css::uno::Sequence<OUString>& aCommandSequence);
     Image getImageFromCommandURL(ImageType nImageType, const OUString& rCommandURL);

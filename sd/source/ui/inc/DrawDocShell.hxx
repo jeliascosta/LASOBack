@@ -58,21 +58,21 @@ private:
 
 public:
     DrawDocShell (
-        SfxObjectCreateMode eMode = SfxObjectCreateMode::EMBEDDED,
-        bool bSdDataObj=false,
-        DocumentType=DOCUMENT_TYPE_IMPRESS);
+        SfxObjectCreateMode eMode,
+        bool bSdDataObj,
+        DocumentType=DocumentType::Impress);
 
     DrawDocShell (
         SfxModelFlags nModelCreationFlags,
-        bool bSdDataObj=false,
-        DocumentType=DOCUMENT_TYPE_IMPRESS);
+        bool bSdDataObj,
+        DocumentType=DocumentType::Impress);
 
     DrawDocShell (
         SdDrawDocument* pDoc,
-        SfxObjectCreateMode eMode = SfxObjectCreateMode::EMBEDDED,
-        bool bSdDataObj=false,
-        DocumentType=DOCUMENT_TYPE_IMPRESS);
-    virtual ~DrawDocShell();
+        SfxObjectCreateMode eMode,
+        bool bSdDataObj,
+        DocumentType=DocumentType::Impress);
+    virtual ~DrawDocShell() override;
 
     void                    UpdateRefDevice();
     virtual void            Activate( bool bMDI ) override;
@@ -98,7 +98,6 @@ public:
     virtual Printer*        GetDocumentPrinter() override;
     virtual void            OnDocumentPrinterChanged(Printer* pNewPrinter) override;
     virtual SfxStyleSheetBasePool* GetStyleSheetPool() override;
-    virtual Size            GetFirstPageSize() override;
     virtual void            FillClass(SvGlobalName* pClassName, SotClipboardFormatId* pFormat, OUString* pAppName, OUString* pFullTypeName, OUString* pShortTypeName, sal_Int32 nFileFormat, bool bTemplate = false ) const override;
     virtual void            SetModified( bool = true ) override;
     virtual VclPtr<SfxDocumentInfoDialog> CreateDocumentInfoDialog( const SfxItemSet &rSet ) override;
@@ -133,8 +132,8 @@ public:
 
     bool                    IsMarked(  SdrObject* pObject  );
     // Optionally realize multi-selection of objects
-    bool                    GetObjectIsmarked(const OUString& rBookmark, bool bRealizeMultiSelectionOfObjects = false);
-    Bitmap                  GetPagePreviewBitmap(SdPage* pPage, sal_uInt16 nMaxEdgePixel);
+    bool                    GetObjectIsmarked(const OUString& rBookmark, bool bRealizeMultiSelectionOfObjects);
+    Bitmap                  GetPagePreviewBitmap(SdPage* pPage);
 
     /** checks, if the given name is a valid new name for a slide
 
@@ -194,14 +193,12 @@ public:
     */
     virtual OutputDevice* GetDocumentRefDev() override;
 
-    DECL_LINK_TYPED( RenameSlideHdl, AbstractSvxNameDialog&, bool );
+    DECL_LINK( RenameSlideHdl, AbstractSvxNameDialog&, bool );
 
     // ExecuteSpellPopup now handled by DrawDocShell
-    DECL_LINK_TYPED( OnlineSpellCallback, SpellCallbackInfo&, void );
+    DECL_LINK( OnlineSpellCallback, SpellCallbackInfo&, void );
 
     void                    ClearUndoBuffer();
-
-    virtual void libreOfficeKitCallback(int nType, const char* pPayload) const override;
 
 protected:
 

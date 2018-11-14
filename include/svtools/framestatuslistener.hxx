@@ -29,7 +29,7 @@
 #include <com/sun/star/frame/XStatusListener.hpp>
 #include <cppuhelper/weak.hxx>
 #include <cppuhelper/interfacecontainer.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 
 #include <unordered_map>
 
@@ -39,18 +39,17 @@ namespace svt
 class SVT_DLLPUBLIC FrameStatusListener : public css::frame::XStatusListener,
                             public css::frame::XFrameActionListener,
                             public css::lang::XComponent,
-                            public ::comphelper::OBaseMutex,
+                            public ::cppu::BaseMutex,
                             public ::cppu::OWeakObject
 {
     public:
         FrameStatusListener( const css::uno::Reference< css::uno::XComponentContext >& rxContext,
                              const css::uno::Reference< css::frame::XFrame >& xFrame );
-        virtual ~FrameStatusListener();
+        virtual ~FrameStatusListener() override;
 
         // methods to support status forwarder, known by the old sfx2 toolbox controller implementation
         void addStatusListener( const OUString& aCommandURL );
         void bindListener();
-        void unbindListener();
 
         // XInterface
         virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) throw (css::uno::RuntimeException, std::exception) override;
@@ -85,8 +84,7 @@ class SVT_DLLPUBLIC FrameStatusListener : public css::frame::XStatusListener,
                                     css::uno::Reference< css::frame::XDispatch >,
                                     OUStringHash > URLToDispatchMap;
 
-        bool                                                      m_bInitialized : 1,
-                                                                  m_bDisposed : 1;
+        bool                                                      m_bDisposed : 1;
         css::uno::Reference< css::frame::XFrame >                 m_xFrame;
         css::uno::Reference< css::uno::XComponentContext >        m_xContext;
         URLToDispatchMap                                          m_aListenerMap;

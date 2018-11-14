@@ -19,10 +19,10 @@
 #ifndef INCLUDED_SFX2_SIDEBAR_SIDEBARPANELBASE_HXX
 #define INCLUDED_SFX2_SIDEBAR_SIDEBARPANELBASE_HXX
 
-#include <sfx2/sidebar/EnumContext.hxx>
+#include <vcl/EnumContext.hxx>
 #include <sfx2/sidebar/IContextChangeReceiver.hxx>
 
-#include <cppuhelper/compbase5.hxx>
+#include <cppuhelper/compbase.hxx>
 #include <cppuhelper/basemutex.hxx>
 
 #include <com/sun/star/frame/XController.hpp>
@@ -42,7 +42,7 @@ namespace sfx2 { namespace sidebar {
 namespace
 {
 
-typedef cppu::WeakComponentImplHelper5<css::ui::XContextChangeEventListener,
+typedef cppu::WeakComponentImplHelper<css::ui::XContextChangeEventListener,
                                        css::ui::XUIElement,
                                        css::ui::XToolPanel,
                                        css::ui::XSidebarPanel,
@@ -102,7 +102,7 @@ protected:
 
     SidebarPanelBase(const OUString& rsResourceURL, const css::uno::Reference<css::frame::XFrame>& rxFrame,
                      vcl::Window* pWindow, const css::ui::LayoutSize& rLayoutSize);
-    virtual ~SidebarPanelBase();
+    virtual ~SidebarPanelBase() override;
     SidebarPanelBase(const SidebarPanelBase&) = delete;
     SidebarPanelBase& operator=( const SidebarPanelBase& ) = delete;
 

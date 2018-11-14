@@ -144,15 +144,8 @@ namespace pcr
         virtual void SAL_CALL revokeControlObserver( const Reference< XPropertyControlObserver >& Observer ) throw (RuntimeException, std::exception) override;
         virtual void SAL_CALL setHelpSectionText( const OUString& HelpText ) throw (NoSupportException, RuntimeException, std::exception) override;
 
-        // UNOCompatibleNonUNOReference overridables
-        virtual void SAL_CALL acquire() throw() override;
-        virtual void SAL_CALL release() throw() override;
-
     protected:
-        virtual ~CachedInspectorUI();
-
-        /// determines whether the instance is already disposed
-        inline bool isDisposed() const { return m_bDisposed; }
+        virtual ~CachedInspectorUI() override;
 
         /// throws an exception if the component is already disposed
         void checkDisposed() const;
@@ -209,22 +202,9 @@ namespace pcr
     }
 
 
-    void SAL_CALL CachedInspectorUI::acquire() throw()
-    {
-        osl_atomic_increment( &m_refCount );
-    }
-
-
-    void SAL_CALL CachedInspectorUI::release() throw()
-    {
-        if ( 0 == osl_atomic_decrement( &m_refCount ) )
-            delete this;
-    }
-
-
     void CachedInspectorUI::checkDisposed() const
     {
-        if ( isDisposed() )
+        if (m_bDisposed)
             throw DisposedException();
     }
 
@@ -763,7 +743,7 @@ namespace pcr
     }
 
 
-    Reference< XObjectInspectorUI > ComposedPropertyUIUpdate::getDelegatorUI() const
+    Reference< XObjectInspectorUI > const & ComposedPropertyUIUpdate::getDelegatorUI() const
     {
         impl_checkDisposed();
         return m_xDelegatorUI;

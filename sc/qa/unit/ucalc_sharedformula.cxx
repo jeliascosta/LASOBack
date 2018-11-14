@@ -742,9 +742,10 @@ void Test::testSharedFormulasRefUpdateExternal()
 
     // Launch an external document shell.
     ScDocShellRef xExtDocSh = new ScDocShell;
+    xExtDocSh->SetIsInUcalc();
     OUString aExtDocName("file:///extdata.fake");
 
-    SfxMedium* pMed = new SfxMedium(aExtDocName, STREAM_STD_READWRITE);
+    SfxMedium* pMed = new SfxMedium(aExtDocName, StreamMode::STD_READWRITE);
     xExtDocSh->DoInitNew(pMed);
     ScDocument& rExtDoc = xExtDocSh->GetDocument();
 
@@ -1340,7 +1341,7 @@ void Test::testSharedFormulasCopyPaste()
     ScRange aRange(1,0,0,1,9,0); // B1:B10
     ScDocument* pUndoDoc = new ScDocument(SCDOCMODE_UNDO);
     pUndoDoc->InitUndo(m_pDoc, 0, 0, true, true);
-    m_pDoc->CopyToDocument(aRange, InsertDeleteFlags::CONTENTS, false, pUndoDoc);
+    m_pDoc->CopyToDocument(aRange, InsertDeleteFlags::CONTENTS, false, *pUndoDoc);
     std::unique_ptr<ScUndoPaste> pUndo(createUndoPaste(getDocShell(), aRange, pUndoDoc));
 
     // First, make sure the formula cells are shared in the undo document.
@@ -1426,7 +1427,8 @@ void Test::testSharedFormulaMoveBlock()
 
     // Move A1:A3 to D1:D3.
     ScDocFunc& rFunc = getDocShell().GetDocFunc();
-    rFunc.MoveBlock(ScRange(0,0,0,0,2,0), ScAddress(3,0,0), true, true, false, true);
+    bool bMoved = rFunc.MoveBlock(ScRange(0,0,0,0,2,0), ScAddress(3,0,0), true, true, false, true);
+    CPPUNIT_ASSERT(bMoved);
 
     // The result should stay the same.
     CPPUNIT_ASSERT_EQUAL(1.0, m_pDoc->GetValue(ScAddress(1,0,0)));
@@ -1479,7 +1481,8 @@ void Test::testSharedFormulaMoveBlock()
     CPPUNIT_ASSERT_EQUAL(5.0, m_pDoc->GetValue(ScAddress(1,4,0)));
 
     // Move A1:A2 to D2:D3.
-    rFunc.MoveBlock(ScRange(0,0,0,0,1,0), ScAddress(3,1,0), true, true, false, true);
+    bMoved = rFunc.MoveBlock(ScRange(0,0,0,0,1,0), ScAddress(3,1,0), true, true, false, true);
+    CPPUNIT_ASSERT(bMoved);
 
     // Check the formula values again.  They should not change.
     CPPUNIT_ASSERT_EQUAL(1.0, m_pDoc->GetValue(ScAddress(1,0,0)));
@@ -1842,7 +1845,7 @@ void Test::testSharedFormulaUpdateOnReplacement()
     aMark.SetMultiMarkArea(aUndoRange);
     std::unique_ptr<ScDocument> pUndoDoc(new ScDocument(SCDOCMODE_UNDO));
     pUndoDoc->InitUndo(m_pDoc, 0, 0);
-    m_pDoc->CopyToDocument(aUndoRange, InsertDeleteFlags::CONTENTS, false, pUndoDoc.get(), &aMark);
+    m_pDoc->CopyToDocument(aUndoRange, InsertDeleteFlags::CONTENTS, false, *pUndoDoc, &aMark);
     ScUndoDeleteContents aUndo(&getDocShell(), aMark, aUndoRange, std::move(pUndoDoc), false, InsertDeleteFlags::CONTENTS, true);
 
     // Delete A4.

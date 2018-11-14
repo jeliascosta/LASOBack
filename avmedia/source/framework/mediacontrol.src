@@ -87,7 +87,6 @@ String AVMEDIA_STR_MEDIAPLAYER
 ImageList AVMEDIA_IMGLST
 {
     Prefix = "av";
-    MaskColor = Color{ Red = 0xff00; Green = 0x0000; Blue = 0xff00; };
     IdList =
     {
         AVMEDIA_IMG_OPEN;
@@ -104,7 +103,6 @@ ImageList AVMEDIA_IMGLST
 ImageList AVMEDIA_IMGLST_L
 {
     Prefix = "avl";
-    MaskColor = Color{ Red = 0xff00; Green = 0x0000; Blue = 0xff00; };
     IdList =
     {
         AVMEDIA_IMG_OPEN;
@@ -117,5 +115,16 @@ ImageList AVMEDIA_IMGLST_L
     };
     IdCount = 7;
 };
+
+String AVMEDIA_MEDIA_PATH
+{
+    Text[en-US] = "Media Path";
+};
+
+String AVMEDIA_MEDIA_PATH_DEFAULT
+{
+    Text[en-US] = "No Media Selected";
+};
+
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

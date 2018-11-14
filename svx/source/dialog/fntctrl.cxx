@@ -153,7 +153,6 @@ class FontPrevWin_Impl
     bool mbSelection : 1;
     bool mbGetSelection : 1;
     bool mbUseResText : 1;
-    bool mbPreviewBackgroundToCharacter : 1;
     bool mbTwoLines : 1;
     bool mbUseFontNameAsText : 1;
     bool mbTextInited : 1;
@@ -175,7 +174,6 @@ public:
         mbSelection(false),
         mbGetSelection(false),
         mbUseResText(false),
-        mbPreviewBackgroundToCharacter(false),
         mbTwoLines(false),
         mbUseFontNameAsText(false),
         mbTextInited(false)
@@ -495,7 +493,7 @@ void SvxFontPrevWindow::Init()
         pImpl->mpPrinter = VclPtr<Printer>::Create();
         pImpl->mbDelPrinter = true;
     }
-    SetMapMode(MapMode(MAP_TWIP));
+    SetMapMode(MapMode(MapUnit::MapTwip));
     initFont(pImpl->maFont);
     initFont(pImpl->maCJKFont);
     initFont(pImpl->maCTLFont);
@@ -503,14 +501,6 @@ void SvxFontPrevWindow::Init()
     ResetSettings(true, true);
 
     SetBorderStyle(WindowBorderStyle::MONO);
-}
-
-SvxFontPrevWindow::SvxFontPrevWindow(vcl::Window* pParent, const ResId& rId)
-    : Window(pParent, rId)
-    , mbResetForeground(true)
-    , mbResetBackground(true)
-{
-    Init();
 }
 
 SvxFontPrevWindow::SvxFontPrevWindow(vcl::Window* pParent, WinBits nStyle)
@@ -521,14 +511,7 @@ SvxFontPrevWindow::SvxFontPrevWindow(vcl::Window* pParent, WinBits nStyle)
     Init();
 }
 
-VCL_BUILDER_DECL_FACTORY(SvxFontPrevWindow)
-{
-    WinBits nWinStyle = 0;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-        nWinStyle |= WB_BORDER;
-    rRet = VclPtr<SvxFontPrevWindow>::Create(pParent, nWinStyle);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(SvxFontPrevWindow, 0)
 
 SvxFontPrevWindow::~SvxFontPrevWindow()
 {
@@ -908,7 +891,7 @@ void SvxFontPrevWindow::SetFontSize( const SfxItemSet& rSet, sal_uInt16 nSlot, S
     {
         nH = LogicToLogic(static_cast<const SvxFontHeightItem&>(rSet.Get(nWhich)).GetHeight(),
                             (MapUnit) rSet.GetPool()->GetMetric(nWhich),
-                            MAP_TWIP);
+                            MapUnit::MapTwip);
     }
     else
         nH = 240;// as default 12pt
@@ -1124,7 +1107,7 @@ void SvxFontPrevWindow::SetFromItemSet(const SfxItemSet &rSet, bool bPreviewBack
     {
         const SvxKerningItem& rItem = static_cast<const SvxKerningItem&>( rSet.Get( nWhich ) );
         short nKern = ( short )
-                        LogicToLogic( rItem.GetValue(), ( MapUnit ) rSet.GetPool()->GetMetric( nWhich ), MAP_TWIP );
+                        LogicToLogic( rItem.GetValue(), ( MapUnit ) rSet.GetPool()->GetMetric( nWhich ), MapUnit::MapTwip );
         rFont.SetFixKerning( nKern );
         rCJKFont.SetFixKerning( nKern );
         rCTLFont.SetFixKerning( nKern );
@@ -1302,7 +1285,7 @@ void SvxFontPrevWindow::Init(const SfxItemSet& rSet)
 
     // Background
     bool bTransparent;
-    nWhich = rSet.GetPool()->GetWhich(pImpl->mbPreviewBackgroundToCharacter ? SID_ATTR_BRUSH : SID_ATTR_BRUSH_CHAR);
+    nWhich = SID_ATTR_BRUSH_CHAR;
     if (ISITEMSET)
     {
          const SvxBrushItem& rBrush = static_cast<const SvxBrushItem&>( rSet.Get( nWhich ) );
@@ -1320,15 +1303,12 @@ void SvxFontPrevWindow::Init(const SfxItemSet& rSet)
     rCTLFont.SetTransparent( bTransparent );
 
     Color aBackCol( COL_TRANSPARENT );
-    if (!pImpl->mbPreviewBackgroundToCharacter)
+    nWhich = rSet.GetPool()->GetWhich( SID_ATTR_BRUSH );
+    if (ISITEMSET)
     {
-        nWhich = rSet.GetPool()->GetWhich( SID_ATTR_BRUSH );
-        if (ISITEMSET)
-        {
-            const SvxBrushItem& rBrush = static_cast<const SvxBrushItem&>(rSet.Get(nWhich));
-            if (GPOS_NONE == rBrush.GetGraphicPos())
-                aBackCol = rBrush.GetColor();
-        }
+        const SvxBrushItem& rBrush = static_cast<const SvxBrushItem&>(rSet.Get(nWhich));
+        if (GPOS_NONE == rBrush.GetGraphicPos())
+            aBackCol = rBrush.GetColor();
     }
     SetBackColor(aBackCol);
 
@@ -1371,7 +1351,7 @@ void SvxFontPrevWindow::Init(const SfxItemSet& rSet)
     {
         const SvxKerningItem& rItem = static_cast<const SvxKerningItem&>( rSet.Get( nWhich ) );
         short nKern = ( short )
-                        LogicToLogic( rItem.GetValue(), ( MapUnit ) rSet.GetPool()->GetMetric( nWhich ), MAP_TWIP );
+                        LogicToLogic( rItem.GetValue(), ( MapUnit ) rSet.GetPool()->GetMetric( nWhich ), MapUnit::MapTwip );
         rFont.SetFixKerning( nKern );
         rCJKFont.SetFixKerning( nKern );
         rCTLFont.SetFixKerning( nKern );

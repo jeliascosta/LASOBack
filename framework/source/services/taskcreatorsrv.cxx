@@ -64,7 +64,7 @@ private:
 public:
 
     explicit TaskCreatorService(const css::uno::Reference< css::uno::XComponentContext >& xContext);
-    virtual ~TaskCreatorService(                                                                   );
+    virtual ~TaskCreatorService(                                                                   ) override;
 
     virtual OUString SAL_CALL getImplementationName()
         throw (css::uno::RuntimeException, std::exception) override
@@ -81,8 +81,7 @@ public:
     virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
         throw (css::uno::RuntimeException, std::exception) override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.frame.TaskCreator" };
-        return aSeq;
+        return {"com.sun.star.frame.TaskCreator"};
     }
 
     // XSingleServiceFactory
@@ -217,7 +216,7 @@ void TaskCreatorService::implts_applyDocStyleToWindow(const css::uno::Reference<
 {
     // SYNCHRONIZED ->
     SolarMutexGuard aSolarGuard;
-    vcl::Window* pVCLWindow = VCLUnoHelper::GetWindow(xWindow);
+    VclPtr<vcl::Window> pVCLWindow = VCLUnoHelper::GetWindow(xWindow);
     if (pVCLWindow)
         pVCLWindow->SetExtendedStyle(WB_EXT_DOCUMENT);
     // <- SYNCHRONIZED

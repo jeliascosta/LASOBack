@@ -140,26 +140,22 @@ public:
 
 void SwGlobalFrameListener_Impl::Notify( SfxBroadcaster& /*rBC*/, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>( &rHint );
-    if( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING)
+    if( rHint.GetId() == SFX_HINT_DYING)
         bValid = false;
 }
 
-SwGlobalTree::SwGlobalTree(vcl::Window* pParent, const ResId& rResId) :
-
-    SvTreeListBox(pParent, rResId),
-
-    pActiveShell        ( nullptr ),
-    pEmphasisEntry      ( nullptr ),
-    pDDSource           ( nullptr ),
-    pSwGlblDocContents  ( nullptr ),
-    pDocContent         ( nullptr ),
-    pDocInserter        ( nullptr ),
-
-    bIsInternalDrag         ( false ),
-    bLastEntryEmphasis      ( false ),
-    bIsImageListInitialized ( false )
-
+SwGlobalTree::SwGlobalTree(vcl::Window* pParent, SwNavigationPI* pDialog)
+    : SvTreeListBox(pParent)
+    , xDialog(pDialog)
+    , pActiveShell(nullptr)
+    , pEmphasisEntry(nullptr)
+    , pDDSource(nullptr)
+    , pSwGlblDocContents(nullptr)
+    , pDocContent(nullptr)
+    , pDocInserter(nullptr)
+    , bIsInternalDrag(false)
+    , bLastEntryEmphasis(false)
+    , bIsImageListInitialized(false)
 {
     SetDragDropMode(DragDropMode::APP_COPY  |
                     DragDropMode::CTRL_MOVE |
@@ -190,7 +186,13 @@ void SwGlobalTree::dispose()
     delete pDocInserter;
     pDocInserter = nullptr;
     aUpdateTimer.Stop();
+    xDialog.clear();
     SvTreeListBox::dispose();
+}
+
+Size SwGlobalTree::GetOptimalSize() const
+{
+    return LogicToPixel(Size(110, 112), MapUnit::MapAppFont);
 }
 
 sal_Int8 SwGlobalTree::ExecuteDrop( const ExecuteDropEvent& rEvt )
@@ -330,16 +332,16 @@ sal_Int8 SwGlobalTree::AcceptDrop( const AcceptDropEvent& rEvt )
     return nRet;
 }
 
-std::unique_ptr<PopupMenu> SwGlobalTree::CreateContextMenu()
+VclPtr<PopupMenu> SwGlobalTree::CreateContextMenu()
 {
-    std::unique_ptr<PopupMenu> pPop;
+    VclPtr<PopupMenu> pPop;
     if(pActiveShell &&
         !pActiveShell->GetView().GetDocShell()->IsReadOnly())
     {
         const sal_uInt16 nEnableFlags = GetEnableFlags();
-        pPop.reset(new PopupMenu);
-        PopupMenu* pSubPop1 = new PopupMenu;
-        PopupMenu* pSubPop2 = new PopupMenu;
+        pPop = VclPtr<PopupMenu>::Create();
+        VclPtrInstance<PopupMenu> pSubPop1;
+        VclPtrInstance<PopupMenu> pSubPop2;
 
         for (sal_uInt16 i = CTX_UPDATE_SEL; i <= CTX_UPDATE_ALL; i++)
         {
@@ -392,10 +394,11 @@ std::unique_ptr<PopupMenu> SwGlobalTree::CreateContextMenu()
 void SwGlobalTree::TbxMenuHdl(sal_uInt16 nTbxId, ToolBox* pBox)
 {
     const sal_uInt16 nEnableFlags = GetEnableFlags();
-    if(FN_GLOBAL_OPEN == nTbxId)
+    const OUString sCommand(pBox->GetItemCommand(nTbxId));
+    if (sCommand == "insert")
     {
-        std::unique_ptr<PopupMenu> pMenu(new PopupMenu);
-        for (sal_uInt16 i = CTX_INSERT_ANY_INDEX; i <= CTX_INSERT_TEXT; i++)
+        ScopedVclPtrInstance<PopupMenu> pMenu;
+        for (sal_uInt16 i = CTX_INSERT_ANY_INDEX; i <= CTX_INSERT_TEXT; ++i)
         {
             pMenu->InsertItem( i, aContextStrings[STR_INDEX  - STR_GLOBAL_CONTEXT_FIRST - CTX_INSERT_ANY_INDEX + i] );
             pMenu->SetHelpId(i, aHelpForMenu[i] );
@@ -406,13 +409,13 @@ void SwGlobalTree::TbxMenuHdl(sal_uInt16 nTbxId, ToolBox* pBox)
         pMenu->EnableItem(CTX_INSERT_NEW_FILE,  0 != (nEnableFlags & ENABLE_INSERT_FILE));
         pMenu->SetSelectHdl(LINK(this, SwGlobalTree, PopupHdl));
         pMenu->Execute(pBox, pBox->GetItemRect(nTbxId));
-        pMenu.reset();
+        pMenu.disposeAndClear();
         pBox->EndSelection();
         pBox->Invalidate();
     }
-    else if(FN_GLOBAL_UPDATE == nTbxId)
+    else if (sCommand == "update")
     {
-        std::unique_ptr<PopupMenu> pMenu(new PopupMenu);
+        ScopedVclPtrInstance<PopupMenu> pMenu;
         for (sal_uInt16 i = CTX_UPDATE_SEL; i <= CTX_UPDATE_ALL; i++)
         {
             pMenu->InsertItem( i, aContextStrings[STR_UPDATE_SEL - STR_GLOBAL_CONTEXT_FIRST - CTX_UPDATE_SEL+ i] );
@@ -421,7 +424,7 @@ void SwGlobalTree::TbxMenuHdl(sal_uInt16 nTbxId, ToolBox* pBox)
         pMenu->EnableItem(CTX_UPDATE_SEL, 0 != (nEnableFlags & ENABLE_UPDATE_SEL));
         pMenu->SetSelectHdl(LINK(this, SwGlobalTree, PopupHdl));
         pMenu->Execute(pBox, pBox->GetItemRect(nTbxId));
-        pMenu.reset();
+        pMenu.disposeAndClear();
         pBox->EndSelection();
         pBox->Invalidate();
     }
@@ -473,7 +476,7 @@ void     SwGlobalTree::RequestHelp( const HelpEvent& rHEvt )
             bParent = false;
             SvLBoxTab* pTab;
             SvLBoxItem* pItem = GetItem( pEntry, aPos.X(), &pTab );
-            if (pItem && SV_ITEM_ID_LBOXSTRING == pItem->GetType())
+            if (pItem && SvLBoxItemType::String == pItem->GetType())
             {
                 const SwSection* pSect = pCont->GetSection();
                 OUString sEntry = pSect->GetLinkFileName().getToken(0, sfx2::cTokenSeparator);
@@ -514,12 +517,12 @@ void     SwGlobalTree::SelectHdl()
     SwNavigationPI* pNavi = GetParentWindow();
     bool bReadonly = !pActiveShell ||
                 pActiveShell->GetView().GetDocShell()->IsReadOnly();
-    pNavi->m_aGlobalToolBox->EnableItem(FN_GLOBAL_EDIT,  nSelCount == 1 && !bReadonly);
-    pNavi->m_aGlobalToolBox->EnableItem(FN_GLOBAL_OPEN,  nSelCount <= 1 && !bReadonly);
-    pNavi->m_aGlobalToolBox->EnableItem(FN_GLOBAL_UPDATE,  GetEntryCount() > 0 && !bReadonly);
-    pNavi->m_aGlobalToolBox->EnableItem(FN_ITEM_UP,
+    pNavi->m_aGlobalToolBox->EnableItem(pNavi->m_aGlobalToolBox->GetItemId("edit"),  nSelCount == 1 && !bReadonly);
+    pNavi->m_aGlobalToolBox->EnableItem(pNavi->m_aGlobalToolBox->GetItemId("insert"),  nSelCount <= 1 && !bReadonly);
+    pNavi->m_aGlobalToolBox->EnableItem(pNavi->m_aGlobalToolBox->GetItemId("update"),  GetEntryCount() > 0 && !bReadonly);
+    pNavi->m_aGlobalToolBox->EnableItem(pNavi->m_aGlobalToolBox->GetItemId("up"),
                     nSelCount == 1 && nAbsPos && !bReadonly);
-    pNavi->m_aGlobalToolBox->EnableItem(FN_ITEM_DOWN,
+    pNavi->m_aGlobalToolBox->EnableItem(pNavi->m_aGlobalToolBox->GetItemId("down"),
                     nSelCount == 1 && nAbsPos < GetEntryCount() - 1 && !bReadonly);
 
 }
@@ -768,7 +771,7 @@ void    SwGlobalTree::EditContent(const SwGlblDocContent* pCont )
     }
 }
 
-IMPL_LINK_TYPED( SwGlobalTree, PopupHdl, Menu* , pMenu, bool)
+IMPL_LINK( SwGlobalTree, PopupHdl, Menu* , pMenu, bool)
 {
     ExecuteContextMenuAction( pMenu->GetCurItemId());
     return true;
@@ -890,11 +893,10 @@ void    SwGlobalTree::ExecuteContextMenuAction( sal_uInt16 nSelectedPopupEntry )
 
                 SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
                 assert(pFact && "Dialog creation failed!");
-                std::unique_ptr<AbstractMultiTOXTabDialog> pDlg(pFact->CreateMultiTOXTabDialog(
+                ScopedVclPtr<AbstractMultiTOXTabDialog> pDlg(pFact->CreateMultiTOXTabDialog(
                                                         this, aSet,
                                                         *pActiveShell,
                                                         nullptr,
-                                                        USHRT_MAX,
                                                         true));
                 assert(pDlg && "Dialog creation failed!");
                 if(RET_OK == pDlg->Execute())
@@ -1007,7 +1009,7 @@ void    SwGlobalTree::ExecuteContextMenuAction( sal_uInt16 nSelectedPopupEntry )
         delete pContCopy;
 }
 
-IMPL_LINK_NOARG_TYPED(SwGlobalTree, Timeout, Timer *, void)
+IMPL_LINK_NOARG(SwGlobalTree, Timeout, Timer *, void)
 {
     if(!IsDisposed() && !HasFocus() && Update( false ))
         Display();
@@ -1047,11 +1049,11 @@ void    SwGlobalTree::HideTree()
     SvTreeListBox::Hide();
 }
 
-void    SwGlobalTree::ExecCommand(sal_uInt16 nCmd)
+void    SwGlobalTree::ExecCommand(const OUString &rCmd)
 {
     SvTreeListEntry* pEntry = FirstSelected();
     OSL_ENSURE(pEntry, "It explodes in the next moment");
-    if(FN_GLOBAL_EDIT == nCmd)
+    if (rCmd == "edit")
     {
         const SwGlblDocContent* pCont = static_cast<const SwGlblDocContent*>(
                                                 pEntry->GetUserData());
@@ -1064,22 +1066,17 @@ void    SwGlobalTree::ExecCommand(sal_uInt16 nCmd)
             bool bMove = false;
             sal_uLong nSource = GetModel()->GetAbsPos(pEntry);
             sal_uLong nDest = nSource;
-            switch(nCmd)
+            if (rCmd == "down")
             {
-                case FN_ITEM_DOWN:
-                {
-                    sal_uLong nEntryCount = GetEntryCount();
-                    bMove = nEntryCount > nSource + 1;
-                    nDest+= 2;
-                }
-                break;
-                case FN_ITEM_UP:
-                {
-                    if(nSource)
-                        bMove = 0 != nSource;
-                    nDest--;
-                }
-                break;
+                sal_uLong nEntryCount = GetEntryCount();
+                bMove = nEntryCount > nSource + 1;
+                nDest+= 2;
+            }
+            else if (rCmd == "up")
+            {
+                if(nSource)
+                    bMove = 0 != nSource;
+                nDest--;
             }
             if( bMove && pActiveShell->MoveGlobalDocContent(
                 *pSwGlblDocContents, nSource, nSource + 1, nDest ) &&
@@ -1195,7 +1192,7 @@ void SwGlobalTree::OpenDoc(const SwGlblDocContent* pCont)
     }
 }
 
-IMPL_LINK_NOARG_TYPED( SwGlobalTree, DoubleClickHdl, SvTreeListBox*, bool)
+IMPL_LINK_NOARG( SwGlobalTree, DoubleClickHdl, SvTreeListBox*, bool)
 {
     SvTreeListEntry* pEntry = GetCurEntry();
     SwGlblDocContent* pCont = static_cast<SwGlblDocContent*>(pEntry->GetUserData());
@@ -1211,13 +1208,12 @@ IMPL_LINK_NOARG_TYPED( SwGlobalTree, DoubleClickHdl, SvTreeListBox*, bool)
 
 SwNavigationPI* SwGlobalTree::GetParentWindow()
 {
-    return static_cast<SwNavigationPI*>(Window::GetParent());
+    return xDialog;
 }
 
-IMPL_STATIC_LINK_NOARG_TYPED(SwGlobalTree, ShowFrameHdl, void*, void)
+IMPL_STATIC_LINK_NOARG(SwGlobalTree, ShowFrameHdl, void*, void)
 {
-    const SfxObjectShell* pShell = SwGlobalTree::GetShowShell();
-    SfxViewFrame* pFirst = pShell ? SfxViewFrame::GetFirst(pShell) : nullptr;
+    SfxViewFrame* pFirst = pShowShell ? SfxViewFrame::GetFirst(pShowShell) : nullptr;
     if (pFirst)
         pFirst->ToTop();
     SwGlobalTree::SetShowShell(nullptr);
@@ -1356,7 +1352,7 @@ void SwGlobalTree::InsertRegion( const SwGlblDocContent* _pContent, const Sequen
     }
 }
 
-IMPL_LINK_TYPED( SwGlobalTree, DialogClosedHdl, sfx2::FileDialogHelper*, _pFileDlg, void )
+IMPL_LINK( SwGlobalTree, DialogClosedHdl, sfx2::FileDialogHelper*, _pFileDlg, void )
 {
     if ( ERRCODE_NONE != _pFileDlg->GetError() )
         return;
@@ -1369,10 +1365,10 @@ IMPL_LINK_TYPED( SwGlobalTree, DialogClosedHdl, sfx2::FileDialogHelper*, _pFileD
         sal_Int32 nPos = 0;
         for (SfxMedium* pMed : *pMedList)
         {
-            OUString sFileName = pMed->GetURLObject().GetMainURL( INetURLObject::NO_DECODE );
-            sFileName += OUString(sfx2::cTokenSeparator);
-            sFileName += pMed->GetFilter()->GetFilterName();
-            sFileName += OUString(sfx2::cTokenSeparator);
+            OUString sFileName = pMed->GetURLObject().GetMainURL( INetURLObject::NO_DECODE )
+                + OUStringLiteral1(sfx2::cTokenSeparator)
+                + pMed->GetFilter()->GetFilterName()
+                + OUStringLiteral1(sfx2::cTokenSeparator);
             pFileNames[nPos++] = sFileName;
         }
         pMedList.reset();

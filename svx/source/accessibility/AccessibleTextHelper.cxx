@@ -93,7 +93,7 @@ namespace accessibility
 
         // receive pointer to our frontend class and view window
         AccessibleTextHelper_Impl();
-        virtual ~AccessibleTextHelper_Impl();
+        virtual ~AccessibleTextHelper_Impl() override;
 
         // XAccessibleContext child handling methods
         sal_Int32 SAL_CALL getAccessibleChildCount();
@@ -171,7 +171,6 @@ namespace accessibility
 
         // syntactic sugar for FireEvent
         void GotPropertyEvent( const uno::Any& rNewValue, const sal_Int16 nEventId ) const { FireEvent( nEventId, rNewValue ); }
-        void LostPropertyEvent( const uno::Any& rOldValue, const sal_Int16 nEventId ) const { FireEvent( nEventId, uno::Any(), rOldValue ); }
 
         // shutdown usage of current edit source on myself and the children.
         void ShutdownEditSource();
@@ -437,7 +436,7 @@ namespace accessibility
                 {
                     AccessibleCell* pAccessibleCell = dynamic_cast< AccessibleCell* > ( mxFrontEnd.get() );
                     if ( !pAccessibleCell )
-                            LostPropertyEvent( uno::makeAny(AccessibleStateType::FOCUSED), AccessibleEventId::STATE_CHANGED );
+                        FireEvent( AccessibleEventId::STATE_CHANGED, uno::Any(), uno::makeAny(AccessibleStateType::FOCUSED) );
                     else
                     {
                         AccessibleTableShape* pAccTable = pAccessibleCell->GetParentTable();
@@ -1174,9 +1173,8 @@ namespace accessibility
 
                 // determine hint type
                 const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>( &rHint );
-                const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>( &rHint );
                 const TextHint* pTextHint = dynamic_cast<const TextHint*>( &rHint );
-                const SvxViewHint* pViewHint = dynamic_cast<const SvxViewHint*>( &rHint );
+                const SvxViewChangedHint* pViewHint = dynamic_cast<const SvxViewChangedHint*>( &rHint );
                 const SvxEditSourceHint* pEditSourceHint = dynamic_cast<const SvxEditSourceHint*>( &rHint );
 
                 try
@@ -1267,20 +1265,15 @@ namespace accessibility
                     }
                     else if( pViewHint )
                     {
-                        switch( pViewHint->GetHintType() )
-                        {
-                            case SvxViewHint::SVX_HINT_VIEWCHANGED:
-                                // just check visibility
-                                UpdateVisibleChildren();
-                                UpdateBoundRect();
-                                break;
-                        }
+                        // just check visibility
+                        UpdateVisibleChildren();
+                        UpdateBoundRect();
                     }
                     else if( pSdrHint )
                     {
                         switch( pSdrHint->GetKind() )
                         {
-                            case HINT_BEGEDIT:
+                            case SdrHintKind::BeginEdit:
                             {
                                 if(!IsActive())
                                 {
@@ -1294,7 +1287,7 @@ namespace accessibility
                                 break;
                             }
 
-                            case HINT_ENDEDIT:
+                            case SdrHintKind::EndEdit:
                             {
                                 // focused child now loses focus
                                 ESelection aSelection;
@@ -1313,9 +1306,9 @@ namespace accessibility
                         }
                     }
                     // it's VITAL to keep the SfxSimpleHint last! It's the base of some classes above!
-                    else if( pSimpleHint )
+                    else if( rHint.GetId() )
                     {
-                        switch( pSimpleHint->GetId() )
+                        switch( rHint.GetId() )
                         {
                             case SFX_HINT_DYING:
                                 // edit source is dying under us, become defunc then
@@ -1352,24 +1345,42 @@ namespace accessibility
 
         mbInNotify = true;
 
-        // determine hint type
-        const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>( &rHint );
-        const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>( &rHint );
-        const TextHint* pTextHint = dynamic_cast<const TextHint*>( &rHint );
-        const SvxViewHint* pViewHint = dynamic_cast<const SvxViewHint*>( &rHint );
-        const SvxEditSourceHint* pEditSourceHint = dynamic_cast<const SvxEditSourceHint*>( &rHint );
-
         try
         {
-            // Process notification event
-            if( pEditSourceHint )
+            // Process notification event, arranged in order of likelihood of
+            // occurrence to avoid unnecessary dynamic_cast. Note that
+            // SvxEditSourceHint is derived from TextHint, so has to be checked
+            // before that.
+            if( const SvxViewChangedHint* pViewHint = dynamic_cast<const SvxViewChangedHint*>( &rHint ) )
+            {
+                maEventQueue.Append( *pViewHint );
+
+                // process visibility right away, if not within an
+                // open EE notification frame. Otherwise, event
+                // processing would be delayed until next EE
+                // notification sequence.
+                if( maEventOpenFrames == 0 )
+                    ProcessQueue();
+            }
+            else if( const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>( &rHint ) )
+            {
+                maEventQueue.Append( *pSdrHint );
+
+                // process drawing layer events right away, if not
+                // within an open EE notification frame. Otherwise,
+                // event processing would be delayed until next EE
+                // notification sequence.
+                if( maEventOpenFrames == 0 )
+                    ProcessQueue();
+            }
+            else if( const SvxEditSourceHint* pEditSourceHint = dynamic_cast<const SvxEditSourceHint*>( &rHint ) )
             {
                 maEventQueue.Append( *pEditSourceHint );
                 // EditEngine should emit TEXT_SELECTION_CHANGED events (#i27299#)
                 if( maEventOpenFrames == 0 )
                     ProcessQueue();
             }
-            else if( pTextHint )
+            else if( const TextHint* pTextHint = dynamic_cast<const TextHint*>( &rHint ) )
             {
                 switch( pTextHint->GetId() )
                 {
@@ -1414,33 +1425,11 @@ namespace accessibility
                         break;
                 }
             }
-            else if( pViewHint )
-            {
-                maEventQueue.Append( *pViewHint );
-
-                // process visibility right away, if not within an
-                // open EE notification frame. Otherwise, event
-                // processing would be delayed until next EE
-                // notification sequence.
-                if( maEventOpenFrames == 0 )
-                    ProcessQueue();
-            }
-            else if( pSdrHint )
-            {
-                maEventQueue.Append( *pSdrHint );
-
-                // process drawing layer events right away, if not
-                // within an open EE notification frame. Otherwise,
-                // event processing would be delayed until next EE
-                // notification sequence.
-                if( maEventOpenFrames == 0 )
-                    ProcessQueue();
-            }
-            // it's VITAL to keep the SfxSimpleHint last! It's the base of some classes above!
-            else if( pSimpleHint )
+            // it's VITAL to keep the SfxHint last! It's the base of the classes above!
+            else if( rHint.GetId() )
             {
                 // handle this event _at once_, because after that, objects are invalid
-                switch( pSimpleHint->GetId() )
+                switch( rHint.GetId() )
                 {
                     case SFX_HINT_DYING:
                         // edit source is dying under us, become defunc then

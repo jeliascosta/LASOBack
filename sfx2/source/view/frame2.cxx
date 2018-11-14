@@ -280,7 +280,7 @@ SfxFrame* SfxFrame::Create( const Reference < XFrame >& i_rFrame )
 {
     // create a new TopFrame to an external XFrame object ( wrap controller )
     ENSURE_OR_THROW( i_rFrame.is(), "NULL frame not allowed" );
-    vcl::Window* pWindow = VCLUnoHelper::GetWindow( i_rFrame->getContainerWindow() );
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( i_rFrame->getContainerWindow() );
     ENSURE_OR_THROW( pWindow, "frame without container window not allowed" );
 
     SfxFrame* pFrame = new SfxFrame( *pWindow );
@@ -290,7 +290,6 @@ SfxFrame* SfxFrame::Create( const Reference < XFrame >& i_rFrame )
 
 SfxFrame::SfxFrame( vcl::Window& i_rContainerWindow )
     :SvCompatWeakBase<SfxFrame>( this )
-    ,pParentFrame( nullptr )
     ,pChildArr( nullptr )
     ,pWindow( nullptr )
 {
@@ -401,7 +400,7 @@ void SfxFrame::PrepareForDoc_Impl( SfxObjectShell& i_rDoc )
     // plugin mode
     sal_Int16 nPluginMode = aDocumentArgs.getOrDefault( "PluginMode", sal_Int16( 0 ) );
     if ( nPluginMode && ( nPluginMode != 2 ) )
-        SetInPlace_Impl( true );
+        pImpl->bInPlace = true;
 }
 
 bool SfxFrame::IsMarkedHidden_Impl() const

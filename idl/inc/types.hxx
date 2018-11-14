@@ -31,12 +31,10 @@ typedef SvRefMemberList< SvMetaSlot* > SvSlotElementList;
 class SvMetaAttribute : public SvMetaReference
 {
 public:
-    virtual void ReadAttributesSvIdl( SvIdlDataBase & rBase,
-                                      SvTokenStream & rInStm ) override;
     tools::SvRef<SvMetaType> aType;
     SvIdentifier             aSlotId;
                         SvMetaAttribute();
-                        SvMetaAttribute( SvMetaType * );
+    SvMetaAttribute( SvMetaType * );
 
     void                SetSlotId( const SvIdentifier & rId )
                         { aSlotId = rId; }
@@ -61,14 +59,12 @@ class SvMetaType : public SvMetaReference
     void                WriteSfxItem( const OString& rItemName, SvIdlDataBase & rBase,
                                       SvStream & rOutStm );
 protected:
-    bool                ReadNamesSvIdl( SvTokenStream & rInStm );
-
     bool                ReadHeaderSvIdl( SvIdlDataBase &, SvTokenStream & rInStm );
 public:
             SvMetaType();
             SvMetaType( const OString& rTypeName );
 
-    virtual ~SvMetaType();
+    virtual ~SvMetaType() override;
 
     virtual void        ReadContextSvIdl( SvIdlDataBase &, SvTokenStream & rInStm ) override;
 

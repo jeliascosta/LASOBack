@@ -55,7 +55,7 @@ public:
     explicit GlobalAcceleratorConfiguration(const css::uno::Reference< css::uno::XComponentContext >& xContext);
 
     /** TODO */
-    virtual ~GlobalAcceleratorConfiguration() {}
+    virtual ~GlobalAcceleratorConfiguration() override {}
 
     virtual OUString SAL_CALL getImplementationName()
         throw (css::uno::RuntimeException, std::exception) override
@@ -72,8 +72,7 @@ public:
     virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
         throw (css::uno::RuntimeException, std::exception) override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.ui.GlobalAcceleratorConfiguration" };
-        return aSeq;
+        return {"com.sun.star.ui.GlobalAcceleratorConfiguration"};
     }
 
     // XComponent

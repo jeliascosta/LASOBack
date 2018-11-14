@@ -24,6 +24,7 @@
 #include <vector>
 #include <algorithm>
 
+#include <o3tl/any.hxx>
 #include <svx/svxids.hrc>
 #include <editeng/memberids.hrc>
 #include <float.h>
@@ -106,6 +107,8 @@
 #include <comphelper/sequence.hxx>
 #include <comphelper/sequenceashashmap.hxx>
 #include <swtable.hxx>
+#include <docsh.hxx>
+#include <fesh.hxx>
 
 using namespace ::com::sun::star;
 using ::editeng::SvxBorderLine;
@@ -275,7 +278,7 @@ static void lcl_SetSpecialProperty(SwFrameFormat* pFormat,
             const SwPageDesc* pDesc = nullptr;
             if (!sPageStyle.isEmpty())
             {
-                SwStyleNameMapper::FillUIName(sPageStyle, sPageStyle, nsSwGetPoolIdFromName::GET_POOLID_PAGEDESC, true );
+                SwStyleNameMapper::FillUIName(sPageStyle, sPageStyle, SwGetPoolIdFromName::PageDesc, true );
                 pDesc = SwPageDesc::GetByName(*pFormat->GetDoc(), sPageStyle);
             }
             SwFormatPageDesc aDesc( pDesc );
@@ -325,7 +328,7 @@ static uno::Any lcl_GetSpecialProperty(SwFrameFormat* pFormat, const SfxItemProp
             {
                 const SwPageDesc* pDsc = static_cast<const SwFormatPageDesc*>(pItem)->GetPageDesc();
                 if(pDsc)
-                    return uno::makeAny<OUString>(SwStyleNameMapper::GetProgName(pDsc->GetName(), nsSwGetPoolIdFromName::GET_POOLID_PAGEDESC ));
+                    return uno::makeAny<OUString>(SwStyleNameMapper::GetProgName(pDsc->GetName(), SwGetPoolIdFromName::PageDesc ));
             }
             return uno::makeAny(OUString());
         }
@@ -657,7 +660,7 @@ static void lcl_GetTableSeparators(uno::Any& rRet, SwTable* pTable, SwTableBox* 
         }
     }
     if(!bError)
-        rRet.setValue(&aColSeq, cppu::UnoType<uno::Sequence< text::TableColumnSeparator>>::get());
+        rRet <<= aColSeq;
 
 }
 
@@ -676,8 +679,8 @@ static void lcl_SetTableSeparators(const uno::Any& rVal, SwTable* pTable, SwTabl
     if( !nOldCount )
         return;
 
-    const uno::Sequence< text::TableColumnSeparator>* pSepSeq =
-                static_cast<uno::Sequence< text::TableColumnSeparator> const *>(rVal.getValue());
+    auto pSepSeq =
+                o3tl::tryAccess<uno::Sequence<text::TableColumnSeparator>>(rVal);
     if(!pSepSeq || static_cast<size_t>(pSepSeq->getLength()) != nOldCount)
         return;
     SwTabCols aCols(aOldCols);
@@ -979,7 +982,7 @@ uno::Reference<text::XTextCursor> SwXCell::createTextCursor() throw( uno::Runtim
     SwXTextCursor* const pXCursor =
         new SwXTextCursor(*GetDoc(), this, CURSOR_TBLTEXT, aPos);
     auto& rUnoCursor(pXCursor->GetCursor());
-    rUnoCursor.Move(fnMoveForward, fnGoNode);
+    rUnoCursor.Move(fnMoveForward, GoInNode);
     return static_cast<text::XWordCursor*>(pXCursor);
 }
 
@@ -1034,11 +1037,15 @@ void SwXCell::setPropertyValue(const OUString& rPropertyName, const uno::Any& aV
         uno::Sequence<beans::PropertyValue> tableCellProperties;
         tableCellProperties = aValue.get< uno::Sequence< beans::PropertyValue > >();
         comphelper::SequenceAsHashMap aPropMap(tableCellProperties);
-        uno::Any sRedlineTypeValue = aPropMap.getUnpackedValueOrDefault("RedlineType", uno::Any());
-        if(!sRedlineTypeValue.has<OUString>())
+        OUString sRedlineType;
+        if(aPropMap.getValue("RedlineType") >>= sRedlineType)
+        {
+            // Create a 'Table Cell Redline' object
+            SwUnoCursorHelper::makeTableCellRedline(*pBox, sRedlineType, tableCellProperties);
+        }
+        else
             throw beans::UnknownPropertyException("No redline type property: ", static_cast<cppu::OWeakObject*>(this));
-        // Create a 'Table Cell Redline' object
-        SwUnoCursorHelper::makeTableCellRedline(*pBox, sRedlineTypeValue.get<OUString>(), tableCellProperties);
+
     }
     else
     {
@@ -1123,7 +1130,7 @@ uno::Reference<container::XEnumeration> SwXCell::createEnumeration() throw( uno:
     const SwStartNode* pSttNd = pBox->GetSttNd();
     SwPosition aPos(*pSttNd);
     auto pUnoCursor(GetDoc()->CreateUnoCursor(aPos));
-    pUnoCursor->Move(fnMoveForward, fnGoNode);
+    pUnoCursor->Move(fnMoveForward, GoInNode);
     // remember table and start node for later travelling
     // (used in export of tables in tables)
     SwTable const*const pTable(&pSttNd->FindTableNode()->GetTable());
@@ -1147,9 +1154,8 @@ void SwXCell::Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew)
 
 void SwXCell::SwClientNotify(const SwModify& rModify, const SfxHint& rHint)
 {
-    if(typeid(FindUnoInstanceHint<SwTableBox, SwXCell>) == typeid(rHint))
+    if(auto pFindHint = dynamic_cast<const FindUnoInstanceHint<SwTableBox, SwXCell>*>(&rHint))
     {
-        auto* pFindHint(static_cast<const FindUnoInstanceHint<SwTableBox, SwXCell>* >(&rHint));
         if(!pFindHint->m_pCore && pFindHint->m_pCore == GetTableBox())
             pFindHint->m_pResult = this;
     }
@@ -1200,7 +1206,7 @@ SwTableBox* SwXCell::FindBox(SwTable* pTable, SwTableBox* pBox2)
 
 double SwXCell::GetForcedNumericalValue() const
 {
-    if(table::CellContentType_TEXT != getType())
+    if(table::CellContentType_TEXT != const_cast<SwXCell*>(this)->getType())
         return getValue();
     // now we'll try to get a useful numerical value
     // from the text in the cell...
@@ -1310,9 +1316,7 @@ void SwXTextTableRow::setPropertyValue(const OUString& rPropertyName, const uno:
             tableRowProperties = aValue.get< uno::Sequence< beans::PropertyValue > >();
             comphelper::SequenceAsHashMap aPropMap( tableRowProperties );
             OUString sRedlineType;
-            uno::Any sRedlineTypeValue;
-            sRedlineTypeValue = aPropMap.getUnpackedValueOrDefault("RedlineType", sRedlineTypeValue);
-            if( sRedlineTypeValue >>= sRedlineType )
+            if( aPropMap.getValue("RedlineType") >>= sRedlineType )
             {
                 // Create a 'Table Row Redline' object
                 SwUnoCursorHelper::makeTableRowRedline( *pLn, sRedlineType, tableRowProperties);
@@ -1340,7 +1344,7 @@ void SwXTextTableRow::setPropertyValue(const OUString& rPropertyName, const uno:
                     SwFormatFrameSize aFrameSize(pLn->GetFrameFormat()->GetFrameSize());
                     if(FN_UNO_ROW_AUTO_HEIGHT== pEntry->nWID)
                     {
-                        bool bSet = *static_cast<sal_Bool const *>(aValue.getValue());
+                        bool bSet = *o3tl::doAccess<bool>(aValue);
                         aFrameSize.SetHeightSizeType(bSet ? ATT_VAR_SIZE : ATT_FIX_SIZE);
                     }
                     else
@@ -1437,10 +1441,9 @@ void SwXTextTableRow::Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew)
 
 void SwXTextTableRow::SwClientNotify(const SwModify& rModify, const SfxHint& rHint)
 {
-    if(typeid(FindUnoInstanceHint<SwTableLine, SwXTextTableRow>) == typeid(rHint))
+    if(auto pFindHint = dynamic_cast<const FindUnoInstanceHint<SwTableLine, SwXTextTableRow>*>(&rHint))
     {
-        auto* pFindHint(static_cast<const FindUnoInstanceHint<SwTableLine,SwXTextTableRow>* >(&rHint));
-        if(!pFindHint->m_pCore && pFindHint->m_pCore == GetTableRow())
+        if(!pFindHint->m_pCore && pFindHint->m_pCore == pLine)
             pFindHint->m_pResult = this;
     }
     else
@@ -1502,7 +1505,7 @@ SwXTextTableCursor::SwXTextTableCursor(SwFrameFormat* pFormat, SwTableBox* pBox)
     const SwStartNode* pSttNd = pBox->GetSttNd();
     SwPosition aPos(*pSttNd);
     m_pUnoCursor = pDoc->CreateUnoCursor(aPos, true);
-    m_pUnoCursor->Move( fnMoveForward, fnGoNode );
+    m_pUnoCursor->Move( fnMoveForward, GoInNode );
     SwUnoTableCursor& rTableCursor = dynamic_cast<SwUnoTableCursor&>(*m_pUnoCursor);
     rTableCursor.MakeBoxSels();
 }
@@ -1604,7 +1607,7 @@ void SwXTextTableCursor::gotoStart(sal_Bool bExpand) throw( uno::RuntimeExceptio
     SwUnoCursor& rUnoCursor = GetCursor();
     SwUnoTableCursor& rTableCursor = dynamic_cast<SwUnoTableCursor&>(rUnoCursor);
     lcl_CursorSelect(rTableCursor, bExpand);
-    rTableCursor.MoveTable(fnTableCurr, fnTableStart);
+    rTableCursor.MoveTable(GotoCurrTable, fnTableStart);
 }
 
 void SwXTextTableCursor::gotoEnd(sal_Bool bExpand) throw( uno::RuntimeException, std::exception )
@@ -1613,7 +1616,7 @@ void SwXTextTableCursor::gotoEnd(sal_Bool bExpand) throw( uno::RuntimeException,
     SwUnoCursor& rUnoCursor = GetCursor();
     SwUnoTableCursor& rTableCursor = dynamic_cast<SwUnoTableCursor&>(rUnoCursor);
     lcl_CursorSelect(rTableCursor, bExpand);
-    rTableCursor.MoveTable(fnTableCurr, fnTableEnd);
+    rTableCursor.MoveTable(GotoCurrTable, fnTableEnd);
 }
 
 sal_Bool SwXTextTableCursor::mergeRange()
@@ -1883,7 +1886,7 @@ void SwTableProperties_Impl::ApplyTableAttr(const SwTable& rTable, SwDoc& rDoc)
         OUString sPageStyle = pPage->get<OUString>();
         if(!sPageStyle.isEmpty())
         {
-            SwStyleNameMapper::FillUIName(sPageStyle, sPageStyle, nsSwGetPoolIdFromName::GET_POOLID_PAGEDESC, true);
+            SwStyleNameMapper::FillUIName(sPageStyle, sPageStyle, SwGetPoolIdFromName::PageDesc, true);
             const SwPageDesc* pDesc = SwPageDesc::GetByName(rDoc, sPageStyle);
             if(pDesc)
             {
@@ -2129,7 +2132,7 @@ uno::Sequence<OUString> SwXTextTable::getCellNames() throw( uno::RuntimeExceptio
     SwTableLines& rTableLines = pTable->GetTabLines();
     std::vector<OUString> aAllNames;
     lcl_InspectLines(rTableLines, aAllNames);
-    return comphelper::containerToSequence<OUString>(aAllNames);
+    return comphelper::containerToSequence(aAllNames);
 }
 
 uno::Reference<text::XTextTableCursor> SwXTextTable::createCursorByCellName(const OUString& sCellName)
@@ -2285,14 +2288,14 @@ uno::Reference<table::XCellRange> GetRangeByName(
     SwPosition aPos(*pSttNd);
     // set cursor to the upper-left cell of the range
     auto pUnoCursor(pFormat->GetDoc()->CreateUnoCursor(aPos, true));
-    pUnoCursor->Move(fnMoveForward, fnGoNode);
+    pUnoCursor->Move(fnMoveForward, GoInNode);
     pUnoCursor->SetRemainInSection(false);
     const SwTableBox* pBRBox(pTable->GetTableBox(rBRName));
     if(!pBRBox)
         return nullptr;
     pUnoCursor->SetMark();
     pUnoCursor->GetPoint()->nNode = *pBRBox->GetSttNd();
-    pUnoCursor->Move( fnMoveForward, fnGoNode );
+    pUnoCursor->Move( fnMoveForward, GoInNode );
     SwUnoTableCursor* pCursor = dynamic_cast<SwUnoTableCursor*>(pUnoCursor.get());
     // HACK: remove pending actions for selecting old style tables
     UnoActionRemoveContext aRemoveContext(*pCursor);
@@ -2586,7 +2589,7 @@ void SwXTextTable::setPropertyValue(const OUString& rPropertyName, const uno::An
 
                 case FN_UNO_RANGE_ROW_LABEL:
                 {
-                    bool bTmp = *static_cast<sal_Bool const *>(aValue.getValue());
+                    bool bTmp = *o3tl::doAccess<bool>(aValue);
                     if (m_pImpl->m_bFirstRowAsLabel != bTmp)
                     {
                         lcl_SendChartEvent(*this, m_pImpl->m_Listeners);
@@ -2597,7 +2600,7 @@ void SwXTextTable::setPropertyValue(const OUString& rPropertyName, const uno::An
 
                 case FN_UNO_RANGE_COL_LABEL:
                 {
-                    bool bTmp = *static_cast<sal_Bool const *>(aValue.getValue());
+                    bool bTmp = *o3tl::doAccess<bool>(aValue);
                     if (m_pImpl->m_bFirstColumnAsLabel != bTmp)
                     {
                         lcl_SendChartEvent(*this, m_pImpl->m_Listeners);
@@ -2670,13 +2673,13 @@ void SwXTextTable::setPropertyValue(const OUString& rPropertyName, const uno::An
                     SwPosition aPos(*pSttNd);
                     // set cursor to top left cell
                     auto pUnoCursor(pDoc->CreateUnoCursor(aPos, true));
-                    pUnoCursor->Move( fnMoveForward, fnGoNode );
+                    pUnoCursor->Move( fnMoveForward, GoInNode );
                     pUnoCursor->SetRemainInSection( false );
 
                     const SwTableBox* pBRBox = lcl_FindCornerTableBox(rLines, false);
                     pUnoCursor->SetMark();
                     pUnoCursor->GetPoint()->nNode = *pBRBox->GetSttNd();
-                    pUnoCursor->Move( fnMoveForward, fnGoNode );
+                    pUnoCursor->Move( fnMoveForward, GoInNode );
                     SwUnoTableCursor& rCursor = dynamic_cast<SwUnoTableCursor&>(*pUnoCursor);
                     // HACK: remove pending actions for selecting old style tables
                     UnoActionRemoveContext aRemoveContext(rCursor);
@@ -2708,7 +2711,7 @@ void SwXTextTable::setPropertyValue(const OUString& rPropertyName, const uno::An
                     aBoxInfo.SetLine(aVertLine.isEmpty() ? nullptr : &aVertLine, SvxBoxInfoItemLine::VERT);
                     aBoxInfo.SetValid(SvxBoxInfoItemValidFlags::VERT, aBorder.IsVerticalLineValid);
 
-                    aBox.SetDistance((sal_uInt16)convertMm100ToTwip(aBorder.Distance));
+                    aBox.SetAllDistances(static_cast<sal_uInt16>(convertMm100ToTwip(aBorder.Distance)));
                     aBoxInfo.SetValid(SvxBoxInfoItemValidFlags::DISTANCE, aBorder.IsDistanceValid);
 
                     aSet.Put(aBox);
@@ -2778,6 +2781,18 @@ void SwXTextTable::setPropertyValue(const OUString& rPropertyName, const uno::An
                 break;
 
                 case FN_UNO_TABLE_COLUMN_RELATIVE_SUM:/*_readonly_*/ break;
+
+                case FN_UNO_TABLE_TEMPLATE_NAME:
+                {
+                    SwTable* pTable = SwTable::FindTable(pFormat);
+                    OUString sName;
+                    if (!(aValue >>= sName))
+                        break;
+                    pTable->SetTableStyleName(sName);
+                    SwDoc* pDoc = pFormat->GetDoc();
+                    pDoc->GetDocShell()->GetFEShell()->UpdateTableStyleFormatting(pTable->GetTableNode());
+                }
+                break;
 
                 default:
                 {
@@ -2859,7 +2874,7 @@ uno::Any SwXTextTable::getPropertyValue(const OUString& rPropertyName)
                     SwPosition aPos(*pSttNd);
                     // set cursor to top left cell
                     auto pUnoCursor(pDoc->CreateUnoCursor(aPos, true));
-                    pUnoCursor->Move( fnMoveForward, fnGoNode );
+                    pUnoCursor->Move( fnMoveForward, GoInNode );
                     pUnoCursor->SetRemainInSection( false );
 
                     const SwTableBox* pBRBox = lcl_FindCornerTableBox(rLines, false);
@@ -2867,7 +2882,7 @@ uno::Any SwXTextTable::getPropertyValue(const OUString& rPropertyName)
                     const SwStartNode* pLastNd = pBRBox->GetSttNd();
                     pUnoCursor->GetPoint()->nNode = *pLastNd;
 
-                    pUnoCursor->Move( fnMoveForward, fnGoNode );
+                    pUnoCursor->Move( fnMoveForward, GoInNode );
                     SwUnoTableCursor& rCursor = dynamic_cast<SwUnoTableCursor&>(*pUnoCursor);
                     // HACK: remove pending actions for selecting old style tables
                     UnoActionRemoveContext aRemoveContext(rCursor);
@@ -2898,7 +2913,7 @@ uno::Any SwXTextTable::getPropertyValue(const OUString& rPropertyName)
                         aTableBorder.IsHorizontalLineValid  = rBoxInfoItem.IsValid(SvxBoxInfoItemValidFlags::HORI);
                         aTableBorder.VerticalLine           = SvxBoxItem::SvxLineToLine(rBoxInfoItem.GetVert(), true);
                         aTableBorder.IsVerticalLineValid    = rBoxInfoItem.IsValid(SvxBoxInfoItemValidFlags::VERT);
-                        aTableBorder.Distance               = convertTwipToMm100( rBox.GetDistance() );
+                        aTableBorder.Distance               = convertTwipToMm100(rBox.GetSmallestDistance());
                         aTableBorder.IsDistanceValid        = rBoxInfoItem.IsValid(SvxBoxInfoItemValidFlags::DISTANCE);
                         aRet <<= aTableBorder;
                     }
@@ -2917,7 +2932,7 @@ uno::Any SwXTextTable::getPropertyValue(const OUString& rPropertyName)
                         aTableBorder.IsHorizontalLineValid  = rBoxInfoItem.IsValid(SvxBoxInfoItemValidFlags::HORI);
                         aTableBorder.VerticalLine           = SvxBoxItem::SvxLineToLine(rBoxInfoItem.GetVert(), true);
                         aTableBorder.IsVerticalLineValid    = rBoxInfoItem.IsValid(SvxBoxInfoItemValidFlags::VERT);
-                        aTableBorder.Distance               = convertTwipToMm100( rBox.GetDistance() );
+                        aTableBorder.Distance               = convertTwipToMm100(rBox.GetSmallestDistance());
                         aTableBorder.IsDistanceValid        = rBoxInfoItem.IsValid(SvxBoxInfoItemValidFlags::DISTANCE);
                         aRet <<= aTableBorder;
                     }
@@ -3015,6 +3030,14 @@ uno::Any SwXTextTable::getPropertyValue(const OUString& rPropertyName)
                                         SwXTextSections::GetObject( *rSect.GetFormat() );
                         aRet <<= xSect;
                     }
+                }
+                break;
+
+                case FN_UNO_TABLE_TEMPLATE_NAME:
+                {
+                    SwTable* pTable = SwTable::FindTable(pFormat);
+                    OUString sName = pTable->GetTableStyleName();
+                    aRet <<= sName;
                 }
                 break;
 
@@ -3376,14 +3399,14 @@ SwXCellRange::getCellRangeByPosition(
                 SwPosition aPos(*pSttNd);
                 // set cursor in the upper-left cell of the range
                 auto pUnoCursor(pFormat->GetDoc()->CreateUnoCursor(aPos, true));
-                pUnoCursor->Move( fnMoveForward, fnGoNode );
+                pUnoCursor->Move( fnMoveForward, GoInNode );
                 pUnoCursor->SetRemainInSection( false );
                 const SwTableBox* pBRBox = pTable->GetTableBox( sBRName );
                 if(pBRBox)
                 {
                     pUnoCursor->SetMark();
                     pUnoCursor->GetPoint()->nNode = *pBRBox->GetSttNd();
-                    pUnoCursor->Move( fnMoveForward, fnGoNode );
+                    pUnoCursor->Move( fnMoveForward, GoInNode );
                     SwUnoTableCursor* pCursor = dynamic_cast<SwUnoTableCursor*>(pUnoCursor.get());
                     // HACK: remove pending actions for selecting old style tables
                     UnoActionRemoveContext aRemoveContext(*pCursor);
@@ -3508,7 +3531,7 @@ SwXCellRange::setPropertyValue(const OUString& rPropertyName, const uno::Any& aV
                 break;
                 case FN_UNO_RANGE_ROW_LABEL:
                 {
-                    bool bTmp = *static_cast<sal_Bool const *>(aValue.getValue());
+                    bool bTmp = *o3tl::doAccess<bool>(aValue);
                     if (m_pImpl->m_bFirstRowAsLabel != bTmp)
                     {
                         lcl_SendChartEvent(*this, m_pImpl->m_ChartListeners);
@@ -3518,7 +3541,7 @@ SwXCellRange::setPropertyValue(const OUString& rPropertyName, const uno::Any& aV
                 break;
                 case FN_UNO_RANGE_COL_LABEL:
                 {
-                    bool bTmp = *static_cast<sal_Bool const *>(aValue.getValue());
+                    bool bTmp = *o3tl::doAccess<bool>(aValue);
                     if (m_pImpl->m_bFirstColumnAsLabel != bTmp)
                     {
                         lcl_SendChartEvent(*this, m_pImpl->m_ChartListeners);
@@ -3674,7 +3697,7 @@ uno::Sequence<uno::Sequence<uno::Any>> SAL_CALL SwXCellRange::getDataArray()
         {
             auto pCell(static_cast<SwXCell*>(pCurrentCell->get()));
             if(!pCell)
-                throw uno::RuntimeException();
+                throw uno::RuntimeException("Table too complex", static_cast<cppu::OWeakObject*>(this));
             rCellAny = pCell->GetAny();
             ++pCurrentCell;
         }
@@ -3741,6 +3764,8 @@ SwXCellRange::getData() throw (uno::RuntimeException, std::exception)
         rRow = uno::Sequence<double>(nColCount);
         for(auto& rValue : rRow)
         {
+            if (!(*pCurrentCell).is())
+                throw uno::RuntimeException("Table too complex", static_cast<cppu::OWeakObject*>(this));
             rValue = (*pCurrentCell)->getValue();
             ++pCurrentCell;
         }
@@ -4056,7 +4081,7 @@ void SwXTableRows::insertByIndex(sal_Int32 nIndex, sal_Int32 nCount)
     std::shared_ptr<SwUnoTableCursor> const pUnoCursor(
             std::dynamic_pointer_cast<SwUnoTableCursor>(
                 pFrameFormat->GetDoc()->CreateUnoCursor(aPos, true)));
-    pUnoCursor->Move( fnMoveForward, fnGoNode );
+    pUnoCursor->Move( fnMoveForward, GoInNode );
     {
         // remove actions - TODO: why?
         UnoActionRemoveContext aRemoveContext(pUnoCursor->GetDoc());
@@ -4082,7 +4107,7 @@ void SwXTableRows::removeByIndex(sal_Int32 nIndex, sal_Int32 nCount)
     SwPosition aPos(*pSttNd);
     // set cursor to the upper-left cell of the range
     auto pUnoCursor(pFrameFormat->GetDoc()->CreateUnoCursor(aPos, true));
-    pUnoCursor->Move(fnMoveForward, fnGoNode);
+    pUnoCursor->Move(fnMoveForward, GoInNode);
     pUnoCursor->SetRemainInSection( false );
     const OUString sBLName = sw_GetCellName(0, nIndex + nCount - 1);
     const SwTableBox* pBLBox = pTable->GetTableBox( sBLName );
@@ -4090,7 +4115,7 @@ void SwXTableRows::removeByIndex(sal_Int32 nIndex, sal_Int32 nCount)
         throw uno::RuntimeException("Illegal arguments", static_cast<cppu::OWeakObject*>(this));
     pUnoCursor->SetMark();
     pUnoCursor->GetPoint()->nNode = *pBLBox->GetSttNd();
-    pUnoCursor->Move(fnMoveForward, fnGoNode);
+    pUnoCursor->Move(fnMoveForward, GoInNode);
     SwUnoTableCursor* pCursor = dynamic_cast<SwUnoTableCursor*>(pUnoCursor.get());
     {
         // HACK: remove pending actions for selecting old style tables
@@ -4207,7 +4232,7 @@ void SwXTableColumns::insertByIndex(sal_Int32 nIndex, sal_Int32 nCount)
     SwPosition aPos(*pSttNd);
     UnoActionContext aAction(pFrameFormat->GetDoc());
     auto pUnoCursor(pFrameFormat->GetDoc()->CreateUnoCursor(aPos, true));
-    pUnoCursor->Move(fnMoveForward, fnGoNode);
+    pUnoCursor->Move(fnMoveForward, GoInNode);
 
     {
         // remove actions - TODO: why?
@@ -4236,7 +4261,7 @@ void SwXTableColumns::removeByIndex(sal_Int32 nIndex, sal_Int32 nCount)
     SwPosition aPos(*pSttNd);
     // set cursor to the upper-left cell of the range
     auto pUnoCursor(pFrameFormat->GetDoc()->CreateUnoCursor(aPos, true));
-    pUnoCursor->Move(fnMoveForward, fnGoNode);
+    pUnoCursor->Move(fnMoveForward, GoInNode);
     pUnoCursor->SetRemainInSection(false);
     const OUString sTRName = sw_GetCellName(nIndex + nCount - 1, 0);
     const SwTableBox* pTRBox = pTable->GetTableBox(sTRName);
@@ -4244,7 +4269,7 @@ void SwXTableColumns::removeByIndex(sal_Int32 nIndex, sal_Int32 nCount)
         throw uno::RuntimeException("Cell not found", static_cast<cppu::OWeakObject*>(this));
     pUnoCursor->SetMark();
     pUnoCursor->GetPoint()->nNode = *pTRBox->GetSttNd();
-    pUnoCursor->Move(fnMoveForward, fnGoNode);
+    pUnoCursor->Move(fnMoveForward, GoInNode);
     SwUnoTableCursor* pCursor = dynamic_cast<SwUnoTableCursor*>(pUnoCursor.get());
     {
         // HACK: remove pending actions for selecting old style tables

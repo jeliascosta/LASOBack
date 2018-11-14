@@ -88,13 +88,13 @@ private:
                                 const Reference< XLoadEventListener > & aListener);
 
     BibDataManager*         GetDataManager()const;
-    Reference< XNameAccess >            GetDataColumns() const;
-    Reference< XResultSet >             GetDataCursor() const;
-    Reference< sdb::XColumn >               GetIdentifierColumn() const;
+    Reference< XNameAccess > const &    GetDataColumns() const;
+    Reference< XResultSet > const &     GetDataCursor() const;
+    Reference< sdb::XColumn >           GetIdentifierColumn() const;
 
 public:
                             BibliographyLoader();
-                            virtual ~BibliographyLoader();
+                            virtual ~BibliographyLoader() override;
 
     // XServiceInfo
     OUString               SAL_CALL getImplementationName() throw(std::exception  ) override;
@@ -270,7 +270,7 @@ void BibliographyLoader::loadView(const Reference< XFrame > & rFrame, const OUSt
     VCLXWindow* pParentComponent = VCLXWindow::GetImplementation(aWindow);
     assert(pParentComponent);
 
-    vcl::Window* pParent = VCLUnoHelper::GetWindow( aWindow );
+    VclPtr<vcl::Window> pParent = VCLUnoHelper::GetWindow( aWindow );
 
     VclPtrInstance<BibBookContainer> pMyWindow( pParent );
     pMyWindow->Show();
@@ -336,7 +336,7 @@ BibDataManager* BibliographyLoader::GetDataManager()const
     return m_pDatMan;
 }
 
-Reference< XNameAccess >  BibliographyLoader::GetDataColumns() const
+Reference< XNameAccess > const & BibliographyLoader::GetDataColumns() const
 {
     if (!m_xColumns.is())
     {
@@ -401,13 +401,12 @@ Reference< sdb::XColumn >  BibliographyLoader::GetIdentifierColumn() const
     Reference< sdb::XColumn >  xReturn;
     if (xColumns.is() && xColumns->hasByName(sIdentifierColumnName))
     {
-        xReturn.set(*static_cast<Reference< XInterface > const *>(
-                xColumns->getByName(sIdentifierColumnName).getValue()), UNO_QUERY);
+        xReturn.set(xColumns->getByName(sIdentifierColumnName), UNO_QUERY);
     }
     return xReturn;
 }
 
-Reference< XResultSet >  BibliographyLoader::GetDataCursor() const
+Reference< XResultSet > const &  BibliographyLoader::GetDataCursor() const
 {
     if (!m_xCursor.is())
         GetDataColumns();
@@ -435,7 +434,7 @@ static OUString lcl_AddProperty(const Reference< XNameAccess >&  xColumns,
     OUString uRet;
     Reference< sdb::XColumn >  xCol;
     if (xColumns->hasByName(uColumnName))
-        xCol.set(*static_cast<Reference< XInterface > const *>(xColumns->getByName(uColumnName).getValue()), UNO_QUERY);
+        xCol.set(xColumns->getByName(uColumnName), UNO_QUERY);
     if (xCol.is())
         uRet = xCol->getString();
     return uRet;
@@ -461,7 +460,7 @@ Any BibliographyLoader::getByName(const OUString& rName) throw
         const OUString sIdentifierMapping = pDatMan->GetIdentifierMapping();
         Reference< sdb::XColumn >  xColumn;
         if (xColumns->hasByName(sIdentifierMapping))
-            xColumn.set(*static_cast<Reference< XInterface > const *>(xColumns->getByName(sIdentifierMapping).getValue()), UNO_QUERY);
+            xColumn.set(xColumns->getByName(sIdentifierMapping), UNO_QUERY);
         if (xColumn.is())
         {
             do
@@ -480,7 +479,7 @@ Any BibliographyLoader::getByName(const OUString& rName) throw
                         pValues[nEntry].Name = sColName;
                         pValues[nEntry].Value <<= lcl_AddProperty(xColumns, pMapping, sColName);
                     }
-                    aRet.setValue(&aPropSequ, cppu::UnoType<Sequence<PropertyValue>>::get());
+                    aRet <<= aPropSequ;
 
                     break;
                 }
@@ -641,7 +640,7 @@ Any BibliographyLoader::getPropertyValue(const OUString& rPropertyName)
             pArray[i].Name = pConfig->GetDefColumnName(aInternalMapping[i]);
             pArray[i].Value <<= (sal_Int16) i;
         }
-        aRet.setValue(&aSeq, cppu::UnoType<Sequence<PropertyValue>>::get());
+        aRet <<= aSeq;
     }
     else
         throw UnknownPropertyException();

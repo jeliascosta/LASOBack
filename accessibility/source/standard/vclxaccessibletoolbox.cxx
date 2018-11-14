@@ -18,8 +18,8 @@
  */
 #include <string.h>
 
-#include <accessibility/standard/vclxaccessibletoolbox.hxx>
-#include <accessibility/standard/vclxaccessibletoolboxitem.hxx>
+#include <standard/vclxaccessibletoolbox.hxx>
+#include <standard/vclxaccessibletoolboxitem.hxx>
 #include <toolkit/helper/convert.hxx>
 
 #include <unotools/accessiblestatesethelper.hxx>
@@ -89,7 +89,7 @@ namespace
         inline sal_Int32    getIndexInParent() const                    { return m_nIndexInParent; }
         inline void         setIndexInParent( sal_Int32 _nNewIndex )    { m_nIndexInParent = _nNewIndex; }
 
-        static  bool    isWindowItem( const Reference< XAccessible >& _rxAcc, OToolBoxWindowItem** /* [out] */ _ppImplementation = nullptr );
+        static  bool    isWindowItem( const Reference< XAccessible >& _rxAcc, OToolBoxWindowItem** /* [out] */ _ppImplementation );
 
     public:
         OToolBoxWindowItem(sal_Int32 _nIndexInParent,

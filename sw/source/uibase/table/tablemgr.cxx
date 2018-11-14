@@ -56,7 +56,7 @@ void SwTableFUNC::ColWidthDlg( vcl::Window *pParent )
     SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
     OSL_ENSURE(pFact, "SwAbstractDialogFactory fail!");
 
-    std::unique_ptr<VclAbstractDialog> pDlg(pFact->CreateSwTableWidthDlg(pParent, *this));
+    ScopedVclPtr<VclAbstractDialog> pDlg(pFact->CreateSwTableWidthDlg(pParent, *this));
     OSL_ENSURE(pDlg, "Dialog creation failed!");
     pDlg->Execute();
 }
@@ -168,18 +168,12 @@ void SwTableFUNC::InitTabCols()
 
 SwTableFUNC::SwTableFUNC(SwWrtShell *pShell)
     : pFormat(pShell->GetTableFormat()),
-      pSh(pShell),
-      bCopy(false)
+      pSh(pShell)
 {
-    // if applicable copy the format for edit
-    if( pFormat && bCopy )
-        pFormat = new SwFrameFormat( *pFormat );
 }
 
 SwTableFUNC::~SwTableFUNC()
 {
-    if(bCopy)
-        delete pFormat;
 }
 
 void SwTableFUNC::UpdateChart()
@@ -210,7 +204,7 @@ uno::Reference< frame::XModel > SwTableFUNC::InsertChart(
     {
         aName = pSh->GetTableFormat()->GetName();
         // insert node before table
-        pSh->MoveTable( fnTableCurr, fnTableStart );
+        pSh->MoveTable( GotoCurrTable, fnTableStart );
         pSh->Up( false );
         if ( pSh->IsCursorInTable() )
         {

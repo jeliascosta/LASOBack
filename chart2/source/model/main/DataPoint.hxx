@@ -52,7 +52,7 @@ class DataPoint :
 {
 public:
     explicit DataPoint( const css::uno::Reference< css::beans::XPropertySet > & rParentProperties );
-    virtual ~DataPoint();
+    virtual ~DataPoint() override;
 
     /// merge XInterface implementations
      DECLARE_XINTERFACE()
@@ -63,9 +63,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
 protected:
     explicit DataPoint( const DataPoint & rOther );
@@ -118,8 +115,6 @@ protected:
     // ____ OPropertySet ____
     virtual void firePropertyChangeEvent() override;
     using OPropertySet::disposing;
-
-    void fireModifyEvent();
 
 private:
     css::uno::WeakReference< css::beans::XPropertySet >   m_xParentProperties;

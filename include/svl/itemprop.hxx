@@ -22,7 +22,7 @@
 #include <com/sun/star/beans/XPropertySetInfo.hpp>
 #include <com/sun/star/beans/PropertyState.hpp>
 #include <com/sun/star/lang/IllegalArgumentException.hpp>
-#include <cppuhelper/implbase1.hxx>
+#include <cppuhelper/implbase.hxx>
 #include <svl/itemset.hxx>
 #include <svl/svldllapi.h>
 #include <vector>
@@ -106,7 +106,7 @@ public:
 
 };
 
-class SVL_DLLPUBLIC SfxItemPropertySet
+class SVL_DLLPUBLIC SfxItemPropertySet final
 {
     SfxItemPropertyMap                                        m_aMap;
     mutable css::uno::Reference<css::beans::XPropertySetInfo> m_xInfo;
@@ -114,7 +114,7 @@ class SVL_DLLPUBLIC SfxItemPropertySet
 public:
                             SfxItemPropertySet( const SfxItemPropertyMapEntry *pMap ) :
                                 m_aMap(pMap) {}
-                            virtual ~SfxItemPropertySet();
+                            ~SfxItemPropertySet();
 
     void getPropertyValue( const SfxItemPropertySimpleEntry& rEntry,
                                           const SfxItemSet& rSet,
@@ -149,20 +149,20 @@ public:
         getPropertyState(const SfxItemPropertySimpleEntry& rEntry, const SfxItemSet& rSet) const
                                     throw();
 
-    css::uno::Reference<css::beans::XPropertySetInfo>
+    css::uno::Reference<css::beans::XPropertySetInfo> const &
         getPropertySetInfo() const;
     const SfxItemPropertyMap& getPropertyMap() const {return m_aMap;}
 };
 
 struct SfxItemPropertySetInfo_Impl;
-class SVL_DLLPUBLIC SfxItemPropertySetInfo : public cppu::WeakImplHelper1<css::beans::XPropertySetInfo>
+class SVL_DLLPUBLIC SfxItemPropertySetInfo : public cppu::WeakImplHelper<css::beans::XPropertySetInfo>
 {
     std::unique_ptr<SfxItemPropertySetInfo_Impl> m_pImpl;
 
 public:
     SfxItemPropertySetInfo(const SfxItemPropertyMap &rMap );
     SfxItemPropertySetInfo(const SfxItemPropertyMapEntry *pEntries );
-    virtual ~SfxItemPropertySetInfo();
+    virtual ~SfxItemPropertySetInfo() override;
 
     virtual css::uno::Sequence< css::beans::Property > SAL_CALL
         getProperties(  )
@@ -179,14 +179,14 @@ public:
 
 };
 
-class SVL_DLLPUBLIC SfxExtItemPropertySetInfo: public cppu::WeakImplHelper1<css::beans::XPropertySetInfo >
+class SVL_DLLPUBLIC SfxExtItemPropertySetInfo: public cppu::WeakImplHelper<css::beans::XPropertySetInfo>
 {
     SfxItemPropertyMap aExtMap;
 public:
                             SfxExtItemPropertySetInfo(
                                 const SfxItemPropertyMapEntry *pMap,
                                 const css::uno::Sequence<css::beans::Property>& rPropSeq );
-                            virtual ~SfxExtItemPropertySetInfo();
+                            virtual ~SfxExtItemPropertySetInfo() override;
 
     virtual css::uno::Sequence< css::beans::Property > SAL_CALL
         getProperties(  )

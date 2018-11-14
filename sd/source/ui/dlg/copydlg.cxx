@@ -19,6 +19,7 @@
 
 #include "copydlg.hxx"
 #include <comphelper/string.hxx>
+#include <svx/colorbox.hxx>
 #include <svx/dlgutil.hxx>
 #include <sfx2/module.hxx>
 #include <svx/xcolit.hxx>
@@ -40,11 +41,9 @@ namespace sd {
 
 #define TOKEN ';'
 
-CopyDlg::CopyDlg(vcl::Window* pWindow, const SfxItemSet& rInAttrs,
-    const XColorListRef &pColList, ::sd::View* pInView)
+CopyDlg::CopyDlg(vcl::Window* pWindow, const SfxItemSet& rInAttrs, ::sd::View* pInView)
     : SfxModalDialog(pWindow, "DuplicateDialog", "modules/sdraw/ui/copydlg.ui")
     , mrOutAttrs(rInAttrs)
-    , mpColorList(pColList)
     , maUIScale(pInView->GetDoc().GetUIScale())
     , mpView(pInView)
 {
@@ -59,14 +58,6 @@ CopyDlg::CopyDlg(vcl::Window* pWindow, const SfxItemSet& rInAttrs,
     get(m_pFtEndColor, "endlabel");
     get(m_pLbEndColor, "end");
     get(m_pBtnSetDefault, "default");
-
-    // Set up the view data button (image and accessible name).
-    m_pBtnSetViewData->SetAccessibleName (m_pBtnSetViewData->GetQuickHelpText());
-
-    // color tables
-    DBG_ASSERT( mpColorList.is(), "No colortable available !" );
-    m_pLbStartColor->Fill( mpColorList );
-    m_pLbEndColor->CopyEntries( *m_pLbStartColor );
 
     m_pLbStartColor->SetSelectHdl( LINK( this, CopyDlg, SelectColorHdl ) );
     m_pBtnSetViewData->SetClickHdl( LINK( this, CopyDlg, SetViewData ) );
@@ -121,12 +112,12 @@ void CopyDlg::Reset()
         long nMoveX = 500L;
         if( SfxItemState::SET == mrOutAttrs.GetItemState( ATTR_COPY_MOVE_X, true, &pPoolItem ) )
             nMoveX = static_cast<const SfxInt32Item*>( pPoolItem )->GetValue();
-        SetMetricValue( *m_pMtrFldMoveX, Fraction(nMoveX) / maUIScale, SFX_MAPUNIT_100TH_MM);
+        SetMetricValue( *m_pMtrFldMoveX, Fraction(nMoveX) / maUIScale, MapUnit::Map100thMM);
 
         long nMoveY = 500L;
         if( SfxItemState::SET == mrOutAttrs.GetItemState( ATTR_COPY_MOVE_Y, true, &pPoolItem ) )
             nMoveY = static_cast<const SfxInt32Item*>( pPoolItem )->GetValue();
-        SetMetricValue( *m_pMtrFldMoveY, Fraction(nMoveY) / maUIScale, SFX_MAPUNIT_100TH_MM);
+        SetMetricValue( *m_pMtrFldMoveY, Fraction(nMoveY) / maUIScale, MapUnit::Map100thMM);
 
         if( SfxItemState::SET == mrOutAttrs.GetItemState( ATTR_COPY_ANGLE, true, &pPoolItem ) )
             m_pMtrFldAngle->SetValue( static_cast<const SfxInt32Item*>( pPoolItem )->GetValue() );
@@ -136,12 +127,12 @@ void CopyDlg::Reset()
         long nWidth = 0L;
         if( SfxItemState::SET == mrOutAttrs.GetItemState( ATTR_COPY_WIDTH, true, &pPoolItem ) )
             nWidth = static_cast<const SfxInt32Item*>( pPoolItem )->GetValue();
-        SetMetricValue( *m_pMtrFldWidth, Fraction(nWidth) / maUIScale, SFX_MAPUNIT_100TH_MM);
+        SetMetricValue( *m_pMtrFldWidth, Fraction(nWidth) / maUIScale, MapUnit::Map100thMM);
 
         long nHeight = 0L;
         if( SfxItemState::SET == mrOutAttrs.GetItemState( ATTR_COPY_HEIGHT, true, &pPoolItem ) )
             nHeight = static_cast<const SfxInt32Item*>( pPoolItem )->GetValue();
-        SetMetricValue( *m_pMtrFldHeight, Fraction(nHeight) / maUIScale, SFX_MAPUNIT_100TH_MM);
+        SetMetricValue( *m_pMtrFldHeight, Fraction(nHeight) / maUIScale, MapUnit::Map100thMM);
 
         if( SfxItemState::SET == mrOutAttrs.GetItemState( ATTR_COPY_START_COLOR, true, &pPoolItem ) )
         {
@@ -192,10 +183,10 @@ void CopyDlg::Reset()
  */
 void CopyDlg::GetAttr( SfxItemSet& rOutAttrs )
 {
-    long nMoveX = Fraction( GetCoreValue( *m_pMtrFldMoveX, SFX_MAPUNIT_100TH_MM) ) * maUIScale;
-    long nMoveY = Fraction( GetCoreValue( *m_pMtrFldMoveY, SFX_MAPUNIT_100TH_MM) ) * maUIScale;
-    long nHeight = Fraction( GetCoreValue( *m_pMtrFldHeight, SFX_MAPUNIT_100TH_MM) ) * maUIScale;
-    long nWidth  = Fraction( GetCoreValue( *m_pMtrFldWidth, SFX_MAPUNIT_100TH_MM) ) * maUIScale;
+    long nMoveX = Fraction( GetCoreValue( *m_pMtrFldMoveX, MapUnit::Map100thMM) ) * maUIScale;
+    long nMoveY = Fraction( GetCoreValue( *m_pMtrFldMoveY, MapUnit::Map100thMM) ) * maUIScale;
+    long nHeight = Fraction( GetCoreValue( *m_pMtrFldHeight, MapUnit::Map100thMM) ) * maUIScale;
+    long nWidth  = Fraction( GetCoreValue( *m_pMtrFldWidth, MapUnit::Map100thMM) ) * maUIScale;
 
     rOutAttrs.Put( SfxUInt16Item( ATTR_COPY_NUMBER, (sal_uInt16) m_pNumFldCopies->GetValue() ) );
     rOutAttrs.Put( SfxInt32Item( ATTR_COPY_MOVE_X, nMoveX ) );
@@ -204,31 +195,22 @@ void CopyDlg::GetAttr( SfxItemSet& rOutAttrs )
     rOutAttrs.Put( SfxInt32Item( ATTR_COPY_WIDTH, nWidth ) );
     rOutAttrs.Put( SfxInt32Item( ATTR_COPY_HEIGHT, nHeight ) );
 
-    if( m_pLbStartColor->GetSelectEntryPos() != LISTBOX_ENTRY_NOTFOUND )
-    {
-        XColorItem aXColorItem( ATTR_COPY_START_COLOR, m_pLbStartColor->GetSelectEntry(),
-                                    m_pLbStartColor->GetSelectEntryColor() );
-        rOutAttrs.Put( aXColorItem );
-    }
-    if( m_pLbEndColor->GetSelectEntryPos() != LISTBOX_ENTRY_NOTFOUND )
-    {
-        XColorItem aXColorItem( ATTR_COPY_END_COLOR, m_pLbEndColor->GetSelectEntry(),
-                                    m_pLbEndColor->GetSelectEntryColor() );
-        rOutAttrs.Put( aXColorItem );
-    }
+    NamedColor aColor = m_pLbStartColor->GetSelectEntry();
+    rOutAttrs.Put(XColorItem(ATTR_COPY_START_COLOR, aColor.second, aColor.first));
+    aColor = m_pLbEndColor->GetSelectEntry();
+    rOutAttrs.Put(XColorItem(ATTR_COPY_END_COLOR, aColor.second, aColor.first));
 }
 
 /**
  * enables and selects end color LB
  */
-IMPL_LINK_NOARG_TYPED(CopyDlg, SelectColorHdl, ListBox&, void)
+IMPL_LINK_NOARG(CopyDlg, SelectColorHdl, SvxColorListBox&, void)
 {
-    sal_Int32 nPos = m_pLbStartColor->GetSelectEntryPos();
+    const Color aColor = m_pLbStartColor->GetSelectEntryColor();
 
-    if( nPos != LISTBOX_ENTRY_NOTFOUND &&
-        !m_pLbEndColor->IsEnabled() )
+    if (!m_pLbEndColor->IsEnabled())
     {
-        m_pLbEndColor->SelectEntryPos( nPos );
+        m_pLbEndColor->SelectEntry(aColor);
         m_pLbEndColor->Enable();
         m_pFtEndColor->Enable();
     }
@@ -237,14 +219,14 @@ IMPL_LINK_NOARG_TYPED(CopyDlg, SelectColorHdl, ListBox&, void)
 /**
  * sets values of selection
  */
-IMPL_LINK_NOARG_TYPED(CopyDlg, SetViewData, Button*, void)
+IMPL_LINK_NOARG(CopyDlg, SetViewData, Button*, void)
 {
     Rectangle aRect = mpView->GetAllMarkedRect();
 
     SetMetricValue( *m_pMtrFldMoveX, Fraction( aRect.GetWidth() ) /
-                                    maUIScale, SFX_MAPUNIT_100TH_MM);
+                                    maUIScale, MapUnit::Map100thMM);
     SetMetricValue( *m_pMtrFldMoveY, Fraction( aRect.GetHeight() ) /
-                                    maUIScale, SFX_MAPUNIT_100TH_MM);
+                                    maUIScale, MapUnit::Map100thMM);
 
     // sets color attribute
     const SfxPoolItem*  pPoolItem = nullptr;
@@ -258,18 +240,18 @@ IMPL_LINK_NOARG_TYPED(CopyDlg, SetViewData, Button*, void)
 /**
  * resets values to default
  */
-IMPL_LINK_NOARG_TYPED(CopyDlg, SetDefault, Button*, void)
+IMPL_LINK_NOARG(CopyDlg, SetDefault, Button*, void)
 {
     m_pNumFldCopies->SetValue( 1L );
 
     long nValue = 500L;
-    SetMetricValue( *m_pMtrFldMoveX, Fraction(nValue) / maUIScale, SFX_MAPUNIT_100TH_MM);
-    SetMetricValue( *m_pMtrFldMoveY, Fraction(nValue) / maUIScale, SFX_MAPUNIT_100TH_MM);
+    SetMetricValue( *m_pMtrFldMoveX, Fraction(nValue) / maUIScale, MapUnit::Map100thMM);
+    SetMetricValue( *m_pMtrFldMoveY, Fraction(nValue) / maUIScale, MapUnit::Map100thMM);
 
     nValue = 0L;
     m_pMtrFldAngle->SetValue( nValue );
-    SetMetricValue( *m_pMtrFldWidth, Fraction(nValue) / maUIScale, SFX_MAPUNIT_100TH_MM);
-    SetMetricValue( *m_pMtrFldHeight, Fraction(nValue) / maUIScale, SFX_MAPUNIT_100TH_MM);
+    SetMetricValue( *m_pMtrFldWidth, Fraction(nValue) / maUIScale, MapUnit::Map100thMM);
+    SetMetricValue( *m_pMtrFldHeight, Fraction(nValue) / maUIScale, MapUnit::Map100thMM);
 
     // set color attribute
     const SfxPoolItem*  pPoolItem = nullptr;

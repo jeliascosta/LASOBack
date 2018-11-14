@@ -27,7 +27,7 @@
 #include "unx/gtk/gtkgdi.hxx"
 
 #include "unx/pixmap.hxx"
-#include "unx/saldata.hxx"
+#include "saldatabasic.hxx"
 #include "unx/saldisp.hxx"
 
 #include <cstdio>
@@ -60,16 +60,6 @@ enum
     BG_WHITE,
     BG_BLACK
 };
-
-GtkSalGraphics::GtkSalGraphics( GtkSalFrame *pFrame, GtkWidget *pWindow )
-    : X11SalGraphics(),
-      m_pWindow( pWindow ),
-      m_aClipRegion(true)
-{
-    Init( pFrame, GDK_WINDOW_XID( widget_get_window( pWindow ) ),
-          SalX11Screen( gdk_x11_screen_get_screen_number(
-                                gtk_widget_get_screen( pWindow ) ) ) );
-}
 
 GtkSalGraphics::GtkSalGraphics( GtkSalFrame *pFrame, GtkWidget *pWindow,
                                 SalX11Screen nXScreen )
@@ -280,7 +270,7 @@ class GdkX11Pixmap : public X11Pixmap
 {
 public:
     GdkX11Pixmap( int nWidth, int nHeight, int nDepth );
-    virtual ~GdkX11Pixmap();
+    virtual ~GdkX11Pixmap() override;
 
     virtual int          GetDepth() const override;
     virtual SalX11Screen GetScreen() const override;
@@ -640,10 +630,6 @@ void GtkSalGraphics::copyBits( const SalTwoRect& rPosAry,
         }
     }
     X11SalGraphics::copyBits( rPosAry, pSrcGraphics );
-    if( pFrame && pFrame->getBackgroundPixmap() != None )
-        XSetWindowBackgroundPixmap( GtkSalFrame::getDisplay()->GetDisplay(),
-                                    aWin,
-                                    pFrame->getBackgroundPixmap() );
 }
 
 /*
@@ -756,7 +742,7 @@ bool GtkSalGraphics::IsNativeControlSupported( ControlType nType, ControlPart nP
 }
 
 /*
- * HitTestNativeControl()
+ * HitTestNativeScrollbar()
  *
  *  bIsInside is set to true if aPos is contained within the
  *  given part of the control, whose bounding region is
@@ -911,7 +897,7 @@ bool GtkSalGraphics::drawNativeControl(ControlType nType, ControlPart nPart,
         return true;
     }
 
-    clipList aClip;
+    std::list< Rectangle > aClip;
     int nPasses = 0;
     GdkDrawable* gdkDrawable[2];
     std::unique_ptr<GdkX11Pixmap> xPixmap;
@@ -992,7 +978,7 @@ bool GtkSalGraphics::DoDrawNativeControl(
                             ControlType nType,
                             ControlPart nPart,
                             const Rectangle& aCtrlRect,
-                            const clipList& aClip,
+                            const std::list< Rectangle >& aClip,
                             ControlState nState,
                             const ImplControlValue& aValue,
                             const OUString& rCaption,
@@ -1430,7 +1416,7 @@ bool GtkSalGraphics::NWPaintGTKArrow(
             GdkDrawable* gdkDrawable,
             ControlType, ControlPart,
             const Rectangle& rControlRectangle,
-            const clipList& rClipList,
+            const std::list< Rectangle >& rClipList,
             ControlState nState, const ImplControlValue& aValue,
             const OUString& )
 {
@@ -1438,7 +1424,7 @@ bool GtkSalGraphics::NWPaintGTKArrow(
     GtkStateType stateType(nState&ControlState::PRESSED?GTK_STATE_ACTIVE:GTK_STATE_NORMAL);
 
     GdkRectangle clipRect;
-    for( clipList::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
+    for( std::list< Rectangle >::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
     {
         clipRect.x = it->Left();
         clipRect.y = it->Top();
@@ -1459,7 +1445,7 @@ bool GtkSalGraphics::NWPaintGTKListHeader(
             GdkDrawable* gdkDrawable,
             ControlType, ControlPart,
             const Rectangle& rControlRectangle,
-            const clipList& rClipList,
+            const std::list< Rectangle >& rClipList,
             ControlState nState, const ImplControlValue&,
             const OUString& )
 {
@@ -1479,7 +1465,7 @@ bool GtkSalGraphics::NWPaintGTKListHeader(
     NWSetWidgetState( button, nState, stateType );
 
     GdkRectangle clipRect;
-    for( clipList::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
+    for( std::list< Rectangle >::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
     {
         clipRect.x = it->Left();
         clipRect.y = it->Top();
@@ -1500,7 +1486,7 @@ bool GtkSalGraphics::NWPaintGTKFixedLine(
             GdkDrawable* gdkDrawable,
             ControlType, ControlPart nPart,
             const Rectangle& rControlRectangle,
-            const clipList&,
+            const std::list< Rectangle >&,
             ControlState, const ImplControlValue&,
             const OUString& )
 {
@@ -1516,7 +1502,7 @@ bool GtkSalGraphics::NWPaintGTKFrame(
             GdkDrawable* gdkDrawable,
             ControlType, ControlPart,
             const Rectangle& rControlRectangle,
-            const clipList& rClipList,
+            const std::list< Rectangle >& rClipList,
             ControlState /* nState */, const ImplControlValue& aValue,
             const OUString& )
 {
@@ -1529,7 +1515,7 @@ bool GtkSalGraphics::NWPaintGTKFrame(
     if( nStyle == DrawFrameStyle::Out )
         shadowType=GTK_SHADOW_IN;
 
-    for( clipList::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
+    for( std::list< Rectangle >::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
     {
         clipRect.x = it->Left();
         clipRect.y = it->Top();
@@ -1583,12 +1569,12 @@ bool GtkSalGraphics::NWPaintGTKWindowBackground(
             GdkDrawable* gdkDrawable,
             ControlType, ControlPart,
             const Rectangle& rControlRectangle,
-            const clipList& rClipList,
+            const std::list< Rectangle >& rClipList,
             ControlState /* nState */, const ImplControlValue&,
             const OUString& )
 {
     GdkRectangle clipRect;
-    for( clipList::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
+    for( std::list< Rectangle >::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
     {
         clipRect.x = it->Left();
         clipRect.y = it->Top();
@@ -1611,7 +1597,7 @@ bool GtkSalGraphics::NWPaintGTKButtonReal(
             GdkDrawable* gdkDrawable,
             ControlType, ControlPart,
             const Rectangle& rControlRectangle,
-            const clipList& rClipList,
+            const std::list< Rectangle >& rClipList,
             ControlState nState, const ImplControlValue&,
             const OUString& )
 {
@@ -1707,7 +1693,7 @@ bool GtkSalGraphics::NWPaintGTKButtonReal(
         wi -= 2 * (focusWidth + focusPad);
         hi -= 2 * (focusWidth + focusPad);
     }
-    for( clipList::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it)
+    for( std::list< Rectangle >::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it)
     {
         clipRect.x = it->Left();
         clipRect.y = it->Top();
@@ -1747,7 +1733,7 @@ bool GtkSalGraphics::NWPaintGTKButton(
             GdkDrawable* gdkDrawable,
             ControlType type, ControlPart part,
             const Rectangle& rControlRectangle,
-            const clipList& rClipList,
+            const std::list< Rectangle >& rClipList,
             ControlState nState, const ImplControlValue& value,
             const OUString& string)
 {
@@ -1837,7 +1823,7 @@ static Rectangle NWGetTabItemRect( SalX11Screen nScreen, Rectangle aAreaRect )
 bool GtkSalGraphics::NWPaintGTKRadio( GdkDrawable* gdkDrawable,
                                       ControlType, ControlPart,
                                       const Rectangle& rControlRectangle,
-                                      const clipList& rClipList,
+                                      const std::list< Rectangle >& rClipList,
                                       ControlState nState,
                                       const ImplControlValue& aValue,
                                       const OUString& )
@@ -1875,7 +1861,7 @@ bool GtkSalGraphics::NWPaintGTKRadio( GdkDrawable* gdkDrawable,
         GTK_TOGGLE_BUTTON(gWidgetData[m_nXScreen].gRadioWidgetSibling)->active = true;
     GTK_TOGGLE_BUTTON(gWidgetData[m_nXScreen].gRadioWidget)->active = isChecked;
 
-    for( clipList::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
+    for( std::list< Rectangle >::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
     {
         clipRect.x = it->Left();
         clipRect.y = it->Top();
@@ -1893,7 +1879,7 @@ bool GtkSalGraphics::NWPaintGTKRadio( GdkDrawable* gdkDrawable,
 bool GtkSalGraphics::NWPaintGTKCheck( GdkDrawable* gdkDrawable,
                                       ControlType, ControlPart,
                                       const Rectangle& rControlRectangle,
-                                      const clipList& rClipList,
+                                      const std::list< Rectangle >& rClipList,
                                       ControlState nState,
                                       const ImplControlValue& aValue,
                                       const OUString& )
@@ -1920,7 +1906,7 @@ bool GtkSalGraphics::NWPaintGTKCheck( GdkDrawable* gdkDrawable,
     NWSetWidgetState( gWidgetData[m_nXScreen].gCheckWidget, nState, stateType );
     GTK_TOGGLE_BUTTON(gWidgetData[m_nXScreen].gCheckWidget)->active = isChecked;
 
-    for( clipList::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
+    for( std::list< Rectangle >::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
     {
         clipRect.x = it->Left();
         clipRect.y = it->Top();
@@ -1949,7 +1935,7 @@ static void NWCalcArrowRect( const Rectangle& rButton, Rectangle& rArrow )
 
 bool GtkSalGraphics::NWPaintGTKScrollbar( ControlType, ControlPart nPart,
                                           const Rectangle& rControlRectangle,
-                                          const clipList&,
+                                          const std::list< Rectangle >&,
                                           ControlState nState,
                                           const ImplControlValue& aValue,
                                           const OUString& )
@@ -2351,7 +2337,7 @@ static Rectangle NWGetScrollButtonRect(    SalX11Screen nScreen, ControlPart nPa
 bool GtkSalGraphics::NWPaintGTKEditBox( GdkDrawable* gdkDrawable,
                                         ControlType nType, ControlPart nPart,
                                         const Rectangle& rControlRectangle,
-                                        const clipList& rClipList,
+                                        const std::list< Rectangle >& rClipList,
                                         ControlState nState,
                                         const ImplControlValue& aValue,
                                         const OUString& rCaption )
@@ -2363,7 +2349,7 @@ bool GtkSalGraphics::NWPaintGTKEditBox( GdkDrawable* gdkDrawable,
     // plus its actual draw rect excluding adornment
     pixmapRect = NWGetEditBoxPixmapRect( m_nXScreen, nType, nPart, rControlRectangle,
                                          nState, aValue, rCaption );
-    for( clipList::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
+    for( std::list< Rectangle >::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
     {
         clipRect.x = it->Left();
         clipRect.y = it->Top();
@@ -2483,7 +2469,7 @@ static void NWPaintOneEditBox(    SalX11Screen nScreen,
 
 bool GtkSalGraphics::NWPaintGTKSpinBox(ControlType nType, ControlPart nPart,
                                        const Rectangle& rControlRectangle,
-                                       const clipList&,
+                                       const std::list< Rectangle >&,
                                        ControlState nState,
                                        const ImplControlValue& aValue,
                                        const OUString& rCaption,
@@ -2657,7 +2643,7 @@ static void NWPaintOneSpinButton( SalX11Screen nScreen,
 bool GtkSalGraphics::NWPaintGTKComboBox( GdkDrawable* gdkDrawable,
                                          ControlType nType, ControlPart nPart,
                                          const Rectangle& rControlRectangle,
-                                         const clipList& rClipList,
+                                         const std::list< Rectangle >& rClipList,
                                          ControlState nState,
                                          const ImplControlValue& aValue,
                                          const OUString& rCaption )
@@ -2700,7 +2686,7 @@ bool GtkSalGraphics::NWPaintGTKComboBox( GdkDrawable* gdkDrawable,
     arrowRect.SetPos( Point( buttonRect.Left() + (gint)((buttonRect.GetWidth() - arrowRect.GetWidth()) / 2),
                              buttonRect.Top() + (gint)((buttonRect.GetHeight() - arrowRect.GetHeight()) / 2) ) );
 
-    for( clipList::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
+    for( std::list< Rectangle >::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
     {
         clipRect.x = it->Left();
         clipRect.y = it->Top();
@@ -2790,7 +2776,7 @@ static Rectangle NWGetComboBoxButtonRect( SalX11Screen nScreen,
 
 bool GtkSalGraphics::NWPaintGTKTabItem( ControlType nType, ControlPart,
                                         const Rectangle& rControlRectangle,
-                                        const clipList&,
+                                        const std::list< Rectangle >&,
                                         ControlState nState,
                                         const ImplControlValue& aValue,
                                         const OUString& )
@@ -2943,7 +2929,7 @@ bool GtkSalGraphics::NWPaintGTKTabItem( ControlType nType, ControlPart,
 bool GtkSalGraphics::NWPaintGTKListBox( GdkDrawable* gdkDrawable,
                                         ControlType nType, ControlPart nPart,
                                         const Rectangle& rControlRectangle,
-                                        const clipList& rClipList,
+                                        const std::list< Rectangle >& rClipList,
                                         ControlState nState,
                                         const ImplControlValue& aValue,
                                         const OUString& rCaption )
@@ -2981,7 +2967,7 @@ bool GtkSalGraphics::NWPaintGTKListBox( GdkDrawable* gdkDrawable,
             nullptr);
     }
 
-    for( clipList::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
+    for( std::list< Rectangle >::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
     {
         clipRect.x = it->Left();
         clipRect.y = it->Top();
@@ -3020,7 +3006,7 @@ bool GtkSalGraphics::NWPaintGTKToolbar(
             GdkDrawable* gdkDrawable,
             ControlType, ControlPart nPart,
             const Rectangle& rControlRectangle,
-            const clipList& rClipList,
+            const std::list< Rectangle >& rClipList,
             ControlState nState, const ImplControlValue& aValue,
             const OUString& string)
 {
@@ -3097,7 +3083,7 @@ bool GtkSalGraphics::NWPaintGTKToolbar(
 
     if( nPart != ControlPart::Button )
     {
-        for( clipList::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
+        for( std::list< Rectangle >::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
         {
             clipRect.x = it->Left();
             clipRect.y = it->Top();
@@ -3200,7 +3186,7 @@ bool GtkSalGraphics::NWPaintGTKMenubar(
             GdkDrawable* gdkDrawable,
             ControlType, ControlPart nPart,
             const Rectangle& rControlRectangle,
-            const clipList& rClipList,
+            const std::list< Rectangle >& rClipList,
             ControlState nState, const ImplControlValue&,
             const OUString& )
 {
@@ -3228,7 +3214,7 @@ bool GtkSalGraphics::NWPaintGTKMenubar(
         }
     }
 
-    for( clipList::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
+    for( std::list< Rectangle >::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
     {
         lcl_rectangleToGdkRectangle(*it, clipRect);
 
@@ -3287,7 +3273,7 @@ bool GtkSalGraphics::NWPaintGTKPopupMenu(
             GdkDrawable* gdkDrawable,
             ControlType, ControlPart nPart,
             const Rectangle& rControlRectangle,
-            const clipList& rClipList,
+            const std::list< Rectangle >& rClipList,
             ControlState nState, const ImplControlValue&,
             const OUString& )
 {
@@ -3325,7 +3311,7 @@ bool GtkSalGraphics::NWPaintGTKPopupMenu(
     if ( nState & ControlState::ENABLED )
         GTK_WIDGET_SET_FLAGS( gWidgetData[m_nXScreen].gMenuWidget, GTK_SENSITIVE );
 
-    for( clipList::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
+    for( std::list< Rectangle >::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
     {
         clipRect.x = it->Left();
         clipRect.y = it->Top();
@@ -3452,7 +3438,7 @@ bool GtkSalGraphics::NWPaintGTKTooltip(
             GdkDrawable* gdkDrawable,
             ControlType, ControlPart,
             const Rectangle& rControlRectangle,
-            const clipList& rClipList,
+            const std::list< Rectangle >& rClipList,
             ControlState, const ImplControlValue&,
             const OUString& )
 {
@@ -3466,7 +3452,7 @@ bool GtkSalGraphics::NWPaintGTKTooltip(
     w = rControlRectangle.GetWidth();
     h = rControlRectangle.GetHeight();
 
-    for( clipList::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
+    for( std::list< Rectangle >::const_iterator it = rClipList.begin(); it != rClipList.end(); ++it )
     {
         clipRect.x = it->Left();
         clipRect.y = it->Top();
@@ -3490,7 +3476,7 @@ bool GtkSalGraphics::NWPaintGTKListNode(
             GdkDrawable*,
             ControlType, ControlPart,
             const Rectangle& rControlRectangle,
-            const clipList&,
+            const std::list< Rectangle >&,
             ControlState nState, const ImplControlValue& rValue,
             const OUString& )
 {
@@ -3540,7 +3526,7 @@ bool GtkSalGraphics::NWPaintGTKProgress(
             GdkDrawable*,
             ControlType, ControlPart,
             const Rectangle& rControlRectangle,
-            const clipList&,
+            const std::list< Rectangle >&,
             ControlState, const ImplControlValue& rValue,
             const OUString& )
 {
@@ -3605,7 +3591,7 @@ bool GtkSalGraphics::NWPaintGTKSlider(
             GdkDrawable*,
             ControlType, ControlPart nPart,
             const Rectangle& rControlRectangle,
-            const clipList&,
+            const std::list< Rectangle >&,
             ControlState nState, const ImplControlValue& rValue,
             const OUString& )
 {
@@ -3948,7 +3934,6 @@ void GtkSalGraphics::updateSettings( AllSettings& rSettings )
     aStyleSet.SetRadioCheckTextColor( aTextColor );
     aStyleSet.SetGroupTextColor( aTextColor );
     aStyleSet.SetLabelTextColor( aTextColor );
-    aStyleSet.SetInfoTextColor( aTextColor );
     aStyleSet.SetTabTextColor( aTextColor );
     aStyleSet.SetTabRolloverTextColor( aTextColor );
     aStyleSet.SetTabHighlightTextColor( aTextColor );
@@ -3981,7 +3966,7 @@ void GtkSalGraphics::updateSettings( AllSettings& rSettings )
 
     // background colors
     Color aBackColor = getColor( pStyle->bg[GTK_STATE_NORMAL] );
-    Color aBackFieldColor = getColor( pStyle->base[ GTK_STATE_NORMAL ] );
+    Color aBackFieldColor = getColor( pStyle->base[GTK_STATE_NORMAL] );
     aStyleSet.Set3DColors( aBackColor );
     aStyleSet.SetFaceColor( aBackColor );
     aStyleSet.SetDialogColor( aBackColor );
@@ -3989,6 +3974,17 @@ void GtkSalGraphics::updateSettings( AllSettings& rSettings )
     aStyleSet.SetFieldColor( aBackFieldColor );
     aStyleSet.SetWindowColor( aBackFieldColor );
     aStyleSet.SetCheckedColorSpecialCase( );
+
+    // Dark shadow color
+    Color aDarkShadowColor = getColor( pStyle->fg[GTK_STATE_INSENSITIVE] );
+    aStyleSet.SetDarkShadowColor( aDarkShadowColor );
+
+    ::Color aShadowColor(aBackColor);
+    if (aDarkShadowColor.GetLuminance() > aBackColor.GetLuminance())
+        aShadowColor.IncreaseLuminance(64);
+    else
+        aShadowColor.DecreaseLuminance(64);
+    aStyleSet.SetShadowColor(aShadowColor);
 
     // highlighting colors
     Color aHighlightColor = getColor( pStyle->base[GTK_STATE_SELECTED] );
@@ -4019,7 +4015,7 @@ void GtkSalGraphics::updateSettings( AllSettings& rSettings )
 
     // menu disabled entries handling
     aStyleSet.SetSkipDisabledInMenus( true );
-    aStyleSet.SetAcceleratorsInContextMenus( false );
+    aStyleSet.SetPreferredContextMenuShortcuts( false );
     // menu colors
     GtkStyle* pMenuStyle = gtk_widget_get_style( gWidgetData[m_nXScreen].gMenuWidget );
     GtkStyle* pMenuItemStyle = gtk_rc_get_style( gWidgetData[m_nXScreen].gMenuItemMenuWidget );
@@ -4054,21 +4050,6 @@ void GtkSalGraphics::updateSettings( AllSettings& rSettings )
     std::fprintf( stderr, "ShadowColor = %x (%d)\n", (int)aStyleSet.GetShadowColor().GetColor(), aStyleSet.GetShadowColor().GetLuminance() );
     std::fprintf( stderr, "DarkShadowColor = %x (%d)\n", (int)aStyleSet.GetDarkShadowColor().GetColor(), aStyleSet.GetDarkShadowColor().GetLuminance() );
 #endif
-
-    // Awful hack for menu separators in the Sonar and similar themes.
-    // If the menu color is not too dark, and the menu text color is lighter,
-    // make the "light" color lighter than the menu color and the "shadow"
-    // color darker than it.
-    if ( aStyleSet.GetMenuColor().GetLuminance() >= 32 &&
-     aStyleSet.GetMenuColor().GetLuminance() <= aStyleSet.GetMenuTextColor().GetLuminance() )
-    {
-      Color temp = aStyleSet.GetMenuColor();
-      temp.IncreaseLuminance( 8 );
-      aStyleSet.SetLightColor( temp );
-      temp = aStyleSet.GetMenuColor();
-      temp.DecreaseLuminance( 16 );
-      aStyleSet.SetShadowColor( temp );
-    }
 
     aHighlightColor = getColor( pMenuItemStyle->bg[ GTK_STATE_SELECTED ] );
     aHighlightTextColor = getColor( pMenuItemStyle->fg[ GTK_STATE_SELECTED ] );
@@ -4131,11 +4112,8 @@ void GtkSalGraphics::updateSettings( AllSettings& rSettings )
 #endif
 
     sal_Int32 nDispDPIY = GetDisplay()->GetResolution().B();
-    int nPointHeight = 0;
-    static gboolean(*pAbso)(const PangoFontDescription*) =
-        reinterpret_cast<gboolean(*)(const PangoFontDescription*)>(osl_getAsciiFunctionSymbol( GetSalData()->m_pPlugin, "pango_font_description_get_size_is_absolute" ));
-
-    if( pAbso && pAbso( pStyle->font_desc ) )
+    int nPointHeight;
+    if (pango_font_description_get_size_is_absolute(pStyle->font_desc))
         nPointHeight = (nPangoHeight * 72 + nDispDPIY*PANGO_SCALE/2) / (nDispDPIY * PANGO_SCALE);
     else
         nPointHeight = nPangoHeight/PANGO_SCALE;
@@ -4155,7 +4133,6 @@ void GtkSalGraphics::updateSettings( AllSettings& rSettings )
     aStyleSet.SetMenuFont( aFont );
     aStyleSet.SetToolFont( aFont );
     aStyleSet.SetLabelFont( aFont );
-    aStyleSet.SetInfoFont( aFont );
     aStyleSet.SetRadioCheckFont( aFont );
     aStyleSet.SetPushButtonFont( aFont );
     aStyleSet.SetFieldFont( aFont );

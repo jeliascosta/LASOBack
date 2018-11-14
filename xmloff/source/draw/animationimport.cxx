@@ -53,6 +53,9 @@
 #include <sax/tools/converter.hxx>
 
 #include <list>
+
+#include <o3tl/make_unique.hxx>
+
 #include <xmloff/xmltypes.hxx>
 #include "sdpropls.hxx"
 #include <xmloff/xmltoken.hxx>
@@ -98,6 +101,15 @@ OUString SAL_CALL AnimationsImport_getImplementationName() throw()
     return OUString( "xmloff::AnimationsImport" );
 }
 
+static ::rtl::OUString
+lcl_GetMediaReference(SvXMLImport const& rImport, ::rtl::OUString const& rURL)
+{
+    if (rImport.IsPackageURL(rURL))
+        return ::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("vnd.sun.star.Package:")) + rURL;
+
+    return rImport.GetAbsoluteReference(rURL);
+}
+
 namespace xmloff
 {
 
@@ -106,12 +118,11 @@ class AnimationsImportHelperImpl
 private:
     SvXMLImport& mrImport;
 
-    SvXMLTokenMap* mpAnimationNodeTokenMap;
-    SvXMLTokenMap* mpAnimationNodeAttributeTokenMap;
+    std::unique_ptr<SvXMLTokenMap> mpAnimationNodeTokenMap;
+    std::unique_ptr<SvXMLTokenMap> mpAnimationNodeAttributeTokenMap;
 
 public:
     explicit AnimationsImportHelperImpl( SvXMLImport& rImport );
-    ~AnimationsImportHelperImpl();
 
     const SvXMLTokenMap& getAnimationNodeTokenMap();
     const SvXMLTokenMap& getAnimationNodeAttributeTokenMap();
@@ -127,16 +138,8 @@ public:
 };
 
 AnimationsImportHelperImpl::AnimationsImportHelperImpl( SvXMLImport& rImport )
-:   mrImport( rImport ),
-    mpAnimationNodeTokenMap( nullptr ),
-    mpAnimationNodeAttributeTokenMap( nullptr )
+:   mrImport( rImport )
 {
-}
-
-AnimationsImportHelperImpl::~AnimationsImportHelperImpl()
-{
-    delete mpAnimationNodeTokenMap;
-    delete mpAnimationNodeAttributeTokenMap;
 }
 
 const SvXMLTokenMap& AnimationsImportHelperImpl::getAnimationNodeTokenMap()
@@ -159,7 +162,7 @@ const SvXMLTokenMap& AnimationsImportHelperImpl::getAnimationNodeTokenMap()
             XML_TOKEN_MAP_END
         };
 
-        mpAnimationNodeTokenMap = new SvXMLTokenMap( aAnimationNodeTokenMap );
+        mpAnimationNodeTokenMap = o3tl::make_unique<SvXMLTokenMap>( aAnimationNodeTokenMap );
     }
 
     return *mpAnimationNodeTokenMap;
@@ -278,7 +281,7 @@ const SvXMLTokenMap& AnimationsImportHelperImpl::getAnimationNodeAttributeTokenM
             XML_TOKEN_MAP_END
         };
 
-        mpAnimationNodeAttributeTokenMap = new SvXMLTokenMap( aAnimationNodeAttributeTokenMap );
+        mpAnimationNodeAttributeTokenMap = o3tl::make_unique<SvXMLTokenMap>( aAnimationNodeAttributeTokenMap );
     }
 
     return *mpAnimationNodeAttributeTokenMap;
@@ -527,7 +530,7 @@ Any AnimationsImportHelperImpl::convertTiming( const OUString& rValue )
                     aEventTrigger = rValue.copy( 0, nPos );
 
                     // convert offset
-                    aEvent.Offset <<= convertTiming( rValue.copy( nPos + 1 ) );
+                    aEvent.Offset = convertTiming( rValue.copy( nPos + 1 ) );
                 }
 
                 nPos = aEventTrigger.indexOf( (sal_Unicode)'.' );
@@ -625,16 +628,16 @@ AnimationNodeContext::AnimationNodeContext(
         const Reference< XAnimationNode >& xParentNode,
         SvXMLImport& rImport, sal_uInt16 nPrfx, const OUString& rLocalName,
         const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList,
-        AnimationsImportHelperImpl* pHelper /* = NULL */ )
+        std::shared_ptr<AnimationsImportHelperImpl> pHelper )
 :   SvXMLImportContext(rImport, nPrfx, rLocalName),
     mpHelper( pHelper ),
-    mbRootContext( pHelper == nullptr )
+    mbRootContext( !pHelper )
 {
     try
     {
         if( mbRootContext )
         {
-            mpHelper = new AnimationsImportHelperImpl( rImport );
+            mpHelper = std::make_shared<AnimationsImportHelperImpl>( rImport );
             mxNode = xParentNode;
         }
         else
@@ -718,12 +721,6 @@ AnimationNodeContext::AnimationNodeContext(
     {
         OSL_FAIL( "xmloff::AnimationsImportImpl::AnimationsImportImpl(), RuntimeException caught!" );
     }
-}
-
-AnimationNodeContext::~AnimationNodeContext()
-{
-    if( mbRootContext )
-        delete mpHelper;
 }
 
 void AnimationNodeContext::StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& )
@@ -872,7 +869,7 @@ void AnimationNodeContext::init_node(  const css::uno::Reference< css::xml::sax:
                 if( nNodeType == AnimationNodeType::AUDIO )
                 {
                     Reference< XAudio > xAudio( mxNode, UNO_QUERY_THROW );
-                    xAudio->setSource( makeAny( GetImport().GetAbsoluteReference( rValue ) ) );
+                    xAudio->setSource( makeAny(lcl_GetMediaReference(GetImport(), rValue)) );
                     break;
                 }
                 SAL_FALLTHROUGH;
@@ -1251,7 +1248,7 @@ class AnimationsImport: public SvXMLImport, public XAnimationNodeSupplier
 {
 public:
     explicit AnimationsImport( const Reference< XComponentContext > & rxContext );
-    virtual ~AnimationsImport() throw ();
+    virtual ~AnimationsImport() throw () override;
 
     SvXMLImportContext* CreateContext(sal_uInt16 nPrefix, const OUString& rLocalName,   const Reference<XAttributeList>& xAttrList) override;
 

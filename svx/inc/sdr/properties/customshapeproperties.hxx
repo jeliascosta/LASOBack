@@ -43,7 +43,7 @@ namespace sdr
             virtual void ItemSetChanged(const SfxItemSet& rSet) override;
 
             // react on Item change
-            virtual void ItemChange(const sal_uInt16 nWhich, const SfxPoolItem* pNewItem) override;
+            virtual void ItemChange(const sal_uInt16 nWhich, const SfxPoolItem* pNewItem = nullptr) override;
 
             // Called after ItemChange() is done for all items. Allows local reactions on
             // specific item changes
@@ -54,7 +54,7 @@ namespace sdr
 
             // clear single item direct, do not do any notifies or things like that.
             // Also supports complete deleteion of items when default parameter 0 is used.
-            virtual void ClearObjectItemDirect(const sal_uInt16 nWhich = 0) override;
+            virtual void ClearObjectItemDirect(const sal_uInt16 nWhich) override;
 
         public:
 
@@ -72,7 +72,7 @@ namespace sdr
             CustomShapeProperties(const CustomShapeProperties& rProps, SdrObject& rObj);
 
             // destructor
-            virtual ~CustomShapeProperties();
+            virtual ~CustomShapeProperties() override;
 
             // Clone() operator, normally just calls the local copy constructor
             virtual BaseProperties& Clone(SdrObject& rObj) const override;

@@ -125,7 +125,6 @@ PDFExport::PDFExport( const Reference< XComponent >& rxSrcDoc,
     mnZoom                      ( 100 ),
     mnInitialPage               ( 1 ),
     mnPDFPageLayout             ( 0 ),
-    mbFirstPageLeft             ( false ),
 
     mbEncrypt                   ( false ),
     mbRestrictPermissions       ( false ),
@@ -200,7 +199,7 @@ bool PDFExport::ExportSelection( vcl::PDFWriter& rPDFWriter,
                     rPDFExtOutDevData.SetCurrentPageNumber( nCurrentPage );
 
                     GDIMetaFile                 aMtf;
-                    const MapMode               aMapMode( MAP_100TH_MM );
+                    const MapMode               aMapMode( MapUnit::Map100thMM );
                     const Size                  aMtfSize( aPageSize.Width, aPageSize.Height );
 
                     pOut->Push();
@@ -242,7 +241,7 @@ bool PDFExport::ExportSelection( vcl::PDFWriter& rPDFWriter,
             {
                 bRet = true;                            // #i18334# nPageCount == 0,
                 rPDFWriter.NewPage( 10000, 10000 );     // creating dummy page
-                rPDFWriter.SetMapMode( MAP_100TH_MM );
+                rPDFWriter.SetMapMode( MapUnit::Map100thMM );
             }
         }
     }
@@ -265,7 +264,7 @@ public:
     : m_xSrcDoc( xDoc ),
       m_aPreparedPassword( rPwd )
     {}
-    virtual ~PDFExportStreamDoc();
+    virtual ~PDFExportStreamDoc() override;
 
     virtual void write( const Reference< XOutputStream >& xStream ) override;
 };
@@ -446,7 +445,7 @@ bool PDFExport::Export( const OUString& rFile, const Sequence< PropertyValue >& 
                 if ( rFilterData[ nData ].Name == "PageRange" )
                     rFilterData[ nData ].Value >>= aPageRange;
                 else if ( rFilterData[ nData ].Name == "Selection" )
-                    rFilterData[ nData ].Value >>= aSelection;
+                    aSelection = rFilterData[ nData ].Value;
                 else if ( rFilterData[ nData ].Name == "UseLosslessCompression" )
                     rFilterData[ nData ].Value >>= mbUseLosslessCompression;
                 else if ( rFilterData[ nData ].Name == "Quality" )
@@ -646,18 +645,11 @@ bool PDFExport::Export( const OUString& rFile, const Sequence< PropertyValue >& 
                     break;
             }
 
-            aContext.FirstPageLeft = mbFirstPageLeft;
+            aContext.FirstPageLeft = false;
 
             // check if PDF/A, which does not allow encryption
             if( aContext.Version != vcl::PDFWriter::PDF_A_1 )
             {
-                // set values needed in encryption
-                // set encryption level, fixed, but here it can set by the UI if needed.
-                // true is 128 bit, false 40
-                // note that in 40 bit mode the UI needs reworking, since the current UI is meaningfull only for
-                // 128bit security mode
-                aContext.Encryption.Security128bit = true;
-
                 // set check for permission change password
                 // if not enabled and no permission password, force permissions to default as if PDF where without encryption
                 if( mbRestrictPermissions && (xEnc.is() || !aPermissionPassword.isEmpty()) )
@@ -711,7 +703,7 @@ bool PDFExport::Export( const OUString& rFile, const Sequence< PropertyValue >& 
                 aContext.Encryption.CanCopyOrExtract                = mbCanCopyOrExtract;
                 aContext.Encryption.CanExtractForAccessibility  = mbCanExtractForAccessibility;
                 if( mbEncrypt && ! xEnc.is() )
-                    xEnc = vcl::PDFWriter::InitEncryption( aPermissionPassword, aOpenPassword, aContext.Encryption.Security128bit );
+                    xEnc = vcl::PDFWriter::InitEncryption( aPermissionPassword, aOpenPassword, true/*bSecurity128bit*/ );
                 if( mbEncrypt && !aPermissionPassword.isEmpty() && ! aPreparedPermissionPassword.getLength() )
                     aPreparedPermissionPassword = comphelper::OStorageHelper::CreatePackageEncryptionData( aPermissionPassword );
             }
@@ -1022,7 +1014,7 @@ void PDFExport::showErrors( const std::set< vcl::PDFWriter::ErrorCode >& rErrors
 
 bool PDFExport::ImplExportPage( vcl::PDFWriter& rWriter, vcl::PDFExtOutDevData& rPDFExtOutDevData, const GDIMetaFile& rMtf )
 {
-    const Size      aSizePDF( OutputDevice::LogicToLogic( rMtf.GetPrefSize(), rMtf.GetPrefMapMode(), MAP_POINT ) );
+    const Size      aSizePDF( OutputDevice::LogicToLogic( rMtf.GetPrefSize(), rMtf.GetPrefMapMode(), MapUnit::MapPoint ) );
     Point           aOrigin;
     Rectangle       aPageRect( aOrigin, rMtf.GetPrefSize() );
     bool        bRet = true;
@@ -1079,7 +1071,7 @@ void PDFExport::ImplWriteWatermark( vcl::PDFWriter& rWriter, const Size& rPageSi
     OutputDevice* pDev = rWriter.GetReferenceDevice();
     pDev->Push();
     pDev->SetFont( aFont );
-    pDev->SetMapMode( MapMode( MAP_POINT ) );
+    pDev->SetMapMode( MapMode( MapUnit::MapPoint ) );
     int w = 0;
     while( ( w = pDev->GetTextWidth( msWatermark ) ) > nTextWidth )
     {
@@ -1102,7 +1094,7 @@ void PDFExport::ImplWriteWatermark( vcl::PDFWriter& rWriter, const Size& rPageSi
     pDev->Pop();
 
     rWriter.Push();
-    rWriter.SetMapMode( MapMode( MAP_POINT ) );
+    rWriter.SetMapMode( MapMode( MapUnit::MapPoint ) );
     rWriter.SetFont( aFont );
     rWriter.SetTextColor( COL_LIGHTGREEN );
     Point aTextPoint;

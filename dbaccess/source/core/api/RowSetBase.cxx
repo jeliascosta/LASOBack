@@ -96,10 +96,8 @@ ORowSetBase::ORowSetBase( const Reference<XComponentContext>& _rContext, ::cppu:
 {
     sal_Int32 nRBT  = PropertyAttribute::READONLY   | PropertyAttribute::BOUND      | PropertyAttribute::TRANSIENT;
 
-    sal_Int32 nInitialRowCountValue = 0;
-    sal_Bool bInitialRowCountFinalValue( false );
-    registerPropertyNoMember( PROPERTY_ROWCOUNT,        PROPERTY_ID_ROWCOUNT,        nRBT, cppu::UnoType<decltype(nInitialRowCountValue)>::get(), &nInitialRowCountValue );
-    registerPropertyNoMember( PROPERTY_ISROWCOUNTFINAL, PROPERTY_ID_ISROWCOUNTFINAL, nRBT, cppu::UnoType<bool>::get(),                  &bInitialRowCountFinalValue );
+    registerPropertyNoMember( PROPERTY_ROWCOUNT,        PROPERTY_ID_ROWCOUNT,        nRBT, cppu::UnoType<sal_Int32>::get(), css::uno::makeAny<sal_Int32>(0) );
+    registerPropertyNoMember( PROPERTY_ISROWCOUNTFINAL, PROPERTY_ID_ISROWCOUNTFINAL, nRBT, cppu::UnoType<bool>::get(), css::uno::Any(false) );
 }
 
 ORowSetBase::~ORowSetBase()
@@ -188,12 +186,8 @@ sal_Bool SAL_CALL ORowSetBase::wasNull(  ) throw(SQLException, RuntimeException,
 {
     ::osl::MutexGuard aGuard( *m_pMutex );
     checkCache();
-    return impl_wasNull();
-}
-
-bool ORowSetBase::impl_wasNull()
-{
-    return !((m_nLastColumnIndex != -1) && !m_aCurrentRow.isNull() && m_aCurrentRow != m_pCache->getEnd() && m_aCurrentRow->is()) || ((*m_aCurrentRow)->get())[m_nLastColumnIndex].isNull();
+    return !((m_nLastColumnIndex != -1) && !m_aCurrentRow.isNull() && m_aCurrentRow != m_pCache->getEnd() && m_aCurrentRow->is())
+           || ((*m_aCurrentRow)->get())[m_nLastColumnIndex].isNull();
 }
 
 const ORowSetValue& ORowSetBase::getValue(sal_Int32 columnIndex)

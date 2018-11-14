@@ -36,7 +36,6 @@ typedef sal_Int32 GlyphWidth;
 typedef float RealType;
 typedef RealType ValType;
 #include <vector>
-typedef std::vector<ValType> ValVector;
 
 static const char* pStringIds[] = {
 /*0*/   ".notdef",      "space",            "exclam",           "quotedbl",
@@ -275,8 +274,8 @@ struct CffGlobal
     int     mnFontDictBase;
     int     mnFDAryCount;
 
-    ValVector   maFontBBox;
-    ValVector   maFontMatrix;
+    std::vector<ValType>   maFontBBox;
+    std::vector<ValType>   maFontMatrix;
 
     int     mnFontNameSID;
     int     mnFullNameSID;
@@ -300,12 +299,12 @@ struct CffLocal
     // ATM hinting related values
     ValType     maStemStdHW;
     ValType     maStemStdVW;
-    ValVector   maStemSnapH;
-    ValVector   maStemSnapV;
-    ValVector   maBlueValues;
-    ValVector   maOtherBlues;
-    ValVector   maFamilyBlues;
-    ValVector   maFamilyOtherBlues;
+    std::vector<ValType>   maStemSnapH;
+    std::vector<ValType>   maStemSnapV;
+    std::vector<ValType>   maBlueValues;
+    std::vector<ValType>   maOtherBlues;
+    std::vector<ValType>   maFamilyBlues;
+    std::vector<ValType>   maFamilyOtherBlues;
     RealType    mfBlueScale;
     RealType    mfBlueShift;
     RealType    mfBlueFuzz;
@@ -347,7 +346,6 @@ private:
     const U8* mpReadEnd;
 
     U8*     mpWritePtr;
-    bool    mbSawError;
     bool    mbNeedClose;
     bool    mbIgnoreHints;
     sal_Int32 mnCntrMask;
@@ -417,7 +415,6 @@ CffSubsetterContext::CffSubsetterContext( const U8* pBasePtr, int nBaseLen)
     , mpReadPtr(nullptr)
     , mpReadEnd(nullptr)
     , mpWritePtr(nullptr)
-    , mbSawError(false)
     , mbNeedClose(false)
     , mbIgnoreHints(false)
     , mnCntrMask(0)
@@ -1213,7 +1210,6 @@ int CffSubsetterContext::convert2Type1Ops( CffLocal* pCffLocal, const U8* const 
     writeType1Val( 0); // TODO: aSubsetterContext.getLeftSideBearing();
     writeType1Val( 1000/*###getCharWidth()###*/);
     writeTypeOp( TYPE1OP::HSBW);
-mbSawError = false;
 mbNeedClose = false;
 mbIgnoreHints = false;
 mnHintSize=mnHorzHintSize=mnStackIdx=0; maCharWidth=-1;//#######
@@ -1224,23 +1220,6 @@ mnCntrMask = 0;
 //      writeTypeOp( TYPE1OP::CLOSEPATH);
 //  if( bSubRoutine)
 //      writeTypeOp( TYPE1OP::RETURN);
-if( mbSawError) {
-    mpWritePtr = pT1Ops+4;
-     // create an "idiotproof" charstring
-    writeType1Val( 0);
-    writeType1Val( 800);
-    writeTypeOp( TYPE1OP::HSBW);
-    writeType1Val( 50);
-    writeTypeOp( TYPE1OP::HMOVETO);
-    writeType1Val( 650);
-    writeType1Val( 100);
-    writeTypeOp( TYPE1OP::RLINETO);
-    writeType1Val( -350);
-    writeType1Val( 700);
-    writeTypeOp( TYPE1OP::RLINETO);
-    writeTypeOp( TYPE1OP::CLOSEPATH);
-    writeTypeOp( TYPE1OP::ENDCHAR);
-}
 #else // useful for manually encoding charstrings
     mpWritePtr = pT1Ops;
     mpWritePtr += sprintf( (char*)mpWritePtr, "OOo_\x8b\x8c\x0c\x10\x0b");
@@ -1702,7 +1681,7 @@ const char* CffSubsetterContext::getGlyphName( int nGlyphIndex)
 class Type1Emitter
 {
 public:
-    explicit    Type1Emitter( FILE* pOutFile, bool bPfbSubset = true);
+    explicit    Type1Emitter( FILE* pOutFile, bool bPfbSubset);
     ~Type1Emitter();
     void        setSubsetName( const char* );
 
@@ -1712,10 +1691,9 @@ public:
     void        emitAllCrypted();
     int         tellPos() const;
     void        updateLen( int nTellPos, size_t nLength);
-    void        emitValVector( const char* pLineHead, const char* pLineTail, const ValVector&);
+    void        emitValVector( const char* pLineHead, const char* pLineTail, const std::vector<ValType>&);
 private:
     FILE*       mpFileOut;
-    bool        mbCloseOutfile;
     char        maBuffer[MAX_T1OPS_SIZE];   // TODO: dynamic allocation
     int         mnEECryptR;
 public:
@@ -1728,7 +1706,6 @@ public:
 
 Type1Emitter::Type1Emitter( FILE* pOutFile, bool bPfbSubset)
 :   mpFileOut( pOutFile)
-,   mbCloseOutfile( false)
 ,   maBuffer{}
 ,   mnEECryptR( 55665)  // default eexec seed, TODO: mnEECryptSeed
 ,   mpPtr( maBuffer)
@@ -1742,8 +1719,6 @@ Type1Emitter::~Type1Emitter()
 {
     if( !mpFileOut)
         return;
-    if( mbCloseOutfile )
-        fclose( mpFileOut);
     mpFileOut = nullptr;
 }
 
@@ -1844,7 +1819,7 @@ inline int dbl2str( char* pOut, double fVal)
 }
 
 void Type1Emitter::emitValVector( const char* pLineHead, const char* pLineTail,
-    const ValVector& rVector)
+    const std::vector<ValType>& rVector)
 {
     // ignore empty vectors
     if( rVector.empty())
@@ -1853,8 +1828,8 @@ void Type1Emitter::emitValVector( const char* pLineHead, const char* pLineTail,
     // emit the line head
     mpPtr += sprintf( mpPtr, "%s", pLineHead);
     // emit the vector values
-    ValVector::value_type aVal = 0;
-    for( ValVector::const_iterator it = rVector.begin();;) {
+    std::vector<ValType>::value_type aVal = 0;
+    for( std::vector<ValType>::const_iterator it = rVector.begin();;) {
         aVal = *it;
         if( ++it == rVector.end() )
             break;

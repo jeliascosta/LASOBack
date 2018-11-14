@@ -126,7 +126,7 @@ bool ImportLotus::BofFm3()
 
 void ImportLotus::Columnwidth( sal_uInt16 nRecLen )
 {
-    OSL_ENSURE( nRecLen >= 4, "*ImportLotus::Columnwidth(): Record zu kurz!" );
+    OSL_ENSURE( nRecLen >= 4, "*ImportLotus::Columnwidth(): Record too short!" );
 
     sal_uInt8    nLTab, nWindow2;
     sal_uInt16    nCnt = (nRecLen < 4) ? 0 : ( nRecLen - 4 ) / 2;
@@ -189,7 +189,7 @@ void ImportLotus::Userrange()
     Read( nRangeType );
 
     sal_Char aBuffer[ 17 ];
-    pIn->Read( aBuffer, 16 );
+    pIn->ReadBytes(aBuffer, 16);
     aBuffer[ 16 ] = 0;
     OUString      aName( aBuffer, strlen(aBuffer), eQuellChar );
 
@@ -317,7 +317,7 @@ void ImportLotus::RowPresentation( sal_uInt16 nRecLen )
             nHeight *= 20;  // -> 32 * TWIPS
             nHeight /= 32;  // -> TWIPS
 
-            pD->SetRowFlags( static_cast<SCROW> (nRow), static_cast<SCTAB> (nLTab), pD->GetRowFlags( static_cast<SCROW> (nRow), static_cast<SCTAB> (nLTab) ) | CR_MANUALSIZE );
+            pD->SetRowFlags( static_cast<SCROW> (nRow), static_cast<SCTAB> (nLTab), pD->GetRowFlags( static_cast<SCROW> (nRow), static_cast<SCTAB> (nLTab) ) | CRFlags::ManualSize );
 
             pD->SetRowHeight( static_cast<SCROW> (nRow), static_cast<SCTAB> (nLTab), nHeight );
         }

@@ -17,11 +17,11 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/standard/vclxaccessiblecheckbox.hxx>
+#include <standard/vclxaccessiblecheckbox.hxx>
 
 #include <toolkit/awt/vclxwindows.hxx>
-#include <accessibility/helper/accresmgr.hxx>
-#include <accessibility/helper/accessiblestrings.hrc>
+#include <helper/accresmgr.hxx>
+#include <helper/accessiblestrings.hrc>
 
 #include <unotools/accessiblestatesethelper.hxx>
 #include <comphelper/accessiblekeybindinghelper.hxx>
@@ -164,8 +164,7 @@ OUString VCLXAccessibleCheckBox::getImplementationName() throw (RuntimeException
 
 Sequence< OUString > VCLXAccessibleCheckBox::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    Sequence< OUString > aNames { "com.sun.star.awt.AccessibleCheckBox" };
-    return aNames;
+    return { "com.sun.star.awt.AccessibleCheckBox" };
 }
 
 
@@ -235,7 +234,7 @@ Reference< XAccessibleKeyBinding > VCLXAccessibleCheckBox::getAccessibleActionKe
     OAccessibleKeyBindingHelper* pKeyBindingHelper = new OAccessibleKeyBindingHelper();
     Reference< XAccessibleKeyBinding > xKeyBinding = pKeyBindingHelper;
 
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if ( pWindow )
     {
         KeyEvent aKeyEvent = pWindow->GetActivationKey();

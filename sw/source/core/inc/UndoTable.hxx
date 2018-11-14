@@ -20,6 +20,7 @@
 #ifndef INCLUDED_SW_SOURCE_CORE_INC_UNDOTABLE_HXX
 #define INCLUDED_SW_SOURCE_CORE_INC_UNDOTABLE_HXX
 
+#include <ndarr.hxx>
 #include <undobj.hxx>
 #include <set>
 #include <swtypes.hxx>
@@ -32,11 +33,8 @@ class SfxItemSet;
 struct SwSaveRowSpan;
 class SaveTable;
 class SwDDEFieldType;
-class SwUndoSaveSections;
-class SwUndoMoves;
 class SwUndoDelete;
 class SwSelBoxes;
-class SwTableToTextSaves;
 class SwTable;
 class SwTableBox;
 class SwStartNode;
@@ -62,7 +60,7 @@ public:
                     const SwTableAutoFormat* pTAFormat, const std::vector<sal_uInt16> *pColArr,
                   const OUString & rName);
 
-    virtual ~SwUndoInsTable();
+    virtual ~SwUndoInsTable() override;
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -87,7 +85,7 @@ public:
                     sal_uInt16,
                     const SwTableAutoFormat* pAFormat );
 
-    virtual ~SwUndoTextToTable();
+    virtual ~SwUndoTextToTable() override;
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -112,7 +110,7 @@ class SwUndoTableToText : public SwUndo
 public:
     SwUndoTableToText( const SwTable& rTable, sal_Unicode cCh );
 
-    virtual ~SwUndoTableToText();
+    virtual ~SwUndoTableToText() override;
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -132,7 +130,7 @@ class SwUndoAttrTable : public SwUndo
 public:
     SwUndoAttrTable( const SwTableNode& rTableNd, bool bClearTabCols = false );
 
-    virtual ~SwUndoAttrTable();
+    virtual ~SwUndoAttrTable() override;
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -154,13 +152,15 @@ class SwUndoTableAutoFormat : public SwUndo
 public:
     SwUndoTableAutoFormat( const SwTableNode& rTableNd, const SwTableAutoFormat& );
 
-    virtual ~SwUndoTableAutoFormat();
+    virtual ~SwUndoTableAutoFormat() override;
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
 
     void SaveBoxContent( const SwTableBox& rBox );
 };
+
+using SwUndoSaveSections = std::vector<std::unique_ptr<SwUndoSaveSection>>;
 
 class SwUndoTableNdsChg : public SwUndo
 {
@@ -195,7 +195,7 @@ public:
     SwUndoTableNdsChg( SwUndoId UndoId, const SwSelBoxes& rBoxes,
                     const SwTableNode& rTableNd );
 
-    virtual ~SwUndoTableNdsChg();
+    virtual ~SwUndoTableNdsChg() override;
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -217,6 +217,9 @@ public:
     }
 };
 
+class SwUndoMove;
+using SwUndoMoves = std::vector<std::unique_ptr<SwUndoMove>>;
+
 class SwUndoTableMerge : public SwUndo, private SwUndRng
 {
     sal_uLong nTableNode;
@@ -229,7 +232,7 @@ class SwUndoTableMerge : public SwUndo, private SwUndRng
 public:
     SwUndoTableMerge( const SwPaM& rTableSel );
 
-    virtual ~SwUndoTableMerge();
+    virtual ~SwUndoTableMerge() override;
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -262,7 +265,7 @@ class SwUndoTableNumFormat : public SwUndo
 public:
     SwUndoTableNumFormat( const SwTableBox& rBox, const SfxItemSet* pNewSet = nullptr );
 
-    virtual ~SwUndoTableNumFormat();
+    virtual ~SwUndoTableNumFormat() override;
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -272,7 +275,8 @@ public:
     void SetBox( const SwTableBox& rBox );
 };
 
-class SwUndoTableCpyTable_Entries;
+struct UndoTableCpyTable_Entry;
+using SwUndoTableCpyTable_Entries = std::vector<std::unique_ptr<UndoTableCpyTable_Entry>>;
 
 class SwUndoTableCpyTable : public SwUndo
 {
@@ -285,9 +289,9 @@ class SwUndoTableCpyTable : public SwUndo
                 const SwPosition& rPos, bool& rJoin, bool bRedo );
 
 public:
-    SwUndoTableCpyTable();
+    SwUndoTableCpyTable(const SwDoc* pDoc);
 
-    virtual ~SwUndoTableCpyTable();
+    virtual ~SwUndoTableCpyTable() override;
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -306,9 +310,9 @@ class SwUndoCpyTable : public SwUndo
     sal_uLong nTableNode;
 
 public:
-    SwUndoCpyTable();
+    SwUndoCpyTable(const SwDoc* pDoc);
 
-    virtual ~SwUndoCpyTable();
+    virtual ~SwUndoCpyTable() override;
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -329,7 +333,7 @@ public:
     SwUndoSplitTable( const SwTableNode& rTableNd, SwSaveRowSpan* pRowSp,
             sal_uInt16 nMode, bool bCalcNewSize );
 
-    virtual ~SwUndoSplitTable();
+    virtual ~SwUndoSplitTable() override;
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -353,7 +357,7 @@ public:
     SwUndoMergeTable( const SwTableNode& rTableNd, const SwTableNode& rDelTableNd,
                     bool bWithPrev, sal_uInt16 nMode );
 
-    virtual ~SwUndoMergeTable();
+    virtual ~SwUndoMergeTable() override;
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -377,6 +381,50 @@ public:
 };
 
 void InsertSort( std::vector<sal_uInt16>& rArr, sal_uInt16 nIdx );
+
+class SwUndoTableStyleMake : public SwUndo
+{
+    OUString m_sName;
+    std::unique_ptr<SwTableAutoFormat> m_pAutoFormat;
+public:
+    SwUndoTableStyleMake(const OUString& rName, const SwDoc* pDoc);
+
+    virtual ~SwUndoTableStyleMake() override;
+
+    virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
+    virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
+
+    virtual SwRewriter GetRewriter() const override;
+};
+
+class SwUndoTableStyleDelete : public SwUndo
+{
+    std::unique_ptr<SwTableAutoFormat> m_pAutoFormat;
+    std::vector<SwTable*> m_rAffectedTables;
+public:
+    SwUndoTableStyleDelete(std::unique_ptr<SwTableAutoFormat> pAutoFormat, const std::vector<SwTable*>& rAffectedTables, const SwDoc* pDoc);
+
+    virtual ~SwUndoTableStyleDelete() override;
+
+    virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
+    virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
+
+    virtual SwRewriter GetRewriter() const override;
+};
+
+class SwUndoTableStyleUpdate : public SwUndo
+{
+    std::unique_ptr<SwTableAutoFormat> m_pOldFormat, m_pNewFormat;
+public:
+    SwUndoTableStyleUpdate(const OUString& rName, const SwTableAutoFormat& rOldFormat, const SwDoc* pDoc);
+
+    virtual ~SwUndoTableStyleUpdate() override;
+
+    virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
+    virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
+
+    virtual SwRewriter GetRewriter() const override;
+};
 
 #endif // INCLUDED_SW_SOURCE_CORE_INC_UNDOTABLE_HXX
 

@@ -99,7 +99,7 @@ public:
         INetBookmark        maBookmark;
         ::sd::DrawDocShell&     mrDocShell;
         NavigatorDragType   meDragType;
-        SAL_DLLPRIVATE virtual               ~SdPageObjsTransferable();
+        SAL_DLLPRIVATE virtual               ~SdPageObjsTransferable() override;
 
         SAL_DLLPRIVATE virtual void      AddSupportedFormats() override;
         SAL_DLLPRIVATE virtual bool GetData( const css::datatransfer::DataFlavor& rFlavor, const OUString& rDestDoc ) override;
@@ -168,7 +168,7 @@ protected:
         const SdrObject* pObject,
         const bool bCreate = true) const;
     void                    CloseBookmarkDoc();
-                            DECL_LINK_TYPED(ExecDragHdl, void*, void);
+                            DECL_LINK(ExecDragHdl, void*, void);
 
     /** Handle the reordering of entries in the navigator.  This method
         reorders both the involved shapes in their page as well as the
@@ -186,9 +186,8 @@ protected:
 
 public:
 
-    SdPageObjsTLB( vcl::Window* pParent, const SdResId& rSdResId );
-    SdPageObjsTLB( vcl::Window* pParent, WinBits nStyle );
-    virtual ~SdPageObjsTLB();
+    SdPageObjsTLB(vcl::Window* pParent, WinBits nStyle);
+    virtual ~SdPageObjsTLB() override;
     virtual void            dispose() override;
 
    // helper function for   GetEntryAltText and GetEntryLongDescription
@@ -204,7 +203,7 @@ public:
     void                    Fill( const SdDrawDocument*, SfxMedium* pSfxMedium, const OUString& rDocName );
     void                    SetShowAllShapes (const bool bShowAllShapes, const bool bFill);
     bool                    GetShowAllShapes() const { return mbShowAllShapes;}
-    bool                    IsEqualToDoc( const SdDrawDocument* pInDoc = nullptr );
+    bool                    IsEqualToDoc( const SdDrawDocument* pInDoc );
     bool                    HasSelectedChildren( const OUString& rName );
     bool                    SelectEntry( const OUString& rName );
     OUString                GetSelectEntry();

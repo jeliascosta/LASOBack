@@ -17,8 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/standard/vclxaccessibletabcontrol.hxx>
-#include <accessibility/standard/vclxaccessibletabpage.hxx>
+#include <standard/vclxaccessibletabcontrol.hxx>
+#include <standard/vclxaccessibletabpage.hxx>
 
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 #include <com/sun/star/accessibility/AccessibleRole.hpp>
@@ -340,8 +340,7 @@ OUString VCLXAccessibleTabControl::getImplementationName() throw (RuntimeExcepti
 
 Sequence< OUString > VCLXAccessibleTabControl::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    Sequence< OUString > aNames { "com.sun.star.awt.AccessibleTabControl" };
-    return aNames;
+    return { "com.sun.star.awt.AccessibleTabControl" };
 }
 
 

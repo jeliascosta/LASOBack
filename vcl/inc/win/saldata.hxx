@@ -39,6 +39,7 @@ class WinSalPrinter;
 namespace vcl { class Font; }
 struct HDCCache;
 struct TempFontItem;
+class TextOutRenderer;
 
 #define MAX_STOCKPEN            4
 #define MAX_STOCKBRUSH          4
@@ -59,8 +60,8 @@ public:
     ~SalData();
 
     // native widget framework
-    void    initNWF();
-    void    deInitNWF();
+    static void initNWF();
+    static void deInitNWF();
 
     // fill maVKMap;
     void initKeyCodeMap();
@@ -118,6 +119,11 @@ public:
 
     std::set< HMENU >       mhMenuSet;              // keeps track of menu handles created by VCL, used by IsKnownMenuHandle()
     std::map< UINT,sal_uInt16 > maVKMap;      // map some dynamic VK_* entries
+
+    // must be deleted before exit(), so delete it in DeInitSalData()
+    std::unique_ptr<TextOutRenderer> m_pD2DWriteTextOutRenderer;
+    // tdf#107205 need 2 instances because D2DWrite can't rotate text
+    std::unique_ptr<TextOutRenderer> m_pExTextOutRenderer;
 };
 
 inline void SetSalData( SalData* pData ) { ImplGetSVData()->mpSalData = pData; }
@@ -151,7 +157,7 @@ struct HDCCache
 };
 
 void ImplClearHDCCache( SalData* pData );
-HDC ImplGetCachedDC( sal_uLong nID, HBITMAP hBmp = 0 );
+HDC ImplGetCachedDC( sal_uLong nID, HBITMAP hBmp = nullptr );
 void ImplReleaseCachedDC( sal_uLong nID );
 
 bool ImplAddTempFont( SalData&, const OUString& rFontFileURL );
@@ -175,7 +181,6 @@ LRESULT CALLBACK SalFrameWndProcW( HWND hWnd, UINT nMsg, WPARAM wParam, LPARAM l
 void EmitTimerCallback();
 
 void SalTestMouseLeave();
-void ImplWriteLastError(DWORD lastError, const char *szApiCall);
 
 long ImplHandleSalObjKeyMsg( HWND hWnd, UINT nMsg, WPARAM wParam, LPARAM lParam );
 long ImplHandleSalObjSysCharMsg( HWND hWnd, WPARAM wParam, LPARAM lParam );
@@ -274,22 +279,22 @@ int ImplSalWICompareAscii( const wchar_t* pStr1, const char* pStr2 );
 
 inline void SetWindowPtr( HWND hWnd, WinSalFrame* pThis )
 {
-    SetWindowLongPtr( hWnd, SAL_FRAME_THIS, (LONG_PTR)pThis );
+    SetWindowLongPtr( hWnd, SAL_FRAME_THIS, reinterpret_cast<LONG_PTR>(pThis) );
 }
 
 inline WinSalFrame* GetWindowPtr( HWND hWnd )
 {
-    return (WinSalFrame*)GetWindowLongPtrW( hWnd, SAL_FRAME_THIS );
+    return reinterpret_cast<WinSalFrame*>(GetWindowLongPtrW( hWnd, SAL_FRAME_THIS ));
 }
 
 inline void SetSalObjWindowPtr( HWND hWnd, WinSalObject* pThis )
 {
-    SetWindowLongPtr( hWnd, SAL_OBJECT_THIS, (LONG_PTR)pThis );
+    SetWindowLongPtr( hWnd, SAL_OBJECT_THIS, reinterpret_cast<LONG_PTR>(pThis) );
 }
 
 inline WinSalObject* GetSalObjWindowPtr( HWND hWnd )
 {
-    return (WinSalObject*)GetWindowLongPtr( hWnd, SAL_OBJECT_THIS );
+    return reinterpret_cast<WinSalObject*>(GetWindowLongPtr( hWnd, SAL_OBJECT_THIS ));
 }
 
 #endif // INCLUDED_VCL_INC_WIN_SALDATA_HXX

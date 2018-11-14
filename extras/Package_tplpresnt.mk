@@ -10,10 +10,19 @@
 $(eval $(call gb_Package_Package,extras_tplpresnt,$(SRCDIR)/extras/source/templates/presnt))
 
 $(eval $(call gb_Package_add_files,extras_tplpresnt,$(LIBO_SHARE_FOLDER)/template/common/presnt,\
+	BrightBlue.otp \
+	DNA.otp \
+	Inspiration.otp \
+	LushGreen.otp \
+	Metropolis.otp \
+	Sunset.otp \
+	Vintage.otp \
 	Alizarin.otp \
 	Focus.otp \
 	Impress.otp \
 	Midnightblue.otp \
+	Vivid.otp \
+	Pencil.otp \
 ))
 
 # vim: set noet sw=4 ts=4:

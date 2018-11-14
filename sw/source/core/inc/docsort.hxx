@@ -57,9 +57,9 @@ public:
 
 // Functions for moving boxes
 void MoveCol(SwDoc* pDoc, const FlatFndBox& rBox,
-             sal_uInt16 nS, sal_uInt16 nT, SwMovedBoxes& rMovedList, SwUndoSort* pUD=nullptr);
+             sal_uInt16 nS, sal_uInt16 nT, SwMovedBoxes& rMovedList, SwUndoSort* pUD);
 void MoveRow(SwDoc* pDoc, const FlatFndBox& rBox,
-             sal_uInt16 nS, sal_uInt16 nT, SwMovedBoxes& rMovedList, SwUndoSort* pUD=nullptr);
+             sal_uInt16 nS, sal_uInt16 nT, SwMovedBoxes& rMovedList, SwUndoSort* pUD);
 void MoveCell(SwDoc* pDoc, const SwTableBox* pSource,
               const SwTableBox* pTar, bool bMovedBefore, SwUndoSort* pUD=nullptr);
 
@@ -96,7 +96,7 @@ struct SwSortTextElement : public SwSortElement
     SwNodeIndex aPos;
 
     SwSortTextElement( const SwNodeIndex& rPos );
-    virtual ~SwSortTextElement();
+    virtual ~SwSortTextElement() override;
 
     virtual OUString GetKey( sal_uInt16 nKey ) const override;
 };
@@ -107,7 +107,7 @@ struct SwSortBoxElement : public SwSortElement
     sal_uInt16 nRow;
 
     SwSortBoxElement( sal_uInt16 nRC );
-    virtual ~SwSortBoxElement();
+    virtual ~SwSortBoxElement() override;
 
     virtual OUString GetKey( sal_uInt16 nKey ) const override;
     virtual double GetValue( sal_uInt16 nKey ) const override;

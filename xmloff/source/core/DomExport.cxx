@@ -125,7 +125,6 @@ class DomExport: public DomVisitor
     vector<SvXMLNamespaceMap> maNamespaces;
 
     void pushNamespace();
-    void popNamespace();
     void addNamespace( const OUString& sPrefix, const OUString& sURI );
     OUString qualifiedName( const OUString& sPrefix, const OUString& sURI,
                             const OUString& sLocalName );
@@ -136,7 +135,7 @@ class DomExport: public DomVisitor
 public:
 
     explicit DomExport( SvXMLExport& rExport );
-    virtual ~DomExport();
+    virtual ~DomExport() override;
 
     virtual void element( const Reference<XElement>& ) override;
     virtual void endElement( const Reference<XElement>& ) override;
@@ -151,7 +150,7 @@ DomExport::DomExport( SvXMLExport& rExport ) :
 
 DomExport::~DomExport()
 {
-    DBG_ASSERT( maNamespaces.size() == 1, "namespace missing" );
+    SAL_WARN_IF( maNamespaces.size() != 1, "xmloff", "namespace missing" );
     maNamespaces.clear();
 }
 
@@ -159,11 +158,6 @@ void DomExport::pushNamespace()
 {
     SvXMLNamespaceMap const aMap(maNamespaces.back());
     maNamespaces.push_back(aMap);
-}
-
-void DomExport::popNamespace()
-{
-    maNamespaces.pop_back();
 }
 
 void DomExport::addNamespace( const OUString& sPrefix, const OUString& sURI )
@@ -234,7 +228,7 @@ void DomExport::element( const Reference<XElement>& xElement )
 void DomExport::endElement( const Reference<XElement>& xElement )
 {
     mrExport.EndElement( qualifiedName( xElement ), false );
-    popNamespace();
+    maNamespaces.pop_back();
 }
 
 void DomExport::character( const Reference<XCharacterData>& xChars )

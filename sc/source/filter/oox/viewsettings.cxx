@@ -31,6 +31,7 @@
 #include <osl/diagnose.h>
 #include <unotools/mediadescriptor.hxx>
 #include <oox/core/filterbase.hxx>
+#include <oox/helper/binaryinputstream.hxx>
 #include <oox/helper/attributelist.hxx>
 #include <oox/helper/containerhelper.hxx>
 #include <oox/helper/propertymap.hxx>
@@ -38,7 +39,6 @@
 #include <oox/token/properties.hxx>
 #include <oox/token/tokens.hxx>
 #include "addressconverter.hxx"
-#include "biffinputstream.hxx"
 #include "unitconverter.hxx"
 #include "workbooksettings.hxx"
 #include "worksheetbuffer.hxx"
@@ -160,14 +160,9 @@ sal_Int32 SheetViewModel::getGridColor( const FilterBase& rFilter ) const
     return mbDefGridColor ? API_RGB_TRANSPARENT : maGridColor.getColor( rFilter.getGraphicHelper() );
 }
 
-const PaneSelectionModel* SheetViewModel::getPaneSelection( sal_Int32 nPaneId ) const
-{
-    return maPaneSelMap.get( nPaneId ).get();
-}
-
 const PaneSelectionModel* SheetViewModel::getActiveSelection() const
 {
-    return getPaneSelection( mnActivePaneId );
+    return maPaneSelMap.get( mnActivePaneId ).get();
 }
 
 PaneSelectionModel& SheetViewModel::createPaneSelection( sal_Int32 nPaneId )
@@ -538,9 +533,14 @@ void ViewSettings::setSheetViewSettings( sal_Int16 nSheet, const SheetViewModelR
     maSheetProps[ nSheet ] = rProperties;
 }
 
-void ViewSettings::setSheetUsedArea( const CellRangeAddress& rUsedArea )
+void ViewSettings::setSheetUsedArea( const ScRange& rUsedArea )
 {
-    maSheetUsedAreas[ rUsedArea.Sheet ] = rUsedArea;
+    assert( rUsedArea.IsValid() );
+    assert( rUsedArea.aStart.Col() <= MAXCOLCOUNT );
+    assert( rUsedArea.aStart.Row() <= MAXROWCOUNT );
+    maSheetUsedAreas[ rUsedArea.aStart.Tab() ] = CellRangeAddress( rUsedArea.aStart.Tab(),
+                                                                   rUsedArea.aStart.Col(), rUsedArea.aStart.Row(),
+                                                                   rUsedArea.aEnd.Col(), rUsedArea.aEnd.Row() );
 }
 
 void ViewSettings::finalizeImport()

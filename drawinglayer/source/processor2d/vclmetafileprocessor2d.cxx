@@ -313,32 +313,32 @@ namespace drawinglayer
             {
                 default : // attribute::GradientStyle::Linear :
                 {
-                    o_rVCLGradient.SetStyle(GradientStyle_LINEAR);
+                    o_rVCLGradient.SetStyle(GradientStyle::Linear);
                     break;
                 }
                 case attribute::GradientStyle::Axial :
                 {
-                    o_rVCLGradient.SetStyle(GradientStyle_AXIAL);
+                    o_rVCLGradient.SetStyle(GradientStyle::Axial);
                     break;
                 }
                 case attribute::GradientStyle::Radial :
                 {
-                    o_rVCLGradient.SetStyle(GradientStyle_RADIAL);
+                    o_rVCLGradient.SetStyle(GradientStyle::Radial);
                     break;
                 }
                 case attribute::GradientStyle::Elliptical :
                 {
-                    o_rVCLGradient.SetStyle(GradientStyle_ELLIPTICAL);
+                    o_rVCLGradient.SetStyle(GradientStyle::Elliptical);
                     break;
                 }
                 case attribute::GradientStyle::Square :
                 {
-                    o_rVCLGradient.SetStyle(GradientStyle_SQUARE);
+                    o_rVCLGradient.SetStyle(GradientStyle::Square);
                     break;
                 }
                 case attribute::GradientStyle::Rect :
                 {
-                    o_rVCLGradient.SetStyle(GradientStyle_RECT);
+                    o_rVCLGradient.SetStyle(GradientStyle::Rect);
                     break;
                 }
             }
@@ -794,7 +794,7 @@ namespace drawinglayer
                     }
 
                     // process recursively and add MetaFile comment
-                    process(rGraphicPrimitive.get2DDecomposition(getViewInformation2D()));
+                    process(rGraphicPrimitive);
 
                     if(bUsingPDFExtOutDevData)
                     {
@@ -818,7 +818,7 @@ namespace drawinglayer
                             double fFactorY(1.0);
 
                             {
-                                const MapMode aMapMode100thmm(MAP_100TH_MM);
+                                const MapMode aMapMode100thmm(MapUnit::Map100thMM);
                                 const Size aBitmapSize(OutputDevice::LogicToLogic(
                                     rGraphicPrimitive.getGraphicObject().GetPrefSize(),
                                     rGraphicPrimitive.getGraphicObject().GetPrefMapMode(), aMapMode100thmm));
@@ -909,7 +909,7 @@ namespace drawinglayer
                                 pPDFControl->Location = aRectLogic;
 
                                 Size aFontSize(pPDFControl->TextFont.GetFontSize());
-                                aFontSize = OutputDevice::LogicToLogic(aFontSize, MapMode(MAP_POINT), mpOutputDevice->GetMapMode());
+                                aFontSize = OutputDevice::LogicToLogic(aFontSize, MapMode(MapUnit::MapPoint), mpOutputDevice->GetMapMode());
                                 pPDFControl->TextFont.SetFontSize(aFontSize);
 
                                 mpPDFExtOutDevData->BeginStructureElement(vcl::PDFWriter::Form);
@@ -965,7 +965,7 @@ namespace drawinglayer
                         // process recursively if not done yet to export as decomposition (bitmap)
                         if(bDoProcessRecursively)
                         {
-                            process(rControlPrimitive.get2DDecomposition(getViewInformation2D()));
+                            process(rControlPrimitive);
                         }
                     }
 
@@ -1001,7 +1001,8 @@ namespace drawinglayer
                     }
 
                     // process recursively
-                    const primitive2d::Primitive2DContainer rContent = rFieldPrimitive.get2DDecomposition(getViewInformation2D());
+                    primitive2d::Primitive2DContainer rContent;
+                    rFieldPrimitive.get2DDecomposition(rContent, getViewInformation2D());
                     process(rContent);
 
                     // for the end comment the type is not relevant yet, they are all the same. Just add.
@@ -1029,7 +1030,7 @@ namespace drawinglayer
                     const OString aCommentString("XTEXT_EOL");
 
                     // process recursively and add MetaFile comment
-                    process(rLinePrimitive.get2DDecomposition(getViewInformation2D()));
+                    process(rLinePrimitive);
                     mpMetaFile->AddAction(new MetaCommentAction(aCommentString));
 
                     break;
@@ -1042,7 +1043,7 @@ namespace drawinglayer
                     const OString aCommentString("XTEXT_EOC");
 
                     // process recursively and add MetaFile comment
-                    process(rBulletPrimitive.get2DDecomposition(getViewInformation2D()));
+                    process(rBulletPrimitive);
                     mpMetaFile->AddAction(new MetaCommentAction(aCommentString));
 
                     break;
@@ -1059,7 +1060,7 @@ namespace drawinglayer
                     }
 
                     // process recursively and add MetaFile comment
-                    process(rParagraphPrimitive.get2DDecomposition(getViewInformation2D()));
+                    process(rParagraphPrimitive);
                     mpMetaFile->AddAction(new MetaCommentAction(aCommentString));
 
                     if(mpPDFExtOutDevData)
@@ -1078,7 +1079,7 @@ namespace drawinglayer
 
                     // add MetaFile comment, process recursively and add MetaFile comment
                     mpMetaFile->AddAction(new MetaCommentAction(aCommentStringA));
-                    process(rBlockPrimitive.get2DDecomposition(getViewInformation2D()));
+                    process(rBlockPrimitive);
                     mpMetaFile->AddAction(new MetaCommentAction(aCommentStringB));
 
                     break;
@@ -1160,8 +1161,8 @@ namespace drawinglayer
                         // per polygon. If there are more, split the polygon in half and call recursively
                         basegfx::B2DPolygon aLeft, aRight;
                         splitLinePolygon(rBasePolygon, aLeft, aRight);
-                        uno::Reference< primitive2d::PolygonHairlinePrimitive2D > xPLeft(new primitive2d::PolygonHairlinePrimitive2D(aLeft, rHairlinePrimitive.getBColor()));
-                        uno::Reference< primitive2d::PolygonHairlinePrimitive2D > xPRight(new primitive2d::PolygonHairlinePrimitive2D(aRight, rHairlinePrimitive.getBColor()));
+                        rtl::Reference< primitive2d::PolygonHairlinePrimitive2D > xPLeft(new primitive2d::PolygonHairlinePrimitive2D(aLeft, rHairlinePrimitive.getBColor()));
+                        rtl::Reference< primitive2d::PolygonHairlinePrimitive2D > xPRight(new primitive2d::PolygonHairlinePrimitive2D(aRight, rHairlinePrimitive.getBColor()));
 
                         processBasePrimitive2D(*xPLeft.get());
                         processBasePrimitive2D(*xPRight.get());
@@ -1208,9 +1209,9 @@ namespace drawinglayer
                         // per polygon. If there are more, split the polygon in half and call recursively
                         basegfx::B2DPolygon aLeft, aRight;
                         splitLinePolygon(rBasePolygon, aLeft, aRight);
-                        uno::Reference< primitive2d::PolygonStrokePrimitive2D > xPLeft(new primitive2d::PolygonStrokePrimitive2D(
+                        rtl::Reference< primitive2d::PolygonStrokePrimitive2D > xPLeft(new primitive2d::PolygonStrokePrimitive2D(
                             aLeft, rStrokePrimitive.getLineAttribute(), rStrokePrimitive.getStrokeAttribute()));
-                        uno::Reference< primitive2d::PolygonStrokePrimitive2D > xPRight(new primitive2d::PolygonStrokePrimitive2D(
+                        rtl::Reference< primitive2d::PolygonStrokePrimitive2D > xPRight(new primitive2d::PolygonStrokePrimitive2D(
                             aRight, rStrokePrimitive.getLineAttribute(), rStrokePrimitive.getStrokeAttribute()));
 
                         processBasePrimitive2D(*xPLeft.get());
@@ -1228,7 +1229,7 @@ namespace drawinglayer
                         impStartSvtGraphicStroke(pSvtGraphicStroke);
                         const attribute::LineAttribute& rLine = rStrokePrimitive.getLineAttribute();
 
-                        // create MetaPolyLineActions, but without LINE_DASH
+                        // create MetaPolyLineActions, but without LineStyle::Dash
                         if(basegfx::fTools::more(rLine.getWidth(), 0.0))
                         {
                             const attribute::StrokeAttribute& rStroke = rStrokePrimitive.getStrokeAttribute();
@@ -1251,7 +1252,7 @@ namespace drawinglayer
                             aHairLinePolyPolygon.transform(maCurrentTransformation);
 
                             // use the transformed line width
-                            LineInfo aLineInfo(LINE_SOLID, basegfx::fround(getTransformedLineWidth(rLine.getWidth())));
+                            LineInfo aLineInfo(LineStyle::Solid, basegfx::fround(getTransformedLineWidth(rLine.getWidth())));
                             aLineInfo.SetLineJoin(rLine.getLineJoin());
                             aLineInfo.SetLineCap(rLine.getLineCap());
 
@@ -1269,7 +1270,7 @@ namespace drawinglayer
                         }
                         else
                         {
-                            process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                            process(rCandidate);
                         }
 
                         impEndSvtGraphicStroke(pSvtGraphicStroke);
@@ -1289,13 +1290,13 @@ namespace drawinglayer
                         basegfx::B2DPolygon aLeft, aRight;
                         splitLinePolygon(rBasePolygon, aLeft, aRight);
                         const attribute::LineStartEndAttribute aEmpty;
-                        uno::Reference< primitive2d::PolygonStrokeArrowPrimitive2D > xPLeft(new primitive2d::PolygonStrokeArrowPrimitive2D(
+                        rtl::Reference< primitive2d::PolygonStrokeArrowPrimitive2D > xPLeft(new primitive2d::PolygonStrokeArrowPrimitive2D(
                             aLeft,
                             rStrokeArrowPrimitive.getLineAttribute(),
                             rStrokeArrowPrimitive.getStrokeAttribute(),
                             rStrokeArrowPrimitive.getStart(),
                             aEmpty));
-                        uno::Reference< primitive2d::PolygonStrokeArrowPrimitive2D > xPRight(new primitive2d::PolygonStrokeArrowPrimitive2D(
+                        rtl::Reference< primitive2d::PolygonStrokeArrowPrimitive2D > xPRight(new primitive2d::PolygonStrokeArrowPrimitive2D(
                             aRight,
                             rStrokeArrowPrimitive.getLineAttribute(),
                             rStrokeArrowPrimitive.getStrokeAttribute(),
@@ -1335,7 +1336,7 @@ namespace drawinglayer
                         }
 
                         // process sub-line geometry (evtl. filled PolyPolygons)
-                        process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                        process(rCandidate);
 
                         if(bDrawmodeChange)
                         {
@@ -1367,7 +1368,7 @@ namespace drawinglayer
                     {
                         // #i112245# Metafiles use tools Polygon and are not able to have more than 65535 points
                         // per polygon. If there are more use the splitted polygon and call recursively
-                        uno::Reference< primitive2d::PolyPolygonGraphicPrimitive2D > xSplitted(new primitive2d::PolyPolygonGraphicPrimitive2D(
+                        rtl::Reference< primitive2d::PolyPolygonGraphicPrimitive2D > xSplitted(new primitive2d::PolyPolygonGraphicPrimitive2D(
                             aLocalPolyPolygon,
                             rBitmapCandidate.getFillGraphic()));
 
@@ -1434,7 +1435,7 @@ namespace drawinglayer
 
                         // Do use decomposition; encapsulate with SvtGraphicFill
                         impStartSvtGraphicFill(pSvtGraphicFill);
-                        process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                        process(rCandidate);
                         impEndSvtGraphicFill(pSvtGraphicFill);
                     }
 
@@ -1452,7 +1453,7 @@ namespace drawinglayer
                         // the range which defines the hatch is different from the range of the
                         // geometry (used for writer frames). This cannot be done calling vcl, thus use
                         // decomposition here
-                        process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                        process(rCandidate);
                         break;
                     }
 
@@ -1537,9 +1538,9 @@ namespace drawinglayer
                     // process(rCandidate.get2DDecomposition(getViewInformation2D()));
                     const ::tools::PolyPolygon aToolsPolyPolygon(basegfx::tools::adaptiveSubdivideByAngle(aLocalPolyPolygon));
                     const HatchStyle aHatchStyle(
-                        attribute::HatchStyle::Single == rFillHatchAttribute.getStyle() ? HATCH_SINGLE :
-                        attribute::HatchStyle::Double == rFillHatchAttribute.getStyle() ? HATCH_DOUBLE :
-                        HATCH_TRIPLE);
+                        attribute::HatchStyle::Single == rFillHatchAttribute.getStyle() ? HatchStyle::Single :
+                        attribute::HatchStyle::Double == rFillHatchAttribute.getStyle() ? HatchStyle::Double :
+                        HatchStyle::Triple);
 
                     mpOutputDevice->DrawHatch(aToolsPolyPolygon,
                         Hatch(aHatchStyle,
@@ -1577,7 +1578,7 @@ namespace drawinglayer
                         // transfers. One more reason to *change* these to primitives.
                         // BTW: One more example how useful the principles of primitives are; the decomposition
                         // is by definition a simpler, maybe more expensive representation of the same content.
-                        process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                        process(rCandidate);
                         break;
                     }
 
@@ -1589,7 +1590,7 @@ namespace drawinglayer
                         // the range which defines the gradient is different from the range of the
                         // geometry (used for writer frames). This cannot be done calling vcl, thus use
                         // decomposition here
-                        process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                        process(rCandidate);
                         break;
                     }
 
@@ -1625,16 +1626,16 @@ namespace drawinglayer
 
                             switch(aVCLGradient.GetStyle())
                             {
-                                default : // GradientStyle_LINEAR:
-                                case GradientStyle_AXIAL:
+                                default : // GradientStyle::Linear:
+                                case GradientStyle::Axial:
                                     eGrad = SvtGraphicFill::gradientLinear;
                                     break;
-                                case GradientStyle_RADIAL:
-                                case GradientStyle_ELLIPTICAL:
+                                case GradientStyle::Radial:
+                                case GradientStyle::Elliptical:
                                     eGrad = SvtGraphicFill::gradientRadial;
                                     break;
-                                case GradientStyle_SQUARE:
-                                case GradientStyle_RECT:
+                                case GradientStyle::Square:
+                                case GradientStyle::Rect:
                                     eGrad = SvtGraphicFill::gradientRectangular;
                                     break;
                             }
@@ -1732,7 +1733,7 @@ namespace drawinglayer
                     {
                         // Use new Metafile decomposition.
                         // TODO EMF+ stuffed into METACOMMENT support required
-                        process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                        process(rCandidate);
                     }
                     else
                     {
@@ -1925,7 +1926,7 @@ namespace drawinglayer
                                 const sal_uInt8 nTransPercentVcl((sal_uInt8)basegfx::fround(rUniTransparenceCandidate.getTransparence() * 255.0));
                                 const Color aTransColor(nTransPercentVcl, nTransPercentVcl, nTransPercentVcl);
 
-                                aVCLGradient.SetStyle(GradientStyle_LINEAR);
+                                aVCLGradient.SetStyle(GradientStyle::Linear);
                                 aVCLGradient.SetStartColor(aTransColor);
                                 aVCLGradient.SetEndColor(aTransColor);
                                 aVCLGradient.SetAngle(0);
@@ -2033,10 +2034,10 @@ namespace drawinglayer
                                 // prepare view transformation for target renderers
                                 // ATTENTION! Need to apply another scaling because of the potential DPI differences
                                 // between Printer and VDev (mpOutputDevice and aBufferDevice here).
-                                // To get the DPI, LogicToPixel from (1,1) from MAP_INCH needs to be used.
+                                // To get the DPI, LogicToPixel from (1,1) from MapUnit::MapInch needs to be used.
                                 basegfx::B2DHomMatrix aViewTransform(aBufferDevice->GetViewTransformation());
-                                const Size aDPIOld(mpOutputDevice->LogicToPixel(Size(1, 1), MAP_INCH));
-                                const Size aDPINew(aBufferDevice->LogicToPixel(Size(1, 1), MAP_INCH));
+                                const Size aDPIOld(mpOutputDevice->LogicToPixel(Size(1, 1), MapUnit::MapInch));
+                                const Size aDPINew(aBufferDevice->LogicToPixel(Size(1, 1), MapUnit::MapInch));
                                 const double fDPIXChange((double)aDPIOld.getWidth() / (double)aDPINew.getWidth());
                                 const double fDPIYChange((double)aDPIOld.getHeight() / (double)aDPINew.getHeight());
 
@@ -2139,7 +2140,7 @@ namespace drawinglayer
                 default :
                 {
                     // process recursively
-                    process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                    process(rCandidate);
                     break;
                 }
             }

@@ -296,8 +296,6 @@ public:
     ToolBarRules& GetToolBarRules() { return maToolBarRules;}
 
 private:
-    const static OUString msToolBarResourcePrefix;
-
     mutable ::osl::Mutex maMutex;
     ViewShellBase& mrBase;
     std::shared_ptr<sd::tools::EventMultiplexer> mpEventMultiplexer;
@@ -323,9 +321,9 @@ private:
     static OUString GetToolBarResourceName (const OUString& rsBaseName);
     bool CheckPlugInMode (const OUString& rsName) const;
 
-    DECL_LINK_TYPED(UpdateCallback, void *, void);
-    DECL_LINK_TYPED(EventMultiplexerCallback, sd::tools::EventMultiplexerEvent&, void);
-    DECL_LINK_TYPED(SetValidCallback, void*, void);
+    DECL_LINK(UpdateCallback, void *, void);
+    DECL_LINK(EventMultiplexerCallback, sd::tools::EventMultiplexerEvent&, void);
+    DECL_LINK(SetValidCallback, void*, void);
 };
 
 //===== ToolBarManager ========================================================
@@ -511,8 +509,6 @@ void ToolBarManager::ToolBarsDestroyed()
 
 //===== ToolBarManager::Implementation =======================================
 
-const OUString ToolBarManager::Implementation::msToolBarResourcePrefix("private:resource/toolbar/");
-
 ToolBarManager::Implementation::Implementation (
     ViewShellBase& rBase,
     const std::shared_ptr<sd::tools::EventMultiplexer>& rpMultiplexer,
@@ -536,11 +532,7 @@ ToolBarManager::Implementation::Implementation (
       maToolBarRules(rpToolBarManager,rpViewShellManager)
 {
     Link<tools::EventMultiplexerEvent&,void> aLink (LINK(this,ToolBarManager::Implementation,EventMultiplexerCallback));
-    mpEventMultiplexer->AddEventListener(
-        aLink,
-        tools::EventMultiplexerEvent::EID_CONTROLLER_ATTACHED
-        | tools::EventMultiplexerEvent::EID_CONTROLLER_DETACHED
-        | tools::EventMultiplexerEvent::EID_PANE_MANAGER_DYING);
+    mpEventMultiplexer->AddEventListener( aLink );
 }
 
 /** The order of statements is important.
@@ -847,7 +839,7 @@ void ToolBarManager::Implementation::Update (
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ToolBarManager::Implementation, UpdateCallback, void*, void)
+IMPL_LINK_NOARG(ToolBarManager::Implementation, UpdateCallback, void*, void)
 {
     mnPendingUpdateCall = nullptr;
     if (mnLockCount == 0)
@@ -861,29 +853,31 @@ IMPL_LINK_NOARG_TYPED(ToolBarManager::Implementation, UpdateCallback, void*, voi
     }
 }
 
-IMPL_LINK_TYPED(ToolBarManager::Implementation,EventMultiplexerCallback,
+IMPL_LINK(ToolBarManager::Implementation,EventMultiplexerCallback,
     sd::tools::EventMultiplexerEvent&, rEvent, void)
 {
     SolarMutexGuard g;
     switch (rEvent.meEventId)
     {
-        case tools::EventMultiplexerEvent::EID_CONTROLLER_ATTACHED:
+        case EventMultiplexerEventId::ControllerAttached:
             if (mnPendingSetValidCall == nullptr)
                 mnPendingSetValidCall
                     = Application::PostUserEvent(LINK(this,Implementation,SetValidCallback));
             break;
 
-        case tools::EventMultiplexerEvent::EID_CONTROLLER_DETACHED:
+        case EventMultiplexerEventId::ControllerDetached:
             SetValid(false);
             break;
 
-        case tools::EventMultiplexerEvent::EID_PANE_MANAGER_DYING:
+        case EventMultiplexerEventId::PaneManagerDying:
             SetValid(false);
             break;
+
+        default: break;
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ToolBarManager::Implementation, SetValidCallback, void*, void)
+IMPL_LINK_NOARG(ToolBarManager::Implementation, SetValidCallback, void*, void)
 {
     mnPendingSetValidCall = nullptr;
     SetValid(true);
@@ -892,9 +886,7 @@ IMPL_LINK_NOARG_TYPED(ToolBarManager::Implementation, SetValidCallback, void*, v
 OUString ToolBarManager::Implementation::GetToolBarResourceName (
     const OUString& rsBaseName)
 {
-    OUString sToolBarName (msToolBarResourcePrefix);
-    sToolBarName += rsBaseName;
-    return sToolBarName;
+    return "private:resource/toolbar/" + rsBaseName;
 }
 
 bool ToolBarManager::Implementation::CheckPlugInMode (const OUString& rsName) const
@@ -1057,7 +1049,7 @@ void ToolBarRules::MainViewShellChanged (const ViewShell& rMainViewShell)
                 = dynamic_cast<const DrawViewShell*>(&rMainViewShell);
             if (pDrawViewShell != nullptr)
             {
-                if (pDrawViewShell->GetEditMode() == EM_MASTERPAGE)
+                if (pDrawViewShell->GetEditMode() == EditMode::MasterPage)
                     mpToolBarManager->AddToolBar(
                         ToolBarManager::TBG_MASTER_MODE,
                         ToolBarManager::msMasterViewToolBar);
@@ -1086,22 +1078,22 @@ void ToolBarRules::SelectionHasChanged (
 
     switch (rView.GetContext())
     {
-        case SDRCONTEXT_GRAPHIC:
+        case SdrViewContext::Graphic:
             if( !bTextEdit )
                 mpToolBarManager->SetToolBarShell(ToolBarManager::TBG_FUNCTION, RID_DRAW_GRAF_TOOLBOX);
             break;
 
-        case SDRCONTEXT_MEDIA:
+        case SdrViewContext::Media:
             if( !bTextEdit )
                 mpToolBarManager->SetToolBarShell(ToolBarManager::TBG_FUNCTION, RID_DRAW_MEDIA_TOOLBOX);
             break;
 
-        case SDRCONTEXT_TABLE:
+        case SdrViewContext::Table:
             mpToolBarManager->SetToolBarShell(ToolBarManager::TBG_FUNCTION, RID_DRAW_TABLE_TOOLBOX);
             bTextEdit = true;
             break;
 
-        case SDRCONTEXT_STANDARD:
+        case SdrViewContext::Standard:
         default:
             if( !bTextEdit )
             {
@@ -1135,7 +1127,7 @@ void ToolBarRules::SelectionHasChanged (
         mpToolBarManager->AddToolBarShell(ToolBarManager::TBG_FUNCTION, RID_SVX_FONTWORK_BAR);
 
     // Switch on additional context-sensitive tool bars.
-    if (rView.GetContext() == SDRCONTEXT_POINTEDIT)
+    if (rView.GetContext() == SdrViewContext::PointEdit)
         mpToolBarManager->AddToolBarShell(ToolBarManager::TBG_FUNCTION, RID_BEZIER_TOOLBOX);
 }
 

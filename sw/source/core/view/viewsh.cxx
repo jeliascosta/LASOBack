@@ -115,21 +115,6 @@ void SwViewShell::ToggleHeaderFooterEdit()
     GetWin()->Invalidate();
 }
 
-void SwViewShell::registerLibreOfficeKitCallback(LibreOfficeKitCallback pCallback, void* pData)
-{
-    getIDocumentDrawModelAccess().GetDrawModel()->registerLibreOfficeKitCallback(pCallback, pData);
-    if (SwPostItMgr* pPostItMgr = GetPostItMgr())
-        pPostItMgr->registerLibreOfficeKitCallback(getIDocumentDrawModelAccess().GetDrawModel());
-}
-
-void SwViewShell::libreOfficeKitCallback(int nType, const char* pPayload) const
-{
-    if (mbInLibreOfficeKitCallback)
-        return;
-
-    getIDocumentDrawModelAccess().GetDrawModel()->libreOfficeKitCallback(nType, pPayload);
-}
-
 void SwViewShell::setOutputToWindow(bool bOutputToWindow)
 {
     mbOutputToWindow = bOutputToWindow;
@@ -142,7 +127,7 @@ bool SwViewShell::isOutputToWindow() const
 
 void SwViewShell::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swViewShell"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwViewShell"));
     xmlTextWriterEndElement(pWriter);
 }
 
@@ -1025,8 +1010,8 @@ void SwViewShell::SizeChgNotify()
                     Size aDocSize = GetDocSize();
                     std::stringstream ss;
                     ss << aDocSize.Width() + 2L * DOCUMENTBORDER << ", " << aDocSize.Height() + 2L * DOCUMENTBORDER;
-                    OString sRect = ss.str().c_str();
-                    libreOfficeKitCallback(LOK_CALLBACK_DOCUMENT_SIZE_CHANGED, sRect.getStr());
+                    OString sSize = ss.str().c_str();
+                    GetSfxViewShell()->libreOfficeKitViewCallback(LOK_CALLBACK_DOCUMENT_SIZE_CHANGED, sSize.getStr());
                 }
             }
         }
@@ -1100,7 +1085,7 @@ void SwViewShell::VisPortChgd( const SwRect &rRect)
                 SwRect aPageRect( pPage->GetBoundRect(GetWin()) );
                 if ( bBookMode )
                 {
-                    const SwPageFrame& rFormatPage = static_cast<const SwPageFrame*>(pPage)->GetFormatPage();
+                    const SwPageFrame& rFormatPage = pPage->GetFormatPage();
                     aPageRect.SSize() = rFormatPage.GetBoundRect(GetWin()).SSize();
                 }
 
@@ -1857,7 +1842,7 @@ void SwViewShell::PaintTile(VirtualDevice &rDevice, int contextWidth, int contex
     // TODO clean up SwViewShell's approach to output devices (the many of
     // them - mpBufferedOut, mpOut, mpWin, ...)
     OutputDevice *pSaveOut = mpOut;
-    mbInLibreOfficeKitCallback = true;
+    comphelper::LibreOfficeKit::setTiledPainting(true);
     mpOut = &rDevice;
 
     // resizes the virtual device so to contain the entries context
@@ -1865,7 +1850,7 @@ void SwViewShell::PaintTile(VirtualDevice &rDevice, int contextWidth, int contex
 
     // setup the output device to draw the tile
     MapMode aMapMode(rDevice.GetMapMode());
-    aMapMode.SetMapUnit(MAP_TWIP);
+    aMapMode.SetMapUnit(MapUnit::MapTwip);
     aMapMode.SetOrigin(Point(-tilePosX, -tilePosY));
 
     // Scaling. Must convert from pixels to twips. We know
@@ -1910,7 +1895,7 @@ void SwViewShell::PaintTile(VirtualDevice &rDevice, int contextWidth, int contex
 
     // SwViewShell's output device tear down
     mpOut = pSaveOut;
-    mbInLibreOfficeKitCallback = false;
+    comphelper::LibreOfficeKit::setTiledPainting(false);
 }
 
 void SwViewShell::SetBrowseBorder( const Size& rNew )

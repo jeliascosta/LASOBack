@@ -1,4 +1,4 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4; fill-column: 100 -*- */
 /*
  * This file is part of the LibreOffice project.
  *
@@ -19,12 +19,12 @@
 
 
 #include "xsecparser.hxx"
-#include <tools/debug.hxx>
 #include <cppuhelper/exc_hlp.hxx>
 
 #include <string.h>
 
 namespace cssu = com::sun::star::uno;
+namespace cssxc = com::sun::star::xml::crypto;
 namespace cssxs = com::sun::star::xml::sax;
 
 XSecParser::XSecParser(XSecController* pXSecController,
@@ -32,6 +32,9 @@ XSecParser::XSecParser(XSecController* pXSecController,
     : m_bInX509IssuerName(false)
     , m_bInX509SerialNumber(false)
     , m_bInX509Certificate(false)
+    , m_bInCertDigest(false)
+    , m_bInEncapsulatedX509Certificate(false)
+    , m_bInSigningTime(false)
     , m_bInDigestValue(false)
     , m_bInSignatureValue(false)
     , m_bInDate(false)
@@ -39,6 +42,7 @@ XSecParser::XSecParser(XSecController* pXSecController,
     , m_pXSecController(pXSecController)
     , m_xNextHandler(xNextHandler)
     , m_bReferenceUnresolved(false)
+    , m_nReferenceDigestID(cssxc::DigestID::SHA1)
 {
 }
 
@@ -46,7 +50,7 @@ OUString XSecParser::getIdAttr(const cssu::Reference< cssxs::XAttributeList >& x
 {
     OUString ouIdAttr = xAttribs->getValueByName("id");
 
-    if (ouIdAttr == nullptr)
+    if (ouIdAttr.isEmpty())
     {
         ouIdAttr = xAttribs->getValueByName("Id");
     }
@@ -91,30 +95,29 @@ void SAL_CALL XSecParser::startElement(
     try
     {
         OUString ouIdAttr = getIdAttr(xAttribs);
-        if (ouIdAttr != nullptr)
+        if (!ouIdAttr.isEmpty())
         {
             m_pXSecController->collectToVerify( ouIdAttr );
         }
 
-        if ( aName == TAG_SIGNATURE )
+        if ( aName == "Signature" )
         {
             m_pXSecController->addSignature();
-            if (ouIdAttr != nullptr)
+            if (!ouIdAttr.isEmpty())
             {
                 m_pXSecController->setId( ouIdAttr );
             }
         }
-        else if ( aName == TAG_REFERENCE )
+        else if ( aName == "Reference" )
         {
-            OUString ouUri = xAttribs->getValueByName(ATTR_URI);
-            DBG_ASSERT( ouUri != nullptr, "URI == NULL" );
-
-            if (ouUri.startsWith(CHAR_FRAGMENT))
+            OUString ouUri = xAttribs->getValueByName("URI");
+            SAL_WARN_IF( ouUri.isEmpty(), "xmlsecurity.helper", "URI is empty" );
+            if (ouUri.startsWith("#"))
             {
                 /*
                 * remove the first character '#' from the attribute value
                 */
-                m_pXSecController->addReference( ouUri.copy(1) );
+                m_pXSecController->addReference( ouUri.copy(1), m_nReferenceDigestID );
             }
             else
             {
@@ -125,60 +128,95 @@ void SAL_CALL XSecParser::startElement(
                 m_bReferenceUnresolved = true;
             }
         }
-        else if (aName == TAG_TRANSFORM)
+        else if (aName == "DigestMethod")
+        {
+            OUString ouAlgorithm = xAttribs->getValueByName("Algorithm");
+
+            SAL_WARN_IF( ouAlgorithm.isEmpty(), "xmlsecurity.helper", "no Algorithm in Reference" );
+            if (!ouAlgorithm.isEmpty())
+            {
+                SAL_WARN_IF( ouAlgorithm != ALGO_XMLDSIGSHA1 && ouAlgorithm != ALGO_XMLDSIGSHA256,
+                             "xmlsecurity.helper", "Algorithm neither SHA1 or SHA256");
+                if (ouAlgorithm == ALGO_XMLDSIGSHA1)
+                    m_nReferenceDigestID = cssxc::DigestID::SHA1;
+                else if (ouAlgorithm == ALGO_XMLDSIGSHA256)
+                    m_nReferenceDigestID = cssxc::DigestID::SHA256;
+            }
+        }
+        else if (aName == "Transform")
         {
             if ( m_bReferenceUnresolved )
             {
-                OUString ouAlgorithm = xAttribs->getValueByName(ATTR_ALGORITHM);
+                OUString ouAlgorithm = xAttribs->getValueByName("Algorithm");
 
-                if (ouAlgorithm != nullptr && ouAlgorithm == ALGO_C14N)
+                if (ouAlgorithm == ALGO_C14N)
                     /*
                      * a xml stream
                      */
                 {
-                    m_pXSecController->addStreamReference( m_currentReferenceURI, false);
+                    m_pXSecController->addStreamReference( m_currentReferenceURI, false, m_nReferenceDigestID );
                     m_bReferenceUnresolved = false;
                 }
             }
         }
-        else if (aName == TAG_X509ISSUERNAME)
+        else if (aName == "X509IssuerName")
         {
             m_ouX509IssuerName.clear();
             m_bInX509IssuerName = true;
         }
-        else if (aName == TAG_X509SERIALNUMBER)
+        else if (aName == "X509SerialNumber")
         {
             m_ouX509SerialNumber.clear();
             m_bInX509SerialNumber = true;
         }
-        else if (aName == TAG_X509CERTIFICATE)
+        else if (aName == "X509Certificate")
         {
             m_ouX509Certificate.clear();
             m_bInX509Certificate = true;
         }
-        else if (aName == TAG_SIGNATUREVALUE)
+        else if (aName == "SignatureValue")
         {
             m_ouSignatureValue.clear();
             m_bInSignatureValue = true;
         }
-        else if (aName == TAG_DIGESTVALUE)
+        else if (aName == "DigestValue" && !m_bInCertDigest)
         {
             m_ouDigestValue.clear();
             m_bInDigestValue = true;
         }
-        else if ( aName == TAG_SIGNATUREPROPERTY )
+        else if (aName == "xd:CertDigest")
         {
-            if (ouIdAttr != nullptr)
+            m_ouCertDigest.clear();
+            m_bInCertDigest = true;
+        }
+        // FIXME: Existing code here in xmlsecurity uses "xd" as the namespace prefix for XAdES,
+        // while the sample document attached to tdf#76142 uses "xades". So accept either here. Of
+        // course this is idiotic and wrong, the right thing would be to use a proper way to parse
+        // XML that would handle namespaces correctly. I have no idea how substantial re-plumbing of
+        // this code that would require.
+        else if (aName == "xd:EncapsulatedX509Certificate" || aName == "xades:EncapsulatedX509Certificate")
+        {
+            m_ouEncapsulatedX509Certificate.clear();
+            m_bInEncapsulatedX509Certificate = true;
+        }
+        else if (aName == "xd:SigningTime" || aName == "xades:SigningTime")
+        {
+            m_ouDate.clear();
+            m_bInSigningTime = true;
+        }
+        else if ( aName == "SignatureProperty" )
+        {
+            if (!ouIdAttr.isEmpty())
             {
                 m_pXSecController->setPropertyId( ouIdAttr );
             }
         }
-        else if (aName == NSTAG_DC ":" TAG_DATE)
+        else if (aName == "dc:date")
         {
-            m_ouDate.clear();
-            m_bInDate = true;
+            if (m_ouDate.isEmpty())
+                m_bInDate = true;
         }
-        else if (aName == NSTAG_DC ":" TAG_DESCRIPTION)
+        else if (aName == "dc:description")
         {
             m_ouDescription.clear();
             m_bInDescription = true;
@@ -209,53 +247,71 @@ void SAL_CALL XSecParser::endElement( const OUString& aName )
 {
     try
     {
-        if (aName == TAG_DIGESTVALUE)
-            {
-                m_bInDigestValue = false;
-            }
-        else if ( aName == TAG_REFERENCE )
+        if (aName == "DigestValue" && !m_bInCertDigest)
+        {
+            m_bInDigestValue = false;
+        }
+        else if ( aName == "Reference" )
         {
             if ( m_bReferenceUnresolved )
             /*
             * it must be a octet stream
             */
             {
-                m_pXSecController->addStreamReference( m_currentReferenceURI, true);
+                m_pXSecController->addStreamReference( m_currentReferenceURI, true, m_nReferenceDigestID );
                 m_bReferenceUnresolved = false;
             }
 
-            m_pXSecController->setDigestValue( m_ouDigestValue );
+            m_pXSecController->setDigestValue( m_nReferenceDigestID, m_ouDigestValue );
         }
-        else if ( aName == TAG_SIGNEDINFO )
+        else if ( aName == "SignedInfo" )
         {
             m_pXSecController->setReferenceCount();
         }
-        else if ( aName == TAG_SIGNATUREVALUE )
+        else if ( aName == "SignatureValue" )
         {
             m_pXSecController->setSignatureValue( m_ouSignatureValue );
-                m_bInSignatureValue = false;
+            m_bInSignatureValue = false;
         }
-        else if (aName == TAG_X509ISSUERNAME)
+        else if (aName == "X509IssuerName")
         {
             m_pXSecController->setX509IssuerName( m_ouX509IssuerName );
             m_bInX509IssuerName = false;
         }
-        else if (aName == TAG_X509SERIALNUMBER)
+        else if (aName == "X509SerialNumber")
         {
             m_pXSecController->setX509SerialNumber( m_ouX509SerialNumber );
             m_bInX509SerialNumber = false;
         }
-        else if (aName == TAG_X509CERTIFICATE)
+        else if (aName == "X509Certificate")
         {
             m_pXSecController->setX509Certificate( m_ouX509Certificate );
             m_bInX509Certificate = false;
         }
-        else if (aName == NSTAG_DC ":" TAG_DATE)
+        else if (aName == "xd:CertDigest")
+        {
+            m_pXSecController->setCertDigest( m_ouCertDigest );
+            m_bInCertDigest = false;
+        }
+        else if (aName == "xd:EncapsulatedX509Certificate" || aName == "xades:EncapsulatedX509Certificate")
+        {
+            m_pXSecController->addEncapsulatedX509Certificate( m_ouEncapsulatedX509Certificate );
+            m_bInEncapsulatedX509Certificate = false;
+        }
+        else if (aName == "xd:SigningTime" || aName == "xades:SigningTime")
         {
             m_pXSecController->setDate( m_ouDate );
-                m_bInDate = false;
+            m_bInSigningTime = false;
         }
-        else if (aName == NSTAG_DC ":" TAG_DESCRIPTION)
+        else if (aName == "dc:date")
+        {
+            if (m_bInDate)
+            {
+                m_pXSecController->setDate( m_ouDate );
+                m_bInDate = false;
+            }
+        }
+        else if (aName == "dc:description")
         {
             m_pXSecController->setDescription( m_ouDescription );
             m_bInDescription = false;
@@ -300,7 +356,7 @@ void SAL_CALL XSecParser::characters( const OUString& aChars )
     {
         m_ouSignatureValue += aChars;
     }
-    else if (m_bInDigestValue)
+    else if (m_bInDigestValue && !m_bInCertDigest)
     {
         m_ouDigestValue += aChars;
     }
@@ -311,6 +367,18 @@ void SAL_CALL XSecParser::characters( const OUString& aChars )
     else if (m_bInDescription)
     {
         m_ouDescription += aChars;
+    }
+    else if (m_bInCertDigest)
+    {
+        m_ouCertDigest += aChars;
+    }
+    else if (m_bInEncapsulatedX509Certificate)
+    {
+        m_ouEncapsulatedX509Certificate += aChars;
+    }
+    else if (m_bInSigningTime)
+    {
+        m_ouDate += aChars;
     }
 
     if (m_xNextHandler.is())

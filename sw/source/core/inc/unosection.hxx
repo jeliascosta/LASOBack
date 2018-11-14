@@ -37,8 +37,6 @@
 
 class SwSectionFormat;
 
-struct SwTextSectionProperties_Impl;
-
 typedef ::cppu::ImplInheritanceHelper
 <   ::sfx2::MetadatableMixin
 ,   css::lang::XUnoTunnel
@@ -59,16 +57,16 @@ private:
     class Impl;
     ::sw::UnoImplPtr<Impl> m_pImpl;
 
-    SwXTextSection(SwSectionFormat *const pFormat, const bool bIndexHeader = false);
+    SwXTextSection(SwSectionFormat *const pFormat, const bool bIndexHeader);
 
-    virtual ~SwXTextSection();
+    virtual ~SwXTextSection() override;
 
 public:
 
     SwSectionFormat*   GetFormat() const;
 
     static css::uno::Reference< css::text::XTextSection >
-        CreateXTextSection(SwSectionFormat *const pFormat = nullptr,
+        CreateXTextSection(SwSectionFormat *const pFormat,
                 const bool bIndexHeader = false);
 
     // MetadatableMixin

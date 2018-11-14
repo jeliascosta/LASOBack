@@ -49,12 +49,12 @@ using namespace ::com::sun::star;
 SwEnvPreview::SwEnvPreview(vcl::Window* pParent, WinBits nStyle)
     : Window(pParent, nStyle)
 {
-    SetMapMode(MapMode(MAP_PIXEL));
+    SetMapMode(MapMode(MapUnit::MapPixel));
 }
 
 Size SwEnvPreview::GetOptimalSize() const
 {
-    return LogicToPixel(Size(84 , 63), MAP_APPFONT);
+    return LogicToPixel(Size(84 , 63), MapUnit::MapAppFont);
 }
 
 VCL_BUILDER_FACTORY_ARGS(SwEnvPreview, 0)
@@ -156,6 +156,7 @@ void SwEnvDlg::dispose()
 {
     delete pAddresseeSet;
     delete pSenderSet;
+    pPrinter.clear();
     SfxTabDialog::dispose();
 }
 
@@ -225,7 +226,7 @@ SwEnvPage::SwEnvPage(vcl::Window* pParent, const SfxItemSet& rSet)
     m_pPreview->SetBorderStyle( WindowBorderStyle::MONO );
 
     SwDBData aData = pSh->GetDBData();
-    sActDBName = aData.sDataSource + OUString(DB_DELIM) + aData.sCommand;
+    sActDBName = aData.sDataSource + OUStringLiteral1(DB_DELIM) + aData.sCommand;
     InitDatabaseBox();
 }
 
@@ -247,7 +248,7 @@ void SwEnvPage::dispose()
     SfxTabPage::dispose();
 }
 
-IMPL_LINK_TYPED( SwEnvPage, DatabaseHdl, ListBox&, rListBox, void )
+IMPL_LINK( SwEnvPage, DatabaseHdl, ListBox&, rListBox, void )
 {
     SwWait aWait( *pSh->GetView().GetDocShell(), true );
 
@@ -255,7 +256,7 @@ IMPL_LINK_TYPED( SwEnvPage, DatabaseHdl, ListBox&, rListBox, void )
     {
         sActDBName = rListBox.GetSelectEntry();
         pSh->GetDBManager()->GetTableNames(m_pTableLB, sActDBName);
-        sActDBName += OUString(DB_DELIM);
+        sActDBName += OUStringLiteral1(DB_DELIM);
     }
     else
     {
@@ -265,7 +266,7 @@ IMPL_LINK_TYPED( SwEnvPage, DatabaseHdl, ListBox&, rListBox, void )
                                        m_pTableLB->GetSelectEntry());
 }
 
-IMPL_LINK_NOARG_TYPED(SwEnvPage, FieldHdl, Button*, void)
+IMPL_LINK_NOARG(SwEnvPage, FieldHdl, Button*, void)
 {
     OUString aStr("<" + m_pDatabaseLB->GetSelectEntry() + "." +
                   m_pTableLB->GetSelectEntry() + "." +
@@ -277,7 +278,7 @@ IMPL_LINK_NOARG_TYPED(SwEnvPage, FieldHdl, Button*, void)
     m_pAddrEdit->SetSelection(aSel);
 }
 
-IMPL_LINK_NOARG_TYPED(SwEnvPage, SenderHdl, Button*, void)
+IMPL_LINK_NOARG(SwEnvPage, SenderHdl, Button*, void)
 {
     const bool bEnable = m_pSenderBox->IsChecked();
     GetParentSwEnvDlg()->aEnvItem.bSend = bEnable;
@@ -328,12 +329,12 @@ void SwEnvPage::ActivatePage(const SfxItemSet& rSet)
     Reset(&aSet);
 }
 
-SfxTabPage::sfxpg SwEnvPage::DeactivatePage(SfxItemSet* _pSet)
+DeactivateRC SwEnvPage::DeactivatePage(SfxItemSet* _pSet)
 {
     FillItem(GetParentSwEnvDlg()->aEnvItem);
     if( _pSet )
         FillItemSet(_pSet);
-    return SfxTabPage::LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 void SwEnvPage::FillItem(SwEnvItem& rItem)

@@ -75,7 +75,7 @@ public:
                             const css::uno::Reference < css::ucb::XAnyCompareFactory >   &xCompFac,
                             const css::uno::Reference < css::uno::XComponentContext >    &rxContext );
 
-    virtual ~SortedDynamicResultSet();
+    virtual ~SortedDynamicResultSet() override;
 
 
     // XServiceInfo
@@ -86,8 +86,6 @@ public:
         throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
         throw( css::uno::RuntimeException, std::exception ) override;
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // XComponent
 
@@ -140,7 +138,7 @@ class SortedDynamicResultSetListener: public cppu::WeakImplHelper <
 
 public:
      SortedDynamicResultSetListener( SortedDynamicResultSet *mOwner );
-    virtual ~SortedDynamicResultSetListener();
+    virtual ~SortedDynamicResultSetListener() override;
 
     // XEventListener ( base of XDynamicResultSetListener )
 
@@ -170,7 +168,7 @@ public:
     SortedDynamicResultSetFactory(
         const css::uno::Reference< css::uno::XComponentContext > & rxContext);
 
-    virtual ~SortedDynamicResultSetFactory();
+    virtual ~SortedDynamicResultSetFactory() override;
 
 
     // XServiceInfo

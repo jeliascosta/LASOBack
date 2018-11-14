@@ -21,7 +21,6 @@
 #include "macros.hxx"
 #include "servicenames_charttypes.hxx"
 #include "PropertyHelper.hxx"
-#include "ContainerHelper.hxx"
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <cppuhelper/supportsservice.hxx>
 
@@ -186,22 +185,8 @@ uno::Reference< beans::XPropertySetInfo > SAL_CALL ColumnChartType::getPropertyS
     return *StaticColumnChartTypeInfo::get();
 }
 
-uno::Sequence< OUString > ColumnChartType::getSupportedServiceNames_Static()
-{
-    uno::Sequence< OUString > aServices( 2 );
-    aServices[ 0 ] = CHART2_SERVICE_NAME_CHARTTYPE_COLUMN;
-    aServices[ 1 ] = "com.sun.star.chart2.ChartType";
-    return aServices;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL ColumnChartType::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
-{
-    return getImplementationName_Static();
-}
-
-OUString ColumnChartType::getImplementationName_Static()
 {
     return OUString("com.sun.star.comp.chart.ColumnChartType");
 }
@@ -215,7 +200,9 @@ sal_Bool SAL_CALL ColumnChartType::supportsService( const OUString& rServiceName
 css::uno::Sequence< OUString > SAL_CALL ColumnChartType::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return {
+        CHART2_SERVICE_NAME_CHARTTYPE_COLUMN,
+        "com.sun.star.chart2.ChartType" };
 }
 
 } //  namespace chart

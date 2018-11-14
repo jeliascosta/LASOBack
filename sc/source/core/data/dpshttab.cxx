@@ -29,7 +29,6 @@
 #include "rangenam.hxx"
 #include "queryentry.hxx"
 
-#include <com/sun/star/sheet/DataPilotFieldFilter.hpp>
 #include <osl/diagnose.h>
 
 #include <vector>
@@ -208,6 +207,15 @@ void ScSheetDPData::ReloadCacheTable()
     aCacheTable.clear();
     CreateCacheTable();
 }
+
+#if DUMP_PIVOT_TABLE
+
+void ScSheetDPData::Dump() const
+{
+    // TODO : Implement this.
+}
+
+#endif
 
 ScSheetSourceDesc::ScSheetSourceDesc(ScDocument* pDoc) :
     mpDoc(pDoc) {}

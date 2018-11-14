@@ -57,7 +57,8 @@ private:
     virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw(css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception) override;
 
-    DECLARE_XINTERFACE( )
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) throw (css::uno::RuntimeException, std::exception) override;
+
     DECLARE_XTYPEPROVIDER( )
 
     // css::xml::sax::XDocumentHandler:
@@ -77,7 +78,7 @@ private:
     ExportDocumentHandler(ExportDocumentHandler &) = delete;
     void operator =(ExportDocumentHandler &) = delete;
 
-    virtual ~ExportDocumentHandler();
+    virtual ~ExportDocumentHandler() override;
 
     ::osl::Mutex                                              m_aMutex;
     css::uno::Reference< css::uno::XComponentContext >        m_xContext;
@@ -91,7 +92,6 @@ private:
     sal_Int32                                                 m_nColumnCount;
     bool m_bTableRowsStarted;
     bool m_bFirstRowExported;
-    bool m_bExportChar;
     bool m_bCountColumnHeader;
 };
 

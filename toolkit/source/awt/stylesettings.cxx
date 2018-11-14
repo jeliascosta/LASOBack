@@ -56,11 +56,11 @@ namespace toolkit
         {
         }
 
-        DECL_LINK_TYPED( OnWindowEvent, VclWindowEvent&, void );
+        DECL_LINK( OnWindowEvent, VclWindowEvent&, void );
     };
 
 
-    IMPL_LINK_TYPED( WindowStyleSettings_Data, OnWindowEvent, VclWindowEvent&, rEvent, void )
+    IMPL_LINK( WindowStyleSettings_Data, OnWindowEvent, VclWindowEvent&, rEvent, void )
     {
         if ( rEvent.GetId() != VCLEVENT_WINDOW_DATACHANGED )
             return;
@@ -102,7 +102,7 @@ namespace toolkit
     WindowStyleSettings::WindowStyleSettings(::osl::Mutex& i_rListenerMutex, VCLXWindow& i_rOwningWindow )
         :m_pData( new WindowStyleSettings_Data(i_rListenerMutex, i_rOwningWindow ) )
     {
-        vcl::Window* pWindow = i_rOwningWindow.GetWindow();
+        VclPtr<vcl::Window> pWindow = i_rOwningWindow.GetWindow();
         if ( !pWindow )
             throw RuntimeException();
         pWindow->AddEventListener( LINK( m_pData.get(), WindowStyleSettings_Data, OnWindowEvent ) );
@@ -118,7 +118,7 @@ namespace toolkit
     {
         StyleMethodGuard aGuard( *m_pData );
 
-        vcl::Window* pWindow = m_pData->pOwningWindow->GetWindow();
+        VclPtr<vcl::Window> pWindow = m_pData->pOwningWindow->GetWindow();
         OSL_ENSURE( pWindow, "WindowStyleSettings::dispose: window has been reset before we could revoke the listener!" );
         if ( pWindow )
             pWindow->RemoveEventListener( LINK( m_pData.get(), WindowStyleSettings_Data, OnWindowEvent ) );
@@ -142,7 +142,7 @@ namespace toolkit
 
         void lcl_setStyleColor( WindowStyleSettings_Data& i_rData, void (StyleSettings::*i_pSetter)( Color const & ), const sal_Int32 i_nColor )
         {
-            vcl::Window* pWindow = i_rData.pOwningWindow->GetWindow();
+            VclPtr<vcl::Window> pWindow = i_rData.pOwningWindow->GetWindow();
             AllSettings aAllSettings = pWindow->GetSettings();
             StyleSettings aStyleSettings = aAllSettings.GetStyleSettings();
             (aStyleSettings.*i_pSetter)( Color( i_nColor ) );
@@ -161,7 +161,7 @@ namespace toolkit
         void lcl_setStyleFont( WindowStyleSettings_Data& i_rData, void (StyleSettings::*i_pSetter)( vcl::Font const &),
             vcl::Font const & (StyleSettings::*i_pGetter)() const, const FontDescriptor& i_rFont )
         {
-            vcl::Window* pWindow = i_rData.pOwningWindow->GetWindow();
+            VclPtr<vcl::Window> pWindow = i_rData.pOwningWindow->GetWindow();
             AllSettings aAllSettings = pWindow->GetSettings();
             StyleSettings aStyleSettings = aAllSettings.GetStyleSettings();
             const vcl::Font aNewFont = VCLUnoHelper::CreateFont( i_rFont, (aStyleSettings.*i_pGetter)() );
@@ -518,20 +518,6 @@ namespace toolkit
     }
 
 
-    ::sal_Int32 SAL_CALL WindowStyleSettings::getInfoTextColor() throw (RuntimeException, std::exception)
-    {
-        StyleMethodGuard aGuard( *m_pData );
-        return lcl_getStyleColor( *m_pData, &StyleSettings::GetInfoTextColor );
-    }
-
-
-    void SAL_CALL WindowStyleSettings::setInfoTextColor( ::sal_Int32 _infotextcolor ) throw (RuntimeException, std::exception)
-    {
-        StyleMethodGuard aGuard( *m_pData );
-        lcl_setStyleColor( *m_pData, &StyleSettings::SetInfoTextColor, _infotextcolor );
-    }
-
-
     ::sal_Int32 SAL_CALL WindowStyleSettings::getLabelTextColor() throw (RuntimeException, std::exception)
     {
         StyleMethodGuard aGuard( *m_pData );
@@ -765,7 +751,7 @@ namespace toolkit
     void SAL_CALL WindowStyleSettings::setHighContrastMode( sal_Bool _highcontrastmode ) throw (RuntimeException, std::exception)
     {
         StyleMethodGuard aGuard( *m_pData );
-        vcl::Window* pWindow = m_pData->pOwningWindow->GetWindow();
+        VclPtr<vcl::Window> pWindow = m_pData->pOwningWindow->GetWindow();
         AllSettings aAllSettings = pWindow->GetSettings();
         StyleSettings aStyleSettings = aAllSettings.GetStyleSettings();
         aStyleSettings.SetHighContrastMode( _highcontrastmode );
@@ -883,20 +869,6 @@ namespace toolkit
     {
         StyleMethodGuard aGuard( *m_pData );
         lcl_setStyleFont( *m_pData, &StyleSettings::SetLabelFont, &StyleSettings::GetLabelFont, _labelfont );
-    }
-
-
-    FontDescriptor SAL_CALL WindowStyleSettings::getInfoFont() throw (RuntimeException, std::exception)
-    {
-        StyleMethodGuard aGuard( *m_pData );
-        return lcl_getStyleFont( *m_pData, &StyleSettings::GetInfoFont );
-    }
-
-
-    void SAL_CALL WindowStyleSettings::setInfoFont( const FontDescriptor& _infofont ) throw (RuntimeException, std::exception)
-    {
-        StyleMethodGuard aGuard( *m_pData );
-        lcl_setStyleFont( *m_pData, &StyleSettings::SetInfoFont, &StyleSettings::GetInfoFont, _infofont );
     }
 
 

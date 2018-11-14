@@ -75,7 +75,7 @@ class DicEvtListenerHelper :
 
 public:
     explicit DicEvtListenerHelper( const uno::Reference< XDictionaryList > &rxDicList );
-    virtual ~DicEvtListenerHelper();
+    virtual ~DicEvtListenerHelper() override;
 
     // XEventListener
     virtual void SAL_CALL
@@ -319,7 +319,7 @@ void DicList::SearchForDictionaries(
                 continue;          // andere Files
         }
 
-        // Record in the list of Dictoinaries
+        // Record in the list of Dictionaries
         // When it already exists don't record
         sal_Int16 nSystemLanguage = MsLangId::getSystemLanguage();
         OUString aTmp1 = ToLower( aURL, nSystemLanguage );
@@ -790,16 +790,13 @@ static void AddInternal(
     if (rDic.is())
     {
         //! TL TODO: word iterator should be used to break up the text
-        static const char aDefWordDelim[] =
-                "!\"#$%&'()*+,-/:;<=>?[]\\_^`{|}~\t \n";
-        OUString aDelim(aDefWordDelim);
+        OUString aDelim("!\"#$%&'()*+,-/:;<=>?[]\\_^`{|}~\t \n");
         OSL_ENSURE(aDelim.indexOf(static_cast<sal_Unicode>('.')) == -1,
             "ensure no '.'");
 
         OUString      aToken;
         sal_Int32 nPos = 0;
-        while (-1 !=
-                    (nPos = lcl_GetToken( aToken, rNew, nPos, aDelim )))
+        while (-1 != (nPos = lcl_GetToken( aToken, rNew, nPos, aDelim )))
         {
             if( !aToken.isEmpty()  &&  !IsNumeric( aToken ) )
             {
@@ -848,7 +845,7 @@ static bool IsVers2OrNewer( const OUString& rFileURL, sal_uInt16& nLng, bool& bN
     }
     catch (const uno::Exception &)
     {
-        DBG_ASSERT( false, "failed to get input stream" );
+        SAL_WARN( "linguistic", "failed to get input stream" );
     }
     DBG_ASSERT( xStream.is(), "failed to get stream for read" );
     if (!xStream.is())

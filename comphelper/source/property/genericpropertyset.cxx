@@ -63,7 +63,7 @@ namespace comphelper
 
     public:
         explicit GenericPropertySet( PropertySetInfo* pInfo ) throw();
-        virtual ~GenericPropertySet() throw();
+        virtual ~GenericPropertySet() throw() override;
 
         // XInterface
         virtual  Any SAL_CALL queryAggregation( const  Type & rType ) throw( RuntimeException, std::exception) override;
@@ -205,7 +205,7 @@ Any SAL_CALL GenericPropertySet::queryAggregation( const Type & rType )
     else if( rType == cppu::UnoType<XMultiPropertySet>::get())
         aAny <<= Reference< XMultiPropertySet >(this);
     else
-        aAny <<= OWeakAggObject::queryAggregation( rType );
+        aAny = OWeakAggObject::queryAggregation( rType );
 
     return aAny;
 }

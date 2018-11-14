@@ -34,8 +34,7 @@ struct ControllerFeature: public css::frame::DispatchInformation
 };
 
 typedef ::std::map< OUString,
-                    ControllerFeature,
-                    ::std::less< OUString > > SupportedFeatures;
+                    ControllerFeature > SupportedFeatures;
 
 struct FeatureState
 {
@@ -51,7 +50,7 @@ class FeatureCommandDispatchBase: public CommandDispatch
 {
 public:
     explicit FeatureCommandDispatchBase( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-    virtual ~FeatureCommandDispatchBase();
+    virtual ~FeatureCommandDispatchBase() override;
 
     // late initialisation, especially for adding as listener
     virtual void initialize() override;
@@ -90,14 +89,11 @@ protected:
             by the user, see also <type scope="css::frame">CommandGroup</type>.
     */
     void implDescribeSupportedFeature( const sal_Char* pAsciiCommandURL, sal_uInt16 nId,
-        sal_Int16 nGroup = css::frame::CommandGroup::INTERNAL );
+        sal_Int16 nGroup );
 
     mutable SupportedFeatures m_aSupportedFeatures;
 
     sal_uInt16 m_nFeatureId;
-
-private:
-    void fillSupportedFeatures();
 };
 
 } //  namespace chart

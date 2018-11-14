@@ -31,7 +31,7 @@
 
 
 /** helper class: parses value-type and associated value attributes */
-class XMLValueImportHelper
+class XMLValueImportHelper final
 {
 
     const OUString sPropertyContent;
@@ -61,9 +61,6 @@ class XMLValueImportHelper
     const bool bSetStyle;   /// should PrepareField set NumberFormat?
     const bool bSetFormula; /// should PrepareField set Formula?
 
-    const bool bStringDefault;  /// default: string-value = content
-    const bool bFormulaDefault; /// default: formula = content
-
 public:
     XMLValueImportHelper(
         SvXMLImport& rImprt,                    /// XML Import
@@ -73,7 +70,7 @@ public:
         bool bValue,                        /// process value (Prep.Field)
         bool bFormula);                     /// process formula (Prep.F.)
 
-    virtual ~XMLValueImportHelper();
+    ~XMLValueImportHelper();
 
     /// process attribute values
     void ProcessAttribute( sal_uInt16 nAttrToken,
@@ -237,10 +234,7 @@ protected:
 /*** import text input fields (<text:text-input>) */
 class XMLTextInputFieldImportContext : public XMLVarFieldImportContext
 {
-    const OUString sPropertyContent;
-
 public:
-
 
     XMLTextInputFieldImportContext(
         SvXMLImport& rImport,                   /// XML Import
@@ -488,7 +482,7 @@ public:
         XMLTextImportHelper& rHlp,              /// text import helper
         sal_uInt16 nPrfx,                       /// namespace prefix
         const OUString& rLocalName);     /// element name w/o prefix
-    virtual ~XMLTableFormulaImportContext();
+    virtual ~XMLTableFormulaImportContext() override;
 
 protected:
 

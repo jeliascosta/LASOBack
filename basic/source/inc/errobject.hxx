@@ -29,11 +29,11 @@ class SbxErrObject : public SbUnoObject
     css::uno::Reference< ooo::vba::XErrObject > m_xErr;
 
     SbxErrObject( const OUString& aName_, const css::uno::Any& aUnoObj_ );
-    virtual ~SbxErrObject();
+    virtual ~SbxErrObject() override;
 
 public:
-    static SbxVariableRef getErrObject();
-    static css::uno::Reference< ooo::vba::XErrObject > getUnoErrObject();
+    static SbxVariableRef const & getErrObject();
+    static css::uno::Reference< ooo::vba::XErrObject > const & getUnoErrObject();
 
     void setNumberAndDescription( ::sal_Int32 _number, const OUString& _description )
         throw (css::uno::RuntimeException);

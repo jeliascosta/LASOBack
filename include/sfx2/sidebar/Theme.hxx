@@ -23,7 +23,7 @@
 
 #include <tools/color.hxx>
 #include <vcl/image.hxx>
-#include <cppuhelper/compbase2.hxx>
+#include <cppuhelper/compbase.hxx>
 #include <cppuhelper/basemutex.hxx>
 #include <tools/gen.hxx>
 #include <rtl/ref.hxx>
@@ -42,7 +42,7 @@ namespace sfx2 { namespace sidebar {
 
 namespace
 {
-    typedef ::cppu::WeakComponentImplHelper2 <
+    typedef cppu::WeakComponentImplHelper <
         css::beans::XPropertySet,
         css::beans::XPropertySetInfo
         > ThemeInterfaceBase;
@@ -148,7 +148,7 @@ public:
     void InitializeTheme();
 
     Theme();
-    virtual ~Theme();
+    virtual ~Theme() override;
     Theme(const Theme&) = delete;
     Theme& operator=( const Theme& ) = delete;
 

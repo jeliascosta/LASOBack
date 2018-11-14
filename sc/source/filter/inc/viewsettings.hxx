@@ -20,7 +20,6 @@
 #ifndef INCLUDED_SC_SOURCE_FILTER_INC_VIEWSETTINGS_HXX
 #define INCLUDED_SC_SOURCE_FILTER_INC_VIEWSETTINGS_HXX
 
-#include <com/sun/star/table/CellAddress.hpp>
 #include <com/sun/star/table/CellRangeAddress.hpp>
 #include "addressconverter.hxx"
 #include "stylesbuffer.hxx"
@@ -79,8 +78,6 @@ struct SheetViewModel
     /** Returns the grid color as RGB value. */
     sal_Int32           getGridColor( const ::oox::core::FilterBase& rFilter ) const;
 
-    /** Returns the selection data, if available, otherwise 0. */
-    const PaneSelectionModel* getPaneSelection( sal_Int32 nPaneId ) const;
     /** Returns the selection data of the active pane. */
     const PaneSelectionModel* getActiveSelection() const;
     /** Returns read/write access to the selection data of the specified pane. */
@@ -166,8 +163,7 @@ public:
                             const SheetViewModelRef& rxSheetView,
                             const css::uno::Any& rProperties );
     /** Stores the used area for a specific worksheet. */
-    void                setSheetUsedArea(
-                            const css::table::CellRangeAddress& rUsedArea );
+    void                setSheetUsedArea( const ScRange& rUsedArea );
 
     /** Converts all imported document view settings. */
     void                finalizeImport();

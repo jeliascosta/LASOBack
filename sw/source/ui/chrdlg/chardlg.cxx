@@ -169,7 +169,7 @@ SwCharURLPage::SwCharURLPage(vcl::Window* pParent, const SfxItemSet& rCoreSet)
     ::FillCharStyleListBox(*m_pNotVisitedLB, pView->GetDocShell());
 
     TargetList* pList = new TargetList;
-    const SfxFrame& rFrame = pView->GetViewFrame()->GetTopFrame();
+    const SfxFrame& rFrame = pView->GetViewFrame()->GetFrame();
     rFrame.GetTargetList(*pList);
     if ( !pList->empty() )
     {
@@ -268,11 +268,11 @@ bool SwCharURLPage::FillItemSet(SfxItemSet* rSet)
 
     // set valid settings first
     OUString sEntry = m_pVisitedLB->GetSelectEntry();
-    sal_uInt16 nId = SwStyleNameMapper::GetPoolIdFromUIName( sEntry, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT);
+    sal_uInt16 nId = SwStyleNameMapper::GetPoolIdFromUIName( sEntry, SwGetPoolIdFromName::ChrFmt);
     aINetFormat.SetVisitedFormatAndId( sEntry, nId );
 
     sEntry = m_pNotVisitedLB->GetSelectEntry();
-    nId = SwStyleNameMapper::GetPoolIdFromUIName( sEntry, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT);
+    nId = SwStyleNameMapper::GetPoolIdFromUIName( sEntry, SwGetPoolIdFromName::ChrFmt);
     aINetFormat.SetINetFormatAndId( sEntry, nId );
 
     if( pINetItem && !pINetItem->GetMacroTable().empty() )
@@ -300,7 +300,7 @@ VclPtr<SfxTabPage> SwCharURLPage::Create(  vcl::Window* pParent,
     return VclPtr<SwCharURLPage>::Create( pParent, *rAttrSet );
 }
 
-IMPL_LINK_NOARG_TYPED(SwCharURLPage, InsertFileHdl, Button*, void)
+IMPL_LINK_NOARG(SwCharURLPage, InsertFileHdl, Button*, void)
 {
     FileDialogHelper aDlgHelper( TemplateDescription::FILEOPEN_SIMPLE );
     if( aDlgHelper.Execute() == ERRCODE_NONE )
@@ -310,7 +310,7 @@ IMPL_LINK_NOARG_TYPED(SwCharURLPage, InsertFileHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SwCharURLPage, EventHdl, Button*, void)
+IMPL_LINK_NOARG(SwCharURLPage, EventHdl, Button*, void)
 {
     bModified |= SwMacroAssignDlg::INetFormatDlg( this,
                     ::GetActiveView()->GetWrtShell(), pINetItem );

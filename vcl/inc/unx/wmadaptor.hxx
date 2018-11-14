@@ -88,7 +88,6 @@ public:
         WIN_APP_STATE,
         WIN_EXPANDED_SIZE,
         WIN_ICONS,
-        WIN_WORKSPACE_NAMES,
         WIN_CLIENT_LIST,
 
         // atoms for general WM hints
@@ -107,7 +106,6 @@ public:
         SAL_USEREVENT,
         SAL_EXTTEXTEVENT,
         SAL_GETTIMEEVENT,
-        DTWM_IS_RUNNING,
         VCL_SYSTEM_SETTINGS,
         XSETTINGS,
         XEMBED,
@@ -149,7 +147,6 @@ protected:
     bool                    m_bEqualWorkAreas;
     ::std::vector< Rectangle >
                             m_aWMWorkAreas;
-    bool                    m_bTransientBehaviour;
     bool                    m_bEnableAlwaysOnTopWorks;
     bool                    m_bLegacyPartialFullscreen;
     int                     m_nWinGravity;
@@ -259,7 +256,7 @@ public:
      *  set hints what decoration is needed;
      *  must be called before showing the frame
      */
-    virtual void setFrameTypeAndDecoration( X11SalFrame* pFrame, WMWindowType eType, int nDecorationFlags, X11SalFrame* pTransientFrame = nullptr ) const;
+    virtual void setFrameTypeAndDecoration( X11SalFrame* pFrame, WMWindowType eType, int nDecorationFlags, X11SalFrame* pTransientFrame ) const;
 
     /*
      *  tells whether there is WM support for splash screens
@@ -296,13 +293,6 @@ public:
     { return m_nWinGravity; }
     int getInitWinGravity() const
     { return m_nInitWinGravity; }
-
-    /*
-     *  expected behaviour is that the WM will not allow transient
-     *  windows to get stacked behind the windows they are transient for
-     */
-    bool isTransientBehaviourAsExpected() const
-    { return m_bTransientBehaviour; }
 
     /*
      *  changes the transient hint of a window to reference frame

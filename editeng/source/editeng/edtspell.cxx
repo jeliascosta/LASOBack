@@ -46,8 +46,8 @@ EditSpellWrapper::EditSpellWrapper( vcl::Window* _pWin,
 {
     SAL_WARN_IF( !pView, "editeng", "One view has to be abandoned!" );
     // Keep IgnoreList, delete ReplaceList...
-    if (SvxGetChangeAllList().is())
-        SvxGetChangeAllList()->clear();
+    if (LinguMgr::GetChangeAllList().is())
+        LinguMgr::GetChangeAllList()->clear();
     pEditView = pView;
 }
 
@@ -57,7 +57,7 @@ void EditSpellWrapper::SpellStart( SvxSpellArea eArea )
     ImpEditEngine* pImpEE = pEditView->GetImpEditEngine();
     SpellInfo* pSpellInfo = pImpEE->GetSpellInfo();
 
-    if ( eArea == SVX_SPELL_BODY_START )
+    if ( eArea == SvxSpellArea::BodyStart )
     {
         // Is called when
         // a) Spell-Forward has arrived at the end and should restart at the top
@@ -76,7 +76,7 @@ void EditSpellWrapper::SpellStart( SvxSpellArea eArea )
                     pEE->GetEditDoc().GetStartPaM() );
         }
     }
-    else if ( eArea == SVX_SPELL_BODY_END )
+    else if ( eArea == SvxSpellArea::BodyEnd )
     {
         // Is called when
         // a) Spell-Forward is launched
@@ -95,7 +95,7 @@ void EditSpellWrapper::SpellStart( SvxSpellArea eArea )
                     pEE->GetEditDoc().GetEndPaM() );
         }
     }
-    else if ( eArea == SVX_SPELL_BODY )
+    else if ( eArea == SvxSpellArea::Body )
     {
         ;   // Is handled by the App through SpellNextDocument
     }
@@ -108,12 +108,6 @@ void EditSpellWrapper::SpellStart( SvxSpellArea eArea )
 void EditSpellWrapper::SpellContinue()
 {
     SetLast( pEditView->GetImpEditEngine()->ImpSpell( pEditView ) );
-}
-
-void EditSpellWrapper::SpellEnd()
-{
-    // Base class will show language errors...
-    SvxSpellWrapper::SpellEnd();
 }
 
 bool EditSpellWrapper::HasOtherCnt()

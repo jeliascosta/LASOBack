@@ -42,12 +42,13 @@ OFrames::OFrames( const   css::uno::Reference< XFrame >&              xOwner    
         ,   m_pFrameContainer           ( pFrameContainer               )
         ,   m_bRecursiveSearchProtection( false                     )
 {
-    // Safe impossible cases
-    // Method is not defined for ALL incoming parameters!
-    SAL_WARN_IF( !impldbg_checkParameter_OFramesCtor( xOwner, pFrameContainer ), "fwk", "OFrames::OFrames(): Invalid parameter detected!" );
+    // An instance of this class can only work with valid initialization.
+    // We share the mutex with our owner class, need a valid factory to instanciate new services and
+    // use the access to our owner for some operations.
+    SAL_WARN_IF( !xOwner.is() || !pFrameContainer, "fwk", "OFrames::OFrames(): Invalid parameter detected!" );
 }
 
-//  (proteced!) destructor
+//  (protected!) destructor
 
 OFrames::~OFrames()
 {
@@ -62,7 +63,7 @@ void SAL_CALL OFrames::append( const css::uno::Reference< XFrame >& xFrame ) thr
 
     // Safe impossible cases
     // Method is not defined for ALL incoming parameters!
-    SAL_WARN_IF( !impldbg_checkParameter_append( xFrame ), "fwk", "OFrames::append(): Invalid parameter detected!" );
+    SAL_WARN_IF( !xFrame.is(), "fwk", "OFrames::append(): Invalid parameter detected!" );
 
     // Do the follow only, if owner instance valid!
     // Lock owner for follow operations - make a "hard reference"!
@@ -85,7 +86,7 @@ void SAL_CALL OFrames::remove( const css::uno::Reference< XFrame >& xFrame ) thr
 
     // Safe impossible cases
     // Method is not defined for ALL incoming parameters!
-    SAL_WARN_IF( !impldbg_checkParameter_remove( xFrame ), "fwk", "OFrames::remove(): Invalid parameter detected!" );
+    SAL_WARN_IF( !xFrame.is(), "fwk", "OFrames::remove(): Invalid parameter detected!" );
 
     // Do the follow only, if owner instance valid!
     // Lock owner for follow operations - make a "hard reference"!
@@ -319,7 +320,7 @@ void OFrames::impl_appendSequence(          Sequence< css::uno::Reference< XFram
     }
 
     // Don't manipulate nResultPosition between these two loops!
-    // Its the current position in the result list.
+    // It's the current position in the result list.
 
     // Copy all items from second sequence.
     for ( sal_Int32 nDestinationPosition=0; nDestinationPosition<nDestinationCount; ++nDestinationPosition )
@@ -344,29 +345,6 @@ void OFrames::impl_appendSequence(          Sequence< css::uno::Reference< XFram
         If you miss a test for one of this parameters, contact the author or add it himself !(?)
         But ... look for right testing! See using of this methods!
 -----------------------------------------------------------------------------------------------------------------*/
-
-// An instance of this class can only work with valid initialization.
-// We share the mutex with our owner class, need a valid factory to instanciate new services and
-// use the access to our owner for some operations.
-bool OFrames::impldbg_checkParameter_OFramesCtor(   const   css::uno::Reference< XFrame >&              xOwner          ,
-                                                            FrameContainer*                             pFrameContainer )
-{
-    return xOwner.is() && pFrameContainer != nullptr;
-}
-
-// Its only allowed to add valid references to container.
-// AND - alle frames must support XFrames-interface!
-bool OFrames::impldbg_checkParameter_append( const css::uno::Reference< XFrame >& xFrame )
-{
-    return xFrame.is();
-}
-
-// Its only allowed to add valid references to container...
-// ... => You can only delete valid references!
-bool OFrames::impldbg_checkParameter_remove( const css::uno::Reference< XFrame >& xFrame )
-{
-    return xFrame.is();
-}
 
 // A search for frames must initiate with right flags.
 // Some one are superflous and not supported yet. But here we control only the range of incoming parameter!

@@ -18,10 +18,10 @@
  */
 
 
-#include <xmlsecurity/macrosecurity.hxx>
-#include <xmlsecurity/certificatechooser.hxx>
-#include <xmlsecurity/certificateviewer.hxx>
-#include <xmlsecurity/biginteger.hxx>
+#include <macrosecurity.hxx>
+#include <certificatechooser.hxx>
+#include <certificateviewer.hxx>
+#include <biginteger.hxx>
 
 #include <osl/file.hxx>
 #include <vcl/help.hxx>
@@ -48,7 +48,7 @@
 using namespace ::com::sun::star;
 
 
-IMPL_LINK_NOARG_TYPED(MacroSecurity, OkBtnHdl, Button*, void)
+IMPL_LINK_NOARG(MacroSecurity, OkBtnHdl, Button*, void)
 {
     mpLevelTP->ClosePage();
     mpTrustSrcTP->ClosePage();
@@ -182,7 +182,7 @@ void MacroSecurityLevelTP::dispose()
     MacroSecurityTP::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED(MacroSecurityLevelTP, RadioButtonHdl, Button*, void)
+IMPL_LINK_NOARG(MacroSecurityLevelTP, RadioButtonHdl, Button*, void)
 {
     sal_uInt16 nNewLevel = 0;
     if( m_pVeryHighRB->IsChecked() )
@@ -215,7 +215,7 @@ void MacroSecurityTrustedSourcesTP::ImplCheckButtons()
 }
 
 
-IMPL_LINK_NOARG_TYPED(MacroSecurityTrustedSourcesTP, ViewCertPBHdl, Button*, void)
+IMPL_LINK_NOARG(MacroSecurityTrustedSourcesTP, ViewCertPBHdl, Button*, void)
 {
     if( m_pTrustCertLB->FirstSelected() )
     {
@@ -230,7 +230,7 @@ IMPL_LINK_NOARG_TYPED(MacroSecurityTrustedSourcesTP, ViewCertPBHdl, Button*, voi
         if ( !xCert.is() )
             xCert = mpDlg->mxSecurityEnvironment->createCertificateFromAscii( maTrustedAuthors[nSelected][2] ) ;
 
-        DBG_ASSERT( xCert.is(), "*MacroSecurityTrustedSourcesTP::ViewCertPBHdl(): Certificate not found and can't be created!" );
+        SAL_WARN_IF( !xCert.is(), "xmlsecurity.dialogs", "*MacroSecurityTrustedSourcesTP::ViewCertPBHdl(): Certificate not found and can't be created!" );
 
         if ( xCert.is() )
         {
@@ -240,7 +240,7 @@ IMPL_LINK_NOARG_TYPED(MacroSecurityTrustedSourcesTP, ViewCertPBHdl, Button*, voi
     }
 }
 
-IMPL_LINK_NOARG_TYPED(MacroSecurityTrustedSourcesTP, RemoveCertPBHdl, Button*, void)
+IMPL_LINK_NOARG(MacroSecurityTrustedSourcesTP, RemoveCertPBHdl, Button*, void)
 {
     if( m_pTrustCertLB->FirstSelected() )
     {
@@ -252,7 +252,7 @@ IMPL_LINK_NOARG_TYPED(MacroSecurityTrustedSourcesTP, RemoveCertPBHdl, Button*, v
     }
 }
 
-IMPL_LINK_NOARG_TYPED(MacroSecurityTrustedSourcesTP, AddLocPBHdl, Button*, void)
+IMPL_LINK_NOARG(MacroSecurityTrustedSourcesTP, AddLocPBHdl, Button*, void)
 {
     try
     {
@@ -290,7 +290,7 @@ IMPL_LINK_NOARG_TYPED(MacroSecurityTrustedSourcesTP, AddLocPBHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(MacroSecurityTrustedSourcesTP, RemoveLocPBHdl, Button*, void)
+IMPL_LINK_NOARG(MacroSecurityTrustedSourcesTP, RemoveLocPBHdl, Button*, void)
 {
     sal_Int32  nSel = m_pTrustFileLocLB->GetSelectEntryPos();
     if( nSel != LISTBOX_ENTRY_NOTFOUND )
@@ -309,12 +309,12 @@ IMPL_LINK_NOARG_TYPED(MacroSecurityTrustedSourcesTP, RemoveLocPBHdl, Button*, vo
     }
 }
 
-IMPL_LINK_NOARG_TYPED(MacroSecurityTrustedSourcesTP, TrustCertLBSelectHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(MacroSecurityTrustedSourcesTP, TrustCertLBSelectHdl, SvTreeListBox*, void)
 {
     ImplCheckButtons();
 }
 
-IMPL_LINK_NOARG_TYPED(MacroSecurityTrustedSourcesTP, TrustFileLocLBSelectHdl, ListBox&, void)
+IMPL_LINK_NOARG(MacroSecurityTrustedSourcesTP, TrustFileLocLBSelectHdl, ListBox&, void)
 {
     ImplCheckButtons();
 }
@@ -357,7 +357,7 @@ public:
         {
             const long nControlWidth = GetSizePixel().Width();
             long aTabLocs[] = { 3, 0, 35*nControlWidth/100, 70*nControlWidth/100 };
-            SvSimpleTable::SetTabs(aTabLocs, MAP_PIXEL);
+            SvSimpleTable::SetTabs(aTabLocs, MapUnit::MapPixel);
         }
     }
 };

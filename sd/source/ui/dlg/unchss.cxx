@@ -21,7 +21,7 @@
 
 #include <svl/itemset.hxx>
 #include <svl/style.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <svx/svdobj.hxx>
 #include <svx/svdpool.hxx>
 
@@ -51,7 +51,7 @@ StyleSheetUndoAction::StyleSheetUndoAction(SdDrawDocument* pTheDoc,
     mpOldSet = o3tl::make_unique<SfxItemSet>(static_cast<SfxItemPool&>(SdrObject::GetGlobalDrawObjectItemPool()), mpStyleSheet->GetItemSet().GetRanges());
     SdrModel::MigrateItemSet( &mpStyleSheet->GetItemSet(), mpOldSet.get(), pTheDoc );
 
-    maComment = SD_RESSTR(STR_UNDO_CHANGE_PRES_OBJECT);
+    OUString aComment(SD_RESSTR(STR_UNDO_CHANGE_PRES_OBJECT));
     OUString aName(mpStyleSheet->GetName());
 
     // delete layout name and separator
@@ -91,7 +91,7 @@ StyleSheetUndoAction::StyleSheetUndoAction(SdDrawDocument* pTheDoc,
     }
 
     // replace placeholder with template name
-    maComment = maComment.replaceFirst("$", aName);
+    SetComment(aComment.replaceFirst("$", aName));
 }
 
 void StyleSheetUndoAction::Undo()
@@ -101,9 +101,9 @@ void StyleSheetUndoAction::Undo()
 
     mpStyleSheet->GetItemSet().Set(aNewSet);
     if( mpStyleSheet->GetFamily() == SD_STYLE_FAMILY_PSEUDO )
-        static_cast<SdStyleSheet*>(mpStyleSheet)->GetRealStyleSheet()->Broadcast(SfxSimpleHint(SFX_HINT_DATACHANGED));
+        static_cast<SdStyleSheet*>(mpStyleSheet)->GetRealStyleSheet()->Broadcast(SfxHint(SFX_HINT_DATACHANGED));
     else
-        mpStyleSheet->Broadcast(SfxSimpleHint(SFX_HINT_DATACHANGED));
+        mpStyleSheet->Broadcast(SfxHint(SFX_HINT_DATACHANGED));
 }
 
 void StyleSheetUndoAction::Redo()
@@ -113,14 +113,9 @@ void StyleSheetUndoAction::Redo()
 
     mpStyleSheet->GetItemSet().Set(aNewSet);
     if( mpStyleSheet->GetFamily() == SD_STYLE_FAMILY_PSEUDO )
-        static_cast<SdStyleSheet*>(mpStyleSheet)->GetRealStyleSheet()->Broadcast(SfxSimpleHint(SFX_HINT_DATACHANGED));
+        static_cast<SdStyleSheet*>(mpStyleSheet)->GetRealStyleSheet()->Broadcast(SfxHint(SFX_HINT_DATACHANGED));
     else
-        mpStyleSheet->Broadcast(SfxSimpleHint(SFX_HINT_DATACHANGED));
-}
-
-OUString StyleSheetUndoAction::GetComment() const
-{
-    return maComment;
+        mpStyleSheet->Broadcast(SfxHint(SFX_HINT_DATACHANGED));
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

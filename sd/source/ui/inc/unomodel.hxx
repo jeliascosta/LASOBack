@@ -97,7 +97,7 @@ private:
     css::uno::Reference<css::uno::XInterface> create(
         OUString const & aServiceSpecifier, OUString const & referer);
 
-    SdPage* InsertSdPage( sal_uInt16 nPage, bool bDuplicate = false )
+    SdPage* InsertSdPage( sal_uInt16 nPage, bool bDuplicate )
         throw (css::uno::RuntimeException, std::exception);
 
     const bool mbImpressDoc;
@@ -131,9 +131,9 @@ private:
     sd::DrawViewShell* GetViewShell();
 
 public:
-    SdXImpressDocument( ::sd::DrawDocShell* pShell, bool bClipBoard = false ) throw();
-    SdXImpressDocument( SdDrawDocument* pDoc, bool bClipBoard = false ) throw();
-    virtual ~SdXImpressDocument() throw();
+    SdXImpressDocument( ::sd::DrawDocShell* pShell, bool bClipBoard ) throw();
+    SdXImpressDocument( SdDrawDocument* pDoc, bool bClipBoard ) throw();
+    virtual ~SdXImpressDocument() throw() override;
 
     static rtl::Reference< SdXImpressDocument > GetModel( SdDrawDocument* pDoc );
 
@@ -247,12 +247,10 @@ public:
 
     /// @see vcl::ITiledRenderable::initializeForTiledRendering().
     virtual void initializeForTiledRendering(const css::uno::Sequence<css::beans::PropertyValue>& rArguments) override;
-    /// @see vcl::ITiledRenderable::registerCallback().
-    virtual void registerCallback(LibreOfficeKitCallback pCallback, void* pData) override;
     /// @see vcl::ITiledRenderable::postKeyEvent().
     virtual void postKeyEvent(int nType, int nCharCode, int nKeyCode) override;
     /// @see vcl::ITiledRenderable::postMouseEvent().
-    virtual void postMouseEvent(int nType, int nX, int nY, int nCount, int nButtons = MOUSE_LEFT, int nModifier = 0) override;
+    virtual void postMouseEvent(int nType, int nX, int nY, int nCount, int nButtons, int nModifier) override;
     /// @see vcl::ITiledRenderable::setTextSelection().
     virtual void setTextSelection(int nType, int nX, int nY) override;
     /// @see vcl::ITiledRenderable::getTextSelection().
@@ -291,7 +289,7 @@ private:
 
 public:
     SdDrawPagesAccess( SdXImpressDocument&  rMyModel ) throw();
-    virtual ~SdDrawPagesAccess() throw();
+    virtual ~SdDrawPagesAccess() throw() override;
 
     // XDrawPages
     virtual css::uno::Reference< css::drawing::XDrawPage > SAL_CALL insertNewByIndex( sal_Int32 nIndex ) throw(css::uno::RuntimeException, std::exception) override;
@@ -332,7 +330,7 @@ private:
 
 public:
     SdMasterPagesAccess( SdXImpressDocument& rMyModel ) throw();
-    virtual ~SdMasterPagesAccess() throw();
+    virtual ~SdMasterPagesAccess() throw() override;
 
     // XDrawPages
     virtual css::uno::Reference< css::drawing::XDrawPage > SAL_CALL insertNewByIndex( sal_Int32 nIndex )
@@ -371,7 +369,7 @@ private:
 
 public:
     SdDocLinkTargets( SdXImpressDocument&   rMyModel ) throw();
-    virtual ~SdDocLinkTargets() throw();
+    virtual ~SdDocLinkTargets() throw() override;
 
     // XNameAccess
     virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) throw(css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;

@@ -27,22 +27,25 @@ use strict;
 use Getopt::Long;
 use File::Find;
 use File::Basename;
+use File::Copy qw(copy);
+use File::Path qw(make_path);
 require File::Temp;
-use File::Temp ();
-use Archive::Zip qw(:ERROR_CODES :CONSTANTS);
+use File::Temp qw(tempdir);
 
 #### globals ####
 
 my $img_global = '%GLOBALRES%';  # 'global' image prefix
 my $img_module = '%MODULE%';  # 'module' image prefix
+my $img_help = '%HELPCONTENT%';  # 'help' image prefix
 
 my $out_file;                # path to output archive
 my $tmp_out_file;            # path to temporary output file
 my $global_path;             # path to global images directory
 my $module_path;             # path to module images directory
+my $helpimg_path;            # path to help images directory
 my $sort_file;               # path to file containing sorting data
 my @custom_path;             # path to custom images directory
-my @imagelist_path;          # paths to directories containing the image lists
+my $imagelist_file;          # file containing list of image list files
 my $verbose;                 # be verbose
 my $extra_verbose;           # be extra verbose
 my $do_rebuild = 0;          # is rebuilding zipfile required?
@@ -63,7 +66,7 @@ foreach ( @{$image_lists_ref} ) {
     $image_lists_hash{$_}="";
 }
 $do_rebuild = is_file_newer(\%image_lists_hash) if $do_rebuild == 0;
-my ($global_hash_ref, $module_hash_ref, $custom_hash_ref) = iterate_image_lists($image_lists_ref);
+my ($global_hash_ref, $module_hash_ref, $custom_hash_ref, $help_hash_ref) = iterate_image_lists($image_lists_ref);
 # custom_hash filled from filesystem lookup
 find_custom($custom_hash_ref);
 
@@ -86,12 +89,14 @@ for my $path (@custom_path) {
     }
 }
 
-my $zip_hash_ref = create_zip_list($global_hash_ref, $module_hash_ref, $custom_hash_ref);
+my $zip_hash_ref = create_zip_list($global_hash_ref, $module_hash_ref, $custom_hash_ref, $help_hash_ref);
+
 remove_links_from_zip_list($zip_hash_ref, \%links);
 
 $do_rebuild = is_file_newer($zip_hash_ref) if $do_rebuild == 0;
 if ( $do_rebuild == 1 ) {
-    create_zip_archive($zip_hash_ref, \%links);
+    my $tmpdir = copy_images($zip_hash_ref);
+    create_zip_archive($zip_hash_ref, \%links, $tmpdir);
     replace_file($tmp_out_file, $out_file);
     print_message("packing  $out_file finished.") if $verbose;
 } else {
@@ -107,22 +112,20 @@ sub parse_options
     my $opt_help;
     my $p = Getopt::Long::Parser->new();
     my @custom_path_list;
-    my $custom_path_extended;
     my $success =$p->getoptions(
                              '-h' => \$opt_help,
                              '-o=s' => \$out_file,
                              '-g=s' => \$global_path,
                  '-s=s' => \$sort_file,
                              '-m=s' => \$module_path,
+                             '-e=s' => \$helpimg_path,
                              '-c=s' => \@custom_path_list,
-                             '-e=s' => \$custom_path_extended,
-                             '-l=s' => \@imagelist_path,
+                             '-l=s' => \$imagelist_file,
                              '-v'   => \$verbose,
                              '-vv'  => \$extra_verbose
                             );
-    push @custom_path_list, $custom_path_extended if ($custom_path_extended);
     if ( $opt_help || !$success || !$out_file || !$global_path
-        || !$module_path || !@custom_path_list || !@imagelist_path )
+        || !$module_path || !@custom_path_list || !$imagelist_file )
     {
         usage();
         exit(1);
@@ -135,7 +138,12 @@ sub parse_options
     my $out_dir = dirname($out_file);
 
     # Check paths.
-    foreach ($out_dir, $global_path, $module_path, @imagelist_path) {
+    print_error("no such file '$_'", 2) if ! -f $imagelist_file;
+
+    my @check_directories = ($out_dir, $global_path, $module_path);
+    push @check_directories, $helpimg_path if ($helpimg_path ne '');
+
+    foreach (@check_directories) {
         print_error("no such directory: '$_'", 2) if ! -d $_;
         print_error("can't search directory: '$_'", 2) if ! -x $_;
     }
@@ -159,17 +167,15 @@ sub parse_options
 sub get_image_lists
 {
     my @image_lists;
-    my $glob_imagelist_path;
 
-    foreach ( @imagelist_path ) {
-        $glob_imagelist_path = $_;
-        # cygwin perl
-        chomp( $glob_imagelist_path = qx{cygpath -u "$glob_imagelist_path"} ) if "$^O" eq "cygwin";
-        push @image_lists, glob("$glob_imagelist_path/*.ilst");
+    open (my $fh, $imagelist_file) or die "cannot open imagelist file $imagelist_file\n";
+    while (<$fh>) {
+        chomp;
+        next if /^\s*$/;
+        my @ilsts = split ' ';
+        push @image_lists, @ilsts;
     }
-    if ( !@image_lists ) {
-        print_error("can't find any image lists in '@imagelist_path'", 3);
-    }
+    close $fh;
 
     return wantarray ? @image_lists : \@image_lists;
 }
@@ -181,12 +187,13 @@ sub iterate_image_lists
     my %global_hash;
     my %module_hash;
     my %custom_hash;
+    my %help_hash;
 
     foreach my $i ( @{$image_lists_ref} ) {
-        parse_image_list($i, \%global_hash, \%module_hash, \%custom_hash);
+        parse_image_list($i, \%global_hash, \%module_hash, \%custom_hash, \%help_hash);
     }
 
-    return (\%global_hash, \%module_hash, \%custom_hash);
+    return (\%global_hash, \%module_hash, \%custom_hash, \%help_hash);
 }
 
 sub parse_image_list
@@ -195,6 +202,7 @@ sub parse_image_list
     my $global_hash_ref = shift;
     my $module_hash_ref = shift;
     my $custom_hash_ref = shift;
+    my $help_hash_ref = shift;
 
     print_message("parsing '$image_list' ...") if $verbose;
     my $linecount = 0;
@@ -218,13 +226,17 @@ sub parse_image_list
             $module_hash_ref->{$1}++;
             next;
         }
+        if ( /^\Q$img_help\E\/(.*)$/o ) {
+            $help_hash_ref->{$1}++;
+            next;
+        }
         # parse failed if we reach this point, bail out
         close(IMAGE_LIST);
         print_error("can't parse line $linecount from file '$image_list'", 4);
     }
     close(IMAGE_LIST);
 
-    return ($global_hash_ref, $module_hash_ref, $custom_hash_ref);
+    return ($global_hash_ref, $module_hash_ref, $custom_hash_ref, $help_hash_ref);
 }
 
 sub find_custom
@@ -258,6 +270,7 @@ sub create_zip_list
     my $global_hash_ref = shift;
     my $module_hash_ref = shift;
     my $custom_hash_ref = shift;
+    my $help_hash_ref = shift;
 
     my %zip_hash;
     my @warn_list;
@@ -283,6 +296,9 @@ sub create_zip_list
         }
         # it's not in 'custom', record it in zip hash
         $zip_hash{$_} = $module_path;
+    }
+    foreach ( keys %{$help_hash_ref} ) {
+        $zip_hash{$_} = $helpimg_path;
     }
 
     if ( @warn_list ) {
@@ -354,40 +370,50 @@ sub optimize_zip_layout($)
     return @sorted;
 }
 
-sub create_zip_archive
+sub copy_images($)
 {
-    my $zip_hash_ref = shift;
-    my $links_hash_ref = shift;
+    my ($zip_hash_ref) = @_;
+    my $dir = tempdir();
+    foreach (keys %$zip_hash_ref) {
+        my $path = $zip_hash_ref->{$_} . "/$_";
+        my $outpath = $dir . "/$_";
+        print_message("copying '$path' to '$outpath' ...") if $extra_verbose;
+        if ( -e $path) {
+            my $dirname = dirname($outpath);
+            if (!-d $dirname) {
+                make_path($dirname);
+            }
+            copy($path, $outpath)
+                or print_error("can't add file '$path' to image dir: $!", 5);
+        }
+    }
+    return $dir;
+}
+
+sub create_zip_archive($$$)
+{
+    my ($zip_hash_ref, $links_hash_ref, $image_dir_ref) = @_;
 
     print_message("creating image archive ...") if $verbose;
-    my $zip = Archive::Zip->new();
 
-    my $linktmp;
+    chdir $image_dir_ref;
+
     if (keys %{$links_hash_ref}) {
-        $linktmp = write_links($links_hash_ref);
-        my $member = $zip->addFile($linktmp->filename, "links.txt", COMPRESSION_DEFLATED);
-        if (!$member) {
-            print_error("failed to add links file: $!", 5);
-        }
+        write_links($links_hash_ref, $image_dir_ref);
+        system "zip $tmp_out_file links.txt";
+            # print_error("failed to add links file: $!", 5);
     }
 
-# FIXME: test - $member = addfile ... $member->desiredCompressionMethod( COMPRESSION_STORED );
-# any measurable performance win/loss ?
-    foreach ( optimize_zip_layout($zip_hash_ref) ) {
-        my $path = $zip_hash_ref->{$_} . "/$_";
-        print_message("zipping '$path' ...") if $extra_verbose;
-        if ( -e $path) {
-            my $member = $zip->addFile($path, $_, COMPRESSION_STORED);
-            if ( !$member ) {
-                print_error("can't add file '$path' to image zip archive: $!", 5);
-            }
-        }
+    my @sorted_list = optimize_zip_layout($zip_hash_ref);
+    my $sorted_file = File::Temp->new();
+    foreach my $item (@sorted_list) {
+        print $sorted_file "$item\n";
     }
-    my $status = $zip->writeToFileNamed($tmp_out_file);
-    if ( $status != AZ_OK ) {
-        print_error("write image zip archive '$tmp_out_file' failed. Reason: $status", 6);
-    }
-    return;
+    binmode $sorted_file; # flush
+
+    system "cat $sorted_file | zip -0 -@ $tmp_out_file";
+        # print_error("write image zip archive '$tmp_out_file' failed. Reason: $!", 6);
+    chdir; # just go out of the temp dir
 }
 
 sub replace_file
@@ -411,7 +437,7 @@ sub replace_file
 
 sub usage
 {
-    print STDERR "Usage: packimages.pl [-h] -o out_file -g g_path -m m_path -c c_path -l imagelist_path\n";
+    print STDERR "Usage: packimages.pl [-h] -o out_file -g g_path -m m_path -c c_path -l imagelist_file\n";
     print STDERR "Creates archive of images\n";
     print STDERR "Options:\n";
     print STDERR "    -h                 print this help\n";
@@ -420,7 +446,7 @@ sub usage
     print STDERR "    -m m_path          path to module images directory\n";
     print STDERR "    -c c_path          path to custom images directory\n";
     print STDERR "    -s sort_file       path to image sort order file\n";
-    print STDERR "    -l imagelist_path  path to directory containing image lists (may appear mutiple times)\n";
+    print STDERR "    -l imagelist_file  file containing list of image list files\n";
     print STDERR "    -v                 verbose\n";
     print STDERR "    -vv                very verbose\n";
 }
@@ -489,18 +515,17 @@ sub read_links($$)
     close ($fh);
 }
 
-# write out the links to a tmp file
-sub write_links($)
+# write out the links
+sub write_links($$)
 {
-    my $links = shift;
-    my $tmp = File::Temp->new( TEMPLATE => "linksXXXXXXX" );
-    $tmp || die "can't create tmp: $!";
+    my ($links, $out_dir_ref) = @_;
+    open (my $fh, ">", "$out_dir_ref/links.txt")
+        || die "can't create links.txt";
     for my $missing (sort keys %{$links}) {
         my $line = $missing . " " . $links->{$missing} . "\n";
-        print $tmp $line;
+        print $fh $line;
     }
-    binmode $tmp; # force flush
-    return $tmp;
+    close $fh;
 }
 
 # Ensure that no link points to another link

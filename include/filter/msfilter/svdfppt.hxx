@@ -20,43 +20,54 @@
 #ifndef INCLUDED_FILTER_MSFILTER_SVDFPPT_HXX
 #define INCLUDED_FILTER_MSFILTER_SVDFPPT_HXX
 
-#include <com/sun/star/io/XInputStream.hpp>
-#include <rtl/ustring.hxx>
-#include <tools/solar.h>
-#include <tools/gen.hxx>
-#include <tools/color.hxx>
-#include <svx/svdobj.hxx>
-#include <editeng/numitem.hxx>
-#include <editeng/editdata.hxx>
-#include <filter/msfilter/msdffimp.hxx>
-#include <filter/msfilter/msocximex.hxx>
+#include <algorithm>
+#include <cstddef>
+#include <memory>
+#include <type_traits>
+#include <vector>
+
+#include <com/sun/star/uno/Reference.hxx>
 #include <editeng/eeitem.hxx>
 #define ITEMID_FIELD EE_FEATURE_FIELD
 #include <editeng/flditem.hxx>
 #undef ITEMID_FIELD
+#include <filter/msfilter/dffrecordheader.hxx>
+#include <filter/msfilter/msdffimp.hxx>
 #include <filter/msfilter/msfilterdllapi.h>
-#include <vcl/font.hxx>
-#include <vector>
-#include <memory>
-#include <boost/optional.hpp>
+#include <filter/msfilter/msocximex.hxx>
 #include <o3tl/enumarray.hxx>
+#include <rtl/textenc.h>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
+#include <svx/msdffdef.hxx>
+#include <tools/color.hxx>
+#include <tools/fontenum.hxx>
+#include <tools/gen.hxx>
+#include <tools/ref.hxx>
+#include <tools/solar.h>
+#include <vcl/graph.hxx>
 
-class SdrModel;
-class SdPage;
+namespace boost {
+    template <class T> class optional;
+}
+
+namespace com { namespace sun { namespace star {
+    namespace awt { struct Size; }
+    namespace drawing { class XShape; }
+    namespace form { class XFormComponent; }
+    namespace frame { class XModel; }
+} } }
+
 class SdrPage;
 class SdrObject;
 class SvStream;
-namespace tools {
-    class Polygon;
-    class PolyPolygon;
-}
 class SfxItemSet;
-class Outliner;
-class Graphic;
-class SvxMSDffManager;
+class SdrOutliner;
+class SfxStyleSheet;
+class SotStorage;
+class SvMemoryStream;
+class SvxNumberFormat;
 class PPTTextObj;
-class DffRecordHeader;
-class SvxBulletItem;
 enum class PptSlideLayout;
 enum class PptPlaceholder : sal_uInt8;
 
@@ -102,7 +113,6 @@ struct SdHyperlinkEntry
     OUString    aSubAdress;
 
     sal_Int32   nStartPos;
-    sal_Int32   nEndPos;
 
     OUString    aConvSubString;
 };
@@ -166,12 +176,6 @@ enum class TSS_Type : unsigned {
     LAST = QuarterBody,
     Unknown        = 0xffffffff // or invalid
 };
-
-// Inventor-Id for PPT UserData
-const sal_uInt32 PPTInventor = sal_uInt32('P') * 0x00000001
-                             + sal_uInt32('P') * 0x00000100
-                             + sal_uInt32('T') * 0x00010000
-                             + sal_uInt32('0') * 0x01000000;
 
 const int nMaxPPTLevels = 5;
 
@@ -260,8 +264,7 @@ struct PptColorSchemeAtom
     sal_uInt8           aData[32];
 
 public:
-                        PptColorSchemeAtom () { Clear(); }
-    void                Clear();
+                        PptColorSchemeAtom();
     Color               GetColor( sal_uInt16 nNum ) const;
 
     friend SvStream& ReadPptColorSchemeAtom(SvStream& rIn, PptColorSchemeAtom& rAtom);
@@ -320,7 +323,6 @@ public:
     friend SvStream& ReadPptOEPlaceholderAtom( SvStream& rIn, PptOEPlaceholderAtom& rAtom );
 };
 
-struct ProcessData;
 struct PPTStyleSheet;
 struct HeaderFooterEntry;
 struct PptSlidePersistEntry
@@ -427,7 +429,6 @@ struct SdPageCapsule {
     SdrPage * page;
 };
 
-class PPTExtParaProv;
 class MSFILTER_DLLPUBLIC SdrEscherImport : public SvxMSDffManager
 {
 protected:
@@ -456,7 +457,7 @@ public:
     PowerPointImportParam& rImportParam;
 
                         SdrEscherImport( PowerPointImportParam&, const OUString& rBaseURL );
-    virtual             ~SdrEscherImport();
+    virtual             ~SdrEscherImport() override;
     virtual bool        GetColorFromPalette( sal_uInt16 nNum, Color& rColor ) const override;
     virtual bool        SeekToShape( SvStream& rSt, void* pClientData, sal_uInt32 nId ) const override;
     PptFontEntityAtom*  GetFontEnityAtom( sal_uInt32 nNum ) const;
@@ -468,7 +469,6 @@ public:
 };
 
 
-class SvxFieldItem;
 struct MSFILTER_DLLPUBLIC PPTFieldEntry
 {
     sal_uInt16          nPos;
@@ -520,7 +520,6 @@ struct ProcessData
 
 
 class SdrTextObj;
-class SfxObjectShell;
 
 class MSFILTER_DLLPUBLIC SdrPowerPointImport : public SdrEscherImport
 {
@@ -553,8 +552,8 @@ protected:
 protected:
     using SdrEscherImport::ReadObjText;
 
-    bool                    SeekToAktPage(DffRecordHeader* pRecHd=nullptr) const;
-    bool                    SeekToDocument(DffRecordHeader* pRecHd=nullptr) const;
+    bool                    SeekToAktPage(DffRecordHeader* pRecHd) const;
+    bool                    SeekToDocument(DffRecordHeader* pRecHd) const;
     static bool             SeekToContentOfProgTag(
                                 sal_Int32 nVersion,
                                 SvStream& rSt,
@@ -594,14 +593,13 @@ protected:
 
 public:
                             SdrPowerPointImport( PowerPointImportParam&, const OUString& rBaseURL );
-    virtual                 ~SdrPowerPointImport();
+    virtual                 ~SdrPowerPointImport() override;
     sal_uInt16              GetPageCount( PptPageKind eKind = PPT_SLIDEPAGE ) const;
     void                    SetPageNum( sal_uInt16 nPageNum, PptPageKind = PPT_SLIDEPAGE );
     Size                    GetPageSize() const;
     SdrObject*              ImportPageBackgroundObject(
                                 const SdrPage& rPage,
-                                sal_uInt32& nBgFileOffset,
-                                bool bForce
+                                sal_uInt32& nBgFileOffset
                             );
     bool                    IsNoteOrHandout( sal_uInt16 nPageNum, PptPageKind ePageKind ) const;
     bool                    HasMasterPage(
@@ -613,7 +611,7 @@ public:
                                 PptPageKind ePageKind = PPT_SLIDEPAGE
                             ) const;
 
-    void                    ImportPage( SdrPage* pPage, const PptSlidePersistEntry* pMasterPersist = nullptr );
+    void                    ImportPage( SdrPage* pPage, const PptSlidePersistEntry* pMasterPersist );
     virtual bool            GetColorFromPalette(sal_uInt16 nNum, Color& rColor) const override;
     virtual bool            SeekToShape( SvStream& rSt, void* pClientData, sal_uInt32 nId ) const override;
     virtual const PptSlideLayoutAtom*   GetSlideLayoutAtom() const override;
@@ -623,19 +621,6 @@ public:
                                 SvxMSDffSolverContainer*
                             );
     virtual bool ReadFormControl( tools::SvRef<SotStorage>& rSrc1, css::uno::Reference< css::form::XFormComponent > & rFormComp ) const = 0;
-};
-
-struct PPTTextCharacterStyleAtomInterpreter
-{
-    sal_uInt16      nFlags1;
-    sal_uInt16      nFlags2;
-    sal_uInt16      nFlags3;
-    sal_Int32       n1;
-    sal_uInt16      nFontHeight;
-    sal_Int32       nFontColor;
-
-                    PPTTextCharacterStyleAtomInterpreter();
-                    ~PPTTextCharacterStyleAtomInterpreter();
 };
 
 struct PPTTextParagraphStyleAtomInterpreter
@@ -855,7 +840,6 @@ struct PPTStyleSheet : public PPTNumberFormatCreator
                         PPTStyleSheet(
                             const DffRecordHeader& rSlideHd,
                             SvStream& rSt, SdrPowerPointImport&,
-                            const PPTTextCharacterStyleAtomInterpreter&,
                             const PPTTextParagraphStyleAtomInterpreter&,
                             const PPTTextSpecInfo&
                         );
@@ -909,8 +893,6 @@ struct PPTParaPropSet
 
 struct ImplPPTCharPropSet
 {
-    sal_uInt32  mnRefCount;
-
     sal_uInt32  mnAttrSet;
     sal_uInt16  mnFlags;
     sal_uInt32  mnColor;
@@ -922,8 +904,7 @@ struct ImplPPTCharPropSet
     sal_uInt16  mnSymbolFont;
 
     ImplPPTCharPropSet()
-        : mnRefCount ( 1 )
-        , mnAttrSet( 0 )
+        : mnAttrSet( 0 )
         , mnFlags( 0 )
         , mnColor( 0 )
         , mnFont( 0 )
@@ -952,8 +933,6 @@ struct PPTCharPropSet
     SvxFieldItem*       mpFieldItem;
     sal_uInt16          mnLanguage[ 3 ];
 
-    ImplPPTCharPropSet* pCharSet;
-
     void                SetFont( sal_uInt16 nFont );
     void                SetColor( sal_uInt32 nColor );
 
@@ -964,8 +943,13 @@ struct PPTCharPropSet
 
     PPTCharPropSet&     operator=( const PPTCharPropSet& rCharPropSet );
 
+    friend class PPTTextObj;
+    friend class PPTParagraphObj;
+    friend class PPTPortionObj;
+    friend struct PPTStyleTextPropReader;
+
 private:
-    void                ImplMakeUnique();
+    o3tl::cow_wrapper< ImplPPTCharPropSet > mpImplPPTCharPropSet;
 };
 
 struct PPTTabEntry
@@ -1097,7 +1081,6 @@ struct PPTStyleTextPropReader
             );
 };
 
-class SvxFieldItem;
 class MSFILTER_DLLPUBLIC PPTPortionObj : public PPTCharPropSet
 {
 
@@ -1289,9 +1272,7 @@ public:
         mpPPTImporter           ( pPPTImporter )
     {};
     bool ReadOCXStream( tools::SvRef<SotStorage>& rSrc1,
-        css::uno::Reference<
-        css::drawing::XShape > *pShapeRef=nullptr,
-        bool bFloatingCtrl=false );
+        css::uno::Reference<css::drawing::XShape > *pShapeRef );
     virtual bool InsertControl(
         const css::uno::Reference< css::form::XFormComponent > &rFComp,
         const css::awt::Size& rSize,

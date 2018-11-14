@@ -97,7 +97,7 @@ class ExtensionRemovedListener : public ::cppu::WeakImplHelper<css::lang::XEvent
 public:
 
     explicit ExtensionRemovedListener( ExtensionBox_Impl *pParent ) { m_pParent = pParent; }
-    virtual ~ExtensionRemovedListener();
+    virtual ~ExtensionRemovedListener() override;
 
 
     // XEventListener
@@ -126,11 +126,9 @@ class ExtensionBox_Impl : public ::svt::IExtensionListBox
     Image m_aWarningImage;
     Image m_aDefaultImage;
 
-    Link<FixedHyperlink&,void> m_aClickHdl;
-
     VclPtr<ScrollBar>      m_pScrollBar;
 
-    css::uno::Reference<ExtensionRemovedListener> m_xRemoveListener;
+    rtl::Reference<ExtensionRemovedListener> m_xRemoveListener;
 
     TheExtensionManager      *m_pManager;
     //This mutex is used for synchronizing access to m_vEntries.
@@ -163,12 +161,12 @@ class ExtensionBox_Impl : public ::svt::IExtensionListBox
     void DeleteRemoved();
 
 
-    DECL_DLLPRIVATE_LINK_TYPED( ScrollHdl, ScrollBar*, void );
+    DECL_LINK( ScrollHdl, ScrollBar*, void );
 
     void Init();
 public:
     explicit ExtensionBox_Impl(vcl::Window* pParent);
-    virtual ~ExtensionBox_Impl();
+    virtual ~ExtensionBox_Impl() override;
     virtual void dispose() override;
 
     virtual void MouseButtonDown( const MouseEvent& rMEvt ) override;
@@ -185,7 +183,6 @@ public:
     long            PointToPos( const Point& rPos );
     void            SetScrollHdl( const Link<ScrollBar*,void>& rLink );
     void            DoScroll( long nDelta );
-    void            SetHyperlinkHdl( const Link<FixedHyperlink&,void>& rLink ){ m_aClickHdl = rLink; }
     virtual void    RecalcAll();
     void            RemoveUnlocked();
 

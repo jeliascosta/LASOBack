@@ -34,17 +34,12 @@
 #include "../folderpicker/FOPServiceInfo.hxx"
 #include "../folderpicker/WinFOPImpl.hxx"
 
-
-// namespace directives
-
-
-using namespace ::com::sun::star::uno       ;
-using namespace ::com::sun::star::container ;
-using namespace ::com::sun::star::lang      ;
-using namespace ::com::sun::star::registry  ;
-using namespace ::cppu                      ;
+using namespace ::com::sun::star::uno;
+using namespace ::com::sun::star::container;
+using namespace ::com::sun::star::lang;
+using namespace ::com::sun::star::registry;
+using namespace ::cppu;
 using ::com::sun::star::ui::dialogs::XFilePicker2;
-
 
 static Reference< XInterface > SAL_CALL createInstance(
     const Reference< XMultiServiceFactory >& rServiceManager )
@@ -79,21 +74,20 @@ createInstance_fop( const Reference< XMultiServiceFactory >& rServiceManager )
     return Reference< XInterface >( static_cast< cppu::OWeakObject * >( new CFolderPicker( rServiceManager ) ) );
 }
 
-
 extern "C"
 {
 
 SAL_DLLPUBLIC_EXPORT void* SAL_CALL fps_win32_component_getFactory(
     const sal_Char* pImplName, void* pSrvManager, void* )
 {
-    void* pRet = 0;
+    void* pRet = nullptr;
 
     if ( pSrvManager && ( 0 == rtl_str_compare( pImplName, FILE_PICKER_IMPL_NAME ) ) )
     {
         Sequence<OUString> aSNS { FILE_PICKER_SERVICE_NAME };
 
         Reference< XSingleServiceFactory > xFactory ( createSingleFactory(
-            reinterpret_cast< XMultiServiceFactory* > ( pSrvManager ),
+            static_cast< XMultiServiceFactory* > ( pSrvManager ),
             OUString::createFromAscii( pImplName ),
             createInstance,
             aSNS ) );
@@ -109,7 +103,7 @@ SAL_DLLPUBLIC_EXPORT void* SAL_CALL fps_win32_component_getFactory(
         Sequence<OUString> aSNS { FOLDER_PICKER_SERVICE_NAME };
 
         Reference< XSingleServiceFactory > xFactory ( createSingleFactory(
-            reinterpret_cast< XMultiServiceFactory* > ( pSrvManager ),
+            static_cast< XMultiServiceFactory* > ( pSrvManager ),
             OUString::createFromAscii( pImplName ),
             createInstance_fop,
             aSNS ) );

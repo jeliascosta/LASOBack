@@ -23,13 +23,13 @@
 
 #include <comphelper/IdPropArrayHelper.hxx>
 #include <connectivity/CommonTools.hxx>
-#include <comphelper/broadcasthelper.hxx>
 #include <connectivity/sdbcx/VTypeDef.hxx>
 #include <com/sun/star/container/XNamed.hpp>
 #include <connectivity/sdbcx/IRefreshable.hxx>
 #include <connectivity/sdbcx/VDescriptor.hxx>
 #include <connectivity/dbtoolsdllapi.hxx>
 #include <cppuhelper/implbase1.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <com/sun/star/sdbcx/XDataDescriptorFactory.hpp>
 #include <memory>
 
@@ -56,12 +56,11 @@ namespace connectivity
             {}
             KeyProperties():m_Type(0),m_UpdateRule(0),m_DeleteRule(0){}
         };
-        typedef std::shared_ptr< KeyProperties > TKeyProperties;
         typedef ::cppu::ImplHelper1< css::sdbcx::XDataDescriptorFactory > OKey_BASE;
         class OCollection;
 
         class OOO_DLLPUBLIC_DBTOOLS OKey :
-                                public comphelper::OBaseMutex,
+                                public cppu::BaseMutex,
                                 public ODescriptor_BASE,
                                 public IRefreshableColumns,
                                 public ::comphelper::OIdPropertyArrayUsageHelper<OKey>,
@@ -69,7 +68,7 @@ namespace connectivity
                                 public OKey_BASE
         {
         protected:
-            TKeyProperties   m_aProps;
+            std::shared_ptr<KeyProperties>   m_aProps;
             OCollection*    m_pColumns;
 
             using ODescriptor_BASE::rBHelper;
@@ -79,9 +78,9 @@ namespace connectivity
             virtual ::cppu::IPropertyArrayHelper & SAL_CALL getInfoHelper() override;
         public:
             OKey(bool _bCase);
-            OKey(const OUString& Name,const TKeyProperties& _rProps,bool _bCase);
+            OKey(const OUString& Name,const std::shared_ptr<KeyProperties>& _rProps,bool _bCase);
 
-            virtual ~OKey( );
+            virtual ~OKey( ) override;
 
             DECLARE_SERVICE_INFO();
             //XInterface

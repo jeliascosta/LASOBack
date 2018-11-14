@@ -84,13 +84,13 @@ namespace psp
             const OUString& i_rOption,
             const OUString& i_rValue,
             const OUString& i_rTranslation,
-            const css::lang::Locale& i_rLocale = css::lang::Locale()
+            const css::lang::Locale& i_rLocale
             );
 
         void insertOption( const OUString& i_rKey,
                            const OUString& i_rOption,
                            const OUString& i_rTranslation,
-                           const css::lang::Locale& i_rLocale = css::lang::Locale() )
+                           const css::lang::Locale& i_rLocale )
         {
             insertValue( i_rKey, i_rOption, OUString(), i_rTranslation, i_rLocale );
         }
@@ -122,7 +122,7 @@ namespace psp
 
     static css::lang::Locale normalizeInputLocale(
         const css::lang::Locale& i_rLocale,
-        bool bInsertDefault = false
+        bool bInsertDefault
         )
     {
         css::lang::Locale aLoc( i_rLocale );
@@ -568,7 +568,7 @@ const PPDParser* PPDParser::getParser( const OUString& rFile )
     else
     {
         PrinterInfoManager& rMgr = PrinterInfoManager::get();
-        if( rMgr.getType() == PrinterInfoManager::CUPS )
+        if( rMgr.getType() == PrinterInfoManager::Type::CUPS )
         {
 #ifdef ENABLE_CUPS
             pNewParser = const_cast<PPDParser*>(static_cast<CUPSManager&>(rMgr).createCUPSParser( aFile ));
@@ -588,7 +588,9 @@ const PPDParser* PPDParser::getParser( const OUString& rFile )
 
 PPDParser::PPDParser( const OUString& rFile ) :
         m_aFile( rFile ),
+        m_bColorDevice( false ),
         m_bType42Capable( false ),
+        m_nLanguageLevel( 0 ),
         m_aFileEncoding( RTL_TEXTENCODING_MS_1252 ),
         m_pDefaultImageableArea( nullptr ),
         m_pImageableAreas( nullptr ),
@@ -1259,17 +1261,17 @@ void PPDParser::parseOrderDependency(const OString& rLine)
 
     pKey->m_nOrderDependency = nOrder;
     if( aSetup == "ExitServer" )
-        pKey->m_eSetupType = PPDKey::ExitServer;
+        pKey->m_eSetupType = PPDKey::SetupType::ExitServer;
     else if( aSetup == "Prolog" )
-        pKey->m_eSetupType = PPDKey::Prolog;
+        pKey->m_eSetupType = PPDKey::SetupType::Prolog;
     else if( aSetup == "DocumentSetup" )
-        pKey->m_eSetupType = PPDKey::DocumentSetup;
+        pKey->m_eSetupType = PPDKey::SetupType::DocumentSetup;
     else if( aSetup == "PageSetup" )
-        pKey->m_eSetupType = PPDKey::PageSetup;
+        pKey->m_eSetupType = PPDKey::SetupType::PageSetup;
     else if( aSetup == "JCLSetup" )
-        pKey->m_eSetupType = PPDKey::JCLSetup;
+        pKey->m_eSetupType = PPDKey::SetupType::JCLSetup;
     else
-        pKey->m_eSetupType = PPDKey::AnySetup;
+        pKey->m_eSetupType = PPDKey::SetupType::AnySetup;
 }
 
 void PPDParser::parseConstraint( const OString& rLine )
@@ -1502,7 +1504,7 @@ PPDKey::PPDKey( const OUString& rKey ) :
         m_bUIOption( false ),
         m_eUIType( PickOne ),
         m_nOrderDependency( 100 ),
-        m_eSetupType( AnySetup )
+        m_eSetupType( SetupType::AnySetup )
 {
 }
 
@@ -1570,8 +1572,8 @@ PPDValue* PPDKey::insertValue(const OUString& rOption, PPDValueType eType, bool 
  * PPDContext
  */
 
-PPDContext::PPDContext( const PPDParser* pParser ) :
-        m_pParser( pParser )
+PPDContext::PPDContext() :
+        m_pParser( nullptr )
 {
 }
 
@@ -1579,6 +1581,13 @@ PPDContext& PPDContext::operator=( const PPDContext& rCopy )
 {
     m_pParser           = rCopy.m_pParser;
     m_aCurrentValues    = rCopy.m_aCurrentValues;
+    return *this;
+}
+
+PPDContext& PPDContext::operator=( PPDContext&& rCopy )
+{
+    std::swap(m_pParser, rCopy.m_pParser);
+    std::swap(m_aCurrentValues, rCopy.m_aCurrentValues);
     return *this;
 }
 

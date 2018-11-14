@@ -66,7 +66,7 @@ public:
         , mnTintShade()
     {}
 
-    ColorVariable(long nIndex, sal_Int16 nTintShade = 0)
+    ColorVariable(long nIndex, sal_Int16 nTintShade)
         : mnIndex(nIndex)
         , maColor()
         , mnTintShade(nTintShade)
@@ -115,7 +115,7 @@ public:
         : maStyles()
     {}
 
-    void add(StyleRedefinition aRedefinition)
+    void add(StyleRedefinition const & aRedefinition)
     {
         maStyles.push_back(aRedefinition);
     }
@@ -394,9 +394,9 @@ void applyTheme(SfxStyleSheetBasePool* pPool, const OUString& sFontSetName, cons
 BitmapEx GenerateColorPreview(const svx::ColorSet& rColorSet)
 {
     ScopedVclPtrInstance<VirtualDevice> pVirtualDev(*Application::GetDefaultDevice());
-    sal_Int32 nScaleFactor = pVirtualDev->GetDPIScaleFactor();
-    long BORDER = 2 * nScaleFactor;
-    long SIZE = 12 * nScaleFactor;
+    float fScaleFactor = pVirtualDev->GetDPIScaleFactor();
+    long BORDER = 2 * fScaleFactor;
+    long SIZE = 12 * fScaleFactor;
 
     Size aSize(BORDER * 7 + SIZE * 6, BORDER * 3 + SIZE * 2);
     pVirtualDev->SetOutputSizePixel(aSize);
@@ -485,15 +485,15 @@ void ThemePanel::dispose()
     PanelLayout::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED(ThemePanel, ClickHdl, Button*, void)
+IMPL_LINK_NOARG(ThemePanel, ClickHdl, Button*, void)
 {
     DoubleClickHdl();
 }
-IMPL_LINK_NOARG_TYPED(ThemePanel, DoubleClickValueSetHdl, ValueSet*, void)
+IMPL_LINK_NOARG(ThemePanel, DoubleClickValueSetHdl, ValueSet*, void)
 {
     DoubleClickHdl();
 }
-IMPL_LINK_NOARG_TYPED(ThemePanel, DoubleClickHdl, ListBox&, void)
+IMPL_LINK_NOARG(ThemePanel, DoubleClickHdl, ListBox&, void)
 {
     DoubleClickHdl();
 }

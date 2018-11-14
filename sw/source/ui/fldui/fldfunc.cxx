@@ -76,7 +76,7 @@ SwFieldFuncPage::SwFieldFuncPage(vcl::Window* pParent, const SfxItemSet *const p
     m_pTypeLB->set_height_request(nHeight);
     m_pFormatLB->set_height_request(nHeight);
 
-    long nWidth = m_pTypeLB->LogicToPixel(Size(FIELD_COLUMN_WIDTH, 0), MapMode(MAP_APPFONT)).Width();
+    long nWidth = m_pTypeLB->LogicToPixel(Size(FIELD_COLUMN_WIDTH, 0), MapMode(MapUnit::MapAppFont)).Width();
     m_pTypeLB->set_width_request(nWidth);
     m_pFormatLB->set_width_request(nWidth);
 
@@ -210,7 +210,7 @@ void SwFieldFuncPage::Reset(const SfxItemSet* )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SwFieldFuncPage, TypeHdl, ListBox&, void)
+IMPL_LINK_NOARG(SwFieldFuncPage, TypeHdl, ListBox&, void)
 {
     // save old ListBoxPos
     const sal_Int32 nOld = GetTypeSel();
@@ -403,7 +403,7 @@ IMPL_LINK_NOARG_TYPED(SwFieldFuncPage, TypeHdl, ListBox&, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SwFieldFuncPage, SelectHdl, ListBox&, void)
+IMPL_LINK_NOARG(SwFieldFuncPage, SelectHdl, ListBox&, void)
 {
     const sal_uInt16 nTypeId = (sal_uInt16)reinterpret_cast<sal_uLong>(m_pTypeLB->GetEntryData(GetTypeSel()));
 
@@ -411,17 +411,17 @@ IMPL_LINK_NOARG_TYPED(SwFieldFuncPage, SelectHdl, ListBox&, void)
         m_pNameED->SetText( m_pSelectionLB->GetSelectEntry() );
 }
 
-IMPL_LINK_NOARG_TYPED(SwFieldFuncPage, InsertMacroHdl, ListBox&, void)
+IMPL_LINK_NOARG(SwFieldFuncPage, InsertMacroHdl, ListBox&, void)
 {
     SelectHdl(*m_pSelectionLB);
     InsertHdl(nullptr);
 }
 
-IMPL_LINK_TYPED( SwFieldFuncPage, ListModifyButtonHdl, Button*, pControl, void)
+IMPL_LINK( SwFieldFuncPage, ListModifyButtonHdl, Button*, pControl, void)
 {
     ListModifyHdl(pControl);
 }
-IMPL_LINK_TYPED( SwFieldFuncPage, ListModifyReturnActionHdl, ReturnActionEdit&, rControl, void)
+IMPL_LINK( SwFieldFuncPage, ListModifyReturnActionHdl, ReturnActionEdit&, rControl, void)
 {
     ListModifyHdl(&rControl);
 }
@@ -471,11 +471,11 @@ void SwFieldFuncPage::ListModifyHdl(Control* pControl)
     ListEnableHdl(*m_pListItemED);
 }
 
-IMPL_LINK_NOARG_TYPED(SwFieldFuncPage, ListEnableListBoxHdl, ListBox&, void)
+IMPL_LINK_NOARG(SwFieldFuncPage, ListEnableListBoxHdl, ListBox&, void)
 {
     ListEnableHdl(*m_pListItemED);
 }
-IMPL_LINK_NOARG_TYPED(SwFieldFuncPage, ListEnableHdl, Edit&, void)
+IMPL_LINK_NOARG(SwFieldFuncPage, ListEnableHdl, Edit&, void)
 {
     //enable "Add" button when text is in the Edit that's not already member of the box
     m_pListAddPB->Enable(!m_pListItemED->GetText().isEmpty() &&
@@ -531,7 +531,7 @@ void SwFieldFuncPage::UpdateSubType()
 }
 
 // call MacroBrowser, fill Listbox with Macros
-IMPL_LINK_NOARG_TYPED( SwFieldFuncPage, MacroHdl, Button *, void)
+IMPL_LINK_NOARG( SwFieldFuncPage, MacroHdl, Button *, void)
 {
     const OUString sMacro(TurnMacroString(m_pNameED->GetText()).replaceAll(".", ";"));
     if (GetFieldMgr().ChooseMacro(sMacro))
@@ -575,7 +575,7 @@ bool SwFieldFuncPage::FillItemSet(SfxItemSet* )
             for(sal_Int32 i = 0; i < m_pListItemsLB->GetEntryCount(); i++)
             {
                 if(i)
-                    aVal += OUString(DB_DELIM);
+                    aVal += OUStringLiteral1(DB_DELIM);
                 aVal += m_pListItemsLB->GetEntry(i);
             }
         }
@@ -646,7 +646,7 @@ void    SwFieldFuncPage::FillUserData()
     SetUserData(USER_DATA_VERSION ";" + OUString::number( nTypeSel ));
 }
 
-IMPL_LINK_NOARG_TYPED(SwFieldFuncPage, ModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(SwFieldFuncPage, ModifyHdl, Edit&, void)
 {
     const sal_Int32 nLen = m_pNameED->GetText().getLength();
 

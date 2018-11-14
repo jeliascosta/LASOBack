@@ -29,24 +29,21 @@
 #include <com/sun/star/embed/XEmbeddedObject.hpp>
 #include <svx/svxdllapi.h>
 
-enum SvXMLEmbeddedObjectHelperMode
+enum class SvXMLEmbeddedObjectHelperMode
 {
-    EMBEDDEDOBJECTHELPER_MODE_READ = 0,
-    EMBEDDEDOBJECTHELPER_MODE_WRITE = 1
+    Read, Write
 };
 
 namespace comphelper { class IEmbeddedHelper; }
 
 class SvGlobalName;
-struct OUStringLess;
 class OutputStorageWrapper_Impl;
 
 
 class SVX_DLLPUBLIC SvXMLEmbeddedObjectHelper :
     public ::cppu::WeakComponentImplHelper2< css::document::XEmbeddedObjectResolver, css::container::XNameAccess >
 {
-    typedef ::std::map< OUString, OutputStorageWrapper_Impl*,
-                         OUStringLess > SvXMLEmbeddedObjectHelper_Impl;
+    typedef ::std::map< OUString, OutputStorageWrapper_Impl* > SvXMLEmbeddedObjectHelper_Impl;
 private:
 
     ::osl::Mutex                maMutex;
@@ -72,7 +69,7 @@ private:
                                        bool *pGraphicRepl=nullptr,
                                        bool *pOasisFormat=nullptr ) const;
 
-    SVX_DLLPRIVATE css::uno::Reference < css::embed::XStorage > ImplGetContainerStorage(
+    SVX_DLLPRIVATE css::uno::Reference < css::embed::XStorage > const & ImplGetContainerStorage(
                                     const OUString& rStorageName );
 
     SVX_DLLPRIVATE void                 ImplReadObject(
@@ -90,7 +87,7 @@ private:
 protected:
 
                                 SvXMLEmbeddedObjectHelper();
-                                virtual ~SvXMLEmbeddedObjectHelper();
+                                virtual ~SvXMLEmbeddedObjectHelper() override;
     void                        Init( const css::uno::Reference < css::embed::XStorage >&,
                                       ::comphelper::IEmbeddedHelper& rDocPersist,
                                       SvXMLEmbeddedObjectHelperMode eCreateMode );
@@ -111,8 +108,6 @@ public:
                                     ::comphelper::IEmbeddedHelper& rDocPersist,
                                     SvXMLEmbeddedObjectHelperMode eCreateMode );
     static void                 Destroy( SvXMLEmbeddedObjectHelper* pSvXMLEmbeddedObjectHelper );
-
-    void                        Flush();
 
     // XEmbeddedObjectResolver
     virtual OUString SAL_CALL resolveEmbeddedObjectURL( const OUString& aURL ) throw(css::uno::RuntimeException, std::exception) override;

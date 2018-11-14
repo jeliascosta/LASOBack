@@ -69,7 +69,6 @@
 #include <com/sun/star/embed/EmbedMisc.hpp>
 #include <com/sun/star/embed/EmbedStates.hpp>
 #include <svtools/embedhlp.hxx>
-#include <svx/charthelper.hxx>
 #include <dview.hxx>
 #include <basegfx/matrix/b2dhommatrix.hxx>
 #include <drawinglayer/processor2d/baseprocessor2d.hxx>
@@ -145,12 +144,6 @@ static void lcl_PaintReplacement( const SwRect &rRect, const OUString &rText,
 
 SwNoTextFrame::SwNoTextFrame(SwNoTextNode * const pNode, SwFrame* pSib )
     : SwContentFrame( pNode, pSib )
-{
-    InitCtor();
-}
-
-/// Initialization: Currently add the Frame to the Cache
-void SwNoTextFrame::InitCtor()
 {
     mnFrameType = SwFrameType::NoTxt;
 }
@@ -808,7 +801,7 @@ void paintGraphicUsingPrimitivesHelper(vcl::RenderContext & rOutputDevice,
 
             if (GRFILTER_OK == GraphicFilter::GetGraphicFilter().ImportGraphic(aTempGraphic, aURL))
             {
-                if(aTempGraphic.IsLink() && GFX_LINK_TYPE_NATIVE_JPG == aTempGraphic.GetLink().GetType())
+                if(aTempGraphic.IsLink() && GfxLinkType::NativeJpg == aTempGraphic.GetLink().GetType())
                 {
                     aContent[0] = new drawinglayer::primitive2d::GraphicPrimitive2D(
                         aTargetTransform,
@@ -901,8 +894,8 @@ void SwNoTextFrame::PaintPicture( vcl::RenderContext* pOut, const SwRect &rGrfAr
             }
             // #i85717#, #i90395# - check, if asynchronous retrieval
             // if input stream for the graphic is possible
-            else if ( ( rGrfObj.GetType() == GRAPHIC_DEFAULT ||
-                        rGrfObj.GetType() == GRAPHIC_NONE ) &&
+            else if ( ( rGrfObj.GetType() == GraphicType::Default ||
+                        rGrfObj.GetType() == GraphicType::NONE ) &&
                       pGrfNd->IsLinkedFile() &&
                       pGrfNd->IsAsyncRetrieveInputStreamPossible() )
             {
@@ -957,7 +950,7 @@ void SwNoTextFrame::PaintPicture( vcl::RenderContext* pOut, const SwRect &rGrfAr
 
                     pGrfNd->StartGraphicAnimation(pOut, aAlignedGrfArea.Pos(),
                                         aAlignedGrfArea.SSize(), sal_IntPtr(this),
-                                        nullptr, GraphicManagerDrawFlags::STANDARD, pVout );
+                                        pVout );
                 }
                 else
                 {
@@ -969,7 +962,7 @@ void SwNoTextFrame::PaintPicture( vcl::RenderContext* pOut, const SwRect &rGrfAr
             {
                 sal_uInt16 nResId = 0;
 
-                if( GRAPHIC_NONE == rGrfObj.GetType() )
+                if( GraphicType::NONE == rGrfObj.GetType() )
                     nResId = STR_COMCORE_READERROR;
                 else if ( !rGrfObj.GetGraphic().IsSupportedGraphic() )
                     nResId = STR_COMCORE_CANT_SHOW;
@@ -1011,29 +1004,23 @@ void SwNoTextFrame::PaintPicture( vcl::RenderContext* pOut, const SwRect &rGrfAr
 
         if(bIsChart)
         {
-            const uno::Reference< frame::XModel > aXModel(pOLENd->GetOLEObj().GetOleRef()->getComponent(), uno::UNO_QUERY);
+            basegfx::B2DRange aSourceRange;
+            const drawinglayer::primitive2d::Primitive2DContainer aSequence(
+                pOLENd->GetOLEObj().tryToGetChartContentAsPrimitive2DSequence(
+                    aSourceRange,
+                    bPrn));
 
-            if(aXModel.is())
+            if(!aSequence.empty() && !aSourceRange.isEmpty())
             {
-                basegfx::B2DRange aSourceRange;
+                const basegfx::B2DRange aTargetRange(
+                    aAlignedGrfArea.Left(), aAlignedGrfArea.Top(),
+                    aAlignedGrfArea.Right(), aAlignedGrfArea.Bottom());
 
-                const drawinglayer::primitive2d::Primitive2DContainer aSequence(
-                    ChartHelper::tryToGetChartContentAsPrimitive2DSequence(
-                        aXModel,
-                        aSourceRange));
-
-                if(!aSequence.empty() && !aSourceRange.isEmpty())
-                {
-                    const basegfx::B2DRange aTargetRange(
-                        aAlignedGrfArea.Left(), aAlignedGrfArea.Top(),
-                        aAlignedGrfArea.Right(), aAlignedGrfArea.Bottom());
-
-                    bDone = paintUsingPrimitivesHelper(
-                        *pOut,
-                        aSequence,
-                        aSourceRange,
-                        aTargetRange);
-                }
+                bDone = paintUsingPrimitivesHelper(
+                    *pOut,
+                    aSequence,
+                    aSourceRange,
+                    aTargetRange);
             }
         }
 
@@ -1043,7 +1030,7 @@ void SwNoTextFrame::PaintPicture( vcl::RenderContext* pOut, const SwRect &rGrfAr
             Size aSize(aAlignedGrfArea.SSize());
 
             const Graphic* pGraphic = pOLENd->GetGraphic();
-            if ( pGraphic && pGraphic->GetType() != GRAPHIC_NONE )
+            if ( pGraphic && pGraphic->GetType() != GraphicType::NONE )
             {
                 pGraphic->Draw( pOut, aPosition, aSize );
 

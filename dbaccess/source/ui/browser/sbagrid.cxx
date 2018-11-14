@@ -361,7 +361,7 @@ Reference< css::frame::XDispatch >  SAL_CALL SbaXGridPeer::queryDispatch(const c
     return FmXGridPeer::queryDispatch(aURL, aTargetFrameName, nSearchFlags);
 }
 
-IMPL_LINK_NOARG_TYPED( SbaXGridPeer, OnDispatchEvent, void*, void )
+IMPL_LINK_NOARG( SbaXGridPeer, OnDispatchEvent, void*, void )
 {
     VclPtr< SbaGridControl > pGrid = GetAs< SbaGridControl >();
     if ( pGrid )    // if this fails, we were disposing before arriving here
@@ -556,10 +556,21 @@ VclPtr<FmGridControl> SbaXGridPeer::imp_CreateControl(vcl::Window* pParent, WinB
 
 // SbaGridHeader
 
-SbaGridHeader::SbaGridHeader(BrowseBox* pParent, WinBits nWinBits)
-    :FmGridHeader(pParent, nWinBits)
+SbaGridHeader::SbaGridHeader(BrowseBox* pParent)
+    :FmGridHeader(pParent, WB_STDHEADERBAR | WB_DRAG)
     ,DragSourceHelper(this)
 {
+}
+
+SbaGridHeader::~SbaGridHeader()
+{
+    disposeOnce();
+}
+
+void SbaGridHeader::dispose()
+{
+    DragSourceHelper::dispose();
+    FmGridHeader::dispose();
 }
 
 void SbaGridHeader::StartDrag( sal_Int8 _nAction, const Point& _rPosPixel )
@@ -639,7 +650,7 @@ void SbaGridHeader::PreExecuteColumnContextMenu(sal_uInt16 nColId, PopupMenu& rM
     bool bColAttrs = (nColId != (sal_uInt16)-1) && (nColId != 0);
     if ( bColAttrs && !bDBIsReadOnly)
     {
-        PopupMenu aNewItems(ModuleRes(RID_SBA_GRID_COLCTXMENU));
+        ScopedVclPtrInstance<PopupMenu> aNewItems(ModuleRes(RID_SBA_GRID_COLCTXMENU));
         sal_uInt16 nPos = 0;
         sal_uInt16 nModelPos = static_cast<SbaGridControl*>(GetParent())->GetModelColumnPos(nColId);
         Reference< XPropertySet >  xField = static_cast<SbaGridControl*>(GetParent())->getField(nModelPos);
@@ -658,14 +669,14 @@ void SbaGridHeader::PreExecuteColumnContextMenu(sal_uInt16 nColId, PopupMenu& rM
             case DataType::REF:
                 break;
             default:
-                rMenu.InsertItem(ID_BROWSER_COLATTRSET, aNewItems.GetItemText(ID_BROWSER_COLATTRSET), MenuItemBits::NONE, OString(), nPos++);
-                rMenu.SetHelpId(ID_BROWSER_COLATTRSET, aNewItems.GetHelpId(ID_BROWSER_COLATTRSET));
+                rMenu.InsertItem(ID_BROWSER_COLATTRSET, aNewItems->GetItemText(ID_BROWSER_COLATTRSET), MenuItemBits::NONE, OString(), nPos++);
+                rMenu.SetHelpId(ID_BROWSER_COLATTRSET, aNewItems->GetHelpId(ID_BROWSER_COLATTRSET));
                 rMenu.InsertSeparator(OString(), nPos++);
             }
         }
 
-        rMenu.InsertItem(ID_BROWSER_COLWIDTH, aNewItems.GetItemText(ID_BROWSER_COLWIDTH), MenuItemBits::NONE, OString(), nPos++);
-        rMenu.SetHelpId(ID_BROWSER_COLWIDTH, aNewItems.GetHelpId(ID_BROWSER_COLWIDTH));
+        rMenu.InsertItem(ID_BROWSER_COLWIDTH, aNewItems->GetItemText(ID_BROWSER_COLWIDTH), MenuItemBits::NONE, OString(), nPos++);
+        rMenu.SetHelpId(ID_BROWSER_COLWIDTH, aNewItems->GetHelpId(ID_BROWSER_COLWIDTH));
         rMenu.InsertSeparator(OString(), nPos++);
     }
 }
@@ -702,7 +713,7 @@ void SbaGridHeader::PostExecuteColumnContextMenu(sal_uInt16 nColId, const PopupM
 }
 
 // SbaGridControl
-SbaGridControl::SbaGridControl(Reference< XComponentContext > _rM,
+SbaGridControl::SbaGridControl(Reference< XComponentContext > const & _rM,
                                vcl::Window* pParent, FmXGridPeer* _pPeer, WinBits nBits)
     :FmGridControl(_rM,pParent, _pPeer, nBits)
     ,m_pMasterListener(nullptr)
@@ -740,23 +751,23 @@ void SbaGridControl::PreExecuteRowContextMenu(sal_uInt16 nRow, PopupMenu& rMenu)
 {
     FmGridControl::PreExecuteRowContextMenu(nRow, rMenu);
 
-    PopupMenu aNewItems(ModuleRes(RID_SBA_GRID_ROWCTXMENU));
+    ScopedVclPtrInstance<PopupMenu> aNewItems(ModuleRes(RID_SBA_GRID_ROWCTXMENU));
     sal_uInt16 nPos = 0;
 
     if (!IsReadOnlyDB())
     {
-        rMenu.InsertItem(ID_BROWSER_TABLEATTR, aNewItems.GetItemText(ID_BROWSER_TABLEATTR), MenuItemBits::NONE, OString(), nPos++);
-        rMenu.SetHelpId(ID_BROWSER_TABLEATTR, aNewItems.GetHelpId(ID_BROWSER_TABLEATTR));
+        rMenu.InsertItem(ID_BROWSER_TABLEATTR, aNewItems->GetItemText(ID_BROWSER_TABLEATTR), MenuItemBits::NONE, OString(), nPos++);
+        rMenu.SetHelpId(ID_BROWSER_TABLEATTR, aNewItems->GetHelpId(ID_BROWSER_TABLEATTR));
 
-        rMenu.InsertItem(ID_BROWSER_ROWHEIGHT, aNewItems.GetItemText(ID_BROWSER_ROWHEIGHT), MenuItemBits::NONE, OString(), nPos++);
-        rMenu.SetHelpId(ID_BROWSER_ROWHEIGHT, aNewItems.GetHelpId(ID_BROWSER_ROWHEIGHT));
+        rMenu.InsertItem(ID_BROWSER_ROWHEIGHT, aNewItems->GetItemText(ID_BROWSER_ROWHEIGHT), MenuItemBits::NONE, OString(), nPos++);
+        rMenu.SetHelpId(ID_BROWSER_ROWHEIGHT, aNewItems->GetHelpId(ID_BROWSER_ROWHEIGHT));
         rMenu.InsertSeparator(OString(), nPos++);
     }
 
     if ( GetSelectRowCount() > 0 )
     {
-        rMenu.InsertItem(ID_BROWSER_COPY, aNewItems.GetItemText(SID_COPY), MenuItemBits::NONE, OString(), nPos++);
-        rMenu.SetHelpId(ID_BROWSER_COPY, aNewItems.GetHelpId(SID_COPY));
+        rMenu.InsertItem(ID_BROWSER_COPY, aNewItems->GetItemText(SID_COPY), MenuItemBits::NONE, OString(), nPos++);
+        rMenu.SetHelpId(ID_BROWSER_COPY, aNewItems->GetHelpId(SID_COPY));
 
         rMenu.InsertSeparator(OString(), nPos++);
     }
@@ -914,11 +925,6 @@ void SbaGridControl::Select()
         m_pMasterListener->SelectionChanged();
 }
 
-void SbaGridControl::CursorMoved()
-{
-    FmGridControl::CursorMoved();
-}
-
 void SbaGridControl::ActivateCell(long nRow, sal_uInt16 nCol, bool bSetCellFocus /*= sal_True*/ )
 {
     FmGridControl::ActivateCell(nRow, nCol, bSetCellFocus);
@@ -943,18 +949,6 @@ void SbaGridControl::onColumnChange()
 {
     if ( m_pMasterListener )
         m_pMasterListener->ColumnChanged();
-}
-
-void SbaGridControl::BeforeDrop()
-{
-    if (m_pMasterListener)
-        m_pMasterListener->BeforeDrop();
-}
-
-void SbaGridControl::AfterDrop()
-{
-    if (m_pMasterListener)
-        m_pMasterListener->AfterDrop();
 }
 
 Reference< XPropertySet >  SbaGridControl::getField(sal_uInt16 nModelPos)
@@ -1054,7 +1048,7 @@ void SbaGridControl::StartDrag( sal_Int8 _nAction, const Point& _rPosPixel )
         // so the row contains data which has no counter part within the data source
 
         long nCorrectRowCount = GetRowCount();
-        if (GetOptions() & OPT_INSERT)
+        if (GetOptions() & DbGridControlOptions::Insert)
             --nCorrectRowCount; // there is a empty row for inserting records
         if (bCurrentRowVirtual)
             --nCorrectRowCount;
@@ -1088,7 +1082,7 @@ void SbaGridControl::StartDrag( sal_Int8 _nAction, const Point& _rPosPixel )
                 SelectAll();
 
             getMouseEvent().Clear();
-            DoRowDrag((sal_Int16)nRow);
+            implTransferSelectedRows((sal_Int16)nRow, false);
 
             bHandled = true;
         }
@@ -1122,11 +1116,6 @@ void SbaGridControl::StartDrag( sal_Int8 _nAction, const Point& _rPosPixel )
 
     if (!bHandled)
         FmGridControl::StartDrag(_nAction, _rPosPixel);
-}
-
-void SbaGridControl::Command(const CommandEvent& rEvt)
-{
-    FmGridControl::Command(rEvt);
 }
 
 void SbaGridControl::DoColumnDrag(sal_uInt16 nColumnPos)
@@ -1169,11 +1158,6 @@ void SbaGridControl::CopySelectedRowsToClipboard()
 {
     OSL_ENSURE( GetSelectRowCount() > 0, "SbaGridControl::CopySelectedRowsToClipboard: invalid call!" );
     implTransferSelectedRows( (sal_Int16)FirstSelectedRow(), true );
-}
-
-void SbaGridControl::DoRowDrag( sal_Int16 nRowPos )
-{
-    implTransferSelectedRows( nRowPos, false );
 }
 
 void SbaGridControl::implTransferSelectedRows( sal_Int16 nRowPos, bool _bTrueIfClipboardFalseIfDrag )
@@ -1275,7 +1259,7 @@ sal_Int8 SbaGridControl::AcceptDrop( const BrowserAcceptDropEvent& rEvt )
         sal_uInt16  nCol = GetColumnAtXPosPixel(rEvt.maPosPixel.X(), false);
 
         long nCorrectRowCount = GetRowCount();
-        if (GetOptions() & OPT_INSERT)
+        if (GetOptions() & DbGridControlOptions::Insert)
             --nCorrectRowCount; // there is a empty row for inserting records
         if (IsCurrentAppending())
             --nCorrectRowCount; // the current data record doesn't really exist, we are appending a new one
@@ -1369,7 +1353,7 @@ sal_Int8 SbaGridControl::ExecuteDrop( const BrowserExecuteDropEvent& rEvt )
         sal_uInt16  nCol = GetColumnAtXPosPixel(rEvt.maPosPixel.X(), false);
 
         long nCorrectRowCount = GetRowCount();
-        if (GetOptions() & OPT_INSERT)
+        if (GetOptions() & DbGridControlOptions::Insert)
             --nCorrectRowCount; // there is a empty row for inserting records
         if (IsCurrentAppending())
             --nCorrectRowCount; // the current data record doesn't really exist, we are appending a new one
@@ -1432,7 +1416,7 @@ Reference< XPropertySet >  SbaGridControl::getDataSource() const
     return xReturn;
 }
 
-IMPL_LINK_NOARG_TYPED(SbaGridControl, AsynchDropEvent, void*, void)
+IMPL_LINK_NOARG(SbaGridControl, AsynchDropEvent, void*, void)
 {
     m_nAsyncDropEvent = nullptr;
 
@@ -1450,24 +1434,28 @@ IMPL_LINK_NOARG_TYPED(SbaGridControl, AsynchDropEvent, void*, void)
         try
         {
             pImExport->initialize(m_aDataDescriptor);
-            BeforeDrop();
+            if (m_pMasterListener)
+                m_pMasterListener->BeforeDrop();
             if(!pImExport->Read())
             {
                 OUString sError = OUString(ModuleRes(STR_NO_COLUMNNAME_MATCHING));
                 throwGenericSQLException(sError,nullptr);
             }
-            AfterDrop();
+            if (m_pMasterListener)
+                m_pMasterListener->AfterDrop();
             Show();
         }
         catch(const SQLException& e)
         {
-            AfterDrop();
+            if (m_pMasterListener)
+                m_pMasterListener->AfterDrop();
             Show();
             ::dbaui::showError( ::dbtools::SQLExceptionInfo(e), this, getContext() );
         }
         catch(const Exception& )
         {
-            AfterDrop();
+            if (m_pMasterListener)
+                m_pMasterListener->AfterDrop();
             Show();
             DBG_UNHANDLED_EXCEPTION();
         }
@@ -1488,11 +1476,6 @@ OUString SbaGridControl::GetAccessibleObjectDescription( ::svt::AccessibleBrowse
     else
         sRet = FmGridControl::GetAccessibleObjectDescription( eObjType,_nPosition);
     return sRet;
-}
-
-void SbaGridControl::DeleteSelectedRows()
-{
-    FmGridControl::DeleteSelectedRows();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

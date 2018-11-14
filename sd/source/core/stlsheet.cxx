@@ -31,7 +31,7 @@
 #include <editeng/fhgtitem.hxx>
 #include <svx/svdoattr.hxx>
 #include <editeng/ulspitem.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <svl/itemset.hxx>
 
 #include <svx/xflbmtit.hxx>
@@ -50,8 +50,8 @@
 #include "app.hrc"
 #include "glob.hxx"
 #include "helpids.h"
-#include "../ui/inc/DrawViewShell.hxx"
-#include "../ui/inc/ViewShellBase.hxx"
+#include "DrawViewShell.hxx"
+#include "ViewShellBase.hxx"
 #include <editeng/boxitem.hxx>
 
 #include <memory>
@@ -175,11 +175,6 @@ void SdStyleSheet::Load (SvStream& rIn, sal_uInt16 nVersion)
     nMask &= ~SFXSTYLEBIT_READONLY;
 }
 
-void SdStyleSheet::Store(SvStream& rOut)
-{
-    SfxStyleSheetBase::Store(rOut);
-}
-
 bool SdStyleSheet::SetParent(const OUString& rParentName)
 {
     bool bResult = false;
@@ -197,14 +192,14 @@ bool SdStyleSheet::SetParent(const OUString& rParentName)
                     bResult = true;
                     SfxItemSet& rParentSet = pStyle->GetItemSet();
                     GetItemSet().SetParent(&rParentSet);
-                    Broadcast( SfxSimpleHint( SFX_HINT_DATACHANGED ) );
+                    Broadcast( SfxHint( SFX_HINT_DATACHANGED ) );
                 }
             }
             else
             {
                 bResult = true;
                 GetItemSet().SetParent(nullptr);
-                Broadcast( SfxSimpleHint( SFX_HINT_DATACHANGED ) );
+                Broadcast( SfxHint( SFX_HINT_DATACHANGED ) );
             }
         }
         else
@@ -231,7 +226,7 @@ SfxItemSet& SdStyleSheet::GetItemSet()
                                         SDRATTR_SHADOW_FIRST,           SDRATTR_SHADOW_LAST,
                                         SDRATTR_TEXT_MINFRAMEHEIGHT,    SDRATTR_TEXT_CONTOURFRAME,
 
-                                        SDRATTR_TEXT_WORDWRAP,          SDRATTR_TEXT_AUTOGROWSIZE,
+                                        SDRATTR_TEXT_WORDWRAP,          SDRATTR_TEXT_WORDWRAP,
 
                                         SDRATTR_EDGE_FIRST,             SDRATTR_EDGE_LAST,
                                         SDRATTR_MEASURE_FIRST,          SDRATTR_MEASURE_LAST,
@@ -260,7 +255,7 @@ SfxItemSet& SdStyleSheet::GetItemSet()
                                         SDRATTR_SHADOW_FIRST,           SDRATTR_SHADOW_LAST,
                                         SDRATTR_TEXT_MINFRAMEHEIGHT,    SDRATTR_TEXT_CONTOURFRAME,
 
-                                        SDRATTR_TEXT_WORDWRAP,          SDRATTR_TEXT_AUTOGROWSIZE,
+                                        SDRATTR_TEXT_WORDWRAP,          SDRATTR_TEXT_WORDWRAP,
 
                                         EE_PARA_START,                  EE_CHAR_END,
 
@@ -297,7 +292,7 @@ SfxItemSet& SdStyleSheet::GetItemSet()
                                              SDRATTR_SHADOW_FIRST,          SDRATTR_SHADOW_LAST,
                                              SDRATTR_TEXT_MINFRAMEHEIGHT,   SDRATTR_TEXT_CONTOURFRAME,
 
-                                             SDRATTR_TEXT_WORDWRAP,         SDRATTR_TEXT_AUTOGROWSIZE,
+                                             SDRATTR_TEXT_WORDWRAP,         SDRATTR_TEXT_WORDWRAP,
 
                                              SDRATTR_EDGE_FIRST,            SDRATTR_EDGE_LAST,
                                              SDRATTR_MEASURE_FIRST,         SDRATTR_MEASURE_LAST,
@@ -393,11 +388,11 @@ SdStyleSheet* SdStyleSheet::GetRealStyleSheet() const
     }
     if (aRealStyle.isEmpty())
     {
-        SdPage* pPage = pDoc->GetSdPage(0, PK_STANDARD);
+        SdPage* pPage = pDoc->GetSdPage(0, PageKind::Standard);
 
         if (pPage)
         {
-            aRealStyle = pDoc->GetSdPage(0, PK_STANDARD)->GetLayoutName();
+            aRealStyle = pDoc->GetSdPage(0, PageKind::Standard)->GetLayoutName();
         }
         else
         {
@@ -531,8 +526,7 @@ void SdStyleSheet::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
 
     /* if the dummy gets a notify about a changed attribute, he takes care that
        the actual ment style sheet sends broadcasts. */
-    const SfxSimpleHint* pSimple = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if (pSimple && pSimple->GetId() == SFX_HINT_DATACHANGED)
+    if (rHint.GetId() == SFX_HINT_DATACHANGED)
     {
         SdStyleSheet* pRealStyle = GetRealStyleSheet();
         if (pRealStyle)
@@ -617,11 +611,6 @@ bool SdStyleSheet::HasClearParentSupport() const
     return true;
 }
 
-bool SdStyleSheet::SetName(const OUString& rName, bool bReindexNow)
-{
-    return SfxStyleSheet::SetName(rName, bReindexNow);
-}
-
 void SdStyleSheet::SetHelpId( const OUString& r, sal_uLong nId )
 {
     SfxStyleSheet::SetHelpId( r, nId );
@@ -629,7 +618,7 @@ void SdStyleSheet::SetHelpId( const OUString& r, sal_uLong nId )
     if( (nId >= HID_PSEUDOSHEET_OUTLINE1) && ( nId <= HID_PSEUDOSHEET_OUTLINE9 ) )
     {
         msApiName = "outline";
-        msApiName += OUString( (sal_Unicode)( '1' + (nId - HID_PSEUDOSHEET_OUTLINE1) ) );
+        msApiName += OUStringLiteral1( '1' + (nId - HID_PSEUDOSHEET_OUTLINE1) );
     }
     else
     {
@@ -894,7 +883,7 @@ void SAL_CALL SdStyleSheet::setName( const OUString& rName  ) throw(RuntimeExcep
     if( SetName( rName ) )
     {
         msApiName = rName;
-        Broadcast(SfxSimpleHint(SFX_HINT_DATACHANGED));
+        Broadcast(SfxHint(SFX_HINT_DATACHANGED));
     }
 }
 
@@ -1059,7 +1048,7 @@ void SAL_CALL SdStyleSheet::setPropertyValue( const OUString& aPropertyName, con
         }
 
         rStyleSet.Put( aSet );
-        Broadcast(SfxSimpleHint(SFX_HINT_DATACHANGED));
+        Broadcast(SfxHint(SFX_HINT_DATACHANGED));
     }
 }
 
@@ -1292,7 +1281,7 @@ void SAL_CALL SdStyleSheet::setPropertyToDefault( const OUString& PropertyName )
     {
         rStyleSet.ClearItem( pEntry->nWID );
     }
-    Broadcast(SfxSimpleHint(SFX_HINT_DATACHANGED));
+    Broadcast(SfxHint(SFX_HINT_DATACHANGED));
 }
 
 Any SAL_CALL SdStyleSheet::getPropertyDefault( const OUString& aPropertyName ) throw(UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
@@ -1340,7 +1329,7 @@ void SdStyleSheet::BroadcastSdStyleSheetChange(SfxStyleSheetBase* pStyleSheet,
     PresentationObjects ePO, SfxStyleSheetBasePool* pSSPool)
 {
     SdStyleSheet* pRealSheet = static_cast<SdStyleSheet*>(pStyleSheet)->GetRealStyleSheet();
-    pRealSheet->Broadcast(SfxSimpleHint(SFX_HINT_DATACHANGED));
+    pRealSheet->Broadcast(SfxHint(SFX_HINT_DATACHANGED));
 
     if( (ePO >= PO_OUTLINE_1) && (ePO <= PO_OUTLINE_8) )
     {
@@ -1355,7 +1344,7 @@ void SdStyleSheet::BroadcastSdStyleSheetChange(SfxStyleSheetBase* pStyleSheet,
             if(pSheet)
             {
                 SdStyleSheet* pRealStyleSheet = static_cast<SdStyleSheet*>(pSheet)->GetRealStyleSheet();
-                pRealStyleSheet->Broadcast(SfxSimpleHint(SFX_HINT_DATACHANGED));
+                pRealStyleSheet->Broadcast(SfxHint(SFX_HINT_DATACHANGED));
             }
         }
     }

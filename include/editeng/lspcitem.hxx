@@ -34,11 +34,11 @@ class SvXMLUnitConverter;
 #define LINE_SPACE_DEFAULT_HEIGHT 200
 class EDITENG_DLLPUBLIC SvxLineSpacingItem : public SfxEnumItemInterface
 {
-    short nInterLineSpace;
-    sal_uInt16 nLineHeight;
-    sal_uInt16 nPropLineSpace;
-    SvxLineSpace eLineSpace;
-    SvxInterLineSpace eInterLineSpace;
+    short                 nInterLineSpace;
+    sal_uInt16            nLineHeight;
+    sal_uInt16            nPropLineSpace;
+    SvxLineSpaceRule      eLineSpaceRule;
+    SvxInterLineSpaceRule eInterLineSpaceRule;
 
 public:
     static SfxPoolItem* CreateDefault();
@@ -48,7 +48,7 @@ public:
     // writer? => Rather have a crooked vales as the default, but the
     // programmer sees that there's something special happening.
 
-    SvxLineSpacingItem( sal_uInt16 nHeight /*= LINE_SPACE_DEFAULT_HEIGHT*/, const sal_uInt16 nId  );
+    SvxLineSpacingItem( sal_uInt16 nLineHeight /*= LINE_SPACE_DEFAULT_HEIGHT*/, const sal_uInt16 nId  );
 
     // "pure virtual Methods" from SfxPoolItem
     virtual bool            operator==( const SfxPoolItem& ) const override;
@@ -56,9 +56,9 @@ public:
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual SfxPoolItem*     Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual SfxPoolItem*     Create(SvStream &, sal_uInt16) const override;
@@ -69,7 +69,7 @@ public:
     inline void SetInterLineSpace( const short nSpace )
     {
         nInterLineSpace = nSpace;
-        eInterLineSpace = SVX_INTER_LINE_SPACE_FIX;
+        eInterLineSpaceRule = SvxInterLineSpaceRule::Fix;
     }
 
     // Determines the absolute or minimum row height.
@@ -77,7 +77,7 @@ public:
     inline void SetLineHeight( const sal_uInt16 nHeight )
     {
         nLineHeight = nHeight;
-        eLineSpace = SVX_LINE_SPACE_MIN;
+        eLineSpaceRule = SvxLineSpaceRule::Min;
     }
 
     // To increase or decrease the row height.
@@ -85,17 +85,17 @@ public:
     inline void SetPropLineSpace( const sal_uInt8 nProp )
     {
         nPropLineSpace = nProp;
-        eInterLineSpace = SVX_INTER_LINE_SPACE_PROP;
+        eInterLineSpaceRule = SvxInterLineSpaceRule::Prop;
     }
 
-    inline SvxLineSpace &GetLineSpaceRule() { return eLineSpace; }
-    inline SvxLineSpace GetLineSpaceRule() const { return eLineSpace; }
+    inline void SetLineSpaceRule(SvxLineSpaceRule e) { eLineSpaceRule = e; }
+    inline SvxLineSpaceRule GetLineSpaceRule() const { return eLineSpaceRule; }
 
-    inline SvxInterLineSpace &GetInterLineSpaceRule() { return eInterLineSpace; }
-    inline SvxInterLineSpace GetInterLineSpaceRule() const { return eInterLineSpace; }
+    inline void SetInterLineSpaceRule(SvxInterLineSpaceRule e) { eInterLineSpaceRule = e; }
+    inline SvxInterLineSpaceRule GetInterLineSpaceRule() const { return eInterLineSpaceRule; }
 
     virtual sal_uInt16      GetValueCount() const override;
-    virtual OUString   GetValueTextByPos( sal_uInt16 nPos ) const override;
+    virtual OUString        GetValueTextByPos( sal_uInt16 nPos ) const override;
     virtual sal_uInt16      GetEnumValue() const override;
     virtual void            SetEnumValue( sal_uInt16 nNewVal ) override;
 };

@@ -497,7 +497,7 @@ void EffectMigration::SetAnimationEffect( SvxShape* pShape, AnimationEffect eEff
 
                     pMainSequence->append( pEffect );
 
-                    if( ( pObj->GetObjInventor() == SdrInventor ) && ( pObj->GetObjIdentifier() == OBJ_OUTLINETEXT ) )
+                    if( ( pObj->GetObjInventor() == SdrInventor::Default ) && ( pObj->GetObjIdentifier() == OBJ_OUTLINETEXT ) )
                     {
                         // special case for outline text, effects are always mapped to text group effect
                         pMainSequence->
@@ -525,7 +525,7 @@ void EffectMigration::SetAnimationEffect( SvxShape* pShape, AnimationEffect eEff
                 if( (pEffect->getPresetId() != aPresetId) ||
                     (pEffect->getPresetSubType() != aPresetSubType) )
                 {
-                    pMainSequence->replace( pEffect, pPreset, aPresetSubType );
+                    pMainSequence->replace( pEffect, pPreset, aPresetSubType, -1.0 );
                 }
             }
         }
@@ -1169,7 +1169,7 @@ void EffectMigration::SetPresentationOrder( SvxShape* pShape, sal_Int32 nNewPos 
 
 /** Returns the position of the given SdrObject in the Presentation order.
  *  This function returns -1 if the SdrObject is not in the Presentation order
- *  or if its the path-object.
+ *  or if it's the path-object.
  */
 sal_Int32 EffectMigration::GetPresentationOrder( SvxShape* pShape )
 {
@@ -1429,11 +1429,11 @@ void EffectMigration::CreateAnimatedGroup(SdrObjGroup& rGroupObj, SdPage& rPage)
 
 void EffectMigration::DocumentLoaded(SdDrawDocument & rDoc)
 {
-    if (DOCUMENT_TYPE_DRAW == rDoc.GetDocumentType())
+    if (DocumentType::Draw == rDoc.GetDocumentType())
         return; // no animations in Draw
-    for (sal_uInt16 n = 0; n < rDoc.GetSdPageCount(PK_STANDARD); ++n)
+    for (sal_uInt16 n = 0; n < rDoc.GetSdPageCount(PageKind::Standard); ++n)
     {
-        SdPage *const pPage = rDoc.GetSdPage(n, PK_STANDARD);
+        SdPage *const pPage = rDoc.GetSdPage(n, PageKind::Standard);
         if (pPage->hasAnimationNode())
         {
             // this will force the equivalent of the MainSequence::onTimerHdl
@@ -1442,9 +1442,9 @@ void EffectMigration::DocumentLoaded(SdDrawDocument & rDoc)
             pPage->getMainSequence()->getRootNode();
         }
     }
-    for (sal_uInt16 n = 0; n < rDoc.GetMasterSdPageCount(PK_STANDARD); ++n)
+    for (sal_uInt16 n = 0; n < rDoc.GetMasterSdPageCount(PageKind::Standard); ++n)
     {
-        SdPage *const pPage = rDoc.GetMasterSdPage(n, PK_STANDARD);
+        SdPage *const pPage = rDoc.GetMasterSdPage(n, PageKind::Standard);
         if (pPage->hasAnimationNode())
         {
             pPage->getMainSequence()->getRootNode();

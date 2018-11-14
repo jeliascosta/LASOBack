@@ -60,7 +60,7 @@ public:
     OutlineView (DrawDocShell& rDocSh,
         vcl::Window* pWindow,
         OutlineViewShell& rOutlineViewSh);
-    virtual ~OutlineView();
+    virtual ~OutlineView() override;
 
     /** This method is called by the view shell that owns the view to tell
         the view that it can safely connect to the application.
@@ -95,17 +95,17 @@ public:
     void Paint (const Rectangle& rRect, ::sd::Window* pWin);
 
                     // Callbacks fuer LINKs
-    DECL_LINK_TYPED( ParagraphInsertedHdl, ::Outliner *, void );
-    DECL_LINK_TYPED( ParagraphRemovingHdl, ::Outliner *, void );
-    DECL_LINK_TYPED( DepthChangedHdl, ::Outliner *, void );
-    DECL_LINK_TYPED( StatusEventHdl, EditStatus&, void );
-    DECL_LINK_TYPED( BeginMovingHdl, ::Outliner *, void );
-    DECL_LINK_TYPED( EndMovingHdl, ::Outliner *, void );
-    DECL_LINK_TYPED( RemovingPagesHdl, OutlinerView *, bool );
-    DECL_LINK_TYPED( IndentingPagesHdl, OutlinerView *, bool );
-    DECL_LINK_TYPED( BeginDropHdl, EditView*, void );
-    DECL_LINK_TYPED( EndDropHdl, EditView*, void );
-    DECL_LINK_TYPED( PaintingFirstLineHdl, PaintFirstLineInfo*, void );
+    DECL_LINK( ParagraphInsertedHdl, ::Outliner::ParagraphHdlParam, void );
+    DECL_LINK( ParagraphRemovingHdl, ::Outliner::ParagraphHdlParam, void );
+    DECL_LINK( DepthChangedHdl, ::Outliner::DepthChangeHdlParam, void );
+    DECL_LINK( StatusEventHdl, EditStatus&, void );
+    DECL_LINK( BeginMovingHdl, ::Outliner *, void );
+    DECL_LINK( EndMovingHdl, ::Outliner *, void );
+    DECL_LINK( RemovingPagesHdl, OutlinerView *, bool );
+    DECL_LINK( IndentingPagesHdl, OutlinerView *, bool );
+    DECL_LINK( BeginDropHdl, EditView*, void );
+    DECL_LINK( EndDropHdl, EditView*, void );
+    DECL_LINK( PaintingFirstLineHdl, PaintFirstLineInfo*, void );
 
     sal_uLong         GetPaperWidth() { return mnPaperWidth;}
 
@@ -125,14 +125,14 @@ public:
     virtual sal_Int8 AcceptDrop (
         const AcceptDropEvent& rEvt,
         DropTargetHelper& rTargetHelper,
-        ::sd::Window* pTargetWindow = nullptr,
-        sal_uInt16 nPage = SDRPAGE_NOTFOUND,
-        sal_uInt16 nLayer = SDRPAGE_NOTFOUND) override;
+        ::sd::Window* pTargetWindow,
+        sal_uInt16 nPage,
+        sal_uInt16 nLayer) override;
     virtual sal_Int8 ExecuteDrop (
         const ExecuteDropEvent& rEvt,
-        ::sd::Window* pTargetWindow = nullptr,
-        sal_uInt16 nPage = SDRPAGE_NOTFOUND,
-        sal_uInt16 nLayer = SDRPAGE_NOTFOUND) override;
+        ::sd::Window* pTargetWindow,
+        sal_uInt16 nPage,
+        sal_uInt16 nLayer) override;
 
     // Re-implement GetScriptType for this view to get correct results
     virtual SvtScriptType GetScriptType() const override;
@@ -193,14 +193,14 @@ private:
     /** updates the high contrast settings and document color if they changed.
         @param bForceUpdate forces the method to set all style settings
     */
-    void onUpdateStyleSettings( bool bForceUpdate = false );
+    void onUpdateStyleSettings( bool bForceUpdate );
 
     /** this link is called from the vcl application when the stylesettings
         change. Its only purpose is to call onUpdateStyleSettings() then.
     */
-    DECL_LINK_TYPED( AppEventListenerHdl, VclSimpleEvent&, void );
+    DECL_LINK( AppEventListenerHdl, VclSimpleEvent&, void );
 
-    DECL_LINK_TYPED(EventMultiplexerListener, sd::tools::EventMultiplexerEvent&, void);
+    DECL_LINK(EventMultiplexerListener, sd::tools::EventMultiplexerEvent&, void);
 
     /** holds a model guard during drag and drop between BeginMovingHdl and EndMovingHdl */
     std::unique_ptr< OutlineViewModelChangeGuard > maDragAndDropModelGuard;

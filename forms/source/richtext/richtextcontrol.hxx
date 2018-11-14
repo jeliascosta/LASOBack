@@ -49,14 +49,8 @@ namespace frm
         ORichTextControl();
 
     protected:
-        virtual ~ORichTextControl();
+        virtual ~ORichTextControl() override;
 
-    public:
-        // XServiceInfo - static version
-        static  OUString SAL_CALL getImplementationName_Static();
-        static  css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames_Static();
-
-    protected:
         // UNO
         DECLARE_UNO3_AGG_DEFAULTS( ORichTextControl, UnoEditControl )
         virtual css::uno::Any SAL_CALL queryAggregation( const css::uno::Type& _rType ) throw ( css::uno::RuntimeException, std::exception ) override;
@@ -106,7 +100,7 @@ namespace frm
 
     protected:
         ORichTextPeer();
-        virtual ~ORichTextPeer();
+        virtual ~ORichTextPeer() override;
 
         // XView
         void SAL_CALL draw( sal_Int32 nX, sal_Int32 nY ) throw(css::uno::RuntimeException, std::exception) override;

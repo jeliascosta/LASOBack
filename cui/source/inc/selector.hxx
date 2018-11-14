@@ -92,12 +92,12 @@ friend class SvxConfigGroupListBox;
     SvxGroupInfoArr_Impl            aArr;
     SvTreeListEntry*                    m_pDraggingEntry;
 
-    DECL_LINK_TYPED(TimerHdl, Timer *, void);
+    DECL_LINK(TimerHdl, Timer *, void);
     virtual void                    MouseMove( const MouseEvent& rMEvt ) override;
 
 public:
     SvxConfigFunctionListBox(vcl::Window* pParent, WinBits nStyle);
-    virtual ~SvxConfigFunctionListBox();
+    virtual ~SvxConfigFunctionListBox() override;
     virtual void                    dispose() override;
     void                            ClearAll();
     OUString                        GetHelpText( SvTreeListEntry *pEntry );
@@ -136,12 +136,12 @@ class SvxConfigGroupListBox : public SvTreeListBox
     OUString m_sProdMacros;
     Image GetImage(
         const css::uno::Reference< css::script::browse::XBrowseNode >& node,
-        css::uno::Reference< css::uno::XComponentContext > xCtx,
+        css::uno::Reference< css::uno::XComponentContext > const & xCtx,
         bool bIsRootNode
     );
 
     static css::uno::Reference< css::uno::XInterface  > getDocumentModel(
-        css::uno::Reference< css::uno::XComponentContext >& xCtx,
+        css::uno::Reference< css::uno::XComponentContext > const & xCtx,
         OUString& docName
     );
 
@@ -159,7 +159,7 @@ protected:
 
 public:
     SvxConfigGroupListBox(vcl::Window* pParent, WinBits nStyle);
-    virtual ~SvxConfigGroupListBox();
+    virtual ~SvxConfigGroupListBox() override;
     virtual void dispose() override;
 
     void    Init(bool bShowSlots, const css::uno::Reference
@@ -187,9 +187,9 @@ class SvxScriptSelectorDialog : public ModalDialog
     bool                                   m_bShowSlots;
     Link<SvxScriptSelectorDialog&,void>    m_aAddHdl;
 
-    DECL_LINK_TYPED( ClickHdl, Button *, void );
-    DECL_LINK_TYPED( SelectHdl, SvTreeListBox*, void );
-    DECL_LINK_TYPED( FunctionDoubleClickHdl, SvTreeListBox*, bool );
+    DECL_LINK( ClickHdl, Button *, void );
+    DECL_LINK( SelectHdl, SvTreeListBox*, void );
+    DECL_LINK( FunctionDoubleClickHdl, SvTreeListBox*, bool );
 
     void                            UpdateUI();
 
@@ -200,7 +200,7 @@ public:
         bool bShowSlots = false,
         const css::uno::Reference< css::frame::XFrame >& xFrame = nullptr
     );
-    virtual ~SvxScriptSelectorDialog();
+    virtual ~SvxScriptSelectorDialog() override;
     virtual void dispose() override;
 
     void        SetAddHdl( const Link<SvxScriptSelectorDialog&,void>& rLink ) { m_aAddHdl = rLink; }

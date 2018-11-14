@@ -413,11 +413,10 @@ struct FundamentalIniData {
     FundamentalIniData() {
         OUString uri;
         ini =
-            ((static_cast< Bootstrap_Impl * >(get_static_bootstrap_handle())->
-              getValue(
-                  "URE_BOOTSTRAP",
-                  &uri.pData, nullptr, LOOKUP_MODE_NORMAL, false, nullptr)) &&
-             resolvePathnameUrl(&uri))
+            (get_static_bootstrap_handle()->getValue(
+                "URE_BOOTSTRAP", &uri.pData, nullptr, LOOKUP_MODE_NORMAL, false,
+                nullptr)
+             && resolvePathnameUrl(&uri))
             ? rtl_bootstrap_args_open(uri.pData) : nullptr;
     }
 
@@ -471,7 +470,7 @@ bool Bootstrap_Impl::getValue(
 #endif
 #ifdef IOS
     if (key == "APP_DATA_DIR") {
-        const char *app_data_dir = [[[[NSBundle mainBundle] bundlePath] stringByAddingPercentEscapesUsingEncoding: NSUTF8StringEncoding] UTF8String];
+        const char *app_data_dir = [[[[NSBundle mainBundle] bundlePath] stringByAddingPercentEncodingWithAllowedCharacters: [NSCharacterSet URLPathAllowedCharacterSet]] UTF8String];
         rtl_uString_assign(
             value, rtl::OUString(app_data_dir, strlen(app_data_dir), RTL_TEXTENCODING_UTF8).pData);
         return true;

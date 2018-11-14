@@ -18,24 +18,11 @@
  */
 
 #include "formresid.hrc"
-#include "formlocalid.hrc"
 
 String RID_STR_CONFIRM_DELETE_DATA_TYPE
 {
     Text [ en-US ] = "Do you want to delete the data type '#type#' from the model?\n"
              "Please note that this will affect all controls which are bound to this data type.";
-};
-
-Resource RID_RSC_BUTTON_IMAGES
-{
-    Image IMG_PLUS
-    {
-        ImageBitmap = Bitmap{ file = "buttonplus.png"; };
-    };
-    Image IMG_MINUS
-    {
-        ImageBitmap = Bitmap{ file = "buttonminus.png"; };
-    };
 };
 
 #define IMAGE_IDS \
@@ -75,7 +62,6 @@ Resource RID_RSC_BUTTON_IMAGES
 ImageList RID_IL_FORMEXPLORER
 {
     Prefix = "sx";
-    MaskColor = Color { Red = 0xff00 ; Green = 0x0000 ; Blue = 0xff00 ; };
     IMAGE_IDS;
 };
 

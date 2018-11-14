@@ -175,12 +175,12 @@ class ODatabaseForm :public OFormComponents
     ::dbtools::WarningsContainer    m_aWarnings;
     OPropertyChangeMultiplexer* m_pAggregatePropertyMultiplexer;
     // Management of the Control Groups
-    OGroupManager*              m_pGroupManager;
+    rtl::Reference<OGroupManager>   m_pGroupManager;
     ::dbtools::ParameterManager m_aParameterManager;
     ::dbtools::FilterManager    m_aFilterManager;
     Timer*                      m_pLoadTimer;
 
-    OFormSubmitResetThread*     m_pThread;
+    rtl::Reference<OFormSubmitResetThread>  m_pThread;
     OUString                    m_sCurrentErrorContext;
     // will be used as additional context information
     // when an exception is catched and forwarded to the listeners
@@ -214,7 +214,7 @@ class ODatabaseForm :public OFormComponents
 public:
     explicit ODatabaseForm(const css::uno::Reference< css::uno::XComponentContext>& _rxFactory);
     ODatabaseForm( const ODatabaseForm& _cloneSource );
-    virtual ~ODatabaseForm();
+    virtual ~ODatabaseForm() override;
 
     // UNO binding
     DECLARE_UNO3_AGG_DEFAULTS(ODatabaseForm, OFormComponents)
@@ -231,7 +231,7 @@ public:
     virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(css::uno::RuntimeException, std::exception) override;
     virtual ::cppu::IPropertyArrayHelper& SAL_CALL getInfoHelper() override;
     virtual void SAL_CALL getFastPropertyValue(css::uno::Any& rValue, sal_Int32 nHandle ) const override;
-    virtual sal_Bool SAL_CALL convertFastPropertyValue(css::uno::Any& rConvertedValue, css::uno::Any& rOldValue, sal_Int32 nHandle, const css::uno::Any& rValue ) throw(css::lang::IllegalArgumentException) override;
+    virtual sal_Bool SAL_CALL convertFastPropertyValue(css::uno::Any& rConvertedValue, css::uno::Any& rOldValue, sal_Int32 nHandle, const css::uno::Any& rValue ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setFastPropertyValue_NoBroadcast(sal_Int32 nHandle, const css::uno::Any& rValue) throw ( css::uno::Exception, std::exception ) override;
 
     css::uno::Any  SAL_CALL getFastPropertyValue( sal_Int32 nHandle )
@@ -374,10 +374,6 @@ public:
     virtual OUString SAL_CALL getImplementationName()  throw(css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()  throw(css::uno::RuntimeException, std::exception) override;
 
-    // css::lang::XServiceInfo - static version
-    static  OUString SAL_CALL getImplementationName_Static();
-    static  css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames_Static();
-
     // css::io::XPersistObject
     virtual OUString SAL_CALL getServiceName() throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL write(const css::uno::Reference< css::io::XObjectOutputStream>& _rxOutStream) throw(css::io::IOException, css::uno::RuntimeException, std::exception) override;
@@ -443,10 +439,10 @@ protected:
     virtual void _propertyChanged( const css::beans::PropertyChangeEvent& ) throw(css::uno::RuntimeException) override;
 
 private:
-    bool executeRowSet(::osl::ResettableMutexGuard& _rClearForNotifies, bool bMoveToFirst = true,
-                    const css::uno::Reference< css::task::XInteractionHandler >& _rxCompletionHandler = css::uno::Reference< css::task::XInteractionHandler >());
+    bool executeRowSet(::osl::ResettableMutexGuard& _rClearForNotifies, bool bMoveToFirst,
+                    const css::uno::Reference< css::task::XInteractionHandler >& _rxCompletionHandler);
     bool    fillParameters(::osl::ResettableMutexGuard& _rClearForNotifies,
-                    const css::uno::Reference< css::task::XInteractionHandler >& _rxCompletionHandler = css::uno::Reference< css::task::XInteractionHandler >());
+                    const css::uno::Reference< css::task::XInteractionHandler >& _rxCompletionHandler);
     void    updateParameterInfo();
     bool    hasValidParent() const;
 
@@ -509,8 +505,6 @@ private:
 
     // html tools
     OUString         GetDataEncoded(bool _bURLEncoded,const css::uno::Reference< css::awt::XControl>& SubmitButton, const css::awt::MouseEvent& MouseEvt);
-    OUString         GetDataURLEncoded(const css::uno::Reference< css::awt::XControl>& SubmitButton, const css::awt::MouseEvent& MouseEvt);
-    OUString         GetDataTextEncoded(const css::uno::Reference< css::awt::XControl>& SubmitButton, const css::awt::MouseEvent& MouseEvt);
     css::uno::Sequence<sal_Int8>   GetDataMultiPartEncoded(const css::uno::Reference< css::awt::XControl>& SubmitButton, const css::awt::MouseEvent& MouseEvt,
                                              OUString& rContentType);
 
@@ -529,7 +523,7 @@ private:
 
     void    impl_construct();
 
-    DECL_LINK_TYPED( OnTimeout, Timer*, void );
+    DECL_LINK( OnTimeout, Timer*, void );
 protected:
     using OPropertySetHelper::getPropertyValues;
 };

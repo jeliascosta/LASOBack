@@ -284,11 +284,6 @@ namespace dbaui
         return true;
     }
 
-    bool IndexFieldsControl::IsModified() const
-    {
-        return EditBrowseBox::IsModified();
-    }
-
     bool IndexFieldsControl::SaveModified()
     {
         if (!IsModified())
@@ -380,7 +375,7 @@ namespace dbaui
         }
     }
 
-    IMPL_LINK_TYPED( IndexFieldsControl, OnListEntrySelected, DbaMouseDownListBoxController&, rController, void )
+    IMPL_LINK( IndexFieldsControl, OnListEntrySelected, DbaMouseDownListBoxController&, rController, void )
     {
         ListBoxControl& rListBox = rController.GetListBox();
         if (!rListBox.IsTravelSelect())

@@ -34,8 +34,7 @@
 class SvXMLNamespaceMap;
 class SvXMLImport;
 
-class XMLOFF_DLLPUBLIC SvXMLImportContext : public SvRefBase,
-        public ::cppu::WeakImplHelper1< ::css::xml::sax::XFastContextHandler >
+class XMLOFF_DLLPUBLIC SvXMLImportContext : public ::cppu::WeakImplHelper1< ::css::xml::sax::XFastContextHandler >
 {
     friend class SvXMLImport;
 
@@ -44,10 +43,10 @@ class XMLOFF_DLLPUBLIC SvXMLImportContext : public SvRefBase,
     sal_uInt16       mnPrefix;
     OUString maLocalName;
 
-    std::unique_ptr<SvXMLNamespaceMap>   mxRewindMap;
+    std::unique_ptr<SvXMLNamespaceMap> m_pRewindMap;
 
-    SAL_DLLPRIVATE SvXMLNamespaceMap *TakeRewindMap() { return mxRewindMap.release(); }
-    SAL_DLLPRIVATE void PutRewindMap( SvXMLNamespaceMap *p ) { mxRewindMap.reset(p); }
+    SAL_DLLPRIVATE std::unique_ptr<SvXMLNamespaceMap> TakeRewindMap() { return std::move(m_pRewindMap); }
+    SAL_DLLPRIVATE void PutRewindMap(std::unique_ptr<SvXMLNamespaceMap> p) { m_pRewindMap = std::move(p); }
 
 protected:
 
@@ -72,7 +71,7 @@ public:
      * ends. By default, nothing is done.
      * Note that virtual methods cannot be used inside destructors. Use
      * EndElement instead if this is required. */
-    virtual ~SvXMLImportContext();
+    virtual ~SvXMLImportContext() override;
 
     /** Create a children element context. By default, the import's
      * CreateContext method is called to create a new default context. */
@@ -125,9 +124,13 @@ public:
     // support multiple images and to rescue evtl. GluePoints imported with one of the
     // to be deprecated contents
     virtual void onDemandRescueUsefulDataFromTemporary( const SvXMLImportContext& rCandidate );
+
+    void AddFirstRef();
+    void AddNextRef();
+    void ReleaseRef();
 };
 
-typedef tools::SvRef<SvXMLImportContext> SvXMLImportContextRef;
+typedef rtl::Reference<SvXMLImportContext> SvXMLImportContextRef;
 
 #endif // INCLUDED_XMLOFF_XMLICTXT_HXX
 

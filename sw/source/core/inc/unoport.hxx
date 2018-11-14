@@ -42,13 +42,13 @@
 #include <unocrsr.hxx>
 #include <calbck.hxx>
 #include <unobaseclass.hxx>
+#include <IDocumentRedlineAccess.hxx>
 
-class SwFormatField;
 class SwFrameFormat;
 class SwRangeRedline;
 class SwTextRuby;
 
-typedef ::std::deque<
+typedef std::deque<
     css::uno::Reference< css::text::XTextRange > >
     TextRangeList_t;
 
@@ -107,10 +107,10 @@ private:
         m_xTextField;
     css::uno::Reference< css::text::XTextContent >
         m_xMeta;
-    ::std::unique_ptr< css::uno::Any > m_pRubyText;
-    ::std::unique_ptr< css::uno::Any > m_pRubyStyle;
-    ::std::unique_ptr< css::uno::Any > m_pRubyAdjust;
-    ::std::unique_ptr< css::uno::Any > m_pRubyIsAbove;
+    std::unique_ptr< css::uno::Any > m_pRubyText;
+    std::unique_ptr< css::uno::Any > m_pRubyStyle;
+    std::unique_ptr< css::uno::Any > m_pRubyAdjust;
+    std::unique_ptr< css::uno::Any > m_pRubyIsAbove;
     sw::UnoCursorPointer m_pUnoCursor;
 
     const SwDepend              m_FrameDepend;
@@ -138,7 +138,7 @@ protected:
         const css::uno::Sequence< OUString >& rPropertyNames, bool bDirectValuesOnly )
             throw (css::uno::RuntimeException, std::exception);
 
-    virtual ~SwXTextPortion();
+    virtual ~SwXTextPortion() override;
 
     //SwClient
     virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew) override;
@@ -200,22 +200,22 @@ public:
     virtual css::uno::Reference< css::container::XEnumeration >  SAL_CALL createContentEnumeration(const OUString& aServiceName) throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getAvailableServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
 
-    void SetRefMark( css::uno::Reference< css::text::XTextContent >  xMark)
+    void SetRefMark( css::uno::Reference< css::text::XTextContent > const & xMark)
     { m_xRefMark = xMark; }
 
-    void SetTOXMark( css::uno::Reference< css::text::XTextContent >  xMark)
+    void SetTOXMark( css::uno::Reference< css::text::XTextContent > const & xMark)
     { m_xTOXMark = xMark; }
 
-    void SetBookmark( css::uno::Reference< css::text::XTextContent >  xMark)
+    void SetBookmark( css::uno::Reference< css::text::XTextContent > const & xMark)
     { m_xBookmark = xMark; }
 
-    void SetFootnote( css::uno::Reference< css::text::XFootnote > xNote)
+    void SetFootnote( css::uno::Reference< css::text::XFootnote > const & xNote)
     { m_xFootnote = xNote; }
 
-    void SetTextField( css::uno::Reference< css::text::XTextField> xField)
+    void SetTextField( css::uno::Reference< css::text::XTextField> const & xField)
     { m_xTextField = xField; }
 
-    void SetMeta( css::uno::Reference< css::text::XTextContent >  xMeta)
+    void SetMeta( css::uno::Reference< css::text::XTextContent > const & xMeta)
     { m_xMeta = xMeta; }
 
     void SetCollapsed(bool bSet)        { m_bIsCollapsed = bSet;}
@@ -236,11 +236,8 @@ class SwXTextPortionEnumeration
     TextRangeList_t m_Portions; // contains all portions, filled by ctor
     sw::UnoCursorPointer m_pUnoCursor;
 
-    SwUnoCursor& GetCursor() const
-        {return *m_pUnoCursor;}
-
 protected:
-    virtual ~SwXTextPortionEnumeration();
+    virtual ~SwXTextPortionEnumeration() override;
 
 public:
     SwXTextPortionEnumeration(SwPaM& rParaCursor,
@@ -284,7 +281,7 @@ private:
 
     using SwXTextPortion::GetPropertyValue;
 
-    virtual ~SwXRedlinePortion();
+    virtual ~SwXRedlinePortion() override;
 
 public:
     SwXRedlinePortion(
@@ -294,9 +291,9 @@ public:
         bool const bIsStart);
 
     static css::uno::Any  GetPropertyValue(
-            OUString const& PropertyName, SwRangeRedline const& rRedline) throw();
+            OUString const& PropertyName, SwRangeRedline const& rRedline) throw (std::exception);
     static css::uno::Sequence< css::beans::PropertyValue > CreateRedlineProperties(
-                SwRangeRedline const& rRedline, bool const bIsStart) throw();
+                SwRangeRedline const& rRedline, bool const bIsStart) throw (std::exception);
 
     virtual css::uno::Sequence< sal_Int8 > SAL_CALL
         getImplementationId() throw (css::uno::RuntimeException, std::exception) override;
@@ -308,6 +305,8 @@ public:
                 css::lang::WrappedTargetException,
                 css::uno::RuntimeException, std::exception) override;
 };
+
+OUString SwRedlineTypeToOUString(RedlineType_t eType);
 
 #endif
 

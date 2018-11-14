@@ -34,10 +34,7 @@ namespace sdr
         {
         public:
             ViewObjectContactOfMasterPageDescriptor(ObjectContact& rObjectContact, ViewContact& rViewContact);
-            virtual ~ViewObjectContactOfMasterPageDescriptor();
-
-            // access to MasterPageDescriptor
-            sdr::MasterPageDescriptor& GetMasterPageDescriptor() const;
+            virtual ~ViewObjectContactOfMasterPageDescriptor() override;
 
             virtual bool isPrimitiveVisible(const DisplayInfo& rDisplayInfo) const override;
             virtual drawinglayer::primitive2d::Primitive2DContainer getPrimitive2DSequenceHierarchy(DisplayInfo& rDisplayInfo) const override;

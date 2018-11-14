@@ -43,7 +43,7 @@ private:
 
 public:
     SvxHlmarkTreeLBox(vcl::Window* pParent, WinBits nStyle);
-    virtual ~SvxHlmarkTreeLBox();
+    virtual ~SvxHlmarkTreeLBox() override;
     virtual void dispose() override;
 
     void SetParentWnd(SvxHlinkDlgMarkWnd* pParent)
@@ -86,13 +86,13 @@ protected:
 
     virtual void Move () override;
 
-    DECL_LINK_TYPED( ClickApplyHdl_Impl, Button*, void );
-    DECL_LINK_TYPED( DoubleClickApplyHdl_Impl, SvTreeListBox*, bool );
-    DECL_LINK_TYPED( ClickCloseHdl_Impl, Button*, void );
+    DECL_LINK( ClickApplyHdl_Impl, Button*, void );
+    DECL_LINK( DoubleClickApplyHdl_Impl, SvTreeListBox*, bool );
+    DECL_LINK( ClickCloseHdl_Impl, Button*, void );
 
 public:
     SvxHlinkDlgMarkWnd (SvxHyperlinkTabPageBase *pParent);
-    virtual ~SvxHlinkDlgMarkWnd();
+    virtual ~SvxHlinkDlgMarkWnd() override;
     virtual void dispose() override;
 
     bool MoveTo ( Point aNewPos );

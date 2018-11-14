@@ -39,6 +39,22 @@
 #include <txtrfmrk.hxx>
 #include <hints.hxx>
 #include <comphelper/servicehelper.hxx>
+#include <com/sun/star/lang/WrappedTargetRuntimeException.hpp>
+#include <com/sun/star/rdf/Statement.hpp>
+#include <com/sun/star/rdf/URI.hpp>
+#include <com/sun/star/rdf/URIs.hpp>
+#include <com/sun/star/rdf/XLiteral.hpp>
+#include <com/sun/star/rdf/XRepositorySupplier.hpp>
+#include <comphelper/processfactory.hxx>
+#include <com/sun/star/lang/DisposedException.hpp>
+#include <unometa.hxx>
+#include <unotext.hxx>
+#include <unoport.hxx>
+#include <txtatr.hxx>
+#include <fmtmeta.hxx>
+#include <docsh.hxx>
+#include <cppuhelper/weak.hxx>
+
 
 using namespace ::com::sun::star;
 
@@ -187,11 +203,11 @@ throw (uno::RuntimeException, std::exception)
 
 template<typename T> struct NotContainedIn
 {
-    ::std::vector<T> const& m_rVector;
-    explicit NotContainedIn(::std::vector<T> const& rVector)
+    std::vector<T> const& m_rVector;
+    explicit NotContainedIn(std::vector<T> const& rVector)
         : m_rVector(rVector) { }
     bool operator() (T const& rT) {
-        return ::std::find(m_rVector.begin(), m_rVector.end(), rT)
+        return std::find(m_rVector.begin(), m_rVector.end(), rT)
                     == m_rVector.end();
     }
 };
@@ -214,7 +230,7 @@ void SwXReferenceMark::Impl::InsertRefMark(SwPaM& rPam,
             | SetAttrMode::DONTEXPAND)
         : SetAttrMode::DONTEXPAND;
 
-    ::std::vector<SwTextAttr *> oldMarks;
+    std::vector<SwTextAttr *> oldMarks;
     if (bMark)
     {
         oldMarks = rPam.GetNode().GetTextNode()->GetTextAttrsAt(
@@ -234,11 +250,11 @@ void SwXReferenceMark::Impl::InsertRefMark(SwPaM& rPam,
     {
         // #i107672#
         // ensure that we do not retrieve a different mark at the same position
-        ::std::vector<SwTextAttr *> const newMarks(
+        std::vector<SwTextAttr *> const newMarks(
             rPam.GetNode().GetTextNode()->GetTextAttrsAt(
                 rPam.GetPoint()->nContent.GetIndex(), RES_TXTATR_REFMARK));
-        ::std::vector<SwTextAttr *>::const_iterator const iter(
-            ::std::find_if(newMarks.begin(), newMarks.end(),
+        std::vector<SwTextAttr *>::const_iterator const iter(
+            std::find_if(newMarks.begin(), newMarks.end(),
                 NotContainedIn<SwTextAttr *>(oldMarks)));
         OSL_ASSERT(newMarks.end() != iter);
         if (newMarks.end() != iter)
@@ -317,7 +333,7 @@ SwXReferenceMark::getAnchor() throw (uno::RuntimeException, std::exception)
                     &m_pImpl->m_pDoc->GetNodes()))
             {
                 SwTextNode const& rTextNode = pTextMark->GetTextNode();
-                const ::std::unique_ptr<SwPaM> pPam( (pTextMark->End())
+                const std::unique_ptr<SwPaM> pPam( (pTextMark->End())
                     ?   new SwPaM( rTextNode, *pTextMark->End(),
                                    rTextNode, pTextMark->GetStart())
                     :   new SwPaM( rTextNode, pTextMark->GetStart()) );
@@ -508,15 +524,6 @@ throw (beans::UnknownPropertyException, lang::WrappedTargetException,
     OSL_FAIL("SwXReferenceMark::removeVetoableChangeListener(): not implemented");
 }
 
-#include <com/sun/star/lang/DisposedException.hpp>
-#include <unometa.hxx>
-#include <unotext.hxx>
-#include <unoport.hxx>
-#include <txtatr.hxx>
-#include <fmtmeta.hxx>
-#include <docsh.hxx>
-#include <cppuhelper/weak.hxx>
-
 class SwXMetaText : public cppu::OWeakObject, public SwXText
 {
 private:
@@ -537,7 +544,7 @@ public:
     SwXMetaText(SwDoc & rDoc, SwXMeta & rMeta);
 
     /// make available for SwXMeta
-    void Invalidate() { SwXText::Invalidate(); };
+    using SwXText::Invalidate;
 
     // XInterface
     virtual void SAL_CALL acquire() throw() override { cppu::OWeakObject::acquire(); }
@@ -641,12 +648,12 @@ private:
 public:
     uno::WeakReference<uno::XInterface> m_wThis;
     ::comphelper::OInterfaceContainerHelper2 m_EventListeners;
-    ::std::unique_ptr<const TextRangeList_t> m_pTextPortions;
+    std::unique_ptr<const TextRangeList_t> m_pTextPortions;
     // 3 possible states: not attached, attached, disposed
     bool m_bIsDisposed;
     bool m_bIsDescriptor;
     uno::Reference<text::XText> m_xParentText;
-    uno::Reference<SwXMetaText> m_xText;
+    rtl::Reference<SwXMetaText> m_xText;
 
     Impl(   SwXMeta & rThis, SwDoc & rDoc,
             ::sw::Meta * const pMeta,
@@ -735,7 +742,7 @@ SwXMeta::CreateXMeta(SwDoc & rDoc, bool const isField)
 uno::Reference<rdf::XMetadatable>
 SwXMeta::CreateXMeta(::sw::Meta & rMeta,
             uno::Reference<text::XText> const& i_xParent,
-            ::std::unique_ptr<TextRangeList_t const> && pPortions)
+            std::unique_ptr<TextRangeList_t const> && pPortions)
 {
     // re-use existing SwXMeta
     // #i105557#: do not iterate over the registered clients: race condition
@@ -1499,14 +1506,6 @@ throw (beans::UnknownPropertyException, lang::WrappedTargetException,
 {
     OSL_FAIL("SwXMetaField::removeVetoableChangeListener(): not implemented");
 }
-
-#include <com/sun/star/lang/WrappedTargetRuntimeException.hpp>
-#include <com/sun/star/rdf/Statement.hpp>
-#include <com/sun/star/rdf/URI.hpp>
-#include <com/sun/star/rdf/URIs.hpp>
-#include <com/sun/star/rdf/XLiteral.hpp>
-#include <com/sun/star/rdf/XRepositorySupplier.hpp>
-#include <comphelper/processfactory.hxx>
 
 static uno::Reference<rdf::XURI> const&
 lcl_getURI(const bool bPrefix)

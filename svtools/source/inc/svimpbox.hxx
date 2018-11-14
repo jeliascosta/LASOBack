@@ -50,7 +50,7 @@ class ImpLBSelEng : public FunctionSet
 public:
     ImpLBSelEng( SvImpLBox* pImp, SelectionEngine* pSelEng,
                  SvTreeListBox* pView );
-    virtual ~ImpLBSelEng();
+    virtual ~ImpLBSelEng() override;
     void        BeginDrag() override;
     void        CreateAnchor() override;
     void        DestroyAnchor() override;
@@ -148,9 +148,9 @@ private:
 
     std::vector< short > aContextBmpWidthVector;
 
-    DECL_LINK_TYPED(EditTimerCall, Idle *, void);
+    DECL_LINK(EditTimerCall, Idle *, void);
 
-    DECL_LINK_TYPED( BeginDragHdl, Idle*, void );
+    DECL_LINK( BeginDragHdl, Idle*, void );
 
     void                InvalidateEntriesFrom( long nY ) const;
     bool                IsLineVisible( long nY ) const;
@@ -159,9 +159,9 @@ private:
     void                DrawNet(vcl::RenderContext& rRenderContext);
 
     // ScrollBar-Handler
-    DECL_LINK_TYPED( ScrollUpDownHdl, ScrollBar*, void );
-    DECL_LINK_TYPED( ScrollLeftRightHdl, ScrollBar*, void );
-    DECL_LINK_TYPED( EndScrollHdl, ScrollBar*, void );
+    DECL_LINK( ScrollUpDownHdl, ScrollBar*, void );
+    DECL_LINK( ScrollLeftRightHdl, ScrollBar*, void );
+    DECL_LINK( EndScrollHdl, ScrollBar*, void );
 
     void                SetNodeBmpYOffset( const Image& );
     void                SetNodeBmpTabDistance();
@@ -189,9 +189,6 @@ private:
     // if element at cursor can be expanded in general
     bool IsExpandable() const;
 
-    // if element at cursor can be expanded at this moment
-    bool IsNowExpandable() const;
-
     static  void        implInitDefaultNodeImages();
 
     void UpdateStringSorter();
@@ -218,7 +215,7 @@ protected:
     SelectionEngine         aSelEng;
     sal_uLong               nVisibleCount;  // Number of lines in control
     bool                    bInVScrollHdl : 1;
-    bool                    bSimpleTravel : 1; // ist true bei SINGLE_SELECTION
+    bool                    bSimpleTravel : 1; // ist true bei SelectionMode::Single
     long                    nNextVerVisSize;
     long                    nNodeBmpTabDistance; // typical smaller than 0
 
@@ -242,7 +239,7 @@ protected:
     void                ShowVerSBar();
     void                StopUserEvent();
 
-    DECL_LINK_TYPED( MyUserEvent,  void*, void);
+    DECL_LINK( MyUserEvent,  void*, void);
 
 public:
     SvImpLBox( SvTreeListBox* pView, SvTreeList*, WinBits nWinStyle );
@@ -273,10 +270,10 @@ public:
     void                Resize();
     void                GetFocus();
     void                LoseFocus();
-    virtual void        UpdateAll( bool bInvalidateCompleteView= true );
+    virtual void        UpdateAll( bool bInvalidateCompleteView );
     void                SetEntryHeight( short nHeight );
     void                InvalidateEntry( SvTreeListEntry* );
-    virtual void        RecalcFocusRect();
+    void                RecalcFocusRect();
 
     void SelectEntry( SvTreeListEntry* pEntry, bool bSelect );
     void                SetDragDropMode( DragDropMode eDDMode );

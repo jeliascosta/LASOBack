@@ -26,6 +26,7 @@
 
 #include <osl/mutex.hxx>
 
+#include <vcl/commandinfoprovider.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/toolbox.hxx>
 
@@ -38,8 +39,6 @@
 
 #include <toolkit/helper/vclunohelper.hxx>
 #include <comphelper/processfactory.hxx>
-
-#include <sfx2/imagemgr.hxx>
 
 #include "app.hrc"
 #include "facreg.hxx"
@@ -65,17 +64,16 @@ namespace sd
 class LayoutToolbarMenu : public svtools::ToolbarMenu
 {
 public:
-    LayoutToolbarMenu( SlideLayoutController& rController, const Reference< XFrame >& xFrame, vcl::Window* pParent, const bool bInsertPage );
-    virtual ~LayoutToolbarMenu();
+    LayoutToolbarMenu( SlideLayoutController& rController, vcl::Window* pParent, const bool bInsertPage );
+    virtual ~LayoutToolbarMenu() override;
     virtual void dispose() override;
 
 protected:
-    DECL_LINK_TYPED( SelectToolbarMenuHdl, ToolbarMenu*, void );
-    DECL_LINK_TYPED( SelectValueSetHdl, ValueSet*, void );
+    DECL_LINK( SelectToolbarMenuHdl, ToolbarMenu*, void );
+    DECL_LINK( SelectValueSetHdl, ValueSet*, void );
     void SelectHdl(void*);
 private:
     SlideLayoutController& mrController;
-    Reference< XFrame > mxFrame;
     bool mbInsertPage;
     VclPtr<ValueSet> mpLayoutSet1;
     VclPtr<ValueSet> mpLayoutSet2;
@@ -151,15 +149,15 @@ static void fillLayoutValueSet( ValueSet* pValue, const snewfoil_value_info_layo
     pValue->SetSizePixel( pValue->CalcWindowSizePixel( aLayoutItemSize ) );
 }
 
-LayoutToolbarMenu::LayoutToolbarMenu( SlideLayoutController& rController, const Reference< XFrame >& xFrame, vcl::Window* pParent, const bool bInsertPage )
-: svtools::ToolbarMenu(xFrame, pParent, WB_CLIPCHILDREN )
+LayoutToolbarMenu::LayoutToolbarMenu( SlideLayoutController& rController, vcl::Window* pParent, const bool bInsertPage )
+: svtools::ToolbarMenu( rController.getFrameInterface(), pParent, WB_CLIPCHILDREN )
 , mrController( rController )
-, mxFrame(xFrame)
 , mbInsertPage( bInsertPage )
 , mpLayoutSet1( nullptr )
 , mpLayoutSet2( nullptr )
 {
     DrawViewMode eMode = DrawViewMode_DRAW;
+    Reference< XFrame > xFrame( rController.getFrameInterface() );
 
     // find out which view is running
     if( xFrame.is() ) try
@@ -235,17 +233,17 @@ LayoutToolbarMenu::LayoutToolbarMenu( SlideLayoutController& rController, const 
 
         OUString sSlotStr;
         Image aSlotImage;
-        if( mxFrame.is() )
+        if( xFrame.is() )
         {
             if( bInsertPage )
                 sSlotStr = ".uno:DuplicatePage";
             else
                 sSlotStr = ".uno:Undo";
-            aSlotImage = ::GetImage( mxFrame, sSlotStr, false );
+            aSlotImage = vcl::CommandInfoProvider::Instance().GetImageForCommand(sSlotStr, xFrame);
 
             OUString sSlotTitle;
             if( bInsertPage )
-                sSlotTitle = ImplRetrieveLabelFromCommand( mxFrame, sSlotStr );
+                sSlotTitle = vcl::CommandInfoProvider::Instance().GetLabelForCommand( sSlotStr, xFrame );
             else
                 sSlotTitle = SD_RESSTR( STR_RESET_LAYOUT );
             appendEntry( 2, sSlotTitle, aSlotImage);
@@ -267,11 +265,11 @@ void LayoutToolbarMenu::dispose()
     svtools::ToolbarMenu::dispose();
 }
 
-IMPL_LINK_TYPED( LayoutToolbarMenu, SelectValueSetHdl, ValueSet*, pControl, void )
+IMPL_LINK( LayoutToolbarMenu, SelectValueSetHdl, ValueSet*, pControl, void )
 {
     SelectHdl(pControl);
 }
-IMPL_LINK_TYPED( LayoutToolbarMenu, SelectToolbarMenuHdl, ToolbarMenu *, pControl, void )
+IMPL_LINK( LayoutToolbarMenu, SelectToolbarMenuHdl, ToolbarMenu *, pControl, void )
 {
     SelectHdl(pControl);
 }
@@ -358,7 +356,7 @@ void SAL_CALL SlideLayoutController::initialize( const css::uno::Sequence< css::
 
 VclPtr<vcl::Window> SlideLayoutController::createPopupWindow( vcl::Window* pParent )
 {
-    return VclPtr<sd::LayoutToolbarMenu>::Create( *this, m_xFrame, pParent, mbInsertPage );
+    return VclPtr<sd::LayoutToolbarMenu>::Create( *this, pParent, mbInsertPage );
 }
 
 // XServiceInfo

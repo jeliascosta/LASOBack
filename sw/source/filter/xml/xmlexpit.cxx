@@ -248,7 +248,7 @@ void SvXMLExportItemMapper::exportElementItems(
 }
 
 /** returns the item with the given WhichId from the given ItemSet if its
-    set or its default item if its not set and the SvXmlExportFlags::DEEP
+    set or its default item if it's not set and the SvXmlExportFlags::DEEP
     is set in the flags
 */
 const SfxPoolItem* SvXMLExportItemMapper::GetItem( const SfxItemSet& rSet,
@@ -267,9 +267,9 @@ const SfxPoolItem* SvXMLExportItemMapper::GetItem( const SfxItemSet& rSet,
         return pItem;
     }
     else if( (nFlags & SvXmlExportFlags::DEFAULTS) &&
-              SFX_WHICH_MAX > nWhichId )
+              SfxItemPool::IsWhich(nWhichId))
     {
-        // if its not set, try the pool if we export defaults
+        // if it's not set, try the pool if we export defaults
         return &rSet.GetPool()->GetDefaultItem(nWhichId);
     }
     else
@@ -290,10 +290,10 @@ SvXMLExportItemMapper::~SvXMLExportItemMapper()
 void SvXMLExportItemMapper::exportXML( SvXMLExport& rExport,
                     const SfxItemSet& rSet,
                     const SvXMLUnitConverter& rUnitConverter,
-                    XMLTokenEnum ePropToken,
-                    SvXmlExportFlags nFlags ) const
+                    XMLTokenEnum ePropToken ) const
 {
     std::vector<sal_uInt16> aIndexArray;
+    const SvXmlExportFlags nFlags = SvXmlExportFlags::IGN_WS;
 
     exportXML( rExport, rExport.GetAttrList(), rSet, rUnitConverter,
                rExport.GetNamespaceMap(), nFlags, &aIndexArray );
@@ -844,15 +844,15 @@ bool SvXMLExportItemMapper::QueryXMLValue(
             switch( nMemberId )
             {
             case MID_BREAK_BEFORE:
-                switch (rFormatBreak.GetValue())
+                switch (rFormatBreak.GetBreak())
                 {
-                    case SVX_BREAK_COLUMN_BEFORE:
+                    case SvxBreak::ColumnBefore:
                         eEnum = 1;
                         break;
-                    case SVX_BREAK_PAGE_BEFORE:
+                    case SvxBreak::PageBefore:
                         eEnum = 2;
                         break;
-                    case SVX_BREAK_NONE:
+                    case SvxBreak::NONE:
                         eEnum = 0;
                         break;
                     default:
@@ -860,15 +860,15 @@ bool SvXMLExportItemMapper::QueryXMLValue(
                 }
                 break;
             case MID_BREAK_AFTER:
-                switch (rFormatBreak.GetValue())
+                switch (rFormatBreak.GetBreak())
                 {
-                    case SVX_BREAK_COLUMN_AFTER:
+                    case SvxBreak::ColumnAfter:
                         eEnum = 1;
                         break;
-                    case SVX_BREAK_PAGE_AFTER:
+                    case SvxBreak::PageAfter:
                         eEnum = 2;
                         break;
-                    case SVX_BREAK_NONE:
+                    case SvxBreak::NONE:
                         eEnum = 0;
                         break;
                     default:

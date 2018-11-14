@@ -184,7 +184,6 @@ FmXUndoEnvironment::FmXUndoEnvironment(FmFormModel& _rModel)
     }
 }
 
-
 FmXUndoEnvironment::~FmXUndoEnvironment()
 {
     if ( !m_bDisposed )   // i120746, call FormScriptingEnvironment::dispose to avoid memory leak
@@ -193,7 +192,6 @@ FmXUndoEnvironment::~FmXUndoEnvironment()
     if (m_pPropertySetCache)
         delete static_cast<PropertySetInfoCache*>(m_pPropertySetCache);
 }
-
 
 void FmXUndoEnvironment::dispose()
 {
@@ -288,17 +286,16 @@ void FmXUndoEnvironment::ModeChanged()
 
 void FmXUndoEnvironment::Notify( SfxBroadcaster& /*rBC*/, const SfxHint& rHint )
 {
-    const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>(&rHint);
-    if (pSdrHint)
+    if (const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>(&rHint))
     {
-        switch( pSdrHint->GetKind() )
+        switch (pSdrHint->GetKind())
         {
-            case HINT_OBJINSERTED:
+            case SdrHintKind::ObjectInserted:
             {
                 SdrObject* pSdrObj = const_cast<SdrObject*>(pSdrHint->GetObject());
                 Inserted( pSdrObj );
             }   break;
-            case HINT_OBJREMOVED:
+            case SdrHintKind::ObjectRemoved:
             {
                 SdrObject* pSdrObj = const_cast<SdrObject*>(pSdrHint->GetObject());
                 Removed( pSdrObj );
@@ -308,9 +305,9 @@ void FmXUndoEnvironment::Notify( SfxBroadcaster& /*rBC*/, const SfxHint& rHint )
                 break;
         }
     }
-    else if (dynamic_cast<const SfxSimpleHint*>(&rHint))
+    else if (rHint.GetId())
     {
-        switch ( static_cast<const SfxSimpleHint*>(&rHint)->GetId() )
+        switch (rHint.GetId())
         {
             case SFX_HINT_DYING:
                 dispose();
@@ -321,23 +318,21 @@ void FmXUndoEnvironment::Notify( SfxBroadcaster& /*rBC*/, const SfxHint& rHint )
                 break;
         }
     }
-    else if (dynamic_cast<const SfxEventHint*>(&rHint))
+    else if (const SfxEventHint* pEventHint = dynamic_cast<const SfxEventHint*>(&rHint))
     {
-        switch ( static_cast<const SfxEventHint*>(&rHint)->GetEventId() )
+        switch (pEventHint->GetEventId())
         {
-        case SFX_EVENT_CREATEDOC:
+            case SFX_EVENT_CREATEDOC:
             case SFX_EVENT_OPENDOC:
                 ModeChanged();
                 break;
         }
     }
-
 }
-
 
 void FmXUndoEnvironment::Inserted(SdrObject* pObj)
 {
-    if (pObj->GetObjInventor() == FmFormInventor)
+    if (pObj->GetObjInventor() == SdrInventor::FmForm)
     {
         FmFormObj* pFormObj = dynamic_cast<FmFormObj*>( pObj );
         Inserted( pFormObj );
@@ -451,7 +446,7 @@ void FmXUndoEnvironment::Removed(SdrObject* pObj)
         // object, which is sufficient here
         return;
 
-    if (pObj->GetObjInventor() == FmFormInventor)
+    if (pObj->GetObjInventor() == SdrInventor::FmForm)
     {
         FmFormObj* pFormObj = dynamic_cast<FmFormObj*>( pObj );
         Removed(pFormObj);
@@ -540,13 +535,13 @@ void SAL_CALL FmXUndoEnvironment::propertyChange(const PropertyChangeEvent& evt)
             return;
 
         // if it's a "default value" property of a control model, set the according "value" property
-        static const OUString pDefaultValueProperties[] = {
-            OUString(FM_PROP_DEFAULT_TEXT), OUString(FM_PROP_DEFAULTCHECKED), OUString(FM_PROP_DEFAULT_DATE), OUString(FM_PROP_DEFAULT_TIME),
-            OUString(FM_PROP_DEFAULT_VALUE), OUString(FM_PROP_DEFAULT_SELECT_SEQ), OUString(FM_PROP_EFFECTIVE_DEFAULT)
+        static const OUStringLiteral pDefaultValueProperties[] = {
+            OUStringLiteral(FM_PROP_DEFAULT_TEXT), OUStringLiteral(FM_PROP_DEFAULTCHECKED), OUStringLiteral(FM_PROP_DEFAULT_DATE), OUStringLiteral(FM_PROP_DEFAULT_TIME),
+            OUStringLiteral(FM_PROP_DEFAULT_VALUE), OUStringLiteral(FM_PROP_DEFAULT_SELECT_SEQ), OUStringLiteral(FM_PROP_EFFECTIVE_DEFAULT)
         };
-        const OUString aValueProperties[] = {
-            OUString(FM_PROP_TEXT), OUString(FM_PROP_STATE), OUString(FM_PROP_DATE), OUString(FM_PROP_TIME),
-            OUString(FM_PROP_VALUE), OUString(FM_PROP_SELECT_SEQ), OUString(FM_PROP_EFFECTIVE_VALUE)
+        static const OUStringLiteral aValueProperties[] = {
+            OUStringLiteral(FM_PROP_TEXT), OUStringLiteral(FM_PROP_STATE), OUStringLiteral(FM_PROP_DATE), OUStringLiteral(FM_PROP_TIME),
+            OUStringLiteral(FM_PROP_VALUE), OUStringLiteral(FM_PROP_SELECT_SEQ), OUStringLiteral(FM_PROP_EFFECTIVE_VALUE)
         };
         sal_Int32 nDefaultValueProps = SAL_N_ELEMENTS(pDefaultValueProperties);
         OSL_ENSURE(SAL_N_ELEMENTS(aValueProperties) == nDefaultValueProps,

@@ -1,10 +1,11 @@
 #//ADD LIBRAS
 --enable-odk
 --enable-ext-languagetool
---with-epm
 --with-package-format=archive msi installed
 --with-lang=pt-BR
---with-extra-buildid=LIBRASOffice MAR/2017
---with-vendor=Jonathan Elias Sousa da Costa
+--with-extra-buildid=LIBRASOffice 1.0 alpha
+--with-vendor=Laboratorio de Informatica para Educacao da UFRJ
 --with-build-version=Desenvolvido por Jonathan Elias
+--with-product-name=LIBRASOffice
+#--with-package-version=1.0
 #//END LIBRAS

@@ -23,7 +23,6 @@
 #include "componentmodule.hxx"
 #include <comphelper/processfactory.hxx>
 #include <tools/debug.hxx>
-#include <svtools/localresaccess.hxx>
 #include "typeselectionpage.hxx"
 #include "admininvokationpage.hxx"
 #include "tableselectionpage.hxx"
@@ -55,13 +54,12 @@ namespace abp
     using namespace ::com::sun::star::lang;
 
     OAddressBookSourcePilot::OAddressBookSourcePilot(vcl::Window* _pParent, const Reference< XComponentContext >& _rxORB)
-        :OAddressBookSourcePilot_Base( _pParent,
-            WizardButtonFlags::HELP | WizardButtonFlags::FINISH | WizardButtonFlags::CANCEL | WizardButtonFlags::NEXT | WizardButtonFlags::PREVIOUS )
+        :OAddressBookSourcePilot_Base( _pParent )
         ,m_xORB(_rxORB)
         ,m_aNewDataSource(_rxORB)
         ,m_eNewDataSourceType( AST_INVALID )
     {
-        SetPageSizePixel(LogicToPixel(Size(WINDOW_SIZE_X, WINDOW_SIZE_Y), MAP_APPFONT));
+        SetPageSizePixel(LogicToPixel(Size(WINDOW_SIZE_X, WINDOW_SIZE_Y), MapUnit::MapAppFont));
 
         declarePath( PATH_COMPLETE,
             {STATE_SELECT_ABTYPE,
@@ -175,7 +173,7 @@ namespace abp
     }
 
 
-    IMPL_LINK_NOARG_TYPED( OAddressBookSourcePilot, OnCancelClicked, Button*, void )
+    IMPL_LINK_NOARG( OAddressBookSourcePilot, OnCancelClicked, Button*, void )
     {
         // do cleanups
         implCleanup();
@@ -262,7 +260,7 @@ namespace abp
 
             if ( aTables.empty() )
             {
-                if (RET_YES != ScopedVclPtrInstance<MessageDialog>(this, ModuleRes(( getSettings().eType == AST_EVOLUTION_GROUPWISE ? RID_STR_QRY_NO_EVO_GW : RID_STR_QRY_NOTABLES)), VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO)->Execute())
+                if (RET_YES != ScopedVclPtrInstance<MessageDialog>(this, ModuleRes(( getSettings().eType == AST_EVOLUTION_GROUPWISE ? RID_STR_QRY_NO_EVO_GW : RID_STR_QRY_NOTABLES)), VclMessageType::Question, VCL_BUTTONS_YES_NO)->Execute())
                 {
                     // cannot ask the user, or the user chose to use this data source, though there are no tables
                     bAllow = false;

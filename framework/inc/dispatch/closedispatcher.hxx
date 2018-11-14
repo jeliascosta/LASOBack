@@ -127,7 +127,7 @@ class CloseDispatcher : public  ::cppu::WeakImplHelper<
                         const OUString&                                           sTarget);
 
         /** @short  does nothing real. */
-        virtual ~CloseDispatcher();
+        virtual ~CloseDispatcher() override;
 
     // uno interface
 
@@ -160,7 +160,7 @@ class CloseDispatcher : public  ::cppu::WeakImplHelper<
                     asynchronous. Otherwise our callis kill its own environment
                     during they call us...
         */
-        DECL_LINK_TYPED( impl_asyncCallback, LinkParamNone*, void );
+        DECL_LINK( impl_asyncCallback, LinkParamNone*, void );
 
         /** @short  prepare m_xCloseFrame so it should be closeable without problems.
 

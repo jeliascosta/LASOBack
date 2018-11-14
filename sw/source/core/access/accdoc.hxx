@@ -35,15 +35,15 @@ class SwAccessibleDocumentBase : public SwAccessibleContext
 {
     css::uno::Reference< css::accessibility::XAccessible> mxParent;
 
-    VclPtr<vcl::Window> mpChildWin; // protected by solar mutext
+    VclPtr<vcl::Window> mpChildWin; // protected by solar mutex
 
     using SwAccessibleFrame::SetVisArea;
 
 protected:
-    virtual ~SwAccessibleDocumentBase();
+    virtual ~SwAccessibleDocumentBase() override;
 
 public:
-    SwAccessibleDocumentBase( SwAccessibleMap* pInitMap );
+    SwAccessibleDocumentBase(std::shared_ptr<SwAccessibleMap> const& pInitMap);
 
     void SetVisArea();
 
@@ -117,12 +117,12 @@ protected:
     // This derived class additionally sets MULTISELECTABLE(1)
     virtual void GetStates( ::utl::AccessibleStateSetHelper& rStateSet ) override;
 
-    virtual ~SwAccessibleDocument();
+    virtual ~SwAccessibleDocument() override;
 
 public:
-    SwAccessibleDocument( SwAccessibleMap* pInitMap );
+    SwAccessibleDocument(std::shared_ptr<SwAccessibleMap> const& pInitMap);
 
-    DECL_LINK_TYPED( WindowChildEventListener, VclWindowEvent&, void );
+    DECL_LINK( WindowChildEventListener, VclWindowEvent&, void );
 
     // XServiceInfo
 
@@ -198,7 +198,7 @@ public:
     // thread safe C++ interface
 
     // The object is not visible an longer and should be destroyed
-    virtual void Dispose( bool bRecursive = false ) override;
+    virtual void Dispose(bool bRecursive, bool bCanSkipInvisible = true) override;
 
     // XAccessibleComponent
     sal_Int32 SAL_CALL getBackground()

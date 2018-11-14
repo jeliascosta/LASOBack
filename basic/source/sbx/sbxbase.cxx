@@ -43,7 +43,7 @@ SbxAppData::~SbxAppData()
 {
     SolarMutexGuard g;
 
-    delete pBasicFormater;
+    pBasicFormater.reset();
     m_Factories.clear();
 }
 
@@ -76,10 +76,6 @@ SbxDataType SbxBase::GetType() const
 SbxClassType SbxBase::GetClass() const
 {
     return SbxClassType::DontCare;
-}
-
-void SbxBase::Clear()
-{
 }
 
 bool SbxBase::IsFixed() const
@@ -123,15 +119,7 @@ void SbxBase::AddFactory( SbxFactory* pFac )
 {
     SbxAppData& r = GetSbxData_Impl();
 
-    // From 1996-03-06: take the HandleLast-Flag into account
-    sal_uInt16 nPos = r.m_Factories.size(); // Insert position
-    if( !pFac->IsHandleLast() )         // Only if not self HandleLast
-    {
-        // Rank new factory in front of factories with HandleLast
-        while (nPos > 0 && r.m_Factories[ nPos-1 ]->IsHandleLast())
-            nPos--;
-    }
-    r.m_Factories.insert(r.m_Factories.begin() + nPos, std::unique_ptr<SbxFactory>(pFac));
+    r.m_Factories.insert(r.m_Factories.begin(), std::unique_ptr<SbxFactory>(pFac));
 }
 
 void SbxBase::RemoveFactory( SbxFactory* pFac )
@@ -210,7 +198,7 @@ SbxBase* SbxBase::Load( SvStream& rStrm )
     if( nFlags & SbxFlagBits::Reserved )
         nFlags = ( nFlags & ~SbxFlagBits::Reserved ) | SbxFlagBits::GlobalSearch;
 
-    sal_Size nOldPos = rStrm.Tell();
+    sal_uInt64 nOldPos = rStrm.Tell();
     rStrm.ReadUInt32( nSize );
     SbxBase* p = Create( nSbxId, nCreator );
     if( p )
@@ -218,7 +206,7 @@ SbxBase* SbxBase::Load( SvStream& rStrm )
         p->nFlags = nFlags;
         if( p->LoadData( rStrm, nVer ) )
         {
-            sal_Size nNewPos = rStrm.Tell();
+            sal_uInt64 const nNewPos = rStrm.Tell();
             nOldPos += nSize;
             DBG_ASSERT( nOldPos >= nNewPos, "SBX: Too much data loaded" );
             if( nOldPos != nNewPos )
@@ -247,14 +235,14 @@ bool SbxBase::Store( SvStream& rStrm )
 {
     if( ( nFlags & SbxFlagBits::DontStore ) == SbxFlagBits::NONE )
     {
-        rStrm.WriteUInt32( GetCreator() )
+        rStrm.WriteUInt32( SBXCR_SBX )
              .WriteUInt16( GetSbxId() )
              .WriteUInt16( static_cast<sal_uInt16>(GetFlags()) )
              .WriteUInt16( GetVersion() );
-        sal_Size nOldPos = rStrm.Tell();
-        rStrm.WriteUInt32( 0L );
+        sal_uInt64 const nOldPos = rStrm.Tell();
+        rStrm.WriteUInt32( 0 );
         bool bRes = StoreData( rStrm );
-        sal_Size nNewPos = rStrm.Tell();
+        sal_uInt64 const nNewPos = rStrm.Tell();
         rStrm.Seek( nOldPos );
         rStrm.WriteUInt32( nNewPos - nOldPos );
         rStrm.Seek( nNewPos );
@@ -266,16 +254,6 @@ bool SbxBase::Store( SvStream& rStrm )
     }
     else
         return true;
-}
-
-bool SbxBase::LoadData( SvStream&, sal_uInt16 )
-{
-    return false;
-}
-
-bool SbxBase::StoreData( SvStream& ) const
-{
-    return false;
 }
 
 bool SbxBase::LoadCompleted()

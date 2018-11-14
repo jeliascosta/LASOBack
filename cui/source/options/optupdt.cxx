@@ -37,6 +37,8 @@
 #include <com/sun/star/util/URLTransformer.hpp>
 #include <com/sun/star/util/XURLTransformer.hpp>
 #include <com/sun/star/setup/UpdateCheckConfig.hpp>
+#include <com/sun/star/configuration/ReadWriteAccess.hpp>
+#include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <osl/file.hxx>
 #include <osl/security.hxx>
 
@@ -67,6 +69,7 @@ SvxOnlineUpdateTabPage::SvxOnlineUpdateTabPage(vcl::Window* pParent, const SfxIt
     uno::Reference < uno::XComponentContext > xContext( ::comphelper::getProcessComponentContext() );
 
     m_xUpdateAccess = setup::UpdateCheckConfig::create( xContext );
+    m_xReadWriteAccess = css::configuration::ReadWriteAccess::create(xContext, "*");
 
     bool bDownloadSupported = false;
     m_xUpdateAccess->getByName( "DownloadSupported" ) >>= bDownloadSupported;
@@ -274,14 +277,19 @@ void SvxOnlineUpdateTabPage::Reset( const SfxItemSet* )
 {
     bool bValue = false;
     m_xUpdateAccess->getByName( "AutoCheckEnabled" ) >>= bValue;
+    beans::Property aProperty = m_xReadWriteAccess->getPropertyByHierarchicalName("/org.openoffice.Office.Jobs/Jobs/org.openoffice.Office.Jobs:Job['UpdateCheck']/Arguments/AutoCheckEnabled");
+    bool bReadOnly = (aProperty.Attributes & beans::PropertyAttribute::READONLY) != 0;
 
     m_pAutoCheckCheckBox->Check(bValue);
-    m_pEveryDayButton->Enable(bValue);
-    m_pEveryWeekButton->Enable(bValue);
-    m_pEveryMonthButton->Enable(bValue);
+    m_pAutoCheckCheckBox->Enable(!bReadOnly);
 
     sal_Int64 nValue = 0;
     m_xUpdateAccess->getByName( "CheckInterval" ) >>= nValue;
+    aProperty = m_xReadWriteAccess->getPropertyByHierarchicalName("/org.openoffice.Office.Jobs/Jobs/org.openoffice.Office.Jobs:Job['UpdateCheck']/Arguments/CheckInterval");
+    bool bReadOnly2 = (aProperty.Attributes & beans::PropertyAttribute::READONLY) != 0;
+    m_pEveryDayButton->Enable(bValue && !(bReadOnly || bReadOnly2));
+    m_pEveryWeekButton->Enable(bValue && !(bReadOnly || bReadOnly2));
+    m_pEveryMonthButton->Enable(bValue && !(bReadOnly || bReadOnly2));
 
     if( nValue == 86400 )
         m_pEveryDayButton->Check();
@@ -296,19 +304,27 @@ void SvxOnlineUpdateTabPage::Reset( const SfxItemSet* )
     m_pEveryMonthButton->SaveValue();
 
     m_xUpdateAccess->getByName( "AutoDownloadEnabled" ) >>= bValue;
+    aProperty = m_xReadWriteAccess->getPropertyByHierarchicalName("/org.openoffice.Office.Jobs/Jobs/org.openoffice.Office.Jobs:Job['UpdateCheck']/Arguments/AutoDownloadEnabled");
+    bReadOnly = (aProperty.Attributes & beans::PropertyAttribute::READONLY) != 0;
     m_pAutoDownloadCheckBox->Check(bValue);
+    m_pAutoDownloadCheckBox->Enable(!bReadOnly);
     m_pDestPathLabel->Enable();
     m_pDestPath->Enable();
-    m_pChangePathButton->Enable();
 
     OUString sValue, aPath;
     m_xUpdateAccess->getByName( "DownloadDestination" ) >>= sValue;
+    aProperty = m_xReadWriteAccess->getPropertyByHierarchicalName("/org.openoffice.Office.Jobs/Jobs/org.openoffice.Office.Jobs:Job['UpdateCheck']/Arguments/DownloadDestination");
+    bReadOnly = (aProperty.Attributes & beans::PropertyAttribute::READONLY) != 0;
+    m_pChangePathButton->Enable(!bReadOnly);
 
     if( osl::FileBase::E_None == osl::FileBase::getSystemPathFromFileURL(sValue, aPath) )
         m_pDestPath->SetText(aPath);
 
     m_xUpdateAccess->getByName( "ExtendedUserAgent" ) >>= bValue;
+    aProperty = m_xReadWriteAccess->getPropertyByHierarchicalName("/org.openoffice.Office.Jobs/Jobs/org.openoffice.Office.Jobs:Job['UpdateCheck']/Arguments/ExtendedUserAgent");
+    bReadOnly = (aProperty.Attributes & beans::PropertyAttribute::READONLY) != 0;
     m_pExtrasCheckBox->Check(bValue);
+    m_pExtrasCheckBox->Enable(!bReadOnly);
     m_pExtrasCheckBox->SaveValue();
     UpdateUserAgent();
 
@@ -319,21 +335,22 @@ void SvxOnlineUpdateTabPage::FillUserData()
 {
 }
 
-IMPL_LINK_TYPED( SvxOnlineUpdateTabPage, AutoCheckHdl_Impl, Button*, pBox, void )
+IMPL_LINK( SvxOnlineUpdateTabPage, AutoCheckHdl_Impl, Button*, pBox, void )
 {
     bool bEnabled = static_cast<CheckBox*>(pBox)->IsChecked();
-
-    m_pEveryDayButton->Enable(bEnabled);
-    m_pEveryWeekButton->Enable(bEnabled);
-    m_pEveryMonthButton->Enable(bEnabled);
+    beans::Property aProperty = m_xReadWriteAccess->getPropertyByHierarchicalName("/org.openoffice.Office.Jobs/Jobs/org.openoffice.Office.Jobs:Job['UpdateCheck']/Arguments/CheckInterval");
+    bool bReadOnly = (aProperty.Attributes & beans::PropertyAttribute::READONLY) != 0;
+    m_pEveryDayButton->Enable(bEnabled && !bReadOnly);
+    m_pEveryWeekButton->Enable(bEnabled && !bReadOnly);
+    m_pEveryMonthButton->Enable(bEnabled && !bReadOnly);
 }
 
-IMPL_LINK_TYPED( SvxOnlineUpdateTabPage, ExtrasCheckHdl_Impl, Button*, , void )
+IMPL_LINK( SvxOnlineUpdateTabPage, ExtrasCheckHdl_Impl, Button*, , void )
 {
     UpdateUserAgent();
 }
 
-IMPL_LINK_NOARG_TYPED(SvxOnlineUpdateTabPage, FileDialogHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxOnlineUpdateTabPage, FileDialogHdl_Impl, Button*, void)
 {
     uno::Reference < uno::XComponentContext > xContext( ::comphelper::getProcessComponentContext() );
     uno::Reference < ui::dialogs::XFolderPicker2 >  xFolderPicker = ui::dialogs::FolderPicker::create(xContext);
@@ -353,7 +370,7 @@ IMPL_LINK_NOARG_TYPED(SvxOnlineUpdateTabPage, FileDialogHdl_Impl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SvxOnlineUpdateTabPage, CheckNowHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxOnlineUpdateTabPage, CheckNowHdl_Impl, Button*, void)
 {
     uno::Reference < uno::XComponentContext> xContext( ::comphelper::getProcessComponentContext() );
 

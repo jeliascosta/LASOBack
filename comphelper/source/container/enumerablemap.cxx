@@ -148,12 +148,11 @@ namespace comphelper
                                                 ,   XServiceInfo
                                                 > Map_IFace;
 
-    class COMPHELPER_DLLPRIVATE EnumerableMap :public Map_IFace
-                                    ,public ComponentBase
+    class EnumerableMap: public Map_IFace, public ComponentBase
     {
     protected:
         EnumerableMap();
-        virtual ~EnumerableMap();
+        virtual ~EnumerableMap() override;
 
         // XInitialization
         virtual void SAL_CALL initialize( const Sequence< Any >& aArguments ) throw (Exception, RuntimeException, std::exception) override;
@@ -209,7 +208,7 @@ namespace comphelper
     };
 
 
-    class MapEnumerator
+    class MapEnumerator final
     {
     public:
         MapEnumerator( ::cppu::OWeakObject& _rParent, MapData& _mapData, const EnumerationType _type )
@@ -222,7 +221,7 @@ namespace comphelper
             lcl_registerMapModificationListener( m_rMapData, *this );
         }
 
-        virtual ~MapEnumerator()
+        ~MapEnumerator()
         {
             dispose();
         }
@@ -283,7 +282,7 @@ namespace comphelper
         virtual Any SAL_CALL nextElement(  ) throw (NoSuchElementException, WrappedTargetException, RuntimeException, std::exception) override;
 
     protected:
-        virtual ~MapEnumeration()
+        virtual ~MapEnumeration() override
         {
             acquire();
             {

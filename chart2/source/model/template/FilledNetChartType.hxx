@@ -28,7 +28,7 @@ class FilledNetChartType : public NetChartType_Base
 {
 public:
     explicit FilledNetChartType( css::uno::Reference< css::uno::XComponentContext > const & xContext );
-    virtual ~FilledNetChartType();
+    virtual ~FilledNetChartType() override;
 
     virtual OUString SAL_CALL
         getImplementationName()
@@ -39,9 +39,6 @@ public:
     virtual css::uno::Sequence< OUString > SAL_CALL
         getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString >
-        getSupportedServiceNames_Static();
 
 protected:
     explicit FilledNetChartType( const FilledNetChartType & rOther );

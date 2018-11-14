@@ -22,17 +22,16 @@
 
 #include <xmloff/xmlictxt.hxx>
 #include "xmlimprt.hxx"
+#include "importcontext.hxx"
 
-class ScXMLTableShapesContext : public SvXMLImportContext
+class ScXMLTableShapesContext : public ScXMLImportContext
 {
-    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
-    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 public:
     ScXMLTableShapesContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
                         const OUString& rLName,
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList);
 
-    virtual ~ScXMLTableShapesContext();
+    virtual ~ScXMLTableShapesContext() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,

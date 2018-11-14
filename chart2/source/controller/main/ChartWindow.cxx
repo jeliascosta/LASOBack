@@ -20,6 +20,7 @@
 #include "ChartWindow.hxx"
 #include "ChartController.hxx"
 #include "HelpIds.hrc"
+#include "uiobject.hxx"
 
 #include <vcl/help.hxx>
 #include <vcl/openglwin.hxx>
@@ -55,8 +56,9 @@ ChartWindow::ChartWindow( ChartController* pController, vcl::Window* pParent, Wi
         , m_pOpenGLWindow(nullptr)
 #endif
 {
+    set_id("chart_window");
     this->SetHelpId( HID_SCH_WIN_DOCUMENT );
-    this->SetMapMode( MapMode(MAP_100TH_MM) );
+    this->SetMapMode( MapMode(MapUnit::Map100thMM) );
     adjustHighContrastMode();
     // chart does not depend on exact pixel painting => enable antialiased drawing
     SetAntialiasing( AntialiasingFlags::EnableB2dDraw | GetAntialiasing() );
@@ -303,6 +305,16 @@ void ChartWindow::Invalidate( const vcl::Region& rRegion, InvalidateFlags nFlags
     {
         m_pOpenGLWindow->Invalidate( rRegion, nFlags );
     }
+}
+
+FactoryFunction ChartWindow::GetUITestFactory() const
+{
+    return ChartWindowUIObject::create;
+}
+
+ChartController* ChartWindow::GetController()
+{
+    return m_pWindowController;
 }
 
 } //namespace chart

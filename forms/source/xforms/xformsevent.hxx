@@ -36,12 +36,11 @@ class XFormsEventConcrete : public cppu::WeakImplHelper< XFormsEvent > {
 
         XFormsEventConcrete()
             : m_canceled(false)
-            , m_phase(css::xml::dom::events::PhaseType_CAPTURING_PHASE)
             , m_bubbles(false)
             , m_cancelable(false)
         {
         }
-        virtual ~XFormsEventConcrete() {}
+        virtual ~XFormsEventConcrete() override {}
 
         virtual OUString SAL_CALL getType() throw (css::uno::RuntimeException, std::exception) override;
         virtual css::uno::Reference< css::xml::dom::events::XEventTarget > SAL_CALL getTarget() throw (css::uno::RuntimeException, std::exception) override;
@@ -74,7 +73,6 @@ class XFormsEventConcrete : public cppu::WeakImplHelper< XFormsEvent > {
         OUString m_eventType;
         css::uno::Reference< css::xml::dom::events::XEventTarget > m_target;
         css::uno::Reference< css::xml::dom::events::XEventTarget > m_currentTarget;
-        css::xml::dom::events::PhaseType m_phase;
         bool m_bubbles;
         bool m_cancelable;
         css::util::Time m_time;

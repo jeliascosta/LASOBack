@@ -702,7 +702,7 @@ void ChartController::executeDlg_ObjectProperties( const OUString& rSelectedObje
     OUString aObjectCID = lcl_getFormatCIDforSelectedCID( rSelectedObjectCID );
 
     UndoGuard aUndoGuard( ActionDescriptionProvider::createDescription(
-                ActionDescriptionProvider::FORMAT,
+                ActionDescriptionProvider::ActionType::Format,
                 ObjectNameProvider::getName( ObjectIdentifier::getObjectType( aObjectCID ))),
             m_xUndoManager );
 
@@ -817,14 +817,13 @@ void ChartController::executeDispatch_View3D()
 {
     try
     {
-        // using assignment for broken gcc 3.3
-        UndoLiveUpdateGuard aUndoGuard = UndoLiveUpdateGuard(
+        UndoLiveUpdateGuard aUndoGuard(
             SCH_RESSTR( STR_ACTION_EDIT_3D_VIEW ),
             m_xUndoManager );
 
         //open dialog
         SolarMutexGuard aSolarGuard;
-        ScopedVclPtrInstance< View3DDialog > aDlg( m_pChartWindow, getModel(), m_pDrawModelWrapper->GetColorList() );
+        ScopedVclPtrInstance< View3DDialog > aDlg(m_pChartWindow, getModel());
         if( aDlg->Execute() == RET_OK )
             aUndoGuard.commit();
     }

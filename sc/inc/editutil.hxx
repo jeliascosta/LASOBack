@@ -110,8 +110,7 @@ protected:
     bool            bDeleteEnginePool;
     bool            bDeleteDefaults;
 
-                    ScEnginePoolHelper( SfxItemPool* pEnginePool,
-                        bool bDeleteEnginePool = false );
+                    ScEnginePoolHelper( SfxItemPool* pEnginePool, bool bDeleteEnginePool );
                     ScEnginePoolHelper( const ScEnginePoolHelper& rOrg );
     virtual         ~ScEnginePoolHelper();
 };
@@ -129,7 +128,7 @@ public:
                     /// If rOrg.bDeleteEnginePool: pool gets cloned and will be
                     /// deleted on destruction. Defaults are not set.
                     ScEditEngineDefaulter( const ScEditEngineDefaulter& rOrg );
-    virtual         ~ScEditEngineDefaulter();
+    virtual         ~ScEditEngineDefaulter() override;
 
                     /// Creates a copy of SfxItemSet if bRememberCopy set
     void            SetDefaults( const SfxItemSet& rDefaults, bool bRememberCopy = true );
@@ -236,8 +235,7 @@ class ScNoteEditEngine : public ScEditEngineDefaulter
 {
 
 public:
-    ScNoteEditEngine( SfxItemPool* pEnginePool,
-                SfxItemPool* pTextObjectPool = nullptr );
+    ScNoteEditEngine( SfxItemPool* pEnginePool, SfxItemPool* pTextObjectPool );
 
 };
 

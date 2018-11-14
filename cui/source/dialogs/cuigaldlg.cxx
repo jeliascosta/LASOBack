@@ -218,20 +218,14 @@ void SearchProgress::dispose()
 }
 
 
-void SearchProgress::Terminate()
+IMPL_LINK_NOARG(SearchProgress, ClickCancelBtn, Button*, void)
 {
     if (maSearchThread.is())
         maSearchThread->terminate();
 }
 
 
-IMPL_LINK_NOARG_TYPED(SearchProgress, ClickCancelBtn, Button*, void)
-{
-    Terminate();
-}
-
-
-IMPL_LINK_NOARG_TYPED(SearchProgress, CleanUpHdl, void*, void)
+IMPL_LINK_NOARG(SearchProgress, CleanUpHdl, void*, void)
 {
     if (maSearchThread.is())
         maSearchThread->join();
@@ -347,20 +341,14 @@ void TakeProgress::dispose()
 }
 
 
-void TakeProgress::Terminate()
+IMPL_LINK_NOARG(TakeProgress, ClickCancelBtn, Button*, void)
 {
     if (maTakeThread.is())
         maTakeThread->terminate();
 }
 
 
-IMPL_LINK_NOARG_TYPED(TakeProgress, ClickCancelBtn, Button*, void)
-{
-    Terminate();
-}
-
-
-IMPL_LINK_NOARG_TYPED(TakeProgress, CleanUpHdl, void*, void)
+IMPL_LINK_NOARG(TakeProgress, CleanUpHdl, void*, void)
 {
     if (maTakeThread.is())
         maTakeThread->join();
@@ -472,14 +460,14 @@ short ActualizeProgress::Execute()
 }
 
 
-IMPL_LINK_NOARG_TYPED(ActualizeProgress, ClickCancelBtn, Button*, void)
+IMPL_LINK_NOARG(ActualizeProgress, ClickCancelBtn, Button*, void)
 {
     pTheme->AbortActualize();
     EndDialog( RET_OK );
 }
 
 
-IMPL_LINK_TYPED( ActualizeProgress, TimeoutHdl, Idle*, _pTimer, void)
+IMPL_LINK( ActualizeProgress, TimeoutHdl, Idle*, _pTimer, void)
 {
     if ( _pTimer )
     {
@@ -492,7 +480,7 @@ IMPL_LINK_TYPED( ActualizeProgress, TimeoutHdl, Idle*, _pTimer, void)
 }
 
 
-IMPL_LINK_TYPED( ActualizeProgress, ActualizeHdl, const INetURLObject&, rURL, void )
+IMPL_LINK( ActualizeProgress, ActualizeHdl, const INetURLObject&, rURL, void )
 {
     for( long i = 0; i < 128; i++ )
         Application::Reschedule();
@@ -558,7 +546,7 @@ void GalleryIdDialog::dispose()
 }
 
 
-IMPL_LINK_NOARG_TYPED(GalleryIdDialog, ClickOkHdl, Button*, void)
+IMPL_LINK_NOARG(GalleryIdDialog, ClickOkHdl, Button*, void)
 {
     Gallery*    pGal = pThm->GetParent();
     const sal_uLong nId = GetId();
@@ -572,9 +560,7 @@ IMPL_LINK_NOARG_TYPED(GalleryIdDialog, ClickOkHdl, Button*, void)
         {
             OUString aStr( CUI_RES( RID_SVXSTR_GALLERY_ID_EXISTS ) );
 
-            aStr += " (";
-            aStr += pInfo->GetThemeName();
-            aStr += ")";
+            aStr += " (" + pInfo->GetThemeName() + ")";
 
             ScopedVclPtrInstance< InfoBox > aBox( this, aStr );
             aBox->Execute();
@@ -602,9 +588,7 @@ GalleryThemeProperties::GalleryThemeProperties(vcl::Window* pParent,
     if( pData->pTheme->IsReadOnly() )
         RemoveTabPage(m_nFilesPageId);
 
-    OUString aText( GetText() );
-
-    aText += pData->pTheme->GetName();
+    OUString aText = GetText() + pData->pTheme->GetName();
 
     if( pData->pTheme->IsReadOnly() )
         aText +=  CUI_RES( RID_SVXSTR_GALLERY_READONLY );
@@ -737,7 +721,7 @@ TPGalleryThemeProperties::TPGalleryThemeProperties( vcl::Window* pWindow, const 
 {
     get(m_pCbbFileType, "filetype");
     get(m_pLbxFound, "files");
-    Size aSize(LogicToPixel(Size(172, 156), MAP_APPFONT));
+    Size aSize(LogicToPixel(Size(172, 156), MapUnit::MapAppFont));
     m_pLbxFound->set_width_request(aSize.Width());
     m_pLbxFound->set_height_request(aSize.Height());
     m_pLbxFound->EnableMultiSelection(true);
@@ -831,9 +815,7 @@ OUString TPGalleryThemeProperties::addExtension( const OUString& _rDisplayText, 
 
     if ( sRet.indexOf( sAllFilter ) == -1 )
     {
-        sRet += sOpenBracket;
-        sRet += _rExtension;
-        sRet += sCloseBracket;
+        sRet += sOpenBracket + _rExtension + sCloseBracket;
     }
     return sRet;
 }
@@ -978,7 +960,7 @@ void TPGalleryThemeProperties::FillFilterList()
 }
 
 
-IMPL_LINK_NOARG_TYPED(TPGalleryThemeProperties, SelectFileTypeHdl, ComboBox&, void)
+IMPL_LINK_NOARG(TPGalleryThemeProperties, SelectFileTypeHdl, ComboBox&, void)
 {
     OUString aText( m_pCbbFileType->GetText() );
 
@@ -994,7 +976,7 @@ IMPL_LINK_NOARG_TYPED(TPGalleryThemeProperties, SelectFileTypeHdl, ComboBox&, vo
 
 void TPGalleryThemeProperties::SearchFiles()
 {
-    SearchProgress* pProgress = VclPtr<SearchProgress>::Create( this, aURL );
+    VclPtrInstance<SearchProgress> pProgress( this, aURL );
 
     aFoundList.clear();
     m_pLbxFound->Clear();
@@ -1007,7 +989,7 @@ void TPGalleryThemeProperties::SearchFiles()
 }
 
 
-IMPL_LINK_NOARG_TYPED(TPGalleryThemeProperties, ClickSearchHdl, Button*, void)
+IMPL_LINK_NOARG(TPGalleryThemeProperties, ClickSearchHdl, Button*, void)
 {
     if( bInputAllowed )
     {
@@ -1059,7 +1041,7 @@ void TPGalleryThemeProperties::TakeFiles()
 }
 
 
-IMPL_LINK_NOARG_TYPED(TPGalleryThemeProperties, ClickPreviewHdl, Button*, void)
+IMPL_LINK_NOARG(TPGalleryThemeProperties, ClickPreviewHdl, Button*, void)
 {
     if ( bInputAllowed )
     {
@@ -1106,7 +1088,7 @@ void TPGalleryThemeProperties::DoPreview()
 }
 
 
-IMPL_LINK_NOARG_TYPED(TPGalleryThemeProperties, ClickTakeHdl, Button*, void)
+IMPL_LINK_NOARG(TPGalleryThemeProperties, ClickTakeHdl, Button*, void)
 {
     if( bInputAllowed )
     {
@@ -1130,7 +1112,7 @@ IMPL_LINK_NOARG_TYPED(TPGalleryThemeProperties, ClickTakeHdl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(TPGalleryThemeProperties, ClickTakeAllHdl, Button*, void)
+IMPL_LINK_NOARG(TPGalleryThemeProperties, ClickTakeAllHdl, Button*, void)
 {
     if( bInputAllowed )
     {
@@ -1141,7 +1123,7 @@ IMPL_LINK_NOARG_TYPED(TPGalleryThemeProperties, ClickTakeAllHdl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(TPGalleryThemeProperties, SelectFoundHdl, ListBox&, void)
+IMPL_LINK_NOARG(TPGalleryThemeProperties, SelectFoundHdl, ListBox&, void)
 {
     if( bInputAllowed )
     {
@@ -1171,7 +1153,7 @@ IMPL_LINK_NOARG_TYPED(TPGalleryThemeProperties, SelectFoundHdl, ListBox&, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(TPGalleryThemeProperties, DClickFoundHdl, ListBox&, void)
+IMPL_LINK_NOARG(TPGalleryThemeProperties, DClickFoundHdl, ListBox&, void)
 {
     if( bInputAllowed )
     {
@@ -1183,14 +1165,14 @@ IMPL_LINK_NOARG_TYPED(TPGalleryThemeProperties, DClickFoundHdl, ListBox&, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(TPGalleryThemeProperties, PreviewTimerHdl, Timer *, void)
+IMPL_LINK_NOARG(TPGalleryThemeProperties, PreviewTimerHdl, Timer *, void)
 {
     aPreviewTimer.Stop();
     DoPreview();
 }
 
 
-IMPL_LINK_NOARG_TYPED(TPGalleryThemeProperties, EndSearchProgressHdl, Dialog&, void)
+IMPL_LINK_NOARG(TPGalleryThemeProperties, EndSearchProgressHdl, Dialog&, void)
 {
   if( !aFoundList.empty() )
   {
@@ -1209,7 +1191,7 @@ IMPL_LINK_NOARG_TYPED(TPGalleryThemeProperties, EndSearchProgressHdl, Dialog&, v
 }
 
 
-IMPL_LINK_TYPED( TPGalleryThemeProperties, DialogClosedHdl, css::ui::dialogs::DialogClosedEvent*, pEvt, void )
+IMPL_LINK( TPGalleryThemeProperties, DialogClosedHdl, css::ui::dialogs::DialogClosedEvent*, pEvt, void )
 {
     DBG_ASSERT( xFolderPicker.is(), "TPGalleryThemeProperties::DialogClosedHdl(): no folder picker" );
 

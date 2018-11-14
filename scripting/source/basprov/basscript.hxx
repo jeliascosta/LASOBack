@@ -57,7 +57,7 @@ namespace basprov
                             m_xDocumentScriptContext;
         // hack, OPropertyContainer doesn't allow you to define a property of unknown
         // type ( I guess because an Any can't contain an Any... I've always wondered why?
-    // as its not unusual to do that in corba )
+    // as it's not unusual to do that in corba )
         css::uno::Sequence< css::uno::Any > m_caller;
     protected:
         // OPropertySetHelper
@@ -69,15 +69,15 @@ namespace basprov
     public:
         BasicScriptImpl(
             const OUString& funcName,
-            SbMethodRef xMethod
+            SbMethodRef const & xMethod
         );
         BasicScriptImpl(
             const OUString& funcName,
-            SbMethodRef xMethod,
+            SbMethodRef const & xMethod,
             BasicManager& documentBasicManager,
             const css::uno::Reference< css::document::XScriptInvocationContext >& documentScriptContext
         );
-        virtual ~BasicScriptImpl();
+        virtual ~BasicScriptImpl() override;
 
         // XInterface
         DECLARE_XINTERFACE()

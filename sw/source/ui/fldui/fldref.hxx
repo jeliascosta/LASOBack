@@ -61,15 +61,15 @@ class SwFieldRefPage : public SwFieldPage
     // fallback, if previously selected text node doesn't exist anymore
     size_t mnSavedSelectedPos;
 
-    DECL_LINK_TYPED(TypeHdl, ListBox&, void);
-    DECL_LINK_TYPED(SubTypeListBoxHdl, ListBox&, void);
-    DECL_LINK_TYPED(SubTypeTreeListBoxHdl, SvTreeListBox*, void);
-    DECL_LINK_TYPED(ModifyHdl, Edit&, void);
-    DECL_LINK_TYPED(ModifyHdl_Impl, Edit&, void);
+    DECL_LINK(TypeHdl, ListBox&, void);
+    DECL_LINK(SubTypeListBoxHdl, ListBox&, void);
+    DECL_LINK(SubTypeTreeListBoxHdl, SvTreeListBox*, void);
+    DECL_LINK(ModifyHdl, Edit&, void);
+    DECL_LINK(ModifyHdl_Impl, Edit&, void);
 
     void SubTypeHdl();
 
-    void                UpdateSubType(const OUString& filterString = OUString());
+    void                UpdateSubType(const OUString& filterString);
 
     static bool                MatchSubstring( const OUString& list_string, const OUString& substr );
 
@@ -84,7 +84,7 @@ protected:
 public:
                         SwFieldRefPage(vcl::Window* pParent, const SfxItemSet* pSet);
 
-                        virtual ~SwFieldRefPage();
+                        virtual ~SwFieldRefPage() override;
     virtual void        dispose() override;
 
     static VclPtr<SfxTabPage>  Create(vcl::Window* pParent, const SfxItemSet* rAttrSet);

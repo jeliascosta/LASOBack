@@ -13,10 +13,7 @@ $(eval $(call gb_CppunitTest_use_externals,writerperfect_draw,\
 	boost_headers \
 ))
 
-$(eval $(call gb_CppunitTest_use_api,writerperfect_draw,\
-	offapi \
-	udkapi \
-))
+$(eval $(call gb_CppunitTest_use_sdk_api,writerperfect_draw))
 
 $(eval $(call gb_CppunitTest_use_libraries,writerperfect_draw,\
 	comphelper \
@@ -44,5 +41,8 @@ $(eval $(call gb_CppunitTest_use_configuration,writerperfect_draw))
 $(eval $(call gb_CppunitTest_add_exception_objects,writerperfect_draw,\
 	writerperfect/qa/unit/WpftDrawFilterTest \
 ))
+
+$(call gb_CppunitTest_get_target,writerperfect_draw): \
+    $(call gb_AllLangResTarget_get_target,sd)
 
 # vim: set noet sw=4 ts=4:

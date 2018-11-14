@@ -20,6 +20,7 @@
 #include "eppt.hxx"
 #include "epptdef.hxx"
 
+#include <o3tl/any.hxx>
 #include <tools/globname.hxx>
 #include <tools/datetime.hxx>
 #include <tools/poly.hxx>
@@ -127,8 +128,8 @@ PPTWriterBase::PPTWriterBase()
     , mnPages(0)
     , mnMasterPages(0)
     , maFraction(1, 576)
-    , maMapModeSrc(MAP_100TH_MM)
-    , maMapModeDest(MAP_INCH, Point(), maFraction, maFraction)
+    , maMapModeSrc(MapUnit::Map100thMM)
+    , maMapModeDest(MapUnit::MapInch, Point(), maFraction, maFraction)
     , meLatestPageType(NORMAL)
     , mpStyleSheet(nullptr)
 {
@@ -147,8 +148,8 @@ PPTWriterBase::PPTWriterBase( const Reference< XModel > & rXModel,
     , mnPages(0)
     , mnMasterPages(0)
     , maFraction(1, 576)
-    , maMapModeSrc(MAP_100TH_MM)
-    , maMapModeDest(MAP_INCH, Point(), maFraction, maFraction)
+    , maMapModeSrc(MapUnit::Map100thMM)
+    , maMapModeDest(MapUnit::MapInch, Point(), maFraction, maFraction)
     , meLatestPageType (NORMAL)
     , mpStyleSheet(nullptr)
 {
@@ -483,7 +484,7 @@ sal_uInt32 PPTWriterBase::GetMasterIndex( PageType ePageType )
             if ( aXPropertySet.is() )
             {
                 if ( ImplGetPropertyValue( aXPropertySet, "Number" ) )
-                    nRetValue |= *static_cast<sal_Int16 const *>(mAny.getValue());
+                    nRetValue |= *o3tl::doAccess<sal_Int16>(mAny);
                 if ( nRetValue & 0xffff )           // avoid overflow
                     nRetValue--;
             }
@@ -522,7 +523,7 @@ bool PPTWriterBase::GetStyleSheets()
             aXPropSet( mXModel, UNO_QUERY );
 
         sal_uInt16 nDefaultTab = ( aXPropSet.is() && ImplGetPropertyValue( aXPropSet, "TabStop" ) )
-            ? (sal_uInt16)( *static_cast<sal_Int32 const *>(mAny.getValue()) / 4.40972 )
+            ? (sal_uInt16)( *o3tl::doAccess<sal_Int32>(mAny) / 4.40972 )
             : 1250;
 
         maStyleSheetList.push_back( new PPTExStyleSheet( nDefaultTab, dynamic_cast<PPTExBulletProvider*>(this) ) );
@@ -600,7 +601,7 @@ bool PPTWriterBase::GetStyleSheets()
                                                 if ( nInstance == EPP_TEXTTYPE_Body )
                                                 {
                                                     sal_Unicode cTemp = aStyle[aStyle.getLength() - 1];
-                                                    aStyle = aStyle.copy(0, aStyle.getLength() - 1) + OUString(++cTemp);
+                                                    aStyle = aStyle.copy(0, aStyle.getLength() - 1) + OUStringLiteral1(++cTemp);
                                                     if ( aXFamily->hasByName( aStyle ) )
                                                     {
                                                         aXFamily->getByName( aStyle ) >>= xStyle;
@@ -733,7 +734,7 @@ bool PPTWriterBase::GetShapeByIndex( sal_uInt32 nIndex, bool bGroup )
 
         mnAngle = ( PropValue::GetPropertyValue( aAny,
             mXPropSet, "RotateAngle", true ) )
-                ? *static_cast<sal_Int32 const *>(aAny.getValue())
+                ? *o3tl::doAccess<sal_Int32>(aAny)
                 : 0;
 
         return true;
@@ -798,7 +799,13 @@ sal_Int8 PPTWriterBase::GetTransition( sal_Int16 nTransitionType, sal_Int16 nTra
     break;
     case TransitionType::ELLIPSEWIPE :
     {
-        nPPTTransitionType = PPT_TRANSITION_TYPE_CIRCLE;
+        switch( nTransitionSubtype ) {
+        case TransitionSubType::VERTICAL:
+        case TransitionSubType::HORIZONTAL:
+            // no ellipse or oval in PPT or OOXML, fallback to circle
+        default:
+            nPPTTransitionType = PPT_TRANSITION_TYPE_CIRCLE;
+        }
     }
     break;
     case TransitionType::FOURBOXWIPE :
@@ -998,7 +1005,7 @@ bool PPTWriterBase::ContainsOtherShapeThanPlaceholders()
     if ( nShapes )
         for ( sal_uInt32 nIndex = 0; ( nIndex < nShapes ) && !bOtherThanPlaceHolders; nIndex++ )
         {
-            if ( GetShapeByIndex( nIndex ) && mType != "drawing.Page" )
+            if ( GetShapeByIndex( nIndex, false ) && mType != "drawing.Page" )
             {
                 if( mType == "presentation.Page" || mType == "presentation.Notes" )
                 {

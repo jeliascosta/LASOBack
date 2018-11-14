@@ -97,7 +97,7 @@ public:
     /** Reads a CRN record (external referenced cell). */
     void                ReadCrn( XclImpStream& rStrm );
     /** Reads an EXTERNNAME record. */
-    void                ReadExternname( XclImpStream& rStrm, ExcelToSc* pFormulaConv = nullptr );
+    void                ReadExternname( XclImpStream& rStrm, ExcelToSc* pFormulaConv );
 
     /** Returns the SUPBOOK record type. */
     inline XclSupbookType GetType() const { return meType; }
@@ -170,7 +170,7 @@ public:
     /** Reads a CRN record and appends it to the current SUPBOOK. */
     void                ReadCrn( XclImpStream& rStrm );
     /** Reads an EXTERNNAME record and appends it to the current SUPBOOK. */
-    void                ReadExternname( XclImpStream& rStrm, ExcelToSc* pFormulaConv = nullptr );
+    void                ReadExternname( XclImpStream& rStrm, ExcelToSc* pFormulaConv );
 
     /** Returns true, if the specified XTI entry contains an internal reference. */
     bool                IsSelfRef( sal_uInt16 nXtiIndex ) const;
@@ -244,11 +244,11 @@ void XclImpTabInfo::ReadTabid( XclImpStream& rStrm )
     if( rStrm.GetRoot().GetBiff() == EXC_BIFF8 )
     {
         rStrm.EnableDecryption();
-        sal_Size nReadCount = rStrm.GetRecLeft() / 2;
+        std::size_t nReadCount = rStrm.GetRecLeft() / 2;
         OSL_ENSURE( nReadCount <= 0xFFFF, "XclImpTabInfo::ReadTabid - record too long" );
         maTabIdVec.clear();
         maTabIdVec.reserve( nReadCount );
-        for( sal_Size nIndex = 0; rStrm.IsValid() && (nIndex < nReadCount); ++nIndex )
+        for( std::size_t nIndex = 0; rStrm.IsValid() && (nIndex < nReadCount); ++nIndex )
             // zero index is not allowed in BIFF8, but it seems that it occurs in real life
             maTabIdVec.push_back( rStrm.ReaduInt16() );
     }
@@ -320,8 +320,8 @@ XclImpExtName::MOper::MOper(svl::SharedStringPool& rPool, XclImpStream& rStrm) :
                 case 0x10:
                 {
                     sal_uInt8 nErr = rStrm.ReaduInt8();
-                    // TODO: Map the error code from xls to calc.
-                    mxCached->PutError(nErr, nCol, nRow);
+                    // Map the error code from xls to calc.
+                    mxCached->PutError(XclTools::GetScErrorCode(nErr), nCol, nRow);
                     rStrm.Ignore(7);
                 }
                 break;
@@ -513,20 +513,20 @@ bool XclImpExtName::CreateOleData(ScDocument& rDoc, const OUString& rUrl,
             ScMatrixValue aVal = rCache.Get(j, i);
             switch (aVal.nType)
             {
-                case SC_MATVAL_BOOLEAN:
+                case ScMatValType::Boolean:
                 {
                     bool b = aVal.GetBoolean();
                     ScExternalRefCache::TokenRef pToken(new formula::FormulaDoubleToken(b ? 1.0 : 0.0));
                     xTab->setCell(nCol, nRow, pToken, 0, false);
                 }
                 break;
-                case SC_MATVAL_VALUE:
+                case ScMatValType::Value:
                 {
                     ScExternalRefCache::TokenRef pToken(new formula::FormulaDoubleToken(aVal.fVal));
                     xTab->setCell(nCol, nRow, pToken, 0, false);
                 }
                 break;
-                case SC_MATVAL_STRING:
+                case ScMatValType::String:
                 {
                     const svl::SharedString aStr( aVal.GetString());
                     ScExternalRefCache::TokenRef pToken(new formula::FormulaStringToken(aStr));
@@ -776,8 +776,8 @@ void XclImpLinkManagerImpl::ReadExternsheet( XclImpStream& rStrm )
 {
     sal_uInt16 nXtiCount;
     nXtiCount = rStrm.ReaduInt16();
-    OSL_ENSURE( static_cast< sal_Size >( nXtiCount * 6 ) == rStrm.GetRecLeft(), "XclImpLinkManagerImpl::ReadExternsheet - invalid count" );
-    nXtiCount = static_cast< sal_uInt16 >( ::std::min< sal_Size >( nXtiCount, rStrm.GetRecLeft() / 6 ) );
+    OSL_ENSURE( static_cast< std::size_t >( nXtiCount * 6 ) == rStrm.GetRecLeft(), "XclImpLinkManagerImpl::ReadExternsheet - invalid count" );
+    nXtiCount = static_cast< sal_uInt16 >( ::std::min< std::size_t >( nXtiCount, rStrm.GetRecLeft() / 6 ) );
 
     /*  #i104057# A weird external XLS generator writes multiple EXTERNSHEET
         records instead of only one as expected. Surprisingly, Excel seems to

@@ -47,7 +47,7 @@ class StockBar :
 {
 public:
     explicit StockBar( bool bRisingCourse );
-    virtual ~StockBar();
+    virtual ~StockBar() override;
 
     /// merge XInterface implementations
      DECLARE_XINTERFACE()
@@ -91,8 +91,6 @@ protected:
     // ____ OPropertySet ____
     virtual void firePropertyChangeEvent() override;
     using OPropertySet::disposing;
-
-    void fireModifyEvent();
 
 private:
     const bool m_bRisingCourse;

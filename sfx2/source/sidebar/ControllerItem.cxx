@@ -56,7 +56,7 @@ namespace
             if (mxFrame.is())
                 mxFrame->addFrameActionListener(this);
         }
-        virtual ~FrameActionListener()
+        virtual ~FrameActionListener() override
         {
         }
         virtual void SAL_CALL disposing() override
@@ -177,11 +177,6 @@ void ControllerItem::NotifyFrameContextChange()
 void ControllerItem::ResetFrame()
 {
     mxFrame = nullptr;
-}
-
-Image ControllerItem::GetIcon() const
-{
-    return GetImage(mxFrame, ".uno:" + msCommandName, false);
 }
 
 ControllerItem::ItemUpdateReceiverInterface::~ItemUpdateReceiverInterface()

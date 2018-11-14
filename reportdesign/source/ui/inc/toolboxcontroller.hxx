@@ -43,13 +43,11 @@ namespace rptui
         typedef std::map<OUString, sal_Bool> TCommandState;
         TCommandState   m_aStates;
         TToolbarHelper  m_pToolbarController;
-        sal_uInt16      m_nToolBoxId;
-        sal_uInt16      m_nSlotId;
         OToolboxController(const OToolboxController&) = delete;
         void operator =(const OToolboxController&) = delete;
     public:
         OToolboxController(const css::uno::Reference< css::uno::XComponentContext >& _rxORB);
-        virtual ~OToolboxController();
+        virtual ~OToolboxController() override;
 
         // XInterface
         virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) throw (css::uno::RuntimeException, std::exception) override;
@@ -78,7 +76,6 @@ namespace rptui
         virtual OUString SAL_CALL getSubToolbarName(  ) throw (css::uno::RuntimeException, std::exception) override;
         virtual void SAL_CALL functionSelected( const OUString& aCommand ) throw (css::uno::RuntimeException, std::exception) override;
         virtual void SAL_CALL updateImage(  ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Reference< css::awt::XWindow > SAL_CALL createItemWindow( const css::uno::Reference< css::awt::XWindow >& Parent ) throw (css::uno::RuntimeException, std::exception) override;
     };
 
 } // rptui

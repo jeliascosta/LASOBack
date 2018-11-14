@@ -99,7 +99,7 @@ class GtkDropTarget : public cppu::WeakComponentImplHelper<css::datatransfer::dn
     std::list<css::uno::Reference<css::datatransfer::dnd::XDropTargetListener>> m_aListeners;
 public:
     GtkDropTarget();
-    virtual ~GtkDropTarget();
+    virtual ~GtkDropTarget() override;
 
     // XInitialization
     virtual void        SAL_CALL initialize(const css::uno::Sequence<css::uno::Any>& rArgs)
@@ -147,7 +147,7 @@ public:
     {
     }
 
-    virtual ~GtkDragSource();
+    virtual ~GtkDragSource() override;
 
     // XDragSource
     virtual sal_Bool    SAL_CALL isDragImageSupported() throw(std::exception) override;
@@ -198,13 +198,16 @@ class GtkInstance : public X11SalInstance
 #endif
 public:
             GtkInstance( SalYieldMutex* pMutex );
-    virtual ~GtkInstance();
+    virtual ~GtkInstance() override;
     void    EnsureInit();
     virtual void AfterAppInit() override;
 
     virtual SalFrame*           CreateFrame( SalFrame* pParent, SalFrameStyleFlags nStyle ) override;
     virtual SalFrame*           CreateChildFrame( SystemParentData* pParent, SalFrameStyleFlags nStyle ) override;
-    virtual SalObject*          CreateObject( SalFrame* pParent, SystemWindowData* pWindowData, bool bShow = true ) override;
+    virtual SalObject*          CreateObject( SalFrame* pParent, SystemWindowData* pWindowData, bool bShow ) override;
+#if !GTK_CHECK_VERSION(3,0,0)
+    virtual SalI18NImeStatus*   CreateI18NImeStatus() override;
+#endif
     virtual SalSystem*          CreateSalSystem() override;
     virtual SalInfoPrinter*     CreateInfoPrinter(SalPrinterQueueInfo* pPrinterQueueInfo, ImplJobSetup* pJobSetup) override;
     virtual SalPrinter*         CreatePrinter( SalInfoPrinter* pInfoPrinter ) override;
@@ -217,7 +220,7 @@ public:
     virtual SalVirtualDevice*   CreateVirtualDevice( SalGraphics*,
                                                      long &nDX, long &nDY,
                                                      DeviceFormat eFormat,
-                                                     const SystemGraphicsData* ) override;
+                                                     const SystemGraphicsData* = nullptr ) override;
     virtual SalBitmap*          CreateSalBitmap() override;
 
     virtual SalYieldResult      DoYield(bool bWait, bool bHandleAllCurrentEvents, sal_uLong nReleased) override;
@@ -244,7 +247,7 @@ public:
 
     void                        RemoveTimer (SalTimer *pTimer);
 
-    std::shared_ptr<vcl::unx::GtkPrintWrapper> getPrintWrapper() const;
+    std::shared_ptr<vcl::unx::GtkPrintWrapper> const & getPrintWrapper() const;
 
 private:
     std::vector<GtkSalTimer *>  m_aTimers;

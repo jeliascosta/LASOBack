@@ -80,8 +80,6 @@
 #define SID_PRESENTATION_END                (SID_SD_START+18)
     // FREE
 #define SID_POSITION                        (SID_SD_START+22)
-#define SID_MIRROR                          (SID_SD_START+23)
-#define SID_CONVERT                         (SID_SD_START+24)
     // FREE
 #define SID_COMBINE                         (SID_SD_START+26)
 #define SID_NAME_GROUP                      (SID_SD_START+27)
@@ -106,7 +104,6 @@
 #define SID_MODIFYLAYER                     (SID_SD_START+45)
 #define SID_PAGEMODE                        (SID_SD_START+46)
 #define SID_LAYERMODE                       (SID_SD_START+47)
-#define SID_DRAW_MEASURELINE                (SID_SD_START+48)
 #define SID_STARTAPP                        (SID_SD_START+49)
 #define SID_MASTERPAGE                      (SID_SD_START+50)
 // Navigation between slides
@@ -127,7 +124,6 @@
 // In svxids.hrc: SID_BEZIER_CONVERT        (SID_SD_START+65)
 // In svxids.hrc: SID_BEZIER_EDGE           (SID_SD_START+66)
 // In svxids.hrc: SID_BEZIER_SYMMTR         (SID_SD_START+67)
-#define SID_PRESENTATION_TEMPLATES          (SID_SD_START+68)
 #define SID_NOTES_MODE                      (SID_SD_START+69)
 #define SID_HANDOUT_MASTER_MODE             (SID_SD_START+70)
 #define SID_LINEEND_POLYGON                 (SID_SD_START+71)
@@ -215,14 +211,6 @@
     // FREE 160 - 168
 #define SID_DOUBLECLICK_TEXTEDIT            (SID_SD_START+169)
 #define SID_CLICK_CHANGE_ROTATION           (SID_SD_START+170)
-#define SID_DRAWTBX_ARROWS                  (SID_SD_START+171)
-#define SID_LINE_ARROW_START                (SID_SD_START+172)
-#define SID_LINE_ARROW_END                  (SID_SD_START+173)
-#define SID_LINE_ARROWS                     (SID_SD_START+174)
-#define SID_LINE_ARROW_CIRCLE               (SID_SD_START+175)
-#define SID_LINE_CIRCLE_ARROW               (SID_SD_START+176)
-#define SID_LINE_ARROW_SQUARE               (SID_SD_START+177)
-#define SID_LINE_SQUARE_ARROW               (SID_SD_START+178)
 #define SID_HELPLINES_VISIBLE               (SID_SD_START+179)
 #define SID_HELPLINES_FRONT                 (SID_SD_START+180)
 #define SID_BEFORE_OBJ                      (SID_SD_START+181)
@@ -290,7 +278,6 @@
 // In svxids.hrc: SID_BEZIERTO                  (SID_SD_START+252)
 #define SID_PAGESIZE                        (SID_SD_START+253)
 #define SID_PAGEMARGIN                      (SID_SD_START+254)
-#define SID_ZOOMING                         (SID_SD_START+255)
 #define SID_SELECTAT                        (SID_SD_START+256)
 #define SID_COLORVIEW                       (SID_SD_START+257)
     // FREE
@@ -401,7 +388,6 @@
 #define SID_OUTPUT_QUALITY_BLACKWHITE       (SID_SD_START+368)
 #define SID_PREVIEW_QUALITY_COLOR           (SID_SD_START+369)
     // FREE
-#define SID_VECTORIZE                       (SID_SD_START+372)
 #define SID_INSERT_FLD_PAGES                (SID_SD_START+373)
     // FREE
 #define SID_CONVERT_TO_BITMAP               (SID_SD_START+378)
@@ -463,8 +449,8 @@
 
 // Add companion for the SID_HIDE_SLIDE (that is defined in svx)
 #define SID_SHOW_SLIDE                      (SID_SD_START+441)
-
 #define SID_ADD_MOTION_PATH                 (SID_SD_START+442)
+
 #define SID_TABLE_TOOLBOX                   (SID_SD_START+443)
     // FREE
 #define SID_ZOOM_MODE                       (SID_SD_START+447)

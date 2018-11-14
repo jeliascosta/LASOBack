@@ -57,7 +57,7 @@ OApplicationIconControl::OApplicationIconControl(vcl::Window* _pParent)
     }
 
     SetChoiceWithCursor();
-    SetSelectionMode(SINGLE_SELECTION);
+    SetSelectionMode(SelectionMode::Single);
 }
 
 OApplicationIconControl::~OApplicationIconControl()
@@ -77,6 +77,7 @@ void OApplicationIconControl::dispose()
             pEntry->SetUserData(nullptr);
         }
     }
+    DropTargetHelper::dispose();
     SvtIconChoiceCtrl::dispose();
 }
 

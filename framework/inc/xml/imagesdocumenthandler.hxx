@@ -65,7 +65,7 @@ class OReadImagesDocumentHandler : public ::cppu::WeakImplHelper< css::xml::sax:
         };
 
         OReadImagesDocumentHandler( ImageListsDescriptor& aItems );
-        virtual ~OReadImagesDocumentHandler();
+        virtual ~OReadImagesDocumentHandler() override;
 
         // XDocumentHandler
         virtual void SAL_CALL startDocument()
@@ -118,10 +118,8 @@ class OReadImagesDocumentHandler : public ::cppu::WeakImplHelper< css::xml::sax:
         bool                                                m_bImageContainerStartFound;
         bool                                                m_bImageContainerEndFound;
         bool                                                m_bImagesStartFound;
-        bool                                                m_bImagesEndFound;
         bool                                                m_bImageStartFound;
         bool                                                m_bExternalImagesStartFound;
-        bool                                                m_bExternalImagesEndFound;
         bool                                                m_bExternalImageStartFound;
         sal_Int32                                           m_nHashMaskModeBitmap;
         sal_Int32                                           m_nHashMaskModeColor;
@@ -132,19 +130,20 @@ class OReadImagesDocumentHandler : public ::cppu::WeakImplHelper< css::xml::sax:
         css::uno::Reference< css::xml::sax::XLocator >      m_xLocator;
 };
 
-class OWriteImagesDocumentHandler
+class OWriteImagesDocumentHandler final
 {
     public:
         OWriteImagesDocumentHandler(
             const ImageListsDescriptor& aItems,
-            css::uno::Reference< css::xml::sax::XDocumentHandler > );
-        virtual ~OWriteImagesDocumentHandler();
+            css::uno::Reference< css::xml::sax::XDocumentHandler > const &
+                rWriteDocumentHandler);
+        ~OWriteImagesDocumentHandler();
 
         void WriteImagesDocument() throw
             ( css::xml::sax::SAXException,
               css::uno::RuntimeException );
 
-    protected:
+    private:
         void WriteImageList( const ImageListItemDescriptor* ) throw
             ( css::xml::sax::SAXException,
               css::uno::RuntimeException );

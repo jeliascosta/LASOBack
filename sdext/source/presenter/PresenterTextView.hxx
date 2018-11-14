@@ -41,6 +41,7 @@ class PresenterTextCaret
 {
 public:
     PresenterTextCaret (
+        css::uno::Reference<css::uno::XComponentContext> const& xContext,
         const ::std::function<css::awt::Rectangle (const sal_Int32,const sal_Int32)>&
             rCharacterBoundsAccess,
         const ::std::function<void (const css::awt::Rectangle&)>&
@@ -69,6 +70,7 @@ public:
     const css::awt::Rectangle& GetBounds() const;
 
 private:
+    css::uno::Reference<css::uno::XComponentContext> const& m_xContext;
     sal_Int32 mnParagraphIndex;
     sal_Int32 mnCharacterIndex;
     sal_Int32 mnCaretBlinkTaskId;
@@ -175,7 +177,6 @@ private:
             const PresenterTheme::SharedFontDescriptor& rpFont,
             const sal_Int8 nTextDirection);
         void ProvideCellBoxes();
-        bool IsEmpty() const;
     };
 
     css::uno::Reference<css::i18n::XBreakIterator> mxBreakIterator;
@@ -254,7 +255,6 @@ public:
 
 private:
     css::uno::Reference<css::rendering::XCanvas> mxCanvas;
-    bool mbDoOuput;
     css::uno::Reference<css::i18n::XBreakIterator> mxBreakIterator;
     css::uno::Reference<css::i18n::XScriptTypeDetector> mxScriptTypeDetector;
     css::geometry::RealPoint2D maLocation;
@@ -265,7 +265,6 @@ private:
     double mnLeftOffset;
     double mnTopOffset;
     bool mbIsFormatPending;
-    sal_Int32 mnCharacterCount;
     ::std::function<void ()> maTextChangeBroadcaster;
 
     void RequestFormat();

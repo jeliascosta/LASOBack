@@ -43,7 +43,7 @@
 
 #include <svx/svdoashp.hxx>
 #include <svx/xtable.hxx>
-#include <sfx2/sidebar/EnumContext.hxx>
+#include <vcl/EnumContext.hxx>
 #include <svx/svdoole2.hxx>
 #include <sfx2/opengrf.hxx>
 #include <svx/svdograf.hxx>
@@ -139,9 +139,9 @@ void SwDrawShell::InsertPictureFromFile(SdrObject& rObject)
 
                 rSh.StartUndo(UNDO_PASTE_CLIPBOARD);
 
-                if(dynamic_cast< SdrGrafObj* >(&rObject))
+                if (SdrGrafObj* pSdrGrafObj = dynamic_cast<SdrGrafObj*>(&rObject))
                 {
-                    SdrGrafObj* pNewGrafObj = static_cast<SdrGrafObj*>(rObject.Clone());
+                    SdrGrafObj* pNewGrafObj = pSdrGrafObj->Clone();
 
                     pNewGrafObj->SetGraphic(aGraphic);
 
@@ -210,9 +210,9 @@ void SwDrawShell::Execute(SfxRequest &rReq)
             if (rSh.IsObjSelected() && pSdrView->IsRotateAllowed())
             {
                 if (GetView().IsDrawRotate())
-                    rSh.SetDragMode(SDRDRAG_MOVE);
+                    rSh.SetDragMode(SdrDragMode::Move);
                 else
-                    rSh.SetDragMode(SDRDRAG_ROTATE);
+                    rSh.SetDragMode(SdrDragMode::Rotate);
 
                 GetView().FlipDrawRotate();
             }
@@ -221,7 +221,7 @@ void SwDrawShell::Execute(SfxRequest &rReq)
         case SID_BEZIER_EDIT:
             if (GetView().IsDrawRotate())
             {
-                rSh.SetDragMode(SDRDRAG_MOVE);
+                rSh.SetDragMode(SdrDragMode::Move);
                 GetView().FlipDrawRotate();
             }
             GetView().FlipDrawSelMode();
@@ -494,7 +494,7 @@ void SwDrawShell::GetState(SfxItemSet& rSet)
                 {
                     SwFrameFormat* pFrameFormat = ::FindFrameFormat(pObj);
                     // Allow creating a TextBox only in case this is a draw format without a TextBox so far.
-                    if (pFrameFormat && pFrameFormat->Which() == RES_DRAWFRMFMT && !SwTextBoxHelper::findTextBox(pFrameFormat))
+                    if (pFrameFormat && pFrameFormat->Which() == RES_DRAWFRMFMT && !SwTextBoxHelper::isTextBox(pFrameFormat, RES_DRAWFRMFMT))
                     {
                         if (SdrObjCustomShape* pCustomShape = dynamic_cast<SdrObjCustomShape*>( pObj) )
                         {
@@ -517,7 +517,7 @@ void SwDrawShell::GetState(SfxItemSet& rSet)
                 {
                     SwFrameFormat* pFrameFormat = ::FindFrameFormat(pObj);
                     // Allow removing a TextBox only in case it has one.
-                    if (pFrameFormat && SwTextBoxHelper::findTextBox(pFrameFormat))
+                    if (pFrameFormat && SwTextBoxHelper::isTextBox(pFrameFormat, RES_DRAWFRMFMT))
                         bDisable = false;
                 }
 
@@ -538,7 +538,7 @@ SwDrawShell::SwDrawShell(SwView &_rView) :
     SetHelpId(SW_DRAWSHELL);
     SetName("Draw");
 
-    SfxShell::SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_Draw));
+    SfxShell::SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context_Draw));
 }
 
 // Edit SfxRequests for FontWork
@@ -579,16 +579,6 @@ void SwDrawShell::GetFormTextState(SfxItemSet& rSet)
     SdrView* pDrView = rSh.GetDrawView();
     const SdrMarkList& rMarkList = pDrView->GetMarkedObjectList();
     const SdrObject* pObj = nullptr;
-    SvxFontWorkDialog* pDlg = nullptr;
-
-    const sal_uInt16 nId = SvxFontWorkChildWindow::GetChildWindowId();
-
-    SfxViewFrame* pVFrame = GetView().GetViewFrame();
-    if ( pVFrame->HasChildWindow(nId) )
-    {
-        SfxChildWindow *pChildWindow = pVFrame->GetChildWindow(nId);
-        pDlg = pChildWindow ? static_cast<SvxFontWorkDialog*>(pChildWindow->GetWindow()) : nullptr;
-    }
 
     if ( rMarkList.GetMarkCount() == 1 )
         pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();
@@ -616,9 +606,6 @@ void SwDrawShell::GetFormTextState(SfxItemSet& rSet)
     }
     else
     {
-        if ( pDlg )
-            pDlg->SetColorList(XColorList::GetStdColorList());
-
         pDrView->GetAttributes( rSet );
     }
 }

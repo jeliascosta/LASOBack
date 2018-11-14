@@ -34,7 +34,6 @@ class ScDelimiterTable
 public:
     explicit ScDelimiterTable( const OUString& rDelTab )
             :   theDelTab ( rDelTab ),
-                cSep      ( '\t' ),
                 nCount    ( comphelper::string::getTokenCount(rDelTab, '\t') ),
                 nIter     ( 0 )
             {}
@@ -47,7 +46,7 @@ public:
 
 private:
     const OUString      theDelTab;
-    const sal_Unicode   cSep;
+    static const sal_Unicode   cSep = '\t';
     const sal_Int32    nCount;
     sal_Int32          nIter;
 };
@@ -107,7 +106,8 @@ ScImportOptionsDlg::ScImportOptionsDlg(
         bool                    bOnlyDbtoolsEncodings,
         bool                    bImport )
     :   ModalDialog ( pParent, "ImOptDialog",
-            "modules/scalc/ui/imoptdialog.ui" )
+            "modules/scalc/ui/imoptdialog.ui" ),
+        m_bIsAsciiImport( bAscii )
 {
     get(m_pFieldFrame, "fieldframe");
     get(m_pFtCharset, "charsetft");
@@ -248,6 +248,7 @@ void ScImportOptionsDlg::dispose()
 {
     delete pFieldSepTab;
     delete pTextSepTab;
+    m_pEncGrid.clear();
     m_pFieldFrame.clear();
     m_pFtCharset.clear();
     m_pLbCharset.clear();
@@ -291,7 +292,7 @@ sal_uInt16 ScImportOptionsDlg::GetCodeFromCombo( const ComboBox& rEd ) const
 
     if ( aStr.isEmpty() )
     {
-        nCode = 0;          // kein Trennzeichen
+        nCode = 0;          // no separator
     }
     else
     {
@@ -304,7 +305,12 @@ sal_uInt16 ScImportOptionsDlg::GetCodeFromCombo( const ComboBox& rEd ) const
     return nCode;
 }
 
-IMPL_LINK_TYPED( ScImportOptionsDlg, FixedWidthHdl, Button*, pCheckBox, void )
+OString ScImportOptionsDlg::GetScreenshotId() const
+{
+    return (m_bIsAsciiImport) ? GetHelpId() : GetHelpId() + "?config=NonTextImport";
+}
+
+IMPL_LINK( ScImportOptionsDlg, FixedWidthHdl, Button*, pCheckBox, void )
 {
     if (pCheckBox == m_pCbFixed)
     {
@@ -318,7 +324,7 @@ IMPL_LINK_TYPED( ScImportOptionsDlg, FixedWidthHdl, Button*, pCheckBox, void )
     }
 }
 
-IMPL_LINK_TYPED( ScImportOptionsDlg, DoubleClickHdl, ListBox&, rLb, void )
+IMPL_LINK( ScImportOptionsDlg, DoubleClickHdl, ListBox&, rLb, void )
 {
     if (&rLb == m_pLbCharset)
     {

@@ -37,14 +37,13 @@ namespace dbaccess
     public:
         explicit WrappedResultSet(sal_Int32 i_nMaxRows) : OCacheSet(i_nMaxRows)
         {}
-        virtual ~WrappedResultSet()
+        virtual ~WrappedResultSet() override
         {
             m_xRowLocate = nullptr;
         }
 
         virtual void construct(const css::uno::Reference< css::sdbc::XResultSet>& _xDriverSet,const OUString& i_sRowSetFilter) override;
         virtual void reset(const css::uno::Reference< css::sdbc::XResultSet>& _xDriverSet) override;
-        virtual void fillValueRow(ORowSetRow& _rRow,sal_Int32 _nPosition) override;
         // css::sdbcx::XRowLocate
         virtual css::uno::Any SAL_CALL getBookmark() throw(css::sdbc::SQLException, css::uno::RuntimeException) override;
         virtual bool SAL_CALL moveToBookmark( const css::uno::Any& bookmark ) throw(css::sdbc::SQLException, css::uno::RuntimeException) override;
@@ -52,8 +51,8 @@ namespace dbaccess
         virtual bool SAL_CALL hasOrderedBookmarks(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException) override;
         virtual sal_Int32 SAL_CALL hashBookmark( const css::uno::Any& bookmark ) throw(css::sdbc::SQLException, css::uno::RuntimeException) override;
         // css::sdbc::XResultSetUpdate
-        virtual void SAL_CALL insertRow( const ORowSetRow& _rInsertRow,const connectivity::OSQLTable& _xTable ) throw(css::sdbc::SQLException, css::uno::RuntimeException) override;
-        virtual void SAL_CALL updateRow(const ORowSetRow& _rInsertRow,const ORowSetRow& _rOriginalRow,const connectivity::OSQLTable& _xTable   ) throw(css::sdbc::SQLException, css::uno::RuntimeException) override;
+        virtual void SAL_CALL insertRow( const ORowSetRow& _rInsertRow,const connectivity::OSQLTable& _xTable ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL updateRow(const ORowSetRow& _rInsertRow,const ORowSetRow& _rOriginalRow,const connectivity::OSQLTable& _xTable   ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
         virtual void SAL_CALL deleteRow(const ORowSetRow& _rInsertRow,const connectivity::OSQLTable& _xTable   ) throw(css::sdbc::SQLException, css::uno::RuntimeException) override;
     };
 }

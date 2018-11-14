@@ -57,17 +57,13 @@ class SfxAccCfgTabListBox_Impl : public SvTabListBox
 
     void                        KeyInput( const KeyEvent &rKEvt ) override;
 
-protected:
-    virtual void                InitEntry(SvTreeListEntry*, const OUString&, const Image&,
-                                          const Image&, SvLBoxButtonKind eButtonKind) override;
-
 public:
     SfxAccCfgTabListBox_Impl(vcl::Window *pParent, WinBits nStyle)
         : SvTabListBox(pParent, nStyle)
         , m_pAccelConfigPage(nullptr)
     {
     }
-    virtual ~SfxAccCfgTabListBox_Impl();
+    virtual ~SfxAccCfgTabListBox_Impl() override;
     virtual void dispose() override;
 
     void SetAccelConfigPage(SfxAcceleratorConfigPage* pAccelConfigPage)
@@ -147,16 +143,16 @@ private:
     OUString m_sModuleShortName;
     OUString m_sModuleUIName;
 
-    DECL_LINK_TYPED(ChangeHdl, Button *, void);
-    DECL_LINK_TYPED(RemoveHdl, Button *, void);
-    DECL_LINK_TYPED(SelectHdl, SvTreeListBox*, void );
-    DECL_LINK_TYPED(Save, Button *, void);
-    DECL_LINK_TYPED(Load, Button *, void);
-    DECL_LINK_TYPED(Default, Button *, void);
-    DECL_LINK_TYPED(RadioHdl, Button *, void);
+    DECL_LINK(ChangeHdl, Button *, void);
+    DECL_LINK(RemoveHdl, Button *, void);
+    DECL_LINK(SelectHdl, SvTreeListBox*, void );
+    DECL_LINK(Save, Button *, void);
+    DECL_LINK(Load, Button *, void);
+    DECL_LINK(Default, Button *, void);
+    DECL_LINK(RadioHdl, Button *, void);
 
-    DECL_LINK_TYPED(LoadHdl, sfx2::FileDialogHelper *, void);
-    DECL_LINK_TYPED(SaveHdl, sfx2::FileDialogHelper *, void);
+    DECL_LINK(LoadHdl, sfx2::FileDialogHelper *, void);
+    DECL_LINK(SaveHdl, sfx2::FileDialogHelper *, void);
 
     OUString                    GetLabel4Command(const OUString& rCommand);
     void                        InitAccCfg();
@@ -171,7 +167,7 @@ private:
 
 public:
                                 SfxAcceleratorConfigPage( vcl::Window *pParent, const SfxItemSet& rItemSet );
-    virtual                     ~SfxAcceleratorConfigPage();
+    virtual                     ~SfxAcceleratorConfigPage() override;
     virtual void                dispose() override;
 
     virtual bool                FillItemSet( SfxItemSet* ) override;

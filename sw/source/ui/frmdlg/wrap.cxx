@@ -180,7 +180,7 @@ void SwWrapTabPage::Reset(const SfxItemSet *rSet)
         {
             int nSelType = m_pWrtSh->GetSelectionType();
             if( ( nSelType & nsSelectionType::SEL_GRF ) ||
-                ( nSelType & nsSelectionType::SEL_OLE && GRAPHIC_NONE !=
+                ( nSelType & nsSelectionType::SEL_OLE && GraphicType::NONE !=
                             m_pWrtSh->GetIMapGraphic().GetType() ))
                 bShowCB = true;
         }
@@ -360,7 +360,7 @@ bool SwWrapTabPage::FillItemSet(SfxItemSet *rSet)
         if(nullptr == (pOldItem = GetOldItem(*rSet, RES_UL_SPACE)) ||
                 aUL != *pOldItem )
         {
-            rSet->Put( aUL, RES_UL_SPACE );
+            rSet->Put( aUL );
             bModified = true;
         }
     }
@@ -377,7 +377,7 @@ bool SwWrapTabPage::FillItemSet(SfxItemSet *rSet)
         if( nullptr == (pOldItem = GetOldItem(*rSet, RES_LR_SPACE)) ||
                 aLR != *pOldItem )
         {
-            rSet->Put(aLR, RES_LR_SPACE);
+            rSet->Put(aLR);
             bModified = true;
         }
     }
@@ -578,20 +578,20 @@ void SwWrapTabPage::ActivatePage(const SfxItemSet& rSet)
     ContourHdl(nullptr);
 }
 
-SfxTabPage::sfxpg SwWrapTabPage::DeactivatePage(SfxItemSet* _pSet)
+DeactivateRC SwWrapTabPage::DeactivatePage(SfxItemSet* _pSet)
 {
     if(_pSet)
         FillItemSet(_pSet);
 
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 // range check
-IMPL_LINK_TYPED( SwWrapTabPage, RangeLoseFocusHdl, Control&, rControl, void )
+IMPL_LINK( SwWrapTabPage, RangeLoseFocusHdl, Control&, rControl, void )
 {
     RangeModifyHdl( static_cast<SpinField&>(rControl) );
 }
-IMPL_LINK_TYPED( SwWrapTabPage, RangeModifyHdl, SpinField&, rSpin, void )
+IMPL_LINK( SwWrapTabPage, RangeModifyHdl, SpinField&, rSpin, void )
 {
     MetricField& rEdit = static_cast<MetricField&>(rSpin);
     sal_Int64 nValue = rEdit.GetValue();
@@ -616,7 +616,7 @@ IMPL_LINK_TYPED( SwWrapTabPage, RangeModifyHdl, SpinField&, rSpin, void )
     }
 }
 
-IMPL_LINK_TYPED( SwWrapTabPage, WrapTypeHdl, Button *, pBtn, void )
+IMPL_LINK( SwWrapTabPage, WrapTypeHdl, Button *, pBtn, void )
 {
     bool bWrapThrough = (pBtn == m_pWrapThroughRB);
     m_pWrapTransparentCB->Enable( bWrapThrough && !m_bHtmlMode );
@@ -630,7 +630,7 @@ IMPL_LINK_TYPED( SwWrapTabPage, WrapTypeHdl, Button *, pBtn, void )
     ContourHdl(nullptr);
 }
 
-IMPL_LINK_NOARG_TYPED(SwWrapTabPage, ContourHdl, Button*, void)
+IMPL_LINK_NOARG(SwWrapTabPage, ContourHdl, Button*, void)
 {
     bool bEnable = !(m_pWrapOutlineCB->IsChecked() && m_pWrapOutlineCB->IsEnabled());
 

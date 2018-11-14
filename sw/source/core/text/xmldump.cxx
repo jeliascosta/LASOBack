@@ -22,6 +22,7 @@
 #include <anchoredobject.hxx>
 #include <libxml/xmlwriter.h>
 #include <SwPortionHandler.hxx>
+#include <view.hxx>
 #include <svx/svdobj.hxx>
 
 class XmlPortionDumper:public SwPortionHandler
@@ -106,7 +107,7 @@ class XmlPortionDumper:public SwPortionHandler
     {
     }
 
-    virtual ~ XmlPortionDumper(  )
+    virtual ~ XmlPortionDumper(  ) override
     {
     }
 
@@ -215,6 +216,8 @@ namespace
     xmlTextWriterPtr lcl_createDefaultWriter()
     {
         xmlTextWriterPtr writer = xmlNewTextWriterFilename( "layout.xml", 0 );
+        xmlTextWriterSetIndent(writer,1);
+        xmlTextWriterSetIndentString(writer, BAD_CAST("  "));
         xmlTextWriterStartDocument( writer, nullptr, nullptr, nullptr );
         return writer;
     }
@@ -293,9 +296,14 @@ void SwFrame::dumpAsXml( xmlTextWriterPtr writer ) const
         if (IsRootFrame())
         {
             const SwRootFrame* pRootFrame = static_cast<const SwRootFrame*>(this);
-            xmlTextWriterStartElement(writer, BAD_CAST("shells"));
-            for (SwViewShell& rViewShell : pRootFrame->GetCurrShell()->GetRingContainer())
-                rViewShell.dumpAsXml(writer);
+            xmlTextWriterStartElement(writer, BAD_CAST("sfxViewShells"));
+            SwView* pView = static_cast<SwView*>(SfxViewShell::GetFirst(true, checkSfxViewShell<SwView>));
+            while (pView)
+            {
+                if (pView->GetObjectShell() == pRootFrame->GetCurrShell()->GetSfxViewShell()->GetObjectShell())
+                    pView->dumpAsXml(writer);
+                pView = static_cast<SwView*>(SfxViewShell::GetNext(*pView, true, checkSfxViewShell<SwView>));
+            }
             xmlTextWriterEndElement(writer);
         }
 
@@ -433,7 +441,7 @@ void SwAnchoredObject::dumpAsXml( xmlTextWriterPtr writer ) const
 
 void SwFont::dumpAsXml(xmlTextWriterPtr writer) const
 {
-    xmlTextWriterStartElement(writer, BAD_CAST("pFont"));
+    xmlTextWriterStartElement(writer, BAD_CAST("SwFont"));
     xmlTextWriterWriteFormatAttribute(writer, BAD_CAST("ptr"), "%p", this);
     xmlTextWriterWriteFormatAttribute(writer, BAD_CAST("color"), "%s", GetColor().AsRGBHexString().toUtf8().getStr());
     xmlTextWriterEndElement(writer);

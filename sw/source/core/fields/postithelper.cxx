@@ -79,7 +79,7 @@ SwPostItHelper::SwLayoutStatus SwPostItHelper::getLayoutInfos(
                 o_rInfo.mRedlineAuthor = 0;
 
                 const IDocumentRedlineAccess& rIDRA = pTextNode->getIDocumentRedlineAccess();
-                if( IDocumentRedlineAccess::IsShowChanges( rIDRA.GetRedlineMode() ) )
+                if( IDocumentRedlineAccess::IsShowChanges( rIDRA.GetRedlineFlags() ) )
                 {
                     const SwRangeRedline* pRedline = rIDRA.GetRedline( rAnchorPos, nullptr );
                     if( pRedline )
@@ -145,10 +145,9 @@ bool SwAnnotationItem::UseElement()
 
 VclPtr<sw::sidebarwindows::SwSidebarWin> SwAnnotationItem::GetSidebarWindow(
                                                             SwEditWin& rEditWin,
-                                                            WinBits nBits,
                                                             SwPostItMgr& aMgr)
 {
-    return VclPtr<sw::annotation::SwAnnotationWin>::Create( rEditWin, nBits,
+    return VclPtr<sw::annotation::SwAnnotationWin>::Create( rEditWin, WB_DIALOGCONTROL,
                                                 aMgr, 0,
                                                 *this,
                                                 &mrFormatField );

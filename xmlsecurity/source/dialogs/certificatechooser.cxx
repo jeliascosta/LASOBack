@@ -18,9 +18,9 @@
  */
 
 
-#include <xmlsecurity/certificatechooser.hxx>
-#include <xmlsecurity/certificateviewer.hxx>
-#include <xmlsecurity/biginteger.hxx>
+#include <certificatechooser.hxx>
+#include <certificateviewer.hxx>
+#include <biginteger.hxx>
 #include <com/sun/star/xml/crypto/XSecurityEnvironment.hpp>
 #include <comphelper/sequence.hxx>
 #include <comphelper/processfactory.hxx>
@@ -57,7 +57,7 @@ CertificateChooser::CertificateChooser(vcl::Window* _pParent, uno::Reference<uno
 
     Size aControlSize(475, 122);
     const long nControlWidth = aControlSize.Width();
-    aControlSize = LogicToPixel(aControlSize, MAP_APPFONT);
+    aControlSize = LogicToPixel(aControlSize, MapUnit::MapAppFont);
     SvSimpleTableContainer *pSignatures = get<SvSimpleTableContainer>("signatures");
     pSignatures->set_width_request(aControlSize.Width());
     pSignatures->set_height_request(aControlSize.Height());
@@ -89,6 +89,7 @@ void CertificateChooser::dispose()
     m_pCertLB.disposeAndClear();
     m_pViewBtn.clear();
     m_pOKBtn.clear();
+    m_pDescriptionED.clear();
     ModalDialog::dispose();
 }
 
@@ -214,7 +215,7 @@ OUString CertificateChooser::GetDescription()
     return m_pDescriptionED->GetText();
 }
 
-IMPL_LINK_NOARG_TYPED(CertificateChooser, CertificateHighlightHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(CertificateChooser, CertificateHighlightHdl, SvTreeListBox*, void)
 {
     bool bEnable = GetSelectedCertificate().is();
     m_pViewBtn->Enable( bEnable );
@@ -222,13 +223,13 @@ IMPL_LINK_NOARG_TYPED(CertificateChooser, CertificateHighlightHdl, SvTreeListBox
     m_pDescriptionED->Enable(bEnable);
 }
 
-IMPL_LINK_NOARG_TYPED(CertificateChooser, CertificateSelectHdl, SvTreeListBox*, bool)
+IMPL_LINK_NOARG(CertificateChooser, CertificateSelectHdl, SvTreeListBox*, bool)
 {
     EndDialog( RET_OK );
     return false;
 }
 
-IMPL_LINK_NOARG_TYPED(CertificateChooser, ViewButtonHdl, Button*, void)
+IMPL_LINK_NOARG(CertificateChooser, ViewButtonHdl, Button*, void)
 {
     ImplShowCertificateDetails();
 }

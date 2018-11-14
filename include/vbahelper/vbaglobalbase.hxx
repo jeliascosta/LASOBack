@@ -19,8 +19,29 @@
 #ifndef INCLUDED_VBAHELPER_VBAGLOBALBASE_HXX
 #define INCLUDED_VBAHELPER_VBAGLOBALBASE_HXX
 
-#include <vbahelper/vbahelperinterface.hxx>
+#include <exception>
+
+#include <com/sun/star/uno/Any.hxx>
+#include <com/sun/star/uno/Exception.hpp>
+#include <com/sun/star/uno/Reference.hxx>
+#include <com/sun/star/uno/RuntimeException.hpp>
+#include <com/sun/star/uno/Sequence.hxx>
 #include <ooo/vba/XGlobalsBase.hpp>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
+#include <vbahelper/vbadllapi.h>
+#include <vbahelper/vbahelper.hxx>
+#include <vbahelper/vbahelperinterface.hxx>
+
+namespace com { namespace sun { namespace star {
+    namespace beans { struct PropertyValue; }
+    namespace uno { class XComponentContext; }
+    namespace uno { class XInterface; }
+} } }
+
+namespace ooo { namespace vba {
+    class XHelperInterface;
+} }
 
 typedef InheritedHelperInterfaceWeakImpl< ov::XGlobalsBase > Globals_BASE;
 class VBAHELPER_DLLPUBLIC VbaGlobalsBase : public Globals_BASE
@@ -34,7 +55,7 @@ protected:
 
 public:
     VbaGlobalsBase( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext >& xContext, const OUString& sDocCtxName );
-    virtual ~VbaGlobalsBase();
+    virtual ~VbaGlobalsBase() override;
     // XMultiServiceFactory
     virtual css::uno::Reference< css::uno::XInterface > SAL_CALL createInstance( const OUString& aServiceSpecifier ) throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::uno::XInterface > SAL_CALL createInstanceWithArguments( const OUString& ServiceSpecifier, const css::uno::Sequence< css::uno::Any >& Arguments ) throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;

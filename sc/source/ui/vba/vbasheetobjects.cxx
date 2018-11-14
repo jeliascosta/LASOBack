@@ -30,6 +30,8 @@
 #include <com/sun/star/form/XForm.hpp>
 #include <com/sun/star/form/XFormComponent.hpp>
 #include <com/sun/star/form/XFormsSupplier.hpp>
+#include <com/sun/star/frame/XModel.hpp>
+#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include "vbasheetobject.hxx"
 #include <cppuhelper/implbase.hxx>
 
@@ -338,11 +340,10 @@ public:
         const uno::Reference< frame::XModel >& rxModel,
         const uno::Reference< sheet::XSpreadsheet >& rxSheet,
         const uno::Type& rVbaType,
-        const OUString& rModelServiceName,
-        sal_Int16 nComponentType ) throw (uno::RuntimeException);
+        const OUString& rModelServiceName ) throw (uno::RuntimeException);
 
 protected:
-    uno::Reference< container::XIndexContainer > createForm() throw (uno::RuntimeException);
+    uno::Reference< container::XIndexContainer > const & createForm() throw (uno::RuntimeException);
 
     virtual bool implPickShape( const uno::Reference< drawing::XShape >& rxShape ) const override;
     virtual OUString implGetShapeServiceName() const override;
@@ -353,7 +354,6 @@ protected:
 protected:
     uno::Reference< container::XIndexContainer > mxFormIC;
     OUString maModelServiceName;
-    sal_Int16 mnComponentType;
 };
 
 ScVbaControlContainer::ScVbaControlContainer(
@@ -362,15 +362,13 @@ ScVbaControlContainer::ScVbaControlContainer(
         const uno::Reference< frame::XModel >& rxModel,
         const uno::Reference< sheet::XSpreadsheet >& rxSheet,
         const uno::Type& rVbaType,
-        const OUString& rModelServiceName,
-        sal_Int16 nComponentType ) throw (uno::RuntimeException) :
+        const OUString& rModelServiceName ) throw (uno::RuntimeException) :
     ScVbaObjectContainer( rxParent, rxContext, rxModel, rxSheet, rVbaType ),
-    maModelServiceName( rModelServiceName ),
-    mnComponentType( nComponentType )
+    maModelServiceName( rModelServiceName )
 {
 }
 
-uno::Reference< container::XIndexContainer > ScVbaControlContainer::createForm() throw (uno::RuntimeException)
+uno::Reference< container::XIndexContainer > const & ScVbaControlContainer::createForm() throw (uno::RuntimeException)
 {
     if( !mxFormIC.is() )
     {
@@ -399,7 +397,7 @@ bool ScVbaControlContainer::implPickShape( const uno::Reference< drawing::XShape
         uno::Reference< beans::XPropertySet > xModelProps( xControlShape->getControl(), uno::UNO_QUERY_THROW );
         sal_Int16 nClassId = -1;
         return lclGetProperty( nClassId, xModelProps, "ClassId" ) &&
-            (nClassId == mnComponentType) && implCheckProperties( xModelProps );
+            (nClassId == form::FormComponentType::COMMANDBUTTON) && implCheckProperties( xModelProps );
     }
     catch( uno::Exception& )
     {
@@ -462,8 +460,7 @@ ScVbaButtonContainer::ScVbaButtonContainer(
     ScVbaControlContainer(
         rxParent, rxContext, rxModel, rxSheet,
         cppu::UnoType<excel::XButton>::get(),
-        "com.sun.star.form.component.CommandButton",
-        form::FormComponentType::COMMANDBUTTON )
+        "com.sun.star.form.component.CommandButton" )
 {
 }
 

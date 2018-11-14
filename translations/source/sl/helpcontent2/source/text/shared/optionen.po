@@ -1,16 +1,16 @@
 #. extracted from helpcontent2/source/text/shared/optionen
 msgid ""
 msgstr ""
-"Project-Id-Version: LibreOffice 5.4\n"
+"Project-Id-Version: LibreOffice 5.3\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2017-04-10 17:20+0200\n"
-"PO-Revision-Date: 2017-04-01 01:34+0200\n"
+"POT-Creation-Date: 2017-01-17 09:44+0100\n"
+"PO-Revision-Date: 2017-01-17 23:43+0200\n"
 "Last-Translator: Martin Srebotnjak <miles@filmsi.net>\n"
 "Language-Team: sl.libreoffice.org\n"
+"Language: sl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: sl\n"
 "Plural-Forms: nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3);\n"
 "X-Generator: Virtaal 0.7.1\n"
 "X-Accelerator-Marker: ~\n"
@@ -82,8 +82,8 @@ msgctxt ""
 "01000000.xhp\n"
 "par_id1013200911280529\n"
 "help.text"
-msgid "Note for macOS users: The Help mentions the menu path Tools - Options at numerous places. Replace this path with %PRODUCTNAME - Preferences on your macOS main menu. Both menu entries open the Options dialog box."
-msgstr "Opozorilo za uporabnike macOS: Pomoč na številnih mestih omenja menijsko pot Orodja – Možnosti. Namesto nje uporabite %PRODUCTNAME – Nastavitve v glavnem meniju macOS. Oba menijska ukaza odpreta pogovorno okno Možnosti."
+msgid "Note for Mac OS X users: The Help mentions the menu path Tools - Options at numerous places. Replace this path with %PRODUCTNAME - Preferences on your Mac OS X main menu. Both menu entries open the Options dialog box."
+msgstr "Opozorilo za uporabnike Mac OS X: Pomoč na številnih mestih omenja menijsko pot Orodja – Možnosti. Namesto nje uporabite %PRODUCTNAME – Nastavitve v glavnem meniju Mac OS X. Oba menijska ukaza odpreta pogovorno okno Možnosti."
 
 #: 01000000.xhp
 msgctxt ""
@@ -4690,6 +4690,130 @@ msgctxt ""
 msgid "<ahelp hid=\"cui/ui/optaccessibilitypage/systempagepreviewcolor\">Applies the high contrast settings of the operating system to page previews.</ahelp>"
 msgstr "<ahelp hid=\"cui/ui/optaccessibilitypage/systempagepreviewcolor\">Uporabi visokokontrastne nastavitve operacijskega sistema za predoglede strani.</ahelp>"
 
+#: 01014000.xhp
+msgctxt ""
+"01014000.xhp\n"
+"tit\n"
+"help.text"
+msgid "Network Identity"
+msgstr "Omrežna identiteta"
+
+#: 01014000.xhp
+msgctxt ""
+"01014000.xhp\n"
+"bm_id3153681\n"
+"help.text"
+msgid "<bookmark_value>network identity options</bookmark_value><bookmark_value>options; network identity</bookmark_value><bookmark_value>single sign on options</bookmark_value><bookmark_value>LDAP server; sign on options</bookmark_value><bookmark_value>remote configurations</bookmark_value><bookmark_value>Configuration Manager</bookmark_value>"
+msgstr "<bookmark_value>možnosti omrežne identitete</bookmark_value><bookmark_value>možnosti; omrežna identiteta</bookmark_value><bookmark_value>enojni predznak pri možnostih</bookmark_value><bookmark_value>oddaljene konfiguracije</bookmark_value><bookmark_value>konfiguracijski upravitelj</bookmark_value>"
+
+#: 01014000.xhp
+msgctxt ""
+"01014000.xhp\n"
+"hd_id3153681\n"
+"1\n"
+"help.text"
+msgid "<link href=\"text/shared/optionen/01014000.xhp\" name=\"Network Identity\">Network Identity</link>"
+msgstr "<link href=\"text/shared/optionen/01014000.xhp\" name=\"Omrežna identiteta\">Omrežna identiteta</link>"
+
+#: 01014000.xhp
+msgctxt ""
+"01014000.xhp\n"
+"par_id3153562\n"
+"2\n"
+"help.text"
+msgid "<ahelp hid=\".\">Sets the options for a remote configuration access to your personal $[officename] settings stored on an LDAP server.</ahelp> To see this tab page and to use this feature, remote configuration must be active: You need an account on an LDAP server that is running and configured to store $[officename] user settings."
+msgstr "<ahelp hid=\".\">Nastavi možnosti za oddaljen konfiguracijski dostop do vaših osebnih nastavitev $[officename], shranjenih na strežniku LDAP.</ahelp> Če želite ta zavihek videti in uporabiti to možnost, mora biti oddaljena konfiguracija aktivna: potrebujete račun na strežniku LDAP, ki je odprt in nastavljen, da hrani uporabniške nastavitve $[officename]."
+
+#: 01014000.xhp
+msgctxt ""
+"01014000.xhp\n"
+"par_id3149797\n"
+"7\n"
+"help.text"
+msgid "Using remote configuration, you can start a copy of $[officename] on any computer in the network with your own user data and personal configuration."
+msgstr "Z uporabo oddaljene konfiguracije lahko zaženete kopijo programa $[officename] na kateremkoli računalniku v omrežju z vašimi uporabniškimi podatki in osebnimi prilagoditvami."
+
+#: 01014000.xhp
+msgctxt ""
+"01014000.xhp\n"
+"hd_id3155388\n"
+"3\n"
+"help.text"
+msgid "Authentication Method"
+msgstr "Metoda overovitve"
+
+#: 01014000.xhp
+msgctxt ""
+"01014000.xhp\n"
+"par_id3147335\n"
+"8\n"
+"help.text"
+msgid "<ahelp hid=\"SVX_LISTBOX_RID_SVXPAGE_SSO_LB_MECHANISM\">Choose your security mechanism for access to the LDAP server.</ahelp> Choices are Simple or Kerberos."
+msgstr "<ahelp hid=\"SVX_LISTBOX_RID_SVXPAGE_SSO_LB_MECHANISM\">Izberite svoj varnostni mehanizem za dostop do strežnika LDAP.</ahelp> Na voljo sta Simple in Kerberos."
+
+#: 01014000.xhp
+msgctxt ""
+"01014000.xhp\n"
+"hd_id3153881\n"
+"4\n"
+"help.text"
+msgid "User name"
+msgstr "Uporabniško ime"
+
+#: 01014000.xhp
+msgctxt ""
+"01014000.xhp\n"
+"par_id3148943\n"
+"9\n"
+"help.text"
+msgid "<ahelp hid=\"SVX_EDIT_RID_SVXPAGE_SSO_ED_USERNAME\">Using \"simple\" authentication method, you enter your user name on the LDAP server here.</ahelp> Using \"Kerberos\", you just see your user name, but cannot edit it."
+msgstr "<ahelp hid=\"SVX_EDIT_RID_SVXPAGE_SSO_ED_USERNAME\">Če uporabljate metodo overitve »simple«, svoje uporabniško ime na strežniku LDAP vnesete tukaj.</ahelp> Če uporabljate »Kerberos«, svoje uporabniško ime samo vidite, a ga ne morete urediti."
+
+#: 01014000.xhp
+msgctxt ""
+"01014000.xhp\n"
+"hd_id3153061\n"
+"5\n"
+"help.text"
+msgid "Password"
+msgstr "Geslo"
+
+#: 01014000.xhp
+msgctxt ""
+"01014000.xhp\n"
+"par_id3156343\n"
+"10\n"
+"help.text"
+msgid "<ahelp hid=\"SVX_EDIT_RID_SVXPAGE_SSO_ED_PASSWORD\">Using \"simple\" authentication method, enter your password for access to the LDAP server here.</ahelp> Using \"Kerberos\", this box is not active."
+msgstr "<ahelp hid=\"SVX_EDIT_RID_SVXPAGE_SSO_ED_PASSWORD\">Če uporabljate metodo overitve »simple«, vnesete svoje geslo za dostop do strežnika LDAP tukaj.</ahelp> Če uporabljate »Kerberos«, to polje ni aktivno."
+
+#: 01014000.xhp
+msgctxt ""
+"01014000.xhp\n"
+"hd_id3146795\n"
+"6\n"
+"help.text"
+msgid "Save password"
+msgstr "Shrani geslo"
+
+#: 01014000.xhp
+msgctxt ""
+"01014000.xhp\n"
+"par_id3150358\n"
+"11\n"
+"help.text"
+msgid "<ahelp hid=\"SVX_CHECKBOX_RID_SVXPAGE_SSO_CB_PASSWORD\">Using \"simple\" authentication method, check this box to make your password persistent.</ahelp> If the password is persistent and the same user starts $[officename] later on, the user name and password will not be requested again. Using \"Kerberos\", this box is not active."
+msgstr "<ahelp hid=\"SVX_CHECKBOX_RID_SVXPAGE_SSO_CB_PASSWORD\">Če uporabljate metodo overitve »simple«, označite to polje, da vaše geslo postane stalno.</ahelp> Če je geslo stalno in isti uporabnik $[officename] zažene kasneje, ne bo ponovno naprošen za uporabniško ime in geslo. Če uporabljate »Kerberos«, to polje ni aktivno."
+
+#: 01014000.xhp
+msgctxt ""
+"01014000.xhp\n"
+"par_id3154939\n"
+"12\n"
+"help.text"
+msgid "The password will be stored encrypted in a file called .ssop in your <switchinline select=\"sys\"><caseinline select=\"UNIX\">home directory </caseinline><defaultinline>\"My Documents\" folder</defaultinline></switchinline>."
+msgstr "Geslo bo šifrirano shranjeno v datoteki z imenom .ssop v <switchinline select=\"sys\"><caseinline select=\"UNIX\">vaši domači mapi </caseinline><defaultinline>\"mapi Moji dokumenti\"</defaultinline></switchinline>."
+
 #: 01020000.xhp
 msgctxt ""
 "01020000.xhp\n"
@@ -5352,8 +5476,8 @@ msgctxt ""
 "01030300.xhp\n"
 "par_idN10692\n"
 "help.text"
-msgid "<ahelp hid=\"cui/ui/optsecuritypage/macro\">Opens the <emph>Macro Security</emph> dialog.</ahelp>"
-msgstr "<ahelp hid=\"cui/ui/optsecuritypage/macro\">Odpre pogovorno okno <emph>Varnost makrov</emph>.</ahelp>"
+msgid "<ahelp hid=\"703992332\">Opens the <emph>Macro Security</emph> dialog.</ahelp>"
+msgstr "<ahelp hid=\"703992332\">Odpre pogovorno okno <emph>Varnost makrov</emph>.</ahelp>"
 
 #: 01030300.xhp
 msgctxt ""
@@ -5384,8 +5508,8 @@ msgctxt ""
 "01030300.xhp\n"
 "par_idN106920\n"
 "help.text"
-msgid "<ahelp hid=\"cui/ui/optsecuritypage/cert\">Opens the <emph>Certificate Path</emph> dialog.</ahelp>"
-msgstr "<ahelp hid=\"cui/ui/optsecuritypage/cert\">Odpre pogovorno okno <emph>Izberi potrdilo</emph>.</ahelp>"
+msgid "Opens the <emph>Certificate Path</emph> dialog."
+msgstr "Odpre pogovorno okno <emph>Pot digitalnega potrdila</emph>."
 
 #: 01030300.xhp
 msgctxt ""
@@ -5416,8 +5540,8 @@ msgctxt ""
 "01030300.xhp\n"
 "par_idN106921\n"
 "help.text"
-msgid "<ahelp hid=\"cui/ui/optsecuritypage/tsas\">Opens the <emph>Time Stamping Authority URLs</emph> dialog.</ahelp>"
-msgstr "<ahelp hid=\"cui/ui/optsecuritypage/tsas\">Odpre pogovorno okno <emph>URL-ji overiteljev časovnih žigov</emph>.</ahelp>"
+msgid "Opens the <emph>Time Stamping Authority URLs</emph> dialog."
+msgstr "Odpre pogovorno okno <emph>URL-ji overiteljev časovnih žigov</emph>."
 
 #: 01030500.xhp
 msgctxt ""
@@ -6334,7 +6458,7 @@ msgctxt ""
 "11\n"
 "help.text"
 msgid "Form controls"
-msgstr "Kontrolniki obrazcev"
+msgstr "Kontrolniki obrazca"
 
 #: 01040400.xhp
 msgctxt ""
@@ -7978,8 +8102,8 @@ msgctxt ""
 "par_id3155602\n"
 "48\n"
 "help.text"
-msgid "Specifies that printer metrics are applied for printing and also for formatting the display on the screen. If this box is not checked, a printer independent layout will be used for screen display and printing."
-msgstr "Določa, da je metrika tiskalnika uporabljena za tiskanje in tudi za oblikovanje prikaza na ekranu. Če to polje ni potrjeno, potem bo za prikaz na zaslonu in za tiskanje uporabljena postavitev, ki ni odvisna od tiskalnika."
+msgid "<ahelp hid=\"SW_CHECKBOX_TP_OPTLOAD_PAGE_CB_PRINTER_METRICS\">Specifies that printer metrics are applied for printing and also for formatting the display on the screen.</ahelp> If this box is not checked, a printer independent layout will be used for screen display and printing."
+msgstr "<ahelp hid=\"SW_CHECKBOX_TP_OPTLOAD_PAGE_CB_PRINTER_METRICS\">Določa, da je metrika tiskalnika uporabljena za tiskanje in tudi za oblikovanje prikaza na zaslonu.</ahelp> Če to polje ni potrjeno, bo uporabljena tiskalnikova neodvisna postavitev za prikaz na zaslonu in tiskanje."
 
 #: 01041000.xhp
 msgctxt ""
@@ -8014,8 +8138,8 @@ msgctxt ""
 "par_id3151250\n"
 "19\n"
 "help.text"
-msgid "Specifies whether to add MS Word-compatible spacing between paragraphs and tables in $[officename] Writer text documents."
-msgstr "Določa, ali naj med odstavke in tabele v dokumentih z besedilom $[officename] Writer doda razmike, združljive z MS Wordom."
+msgid "<ahelp hid=\"SW:CHECKBOX:TP_OPTLOAD_PAGE:CB_MERGE_PARA_DIST\">Specifies whether to add MS Word-compatible spacing between paragraphs and tables in $[officename] Writer text documents.</ahelp>"
+msgstr "<ahelp hid=\"SW:CHECKBOX:TP_OPTLOAD_PAGE:CB_MERGE_PARA_DIST\">Določa, ali naj med odstavke in tabele v dokumentih z besedilom $[officename] Writer doda razmike, združljive z MS Wordom.</ahelp>"
 
 #: 01041000.xhp
 msgctxt ""
@@ -8032,8 +8156,8 @@ msgctxt ""
 "par_id3155333\n"
 "30\n"
 "help.text"
-msgid "Specifies whether paragraph spacing at the top of a page will also be effective at the beginning of a page or column if the paragraph is positioned on the first page of the document. The same applies for a page break."
-msgstr "Določa, ali bo razmik odstavka na vrhu strani veljal tudi na začetku strani ali stolpca, če je odstavek postavljen na prvo stran dokumenta. Enako velja za prelom strani."
+msgid "<ahelp hid=\"SW:CHECKBOX:TP_OPTLOAD_PAGE:CB_MERGE_PARA_DIST_PAGESTART\">Specifies whether paragraph spacing at the top of a page will also be effective at the beginning of a page or column if the paragraph is positioned on the first page of the document.</ahelp> The same applies for a page break."
+msgstr "<ahelp hid=\"SW:CHECKBOX:TP_OPTLOAD_PAGE:CB_MERGE_PARA_DIST_PAGESTART\">Določa, ali bo razmik odstavka na vrhu strani veljal tudi na začetku strani ali stolpca, če je odstavek postavljen na prvo stran dokumenta.</ahelp> Enako velja za prelom strani."
 
 #: 01041000.xhp
 msgctxt ""
@@ -8059,8 +8183,8 @@ msgctxt ""
 "par_id3152777\n"
 "43\n"
 "help.text"
-msgid "Specifies how to align text at tab stops beyond the right margin, how to handle decimal tab stops, and how to handle tab stops close to a line break. If this check box is not selected, tab stops are handled in the same way as in other Office applications."
-msgstr "Določa, kako poravnati besedilo na tabulatorskih mestih preko desnega robu, kako upravljati z decimalnimi tabulatorskimi mesti in kako upravljati s tabulatorskimi mesti blizu preloma vrstice. Če to polje ni potrjeno, so tabulatorska mesta urejena enako kot v drugih pisarniških paketih."
+msgid "<ahelp hid=\"SW_CHECKBOX_TP_OPTLOAD_PAGE_CB_TAB_ALIGNMENT\">Specifies how to align text at tab stops beyond the right margin, how to handle decimal tab stops, and how to handle tab stops close to a line break.</ahelp> If this check box is not selected, tab stops are handled in the same way as in other Office applications."
+msgstr "<ahelp hid=\"SW_CHECKBOX_TP_OPTLOAD_PAGE_CB_TAB_ALIGNMENT\">Določa, kako poravnati besedilo na tabulatorskih mestih preko desnega robu, kako upravljati z decimalnimi tabulatorskimi mesti in kako upravljati s tabulatorskimi mesti blizu preloma vrstice.</ahelp> Če to polje ni potrjeno, so tabulatorska mesta urejena enako kot v ostalih modulih OpenOffice.org."
 
 #: 01041000.xhp
 msgctxt ""
@@ -14229,8 +14353,8 @@ msgctxt ""
 "01160200.xhp\n"
 "par_idN10592\n"
 "help.text"
-msgid "<ahelp hid=\"CUI_HID_DBPATH_CTL_PATH\">Lists the registered name and database file of all registered databases. Double-click an entry to edit.</ahelp>"
-msgstr "<ahelp hid=\"CUI_HID_DBPATH_CTL_PATH\">Navede registrirano ime in datoteko zbirke podatkov za vse registrirane zbirke podatkov. Dvokliknite vnos za urejanje.</ahelp>"
+msgid "<ahelp hid=\"35535\">Lists the registered name and database file of all registered databases. Double-click an entry to edit.</ahelp>"
+msgstr "<ahelp hid=\"35535\">Navede registrirano ime in datoteko zbirke podatkov za vse registrirane zbirke podatkov. Dvokliknite vnos za urejanje.</ahelp>"
 
 #: 01160200.xhp
 msgctxt ""
@@ -14245,8 +14369,8 @@ msgctxt ""
 "01160200.xhp\n"
 "par_idN10599\n"
 "help.text"
-msgid "<ahelp hid=\"cui/ui/dbregisterpage/new\">Opens the <link href=\"text/shared/optionen/01160201.xhp\">Database Link</link> dialog to create a new entry.</ahelp>"
-msgstr "<ahelp hid=\"cui/ui/dbregisterpage/new\">Odpre pogovorno okno <link href=\"text/shared/optionen/01160201.xhp\">Ustvari povezavo zbirke podatkov</link>, kjer lahko ustvarite nov vnos.</ahelp>"
+msgid "<ahelp hid=\"809226765\">Opens the <link href=\"text/shared/optionen/01160201.xhp\">Database Link</link> dialog to create a new entry.</ahelp>"
+msgstr "<ahelp hid=\"809226765\">Odpre pogovorno okno <link href=\"text/shared/optionen/01160201.xhp\">Ustvari povezavo zbirke podatkov</link>, kjer lahko ustvarite nov vnos.</ahelp>"
 
 #: 01160200.xhp
 msgctxt ""
@@ -14261,8 +14385,8 @@ msgctxt ""
 "01160200.xhp\n"
 "par_idN105AE\n"
 "help.text"
-msgid "<ahelp hid=\"cui/ui/dbregisterpage/delete\">Removes the selected entry from the list.</ahelp>"
-msgstr "<ahelp hid=\"cui/ui/dbregisterpage/delete\">Izbrani vnos odstrani s seznama.</ahelp>"
+msgid "<ahelp hid=\"809226770\">Removes the selected entry from the list.</ahelp>"
+msgstr "<ahelp hid=\"809226770\">S seznama odstrani izbrani vnos.</ahelp>"
 
 #: 01160200.xhp
 msgctxt ""
@@ -14277,8 +14401,8 @@ msgctxt ""
 "01160200.xhp\n"
 "par_idN105B5\n"
 "help.text"
-msgid "<ahelp hid=\"cui/ui/dbregisterpage/edit\">Opens the <link href=\"text/shared/optionen/01160201.xhp\">Database Link</link> dialog to edit the selected entry.</ahelp>"
-msgstr "<ahelp hid=\"cui/ui/dbregisterpage/edit\">Odpre pogovorno okno <link href=\"text/shared/optionen/01160201.xhp\">Uredi povezavo zbirke podatkov</link>, kjer lahko uredite izbrani vnos.</ahelp>"
+msgid "<ahelp hid=\"809226766\">Opens the <link href=\"text/shared/optionen/01160201.xhp\">Database Link</link> dialog to edit the selected entry.</ahelp>"
+msgstr "<ahelp hid=\"809226766\">Odpre pogovorno okno <link href=\"text/shared/optionen/01160201.xhp\">Uredi povezavo zbirke podatkov</link>, kjer lahko uredite izbrani vnos.</ahelp>"
 
 #: 01160201.xhp
 msgctxt ""
@@ -15903,38 +16027,6 @@ msgctxt ""
 "help.text"
 msgid "<ahelp hid=\".\">A check will be performed now.</ahelp>"
 msgstr "<ahelp hid=\".\">Preverjanje bo izvedeno zdaj.</ahelp>"
-
-#: online_update.xhp
-msgctxt ""
-"online_update.xhp\n"
-"hd_id1418806\n"
-"help.text"
-msgid "Download updates automatically"
-msgstr "Samodejno prenesi posodobitve"
-
-#: online_update.xhp
-msgctxt ""
-"online_update.xhp\n"
-"par_id3174230\n"
-"help.text"
-msgid "<ahelp hid=\".\">Enable the automatic download of updates.</ahelp>"
-msgstr "<ahelp hid=\".\">Omogočite samodejni prenos posodobitev.</ahelp>"
-
-#: online_update.xhp
-msgctxt ""
-"online_update.xhp\n"
-"hd_id1418807\n"
-"help.text"
-msgid "Change"
-msgstr "Spremeni"
-
-#: online_update.xhp
-msgctxt ""
-"online_update.xhp\n"
-"par_id0116200901063996\n"
-"help.text"
-msgid "<ahelp hid=\".\">Click to select a folder to download the files.</ahelp>"
-msgstr "<ahelp hid=\".\">Kliknite, če želite izbrati mapo, kamor želite prenesti datoteke.</ahelp>"
 
 #: online_update.xhp
 msgctxt ""

@@ -55,14 +55,12 @@ namespace svx
 namespace sidebar
 {
 
-class PopupContainer;
-
 class LinePropertyPanel : public LinePropertyPanelBase,
                           public sfx2::sidebar::IContextChangeReceiver,
                           public sfx2::sidebar::ControllerItem::ItemUpdateReceiverInterface
 {
 public:
-    virtual ~LinePropertyPanel();
+    virtual ~LinePropertyPanel() override;
     virtual void dispose() override;
 
     static VclPtr<vcl::Window> Create(
@@ -71,7 +69,7 @@ public:
         SfxBindings* pBindings);
 
     virtual void HandleContextChange(
-        const ::sfx2::sidebar::EnumContext& rContext) override;
+        const vcl::EnumContext& rContext) override;
 
     virtual void NotifyItemUpdate(
         const sal_uInt16 nSId,
@@ -113,9 +111,7 @@ private:
     sfx2::sidebar::ControllerItem maCapStyle;
 
     SfxBindings* mpBindings;
-    sfx2::sidebar::EnumContext maContext;
-
-    void Initialize();
+    vcl::EnumContext maContext;
 };
 
 } } // end of namespace svx::sidebar

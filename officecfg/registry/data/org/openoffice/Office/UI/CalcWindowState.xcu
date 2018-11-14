@@ -147,7 +147,7 @@
           <value>false</value>
         </prop>
         <prop oor:name="UIName" oor:type="xs:string">
-          <value xml:lang="en-US">Classification</value>
+          <value xml:lang="en-US">TSCP Classification</value>
         </prop>
       </node>
       <node oor:name="private:resource/toolbar/graphicobjectbar" oor:op="replace">
@@ -714,6 +714,17 @@
           <value>false</value>
         </prop>
         <prop oor:name="ContextSensitive" oor:type="xs:boolean">
+          <value>false</value>
+        </prop>
+      </node>
+      <node oor:name="private:resource/toolbar/arrowsbar" oor:op="replace">
+        <prop oor:name="Docked" oor:type="xs:boolean">
+          <value>false</value>
+        </prop>
+        <prop oor:name="UIName" oor:type="xs:string">
+          <value xml:lang="en-US">Arrows</value>
+        </prop>
+        <prop oor:name="Visible" oor:type="xs:boolean">
           <value>false</value>
         </prop>
       </node>

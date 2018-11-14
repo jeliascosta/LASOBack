@@ -20,7 +20,6 @@
 #ifndef INCLUDED_SC_INC_AREALINK_HXX
 #define INCLUDED_SC_INC_AREALINK_HXX
 
-#include "global.hxx"
 #include "refreshtimer.hxx"
 #include "address.hxx"
 #include <sfx2/lnkbase.hxx>
@@ -49,7 +48,7 @@ public:
     ScAreaLink( SfxObjectShell* pShell, const OUString& rFile,
                     const OUString& rFilter, const OUString& rOpt,
                     const OUString& rArea, const ScRange& rDest, sal_uLong nRefresh );
-    virtual ~ScAreaLink();
+    virtual ~ScAreaLink() override;
 
     virtual void Closed() override;
     virtual ::sfx2::SvBaseLink::UpdateResult DataChanged(
@@ -75,8 +74,7 @@ public:
     const OUString& GetSource() const       { return aSourceArea;   }
     const ScRange&  GetDestArea() const     { return aDestArea;     }
 
-    DECL_LINK_TYPED( RefreshHdl, Timer*, void );
-    DECL_LINK_TYPED( AreaEndEditHdl, Dialog&, void );
+    DECL_LINK( RefreshHdl, Timer*, void );
 };
 
 #endif

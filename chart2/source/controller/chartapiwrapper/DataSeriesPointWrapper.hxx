@@ -60,14 +60,14 @@ public:
     };
 
     //this constructor needs an initialize call afterwards
-    explicit DataSeriesPointWrapper( std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
+    explicit DataSeriesPointWrapper(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
 
-    DataSeriesPointWrapper( eType eType
+    DataSeriesPointWrapper(eType eType
             , sal_Int32 nSeriesIndexInNewAPI
             , sal_Int32 nPointIndex //ignored for series
-            , std::shared_ptr< Chart2ModelContact > spChart2ModelContact  );
+            , const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
 
-    virtual ~DataSeriesPointWrapper();
+    virtual ~DataSeriesPointWrapper() override;
 
     bool isSupportingAreaProperties();
     bool isLinesForbidden() { return !m_bLinesAllowed;}
@@ -79,9 +79,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // ___lang::XInitialization___
     virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )

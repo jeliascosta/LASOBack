@@ -19,6 +19,8 @@
 #include "vbalisthelper.hxx"
 #include <tools/diagnose_ex.h>
 #include <ooo/vba/word/WdListGalleryType.hpp>
+#include <com/sun/star/beans/XPropertySet.hpp>
+#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/style/XStyleFamiliesSupplier.hpp>
 #include <com/sun/star/style/NumberingType.hpp>
 #include <com/sun/star/container/XIndexReplace.hpp>
@@ -27,10 +29,6 @@ using namespace ::ooo::vba;
 using namespace ::com::sun::star;
 
 static const sal_Int32 LIST_LEVEL_COUNT = 9;
-
-static const char WORD_BULLET_GALLERY[] = "WdBullet";
-static const char WORD_NUMBER_GALLERY[] = "WdNumber";
-static const char WORD_OUTLINE_NUMBER_GALLERY[] = "WdOutlineNumber";
 
 static const char UNO_NAME_PARENT_NUMBERING[] = "ParentNumbering";
 static const char UNO_NAME_PREFIX[] = "Prefix";
@@ -60,17 +58,17 @@ void SwVbaListHelper::Init() throw( css::uno::RuntimeException )
     {
         case word::WdListGalleryType::wdBulletGallery:
         {
-            msStyleName = WORD_BULLET_GALLERY;
+            msStyleName = "WdBullet";
             break;
         }
         case word::WdListGalleryType::wdNumberGallery:
         {
-            msStyleName = WORD_NUMBER_GALLERY;
+            msStyleName = "WdNumber";
             break;
         }
         case word::WdListGalleryType::wdOutlineNumberGallery:
         {
-            msStyleName = WORD_OUTLINE_NUMBER_GALLERY;
+            msStyleName = "WdOutlineNumber";
             break;
         }
         default:
@@ -151,7 +149,7 @@ void SwVbaListHelper::CreateBulletListTemplate() throw( css::uno::RuntimeExcepti
         }
         case 2:
         {
-            aBulletChar = OUStringLiteral1<CHAR_EMPTY_DOT>();
+            aBulletChar = OUStringLiteral1(CHAR_EMPTY_DOT);
             break;
         }
         case 3:

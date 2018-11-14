@@ -40,7 +40,8 @@ class TabControl
     sal_uInt16    RrePageID;
 public:
     TabControl (DrawViewShell* pDrViewSh, vcl::Window* pParent);
-    virtual ~TabControl();
+    virtual void dispose() override;
+    virtual ~TabControl() override;
 
     /** Inform all listeners of this control that the current page has been
         activated.  Call this method after switching the current page and is
@@ -90,7 +91,7 @@ private:
 
         TabControl&     mrParent;
 
-        virtual             ~TabControlTransferable();
+        virtual             ~TabControlTransferable() override;
 
         virtual void        AddSupportedFormats() override;
         virtual bool GetData( const css::datatransfer::DataFlavor& rFlavor, const OUString& rDestDoc ) override;

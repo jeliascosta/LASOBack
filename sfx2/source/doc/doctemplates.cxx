@@ -128,12 +128,12 @@ namespace {
 class WaitWindow_Impl : public WorkWindow
 {
     Rectangle     maRect;
-    DrawTextFlags mnTextStyle;
     OUString      maText;
+    const DrawTextFlags mnTextStyle = DrawTextFlags::Center | DrawTextFlags::VCenter | DrawTextFlags::WordBreak | DrawTextFlags::MultiLine;
 
 public:
     WaitWindow_Impl();
-    virtual ~WaitWindow_Impl();
+    virtual ~WaitWindow_Impl() override;
     virtual void dispose() override;
     virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
 };
@@ -246,7 +246,7 @@ class SfxDocTplService_Impl
     void                        createFromContent( GroupList_Impl& rList,
                                                    Content &rContent,
                                                    bool bHierarchy,
-                                                   bool bWriteableContent = false );
+                                                   bool bWriteableContent );
     void                        addHierGroup( GroupList_Impl& rList,
                                               const OUString& rTitle,
                                               const OUString& rOwnURL );
@@ -254,7 +254,7 @@ class SfxDocTplService_Impl
                                               const OUString& rTitle,
                                               const OUString& rUITitle,
                                               const OUString& rOwnURL,
-                                              bool bWriteableGroup = false );
+                                              bool bWriteableGroup );
     void                        removeFromHierarchy( DocTemplates_EntryData_Impl *pData );
     void                        addToHierarchy( GroupData_Impl *pGroup,
                                                 DocTemplates_EntryData_Impl *pData );
@@ -475,7 +475,7 @@ void SfxDocTplService_Impl::getDefaultLocale()
         ::osl::MutexGuard aGuard( maMutex );
         if ( !mbLocaleSet )
         {
-            maLocale = LanguageTag( utl::ConfigManager::getLocale()).getLocale( false);
+            maLocale = LanguageTag::convertToLocale( utl::ConfigManager::getLocale(), false);
             mbLocaleSet = true;
         }
     }
@@ -1141,7 +1141,7 @@ void SfxDocTplService_Impl::doUpdate()
     GroupList_Impl  aGroupList;
 
     // get the entries from the hierarchy
-    createFromContent( aGroupList, maRootContent, true );
+    createFromContent( aGroupList, maRootContent, true, false );
 
     // get the entries from the template directories
     sal_Int32   nCountDir = maTemplateDirs.getLength();
@@ -2169,7 +2169,7 @@ class SfxDocTplService: public ::cppu::WeakImplHelper< css::lang::XLocalizable, 
 
 public:
     explicit SfxDocTplService( const css::uno::Reference < uno::XComponentContext >& xContext );
-    virtual ~SfxDocTplService();
+    virtual ~SfxDocTplService() override;
 
     virtual OUString SAL_CALL getImplementationName()
         throw (css::uno::RuntimeException, std::exception) override
@@ -2351,7 +2351,6 @@ void SAL_CALL SfxDocTplService::update()
 WaitWindow_Impl::WaitWindow_Impl() : WorkWindow(nullptr, WB_BORDER | WB_3DLOOK)
 {
     Rectangle aRect = Rectangle(0, 0, 300, 30000);
-    mnTextStyle = DrawTextFlags::Center | DrawTextFlags::VCenter | DrawTextFlags::WordBreak | DrawTextFlags::MultiLine;
     maText = SfxResId(RID_CNT_STR_WAITING).toString();
     maRect = GetTextRect(aRect, maText, mnTextStyle);
     aRect = maRect;

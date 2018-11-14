@@ -16,10 +16,9 @@
  *   except in compliance with the License. You may obtain a copy of
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
-#include <sfx2/sidebar/ResourceDefinitions.hrc>
+
 #include <sfx2/sidebar/ControlFactory.hxx>
 #include <svx/sidebar/LinePropertyPanelBase.hxx>
-#include <LinePropertyPanel.hrc>
 #include <svx/dialogs.hrc>
 #include <svx/dialmgr.hxx>
 #include <sfx2/objsh.hxx>
@@ -45,8 +44,6 @@
 #include <svx/xlnedit.hxx>
 #include <svx/xlncapit.hxx>
 #include <svx/xlinjoit.hxx>
-#include "svx/sidebar/PopupContainer.hxx"
-#include "svx/sidebar/PopupControl.hxx"
 
 using namespace css;
 using namespace css::uno;
@@ -69,7 +66,7 @@ void FillLineEndListBox(ListBox& rListBoxStart, ListBox& rListBoxEnd, const XLin
 
     for(sal_uInt32 i(0); i < nCount; i++)
     {
-        XLineEndEntry* pEntry = rList.GetLineEnd(i);
+        const XLineEndEntry* pEntry = rList.GetLineEnd(i);
         const Bitmap aBitmap = const_cast< XLineEndList& >(rList).GetUiBitmap(i);
 
         if(!aBitmap.IsEmpty())
@@ -140,7 +137,7 @@ void FillLineStyleListBox(ListBox& rListBox, const XDashList& rList)
 
     for(sal_uInt32 i(0); i < nCount; i++)
     {
-        XDashEntry* pEntry = rList.GetDash(i);
+        const XDashEntry* pEntry = rList.GetDash(i);
         const Bitmap aBitmap = const_cast< XDashList& >(rList).GetUiBitmap(i);
 
         if(!aBitmap.IsEmpty())
@@ -167,7 +164,7 @@ LinePropertyPanelBase::LinePropertyPanelBase(
     mpStyleItem(),
     mpDashItem(),
     mnTrans(0),
-    meMapUnit(SFX_MAPUNIT_MM),
+    meMapUnit(MapUnit::MapMM),
     mnWidthCoreValue(0),
     mpStartItem(),
     mpEndItem(),
@@ -539,7 +536,7 @@ void LinePropertyPanelBase::updateLineCap(bool bDisabled, bool bSetOrDefault,
     mpLBCapStyle->SetNoSelection();
 }
 
-IMPL_LINK_NOARG_TYPED(LinePropertyPanelBase, ChangeLineStyleHdl, ListBox&, void)
+IMPL_LINK_NOARG(LinePropertyPanelBase, ChangeLineStyleHdl, ListBox&, void)
 {
     const sal_Int32 nPos(mpLBStyle->GetSelectEntryPos());
 
@@ -577,7 +574,7 @@ IMPL_LINK_NOARG_TYPED(LinePropertyPanelBase, ChangeLineStyleHdl, ListBox&, void)
     ActivateControls();
 }
 
-IMPL_LINK_NOARG_TYPED(LinePropertyPanelBase, ChangeStartHdl, ListBox&, void)
+IMPL_LINK_NOARG(LinePropertyPanelBase, ChangeStartHdl, ListBox&, void)
 {
     sal_Int32  nPos = mpLBStart->GetSelectEntryPos();
     if( nPos != LISTBOX_ENTRY_NOTFOUND && mpLBStart->IsValueChangedFromSaved() )
@@ -591,7 +588,7 @@ IMPL_LINK_NOARG_TYPED(LinePropertyPanelBase, ChangeStartHdl, ListBox&, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(LinePropertyPanelBase, ChangeEndHdl, ListBox&, void)
+IMPL_LINK_NOARG(LinePropertyPanelBase, ChangeEndHdl, ListBox&, void)
 {
     sal_Int32  nPos = mpLBEnd->GetSelectEntryPos();
     if( nPos != LISTBOX_ENTRY_NOTFOUND && mpLBEnd->IsValueChangedFromSaved() )
@@ -605,7 +602,7 @@ IMPL_LINK_NOARG_TYPED(LinePropertyPanelBase, ChangeEndHdl, ListBox&, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(LinePropertyPanelBase, ChangeEdgeStyleHdl, ListBox&, void)
+IMPL_LINK_NOARG(LinePropertyPanelBase, ChangeEdgeStyleHdl, ListBox&, void)
 {
     const sal_Int32 nPos(mpLBEdgeStyle->GetSelectEntryPos());
 
@@ -641,7 +638,7 @@ IMPL_LINK_NOARG_TYPED(LinePropertyPanelBase, ChangeEdgeStyleHdl, ListBox&, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(LinePropertyPanelBase, ChangeCapStyleHdl, ListBox&, void)
+IMPL_LINK_NOARG(LinePropertyPanelBase, ChangeCapStyleHdl, ListBox&, void)
 {
     const sal_Int32 nPos(mpLBCapStyle->GetSelectEntryPos());
 
@@ -672,7 +669,7 @@ IMPL_LINK_NOARG_TYPED(LinePropertyPanelBase, ChangeCapStyleHdl, ListBox&, void)
     }
 }
 
-IMPL_LINK_TYPED(LinePropertyPanelBase, ToolboxWidthSelectHdl,ToolBox*, pToolBox, void)
+IMPL_LINK(LinePropertyPanelBase, ToolboxWidthSelectHdl,ToolBox*, pToolBox, void)
 {
     if (pToolBox->GetItemCommand(pToolBox->GetCurItemId()) == UNO_SELECTWIDTH)
     {
@@ -681,7 +678,7 @@ IMPL_LINK_TYPED(LinePropertyPanelBase, ToolboxWidthSelectHdl,ToolBox*, pToolBox,
     }
 }
 
-IMPL_LINK_NOARG_TYPED( LinePropertyPanelBase, ChangeTransparentHdl, Edit&, void )
+IMPL_LINK_NOARG( LinePropertyPanelBase, ChangeTransparentHdl, Edit&, void )
 {
     sal_uInt16 nVal = (sal_uInt16)mpMFTransparent->GetValue();
     XLineTransparenceItem aItem( nVal );
@@ -707,7 +704,7 @@ void LinePropertyPanelBase::SetWidthIcon()
         return;
     }
 
-    long nVal = LogicToLogic(mnWidthCoreValue * 10,(MapUnit)meMapUnit , MAP_POINT);
+    long nVal = LogicToLogic(mnWidthCoreValue * 10,(MapUnit)meMapUnit , MapUnit::MapPoint);
     const sal_uInt16 nIdWidth = mpTBWidth->GetItemId(UNO_SELECTWIDTH);
 
     if(nVal <= 6)
@@ -812,7 +809,7 @@ void LinePropertyPanelBase::SelectLineStyle()
                 const XDash& rDash = mpDashItem->GetDashValue();
                 for(sal_Int32 a(0);!bSelected &&  a < mxLineStyleList->Count(); a++)
                 {
-                    XDashEntry* pEntry = mxLineStyleList->GetDash(a);
+                    const XDashEntry* pEntry = mxLineStyleList->GetDash(a);
                     const XDash& rEntry = pEntry->GetDash();
                     if(rDash == rEntry)
                     {
@@ -848,7 +845,7 @@ void LinePropertyPanelBase::SelectEndStyle(bool bStart)
             const basegfx::B2DPolyPolygon& rItemPolygon = mpStartItem->GetLineStartValue();
             for(sal_Int32 a(0);!bSelected &&  a < mxLineEndList->Count(); a++)
             {
-                XLineEndEntry* pEntry = mxLineEndList->GetLineEnd(a);
+                const XLineEndEntry* pEntry = mxLineEndList->GetLineEnd(a);
                 const basegfx::B2DPolyPolygon& rEntryPolygon = pEntry->GetLineEnd();
                 if(rItemPolygon == rEntryPolygon)
                 {
@@ -877,7 +874,7 @@ void LinePropertyPanelBase::SelectEndStyle(bool bStart)
             const basegfx::B2DPolyPolygon& rItemPolygon = mpEndItem->GetLineEndValue();
             for(sal_Int32 a(0);!bSelected &&  a < mxLineEndList->Count(); a++)
             {
-                XLineEndEntry* pEntry = mxLineEndList->GetLineEnd(a);
+                const XLineEndEntry* pEntry = mxLineEndList->GetLineEnd(a);
                 const basegfx::B2DPolyPolygon& rEntryPolygon = pEntry->GetLineEnd();
                 if(rItemPolygon == rEntryPolygon)
                 {
@@ -905,7 +902,7 @@ void LinePropertyPanelBase::ActivateControls()
     mpLBEnd->Enable( bLineStyle && mbArrowSupported );
 }
 
-void LinePropertyPanelBase::setMapUnit(SfxMapUnit eMapUnit)
+void LinePropertyPanelBase::setMapUnit(MapUnit eMapUnit)
 {
     meMapUnit = eMapUnit;
 }

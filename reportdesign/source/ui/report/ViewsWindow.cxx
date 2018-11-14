@@ -173,7 +173,7 @@ OViewsWindow::OViewsWindow( OReportWindow* _pReportWindow)
     , m_bInUnmark(false)
 {
     SetPaintTransparent(true);
-    SetMapMode(MapMode(MAP_100TH_MM));
+    SetMapMode(MapMode(MapUnit::Map100thMM));
     m_aColorConfig.AddListener(this);
     ImplInitSettings();
 }
@@ -352,7 +352,7 @@ void OViewsWindow::SetInsertObj( sal_uInt16 eObj,const OUString& _sShapeType )
     TSectionsMap::const_iterator aIter = m_aSections.begin();
     TSectionsMap::const_iterator aEnd = m_aSections.end();
     for (;aIter != aEnd ; ++aIter)
-        (*aIter)->getReportSection().getSectionView().SetCurrentObj( eObj, ReportInventor );
+        (*aIter)->getReportSection().getSectionView().SetCurrentObj( eObj, SdrInventor::ReportDesign );
 
     m_sShapeType = _sShapeType;
 }
@@ -682,7 +682,7 @@ void OViewsWindow::collectRectangles(TRectangleMap& _rSortRectangles)
     }
 }
 
-void OViewsWindow::collectBoundResizeRect(const TRectangleMap& _rSortRectangles,sal_Int32 _nControlModification,bool _bAlignAtSection, bool _bBoundRects,Rectangle& _rBound,Rectangle& _rResize)
+void OViewsWindow::collectBoundResizeRect(const TRectangleMap& _rSortRectangles,sal_Int32 _nControlModification,bool _bAlignAtSection, Rectangle& _rBound, Rectangle& _rResize)
 {
     bool bOnlyOnce = false;
     TRectangleMap::const_iterator aRectIter = _rSortRectangles.begin();
@@ -739,10 +739,7 @@ void OViewsWindow::collectBoundResizeRect(const TRectangleMap& _rSortRectangles,
             }
             else
             {
-                if (_bBoundRects)
-                    _rBound.Union(aRectIter->second.second->GetMarkedObjBoundRect());
-                else
-                    _rBound.Union(aRectIter->second.second->GetMarkedObjRect());
+                _rBound.Union(aRectIter->second.second->GetMarkedObjRect());
             }
         }
     }
@@ -780,7 +777,7 @@ void OViewsWindow::alignMarkedObjects(sal_Int32 _nControlModification,bool _bAli
 
     Rectangle aBound;
     Rectangle aResize;
-    collectBoundResizeRect(aSortRectangles,_nControlModification,_bAlignAtSection,false,aBound,aResize);
+    collectBoundResizeRect(aSortRectangles,_nControlModification,_bAlignAtSection,aBound,aResize);
 
     bool bMove = true;
 
@@ -967,18 +964,15 @@ namespace
     {
     private:
         SectionViewAction   m_eAction;
-        bool                m_bCopy;
 
     public:
-        explicit ApplySectionViewAction(bool _bCopy)
+        explicit ApplySectionViewAction()
             : m_eAction(eEndDragObj)
-            , m_bCopy(_bCopy)
         {
         }
 
-        explicit ApplySectionViewAction(SectionViewAction _eAction = eEndAction)
+        explicit ApplySectionViewAction(SectionViewAction _eAction)
             : m_eAction(_eAction)
-            , m_bCopy(false)
         {
         }
 
@@ -988,7 +982,7 @@ namespace
             switch ( m_eAction )
             {
             case eEndDragObj:
-                rView.EndDragObj( m_bCopy  );
+                rView.EndDragObj();
                 break;
             case eEndAction:
                 if ( rView.IsAction() )
@@ -1044,12 +1038,6 @@ void OViewsWindow::BegDragObj_createInvisibleObjectAtPosition(const Rectangle& _
     }
 }
 
-bool OViewsWindow::isObjectInMyTempList(SdrObject *_pObj)
-{
-    return ::std::find(m_aBegDragTempList.begin(),m_aBegDragTempList.end(),_pObj) != m_aBegDragTempList.end();
-}
-
-
 void OViewsWindow::BegDragObj(const Point& _aPnt, SdrHdl* _pHdl,const OSectionView* _pSection)
 {
     SAL_INFO(
@@ -1097,7 +1085,7 @@ void OViewsWindow::BegDragObj(const Point& _aPnt, SdrHdl* _pHdl,const OSectionVi
             {
                 const SdrMark* pM = rView.GetSdrMarkByIndex(i);
                 SdrObject* pObj = pM->GetMarkedSdrObj();
-                if (!isObjectInMyTempList(pObj))
+                if (::std::find(m_aBegDragTempList.begin(),m_aBegDragTempList.end(),pObj) == m_aBegDragTempList.end())
                 {
                     Rectangle aRect( pObj->GetCurrentBoundRect() );
                     aRect.Move(0, aNewObjPos.Y());
@@ -1352,7 +1340,7 @@ void OViewsWindow::EndDragObj(bool _bControlKeyPressed, const OSectionView* _pSe
     }
     else
     {
-        ::std::for_each( m_aSections.begin(), m_aSections.end(), ApplySectionViewAction( false ) );
+        ::std::for_each( m_aSections.begin(), m_aSections.end(), ApplySectionViewAction() );
         EndDragObj_removeInvisibleObjects();
     }
     m_aDragDelta = Point(SAL_MAX_INT32, SAL_MAX_INT32);
@@ -1360,7 +1348,7 @@ void OViewsWindow::EndDragObj(bool _bControlKeyPressed, const OSectionView* _pSe
 
 void OViewsWindow::EndAction()
 {
-    ::std::for_each( m_aSections.begin(), m_aSections.end(), ApplySectionViewAction() );
+    ::std::for_each( m_aSections.begin(), m_aSections.end(), ApplySectionViewAction(eEndAction) );
 }
 
 void OViewsWindow::MovAction(const Point& _aPnt,const OSectionView* _pSection,bool _bMove, bool _bControlKeySet)
@@ -1472,7 +1460,7 @@ void OViewsWindow::handleKey(const vcl::KeyCode& _rCode)
         OScrollWindowHelper* pScrollWindow = getView()->getScrollWindow();
         ScrollBar& rScrollBar = ( nCode == KEY_LEFT || nCode == KEY_RIGHT ) ? pScrollWindow->GetHScroll() : pScrollWindow->GetVScroll();
         if ( rScrollBar.IsVisible() )
-            rScrollBar.DoScrollAction(( nCode == KEY_RIGHT || nCode == KEY_UP ) ? SCROLL_LINEUP : SCROLL_LINEDOWN );
+            rScrollBar.DoScrollAction(( nCode == KEY_RIGHT || nCode == KEY_UP ) ? ScrollType::LineUp : ScrollType::LineDown );
         return;
     }
     TSectionsMap::const_iterator aIter = m_aSections.begin();
@@ -1642,17 +1630,17 @@ void OViewsWindow::handleKey(const vcl::KeyCode& _rCode)
 
                         switch(pHdl->GetKind())
                         {
-                            case HDL_LEFT:
-                            case HDL_UPLFT:
-                            case HDL_LWLFT:
-                            case HDL_UPPER:
+                            case SdrHdlKind::Left:
+                            case SdrHdlKind::UpperLeft:
+                            case SdrHdlKind::LowerLeft:
+                            case SdrHdlKind::Upper:
                                 aNewRect.Left() += nX;
                                 aNewRect.Top()  += nY;
                                 break;
-                            case HDL_UPRGT:
-                            case HDL_RIGHT:
-                            case HDL_LWRGT:
-                            case HDL_LOWER:
+                            case SdrHdlKind::UpperRight:
+                            case SdrHdlKind::Right:
+                            case SdrHdlKind::LowerRight:
+                            case SdrHdlKind::Lower:
                                 aNewRect.setWidth(aNewRect.getWidth() + nX);
                                 aNewRect.setHeight(aNewRect.getHeight() + nY);
                                 break;

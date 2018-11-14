@@ -36,8 +36,6 @@
 namespace sd
 {
 
-OUString SdPhotoAlbumDialog::sDirUrl;
-
 SdPhotoAlbumDialog::SdPhotoAlbumDialog(vcl::Window* pWindow, SdDrawDocument* pActDoc)
 : ModalDialog(pWindow, "PhotoAlbumCreatorDialog", "modules/simpress/ui/photoalbum.ui"),
   pDoc(pActDoc)
@@ -55,7 +53,10 @@ SdPhotoAlbumDialog::SdPhotoAlbumDialog(vcl::Window* pWindow, SdDrawDocument* pAc
 
     get(pInsTypeCombo, "opt_combo");
     get(pASRCheck, "asr_check");
+    get(pASRCheckCrop, "asr_check_crop");
     get(pCapCheck, "cap_check");
+    get(pInsertAsLinkCheck, "insert_as_link_check");
+
     pCancelBtn->SetClickHdl(LINK(this, SdPhotoAlbumDialog, CancelHdl));
     pCreateBtn->SetClickHdl(LINK(this, SdPhotoAlbumDialog, CreateHdl));
 
@@ -67,9 +68,9 @@ SdPhotoAlbumDialog::SdPhotoAlbumDialog(vcl::Window* pWindow, SdDrawDocument* pAc
     pRemoveBtn->SetClickHdl(LINK(this, SdPhotoAlbumDialog, RemoveHdl));
     pRemoveBtn->Disable();
     pImagesLst->SetSelectHdl(LINK(this, SdPhotoAlbumDialog, SelectHdl));
+    pInsTypeCombo->SetSelectHdl(LINK(this, SdPhotoAlbumDialog, TypeSelectHdl));
 
     mpGraphicFilter = new GraphicFilter;
-    sDirUrl.clear();
     pAddBtn->GrabFocus();
     pImagesLst->Clear();
 }
@@ -91,16 +92,18 @@ void SdPhotoAlbumDialog::dispose()
     pImg.clear();
     pInsTypeCombo.clear();
     pASRCheck.clear();
+    pASRCheckCrop.clear();
     pCapCheck.clear();
+    pInsertAsLinkCheck.clear();
     ModalDialog::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, CancelHdl, Button*, void)
+IMPL_LINK_NOARG(SdPhotoAlbumDialog, CancelHdl, Button*, void)
 {
     Close();
 }
 
-IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, CreateHdl, Button*, void)
+IMPL_LINK_NOARG(SdPhotoAlbumDialog, CreateHdl, Button*, void)
 {
     if (pImagesLst->GetEntryCount() == 0)
     {
@@ -119,6 +122,7 @@ IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, CreateHdl, Button*, void)
         // determine if to use Captions (use TitleObject) and choose the correct AutoLayout
         // from the beginning
         const bool bCreateCaptions(pCapCheck->IsChecked());
+        const bool bInsertAsLink(pInsertAsLinkCheck->IsChecked());
         const AutoLayout aAutoLayout(bCreateCaptions ? AUTOLAYOUT_TITLE_ONLY : AUTOLAYOUT_NONE);
 
         // get the option
@@ -145,7 +149,10 @@ IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, CreateHdl, Button*, void)
                     uno::UNO_QUERY);
 
                 Reference< beans::XPropertySet > xProps( xShape, uno::UNO_QUERY );
-                xProps->setPropertyValue("Graphic", ::uno::Any(xGraphic));
+                if (bInsertAsLink)
+                    xProps->setPropertyValue("GraphicURL", ::uno::Any(sUrl));
+                else
+                    xProps->setPropertyValue("Graphic", ::uno::Any(xGraphic));
 
                 ::awt::Size aPageSize;
 
@@ -156,15 +163,14 @@ IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, CreateHdl, Button*, void)
 
                 ::awt::Point aPicPos;
 
-                if(pASRCheck->IsChecked())
+                if(pASRCheck->IsChecked() && !pASRCheckCrop->IsChecked())
                 {
                     // Resize the image, with keeping ASR
                     aPicSize = createASRSize(aPicSize, aPageSize);
                 }
-                else
+                else if(pASRCheckCrop->IsChecked())
                 {
-                    aPicSize.Width = aPageSize.Width;
-                    aPicSize.Height = aPageSize.Height;
+                    aPicSize = createASRSizeCrop(aPicSize, aPageSize);
                 }
 
                 xShape->setSize(aPicSize);
@@ -220,7 +226,10 @@ IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, CreateHdl, Button*, void)
                         uno::UNO_QUERY);
 
                     Reference< beans::XPropertySet > xProps( xShape, uno::UNO_QUERY );
-                    xProps->setPropertyValue("Graphic", ::uno::Any(xGraphic));
+                    if (bInsertAsLink)
+                        xProps->setPropertyValue("GraphicURL", ::uno::Any(sUrl1));
+                    else
+                        xProps->setPropertyValue("Graphic", ::uno::Any(xGraphic));
 
                     ::awt::Point aPicPos;
 
@@ -255,7 +264,10 @@ IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, CreateHdl, Button*, void)
                         uno::UNO_QUERY);
 
                     Reference< beans::XPropertySet > xProps( xShape, uno::UNO_QUERY );
-                    xProps->setPropertyValue("Graphic", ::uno::Any(xGraphic));
+                    if (bInsertAsLink)
+                        xProps->setPropertyValue("GraphicURL", ::uno::Any(sUrl2));
+                    else
+                        xProps->setPropertyValue("Graphic", ::uno::Any(xGraphic));
 
                     ::awt::Point aPicPos;
 
@@ -335,7 +347,10 @@ IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, CreateHdl, Button*, void)
                         uno::UNO_QUERY);
 
                     Reference< beans::XPropertySet > xProps( xShape, uno::UNO_QUERY );
-                    xProps->setPropertyValue("Graphic", ::uno::Any(xGraphic));
+                    if (bInsertAsLink)
+                        xProps->setPropertyValue("GraphicURL", ::uno::Any(sUrl1));
+                    else
+                        xProps->setPropertyValue("Graphic", ::uno::Any(xGraphic));
 
                     ::awt::Point aPicPos;
 
@@ -369,7 +384,10 @@ IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, CreateHdl, Button*, void)
                         uno::UNO_QUERY);
 
                     Reference< beans::XPropertySet > xProps( xShape, uno::UNO_QUERY );
-                    xProps->setPropertyValue("Graphic", ::uno::Any(xGraphic));
+                    if (bInsertAsLink)
+                        xProps->setPropertyValue("GraphicURL", ::uno::Any(sUrl2));
+                    else
+                        xProps->setPropertyValue("Graphic", ::uno::Any(xGraphic));
 
                     ::awt::Point aPicPos;
 
@@ -404,7 +422,10 @@ IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, CreateHdl, Button*, void)
                         uno::UNO_QUERY);
 
                     Reference< beans::XPropertySet > xProps( xShape, uno::UNO_QUERY );
-                    xProps->setPropertyValue("Graphic", ::uno::Any(xGraphic));
+                    if (bInsertAsLink)
+                        xProps->setPropertyValue("GraphicURL", ::uno::Any(sUrl3));
+                    else
+                        xProps->setPropertyValue("Graphic", ::uno::Any(xGraphic));
 
                     ::awt::Point aPicPos;
 
@@ -438,7 +459,10 @@ IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, CreateHdl, Button*, void)
                         uno::UNO_QUERY);
 
                     Reference< beans::XPropertySet > xProps( xShape, uno::UNO_QUERY );
-                    xProps->setPropertyValue("Graphic", ::uno::Any(xGraphic));
+                    if (bInsertAsLink)
+                        xProps->setPropertyValue("GraphicURL", ::uno::Any(sUrl4));
+                    else
+                        xProps->setPropertyValue("Graphic", ::uno::Any(xGraphic));
 
                     ::awt::Point aPicPos;
 
@@ -473,10 +497,10 @@ IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, CreateHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, FileHdl, Button*, void)
+IMPL_LINK_NOARG(SdPhotoAlbumDialog, FileHdl, Button*, void)
 {
     ::sfx2::FileDialogHelper aDlg(
-        css::ui::dialogs::TemplateDescription::FILEOPEN_LINK_PREVIEW,
+        css::ui::dialogs::TemplateDescription::FILEOPEN_PREVIEW,
         FileDialogFlags::Graphic | FileDialogFlags::MultiSelection
     );
     // Read configuration
@@ -514,7 +538,7 @@ IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, FileHdl, Button*, void)
     EnableDisableButtons();
 }
 
-IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, UpHdl, Button*, void)
+IMPL_LINK_NOARG(SdPhotoAlbumDialog, UpHdl, Button*, void)
 {
     if (pImagesLst->GetSelectEntryPos() != LISTBOX_ENTRY_NOTFOUND
         && pImagesLst->GetSelectEntryPos() != 0)
@@ -545,7 +569,7 @@ IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, UpHdl, Button*, void)
     EnableDisableButtons();
 }
 
-IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, DownHdl, Button*, void)
+IMPL_LINK_NOARG(SdPhotoAlbumDialog, DownHdl, Button*, void)
 {
     const sal_Int32 nActPos = pImagesLst->GetSelectEntryPos();
     if (!pImagesLst->GetEntry(nActPos + 1).isEmpty())
@@ -573,7 +597,7 @@ IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, DownHdl, Button*, void)
     EnableDisableButtons();
 }
 
-IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, RemoveHdl, Button*, void)
+IMPL_LINK_NOARG(SdPhotoAlbumDialog, RemoveHdl, Button*, void)
 {
     pImagesLst->RemoveEntry( pImagesLst->GetSelectEntryPos() );
     pImg->SetImage(Image());
@@ -581,7 +605,7 @@ IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, RemoveHdl, Button*, void)
     EnableDisableButtons();
 }
 
-IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, SelectHdl, ListBox&, void)
+IMPL_LINK_NOARG(SdPhotoAlbumDialog, SelectHdl, ListBox&, void)
 {
     OUString* pData = static_cast<OUString*>(pImagesLst->GetSelectEntryData());
     OUString sImgUrl = pData ? OUString(*pData) : "";
@@ -640,6 +664,16 @@ IMPL_LINK_NOARG_TYPED(SdPhotoAlbumDialog, SelectHdl, ListBox&, void)
     EnableDisableButtons();
 }
 
+IMPL_LINK_NOARG(SdPhotoAlbumDialog, TypeSelectHdl, ListBox&, void)
+{
+    // Enable "Fill Slide" only for one image
+    // If we want to have it for other images too, we need to implement the actual cropping.
+    bool const bEnable = pInsTypeCombo->GetSelectEntryPos() == ONE_IMAGE;
+    pASRCheckCrop->Enable(bEnable);
+    if (!bEnable)
+        pASRCheckCrop->Check(false);
+}
+
 Reference< drawing::XDrawPage > SdPhotoAlbumDialog::appendNewSlide(AutoLayout aLayout,
     const Reference< drawing::XDrawPages >& xDrawPages
 )
@@ -647,7 +681,7 @@ Reference< drawing::XDrawPage > SdPhotoAlbumDialog::appendNewSlide(AutoLayout aL
     Reference< drawing::XDrawPage > xSlide; // Create the slide
     Reference< container::XIndexAccess > xIndexAccess( xDrawPages, uno::UNO_QUERY );
     xSlide = xDrawPages->insertNewByIndex( xIndexAccess->getCount() );
-    SdPage* pSlide = pDoc->GetSdPage( pDoc->GetSdPageCount(PK_STANDARD)-1, PK_STANDARD);
+    SdPage* pSlide = pDoc->GetSdPage( pDoc->GetSdPageCount(PageKind::Standard)-1, PageKind::Standard);
     pSlide->SetAutoLayout(aLayout, true); // Set the layout here
     return xSlide;
 }
@@ -673,6 +707,46 @@ awt::Size SdPhotoAlbumDialog::createASRSize(const awt::Size& aPicSize, const awt
     return awt::Size(resizeWidth, resizeHeight);
 }
 
+awt::Size SdPhotoAlbumDialog::createASRSizeCrop(const awt::Size& aPicSize, const awt::Size& aMaxSize)
+{
+    double resizeWidth = aPicSize.Width;
+    double resizeHeight = aPicSize.Height;
+    double imgAspect = resizeWidth / resizeHeight;
+    double windowAspectRatio = static_cast<double>(aMaxSize.Width) / aMaxSize.Height ;
+
+
+    //When both sides of an image are bigger than canvas size, image would be downscaled.
+    if( resizeWidth > aMaxSize.Width && resizeHeight > aMaxSize.Height )
+    {
+        if( imgAspect > windowAspectRatio )
+        {
+            resizeHeight = aMaxSize.Height;
+            resizeWidth = aMaxSize.Height * imgAspect;
+        }
+        else
+        {
+            resizeHeight = aMaxSize.Width / imgAspect;
+            resizeWidth = aMaxSize.Width;
+        }
+
+    }
+    //In all other cases image is upscaled
+    else
+    {
+        if( imgAspect > windowAspectRatio )
+        {
+            resizeHeight = aMaxSize.Height;
+            resizeWidth = aMaxSize.Height * imgAspect;
+        }
+        else
+        {
+            resizeWidth = aMaxSize.Width;
+            resizeHeight = aMaxSize.Width / imgAspect;
+        }
+    }
+    return awt::Size(resizeWidth, resizeHeight);
+}
+
 void SdPhotoAlbumDialog::createCaption(const awt::Size& aPageSize )
 {
     Point CapPos;
@@ -682,7 +756,7 @@ void SdPhotoAlbumDialog::createCaption(const awt::Size& aPageSize )
     CapSize.Height() = aPageSize.Height/6;
     CapPos.X() = 0;
     CapPos.Y() = aPageSize.Height - CapSize.Height();
-    SdPage* pSlide = pDoc->GetSdPage( pDoc->GetSdPageCount(PK_STANDARD)-1, PK_STANDARD );
+    SdPage* pSlide = pDoc->GetSdPage( pDoc->GetSdPageCount(PageKind::Standard)-1, PageKind::Standard );
 
     // try to get existing PresObj
     const Rectangle rRect(CapPos,CapSize);
@@ -728,11 +802,6 @@ Reference< graphic::XGraphic> SdPhotoAlbumDialog::createXGraphicFromUrl(const OU
     Reference< graphic::XGraphic> xGraphic =
         xProvider->queryGraphic( aMediaProperties.getPropertyValues() );
     return xGraphic;
-}
-
-short SdPhotoAlbumDialog::Execute()
-{
-    return ModalDialog::Execute();
 }
 
 void SdPhotoAlbumDialog::EnableDisableButtons()

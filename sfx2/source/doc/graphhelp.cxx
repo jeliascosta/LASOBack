@@ -90,11 +90,11 @@ void* GraphicHelper::getEnhMetaFileFromGDI_Impl( const GDIMetaFile* pGDIMeta )
         OUString aMetaURL = aTempFile.GetURL();
         OString aWinFile = OUStringToOString( aMetaFile, osl_getThreadTextEncoding() );
 
-        SvStream* pStream = ::utl::UcbStreamHelper::CreateStream( aMetaURL, STREAM_STD_READWRITE );
+        SvStream* pStream = ::utl::UcbStreamHelper::CreateStream( aMetaURL, StreamMode::STD_READWRITE );
         if ( pStream )
         {
             Graphic aGraph( *pGDIMeta );
-            sal_Bool bFailed = (sal_Bool)GraphicConverter::Export( *pStream, aGraph, ConvertDataFormat::EMF );
+            bool bFailed = GraphicConverter::Export( *pStream, aGraph, ConvertDataFormat::EMF );
             pStream->Flush();
             delete pStream;
 
@@ -120,7 +120,7 @@ void* GraphicHelper::getWinMetaFileFromGDI_Impl( const GDIMetaFile* pGDIMeta, co
     {
         SvMemoryStream* pStream = new SvMemoryStream( 65535, 65535 );
         Graphic aGraph( *pGDIMeta );
-        sal_Bool bFailed = (sal_Bool)GraphicConverter::Export( *pStream, aGraph, ConvertDataFormat::WMF );
+        bool bFailed = GraphicConverter::Export( *pStream, aGraph, ConvertDataFormat::WMF );
         pStream->Flush();
         if ( !bFailed )
         {
@@ -128,7 +128,7 @@ void* GraphicHelper::getWinMetaFileFromGDI_Impl( const GDIMetaFile* pGDIMeta, co
             if ( nLength > 22 )
             {
                 HMETAFILE hMeta = SetMetaFileBitsEx( nLength - 22,
-                                ( reinterpret_cast< const unsigned char*>( pStream->GetData() ) ) + 22 );
+                                ( static_cast< const unsigned char*>( pStream->GetData() ) ) + 22 );
 
                 if ( hMeta )
                 {
@@ -136,13 +136,13 @@ void* GraphicHelper::getWinMetaFileFromGDI_Impl( const GDIMetaFile* pGDIMeta, co
 
                     if ( hMemory )
                     {
-                           METAFILEPICT* pMF = (METAFILEPICT*)GlobalLock( hMemory );
+                           METAFILEPICT* pMF = static_cast<METAFILEPICT*>(GlobalLock( hMemory ));
 
                            pMF->hMF = hMeta;
                            pMF->mm = MM_ANISOTROPIC;
 
                         MapMode aMetaMode = pGDIMeta->GetPrefMapMode();
-                        MapMode aWinMode( MAP_100TH_MM );
+                        MapMode aWinMode( MapUnit::Map100thMM );
 
                         if ( aWinMode == pGDIMeta->GetPrefMapMode() )
                         {
@@ -159,7 +159,7 @@ void* GraphicHelper::getWinMetaFileFromGDI_Impl( const GDIMetaFile* pGDIMeta, co
                         }
 
                         GlobalUnlock( hMemory );
-                        pResult = (void*)hMemory;
+                        pResult = static_cast<void*>(hMemory);
                     }
                     else
                            DeleteMetaFile( hMeta );
@@ -198,7 +198,7 @@ bool GraphicHelper::getThumbnailFormatFromGDI_Impl(GDIMetaFile* pMetaFile, const
 
     GraphicFilter& rFilter = GraphicFilter::GetGraphicFilter();
 
-    if (rFilter.compressAsPNG(aResultBitmap, *pStream.get(), 9) != GRFILTER_OK)
+    if (rFilter.compressAsPNG(aResultBitmap, *pStream.get()) != GRFILTER_OK)
         return false;
 
     pStream->Flush();

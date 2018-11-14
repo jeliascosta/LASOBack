@@ -21,6 +21,7 @@
 
 #include <UndoTable.hxx>
 #include <hintids.hxx>
+#include <o3tl/any.hxx>
 #include <unotools/collatorwrapper.hxx>
 #include <unotools/charclass.hxx>
 #include <editeng/unolingu.hxx>
@@ -429,7 +430,7 @@ bool SwGetExpField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         rAny <<= 0 != (nSubType & nsSwExtendedSubType::SUB_CMD);
         break;
     case FIELD_PROP_PAR4:
-        rAny <<= GetExpStr();
+        rAny <<= sExpand;
         break;
     default:
         return SwField::QueryValue(rAny, nWhichId);
@@ -443,7 +444,7 @@ bool SwGetExpField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
     switch( nWhichId )
     {
     case FIELD_PROP_DOUBLE:
-        SwValueField::SetValue(*static_cast<double const *>(rAny.getValue()));
+        SwValueField::SetValue(*o3tl::doAccess<double>(rAny));
         break;
     case FIELD_PROP_FORMAT:
         rAny >>= nTmp;
@@ -466,7 +467,7 @@ bool SwGetExpField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
             SetSubType( static_cast<sal_uInt16>((GetSubType() & 0xff00) | nTmp));
         break;
     case FIELD_PROP_BOOL2:
-        if(*static_cast<sal_Bool const *>(rAny.getValue()))
+        if(*o3tl::doAccess<bool>(rAny))
             nSubType |= nsSwExtendedSubType::SUB_CMD;
         else
             nSubType &= (~nsSwExtendedSubType::SUB_CMD);
@@ -650,7 +651,7 @@ bool SwSetExpFieldType::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         }
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -687,7 +688,7 @@ bool SwSetExpFieldType::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         }
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -973,7 +974,7 @@ bool SwSetExpField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
     switch( nWhichId )
     {
     case FIELD_PROP_BOOL2:
-        if(*static_cast<sal_Bool const *>(rAny.getValue()))
+        if(*o3tl::doAccess<bool>(rAny))
             nSubType &= ~nsSwExtendedSubType::SUB_INVISIBLE;
         else
             nSubType |= nsSwExtendedSubType::SUB_INVISIBLE;
@@ -985,7 +986,7 @@ bool SwSetExpField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
     case FIELD_PROP_USHORT2:
         {
             rAny >>= nTmp16;
-            if(nTmp16 <= SVX_NUMBER_NONE )
+            if(nTmp16 <= css::style::NumberingType::NUMBER_NONE )
                 SetFormat(nTmp16);
             else {
                 //exception(wrong_value)
@@ -1001,7 +1002,7 @@ bool SwSetExpField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         {
             OUString sTmp;
             rAny >>= sTmp;
-            SetPar1( SwStyleNameMapper::GetUIName( sTmp, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL ) );
+            SetPar1( SwStyleNameMapper::GetUIName( sTmp, SwGetPoolIdFromName::TxtColl ) );
         }
         break;
     case FIELD_PROP_PAR2:
@@ -1031,13 +1032,13 @@ bool SwSetExpField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         rAny >>= aPText;
         break;
     case FIELD_PROP_BOOL3:
-        if(*static_cast<sal_Bool const *>(rAny.getValue()))
+        if(*o3tl::doAccess<bool>(rAny))
             nSubType |= nsSwExtendedSubType::SUB_CMD;
         else
             nSubType &= (~nsSwExtendedSubType::SUB_CMD);
         break;
     case FIELD_PROP_BOOL1:
-        SetInputFlag(*static_cast<sal_Bool const *>(rAny.getValue()));
+        SetInputFlag(*o3tl::doAccess<bool>(rAny));
         break;
     case FIELD_PROP_PAR4:
         {
@@ -1069,7 +1070,7 @@ bool SwSetExpField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         rAny <<= (sal_Int16)nSeqNo;
         break;
     case FIELD_PROP_PAR1:
-        rAny <<= OUString ( SwStyleNameMapper::GetProgName(GetPar1(), nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL ) );
+        rAny <<= OUString ( SwStyleNameMapper::GetProgName(GetPar1(), SwGetPoolIdFromName::TxtColl ) );
         break;
     case FIELD_PROP_PAR2:
         {
@@ -1145,30 +1146,6 @@ void SwInputField::SetFormatField( SwFormatField& rFormatField )
 }
 
 
-void SwInputField::LockNotifyContentChange()
-{
-    if ( GetFormatField() != nullptr )
-    {
-        SwTextInputField* pTextInputField = dynamic_cast< SwTextInputField* >(GetFormatField()->GetTextField());
-        if ( pTextInputField != nullptr )
-        {
-            pTextInputField->LockNotifyContentChange();
-        }
-    }
-}
-
-void SwInputField::UnlockNotifyContentChange()
-{
-    if ( GetFormatField() != nullptr )
-    {
-        SwTextInputField* pTextInputField = dynamic_cast< SwTextInputField* >(GetFormatField()->GetTextField());
-        if ( pTextInputField != nullptr )
-        {
-            pTextInputField->UnlockNotifyContentChange();
-        }
-    }
-}
-
 void SwInputField::applyFieldContent( const OUString& rNewFieldContent )
 {
     if ( (nSubType & 0x00ff) == INP_TXT )
@@ -1184,10 +1161,22 @@ void SwInputField::applyFieldContent( const OUString& rNewFieldContent )
             pUserTyp->SetContent( rNewFieldContent );
 
             // trigger update of the corresponding User Fields and other related Input Fields
+            if ( GetFormatField() != nullptr )
             {
-                LockNotifyContentChange();
-                pUserTyp->UpdateFields();
-                UnlockNotifyContentChange();
+                SwTextInputField* pTextInputField = dynamic_cast< SwTextInputField* >(GetFormatField()->GetTextField());
+                if ( pTextInputField != nullptr )
+                {
+                    pTextInputField->LockNotifyContentChange();
+                }
+            }
+            pUserTyp->UpdateFields();
+            if ( GetFormatField() != nullptr )
+            {
+                SwTextInputField* pTextInputField = dynamic_cast< SwTextInputField* >(GetFormatField()->GetTextField());
+                if ( pTextInputField != nullptr )
+                {
+                    pTextInputField->UnlockNotifyContentChange();
+                }
             }
         }
     }
@@ -1263,7 +1252,7 @@ bool SwInputField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         rAny <<= aToolTip;
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -1285,7 +1274,7 @@ bool SwInputField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         rAny >>= aToolTip;
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }

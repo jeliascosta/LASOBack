@@ -29,6 +29,7 @@
 #include <unotools/historyoptions.hxx>
 #include <vcl/menu.hxx>
 #include <vcl/svapp.hxx>
+#include <vcl/commandinfoprovider.hxx>
 
 using namespace css;
 using namespace com::sun::star::uno;
@@ -43,16 +44,8 @@ using namespace framework;
 namespace {
 
 static const char CMD_CLEAR_LIST[]   = ".uno:ClearRecentFileList";
+static const char CMD_OPEN_AS_TEMPLATE[] = ".uno:OpenTemplate";
 static const char CMD_OPEN_REMOTE[]  = ".uno:OpenRemote";
-static const char CMD_PREFIX[]       = "vnd.sun.star.popup:RecentFileList?entry=";
-static const char MENU_SHORTCUT[]     = "~N. ";
-
-struct LoadRecentFile
-{
-    util::URL                               aTargetURL;
-    uno::Sequence< beans::PropertyValue >   aArgSeq;
-    uno::Reference< frame::XDispatch >      xDispatch;
-};
 
 class RecentFilesMenuController :  public svt::PopupMenuControllerBase
 {
@@ -61,7 +54,7 @@ class RecentFilesMenuController :  public svt::PopupMenuControllerBase
 public:
     RecentFilesMenuController( const uno::Reference< uno::XComponentContext >& xContext,
                                const uno::Sequence< uno::Any >& args );
-    virtual ~RecentFilesMenuController();
+    virtual ~RecentFilesMenuController() override;
 
     // XServiceInfo
     virtual OUString SAL_CALL getImplementationName()
@@ -79,8 +72,7 @@ public:
     virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
         throw (css::uno::RuntimeException, std::exception) override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.frame.PopupMenuController" };
-        return aSeq;
+        return {"com.sun.star.frame.PopupMenuController"};
     }
 
     // XStatusListener
@@ -99,29 +91,21 @@ public:
     // XEventListener
     virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw ( uno::RuntimeException, std::exception ) override;
 
-    DECL_STATIC_LINK_TYPED( RecentFilesMenuController, ExecuteHdl_Impl, void*, void );
-
 private:
     virtual void impl_setPopupMenu() override;
-    struct RecentFile
-    {
-        OUString aURL;
-        OUString aTitle;
-    };
-
     void fillPopupMenu( css::uno::Reference< css::awt::XPopupMenu >& rPopupMenu );
     void executeEntry( sal_Int32 nIndex );
 
-    std::vector< RecentFile > m_aRecentFilesItems;
+    std::vector< OUString >   m_aRecentFilesItems;
     bool                      m_bDisabled : 1;
-    bool                      m_bShowRemote;
+    bool                      m_bShowToolbarEntries;
 };
 
 RecentFilesMenuController::RecentFilesMenuController( const uno::Reference< uno::XComponentContext >& xContext,
                                                       const uno::Sequence< uno::Any >& args ) :
     svt::PopupMenuControllerBase( xContext ),
     m_bDisabled( false ),
-    m_bShowRemote( false )
+    m_bShowToolbarEntries( false )
 {
     css::beans::PropertyValue aPropValue;
     for ( sal_Int32 i = 0; i < args.getLength(); ++i )
@@ -129,7 +113,7 @@ RecentFilesMenuController::RecentFilesMenuController( const uno::Reference< uno:
         args[i] >>= aPropValue;
         if ( aPropValue.Name == "InToolbar" )
         {
-            aPropValue.Value >>= m_bShowRemote;
+            aPropValue.Value >>= m_bShowToolbarEntries;
             break;
         }
     }
@@ -162,19 +146,18 @@ void RecentFilesMenuController::fillPopupMenu( Reference< css::awt::XPopupMenu >
             for ( int i = 0; i < nPickListMenuItems; i++ )
             {
                 Sequence< PropertyValue >& rPickListEntry = aHistoryList[i];
-                RecentFile aRecentFile;
+                OUString aURL;
 
                 for ( int j = 0; j < rPickListEntry.getLength(); j++ )
                 {
-                    Any a = rPickListEntry[j].Value;
-
                     if ( rPickListEntry[j].Name == HISTORY_PROPERTYNAME_URL )
-                        a >>= aRecentFile.aURL;
-                    else if ( rPickListEntry[j].Name == HISTORY_PROPERTYNAME_TITLE )
-                        a >>= aRecentFile.aTitle;
+                    {
+                        rPickListEntry[j].Value >>= aURL;
+                        break;
+                    }
                 }
 
-                m_aRecentFilesItems.push_back( aRecentFile );
+                m_aRecentFilesItems.push_back( aURL );
             }
         }
 
@@ -191,7 +174,7 @@ void RecentFilesMenuController::fillPopupMenu( Reference< css::awt::XPopupMenu >
                         aMenuShortCut.append( "1~0. " );
                     else
                     {
-                        aMenuShortCut.append( MENU_SHORTCUT );
+                        aMenuShortCut.append( "~N. " );
                         aMenuShortCut[ 1 ] = sal_Unicode( i + '1' );
                     }
                 }
@@ -201,14 +184,11 @@ void RecentFilesMenuController::fillPopupMenu( Reference< css::awt::XPopupMenu >
                     aMenuShortCut.append( ". " );
                 }
 
-                OUStringBuffer aStrBuffer;
-                aStrBuffer.append( CMD_PREFIX );
-                aStrBuffer.append( sal_Int32( i ) );
-                OUString  aURLString( aStrBuffer.makeStringAndClear() );
+                OUString aURLString = "vnd.sun.star.popup:RecentFileList?entry=" + OUString::number(i);
 
                 // Abbreviate URL
                 OUString   aMenuTitle;
-                INetURLObject   aURL( m_aRecentFilesItems[i].aURL );
+                INetURLObject   aURL( m_aRecentFilesItems[i] );
                 OUString aTipHelpText( aURL.getFSysPath( INetURLObject::FSYS_DETECT ) );
 
                 if ( aURL.GetProtocol() == INetProtocol::File )
@@ -239,21 +219,19 @@ void RecentFilesMenuController::fillPopupMenu( Reference< css::awt::XPopupMenu >
                                         FWK_RESSTR(STR_CLEAR_RECENT_FILES_HELP) );
 
             // Open remote menu entry
-            if ( m_bShowRemote )
+            if ( m_bShowToolbarEntries )
             {
-                pVCLPopupMenu->InsertItem( sal_uInt16( nCount + 2 ),
-                                           FWK_RESSTR(STR_OPEN_REMOTE) );
-                pVCLPopupMenu->SetItemCommand( sal_uInt16( nCount + 2 ),
-                                               CMD_OPEN_REMOTE );
+                pVCLPopupMenu->InsertSeparator();
+                pVCLPopupMenu->InsertItem( CMD_OPEN_AS_TEMPLATE, m_xFrame );
+                pVCLPopupMenu->InsertItem( CMD_OPEN_REMOTE, m_xFrame );
             }
         }
         else
         {
-            if ( m_bShowRemote )
+            if ( m_bShowToolbarEntries )
             {
-                // Open remote menu entry
-                pVCLPopupMenu->InsertItem( 1, FWK_RESSTR(STR_OPEN_REMOTE) );
-                pVCLPopupMenu->SetItemCommand( 1, CMD_OPEN_REMOTE );
+                pVCLPopupMenu->InsertItem( CMD_OPEN_AS_TEMPLATE, m_xFrame );
+                pVCLPopupMenu->InsertItem( CMD_OPEN_REMOTE, m_xFrame );
             }
             else
             {
@@ -269,25 +247,10 @@ void RecentFilesMenuController::fillPopupMenu( Reference< css::awt::XPopupMenu >
 
 void RecentFilesMenuController::executeEntry( sal_Int32 nIndex )
 {
-    Reference< XDispatch >            xDispatch;
-    Reference< XDispatchProvider >    xDispatchProvider;
-    css::util::URL                    aTargetURL;
-    Sequence< PropertyValue >         aArgsList;
-
-    osl::ClearableMutexGuard aLock( m_aMutex );
-    xDispatchProvider.set( m_xFrame, UNO_QUERY );
-    aLock.clear();
-
     if (( nIndex >= 0 ) &&
         ( nIndex < sal::static_int_cast<sal_Int32>( m_aRecentFilesItems.size() )))
     {
-        const RecentFile& rRecentFile = m_aRecentFilesItems[ nIndex ];
-
-        aTargetURL.Complete = rRecentFile.aURL;
-        m_xURLTransformer->parseStrict( aTargetURL );
-
-        sal_Int32 nSize = 2;
-        aArgsList.realloc( nSize );
+        Sequence< PropertyValue > aArgsList(3);
         aArgsList[0].Name = "Referer";
         aArgsList[0].Value = makeAny( OUString( "private:user" ) );
 
@@ -295,28 +258,11 @@ void RecentFilesMenuController::executeEntry( sal_Int32 nIndex )
         aArgsList[1].Name = "AsTemplate";
         aArgsList[1].Value = makeAny( false );
 
-        if (!m_aModuleName.isEmpty())
-        {
-            // Type detection needs to know which app we are opening it from.
-            aArgsList.realloc(++nSize);
-            aArgsList[nSize-1].Name = "DocumentService";
-            aArgsList[nSize-1].Value <<= m_aModuleName;
-        }
+        // Type detection needs to know which app we are opening it from.
+        aArgsList[2].Name = "DocumentService";
+        aArgsList[2].Value <<= m_aModuleName;
 
-        xDispatch = xDispatchProvider->queryDispatch( aTargetURL, "_default", 0 );
-    }
-
-    if ( xDispatch.is() )
-    {
-        // Call dispatch asynchronously as we can be destroyed while dispatch is
-        // executed. VCL is not able to survive this as it wants to call listeners
-        // after select!!!
-        LoadRecentFile* pLoadRecentFile = new LoadRecentFile;
-        pLoadRecentFile->xDispatch  = xDispatch;
-        pLoadRecentFile->aTargetURL = aTargetURL;
-        pLoadRecentFile->aArgSeq    = aArgsList;
-
-        Application::PostUserEvent( LINK(nullptr, RecentFilesMenuController, ExecuteHdl_Impl), pLoadRecentFile );
+        dispatchCommand( m_aRecentFilesItems[ nIndex ], aArgsList, "_default" );
     }
 }
 
@@ -366,6 +312,11 @@ void SAL_CALL RecentFilesMenuController::itemSelected( const css::awt::MenuEvent
         {
             Sequence< PropertyValue > aArgsList( 0 );
             dispatchCommand( CMD_OPEN_REMOTE, aArgsList );
+        }
+        else if ( aCommand == CMD_OPEN_AS_TEMPLATE )
+        {
+            Sequence< PropertyValue > aArgsList( 0 );
+            dispatchCommand( CMD_OPEN_AS_TEMPLATE, aArgsList );
         }
         else
             executeEntry( rEvent.MenuId-1 );
@@ -436,23 +387,6 @@ throw( RuntimeException, std::exception )
             }
         }
     }
-}
-
-IMPL_STATIC_LINK_TYPED( RecentFilesMenuController, ExecuteHdl_Impl, void*, p, void )
-{
-    LoadRecentFile* pLoadRecentFile = static_cast<LoadRecentFile*>(p);
-    try
-    {
-        // Asynchronous execution as this can lead to our own destruction!
-        // Framework can recycle our current frame and the layout manager disposes all user interface
-        // elements if a component gets detached from its frame!
-        pLoadRecentFile->xDispatch->dispatch( pLoadRecentFile->aTargetURL, pLoadRecentFile->aArgSeq );
-    }
-    catch ( const Exception& )
-    {
-    }
-
-    delete pLoadRecentFile;
 }
 
 }

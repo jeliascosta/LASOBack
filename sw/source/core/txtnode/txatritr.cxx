@@ -93,15 +93,18 @@ bool SwScriptIterator::Next()
     return bRet;
 }
 
-SwTextAttrIterator::SwTextAttrIterator( const SwTextNode& rTNd, sal_uInt16 nWhchId,
+SwLanguageIterator::SwLanguageIterator( const SwTextNode& rTNd,
                                         sal_Int32 nStt )
-    : aSIter( rTNd.GetText(), nStt ), rTextNd( rTNd ),
-      pParaItem( nullptr ), nAttrPos( 0 ), nChgPos( nStt ), nWhichId( nWhchId )
+    : aSIter( rTNd.GetText(), nStt ),
+      rTextNd( rTNd ),
+      pParaItem( nullptr ),
+      nAttrPos( 0 ),
+      nChgPos( nStt )
 {
     SearchNextChg();
 }
 
-bool SwTextAttrIterator::Next()
+bool SwLanguageIterator::Next()
 {
     bool bRet = false;
     if (nChgPos < aSIter.GetText().getLength())
@@ -134,7 +137,7 @@ bool SwTextAttrIterator::Next()
 
                     if( RES_TXTATR_CHARFMT == pHt->Which() )
                     {
-                        const sal_uInt16 nWId = GetWhichOfScript( nWhichId, aSIter.GetCurrScript() );
+                        const sal_uInt16 nWId = GetWhichOfScript( RES_CHRATR_LANGUAGE, aSIter.GetCurrScript() );
                         pCurItem = &pHt->GetCharFormat().GetCharFormat()->GetFormatAttr(nWId);
                     }
                     else
@@ -150,7 +153,7 @@ bool SwTextAttrIterator::Next()
     return bRet;
 }
 
-void SwTextAttrIterator::AddToStack( const SwTextAttr& rAttr )
+void SwLanguageIterator::AddToStack( const SwTextAttr& rAttr )
 {
     size_t nIns = 0;
     const sal_Int32 nEndPos = *rAttr.End();
@@ -161,7 +164,7 @@ void SwTextAttrIterator::AddToStack( const SwTextAttr& rAttr )
     aStack.insert( aStack.begin() + nIns, &rAttr );
 }
 
-void SwTextAttrIterator::SearchNextChg()
+void SwLanguageIterator::SearchNextChg()
 {
     sal_uInt16 nWh = 0;
     if( nChgPos == aSIter.GetScriptChgPos() )
@@ -175,7 +178,7 @@ void SwTextAttrIterator::SearchNextChg()
     }
     if( !pParaItem )
     {
-        nWh = GetWhichOfScript( nWhichId, aSIter.GetCurrScript() );
+        nWh = GetWhichOfScript( RES_CHRATR_LANGUAGE, aSIter.GetCurrScript() );
         pParaItem = &rTextNd.GetSwAttrSet().Get( nWh );
     }
 
@@ -188,7 +191,7 @@ void SwTextAttrIterator::SearchNextChg()
     {
         if( !nWh )
         {
-            nWh = GetWhichOfScript( nWhichId, aSIter.GetCurrScript() );
+            nWh = GetWhichOfScript( RES_CHRATR_LANGUAGE, aSIter.GetCurrScript() );
         }
 
         const SfxPoolItem* pItem = nullptr;

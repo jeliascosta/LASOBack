@@ -71,7 +71,7 @@ friend class SfxHelpWindow_Impl;
 
 public:
     HelpInterceptor_Impl();
-    virtual ~HelpInterceptor_Impl();
+    virtual ~HelpInterceptor_Impl() override;
 
     void                    setInterception( const css::uno::Reference< css::frame::XFrame >& xFrame );
     const OUString&         GetCurrentURL() const { return m_aCurrentURL; }
@@ -141,9 +141,9 @@ private:
 
 public:
     HelpStatusListener_Impl(
-        css::uno::Reference < css::frame::XDispatch > xDispatch,
+        css::uno::Reference < css::frame::XDispatch > const & xDispatch,
         css::util::URL& rURL);
-    virtual ~HelpStatusListener_Impl();
+    virtual ~HelpStatusListener_Impl() override;
 
     virtual void SAL_CALL   statusChanged( const css::frame::FeatureStateEvent& Event )
                                 throw( css::uno::RuntimeException, std::exception ) override;

@@ -30,7 +30,7 @@
 #include <svl/intitem.hxx>
 #include "dsitems.hxx"
 #include "dbaccess_helpid.hrc"
-#include "localresaccess.hxx"
+#include "moduledbu.hxx"
 #include <osl/process.h>
 #include <osl/diagnose.h>
 #include <vcl/msgbox.hxx>
@@ -60,14 +60,10 @@
 #include <tools/diagnose_ex.h>
 #include <sfx2/docfilt.hxx>
 
-#if defined(_WIN32)
-#define _ADO_DATALINK_BROWSE_
-#endif
-
-#ifdef _ADO_DATALINK_BROWSE_
+#if defined _WIN32
 #include <vcl/sysdata.hxx>
 #include "adodatalinks.hxx"
-#endif //_ADO_DATALINK_BROWSE_
+#endif
 
 #include <com/sun/star/mozilla/XMozillaBootstrap.hpp>
 #include <comphelper/processfactory.hxx>
@@ -164,7 +160,7 @@ namespace dbaui
             m_pAdminDialog->enableConfirmSettings( !getURLNoPrefix().isEmpty() );
     }
 
-    IMPL_LINK_NOARG_TYPED(OConnectionHelper, OnBrowseConnections, Button*, void)
+    IMPL_LINK_NOARG(OConnectionHelper, OnBrowseConnections, Button*, void)
     {
         OSL_ENSURE(m_pAdminDialog,"No Admin dialog set! ->GPF");
         const ::dbaccess::DATASOURCE_TYPE eType = m_pCollection->determineType(m_eType);
@@ -266,17 +262,17 @@ namespace dbaui
                     return;
             }
             break;
-#ifdef _ADO_DATALINK_BROWSE_
+#if defined _WIN32
             case  ::dbaccess::DST_ADO:
             {
                 OUString sOldDataSource=getURLNoPrefix();
                 OUString sNewDataSource;
                 HWND hWnd = GetParent()->GetSystemData()->hWnd;
-                sNewDataSource = getAdoDatalink((LONG_PTR)hWnd,sOldDataSource);
+                sNewDataSource = getAdoDatalink(reinterpret_cast<LONG_PTR>(hWnd),sOldDataSource);
                 if ( !sNewDataSource.isEmpty() )
                 {
                     setURLNoPrefix(sNewDataSource);
-                    SetRoadmapStateValue(sal_True);
+                    SetRoadmapStateValue(true);
                     callModifiedHdl();
                 }
                 else
@@ -337,7 +333,7 @@ namespace dbaui
         checkTestConnection();
     }
 
-    IMPL_LINK_NOARG_TYPED(OConnectionHelper, OnCreateDatabase, Button*, void)
+    IMPL_LINK_NOARG(OConnectionHelper, OnCreateDatabase, Button*, void)
     {
         OSL_ENSURE(m_pAdminDialog,"No Admin dialog set! ->GPF");
         const ::dbaccess::DATASOURCE_TYPE eType = m_pCollection->determineType(m_eType);

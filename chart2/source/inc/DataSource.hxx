@@ -40,7 +40,7 @@ public:
     explicit DataSource(
         const css::uno::Sequence< css::uno::Reference< css::chart2::data::XLabeledDataSequence > > & rSequences );
 
-    virtual ~DataSource();
+    virtual ~DataSource() override;
 
     /// declare XServiceInfo methods
     virtual OUString SAL_CALL getImplementationName()
@@ -49,9 +49,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
 protected:
     // ____ XDataSource ____

@@ -32,15 +32,14 @@
 #include <com/sun/star/sdb/XSingleSelectQueryComposer.hpp>
 #include <cppuhelper/propshlp.hxx>
 #include <comphelper/proparrhlp.hxx>
-#include "apitools.hxx"
-#include <comphelper/broadcasthelper.hxx>
-
+#include <cppuhelper/basemutex.hxx>
 #include <cppuhelper/implbase3.hxx>
+#include "apitools.hxx"
 
 
 //  OStatementBase
 
-class OStatementBase :  public comphelper::OBaseMutex,
+class OStatementBase :  public cppu::BaseMutex,
                         public OSubComponent,
                         public ::cppu::OPropertySetHelper,
                         public ::comphelper::OPropertyArrayUsageHelper < OStatementBase >,
@@ -60,7 +59,7 @@ protected:
     bool                m_bUseBookmarks;
     bool                m_bEscapeProcessing;
 
-    virtual ~OStatementBase();
+    virtual ~OStatementBase() override;
 
 public:
     OStatementBase(const css::uno::Reference< css::sdbc::XConnection > & _xConn,
@@ -92,7 +91,9 @@ public:
                             css::uno::Any & rOldValue,
                             sal_Int32 nHandle,
                             const css::uno::Any& rValue )
-                                throw (css::lang::IllegalArgumentException) override;
+                                throw (css::lang::IllegalArgumentException,
+                                       css::uno::RuntimeException,
+                                       std::exception) override;
     virtual void SAL_CALL setFastPropertyValue_NoBroadcast(
                                 sal_Int32 nHandle,
                                 const css::uno::Any& rValue

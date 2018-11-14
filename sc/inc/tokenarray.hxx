@@ -57,7 +57,7 @@ public:
     ScTokenArray();
     /// Assignment with references to FormulaToken entries (not copied!)
     ScTokenArray( const ScTokenArray& );
-    virtual ~ScTokenArray();
+    virtual ~ScTokenArray() override;
     void ClearScTokenArray();
     ScTokenArray* Clone() const;    /// True copy!
 
@@ -65,6 +65,7 @@ public:
     size_t GetHash() const { return mnHashValue;}
 
     ScFormulaVectorState GetVectorState() const { return meVectorState;}
+    void ResetVectorState() { meVectorState = FormulaVectorEnabled; }
 
     /**
      * If the array contains at least one relative row reference or named
@@ -95,11 +96,11 @@ public:
     /** ScSingleRefOpToken with ocMatRef. */
     formula::FormulaToken* AddMatrixSingleReference( const ScSingleRefData& rRef );
     formula::FormulaToken* AddDoubleReference( const ScComplexRefData& rRef );
-    formula::FormulaToken* AddRangeName( sal_uInt16 n, sal_Int16 nSheet );
+    void                   AddRangeName( sal_uInt16 n, sal_Int16 nSheet );
     formula::FormulaToken* AddDBRange( sal_uInt16 n );
-    formula::FormulaToken* AddExternalName( sal_uInt16 nFileId, const OUString& rName );
-    void AddExternalSingleReference( sal_uInt16 nFileId, const OUString& rTabName, const ScSingleRefData& rRef );
-    formula::FormulaToken* AddExternalDoubleReference( sal_uInt16 nFileId, const OUString& rTabName, const ScComplexRefData& rRef );
+    formula::FormulaToken* AddExternalName( sal_uInt16 nFileId, const svl::SharedString& rName );
+    void AddExternalSingleReference( sal_uInt16 nFileId, const svl::SharedString& rTabName, const ScSingleRefData& rRef );
+    formula::FormulaToken* AddExternalDoubleReference( sal_uInt16 nFileId, const svl::SharedString& rTabName, const ScComplexRefData& rRef );
     formula::FormulaToken* AddMatrix( const ScMatrixRef& p );
     /** ScSingleRefOpToken with ocColRowName. */
     formula::FormulaToken* AddColRowName( const ScSingleRefData& rRef );
@@ -115,11 +116,6 @@ public:
     /// Assignment with references to FormulaToken entries (not copied!)
     ScTokenArray& operator=( const ScTokenArray& );
 
-    /// Make 3D references point to old referenced position even if relative
-    void            ReadjustRelative3DReferences(
-                                const ScAddress& rOldPos,
-                                const ScAddress& rNewPos );
-
     /**
      * Make all absolute references external references pointing to the old document
      *
@@ -128,13 +124,13 @@ public:
      * @param rPos position of the cell to determine if the reference is in the copied area
      * @param bRangeName set for range names, range names have special handling for absolute sheet ref + relative col/row ref
      */
-    void ReadjustAbsolute3DReferences( const ScDocument* pOldDoc, const ScDocument* pNewDoc, const ScAddress& rPos, bool bRangeName = false );
+    void ReadjustAbsolute3DReferences( const ScDocument* pOldDoc, ScDocument* pNewDoc, const ScAddress& rPos, bool bRangeName = false );
 
     /**
      * Make all absolute references pointing to the copied range if the range is copied too
      * @param bCheckCopyArea should references pointing into the copy area be adjusted independently from being absolute, should be true only for copy&paste between documents
      */
-    void AdjustAbsoluteRefs( const ScDocument* pOldDoc, const ScAddress& rOldPos, const ScAddress& rNewPos, bool bCheckCopyArea = false );
+    void AdjustAbsoluteRefs( const ScDocument* pOldDoc, const ScAddress& rOldPos, const ScAddress& rNewPos, bool bCheckCopyArea );
 
     /** When copying a sheet-local named expression, move sheet references that
         point to the originating sheet to point to the new sheet instead.

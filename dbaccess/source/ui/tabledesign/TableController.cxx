@@ -436,7 +436,7 @@ void OTableController::doEditIndexes()
     // table needs to be saved before editing indexes
     if (m_bNew || isModified())
     {
-        ScopedVclPtrInstance< MessageDialog > aAsk(getView(), ModuleRes(STR_QUERY_SAVE_TABLE_EDIT_INDEXES), VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO);
+        ScopedVclPtrInstance< MessageDialog > aAsk(getView(), ModuleRes(STR_QUERY_SAVE_TABLE_EDIT_INDEXES), VclMessageType::Question, VCL_BUTTONS_YES_NO);
         if (RET_YES != aAsk->Execute())
             return;
 
@@ -1493,8 +1493,7 @@ OUString OTableController::getPrivateTitle() const
         if ( sTitle.isEmpty() )
         {
             OUString aName = ModuleRes(STR_TBL_TITLE);
-            sTitle = aName.getToken(0,' ');
-            sTitle += OUString::number(getCurrentStartNumber());
+            sTitle = aName.getToken(0,' ') + OUString::number(getCurrentStartNumber());
         }
     }
     catch( const Exception& )

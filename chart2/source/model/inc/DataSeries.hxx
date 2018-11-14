@@ -67,8 +67,8 @@ class DataSeries :
     public ::property::OPropertySet
 {
 public:
-    explicit DataSeries( const css::uno::Reference< css::uno::XComponentContext > & xContext );
-    virtual ~DataSeries();
+    explicit DataSeries();
+    virtual ~DataSeries() override;
 
     /// XServiceInfo declarations
     virtual OUString SAL_CALL getImplementationName()
@@ -77,9 +77,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     /// merge XInterface implementations
     DECLARE_XINTERFACE()
@@ -179,7 +176,6 @@ protected:
     void fireModifyEvent();
 
 private:
-    css::uno::Reference< css::uno::XComponentContext >  m_xContext;
     typedef ::std::vector< css::uno::Reference< css::chart2::data::XLabeledDataSequence > > tDataSequenceContainer;
     tDataSequenceContainer        m_aDataSequences;
 

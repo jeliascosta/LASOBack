@@ -65,7 +65,6 @@ ChildrenManagerImpl::ChildrenManagerImpl (
       mxParent (rxParent),
       maShapeTreeInfo (rShapeTreeInfo),
       mrContext (rContext),
-      mnNewNameIndex(1),
       mpFocusedShape(nullptr)
 {
 }
@@ -404,9 +403,7 @@ void ChildrenManagerImpl::SendVisibleAreaEvents (
         // as a result of a change of the view forwarder).
         AccessibleShape* pShape = I->GetAccessibleShape ();
         if (pShape != nullptr)
-            pShape->ViewForwarderChanged (
-                IAccessibleViewForwarderListener::VISIBLE_AREA,
-                maShapeTreeInfo.GetViewForwarder());
+            pShape->ViewForwarderChanged();
     }
 }
 
@@ -539,10 +536,6 @@ void ChildrenManagerImpl::ClearAccessibleShapeList()
         uno::Any(),
         uno::Any());
 
-    // There are no accessible shapes left so the index assigned to new
-    // accessible shapes can be reset.
-    mnNewNameIndex = 1;
-
     // Now the objects in the local lists can be safely disposed without
     // having problems with callers that want to update their child lists.
 
@@ -664,13 +657,9 @@ void SAL_CALL
         const document::EventObject& rEventObject)
     throw (uno::RuntimeException, std::exception)
 {
-    static const char sShapeInserted[] = "ShapeInserted";
-    static const char sShapeRemoved[] = "ShapeRemoved";
-
-
-    if (rEventObject.EventName == sShapeInserted)
+    if (rEventObject.EventName == "ShapeInserted")
         AddShape (Reference<drawing::XShape>(rEventObject.Source, uno::UNO_QUERY));
-    else if (rEventObject.EventName == sShapeRemoved)
+    else if (rEventObject.EventName == "ShapeRemoved")
         RemoveShape (Reference<drawing::XShape>(rEventObject.Source, uno::UNO_QUERY));
     // else ignore unknown event.
 }
@@ -734,22 +723,9 @@ void SAL_CALL ChildrenManagerImpl::disposing()
 }
 
 // IAccessibleViewForwarderListener
-void ChildrenManagerImpl::ViewForwarderChanged (ChangeType aChangeType,
-        const IAccessibleViewForwarder* pViewForwarder)
+void ChildrenManagerImpl::ViewForwarderChanged()
 {
-    if (aChangeType == IAccessibleViewForwarderListener::VISIBLE_AREA)
-        Update (false);
-    else
-    {
-        SolarMutexGuard g;
-        ChildDescriptorListType::const_iterator aEnd = maVisibleChildren.end();
-        for (ChildDescriptorListType::iterator I=maVisibleChildren.begin(); I != aEnd; ++I)
-        {
-            AccessibleShape* pShape = I->GetAccessibleShape();
-            if (pShape != nullptr)
-                pShape->ViewForwarderChanged (aChangeType, pViewForwarder);
-        }
-    }
+    Update(false);
 }
 
 // IAccessibleParent
@@ -868,7 +844,6 @@ void ChildrenManagerImpl::UpdateSelection()
     typedef std::vector< PAIR_SHAPE > VEC_SHAPE;
     VEC_SHAPE vecSelect;
     int nAddSelect=0;
-    int nRemoveSelect=0;
     bool bHasSelectedShape=false;
     ChildDescriptorListType::const_iterator aEnd = maVisibleChildren.end();
     for (ChildDescriptorListType::iterator I=maVisibleChildren.begin(); I != aEnd; ++I)
@@ -932,7 +907,6 @@ void ChildrenManagerImpl::UpdateSelection()
                     if(bDrawShape)
                     {
                         vecSelect.push_back(std::make_pair(pAccessibleShape,false));
-                        ++nRemoveSelect;
                     }
                 }
             }

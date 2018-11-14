@@ -19,38 +19,35 @@
 #ifndef INCLUDED_SC_SOURCE_UI_SIDEBAR_CELLLINESTYLECONTROL_HXX
 #define INCLUDED_SC_SOURCE_UI_SIDEBAR_CELLLINESTYLECONTROL_HXX
 
-#include <svx/sidebar/PopupControl.hxx>
 #include <vcl/button.hxx>
+#include <vcl/floatwin.hxx>
 #include "CellLineStyleValueSet.hxx"
+
+class SfxDispatcher;
 
 namespace sc { namespace sidebar {
 
 class CellAppearancePropertyPanel;
 
-class CellLineStyleControl : public svx::sidebar::PopupControl
+class CellLineStylePopup : public FloatingWindow
 {
-private:
-    CellAppearancePropertyPanel&       mrCellAppearancePropertyPanel;
+    SfxDispatcher*                     mpDispatcher;
     VclPtr<PushButton>                 maPushButtonMoreOptions;
     VclPtr<CellLineStyleValueSet>      maCellLineStyleValueSet;
     OUString                           maStr[CELL_LINE_STYLE_ENTRIES];
 
-    /// bitfield
-    bool                               mbVSfocus : 1;
-
     void Initialize();
     void SetAllNoSel();
 
-    DECL_LINK_TYPED(VSSelectHdl, ValueSet*, void);
-    DECL_LINK_TYPED(PBClickHdl, Button*, void);
+    DECL_LINK(VSSelectHdl, ValueSet*, void);
+    DECL_LINK(PBClickHdl, Button*, void);
+
 
 public:
-    CellLineStyleControl(vcl::Window* pParent, CellAppearancePropertyPanel& rPanel);
-    virtual ~CellLineStyleControl();
-    virtual void dispose() override;
-
-    void GetFocus() override;
+    explicit CellLineStylePopup(SfxDispatcher* pDispatcher);
     void SetLineStyleSelect(sal_uInt16 out, sal_uInt16 in, sal_uInt16 dis);
+    virtual ~CellLineStylePopup() override;
+    virtual void dispose() override;
 };
 
 } } // end of namespace svx::sidebar

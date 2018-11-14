@@ -73,7 +73,7 @@ class BasicViewFactory
 public:
     explicit BasicViewFactory (
         const css::uno::Reference<css::uno::XComponentContext>& rxContext);
-    virtual ~BasicViewFactory();
+    virtual ~BasicViewFactory() override;
 
     virtual void SAL_CALL disposing() override;
 
@@ -129,7 +129,7 @@ private:
 
     void ReleaseView (
         const std::shared_ptr<ViewDescriptor>& rpDescriptor,
-        bool bDoNotCache = false);
+        bool bDoNotCache);
 
     bool IsCacheable (
         const std::shared_ptr<ViewDescriptor>& rpDescriptor);

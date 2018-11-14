@@ -22,7 +22,6 @@
 #include "DiagramHelper.hxx"
 #include "DataSourceHelper.hxx"
 #include "servicenames_charttypes.hxx"
-#include "ContainerHelper.hxx"
 #include "CommonFunctors.hxx"
 #include "ChartModelHelper.hxx"
 #include "DataSeriesHelper.hxx"
@@ -43,7 +42,6 @@
 #include <com/sun/star/chart/XChartDocument.hpp>
 
 #include "CharacterProperties.hxx"
-#include "LineProperties.hxx"
 #include "FillProperties.hxx"
 
 #include <map>
@@ -61,7 +59,6 @@ using ::com::sun::star::chart::XDateCategories;
 
 namespace
 {
-static const char lcl_aServiceName[] = "com.sun.star.comp.chart.ChartData";
 
 uno::Sequence< uno::Sequence< double > > lcl_getNANInsteadDBL_MIN( const uno::Sequence< uno::Sequence< double > >& rData )
 {
@@ -385,16 +382,16 @@ struct lcl_DateCategoriesOperator : public lcl_Operator
     const Sequence< double >& m_rDates;
 };
 
-ChartDataWrapper::ChartDataWrapper( std::shared_ptr< Chart2ModelContact > spChart2ModelContact ) :
-        m_spChart2ModelContact( spChart2ModelContact ),
-        m_aEventListenerContainer( m_aMutex )
+ChartDataWrapper::ChartDataWrapper(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact)
+    : m_spChart2ModelContact(spChart2ModelContact)
+    , m_aEventListenerContainer(m_aMutex)
 {
     osl_atomic_increment( &m_refCount );
     initDataAccess();
     osl_atomic_decrement( &m_refCount );
 }
 
-ChartDataWrapper::ChartDataWrapper( std::shared_ptr< Chart2ModelContact > spChart2ModelContact,
+ChartDataWrapper::ChartDataWrapper( const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact,
                                     const Reference< XChartData >& xNewData ) :
         m_spChart2ModelContact( spChart2ModelContact ),
         m_aEventListenerContainer( m_aMutex )
@@ -704,25 +701,10 @@ void ChartDataWrapper::applyData( lcl_Operator& rDataOperator )
     // \-- locked controllers
 }
 
-uno::Sequence< OUString > ChartDataWrapper::getSupportedServiceNames_Static()
-{
-    uno::Sequence< OUString > aServices( 2 );
-    aServices[ 0 ] = "com.sun.star.chart.ChartDataArray";
-    aServices[ 1 ] = "com.sun.star.chart.ChartData";
-
-    return aServices;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL ChartDataWrapper::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString ChartDataWrapper::getImplementationName_Static()
-{
-    return OUString(lcl_aServiceName);
+    return OUString("com.sun.star.comp.chart.ChartData");
 }
 
 sal_Bool SAL_CALL ChartDataWrapper::supportsService( const OUString& rServiceName )
@@ -734,7 +716,10 @@ sal_Bool SAL_CALL ChartDataWrapper::supportsService( const OUString& rServiceNam
 css::uno::Sequence< OUString > SAL_CALL ChartDataWrapper::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return {
+        "com.sun.star.chart.ChartDataArray",
+        "com.sun.star.chart.ChartData"
+    };
 }
 
 } //  namespace wrapper

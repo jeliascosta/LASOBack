@@ -69,7 +69,7 @@ public:
         const css::uno::Reference<css::uno::XComponentContext>& rxContext,
         const ::rtl::Reference<PresenterPaneContainer>& rpPaneContainer,
         const ::rtl::Reference<PresenterController>& rpPresenterController);
-    virtual ~PresenterWindowManager();
+    virtual ~PresenterWindowManager() override;
     PresenterWindowManager(const PresenterWindowManager&) = delete;
     PresenterWindowManager& operator=(const PresenterWindowManager&) = delete;
 
@@ -192,10 +192,6 @@ private:
     void PaintBackground (const css::awt::Rectangle& rUpdateBox);
     void ProvideBackgroundBitmap();
     css::uno::Reference<css::rendering::XPolyPolygon2D> CreateClipPolyPolygon() const;
-
-    static void UpdateWindowList();
-
-    void Invalidate();
 
     void StoreViewMode (const ViewMode eViewMode);
 

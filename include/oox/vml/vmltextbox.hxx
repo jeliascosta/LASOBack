@@ -20,11 +20,14 @@
 #ifndef INCLUDED_OOX_VML_VMLTEXTBOX_HXX
 #define INCLUDED_OOX_VML_VMLTEXTBOX_HXX
 
+#include <cstddef>
 #include <vector>
-#include <rtl/ustring.hxx>
-#include <oox/helper/helper.hxx>
+
+#include <com/sun/star/uno/Reference.hxx>
 #include <oox/dllapi.h>
-#include <com/sun/star/uno/Reference.h>
+#include <oox/helper/helper.hxx>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
 
 namespace com { namespace sun { namespace star {
     namespace drawing { class XShape; }
@@ -46,6 +49,8 @@ struct TextParagraphModel
 struct OOX_DLLPUBLIC TextFontModel
 {
     OptValue< OUString > moName;     ///< Font name.
+    OptValue< OUString > moNameAsian; ///< Asian font name.
+    OptValue< OUString > moNameComplex; ///< Complex font name.
     OptValue< OUString > moColor;    ///< Font color, HTML encoded, sort of.
     OptValue< sal_Int32 > monSize;          ///< Font size in twips.
     OptValue< sal_Int32 > monUnderline;     ///< Single or double underline.

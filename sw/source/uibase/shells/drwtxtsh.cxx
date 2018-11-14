@@ -35,7 +35,7 @@
 #include <sfx2/bindings.hxx>
 #include <svx/fontwork.hxx>
 #include <sfx2/request.hxx>
-#include <sfx2/sidebar/EnumContext.hxx>
+#include <vcl/EnumContext.hxx>
 #include <svl/whiter.hxx>
 #include <editeng/outliner.hxx>
 #include <editeng/editstat.hxx>
@@ -74,6 +74,7 @@
 #include <comphelper/processfactory.hxx>
 #include "swabstdlg.hxx"
 #include "misc.hrc"
+#include "IDocumentUndoRedo.hxx"
 #include <memory>
 
 using namespace ::com::sun::star;
@@ -133,7 +134,7 @@ SwDrawTextShell::SwDrawTextShell(SwView &rV) :
     rSh.NoEdit();
     SetName("ObjectText");
     SetHelpId(SW_DRWTXTSHELL);
-    SfxShell::SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_DrawText));
+    SfxShell::SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context_DrawText));
 }
 
 SwDrawTextShell::~SwDrawTextShell()
@@ -238,16 +239,6 @@ void SwDrawTextShell::GetFormTextState(SfxItemSet& rSet)
     SdrView* pDrView = rSh.GetDrawView();
     const SdrMarkList& rMarkList = pDrView->GetMarkedObjectList();
     const SdrObject* pObj = nullptr;
-    SvxFontWorkDialog* pDlg = nullptr;
-
-    const sal_uInt16 nId = SvxFontWorkChildWindow::GetChildWindowId();
-
-    SfxViewFrame* pVFrame = GetView().GetViewFrame();
-    if (pVFrame->HasChildWindow(nId))
-    {
-        SfxChildWindow* pWnd = pVFrame->GetChildWindow(nId);
-        pDlg = pWnd ? static_cast<SvxFontWorkDialog*>(pWnd->GetWindow()) : nullptr;
-    }
 
     if ( rMarkList.GetMarkCount() == 1 )
         pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();
@@ -275,9 +266,6 @@ void SwDrawTextShell::GetFormTextState(SfxItemSet& rSet)
     }
     else
     {
-        if ( pDlg )
-            pDlg->SetColorList(XColorList::GetStdColorList());
-
         pDrView->GetAttributes( rSet );
     }
 }
@@ -325,8 +313,8 @@ void SwDrawTextShell::ExecDrawLingu(SfxRequest &rReq)
                 Any* pArray = aSequence.getArray();
                 PropertyValue aParam;
                 aParam.Name = "ParentWindow";
-                aParam.Value <<= makeAny(xDialogParentWindow);
-                pArray[0] <<= makeAny(aParam);
+                aParam.Value = makeAny(xDialogParentWindow);
+                pArray[0] = makeAny(aParam);
                 xInit->initialize( aSequence );
 
                 //execute dialog
@@ -462,7 +450,7 @@ void SwDrawTextShell::ExecDraw(SfxRequest &rReq)
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                 if ( pFact )
                 {
-                    std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateTextTabDialog(
+                    ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateTextTabDialog(
                                 &(GetView().GetViewFrame()->GetWindow()),
                                 &aNewAttr, pSdrView ));
                     sal_uInt16 nResult = pDlg->Execute();
@@ -606,8 +594,14 @@ void SwDrawTextShell::StateUndo(SfxItemSet &rSet)
             break;
 
         default:
-            pSfxViewFrame->GetSlotState( nWhich,
-                                    pSfxViewFrame->GetInterface(), &rSet );
+            {
+                auto* pUndoManager = dynamic_cast<IDocumentUndoRedo*>(GetUndoManager());
+                if (pUndoManager)
+                    pUndoManager->SetView(&GetView());
+                pSfxViewFrame->GetSlotState(nWhich, pSfxViewFrame->GetInterface(), &rSet);
+                if (pUndoManager)
+                    pUndoManager->SetView(nullptr);
+            }
         }
 
         nWhich = aIter.NextWhich();
@@ -742,7 +736,7 @@ void SwDrawTextShell::InsertSymbol(SfxRequest& rReq)
 
         // If character is selected, it can be shown
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-        std::unique_ptr<SfxAbstractDialog> pDlg(pFact->CreateSfxDialog( rView.GetWindow(), aAllSet,
+        ScopedVclPtr<SfxAbstractDialog> pDlg(pFact->CreateSfxDialog( rView.GetWindow(), aAllSet,
             rView.GetViewFrame()->GetFrame().GetFrameInterface(), RID_SVXDLG_CHARMAP ));
         sal_uInt16 nResult = pDlg->Execute();
         if( nResult == RET_OK )
@@ -792,11 +786,17 @@ void SwDrawTextShell::InsertSymbol(SfxRequest& rReq)
                                 EE_CHAR_FONTINFO );
         nScript = g_pBreakIt->GetAllScriptsOfText( sSym );
         if( SvtScriptType::LATIN & nScript )
-            aFontAttribSet.Put( aFontItem, EE_CHAR_FONTINFO );
+            aFontAttribSet.Put( aFontItem );
         if( SvtScriptType::ASIAN & nScript )
-            aFontAttribSet.Put( aFontItem, EE_CHAR_FONTINFO_CJK );
+        {
+            aFontItem.SetWhich(EE_CHAR_FONTINFO_CJK);
+            aFontAttribSet.Put( aFontItem );
+        }
         if( SvtScriptType::COMPLEX & nScript )
-            aFontAttribSet.Put( aFontItem, EE_CHAR_FONTINFO_CTL );
+        {
+            aFontItem.SetWhich(EE_CHAR_FONTINFO_CTL);
+            aFontAttribSet.Put( aFontItem );
+        }
         pOLV->SetAttribs(aFontAttribSet);
 
         // Remove selection

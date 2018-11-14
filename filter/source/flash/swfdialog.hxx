@@ -30,18 +30,17 @@ namespace vcl { class Window; }
 class ResMgr;
 
 
-class SWFDialog : public ::svt::OGenericUnoDialog,
-                  public ::comphelper::OPropertyArrayUsageHelper< SWFDialog >,
-                  public css::beans::XPropertyAccess,
-                  public css::document::XExporter
+class SWFDialog final:
+    public ::svt::OGenericUnoDialog,
+    public ::comphelper::OPropertyArrayUsageHelper< SWFDialog >,
+    public css::beans::XPropertyAccess,
+    public css::document::XExporter
 {
 private:
 
     css::uno::Sequence< css::beans::PropertyValue >   maMediaDescriptor;
     css::uno::Sequence< css::beans::PropertyValue >   maFilterData;
     css::uno::Reference< css::lang::XComponent >      mxSrcDoc;
-
-protected:
 
     // XInterface
     virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) throw (css::uno::RuntimeException, std::exception) override;
@@ -70,7 +69,7 @@ protected:
 public:
 
     explicit SWFDialog( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-    virtual     ~SWFDialog();
+    virtual     ~SWFDialog() override;
 };
 
 

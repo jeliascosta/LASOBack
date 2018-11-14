@@ -64,6 +64,7 @@
 #include <basegfx/matrix/b2dhommatrixtools.hxx>
 
 #include <algorithm>
+#include <deque>
 
 #include <cppuhelper/implbase.hxx>
 
@@ -312,7 +313,7 @@ sal_Int32 CustomAnimationEffect::getNumberOfSubitems( const Any& aTarget, sal_In
             {
                 xEnumeration->nextElement() >>= xParagraph;
 
-                // skip this if its not the only paragraph we want to count
+                // skip this if it's not the only paragraph we want to count
                 if( (nOnlyPara != -1) && (nOnlyPara != nPara ) )
                     continue;
 
@@ -1729,7 +1730,7 @@ CustomAnimationEffectPtr EffectSequenceHelper::append( const CustomAnimationPres
 
             if( bFilter )
             {
-                aUserData = ::comphelper::containerToSequence< NamedValue, std::vector< NamedValue > >( aNewUserData );
+                aUserData = ::comphelper::containerToSequence( aNewUserData );
                 xNode->setUserData( aUserData );
             }
 
@@ -2462,7 +2463,7 @@ void EffectSequenceHelper::createTextGroupParagraphEffects( const CustomAnimatio
         Reference< XEnumerationAccess > xText( xTarget, UNO_QUERY_THROW );
         Reference< XEnumeration > xEnumeration( xText->createEnumeration(), UNO_QUERY_THROW );
 
-        std::list< sal_Int16 > aParaList;
+        std::deque< sal_Int16 > aParaList;
         sal_Int16 nPara;
 
         // fill the list with all valid paragraphs
@@ -2481,11 +2482,9 @@ void EffectSequenceHelper::createTextGroupParagraphEffects( const CustomAnimatio
         ParagraphTarget aTarget;
         aTarget.Shape = xTarget;
 
-        std::list< sal_Int16 >::iterator aIter( aParaList.begin() );
-        std::list< sal_Int16 >::iterator aEnd( aParaList.end() );
-        while( aIter != aEnd )
+        for( const auto i : aParaList )
         {
-            aTarget.Paragraph = (*aIter++);
+            aTarget.Paragraph = i;
 
             CustomAnimationEffectPtr pNewEffect;
             if( bUsed )
@@ -2497,7 +2496,7 @@ void EffectSequenceHelper::createTextGroupParagraphEffects( const CustomAnimatio
             }
             else
             {
-                // reuse first effect if its not yet used
+                // reuse first effect if it's not yet used
                 pNewEffect = pEffect;
                 bUsed = true;
                 aInsertIter = find( pNewEffect );
@@ -3409,7 +3408,7 @@ bool MainSequence::setTrigger( const CustomAnimationEffectPtr& pEffect, const cs
 
 }
 
-IMPL_LINK_NOARG_TYPED(MainSequence, onTimerHdl, Timer *, void)
+IMPL_LINK_NOARG(MainSequence, onTimerHdl, Timer *, void)
 {
     if( mbTimerMode )
     {

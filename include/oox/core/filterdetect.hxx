@@ -62,7 +62,7 @@ class FilterDetectDocHandler : public ::cppu::WeakImplHelper< css::xml::sax::XFa
 {
 public:
     explicit            FilterDetectDocHandler( const css::uno::Reference< css::uno::XComponentContext >& rxContext, OUString& rFilter );
-    virtual             ~FilterDetectDocHandler();
+    virtual             ~FilterDetectDocHandler() override;
 
     // XFastDocumentHandler
     virtual void SAL_CALL startDocument() throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
@@ -95,14 +95,12 @@ private:
 };
 
 
-class SAL_DLLPUBLIC_TEMPLATE FilterDetect_BASE : public ::cppu::WeakImplHelper<css::document::XExtendedFilterDetection, css::lang::XServiceInfo> {};
-
-class OOX_DLLPUBLIC FilterDetect : public FilterDetect_BASE
+class OOX_DLLPUBLIC FilterDetect : public ::cppu::WeakImplHelper<css::document::XExtendedFilterDetection, css::lang::XServiceInfo>
 {
 public:
     explicit            FilterDetect( const css::uno::Reference< css::uno::XComponentContext >& rxContext )
                             throw( css::uno::RuntimeException );
-    virtual             ~FilterDetect();
+    virtual             ~FilterDetect() override;
 
     /** Tries to extract an unencrypted ZIP package from the passed media
         descriptor.

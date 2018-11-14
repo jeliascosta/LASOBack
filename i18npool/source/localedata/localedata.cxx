@@ -17,6 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <com/sun/star/container/XIndexAccess.hpp>
+#include <cppuhelper/implbase.hxx>
 #include <cppuhelper/supportsservice.hxx>
 #include <localedata.hxx>
 #include <i18nlangtag/mslangid.hxx>
@@ -519,7 +521,7 @@ oslGenericFunction SAL_CALL lcl_LookupTableHelper::getFunctionSymbolByName(
             aBuf.append( SAL_DLLPREFIX ).appendAscii(i.pLib).append( SAL_DLLEXTENSION );
 #else
             aBuf.ensureCapacity(strlen(i.pLib) + 4);    // mostly "*.dll"
-            aBuf.appendAscii(i.pLib).appendAscii( SAL_DLLEXTENSION );
+            aBuf.appendAscii(i.pLib).append( SAL_DLLEXTENSION );
 #endif
             osl::Module *module = new osl::Module();
             if ( module->loadRelative(&thisModule, aBuf.makeStringAndClear()) )
@@ -1300,9 +1302,6 @@ LocaleDataImpl::getContinuousNumberingLevels( const lang::Locale& rLocale ) thro
 
 // OutlineNumbering helper class
 
-#include <com/sun/star/container/XIndexAccess.hpp>
-#include <cppuhelper/implbase.hxx>
-
 namespace com{ namespace sun{ namespace star{ namespace lang {
     struct  Locale;
 }}}}
@@ -1330,7 +1329,7 @@ class OutlineNumbering : public cppu::WeakImplHelper < container::XIndexAccess >
     sal_Int16                         m_nCount;
 public:
     OutlineNumbering(const OutlineNumberingLevel_Impl* pOutlineLevels, int nLevels);
-    virtual ~OutlineNumbering();
+    virtual ~OutlineNumbering() override;
 
     //XIndexAccess
     virtual sal_Int32 SAL_CALL getCount(  ) throw(RuntimeException, std::exception) override;

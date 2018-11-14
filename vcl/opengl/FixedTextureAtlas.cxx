@@ -21,7 +21,7 @@
 
 struct FixedTexture
 {
-    ImplOpenGLTexture* mpTexture;
+    std::shared_ptr<ImplOpenGLTexture> mpTexture;
     int mnFreeSlots;
     std::vector<bool> maAllocatedSlots;
 
@@ -42,7 +42,6 @@ struct FixedTexture
     ~FixedTexture()
     {
         mpTexture->ResetSlotDeallocateCallback();
-        mpTexture->DecreaseRefCount(-1);
     }
 
     void allocateSlot(int nSlot)
@@ -69,6 +68,10 @@ struct FixedTexture
         }
         return -1;
     }
+
+private:
+    FixedTexture(const FixedTexture&) = delete;
+    FixedTexture& operator=(const FixedTexture&) = delete;
 };
 
 FixedTextureAtlasManager::FixedTextureAtlasManager(int nWidthFactor, int nHeightFactor, int nSubTextureSize)

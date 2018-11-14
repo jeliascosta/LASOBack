@@ -328,27 +328,28 @@ namespace abp
         *this = _rSource;
     }
 
-
     ODataSource& ODataSource::operator=( const ODataSource& _rSource )
     {
         if( this != &_rSource )
         {
-            delete m_pImpl;
-            m_pImpl = new ODataSourceImpl( *_rSource.m_pImpl );
+            m_pImpl.reset( new ODataSourceImpl( *_rSource.m_pImpl ) );
         }
         return *this;
     }
 
+    ODataSource& ODataSource::operator=( ODataSource&& _rSource )
+    {
+        m_pImpl = std::move(_rSource.m_pImpl);
+        return *this;
+    }
 
     ODataSource::ODataSource( const Reference< XComponentContext >& _rxORB )
         :m_pImpl(new ODataSourceImpl(_rxORB))
     {
     }
 
-
     ODataSource::~ODataSource( )
     {
-        delete m_pImpl;
     }
 
     void ODataSource::store(const AddressSettings& rSettings)
@@ -368,7 +369,7 @@ namespace abp
                 SfxViewFrame* pFrame = SfxViewFrame::Current();
                 SfxObjectShell* pObjectShell = pFrame ? pFrame->GetObjectShell() : nullptr;
                 OUString aOwnURL = lcl_getOwnURL(pObjectShell);
-                if (aOwnURL.isEmpty() || !rSettings.bEmbedDataSource)
+                if (aOwnURL.isEmpty() || !rSettings.bEmbedDataSource || !pObjectShell)
                 {
                     // Cannot or should not embed.
                     xStorable->storeAsURL(m_pImpl->sName,Sequence<PropertyValue>());

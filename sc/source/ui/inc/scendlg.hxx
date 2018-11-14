@@ -27,23 +27,27 @@
 #include <svtools/svmedit.hxx>
 #include <svtools/ctrlbox.hxx>
 
+enum class ScScenarioFlags;
+
+class SvxColorListBox;
+
 class ScNewScenarioDlg : public ModalDialog
 {
 public:
-    ScNewScenarioDlg(vcl::Window* pParent, const OUString& rName, bool bEdit = false, bool bSheetProtected = false);
-    virtual ~ScNewScenarioDlg();
+    ScNewScenarioDlg(vcl::Window* pParent, const OUString& rName, bool bEdit, bool bSheetProtected);
+    virtual ~ScNewScenarioDlg() override;
     virtual void dispose() override;
     void SetScenarioData( const OUString& rName, const OUString& rComment,
-                          const Color& rColor, sal_uInt16 nFlags );
+                          const Color& rColor, ScScenarioFlags nFlags );
 
-    void GetScenarioData( OUString& rName, OUString& rComment,
-                          Color& rColor, sal_uInt16& rFlags ) const;
+    void GetScenarioData(OUString& rName, OUString& rComment,
+                          Color& rColor, ScScenarioFlags &rFlags) const;
 
 private:
     VclPtr<Edit>               m_pEdName;
     VclPtr<VclMultiLineEdit>   m_pEdComment;
     VclPtr<CheckBox>           m_pCbShowFrame;
-    VclPtr<ColorListBox>       m_pLbColor;
+    VclPtr<SvxColorListBox>    m_pLbColor;
     VclPtr<CheckBox>           m_pCbTwoWay;
     VclPtr<CheckBox>           m_pCbCopyAll;
     VclPtr<CheckBox>           m_pCbProtect;
@@ -51,8 +55,8 @@ private:
     const OUString      aDefScenarioName;
     bool                bIsEdit;
 
-    DECL_LINK_TYPED( OkHdl, Button*, void);
-    DECL_LINK_TYPED( EnableHdl, Button*, void );
+    DECL_LINK( OkHdl, Button*, void);
+    DECL_LINK( EnableHdl, Button*, void );
 };
 
 #endif // INCLUDED_SC_SOURCE_UI_INC_SCENDLG_HXX

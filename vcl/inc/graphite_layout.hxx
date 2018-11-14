@@ -38,7 +38,7 @@
 
 #include "sallayout.hxx"
 
-class ServerFont;
+class FreetypeFont;
 class PhysicalFontFace;
 
 namespace grutils { class GrFeatureParser; }
@@ -46,8 +46,7 @@ namespace grutils { class GrFeatureParser; }
 class GraphiteFaceWrapper
 {
 public:
-    typedef std::pair<int, int> GrFontMapKey;
-    typedef std::map<GrFontMapKey, gr_font*> GrFontMap;
+    typedef std::map<std::pair<int, int>, gr_font*> GrFontMap;
     GraphiteFaceWrapper(gr_face * pFace) : m_pFace(pFace) {}
     ~GraphiteFaceWrapper()
     {
@@ -61,7 +60,7 @@ public:
     gr_font * font(int ppm, bool isBold, bool isItalic) const
     {
         int styleKey = int(isBold) | (int(isItalic) << 1);
-        GrFontMap::const_iterator i = m_fonts.find(GrFontMapKey(ppm, styleKey));
+        GrFontMap::const_iterator i = m_fonts.find(std::pair<int, int>(ppm, styleKey));
         if (i != m_fonts.end())
             return i->second;
         return nullptr;
@@ -69,7 +68,7 @@ public:
     void addFont(int ppm, gr_font * pFont, bool isBold, bool isItalic)
     {
         int styleKey = int(isBold) | (int(isItalic) << 1);
-        GrFontMapKey key(ppm, styleKey);
+        std::pair<int, int> key(ppm, styleKey);
         if (m_fonts[key])
             gr_font_destroy(m_fonts[key]);
         m_fonts[key] = pFont;
@@ -104,8 +103,7 @@ private:
     const grutils::GrFeatureParser * mpFeatures;
 
 public:
-    GraphiteLayout(const gr_face * pFace, gr_font * pFont = nullptr,
-        const grutils::GrFeatureParser * features = nullptr) throw();
+    GraphiteLayout(const gr_face * pFace) throw();
 
     // used by upper layers
     virtual bool  LayoutText( ImplLayoutArgs& ) override;    // first step of layout
@@ -114,7 +112,7 @@ public:
     virtual void  AdjustLayout( ImplLayoutArgs& ) override;  // adjusting positions
 
     // methods using string indexing
-    virtual sal_Int32 GetTextBreak(DeviceCoordinate nMaxWidth, DeviceCoordinate nCharExtra=0, int nFactor=1) const override;
+    virtual sal_Int32 GetTextBreak(DeviceCoordinate nMaxWidth, DeviceCoordinate nCharExtra, int nFactor) const override;
     virtual DeviceCoordinate FillDXArray( DeviceCoordinate* pDXArray ) const override;
     void  ApplyDXArray(ImplLayoutArgs &rArgs, std::vector<int> & rDeltaWidth);
 
@@ -133,7 +131,7 @@ public:
     // Dummy implementation so layout can be shared between Linux/Windows
     virtual void    DrawText(SalGraphics&) const override {};
 
-    virtual ~GraphiteLayout() throw();
+    virtual ~GraphiteLayout() throw() override;
     void SetFont(gr_font * pFont) { mpFont = pFont; }
 #ifdef _WIN32
     gr_font * GetFont() { return mpFont; }

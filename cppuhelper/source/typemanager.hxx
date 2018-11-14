@@ -64,7 +64,7 @@ public:
         rtl::OUString const & name);
 
 private:
-    virtual ~TypeManager() throw ();
+    virtual ~TypeManager() throw () override;
 
     virtual void SAL_CALL disposing() override;
 
@@ -115,8 +115,6 @@ private:
             css::reflection::NoSuchTypeNameException,
             css::reflection::InvalidTypeNameException,
             css::uno::RuntimeException, std::exception) override;
-
-    void readRdbs(rtl::OUString const & uris);
 
     void readRdbDirectory(rtl::OUString const & uri, bool optional);
 

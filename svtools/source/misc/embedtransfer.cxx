@@ -126,7 +126,7 @@ bool SvEmbedTransferHelper::GetData( const css::datatransfer::DataFlavor& rFlavo
                             }
                             else
                             {
-                                pStream = aTmp.GetStream( STREAM_STD_READWRITE );
+                                pStream = aTmp.GetStream( StreamMode::STD_READWRITE );
                                 uno::Reference < embed::XStorage > xStor = comphelper::OStorageHelper::GetStorageFromStream( new utl::OStreamWrapper( *pStream ) );
                                 xStg->openStorageElement( aName, embed::ElementModes::READ )->copyToStorage( xStor );
                             }
@@ -135,7 +135,7 @@ bool SvEmbedTransferHelper::GetData( const css::datatransfer::DataFlavor& rFlavo
                             css::uno::Sequence< sal_Int8 > aSeq( nLen );
 
                             pStream->Seek( STREAM_SEEK_TO_BEGIN );
-                            pStream->Read( aSeq.getArray(),  nLen );
+                            pStream->ReadBytes(aSeq.getArray(), nLen);
                             if ( bDeleteStream )
                                 delete pStream;
 
@@ -218,7 +218,7 @@ void SvEmbedTransferHelper::FillTransferableObjectDescriptor( TransferableObject
     rDesc.mnOle2Misc = sal::static_int_cast<sal_Int32>(xObj->getStatus( rDesc.mnViewAspect ));
 
     Size aSize;
-    MapMode aMapMode( MAP_100TH_MM );
+    MapMode aMapMode( MapUnit::Map100thMM );
     if ( nAspect == embed::Aspects::MSOLE_ICON )
     {
         if ( pGraphic )
@@ -247,10 +247,9 @@ void SvEmbedTransferHelper::FillTransferableObjectDescriptor( TransferableObject
         aMapMode = MapMode( VCLUnoHelper::UnoEmbed2VCLMapUnit( xObj->getMapUnit( rDesc.mnViewAspect ) ) );
     }
 
-    rDesc.maSize = OutputDevice::LogicToLogic( aSize, aMapMode, MapMode( MAP_100TH_MM ) );
+    rDesc.maSize = OutputDevice::LogicToLogic( aSize, aMapMode, MapMode( MapUnit::Map100thMM ) );
     rDesc.maDragStartPos = Point();
     rDesc.maDisplayName.clear();
-    rDesc.mbCanLink = false;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

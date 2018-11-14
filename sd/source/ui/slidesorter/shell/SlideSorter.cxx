@@ -51,7 +51,7 @@ class ContentWindow : public ::sd::Window
 {
 public:
     ContentWindow(vcl::Window& rParent, SlideSorter& rSlideSorter);
-    virtual ~ContentWindow();
+    virtual ~ContentWindow() override;
     void SetCurrentFunction (const rtl::Reference<FuPoor>& rpFunction);
     virtual void Paint(vcl::RenderContext& /*rRenderContext*/, const Rectangle& rRect) override;
     virtual void KeyInput (const KeyEvent& rEvent) override;
@@ -305,7 +305,7 @@ void SlideSorter::CreateModelViewController()
     DBG_ASSERT (mpSlideSorterModel.get()!=nullptr,
         "Can not create model for slide browser");
 
-    mpSlideSorterView.reset(CreateView());
+    mpSlideSorterView.reset(new view::SlideSorterView (*this));
     DBG_ASSERT (mpSlideSorterView.get()!=nullptr,
         "Can not create view for slide browser");
 
@@ -331,11 +331,6 @@ model::SlideSorterModel* SlideSorter::CreateModel()
     }
     else
         return nullptr;
-}
-
-view::SlideSorterView* SlideSorter::CreateView()
-{
-    return new view::SlideSorterView (*this);
 }
 
 controller::SlideSorterController* SlideSorter::CreateController()
@@ -417,13 +412,13 @@ void SlideSorter::SetCurrentFunction (const rtl::Reference<FuPoor>& rpFunction)
     }
 }
 
-std::shared_ptr<controller::Properties> SlideSorter::GetProperties() const
+std::shared_ptr<controller::Properties> const & SlideSorter::GetProperties() const
 {
     OSL_ASSERT(mpProperties);
     return mpProperties;
 }
 
-std::shared_ptr<view::Theme> SlideSorter::GetTheme() const
+std::shared_ptr<view::Theme> const & SlideSorter::GetTheme() const
 {
     OSL_ASSERT(mpTheme);
     return mpTheme;

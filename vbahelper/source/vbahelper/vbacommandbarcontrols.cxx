@@ -18,6 +18,7 @@
  */
 #include "vbacommandbarcontrols.hxx"
 #include "vbacommandbarcontrol.hxx"
+#include <com/sun/star/lang/XSingleComponentFactory.hpp>
 
 using namespace com::sun::star;
 using namespace ooo::vba;
@@ -46,7 +47,7 @@ public:
     }
 };
 
-ScVbaCommandBarControls::ScVbaCommandBarControls( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, const uno::Reference< container::XIndexAccess>& xIndexAccess, VbaCommandBarHelperRef pHelper, const uno::Reference< container::XIndexAccess>& xBarSettings, const OUString& sResourceUrl ) throw (uno::RuntimeException) : CommandBarControls_BASE( xParent, xContext, xIndexAccess ), pCBarHelper( pHelper ), m_xBarSettings( xBarSettings ), m_sResourceUrl( sResourceUrl )
+ScVbaCommandBarControls::ScVbaCommandBarControls( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, const uno::Reference< container::XIndexAccess>& xIndexAccess, VbaCommandBarHelperRef const & pHelper, const uno::Reference< container::XIndexAccess>& xBarSettings, const OUString& sResourceUrl ) throw (uno::RuntimeException) : CommandBarControls_BASE( xParent, xContext, xIndexAccess ), pCBarHelper( pHelper ), m_xBarSettings( xBarSettings ), m_sResourceUrl( sResourceUrl )
 {
     m_bIsMenu = sResourceUrl == ITEM_MENUBAR_URL;
 }
@@ -207,7 +208,7 @@ ScVbaCommandBarControls::Add( const uno::Any& Type, const uno::Any& Id, const un
     uno::Sequence< beans::PropertyValue > aProps;
     OUString sHelpUrl;
     sal_uInt16 nItemType = 0;
-    if( IsMenu() )
+    if( m_bIsMenu )
     {
         aProps = CreateMenuItemData( sCommandUrl, sHelpUrl, sLabel, nItemType, aSubMenu, true, true );
     }

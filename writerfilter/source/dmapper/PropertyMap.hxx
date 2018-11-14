@@ -94,7 +94,7 @@ class PropValue
     GrabBagType m_GrabBagType;
 
 public:
-    PropValue(const css::uno::Any& rValue, GrabBagType i_GrabBagType = NO_GRAB_BAG) :
+    PropValue(const css::uno::Any& rValue, GrabBagType i_GrabBagType) :
         m_aValue(rValue), m_GrabBagType(i_GrabBagType) {}
 
     PropValue() : m_aValue(), m_GrabBagType(NO_GRAB_BAG) {}
@@ -111,8 +111,6 @@ class PropertyMap
 
     //marks context as footnote context - ::text( ) events contain either the footnote character or can be ignored
     //depending on sprmCSymbol
-    sal_Unicode                                                                 m_cFootnoteSymbol; // 0 == invalid
-    sal_Int32                                                                   m_nFootnoteFontId; // negative values are invalid ids
     OUString                                                             m_sFootnoteFontName;
     css::uno::Reference<css::text::XFootnote> m_xFootnote;
 
@@ -156,10 +154,6 @@ public:
     const css::uno::Reference<css::text::XFootnote>& GetFootnote() const { return m_xFootnote; }
     void SetFootnote(css::uno::Reference<css::text::XFootnote> const& xF) { m_xFootnote = xF; }
 
-    sal_Unicode GetFootnoteSymbol() const { return m_cFootnoteSymbol;}
-
-    sal_Int32   GetFootnoteFontId() const { return m_nFootnoteFontId;}
-
     const OUString&      GetFootnoteFontName() const { return m_sFootnoteFontName;}
 
     virtual void insertTableProperties( const PropertyMap* );
@@ -200,6 +194,7 @@ class SectionPropertyMap : public PropertyMap
     bool                                    m_bTitlePage;
     sal_Int16                               m_nColumnCount;
     sal_Int32                               m_nColumnDistance;
+    css::uno::Reference< css::beans::XPropertySet > m_xColumnContainer;
     ::std::vector< sal_Int32 >              m_aColWidth;
     ::std::vector< sal_Int32 >              m_aColDistance;
 
@@ -223,7 +218,6 @@ class SectionPropertyMap : public PropertyMap
     sal_Int32                               m_nHeaderBottom;
 
     sal_Int32                               m_nDzaGutter;
-    bool                                    m_bGutterRTL;
 
     sal_Int32                               m_nGridType;
     sal_Int32                               m_nGridLinePitch;
@@ -246,6 +240,7 @@ class SectionPropertyMap : public PropertyMap
     bool                                    m_bFirstPageFooterLinkToPrevious;
 
     void ApplyProperties_(css::uno::Reference<css::beans::XPropertySet> const& xStyle);
+    void DontBalanceTextColumns();
     css::uno::Reference<css::text::XTextColumns> ApplyColumnProperties(css::uno::Reference<css::beans::XPropertySet> const& xFollowPageStyle,
                                                                        DomainMapper_Impl& rDM_Impl);
     void CopyLastHeaderFooter( bool bFirstPage, DomainMapper_Impl& rDM_Impl );
@@ -273,7 +268,7 @@ class SectionPropertyMap : public PropertyMap
 
 public:
         explicit SectionPropertyMap(bool bIsFirstSection);
-        virtual ~SectionPropertyMap();
+        virtual ~SectionPropertyMap() override;
 
     enum PageType
     {
@@ -293,6 +288,14 @@ public:
                                                                const css::uno::Reference<css::lang::XMultiServiceFactory>& xTextFactory,
                                                                bool bFirst);
 
+    OUString const & GetPageStyleName( bool bFirstPage = false ) { return bFirstPage ? m_sFirstPageStyleName : m_sFollowPageStyleName; }
+    void InheritOrFinalizePageStyles( DomainMapper_Impl& rDM_Impl )
+        throw ( css::beans::UnknownPropertyException,
+                css::beans::PropertyVetoException,
+                css::lang::IllegalArgumentException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception);
+
     void SetBorder(BorderPosition ePos, sal_Int32 nLineDistance, const css::table::BorderLine2& rBorderLine, bool bShadow);
     void SetBorderParams( sal_Int32 nSet ) { m_nBorderParams = nSet; }
 
@@ -309,7 +312,8 @@ public:
     void SetPageNumber( sal_Int32 nSet ) { m_nPageNumber = nSet; }
     void SetPageNumberType(sal_Int32 nSet) { m_nPageNumberType = nSet; }
     void SetBreakType( sal_Int32 nSet ) { m_nBreakType = nSet; }
-    sal_Int32 GetBreakType( ) { return m_nBreakType; }
+    // GetBreakType returns -1 if the breakType has not yet been identified for the section
+    sal_Int32 GetBreakType() { return m_nBreakType; }
 
     void SetLeftMargin(    sal_Int32 nSet ) { m_nLeftMargin = nSet; }
     sal_Int32 GetLeftMargin() { return m_nLeftMargin; }
@@ -338,7 +342,7 @@ public:
 
     void CloseSectionGroup( DomainMapper_Impl& rDM_Impl );
     /// Handling of margins, header and footer for any kind of sections breaks.
-    void HandleMarginsHeaderFooter(DomainMapper_Impl& rDM_Impl);
+    void HandleMarginsHeaderFooter(bool bFirstPage, DomainMapper_Impl& rDM_Impl);
     void ClearHeaderFooterLinkToPrevious( bool bHeader, PageType eType );
 };
 
@@ -468,7 +472,7 @@ class StyleSheetPropertyMap : public PropertyMap, public ParagraphProperties
     sal_Int32               mnNumId;
 public:
     explicit StyleSheetPropertyMap();
-    virtual ~StyleSheetPropertyMap();
+    virtual ~StyleSheetPropertyMap() override;
 
     void SetCT_TrPrBase_jc(        sal_Int32 nSet )
         {mnCT_TrPrBase_jc = nSet;        mbCT_TrPrBase_jcSet = true;     }
@@ -499,7 +503,7 @@ class ParagraphPropertyMap : public PropertyMap, public ParagraphProperties
 {
 public:
     explicit ParagraphPropertyMap();
-    virtual ~ParagraphPropertyMap();
+    virtual ~ParagraphPropertyMap() override;
 
 };
 
@@ -534,7 +538,7 @@ private:
 
 public:
     explicit TablePropertyMap();
-    virtual ~TablePropertyMap();
+    virtual ~TablePropertyMap() override;
 
     bool    getValue( TablePropertyMapTarget eWhich, sal_Int32& nFill );
     void    setValue( TablePropertyMapTarget eWhich, sal_Int32 nSet );

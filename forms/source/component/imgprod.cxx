@@ -42,10 +42,10 @@ public:
 
     ImgProdLockBytes( SvStream* pStm, bool bOwner );
     explicit ImgProdLockBytes( css::uno::Reference< css::io::XInputStream > & rStreamRef );
-    virtual             ~ImgProdLockBytes();
+    virtual             ~ImgProdLockBytes() override;
 
-    virtual ErrCode     ReadAt( sal_uInt64 nPos, void* pBuffer, sal_Size nCount, sal_Size * pRead ) const override;
-    virtual ErrCode     WriteAt( sal_uInt64 nPos, const void* pBuffer, sal_Size nCount, sal_Size * pWritten ) override;
+    virtual ErrCode     ReadAt( sal_uInt64 nPos, void* pBuffer, std::size_t nCount, std::size_t * pRead ) const override;
+    virtual ErrCode     WriteAt( sal_uInt64 nPos, const void* pBuffer, std::size_t nCount, std::size_t * pWritten ) override;
     virtual ErrCode     Flush() const override;
     virtual ErrCode     SetSize( sal_uInt64 nSize ) override;
     virtual ErrCode     Stat( SvLockBytesStat*, SvLockBytesStatFlag ) const override;
@@ -90,7 +90,7 @@ ImgProdLockBytes::~ImgProdLockBytes()
 
 
 ErrCode ImgProdLockBytes::ReadAt(sal_uInt64 const nPos,
-        void* pBuffer, sal_Size nCount, sal_Size * pRead) const
+        void* pBuffer, std::size_t nCount, std::size_t * pRead) const
 {
     if( GetStream() )
     {
@@ -101,7 +101,7 @@ ErrCode ImgProdLockBytes::ReadAt(sal_uInt64 const nPos,
     }
     else
     {
-        const sal_Size nSeqLen = maSeq.getLength();
+        const std::size_t nSeqLen = maSeq.getLength();
         ErrCode nErr = ERRCODE_NONE;
 
         if( nPos < nSeqLen )
@@ -121,7 +121,7 @@ ErrCode ImgProdLockBytes::ReadAt(sal_uInt64 const nPos,
 
 
 ErrCode ImgProdLockBytes::WriteAt(sal_uInt64 const nPos,
-        const void* pBuffer, sal_Size nCount, sal_Size * pWritten)
+        const void* pBuffer, std::size_t nCount, std::size_t * pWritten)
 {
     if( GetStream() )
         return SvLockBytes::WriteAt( nPos, pBuffer, nCount, pWritten );
@@ -224,7 +224,7 @@ void ImageProducer::SetImage( const OUString& rPath )
     }
     else if( !maURL.isEmpty() )
     {
-        SvStream* pIStm = ::utl::UcbStreamHelper::CreateStream( maURL, STREAM_STD_READ );
+        SvStream* pIStm = ::utl::UcbStreamHelper::CreateStream( maURL, StreamMode::STD_READ );
         mpStm = pIStm ? new SvStream( new ImgProdLockBytes( pIStm, true ) ) : nullptr;
     }
     else
@@ -259,7 +259,7 @@ void ImageProducer::setImage( css::uno::Reference< css::io::XInputStream > & rIn
 
 void ImageProducer::NewDataAvailable()
 {
-    if( ( GRAPHIC_NONE == mpGraphic->GetType() ) || mpGraphic->GetContext() )
+    if( ( GraphicType::NONE == mpGraphic->GetType() ) || mpGraphic->GetContext() )
         startProduction();
 }
 
@@ -271,17 +271,17 @@ void ImageProducer::startProduction() throw(css::uno::RuntimeException, std::exc
         bool bNotifyEmptyGraphics = false;
 
         // valid stream or filled graphic? => update consumers
-        if( mpStm || ( mpGraphic->GetType() != GRAPHIC_NONE ) )
+        if( mpStm || ( mpGraphic->GetType() != GraphicType::NONE ) )
         {
             // if we already have a graphic, we don't have to import again;
             // graphic is cleared if a new Stream is set
-            if( ( mpGraphic->GetType() == GRAPHIC_NONE ) || mpGraphic->GetContext() )
+            if( ( mpGraphic->GetType() == GraphicType::NONE ) || mpGraphic->GetContext() )
             {
                 if ( ImplImportGraphic( *mpGraphic ) )
                     maDoneHdl.Call( mpGraphic );
             }
 
-            if( mpGraphic->GetType() != GRAPHIC_NONE )
+            if( mpGraphic->GetType() != GraphicType::NONE )
                 ImplUpdateData( *mpGraphic );
             else
                 bNotifyEmptyGraphics = true;

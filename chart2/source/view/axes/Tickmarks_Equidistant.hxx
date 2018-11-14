@@ -33,7 +33,7 @@ public:
     EquidistantTickIter( TickInfoArraysType& rTickInfos
             , const ExplicitIncrementData& rIncrement
             , sal_Int32 nMinDepth=0, sal_Int32 nMaxDepth=-1 );
-    virtual ~EquidistantTickIter();
+    virtual ~EquidistantTickIter() override;
 
     double*     firstValue();
     double*     nextValue();
@@ -108,7 +108,7 @@ private: //methods
     double*     getMajorTick( sal_Int32 nTick ) const;
     double*     getMinorTick( sal_Int32 nTick, sal_Int32 nDepth
                     , double fStartParentTick, double fNextParentTick ) const;
-    sal_Int32   getMaxTickCount( sal_Int32 nDepth = 0 ) const;
+    sal_Int32   getMaxTickCount( sal_Int32 nDepth ) const;
     sal_Int32   getTickDepth() const;
 
     bool        isVisible( double fValue ) const;

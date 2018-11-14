@@ -27,6 +27,7 @@
 #include <tools/datetime.hxx>
 #include "poolfmt.hxx"
 #include "unoredline.hxx"
+#include <o3tl/any.hxx>
 #include <xmloff/xmltoken.hxx>
 #include <vcl/svapp.hxx>
 #include <osl/mutex.hxx>
@@ -46,7 +47,7 @@ using ::com::sun::star::beans::XPropertySetInfo;
 // using util::DateTime;
 
 // a few helper functions
-static SwDoc* lcl_GetDocViaTunnel( Reference<XTextCursor> & rCursor )
+static SwDoc* lcl_GetDocViaTunnel( Reference<XTextCursor> const & rCursor )
 {
     Reference<XUnoTunnel> xTunnel( rCursor, UNO_QUERY);
     OSL_ENSURE(xTunnel.is(), "missing XUnoTunnel for XTextCursor");
@@ -56,7 +57,7 @@ static SwDoc* lcl_GetDocViaTunnel( Reference<XTextCursor> & rCursor )
     return (pXCursor) ? pXCursor->GetDoc() : nullptr;
 }
 
-static SwDoc* lcl_GetDocViaTunnel( Reference<XTextRange> & rRange )
+static SwDoc* lcl_GetDocViaTunnel( Reference<XTextRange> const & rRange )
 {
     Reference<XUnoTunnel> xTunnel(rRange, UNO_QUERY);
     OSL_ENSURE(xTunnel.is(), "missing XUnoTunnel for XTextRange");
@@ -265,12 +266,12 @@ XMLRedlineImportHelper::XMLRedlineImportHelper(
     }
 
     // get redline mode
-    bShowChanges = *static_cast<sal_Bool const *>(
+    bShowChanges = *o3tl::doAccess<bool>(
         ( bHandleShowChanges ? xModelPropertySet : xImportInfoPropertySet )
-        ->getPropertyValue( g_sShowChanges ).getValue());
-    bRecordChanges = *static_cast<sal_Bool const *>(
+        ->getPropertyValue( g_sShowChanges ));
+    bRecordChanges = *o3tl::doAccess<bool>(
         ( bHandleRecordChanges ? xModelPropertySet : xImportInfoPropertySet )
-        ->getPropertyValue( g_sRecordChanges ).getValue());
+        ->getPropertyValue( g_sRecordChanges ));
     {
         Any aAny = (bHandleProtectionKey  ? xModelPropertySet
                                           : xImportInfoPropertySet )
@@ -436,7 +437,7 @@ void XMLRedlineImportHelper::Add(
 }
 
 Reference<XTextCursor> XMLRedlineImportHelper::CreateRedlineTextSection(
-    Reference<XTextCursor> xOldCursor,
+    Reference<XTextCursor> const & xOldCursor,
     const OUString& rId)
 {
     Reference<XTextCursor> xReturn;
@@ -478,7 +479,7 @@ Reference<XTextCursor> XMLRedlineImportHelper::CreateRedlineTextSection(
         SwPosition aPos(*pRedlineNode);
         SwXTextCursor *const pXCursor =
             new SwXTextCursor(*pDoc, pXText, CURSOR_REDLINE, aPos);
-        pXCursor->GetCursor().Move(fnMoveForward, fnGoNode);
+        pXCursor->GetCursor().Move(fnMoveForward, GoInNode);
         // cast to avoid ambiguity
         xReturn = static_cast<text::XWordCursor*>(pXCursor);
     }
@@ -675,9 +676,9 @@ void XMLRedlineImportHelper::InsertIntoDocument(RedlineInfo* pRedlineInfo)
         }
 
         // set redline mode (without doing the associated book-keeping)
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern(nsRedlineMode_t::REDLINE_ON);
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern(RedlineFlags::On);
         pDoc->getIDocumentRedlineAccess().AppendRedline(pRedline, false);
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern(nsRedlineMode_t::REDLINE_NONE);
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern(RedlineFlags::NONE);
     }
 }
 
@@ -714,8 +715,7 @@ SwRedlineData* XMLRedlineImportHelper::ConvertRedline(
     SwRedlineData* pData = new SwRedlineData(pRedlineInfo->eType,
                                              nAuthorId, aDT,
                                              pRedlineInfo->sComment,
-                                             pNext, // next data (if available)
-                                             nullptr); // no extra data
+                                             pNext); // next data (if available)
 
     return pData;
 }

@@ -127,7 +127,9 @@ $(eval $(call gb_Rdb_add_components,services,\
 	$(if $(filter MACOSX,$(OS)), \
 		$(call gb_Helper_optional,AVMEDIA,avmedia/source/macavf/avmediaMacAVF) \
 		$(if $(filter TRUE,$(ENABLE_MACOSX_SANDBOX)),, \
-			$(call gb_Helper_optional,AVMEDIA,avmedia/source/quicktime/avmediaQuickTime) \
+			$(if $(shell test $(MACOSX_SDK_VERSION) -ge 101200 || echo nope), \
+				$(call gb_Helper_optional,AVMEDIA,avmedia/source/quicktime/avmediaQuickTime) \
+			) \
 		) \
 		lingucomponent/source/spellcheck/macosxspell/MacOSXSpell \
 		fpicker/source/aqua/fps_aqua \
@@ -213,8 +215,8 @@ $(eval $(call gb_Rdb_add_components,services,\
 		extensions/source/update/check/updchk.uno \
 		extensions/source/update/ui/updchk \
 	) \
-	$(if $(ENABLE_OPENGL), \
-		slideshow/source/engine/OGLTrans/ogltrans \
+	$(if $(ENABLE_OPENGL_TRANSITIONS), \
+		slideshow/source/engine/opengl/ogltrans \
 	) \
 	$(if $(ENABLE_TDE), \
 		shell/source/backends/kdebe/tdebe1 \
@@ -229,10 +231,8 @@ $(eval $(call gb_Rdb_add_components,services,\
 		wizards/com/sun/star/wizards/report/report \
 		wizards/com/sun/star/wizards/table/table \
 	) \
-    $(if $(ENABLE_OPENGL), \
-        $(if $(ENABLE_GLTF), \
-			$(call gb_Helper_optional,AVMEDIA,avmedia/source/opengl/avmediaogl) \
-		) \
+    $(if $(ENABLE_GLTF), \
+		$(call gb_Helper_optional,AVMEDIA,avmedia/source/opengl/avmediaogl) \
 	) \
 ))
 

@@ -70,7 +70,7 @@ class ODateTimeDialog : public ModalDialog
     */
     sal_Int32 getFormatKey(bool _bDate) const;
 
-    DECL_LINK_TYPED( CBClickHdl, Button*, void );
+    DECL_LINK( CBClickHdl, Button*, void );
     ODateTimeDialog(const ODateTimeDialog&) = delete;
     void operator =(const ODateTimeDialog&) = delete;
 
@@ -80,7 +80,7 @@ public:
     ODateTimeDialog( vcl::Window* pParent
                         ,const css::uno::Reference< css::report::XSection>& _xHoldAlive
                         ,::rptui::OReportController* _pController);
-    virtual ~ODateTimeDialog();
+    virtual ~ODateTimeDialog() override;
     virtual void dispose() override;
     virtual short   Execute() override;
 };

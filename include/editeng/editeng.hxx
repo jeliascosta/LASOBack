@@ -158,7 +158,7 @@ private:
 
                                        EditEngine( const EditEngine& ) = delete;
                        EditEngine&     operator=( const EditEngine& ) = delete;
-    EDITENG_DLLPRIVATE bool            PostKeyEvent( const KeyEvent& rKeyEvent, EditView* pView, vcl::Window* pFrameWin = nullptr );
+    EDITENG_DLLPRIVATE bool            PostKeyEvent( const KeyEvent& rKeyEvent, EditView* pView, vcl::Window* pFrameWin );
 
     EDITENG_DLLPRIVATE void CursorMoved(ContentNode* pPrevNode);
     EDITENG_DLLPRIVATE void CheckIdleFormatter();
@@ -172,7 +172,7 @@ private:
             CreateTransferable(const EditSelection& rSelection);
 
     EDITENG_DLLPRIVATE EditSelection InsertText(
-        css::uno::Reference<css::datatransfer::XTransferable >& rxDataObj,
+        css::uno::Reference<css::datatransfer::XTransferable > const & rxDataObj,
         const OUString& rBaseURL, const EditPaM& rPaM, bool bUseSpecial);
 
     EDITENG_DLLPRIVATE EditPaM EndOfWord(const EditPaM& rPaM);
@@ -227,7 +227,7 @@ public:
 
     void            InsertView(EditView* pEditView, size_t nIndex = EE_APPEND);
     EditView*       RemoveView( EditView* pEditView );
-    void            RemoveView(size_t nIndex = EE_APPEND);
+    void            RemoveView(size_t nIndex);
     EditView*       GetView(size_t nIndex = 0) const;
     size_t          GetViewCount() const;
     bool            HasView( EditView* pView ) const;
@@ -326,7 +326,7 @@ public:
 
     void            RemoveAttribs( const ESelection& rSelection, bool bRemoveParaAttribs, sal_uInt16 nWhich );
 
-    void            ShowParagraph( sal_Int32 nParagraph, bool bShow = true );
+    void            ShowParagraph( sal_Int32 nParagraph, bool bShow );
 
     ::svl::IUndoManager& GetUndoManager();
     ::svl::IUndoManager* SetUndoManager(::svl::IUndoManager* pNew);
@@ -358,7 +358,7 @@ public:
     long            GetFirstLineStartX( sal_Int32 nParagraph );
     Point           GetDocPosTopLeft( sal_Int32 nParagraph );
     Point           GetDocPos( const Point& rPaperPos ) const;
-    bool            IsTextPos( const Point& rPaperPos, sal_uInt16 nBorder = 0 );
+    bool            IsTextPos( const Point& rPaperPos, sal_uInt16 nBorder );
 
     // StartDocPos corresponds to VisArea.TopLeft().
     void            Draw( OutputDevice* pOutDev, const Rectangle& rOutRect );
@@ -395,7 +395,7 @@ public:
     void            QuickDelete( const ESelection& rSel );
     void            QuickMarkToBeRepainted( sal_Int32 nPara );
 
-    void            SetGlobalCharStretching( sal_uInt16 nX = 100, sal_uInt16 nY = 100 );
+    void            SetGlobalCharStretching( sal_uInt16 nX, sal_uInt16 nY = 100 );
     void            GetGlobalCharStretching( sal_uInt16& rX, sal_uInt16& rY ) const;
 
     void            SetEditTextObjectPool( SfxItemPool* pPool );
@@ -415,7 +415,7 @@ public:
     void            EraseVirtualDevice();
 
     void            SetSpeller( css::uno::Reference<
-                            css::linguistic2::XSpellChecker1 > &xSpeller );
+                            css::linguistic2::XSpellChecker1 > const &xSpeller );
     css::uno::Reference<
         css::linguistic2::XSpellChecker1 >
                     GetSpeller();
@@ -533,6 +533,7 @@ public:
 
     EditDoc& GetEditDoc();
     const EditDoc& GetEditDoc() const;
+    void dumpAsXmlEditDoc(struct _xmlTextWriter* pWriter) const;
 
     ParaPortionList& GetParaPortions();
     const ParaPortionList& GetParaPortions() const;
@@ -547,7 +548,7 @@ public:
 
     EditPaM CreateEditPaM(const EPaM& rEPaM);
     EditPaM ConnectParagraphs(
-        ContentNode* pLeft, ContentNode* pRight, bool bBackward = false);
+        ContentNode* pLeft, ContentNode* pRight, bool bBackward);
 
     EditPaM InsertField(const EditSelection& rEditSelection, const SvxFieldItem& rFld);
     EditPaM InsertText(const EditSelection& aCurEditSelection, const OUString& rStr);
@@ -590,16 +591,16 @@ public:
 
     void InsertFeature(const EditSelection& rEditSelection, const SfxPoolItem& rItem);
 
-    EditSelection MoveParagraphs(const Range& rParagraphs, sal_Int32 nNewPos, EditView* pCurView);
+    EditSelection MoveParagraphs(const Range& rParagraphs, sal_Int32 nNewPos);
 
     void RemoveCharAttribs(sal_Int32 nPara, sal_uInt16 nWhich = 0, bool bRemoveFeatures = false);
-    void RemoveCharAttribs(const EditSelection& rSel, bool bRemoveParaAttribs, sal_uInt16 nWhich = 0);
+    void RemoveCharAttribs(const EditSelection& rSel, bool bRemoveParaAttribs, sal_uInt16 nWhich);
 
     ViewsType& GetEditViews();
     const ViewsType& GetEditViews() const;
 
     void SetUndoMode(bool b);
-    void FormatAndUpdate(EditView* pCurView = nullptr, bool bCalledFromUndo = false);
+    void FormatAndUpdate(EditView* pCurView, bool bCalledFromUndo = false);
 
     void Undo(EditView* pView);
     void Redo(EditView* pView);

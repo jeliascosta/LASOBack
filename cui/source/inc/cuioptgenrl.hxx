@@ -50,20 +50,20 @@ private:
     unsigned nNameRow;
     unsigned nShortNameField;
 
-    DECL_LINK_TYPED( ModifyHdl_Impl, Edit&, void );
+    DECL_LINK( ModifyHdl_Impl, Edit&, void );
 
-    bool                GetAddress_Impl();
-    void                SetAddress_Impl();
+    bool                GetData_Impl();
+    void                SetData_Impl();
 
     void InitControls ();
     void SetLinks ();
 
 protected:
-    virtual sfxpg       DeactivatePage( SfxItemSet* pSet ) override;
+    virtual DeactivateRC DeactivatePage( SfxItemSet* pSet ) override;
 
 public:
     SvxGeneralTabPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~SvxGeneralTabPage();
+    virtual ~SvxGeneralTabPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rAttrSet );

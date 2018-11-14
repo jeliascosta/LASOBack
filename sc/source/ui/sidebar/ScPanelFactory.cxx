@@ -69,7 +69,7 @@ Reference<ui::XUIElement> SAL_CALL ScPanelFactory::createUIElement (
         const sal_uInt64 nBindingsValue (aArguments.getOrDefault("SfxBindings", sal_uInt64(0)));
         SfxBindings* pBindings = reinterpret_cast<SfxBindings*>(nBindingsValue);
 
-        vcl::Window* pParentWindow = VCLUnoHelper::GetWindow(xParentWindow);
+        VclPtr<vcl::Window> pParentWindow = VCLUnoHelper::GetWindow(xParentWindow);
         if ( ! xParentWindow.is() || pParentWindow==nullptr)
             throw RuntimeException(
                 "PanelFactory::createUIElement called without ParentWindow",
@@ -93,12 +93,12 @@ Reference<ui::XUIElement> SAL_CALL ScPanelFactory::createUIElement (
             pPanel = NumberFormatPropertyPanel::Create( pParentWindow, xFrame, pBindings );
         else if (rsResourceURL.endsWith("/NavigatorPanel"))
         {
-            pPanel = VclPtr<ScNavigatorDlg>::Create(pBindings, nullptr, pParentWindow, false);
+            pPanel = VclPtr<ScNavigatorDlg>::Create(pBindings, pParentWindow);
             nMinimumSize = 0;
         }
         else if (rsResourceURL.endsWith("/FunctionsPanel"))
         {
-            pPanel = VclPtr<ScFunctionWin>::Create(pBindings, pParentWindow, ScResId(FID_FUNCTION_BOX));
+            pPanel = VclPtr<ScFunctionWin>::Create(pParentWindow, xFrame);
             nMinimumSize = 0;
         }
 

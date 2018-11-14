@@ -48,7 +48,9 @@
 #include <rtl/ustrbuf.hxx>
 #include <vcl/bitmap.hxx>
 
+#if HAVE_FEATURE_OPENCL
 #include <opencl/openclwrapper.hxx>
+#endif
 #include <officecfg/Office/Common.hxx>
 
 using namespace ::com::sun::star::uno;
@@ -107,7 +109,7 @@ void AboutDialog::dispose()
     SfxModalDialog::dispose();
 }
 
-IMPL_LINK_TYPED( AboutDialog, HandleClick, Button*, pButton, void )
+IMPL_LINK( AboutDialog, HandleClick, Button*, pButton, void )
 {
     OUString sURL = "";
 
@@ -285,8 +287,7 @@ OUString AboutDialog::GetVersionString()
         sVersion += m_sBuildStr.replaceAll("$BUILDID", sBuildId);
     }
 
-    sVersion += "\n";
-    sVersion += Application::GetHWOSConfInfo();
+    sVersion += "\n" + Application::GetHWOSConfInfo();
 
     if (EXTRA_BUILDID[0] != '\0')
     {
@@ -304,6 +305,7 @@ OUString AboutDialog::GetVersionString()
         sVersion += m_aLocaleStr.replaceAll("$LOCALE", aLocaleStr);
     }
 
+#if HAVE_FEATURE_OPENCL
     OUString aCalcMode = "Calc: "; // Calc calculation mode
     bool bSWInterp = officecfg::Office::Common::Misc::UseSwInterpreter::get();
     bool bOpenCL = opencl::GPUEnv::isOpenCLEnabled();
@@ -314,17 +316,15 @@ OUString AboutDialog::GetVersionString()
     else
         aCalcMode += "single";
     sVersion += "; " + aCalcMode;
+#endif
 
     return sVersion;
 }
 
 OUString AboutDialog::GetCopyrightString()
 {
-    OUString aCopyrightString = m_aVendorTextStr;
-    aCopyrightString += "\n";
-
-    aCopyrightString += m_aCopyrightTextStr;
-    aCopyrightString += "\n";
+    OUString aCopyrightString  = m_aVendorTextStr + "\n"
+                               + m_aCopyrightTextStr + "\n";
 
     if (utl::ConfigManager::getProductName() == "LibreOffice")
         aCopyrightString += m_aBasedTextStr;

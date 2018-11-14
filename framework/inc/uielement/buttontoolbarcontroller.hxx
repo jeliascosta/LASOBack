@@ -32,7 +32,7 @@
 #include <com/sun/star/frame/XToolbarController.hpp>
 #include <com/sun/star/uno/XComponentContext.hpp>
 
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <cppuhelper/weak.hxx>
 #include <vcl/vclptr.hxx>
 
@@ -46,14 +46,14 @@ class ButtonToolbarController : public css::frame::XStatusListener,
                                 public css::lang::XInitialization,
                                 public css::util::XUpdatable,
                                 public css::lang::XComponent,
-                                public ::comphelper::OBaseMutex,
+                                public ::cppu::BaseMutex,
                                 public ::cppu::OWeakObject
 {
     public:
         ButtonToolbarController( const css::uno::Reference< css::uno::XComponentContext >& rxContext,
                                  ToolBox* pToolBar,
                                  const OUString& aCommand );
-        virtual ~ButtonToolbarController();
+        virtual ~ButtonToolbarController() override;
 
         // XInterface
         virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) throw (css::uno::RuntimeException, std::exception) override;

@@ -19,7 +19,7 @@
 #ifndef INCLUDED_DBACCESS_SOURCE_UI_INC_QUERYDESIGNVIEW_HXX
 #define INCLUDED_DBACCESS_SOURCE_UI_INC_QUERYDESIGNVIEW_HXX
 
-#include "queryview.hxx"
+#include "JoinDesignView.hxx"
 #include <vcl/split.hxx>
 #include "QEnumTypes.hxx"
 #include <com/sun/star/beans/XPropertySet.hpp>
@@ -54,8 +54,9 @@ namespace dbaui
 
     class OSelectionBrowseBox;
     class OQueryContainerWindow;
+    class OQueryController;
 
-    class OQueryDesignView : public OQueryView
+    class OQueryDesignView : public OJoinDesignView
     {
         enum ChildFocusState
         {
@@ -74,26 +75,24 @@ namespace dbaui
         bool                                m_bInSplitHandler;
 
     public:
-        OQueryDesignView(OQueryContainerWindow* pParent, OQueryController& _rController,const css::uno::Reference< css::uno::XComponentContext >& );
-        virtual ~OQueryDesignView();
+        OQueryDesignView(OQueryContainerWindow* pParent, OQueryController& _rController, const css::uno::Reference< css::uno::XComponentContext >& );
+        virtual ~OQueryDesignView() override;
         virtual void dispose() override;
 
-        virtual bool isCutAllowed() override;
-        virtual bool isPasteAllowed() override;
-        virtual bool isCopyAllowed() override;
-        virtual void copy() override;
-        virtual void cut() override;
-        virtual void paste() override;
+        bool isCutAllowed();
+        bool isPasteAllowed();
+        bool isCopyAllowed();
+        void copy();
+        void cut();
+        void paste();
         // clears the whole query
-        virtual void clear() override;
+        void clear();
         // set the view readonly or not
         virtual void setReadOnly(bool _bReadOnly) override;
         // check if the statement is correct when not returning false
         bool checkStatement();
-        // set the statement for representation
-        virtual void setStatement(const OUString& _rsStatement) override;
         // returns the current sql statement
-        virtual OUString getStatement() override;
+        OUString getStatement();
         /// late construction
         virtual void Construct() override;
         virtual void initialize() override;
@@ -110,9 +109,6 @@ namespace dbaui
 
         SqlParseError   InsertField( const OTableFieldDescRef& rInfo, bool bActivate = true);
         bool            HasFieldByAliasName(const OUString& rFieldName, OTableFieldDescRef& rInfo) const;
-        // save the position of the table window and the pos of the splitters
-        // called when fields are deleted
-        void DeleteFields( const OUString& rAliasName );
         // called when a table from tabview was deleted
         void TableDeleted(const OUString& rAliasName);
 
@@ -151,10 +147,10 @@ namespace dbaui
     protected:
         // return the Rectangle where I can paint myself
         virtual void resizeDocumentView(Rectangle& rRect) override;
-        DECL_LINK_TYPED( SplitHdl, Splitter*, void );
+        DECL_LINK( SplitHdl, Splitter*, void );
 
     private:
-        using OQueryView::SaveTabWinUIConfig;
+        using OJoinDesignView::SaveTabWinUIConfig;
     };
 }
 #endif // INCLUDED_DBACCESS_SOURCE_UI_INC_QUERYDESIGNVIEW_HXX

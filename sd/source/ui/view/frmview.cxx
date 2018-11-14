@@ -176,9 +176,9 @@ FrameView::FrameView(SdDrawDocument* pDrawDoc, FrameView* pFrameView /* = NULK *
         mnSelectedPage = pFrameView->GetSelectedPage();
         mnSelectedPageOnLoad = pFrameView->GetSelectedPageOnLoad();
         meEditMode = pFrameView->GetViewShEditMode();
-        // meStandardEditMode = pFrameView->GetViewShEditMode(PK_STANDARD);
-        // meNotesEditMode = pFrameView->GetViewShEditMode(PK_NOTES);
-        // meHandoutEditMode = pFrameView->GetViewShEditMode(PK_HANDOUT);
+        // meStandardEditMode = pFrameView->GetViewShEditMode(PageKind::Standard);
+        // meNotesEditMode = pFrameView->GetViewShEditMode(PageKind::Notes);
+        // meHandoutEditMode = pFrameView->GetViewShEditMode(PageKind::Handout);
         SetViewShEditModeOnLoad(pFrameView->GetViewShEditModeOnLoad());
         mbLayerMode = pFrameView->IsLayerMode();
         mbQuickEdit = pFrameView->IsQuickEdit();
@@ -206,15 +206,15 @@ FrameView::FrameView(SdDrawDocument* pDrawDoc, FrameView* pFrameView /* = NULK *
         mbNoColors = true;
         mbNoAttribs = false;
         maVisArea = Rectangle( Point(), Size(0, 0) );
-        mePageKind = PK_STANDARD;
-        mePageKindOnLoad = PK_STANDARD;
+        mePageKind = PageKind::Standard;
+        mePageKindOnLoad = PageKind::Standard;
         mnSelectedPage = 0;
         mnSelectedPageOnLoad = 0;
-        meEditMode = EM_PAGE;
-        // meStandardEditMode = EM_PAGE;
-        // meNotesEditMode = EM_PAGE;
-        // meHandoutEditMode = EM_MASTERPAGE;
-        SetViewShEditModeOnLoad(EM_PAGE);
+        meEditMode = EditMode::Page;
+        // meStandardEditMode = EditMode::Page;
+        // meNotesEditMode = EditMode::Page;
+        // meHandoutEditMode = EditMode::MasterPage;
+        SetViewShEditModeOnLoad(EditMode::Page);
         mbLayerMode = false;
         SetEliminatePolyPoints(false);
         mbDoubleClickTextEdit = false;
@@ -349,17 +349,17 @@ static OUString createHelpLinesString( const SdrHelpLineList& rHelpLines )
 
         switch( rHelpLine.GetKind() )
         {
-            case SDRHELPLINE_POINT:
+            case SdrHelpLineKind::Point:
                 aLines.append( 'P' );
                 aLines.append( (sal_Int32)rPos.X() );
                 aLines.append( ',' );
                 aLines.append( (sal_Int32)rPos.Y() );
                 break;
-            case SDRHELPLINE_VERTICAL:
+            case SdrHelpLineKind::Vertical:
                 aLines.append( 'V' );
                 aLines.append( (sal_Int32)rPos.X() );
                 break;
-            case SDRHELPLINE_HORIZONTAL:
+            case SdrHelpLineKind::Horizontal:
                 aLines.append( 'H' );
                 aLines.append( (sal_Int32)rPos.Y() );
                 break;
@@ -422,9 +422,9 @@ void FrameView::WriteUserDataSequence ( css::uno::Sequence < css::beans::Propert
 
     aUserData.addValue( sUNO_View_SlidesPerRow, makeAny( (sal_Int16)GetSlidesPerRow() ) );
     aUserData.addValue( sUNO_View_EditMode, makeAny( (sal_Int32)GetViewShEditMode() ) );
-    // aUserData.addValue( sUNO_View_EditModeStandard, makeAny( (sal_Int32)GetViewShEditMode( PK_STANDARD ) ) );
-    // aUserData.addValue( sUNO_View_EditModeNotes, makeAny( (sal_Int32)GetViewShEditMode( PK_NOTES ) ) );
-    // aUserData.addValue( sUNO_View_EditModeHandout, makeAny( (sal_Int32)GetViewShEditMode( PK_HANDOUT ) ) );
+    // aUserData.addValue( sUNO_View_EditModeStandard, makeAny( (sal_Int32)GetViewShEditMode( PageKind::Standard ) ) );
+    // aUserData.addValue( sUNO_View_EditModeNotes, makeAny( (sal_Int32)GetViewShEditMode( PageKind::Notes ) ) );
+    // aUserData.addValue( sUNO_View_EditModeHandout, makeAny( (sal_Int32)GetViewShEditMode( PageKind::Handout ) ) );
 
     {
         const Rectangle aVisArea = GetVisArea();
@@ -473,13 +473,13 @@ static void createHelpLinesFromString( const OUString& rLines, SdrHelpLineList& 
         switch( *pStr )
         {
         case (sal_Unicode)'P':
-            aNewHelpLine.SetKind( SDRHELPLINE_POINT );
+            aNewHelpLine.SetKind( SdrHelpLineKind::Point );
             break;
         case (sal_Unicode)'V':
-            aNewHelpLine.SetKind( SDRHELPLINE_VERTICAL );
+            aNewHelpLine.SetKind( SdrHelpLineKind::Vertical );
             break;
         case (sal_Unicode)'H':
-            aNewHelpLine.SetKind( SDRHELPLINE_HORIZONTAL );
+            aNewHelpLine.SetKind( SdrHelpLineKind::Horizontal );
             break;
         default:
             OSL_FAIL( "syntax error in snap lines settings string" );
@@ -495,7 +495,7 @@ static void createHelpLinesFromString( const OUString& rLines, SdrHelpLineList& 
 
         sal_Int32 nValue = sBuffer.makeStringAndClear().toInt32();
 
-        if( aNewHelpLine.GetKind() == SDRHELPLINE_HORIZONTAL )
+        if( aNewHelpLine.GetKind() == SdrHelpLineKind::Horizontal )
         {
             aPoint.Y() = nValue;
         }
@@ -503,7 +503,7 @@ static void createHelpLinesFromString( const OUString& rLines, SdrHelpLineList& 
         {
             aPoint.X() = nValue;
 
-            if( aNewHelpLine.GetKind() == SDRHELPLINE_POINT )
+            if( aNewHelpLine.GetKind() == SdrHelpLineKind::Point )
             {
                 if( *pStr++ != ',' )
                     return;
@@ -529,7 +529,7 @@ void FrameView::ReadUserDataSequence ( const css::uno::Sequence < css::beans::Pr
     if (nLength)
     {
         SdDrawDocument* pDrawDocument = dynamic_cast<SdDrawDocument*>(GetModel());
-        const bool bImpress = pDrawDocument && pDrawDocument->GetDocumentType() == DOCUMENT_TYPE_IMPRESS;
+        const bool bImpress = pDrawDocument && pDrawDocument->GetDocumentType() == DocumentType::Impress;
 
         bool bBool = false;
         sal_Int32 nInt32 = 0;
@@ -877,7 +877,7 @@ void FrameView::ReadUserDataSequence ( const css::uno::Sequence < css::beans::Pr
             }
         }
 
-        SetViewShEditModeOnLoad(EM_PAGE);
+        SetViewShEditModeOnLoad(EditMode::Page);
 
         const Fraction aSnapGridWidthX( aSnapGridWidthXNum, aSnapGridWidthXDom );
         const Fraction aSnapGridWidthY( aSnapGridWidthYNum, aSnapGridWidthYDom );

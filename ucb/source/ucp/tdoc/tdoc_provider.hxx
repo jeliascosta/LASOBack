@@ -53,12 +53,11 @@ class StorageElementFactory;
 
 class ContentProvider :
     public ::ucbhelper::ContentProviderImplHelper,
-    public css::frame::XTransientDocumentsDocumentContentFactory,
-    public OfficeDocumentsEventListener
+    public css::frame::XTransientDocumentsDocumentContentFactory
 {
 public:
     explicit ContentProvider( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-    virtual ~ContentProvider();
+    virtual ~ContentProvider() override;
 
     // XInterface
     virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
@@ -140,8 +139,8 @@ public:
     queryDocumentModel( const OUString & rUri ) const;
 
     // interface OfficeDocumentsEventListener
-    virtual void notifyDocumentOpened( const OUString & rDocId ) override;
-    virtual void notifyDocumentClosed( const OUString & rDocId ) override;
+    void notifyDocumentOpened( const OUString & rDocId );
+    void notifyDocumentClosed( const OUString & rDocId );
 
 private:
     rtl::Reference< OfficeDocumentsManager > m_xDocsMgr;

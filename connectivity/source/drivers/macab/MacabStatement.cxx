@@ -65,12 +65,11 @@ IMPLEMENT_SERVICE_INFO(MacabStatement, "com.sun.star.sdbc.drivers.MacabStatement
 
 MacabCommonStatement::MacabCommonStatement(MacabConnection* _pConnection )
     : MacabCommonStatement_BASE(m_aMutex),
-    OPropertySetHelper(MacabCommonStatement_BASE::rBHelper),
+    OPropertySetHelper(rBHelper),
     m_aParser(_pConnection->getDriver()->getComponentContext()),
-    m_aSQLIterator(_pConnection, _pConnection->createCatalog()->getTables(), m_aParser, nullptr ),
+    m_aSQLIterator(_pConnection, _pConnection->createCatalog()->getTables(), m_aParser ),
     m_pParseTree(nullptr),
-    m_pConnection(_pConnection),
-    rBHelper(MacabCommonStatement_BASE::rBHelper)
+    m_pConnection(_pConnection)
 {
     m_pConnection->acquire();
 }
@@ -79,16 +78,11 @@ MacabCommonStatement::~MacabCommonStatement()
 {
 }
 
-void MacabCommonStatement::disposing()
-{
-    MacabCommonStatement_BASE::disposing();
-}
-
-void MacabCommonStatement::resetParameters() const throw(::com::sun::star::sdbc::SQLException)
+void MacabCommonStatement::resetParameters() const throw(css::sdbc::SQLException)
 {
 }
 
-void MacabCommonStatement::getNextParameter(OUString &) const throw(::com::sun::star::sdbc::SQLException)
+void MacabCommonStatement::getNextParameter(OUString &) const throw(css::sdbc::SQLException)
 {
     impl_throwError(STR_PARA_ONLY_PREPARED);
 }
@@ -379,7 +373,7 @@ void SAL_CALL MacabCommonStatement::cancel(  ) throw(RuntimeException)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
-    checkDisposed(MacabCommonStatement_BASE::rBHelper.bDisposed);
+    checkDisposed(rBHelper.bDisposed);
     // cancel the current sql statement
 }
 
@@ -387,7 +381,7 @@ void SAL_CALL MacabCommonStatement::close(  ) throw(SQLException, RuntimeExcepti
 {
     {
         ::osl::MutexGuard aGuard( m_aMutex );
-        checkDisposed(MacabCommonStatement_BASE::rBHelper.bDisposed);
+        checkDisposed(rBHelper.bDisposed);
 
     }
     dispose();
@@ -397,7 +391,7 @@ sal_Bool SAL_CALL MacabCommonStatement::execute(
         const OUString& sql ) throw(SQLException, RuntimeException)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
-    checkDisposed(MacabCommonStatement_BASE::rBHelper.bDisposed);
+    checkDisposed(rBHelper.bDisposed);
 
     Reference< XResultSet > xRS = executeQuery(sql);
 
@@ -408,7 +402,7 @@ Reference< XResultSet > SAL_CALL MacabCommonStatement::executeQuery(
         const OUString& sql ) throw(SQLException, RuntimeException)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
-    checkDisposed(MacabCommonStatement_BASE::rBHelper.bDisposed);
+    checkDisposed(rBHelper.bDisposed);
 
 OSL_TRACE("Mac OS Address book - SQL Request: %s", OUtoCStr(sql));
 
@@ -467,7 +461,7 @@ OSL_TRACE("Mac OS Address book - SQL Request: %s", OUtoCStr(sql));
 Reference< XConnection > SAL_CALL MacabCommonStatement::getConnection(  ) throw(SQLException, RuntimeException)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
-    checkDisposed(MacabCommonStatement_BASE::rBHelper.bDisposed);
+    checkDisposed(rBHelper.bDisposed);
 
     // just return our connection here
     return m_pConnection;
@@ -476,7 +470,7 @@ Reference< XConnection > SAL_CALL MacabCommonStatement::getConnection(  ) throw(
 sal_Int32 SAL_CALL MacabCommonStatement::executeUpdate( const OUString& ) throw(SQLException, RuntimeException)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
-    checkDisposed(MacabCommonStatement_BASE::rBHelper.bDisposed);
+    checkDisposed(rBHelper.bDisposed);
 
     // the return values gives information about how many rows are affected by executing the sql statement
     return 0;
@@ -485,7 +479,7 @@ sal_Int32 SAL_CALL MacabCommonStatement::executeUpdate( const OUString& ) throw(
 Any SAL_CALL MacabCommonStatement::getWarnings(  ) throw(SQLException, RuntimeException)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
-    checkDisposed(MacabCommonStatement_BASE::rBHelper.bDisposed);
+    checkDisposed(rBHelper.bDisposed);
 
     return makeAny(m_aLastWarning);
 }
@@ -493,7 +487,7 @@ Any SAL_CALL MacabCommonStatement::getWarnings(  ) throw(SQLException, RuntimeEx
 void SAL_CALL MacabCommonStatement::clearWarnings(  ) throw(SQLException, RuntimeException)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
-    checkDisposed(MacabCommonStatement_BASE::rBHelper.bDisposed);
+    checkDisposed(rBHelper.bDisposed);
 
     m_aLastWarning = SQLWarning();
 }
@@ -505,25 +499,25 @@ void SAL_CALL MacabCommonStatement::clearWarnings(  ) throw(SQLException, Runtim
     Sequence< Property > aProps(10);
     Property* pProperties = aProps.getArray();
     sal_Int32 nPos = 0;
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_CURSORNAME),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_CURSORNAME),
         PROPERTY_ID_CURSORNAME, cppu::UnoType<OUString>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_ESCAPEPROCESSING),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_ESCAPEPROCESSING),
         PROPERTY_ID_ESCAPEPROCESSING, cppu::UnoType<bool>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FETCHDIRECTION),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FETCHDIRECTION),
         PROPERTY_ID_FETCHDIRECTION, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FETCHSIZE),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FETCHSIZE),
         PROPERTY_ID_FETCHSIZE, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_MAXFIELDSIZE),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_MAXFIELDSIZE),
         PROPERTY_ID_MAXFIELDSIZE, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_MAXROWS),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_MAXROWS),
         PROPERTY_ID_MAXROWS, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_QUERYTIMEOUT),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_QUERYTIMEOUT),
         PROPERTY_ID_QUERYTIMEOUT, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RESULTSETCONCURRENCY),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RESULTSETCONCURRENCY),
         PROPERTY_ID_RESULTSETCONCURRENCY, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RESULTSETTYPE),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RESULTSETTYPE),
         PROPERTY_ID_RESULTSETTYPE, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_USEBOOKMARKS),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_USEBOOKMARKS),
         PROPERTY_ID_USEBOOKMARKS, cppu::UnoType<bool>::get(), 0);
 
     return new ::cppu::OPropertyArrayHelper(aProps);
@@ -538,7 +532,7 @@ sal_Bool MacabCommonStatement::convertFastPropertyValue(
         Any &,
         Any &,
         sal_Int32,
-        const Any&) throw (::com::sun::star::lang::IllegalArgumentException)
+        const Any&) throw (css::lang::IllegalArgumentException)
 {
     bool bConverted = false;
     // here we have to try to convert
@@ -594,7 +588,7 @@ void SAL_CALL MacabCommonStatement::release() throw()
     MacabCommonStatement_BASE::release();
 }
 
-Reference< ::com::sun::star::beans::XPropertySetInfo > SAL_CALL MacabCommonStatement::getPropertySetInfo(  ) throw(RuntimeException)
+Reference< css::beans::XPropertySetInfo > SAL_CALL MacabCommonStatement::getPropertySetInfo(  ) throw(RuntimeException)
 {
     return ::cppu::OPropertySetHelper::createPropertySetInfo(getInfoHelper());
 }

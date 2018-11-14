@@ -21,7 +21,6 @@
 #define INCLUDED_SC_SOURCE_FILTER_INC_DRAWINGFRAGMENT_HXX
 
 #include <com/sun/star/awt/Rectangle.hpp>
-#include <com/sun/star/awt/Size.hpp>
 #include <oox/drawingml/shapegroupcontext.hxx>
 #include <oox/ole/axcontrol.hxx>
 #include <oox/drawingml/shape.hxx>
@@ -61,7 +60,7 @@ public:
     explicit            Shape(
                             const WorksheetHelper& rHelper,
                             const AttributeList& rAttribs,
-                            const sal_Char* pcServiceName = nullptr );
+                            const sal_Char* pcServiceName );
 
 protected:
     virtual void        finalizeXShape(

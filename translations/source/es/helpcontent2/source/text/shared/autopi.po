@@ -4,7 +4,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
 "POT-Creation-Date: 2016-11-09 14:10+0100\n"
-"PO-Revision-Date: 2017-03-21 07:14+0000\n"
+"PO-Revision-Date: 2017-10-18 21:21+0000\n"
 "Last-Translator: Adolfo Jayme Barrientos <fito@libreoffice.org>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: es\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Accelerator-Marker: ~\n"
 "X-Generator: Pootle 2.8\n"
-"X-POOTLE-MTIME: 1490080469.000000\n"
+"X-POOTLE-MTIME: 1508361668.000000\n"
 
 #: 01000000.xhp
 msgctxt ""
@@ -84,7 +84,7 @@ msgctxt ""
 "16\n"
 "help.text"
 msgid "<link href=\"text/shared/autopi/01130000.xhp\" name=\"Document Converter\">Document Converter</link>"
-msgstr "<link href=\"text/shared/autopi/01130000.xhp\" name=\"Document Converter\">Convertidor de documentos</link>"
+msgstr "<link href=\"text/shared/autopi/01130000.xhp\" name=\"Conversor de documentos\">Conversor de documentos</link>"
 
 #: 01000000.xhp
 msgctxt ""
@@ -252,7 +252,7 @@ msgctxt ""
 "3\n"
 "help.text"
 msgid "Please choose the type of letter and page design"
-msgstr "Elija el tipo de carta y el diseño de página"
+msgstr "Elija el tipo de carta y el diseño de la página"
 
 #: 01010100.xhp
 msgctxt ""
@@ -339,7 +339,7 @@ msgctxt ""
 "par_idN106A7\n"
 "help.text"
 msgid "Use letterhead paper with pre-printed elements"
-msgstr "Utilizar papel con membrete con elementos impresos"
+msgstr "Usar papel membretado con elementos preimpresos"
 
 #: 01010100.xhp
 msgctxt ""
@@ -391,7 +391,7 @@ msgctxt ""
 "3\n"
 "help.text"
 msgid "Specify items already on your letterhead paper"
-msgstr "Especifique elementos que ya están en su membrete"
+msgstr "Especifique los elementos que ya figuran en el papel membretado"
 
 #: 01010200.xhp
 msgctxt ""
@@ -427,7 +427,7 @@ msgctxt ""
 "34\n"
 "help.text"
 msgid "<ahelp hid=\"HID_LTRWIZ_NUMLOGOHEIGHT\">Defines the height of the object.</ahelp>"
-msgstr "<ahelp visibility=\"visible\" hid=\"HID_LTRWIZ_NUMLOGOHEIGHT\">Define la altura del logotipo.</ahelp>"
+msgstr "<ahelp hid=\"HID_LTRWIZ_NUMLOGOHEIGHT\">Define la altura del objeto.</ahelp>"
 
 #: 01010200.xhp
 msgctxt ""
@@ -445,7 +445,7 @@ msgctxt ""
 "32\n"
 "help.text"
 msgid "<ahelp hid=\"HID_LTRWIZ_NUMLOGOWIDTH\">Defines the width of the object.</ahelp>"
-msgstr "<ahelp visibility=\"visible\" hid=\"HID_LTRWIZ_NUMLOGOWIDTH\">Define el ancho del logotipo.</ahelp>"
+msgstr "<ahelp hid=\"HID_LTRWIZ_NUMLOGOWIDTH\">Define la anchura del objeto.</ahelp>"
 
 #: 01010200.xhp
 msgctxt ""
@@ -454,7 +454,7 @@ msgctxt ""
 "43\n"
 "help.text"
 msgid "Spacing to left margin"
-msgstr "Desde la izquierda/derecha"
+msgstr "Espaciado al margen izquierdo"
 
 #: 01010200.xhp
 msgctxt ""
@@ -463,7 +463,7 @@ msgctxt ""
 "44\n"
 "help.text"
 msgid "<ahelp hid=\"HID_LTRWIZ_NUMLOGOX\">Sets the object distance from the left page margin.</ahelp>"
-msgstr "<ahelp visibility=\"visible\" hid=\"HID_LTRWIZ_NUMLOGOX\">Establece la distancia entre el logotipo y el margen izquierdo o derecho de la página.</ahelp>"
+msgstr "<ahelp hid=\"HID_LTRWIZ_NUMLOGOX\">Establece la distancia entre el objeto y el margen izquierdo de la página.</ahelp>"
 
 #: 01010200.xhp
 msgctxt ""
@@ -472,7 +472,7 @@ msgctxt ""
 "45\n"
 "help.text"
 msgid "Spacing to top margin"
-msgstr "Desde arriba"
+msgstr "Espaciado al margen superior"
 
 #: 01010200.xhp
 msgctxt ""
@@ -481,7 +481,7 @@ msgctxt ""
 "46\n"
 "help.text"
 msgid "<ahelp hid=\"HID_LTRWIZ_NUMLOGOY\">Sets the object distance from the top page margin.</ahelp>"
-msgstr "<ahelp visibility=\"visible\" hid=\"HID_LTRWIZ_NUMLOGOY\">Establece la distancia entre el logotipo y el margen superior de la página.</ahelp>"
+msgstr "<ahelp hid=\"HID_LTRWIZ_NUMLOGOY\">Establece la distancia entre el objeto y el margen superior de la página.</ahelp>"
 
 #: 01010200.xhp
 msgctxt ""
@@ -505,7 +505,7 @@ msgctxt ""
 "par_idN106D2\n"
 "help.text"
 msgid "Return address in envelope window"
-msgstr "Remite en ventana de sobre"
+msgstr "Remitente en ventanilla de sobre"
 
 #: 01010200.xhp
 msgctxt ""
@@ -588,7 +588,7 @@ msgctxt ""
 "par_idN105FA\n"
 "help.text"
 msgid "Logo"
-msgstr "Sin logotipo"
+msgstr "Logotipo"
 
 #: 01010300.xhp
 msgctxt ""
@@ -604,7 +604,7 @@ msgctxt ""
 "par_idN10615\n"
 "help.text"
 msgid "Return address in envelope window"
-msgstr "Remite en ventana de sobre"
+msgstr "Remitente en ventanilla de sobre"
 
 #: 01010300.xhp
 msgctxt ""
@@ -1321,7 +1321,7 @@ msgctxt ""
 "par_idN105D7\n"
 "help.text"
 msgid "Logo"
-msgstr "Sin logotipo"
+msgstr "Logotipo"
 
 #: 01020200.xhp
 msgctxt ""
@@ -1904,7 +1904,7 @@ msgctxt ""
 "par_idN105E2\n"
 "help.text"
 msgid "<ahelp hid=\".\">Prints out a page on which you can write down the minutes during the meeting.</ahelp>"
-msgstr "<ahelp hid=\".\">Imprime una página en la que puede escribir los minutos durante la reunión.</ahelp>"
+msgstr "<ahelp hid=\".\">Imprime una página en la que puede escribir las minutas durante la reunión.</ahelp>"
 
 #: 01040100.xhp
 msgctxt ""
@@ -2044,7 +2044,7 @@ msgctxt ""
 "2\n"
 "help.text"
 msgid "<ahelp hid=\"HID_AGENDA_PAGE3\">Specifies the headings that you want to include in the agenda.</ahelp>"
-msgstr "<ahelp hid=\"HID_AGENDA_PAGE3\">Indica los encabezados que quiere incluir en el orden del día.</ahelp>"
+msgstr "<ahelp hid=\"HID_AGENDA_PAGE3\">Indica los títulos que quiere incluir en el orden del día.</ahelp>"
 
 #: 01040300.xhp
 msgctxt ""
@@ -2247,7 +2247,7 @@ msgctxt ""
 "par_idN10604\n"
 "help.text"
 msgid "Facility personnel"
-msgstr "Personal de la facilidad"
+msgstr "Personal de las instalaciones"
 
 #: 01040400.xhp
 msgctxt ""
@@ -2255,7 +2255,7 @@ msgctxt ""
 "par_idN10608\n"
 "help.text"
 msgid "<ahelp hid=\".\">Specifies whether to print a line where you can enter the facility personnel.</ahelp>"
-msgstr "<ahelp hid=\".\">Especifica si se imprimirá una línea en la que puede indicar los personal de la facilidad.</ahelp>"
+msgstr "<ahelp hid=\".\">Especifica si se imprimirá una línea donde indicar el personal de las instalaciones.</ahelp>"
 
 #: 01040400.xhp
 msgctxt ""
@@ -4906,7 +4906,7 @@ msgctxt ""
 "42\n"
 "help.text"
 msgid "The presenter uses the entered file name to change between the slides viewed by the audience. You can save the WebCast files locally or save them directly to an HTTP server. You can later transfer locally saved files to the HTTP server by FTP. Note that WebCast only works if the files are requested over an HTTP server."
-msgstr "El presentador utiliza el nombre de archivo especificado para cambiar las páginas que el público ve. Los archivos de WebCast se pueden guardar localmente o directamente en un servidor HTTP. Más adelante puede transferir por FTP los archivos guardados localmente al servidor HTTP. Tenga en cuenta que WebCast sólo funciona si los archivos se solicitan a través de un servidor HTTP."
+msgstr "La persona oradora utiliza el nombre de archivo especificado para cambiar las páginas que el público ve. Los archivos de WebCast se pueden guardar localmente o directamente en un servidor HTTP. Más adelante puede transferir por FTP los archivos guardados localmente al servidor HTTP. Observe que WebCast funciona solo si los archivos se solicitan a través de un servidor HTTP."
 
 #: 01110200.xhp
 msgctxt ""
@@ -6297,7 +6297,7 @@ msgctxt ""
 "tit\n"
 "help.text"
 msgid "Document Converter"
-msgstr "Convertidor de documentos"
+msgstr "Conversor de documentos"
 
 #: 01130000.xhp
 msgctxt ""
@@ -6306,7 +6306,7 @@ msgctxt ""
 "9\n"
 "help.text"
 msgid "Document Converter"
-msgstr "Convertidor de documentos"
+msgstr "Conversor de documentos"
 
 #: 01130000.xhp
 msgctxt ""
@@ -6333,7 +6333,7 @@ msgctxt ""
 "4\n"
 "help.text"
 msgid "The Document Converter Wizard contains the following pages:"
-msgstr "El Asistente para convertidor de documentos contiene las páginas siguientes:"
+msgstr "El Asistente de conversión de documentos contiene las páginas siguientes:"
 
 #: 01130000.xhp
 msgctxt ""
@@ -6342,7 +6342,7 @@ msgctxt ""
 "7\n"
 "help.text"
 msgid "Document Converter Summary"
-msgstr "Convertidor de documentos - Resumen"
+msgstr "Resumen del conversor de documentos"
 
 #: 01130000.xhp
 msgctxt ""
@@ -6359,7 +6359,7 @@ msgctxt ""
 "tit\n"
 "help.text"
 msgid "Document Converter Page 1"
-msgstr "Convertidor de documentos - Página 1"
+msgstr "Conversor de documentos. Página 1"
 
 #: 01130100.xhp
 msgctxt ""
@@ -6368,7 +6368,7 @@ msgctxt ""
 "1\n"
 "help.text"
 msgid "<link href=\"text/shared/autopi/01130100.xhp\" name=\"Document Converter Page 1\">Document Converter Page 1</link>"
-msgstr "<link href=\"text/shared/autopi/01130100.xhp\" name=\"Document Converter Page 1\">Página 1 del Convertidor de documentos</link>"
+msgstr "<link href=\"text/shared/autopi/01130100.xhp\" name=\"Conversor de documentos. Página 1\">Conversor de documentos. Página 1</link>"
 
 #: 01130100.xhp
 msgctxt ""
@@ -6476,7 +6476,7 @@ msgctxt ""
 "26\n"
 "help.text"
 msgid "Continue to the next page of the <link href=\"text/shared/autopi/01130200.xhp\" name=\"Document Converter\">Document Converter</link>."
-msgstr "Acto seguido puede pasar a la pantalla siguiente del <link href=\"text/shared/autopi/01130200.xhp\" name=\"Convertidor de documentos\">Convertidor de documentos</link>."
+msgstr "Acto seguido puede pasar a la pantalla siguiente del <link href=\"text/shared/autopi/01130200.xhp\" name=\"Conversor de documentos\">Conversor de documentos</link>."
 
 #: 01130200.xhp
 msgctxt ""
@@ -6484,7 +6484,7 @@ msgctxt ""
 "tit\n"
 "help.text"
 msgid "Document converter continuation pages"
-msgstr "Convertidor de documentos, continuación"
+msgstr "Páginas siguientes del conversor de documentos"
 
 #: 01130200.xhp
 msgctxt ""
@@ -6493,7 +6493,7 @@ msgctxt ""
 "1\n"
 "help.text"
 msgid "<link href=\"text/shared/autopi/01130200.xhp\" name=\"Document converter continuation pages\">Document converter continuation pages</link>"
-msgstr "<link href=\"text/shared/autopi/01130200.xhp\" name=\"Document converter continuation pages\">Páginas siguientes del convertidor de documentos</link>"
+msgstr "<link href=\"text/shared/autopi/01130200.xhp\" name=\"Páginas siguientes del conversor de documentos\">Páginas siguientes del conversor de documentos</link>"
 
 #: 01130200.xhp
 msgctxt ""
@@ -6673,7 +6673,7 @@ msgctxt ""
 "13\n"
 "help.text"
 msgid "Here you can return to the main page of the <link href=\"text/shared/autopi/01130000.xhp\" name=\"Document Converter\">Document Converter Wizard</link>."
-msgstr "Aquí puede regresar a la página principal del <link href=\"text/shared/autopi/01130000.xhp\" name=\"Document Converter\">Asistente de Conversión de documentos</link>."
+msgstr "Aquí puede regresar a la página principal del <link href=\"text/shared/autopi/01130000.xhp\" name=\"Document Converter\">Asistente de conversión de documentos</link>."
 
 #: 01150000.xhp
 msgctxt ""
@@ -6734,7 +6734,7 @@ msgctxt ""
 "3\n"
 "help.text"
 msgid "Extent"
-msgstr "Volumen"
+msgstr "Amplitud"
 
 #: 01150000.xhp
 msgctxt ""

@@ -52,7 +52,7 @@ namespace framework
 
         public:
             ToolbarsMenuController( const css::uno::Reference< css::uno::XComponentContext >& xContext );
-            virtual ~ToolbarsMenuController();
+            virtual ~ToolbarsMenuController() override;
 
             // XServiceInfo
             DECLARE_XSERVICEINFO
@@ -80,14 +80,13 @@ namespace framework
                 css::uno::Sequence< css::beans::PropertyValue >  aArgs;
             };
 
-            DECL_STATIC_LINK_TYPED( ToolbarsMenuController, ExecuteHdl_Impl, void*, void );
+            DECL_STATIC_LINK( ToolbarsMenuController, ExecuteHdl_Impl, void*, void );
 
         private:
             void fillPopupMenu( css::uno::Reference< css::awt::XPopupMenu >& rPopupMenu );
             css::uno::Sequence< css::uno::Sequence< css::beans::PropertyValue > > getLayoutManagerToolbars( const css::uno::Reference< css::frame::XLayoutManager >& rLayoutManager );
             css::uno::Reference< css::frame::XDispatch > getDispatchFromCommandURL( const OUString& rCommandURL );
             void addCommand( css::uno::Reference< css::awt::XPopupMenu >& rPopupMenu, const OUString& rCommandURL, const OUString& aLabel );
-            bool isContextSensitiveToolbarNonVisible() { return m_bResetActive;}
 
             css::uno::Reference< css::uno::XComponentContext >        m_xContext;
             css::uno::Reference< css::container::XNameAccess >        m_xPersistentWindowState;

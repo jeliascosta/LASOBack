@@ -3,17 +3,17 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2015-08-06 22:51+0200\n"
-"PO-Revision-Date: 2015-04-23 18:25+0000\n"
-"Last-Translator: system user <>\n"
+"POT-Creation-Date: 2016-11-09 14:10+0100\n"
+"PO-Revision-Date: 2017-08-13 17:19+0000\n"
+"Last-Translator: Андрей Абухба <aabuchba@mail.ru>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: ab\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Pootle 2.7\n"
 "X-Accelerator-Marker: ~\n"
-"X-POOTLE-MTIME: 1429813525.000000\n"
+"X-Generator: Pootle 2.8\n"
+"X-POOTLE-MTIME: 1502644788.000000\n"
 
 #: Addons.xcu
 msgctxt ""
@@ -22,7 +22,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "FORWARD 10"
-msgstr ""
+msgstr "ҦХЬАҞА 10"
 
 #: Addons.xcu
 msgctxt ""
@@ -31,7 +31,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "BACK 10"
-msgstr ""
+msgstr "ШЬҬАХЬҞА 10"
 
 #: Addons.xcu
 msgctxt ""
@@ -40,7 +40,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "LEFT 15°"
-msgstr ""
+msgstr "АРЫМАРАХЬ 15°"
 
 #: Addons.xcu
 msgctxt ""
@@ -49,7 +49,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "RIGHT 15°"
-msgstr ""
+msgstr "АРЫӶЬАРАХЬ 15°"
 
 #: Addons.xcu
 msgctxt ""
@@ -67,7 +67,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "STOP"
-msgstr ""
+msgstr "ААНКЫЛАРА"
 
 #: Addons.xcu
 msgctxt ""
@@ -76,7 +76,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "HOME"
-msgstr ""
+msgstr "АҨНЫҞА"
 
 #: Addons.xcu
 msgctxt ""
@@ -85,7 +85,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "CLEARSCREEN"
-msgstr ""
+msgstr "АЕКРАНРЫЦҚЬАТӘУП"
 
 #: Addons.xcu
 msgctxt ""
@@ -94,7 +94,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "Logo command line (press Enter for command execution or F1 for help)"
-msgstr ""
+msgstr "Акомандатә цәаҳәа Logo (Enter инанагӡоит акоманда, F1 иаанарҧшуеит аилыркаага)"
 
 #: Addons.xcu
 msgctxt ""
@@ -112,7 +112,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "~Text Document"
-msgstr ""
+msgstr "Атеқстә документ"
 
 #: Common.xcu
 msgctxt ""
@@ -121,7 +121,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "~Spreadsheet"
-msgstr ""
+msgstr "Аелектронтә таблица"
 
 #: Common.xcu
 msgctxt ""
@@ -130,7 +130,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "~Presentation"
-msgstr ""
+msgstr "Апрезентациа..."
 
 #: Common.xcu
 msgctxt ""
@@ -139,7 +139,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "~Drawing"
-msgstr ""
+msgstr "Асахьа"
 
 #: Common.xcu
 msgctxt ""
@@ -148,7 +148,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "Database"
-msgstr ""
+msgstr "Адырқәа рбаза..."
 
 #: Common.xcu
 msgctxt ""
@@ -157,7 +157,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "~HTML Document"
-msgstr ""
+msgstr "HTML адокумент"
 
 #: Common.xcu
 msgctxt ""
@@ -166,7 +166,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "~XML Form Document"
-msgstr ""
+msgstr "XML Form адокумент"
 
 #: Common.xcu
 msgctxt ""
@@ -184,7 +184,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "F~ormula"
-msgstr ""
+msgstr "Аформула"
 
 #: Common.xcu
 msgctxt ""
@@ -211,7 +211,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "Templates"
-msgstr ""
+msgstr "Ашаблонқәа..."
 
 #: Common.xcu
 msgctxt ""
@@ -229,7 +229,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "~Fax..."
-msgstr ""
+msgstr "Афакс..."
 
 #: Common.xcu
 msgctxt ""
@@ -238,16 +238,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "~Agenda..."
-msgstr ""
-
-#: Common.xcu
-msgctxt ""
-"Common.xcu\n"
-"..Common.Menus.Wizard.m5\n"
-"Title\n"
-"value.text"
-msgid "~Presentation..."
-msgstr ""
+msgstr "Амшынҵа..."
 
 #: Common.xcu
 msgctxt ""
@@ -256,7 +247,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "~Web Page..."
-msgstr ""
+msgstr "~Web-адаҟьа..."
 
 #: Common.xcu
 msgctxt ""
@@ -265,7 +256,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "Document ~Converter..."
-msgstr ""
+msgstr "Адокументқәа рконвертер..."
 
 #: Common.xcu
 msgctxt ""
@@ -274,7 +265,7 @@ msgctxt ""
 "Title\n"
 "value.text"
 msgid "~Euro Converter..."
-msgstr ""
+msgstr "Евро аконвертер..."
 
 #: Common.xcu
 msgctxt ""
@@ -310,7 +301,7 @@ msgctxt ""
 "FirstName\n"
 "value.text"
 msgid "First Name"
-msgstr ""
+msgstr "Ахьӡ"
 
 #: DataAccess.xcu
 msgctxt ""
@@ -319,7 +310,7 @@ msgctxt ""
 "LastName\n"
 "value.text"
 msgid "Last Name"
-msgstr ""
+msgstr "Ажәла"
 
 #: DataAccess.xcu
 msgctxt ""
@@ -328,7 +319,7 @@ msgctxt ""
 "DisplayName\n"
 "value.text"
 msgid "Display Name"
-msgstr ""
+msgstr "Ахьӡ"
 
 #: DataAccess.xcu
 msgctxt ""
@@ -337,7 +328,7 @@ msgctxt ""
 "NickName\n"
 "value.text"
 msgid "Nickname"
-msgstr ""
+msgstr "Ахьӡырҩашьа"
 
 #: DataAccess.xcu
 msgctxt ""
@@ -346,7 +337,7 @@ msgctxt ""
 "PrimaryEmail\n"
 "value.text"
 msgid "E-mail"
-msgstr ""
+msgstr "E-mail"
 
 #: DataAccess.xcu
 msgctxt ""
@@ -355,7 +346,7 @@ msgctxt ""
 "SecondEmail\n"
 "value.text"
 msgid "E-mail (2)"
-msgstr ""
+msgstr "E-mail (2)"
 
 #: DataAccess.xcu
 msgctxt ""
@@ -373,7 +364,7 @@ msgctxt ""
 "WorkPhone\n"
 "value.text"
 msgid "Phone (Work)"
-msgstr ""
+msgstr "Аҭел (аҩн.)"
 
 #: DataAccess.xcu
 msgctxt ""
@@ -382,7 +373,7 @@ msgctxt ""
 "HomePhone\n"
 "value.text"
 msgid "Phone (Home)"
-msgstr ""
+msgstr "Аҭел"
 
 #: DataAccess.xcu
 msgctxt ""
@@ -391,7 +382,7 @@ msgctxt ""
 "FaxNumber\n"
 "value.text"
 msgid "Fax"
-msgstr ""
+msgstr "Афакс"
 
 #: DataAccess.xcu
 msgctxt ""
@@ -400,7 +391,7 @@ msgctxt ""
 "PagerNumber\n"
 "value.text"
 msgid "Pager"
-msgstr ""
+msgstr "Апеиджер"
 
 #: DataAccess.xcu
 msgctxt ""
@@ -409,7 +400,7 @@ msgctxt ""
 "CellularNumber\n"
 "value.text"
 msgid "Mobile"
-msgstr ""
+msgstr "Амобилтә ҭел"
 
 #: DataAccess.xcu
 msgctxt ""
@@ -418,7 +409,7 @@ msgctxt ""
 "HomeAddress\n"
 "value.text"
 msgid "Address 1"
-msgstr ""
+msgstr "Аҭыӡҭыҧ 1"
 
 #: DataAccess.xcu
 msgctxt ""
@@ -427,7 +418,7 @@ msgctxt ""
 "HomeAddress2\n"
 "value.text"
 msgid "Address 2"
-msgstr ""
+msgstr "Аҭыӡҭыҧ 2"
 
 #: DataAccess.xcu
 msgctxt ""
@@ -436,7 +427,7 @@ msgctxt ""
 "HomeCity\n"
 "value.text"
 msgid "City"
-msgstr ""
+msgstr "Ақалақь"
 
 #: DataAccess.xcu
 msgctxt ""
@@ -463,7 +454,7 @@ msgctxt ""
 "HomeCountry\n"
 "value.text"
 msgid "Country"
-msgstr ""
+msgstr "Атәыла"
 
 #: DataAccess.xcu
 msgctxt ""
@@ -472,7 +463,7 @@ msgctxt ""
 "WorkAddress\n"
 "value.text"
 msgid "Work Address"
-msgstr ""
+msgstr "Аусурҭатә ҭыӡҭыҧ"
 
 #: DataAccess.xcu
 msgctxt ""
@@ -481,7 +472,7 @@ msgctxt ""
 "WorkAddress2\n"
 "value.text"
 msgid "Work Address 2"
-msgstr ""
+msgstr "Аусурҭатә ҭыӡҭыҧ 2"
 
 #: DataAccess.xcu
 msgctxt ""
@@ -607,7 +598,7 @@ msgctxt ""
 "Custom2\n"
 "value.text"
 msgid "Custom 2"
-msgstr ""
+msgstr "Ахархәаҩ 2"
 
 #: DataAccess.xcu
 msgctxt ""
@@ -616,7 +607,7 @@ msgctxt ""
 "Custom3\n"
 "value.text"
 msgid "Custom 3"
-msgstr ""
+msgstr "Ахархәаҩ 3"
 
 #: DataAccess.xcu
 msgctxt ""
@@ -625,7 +616,7 @@ msgctxt ""
 "Custom4\n"
 "value.text"
 msgid "Custom 4"
-msgstr ""
+msgstr "Ахархәаҩ 4"
 
 #: DataAccess.xcu
 msgctxt ""
@@ -634,7 +625,7 @@ msgctxt ""
 "Notes\n"
 "value.text"
 msgid "Comments"
-msgstr ""
+msgstr "Акомментари"
 
 #: Embedding.xcu
 msgctxt ""
@@ -643,7 +634,7 @@ msgctxt ""
 "VerbUIName\n"
 "value.text"
 msgid "~Edit"
-msgstr ""
+msgstr "Ариашарақәа"
 
 #: Embedding.xcu
 msgctxt ""
@@ -652,7 +643,7 @@ msgctxt ""
 "VerbUIName\n"
 "value.text"
 msgid "~Open"
-msgstr ""
+msgstr "Иаарттәуп"
 
 #: Embedding.xcu
 msgctxt ""
@@ -661,7 +652,7 @@ msgctxt ""
 "VerbUIName\n"
 "value.text"
 msgid "Propert~ies..."
-msgstr ""
+msgstr "Апараметрқәа..."
 
 #: Embedding.xcu
 msgctxt ""
@@ -670,7 +661,7 @@ msgctxt ""
 "VerbUIName\n"
 "value.text"
 msgid "Save Copy ~as..."
-msgstr ""
+msgstr "Иеиқәырхатәуп акопиа иаба(ишҧа)..."
 
 #: Embedding.xcu
 msgctxt ""
@@ -760,7 +751,7 @@ msgctxt ""
 "DisplayName\n"
 "value.text"
 msgid "Page Header"
-msgstr ""
+msgstr "Хыхьтәи аколонтитул"
 
 #: ExtendedColorScheme.xcu
 msgctxt ""
@@ -769,7 +760,7 @@ msgctxt ""
 "DisplayName\n"
 "value.text"
 msgid "Page Footer"
-msgstr ""
+msgstr "Ҵаҟатәи аколонтитул"
 
 #: ExtendedColorScheme.xcu
 msgctxt ""
@@ -814,7 +805,7 @@ msgctxt ""
 "DisplayName\n"
 "value.text"
 msgid "Detail"
-msgstr ""
+msgstr "Адырқәа"
 
 #: ExtendedColorScheme.xcu
 msgctxt ""
@@ -913,7 +904,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "Red"
-msgstr ""
+msgstr "Аҟаҧшь"
 
 #: FormWizard.xcu
 msgctxt ""
@@ -940,7 +931,7 @@ msgctxt ""
 "STR_STEPS\n"
 "value.text"
 msgid "Steps"
-msgstr ""
+msgstr "Ашьаҿақәа"
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -949,7 +940,7 @@ msgctxt ""
 "STR_BACK\n"
 "value.text"
 msgid "< ~Back"
-msgstr ""
+msgstr "< Шьҭахьҟа"
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -958,7 +949,7 @@ msgctxt ""
 "STR_NEXT\n"
 "value.text"
 msgid "~Next >"
-msgstr ""
+msgstr "Анаҩс >"
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -967,7 +958,7 @@ msgctxt ""
 "STR_FINISH\n"
 "value.text"
 msgid "~Finish"
-msgstr ""
+msgstr "Ихыркәшатәуп "
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -976,7 +967,7 @@ msgctxt ""
 "STR_CANCEL\n"
 "value.text"
 msgid "Cancel"
-msgstr ""
+msgstr "Аҟәыхра"
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -985,7 +976,7 @@ msgctxt ""
 "STR_INTRODUCTION\n"
 "value.text"
 msgid "Introduction"
-msgstr ""
+msgstr "Алагалажәа"
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -1012,7 +1003,7 @@ msgctxt ""
 "STR_REMOVE\n"
 "value.text"
 msgid "~Delete"
-msgstr ""
+msgstr "Ианыхтәуп"
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -1029,8 +1020,8 @@ msgctxt ""
 "..PresentationMinimizer.Strings\n"
 "STR_IMAGE_OPTIMIZATION\n"
 "value.text"
-msgid "Graphics"
-msgstr ""
+msgid "Images"
+msgstr "Асахьақәа"
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -1039,7 +1030,7 @@ msgctxt ""
 "STR_LOSSLESS_COMPRESSION\n"
 "value.text"
 msgid "~Lossless compression"
-msgstr ""
+msgstr "Аиҵацалара цәыӡрада"
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -1048,7 +1039,7 @@ msgctxt ""
 "STR_JPEG_COMPRESSION\n"
 "value.text"
 msgid "~JPEG compression"
-msgstr ""
+msgstr "JPEG Еиҵацалара"
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -1057,7 +1048,7 @@ msgctxt ""
 "STR_QUALITY\n"
 "value.text"
 msgid "~Quality in %"
-msgstr ""
+msgstr "~Ахаҭабзиара, %"
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -1065,7 +1056,7 @@ msgctxt ""
 "..PresentationMinimizer.Strings\n"
 "STR_REMOVE_CROP_AREA\n"
 "value.text"
-msgid "~Delete cropped graphic areas"
+msgid "~Delete cropped image areas"
 msgstr ""
 
 #: PresentationMinimizer.xcu
@@ -1084,7 +1075,7 @@ msgctxt ""
 "STR_IMAGE_RESOLUTION_0\n"
 "value.text"
 msgid "0;<no change>"
-msgstr ""
+msgstr "0;<ҧсахрада>"
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -1119,7 +1110,7 @@ msgctxt ""
 "..PresentationMinimizer.Strings\n"
 "STR_EMBED_LINKED_GRAPHICS\n"
 "value.text"
-msgid "~Break links to external graphics"
+msgid "~Embed external images"
 msgstr ""
 
 #: PresentationMinimizer.xcu
@@ -1129,7 +1120,7 @@ msgctxt ""
 "STR_OLE_OBJECTS\n"
 "value.text"
 msgid "OLE Objects"
-msgstr ""
+msgstr "OLE аобиектқәа"
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -1146,7 +1137,7 @@ msgctxt ""
 "..PresentationMinimizer.Strings\n"
 "STR_OLE_REPLACE\n"
 "value.text"
-msgid "Create static replacement graphics for OLE objects"
+msgid "Create static replacement images for OLE objects"
 msgstr ""
 
 #: PresentationMinimizer.xcu
@@ -1192,7 +1183,7 @@ msgctxt ""
 "STR_SLIDES\n"
 "value.text"
 msgid "Slides"
-msgstr ""
+msgstr "Аслаидқәа"
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -1201,16 +1192,7 @@ msgctxt ""
 "STR_CHOOSE_SLIDES\n"
 "value.text"
 msgid "Choose which slides to delete"
-msgstr ""
-
-#: PresentationMinimizer.xcu
-msgctxt ""
-"PresentationMinimizer.xcu\n"
-"..PresentationMinimizer.Strings\n"
-"STR_MASTER_PAGES\n"
-"value.text"
-msgid "Master Pages"
-msgstr ""
+msgstr "Иалышәх ианыхтәу аслаидқәа"
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -1237,7 +1219,7 @@ msgctxt ""
 "STR_DELETE_HIDDEN_SLIDES\n"
 "value.text"
 msgid "Delete hidden ~slides"
-msgstr ""
+msgstr "Ианыхтәуп иҧхьаку аслаидқәа"
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -1246,7 +1228,7 @@ msgctxt ""
 "STR_CUSTOM_SHOW\n"
 "value.text"
 msgid "Delete slides that are not used for the ~custom slide show"
-msgstr ""
+msgstr "Ианыхтәуп аслаидқәа, апрезентациаҿ иаарҧшымхо"
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -1255,7 +1237,7 @@ msgctxt ""
 "STR_SUMMARY\n"
 "value.text"
 msgid "Summary"
-msgstr ""
+msgstr "Аихшьалақәа"
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -1264,24 +1246,6 @@ msgctxt ""
 "STR_SUMMARY_TITLE\n"
 "value.text"
 msgid "Choose where to apply the following changes"
-msgstr ""
-
-#: PresentationMinimizer.xcu
-msgctxt ""
-"PresentationMinimizer.xcu\n"
-"..PresentationMinimizer.Strings\n"
-"STR_PROGRESS\n"
-"value.text"
-msgid "Progress"
-msgstr ""
-
-#: PresentationMinimizer.xcu
-msgctxt ""
-"PresentationMinimizer.xcu\n"
-"..PresentationMinimizer.Strings\n"
-"STR_OBJECTS_OPTIMIZED\n"
-"value.text"
-msgid "Objects optimized"
 msgstr ""
 
 #: PresentationMinimizer.xcu
@@ -1309,7 +1273,7 @@ msgctxt ""
 "STR_SAVE_SETTINGS\n"
 "value.text"
 msgid "~Save settings as"
-msgstr ""
+msgstr "Иеиқәырхатәуп архиарақәа иаба(ишҧа)"
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -1327,7 +1291,7 @@ msgctxt ""
 "STR_DELETE_SLIDES\n"
 "value.text"
 msgid "Delete %SLIDES slides."
-msgstr ""
+msgstr "Ианыхтәуп %SLIDES слаид(к)."
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -1335,7 +1299,7 @@ msgctxt ""
 "..PresentationMinimizer.Strings\n"
 "STR_OPTIMIZE_IMAGES\n"
 "value.text"
-msgid "Optimize %IMAGES graphics to %QUALITY% JPEG quality at %RESOLUTION DPI."
+msgid "Optimize %IMAGES images to %QUALITY% JPEG quality at %RESOLUTION DPI."
 msgstr ""
 
 #: PresentationMinimizer.xcu
@@ -1344,7 +1308,7 @@ msgctxt ""
 "..PresentationMinimizer.Strings\n"
 "STR_CREATE_REPLACEMENT\n"
 "value.text"
-msgid "Create replacement graphics for %OLE objects."
+msgid "Create replacement images for %OLE objects."
 msgstr ""
 
 #: PresentationMinimizer.xcu
@@ -1369,45 +1333,9 @@ msgstr ""
 msgctxt ""
 "PresentationMinimizer.xcu\n"
 "..PresentationMinimizer.Strings\n"
-"STR_MB\n"
-"value.text"
-msgid "%1 MB"
-msgstr ""
-
-#: PresentationMinimizer.xcu
-msgctxt ""
-"PresentationMinimizer.xcu\n"
-"..PresentationMinimizer.Strings\n"
 "MY_SETTINGS\n"
 "value.text"
 msgid "My Settings "
-msgstr ""
-
-#: PresentationMinimizer.xcu
-msgctxt ""
-"PresentationMinimizer.xcu\n"
-"..PresentationMinimizer.Strings\n"
-"STR_DEFAULT_SESSION\n"
-"value.text"
-msgid "default session"
-msgstr ""
-
-#: PresentationMinimizer.xcu
-msgctxt ""
-"PresentationMinimizer.xcu\n"
-"..PresentationMinimizer.Strings\n"
-"STR_MODIFY_WARNING\n"
-"value.text"
-msgid "The optimization will modify the current document. Do you want to continue?"
-msgstr ""
-
-#: PresentationMinimizer.xcu
-msgctxt ""
-"PresentationMinimizer.xcu\n"
-"..PresentationMinimizer.Strings\n"
-"STR_YES\n"
-"value.text"
-msgid "~Yes"
 msgstr ""
 
 #: PresentationMinimizer.xcu
@@ -1471,7 +1399,7 @@ msgctxt ""
 "STR_DELETING_SLIDES\n"
 "value.text"
 msgid "Deleting slides..."
-msgstr ""
+msgstr "Аслаидқәа раныхра..."
 
 #: PresentationMinimizer.xcu
 msgctxt ""
@@ -1479,7 +1407,7 @@ msgctxt ""
 "..PresentationMinimizer.Strings\n"
 "STR_OPTIMIZING_GRAPHICS\n"
 "value.text"
-msgid "Optimizing graphics..."
+msgid "Optimizing images..."
 msgstr ""
 
 #: PresentationMinimizer.xcu
@@ -1488,7 +1416,7 @@ msgctxt ""
 "..PresentationMinimizer.Strings\n"
 "STR_CREATING_OLE_REPLACEMENTS\n"
 "value.text"
-msgid "Creating replacement graphics for OLE objects..."
+msgid "Creating replacement images for OLE objects..."
 msgstr ""
 
 #: PresentationMinimizer.xcu
@@ -1575,7 +1503,16 @@ msgstr ""
 #: PresenterScreen.xcu
 msgctxt ""
 "PresenterScreen.xcu\n"
-"..PresenterScreen.PresenterScreenSettings.ToolBars.ToolBar.Entries.l.Normal\n"
+"..PresenterScreen.PresenterScreenSettings.ToolBars.ToolBar.Entries.k.Normal\n"
+"Text\n"
+"value.text"
+msgid "Restart"
+msgstr ""
+
+#: PresenterScreen.xcu
+msgctxt ""
+"PresenterScreen.xcu\n"
+"..PresenterScreen.PresenterScreenSettings.ToolBars.ToolBar.Entries.m.Normal\n"
 "Text\n"
 "value.text"
 msgid "Exchange"
@@ -1584,7 +1521,7 @@ msgstr ""
 #: PresenterScreen.xcu
 msgctxt ""
 "PresenterScreen.xcu\n"
-"..PresenterScreen.PresenterScreenSettings.ToolBars.ToolBar.Entries.n.Normal\n"
+"..PresenterScreen.PresenterScreenSettings.ToolBars.ToolBar.Entries.o.Normal\n"
 "Text\n"
 "value.text"
 msgid "Help"
@@ -1606,7 +1543,7 @@ msgctxt ""
 "Text\n"
 "value.text"
 msgid "Close"
-msgstr ""
+msgstr "Иарктәуп"
 
 #: PresenterScreen.xcu
 msgctxt ""
@@ -1615,7 +1552,7 @@ msgctxt ""
 "Text\n"
 "value.text"
 msgid "Close"
-msgstr ""
+msgstr "Иарктәуп"
 
 #: PresenterScreen.xcu
 msgctxt ""
@@ -1624,7 +1561,7 @@ msgctxt ""
 "Text\n"
 "value.text"
 msgid "Close"
-msgstr ""
+msgstr "Иарктәуп"
 
 #: PresenterScreen.xcu
 msgctxt ""
@@ -1705,7 +1642,7 @@ msgctxt ""
 "Left\n"
 "value.text"
 msgid "Alt-Page Up"
-msgstr ""
+msgstr "Alt+Page Up"
 
 #: PresenterScreen.xcu
 msgctxt ""
@@ -1723,7 +1660,7 @@ msgctxt ""
 "Left\n"
 "value.text"
 msgid "Alt-Page Down"
-msgstr ""
+msgstr "Alt+Page Down"
 
 #: PresenterScreen.xcu
 msgctxt ""
@@ -2191,7 +2128,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "Serialnumber"
-msgstr ""
+msgstr "АсериатәНомер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -2488,7 +2425,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "PhoneNumber"
-msgstr ""
+msgstr "АҭелАномер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -2506,7 +2443,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "FaxNumber"
-msgstr ""
+msgstr "АфаксАномер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -2821,7 +2758,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "PhoneNumber"
-msgstr ""
+msgstr "АҭелАномер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -2839,7 +2776,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "FaxNumber"
-msgstr ""
+msgstr "АфаксАномер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -2857,7 +2794,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "MobileNumber"
-msgstr ""
+msgstr "АмобилтәҬелАномер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -3262,7 +3199,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "PhoneNumber"
-msgstr ""
+msgstr "АҭелАномер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -3280,7 +3217,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "FaxNumber"
-msgstr ""
+msgstr "АфаксАномер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -3298,7 +3235,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "MobileNumber"
-msgstr ""
+msgstr "АмобилтәҬелАномер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -3703,7 +3640,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "PhoneNumber"
-msgstr ""
+msgstr "АҭелАномер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -3721,7 +3658,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "FaxNumber"
-msgstr ""
+msgstr "АфаксАномер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -3739,7 +3676,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "MobileNumber"
-msgstr ""
+msgstr "АмобилтәҬелАномер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -4090,7 +4027,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "PhoneNumber"
-msgstr ""
+msgstr "АҭелАномер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -4108,7 +4045,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "FaxNumber"
-msgstr ""
+msgstr "АфаксАномер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -4126,7 +4063,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "MobileNumber"
-msgstr ""
+msgstr "АмобилтәҬелАномер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -5107,7 +5044,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "CreditCardNumber"
-msgstr ""
+msgstr "АкредиттәКартаАномер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -7258,7 +7195,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "Model"
-msgstr ""
+msgstr "Амодель"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -7267,7 +7204,7 @@ msgctxt ""
 "ShortName\n"
 "value.text"
 msgid "Model"
-msgstr ""
+msgstr "Амодель"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -7276,7 +7213,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "ModelNumber"
-msgstr ""
+msgstr "АмодельАномер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -7285,7 +7222,7 @@ msgctxt ""
 "ShortName\n"
 "value.text"
 msgid "ModelNo"
-msgstr ""
+msgstr "АмодельАном"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -7294,7 +7231,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "SerialNumber"
-msgstr ""
+msgstr "Асериатә номер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -7456,7 +7393,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "Comments"
-msgstr ""
+msgstr "Акомментари"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -7465,7 +7402,7 @@ msgctxt ""
 "ShortName\n"
 "value.text"
 msgid "Comments"
-msgstr ""
+msgstr "Акомментари"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -7627,7 +7564,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "ReferenceNumber"
-msgstr ""
+msgstr "АдокументАшифр"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -8212,7 +8149,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "FaxNumber"
-msgstr ""
+msgstr "АфаксАномер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -8230,7 +8167,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "MobileNumber"
-msgstr ""
+msgstr "АмобилтәҬелАномер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -8599,7 +8536,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "Model"
-msgstr ""
+msgstr "Амодель"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -8608,7 +8545,7 @@ msgctxt ""
 "ShortName\n"
 "value.text"
 msgid "Model"
-msgstr ""
+msgstr "Амодель"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -8617,7 +8554,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "ModelNumber"
-msgstr ""
+msgstr "АмодельАномер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -8626,7 +8563,7 @@ msgctxt ""
 "ShortName\n"
 "value.text"
 msgid "ModelNo"
-msgstr ""
+msgstr "АмодельАном"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -8635,7 +8572,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "SerialNumber"
-msgstr ""
+msgstr "Асериатә номер"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -9832,7 +9769,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "Director"
-msgstr ""
+msgstr "Арежиссор"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -9841,7 +9778,7 @@ msgctxt ""
 "ShortName\n"
 "value.text"
 msgid "Director"
-msgstr ""
+msgstr "Арежиссор"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -10480,7 +10417,7 @@ msgctxt ""
 "Name\n"
 "value.text"
 msgid "Pages"
-msgstr ""
+msgstr "Даҟьак"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -10489,7 +10426,7 @@ msgctxt ""
 "ShortName\n"
 "value.text"
 msgid "Pages"
-msgstr ""
+msgstr "Даҟьак"
 
 #: TableWizard.xcu
 msgctxt ""
@@ -11569,7 +11506,7 @@ msgctxt ""
 "DisplayName\n"
 "value.text"
 msgid "Web pages"
-msgstr ""
+msgstr "Web-адаҟьақәа"
 
 #: UI.xcu
 msgctxt ""
@@ -11583,11 +11520,11 @@ msgstr ""
 #: UI.xcu
 msgctxt ""
 "UI.xcu\n"
-"..UI.FilterClassification.GlobalFilters.Classes.com.sun.star.formula.FormularProperties\n"
+"..UI.FilterClassification.GlobalFilters.Classes.com.sun.star.formula.FormulaProperties\n"
 "DisplayName\n"
 "value.text"
 msgid "Formulas"
-msgstr ""
+msgstr "Аформулақәа"
 
 #: UI.xcu
 msgctxt ""

@@ -39,10 +39,10 @@ protected:
     OUString     aDfltPropName;
     virtual bool LoadData( SvStream&, sal_uInt16 ) override;
     virtual bool StoreData( SvStream& ) const override;
-    virtual ~SbxObject();
+    virtual ~SbxObject() override;
     virtual void Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 public:
-    SBX_DECL_PERSIST_NODATA(SBXCR_SBX,SBXID_OBJECT,1);
+    SBX_DECL_PERSIST_NODATA(SBXID_OBJECT,1);
     SbxObject( const OUString& rClassname );
     SbxObject( const SbxObject& );
     SbxObject& operator=( const SbxObject& );
@@ -74,14 +74,12 @@ public:
     virtual void Remove( SbxVariable* );
 
     // Direct access on arrays
-    SbxArray* GetMethods()      { return pMethods;  }
-    SbxArray* GetProperties()   { return pProps;    }
-    SbxArray* GetObjects()      { return pObjs;     }
+    SbxArray* GetMethods()      { return pMethods.get(); }
+    SbxArray* GetProperties()   { return pProps.get(); }
+    SbxArray* GetObjects()      { return pObjs.get(); }
     // Debugging
-    void Dump( SvStream&, bool bDumpAll=false );
+    void Dump( SvStream&, bool bDumpAll );
 };
-
-typedef tools::SvRef<SbxObject> SbxObjectRef;
 
 #endif // INCLUDED_BASIC_SBXOBJ_HXX
 

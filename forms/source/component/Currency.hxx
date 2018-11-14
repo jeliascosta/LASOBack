@@ -31,9 +31,6 @@ class OCurrencyModel
 {
     css::uno::Any          m_aSaveValue;
 
-protected:
-    virtual css::uno::Sequence< css::uno::Type> _getTypes() override;
-
 public:
     DECLARE_DEFAULT_LEAF_XTOR( OCurrencyModel );
 
@@ -69,9 +66,6 @@ protected:
 
 class OCurrencyControl: public OBoundControl
 {
-protected:
-    virtual css::uno::Sequence< css::uno::Type> _getTypes() override;
-
 public:
     explicit OCurrencyControl(const css::uno::Reference< css::uno::XComponentContext>& _rxContext);
     // css::lang::XServiceInfo

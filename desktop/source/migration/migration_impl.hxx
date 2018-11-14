@@ -104,7 +104,7 @@ struct MigrationItem
     MigrationItem(const OUString& sParentNodeName,
         const OUString& sPrevSibling,
         const OUString& sCommandURL,
-        const css::uno::Reference< css::container::XIndexContainer > xPopupMenu)
+        const css::uno::Reference< css::container::XIndexContainer > & xPopupMenu)
     {
         m_sParentNodeName = sParentNodeName;
         m_sPrevSibling    = sPrevSibling;
@@ -210,7 +210,6 @@ private:
     void copyFiles();
     void copyConfig();
     void runServices();
-    static void refresh();
 
     static void setMigrationCompleted();
     static bool checkMigrationCompleted();

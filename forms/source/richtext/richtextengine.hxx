@@ -49,7 +49,7 @@ namespace frm
         static  RichTextEngine* Create();
                 RichTextEngine* Clone();
 
-                virtual ~RichTextEngine( );
+                virtual ~RichTextEngine( ) override;
 
         // for multiplexing the StatusChanged events of the edit engine
         void registerEngineStatusListener( IEngineStatusListener* _pListener );
@@ -67,7 +67,7 @@ namespace frm
         RichTextEngine& operator=( const RichTextEngine& ) = delete;
 
     private:
-        DECL_LINK_TYPED( EditEngineStatusChanged, EditStatus&, void );
+        DECL_LINK( EditEngineStatusChanged, EditStatus&, void );
     };
 
 

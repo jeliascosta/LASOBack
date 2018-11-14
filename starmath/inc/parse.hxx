@@ -38,9 +38,9 @@ class SmParser
     int             m_nCurError;
     sal_Int32       m_nBufferIndex,
                     m_nTokenIndex;
-    sal_Int32       m_Row,
-                    m_nColOff;
-    bool            bImportSymNames,
+    sal_Int32       m_nRow,    // 1-based
+                    m_nColOff; // 0-based
+    bool            m_bImportSymNames,
                     m_bExportSymNames;
 
     // map of used symbols (used to reduce file size by exporting only actually used symbols)
@@ -59,7 +59,7 @@ class SmParser
     inline bool     TokenInGroup( TG nGroup );
 
     // grammar
-    void    DoTable();
+    SmTableNode *DoTable();
     void    DoLine();
     void    DoExpression();
     void    DoRelation();
@@ -92,21 +92,18 @@ class SmParser
 
     void    Error(SmParseError Error);
 
-    void    ClearUsedSymbols()                              { m_aUsedSymbols.clear(); }
-    void    AddToUsedSymbols( const OUString &rSymbolName ) { m_aUsedSymbols.insert( rSymbolName ); }
-
 public:
                  SmParser();
 
     /** Parse rBuffer to formula tree */
-    SmNode      *Parse(const OUString &rBuffer);
+    SmTableNode *Parse(const OUString &rBuffer);
     /** Parse rBuffer to formula subtree that constitutes an expression */
     SmNode      *ParseExpression(const OUString &rBuffer);
 
     const OUString & GetText() const { return m_aBufferString; };
 
-    bool        IsImportSymbolNames() const        { return bImportSymNames; }
-    void        SetImportSymbolNames(bool bVal)    { bImportSymNames = bVal; }
+    bool        IsImportSymbolNames() const        { return m_bImportSymNames; }
+    void        SetImportSymbolNames(bool bVal)    { m_bImportSymNames = bVal; }
     bool        IsExportSymbolNames() const        { return m_bExportSymNames; }
     void        SetExportSymbolNames(bool bVal)    { m_bExportSymNames = bVal; }
 

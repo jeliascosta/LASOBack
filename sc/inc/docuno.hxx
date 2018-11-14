@@ -66,6 +66,7 @@ class ScTableSheetObj;
 class ScRangeList;
 class ScPrintUIOptions;
 class ScSheetSaveData;
+struct ScFormatSaveData;
 
 class SC_DLLPUBLIC ScModelObj : public SfxBaseModel,
                     public vcl::ITiledRenderable,
@@ -106,7 +107,7 @@ private:
     bool                    FillRenderMarkData( const css::uno::Any& aSelection,
                                                 const css::uno::Sequence< css::beans::PropertyValue >& rOptions,
                                                 ScMarkData& rMark, ScPrintSelectionStatus& rStatus, OUString& rPagesStr ) const;
-    css::uno::Reference<css::uno::XAggregation> GetFormatter();
+    css::uno::Reference<css::uno::XAggregation> const & GetFormatter();
     void                    HandleCalculateEvents();
 
     css::uno::Reference<css::uno::XInterface> create(
@@ -119,7 +120,7 @@ protected:
 
 public:
                             ScModelObj(ScDocShell* pDocSh);
-    virtual                 ~ScModelObj();
+    virtual                 ~ScModelObj() override;
 
     /// create ScModelObj and set at pDocSh (SetBaseModel)
     static void             CreateAndSet(ScDocShell* pDocSh);
@@ -132,6 +133,7 @@ public:
     void                    BeforeXMLLoading();
     void                    AfterXMLLoading();
     ScSheetSaveData*        GetSheetSaveData();
+    ScFormatSaveData*       GetFormatSaveData();
 
     void                    RepaintRange( const ScRange& rRange );
     void                    RepaintRange( const ScRangeList& rRange );
@@ -139,8 +141,7 @@ public:
     bool                    HasChangesListeners() const;
 
     void                    NotifyChanges( const OUString& rOperation, const ScRangeList& rRanges,
-                                           const css::uno::Sequence< css::beans::PropertyValue >& rProperties =
-                                               css::uno::Sequence< css::beans::PropertyValue >() );
+                                           const css::uno::Sequence< css::beans::PropertyValue >& rProperties );
 
     virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
                                     throw(css::uno::RuntimeException, std::exception) override;
@@ -381,14 +382,11 @@ public:
     /// @see vcl::ITiledRenderable::initializeForTiledRendering().
     virtual void initializeForTiledRendering(const css::uno::Sequence<css::beans::PropertyValue>& rArguments) override;
 
-    /// @see vcl::ITiledRenderable::registerCallback().
-    virtual void registerCallback(LibreOfficeKitCallback pCallback, void* pData) override;
-
     /// @see vcl::ITiledRenderable::postKeyEvent().
     virtual void postKeyEvent(int nType, int nCharCode, int nKeyCode) override;
 
     /// @see vcl::ITiledRenderable::postMouseEvent().
-    virtual void postMouseEvent(int nType, int nX, int nY, int nCount, int nButtons = MOUSE_LEFT, int nModifier = 0) override;
+    virtual void postMouseEvent(int nType, int nX, int nY, int nCount, int nButtons, int nModifier) override;
 
     /// @see vcl::ITiledRenderable::setTextSelection().
     virtual void setTextSelection(int nType, int nX, int nY) override;
@@ -422,6 +420,12 @@ public:
 
     /// @see vcl::ITiledRenderable::getPointer().
     virtual Pointer getPointer() override;
+
+    /// @see vcl::ITiledRenderable::getTrackedChanges().
+    OUString getTrackedChanges() override;
+
+    /// @see vcl::ITiledRenderable::setClientVisibleArea().
+    virtual void setClientVisibleArea(const Rectangle& rRectangle) override;
 };
 
 class ScDrawPagesObj : public cppu::WeakImplHelper<
@@ -437,7 +441,7 @@ css::uno::Reference< css::drawing::XDrawPage >
 
 public:
                             ScDrawPagesObj(ScDocShell* pDocSh);
-    virtual                 ~ScDrawPagesObj();
+    virtual                 ~ScDrawPagesObj() override;
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
@@ -485,7 +489,7 @@ private:
 
 public:
                             ScTableSheetsObj(ScDocShell* pDocSh);
-    virtual                 ~ScTableSheetsObj();
+    virtual                 ~ScTableSheetsObj() override;
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
@@ -598,7 +602,7 @@ private:
 public:
                             ScTableColumnsObj(ScDocShell* pDocSh, SCTAB nT,
                                                 SCCOL nSC, SCCOL nEC);
-    virtual                 ~ScTableColumnsObj();
+    virtual                 ~ScTableColumnsObj() override;
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
@@ -699,7 +703,7 @@ private:
 public:
                             ScTableRowsObj(ScDocShell* pDocSh, SCTAB nT,
                                                 SCROW nSR, SCROW nER);
-    virtual                 ~ScTableRowsObj();
+    virtual                 ~ScTableRowsObj() override;
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
@@ -776,13 +780,8 @@ class ScSpreadsheetSettingsObj : public cppu::WeakImplHelper<
                                     css::lang::XServiceInfo>,
                                  public SfxListener
 {
-private:
-    ScDocShell*             pDocShell;
-
 public:
-    virtual                 ~ScSpreadsheetSettingsObj();
-
-    virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
+    virtual                 ~ScSpreadsheetSettingsObj() override;
 
                             /// XPropertySet
     virtual css::uno::Reference< css::beans::XPropertySetInfo >
@@ -844,7 +843,7 @@ private:
 
 public:
                             ScAnnotationsObj(ScDocShell* pDocSh, SCTAB nT);
-    virtual                 ~ScAnnotationsObj();
+    virtual                 ~ScAnnotationsObj() override;
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
@@ -899,7 +898,7 @@ private:
 
 public:
                             ScScenariosObj(ScDocShell* pDocSh, SCTAB nT);
-    virtual                 ~ScScenariosObj();
+    virtual                 ~ScScenariosObj() override;
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 

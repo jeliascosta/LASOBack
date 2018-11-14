@@ -63,15 +63,15 @@ namespace bib
         BibViewFormControlContainer                       m_aFormControlContainer;
 
     private:
-        DECL_LINK_TYPED(CallMappingHdl, void*, void);
+        DECL_LINK(CallMappingHdl, void*, void);
 
     public:
         // Window overridables
         virtual void    Resize() override;
 
     public:
-                            BibView( vcl::Window* _pParent, BibDataManager* _pDatMan, WinBits nStyle = WB_3DLOOK );
-                            virtual ~BibView();
+                            BibView( vcl::Window* _pParent, BibDataManager* _pDatMan, WinBits nStyle );
+                            virtual ~BibView() override;
         virtual void        dispose() override;
 
         void                UpdatePages();

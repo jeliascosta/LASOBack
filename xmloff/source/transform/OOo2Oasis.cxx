@@ -1096,7 +1096,7 @@ public:
                               sal_uInt16 nPrefix,
                               ::xmloff::token::XMLTokenEnum eToken  );
 
-    virtual ~XMLDocumentTransformerContext_Impl();
+    virtual ~XMLDocumentTransformerContext_Impl() override;
 
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
     virtual void EndElement() override;
@@ -1237,7 +1237,7 @@ public:
     XMLBodyTransformerContext_Impl( XMLTransformerBase& rTransformer,
                            const OUString& rQName );
 
-    virtual ~XMLBodyTransformerContext_Impl();
+    virtual ~XMLBodyTransformerContext_Impl() override;
 
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
     virtual void EndElement() override;
@@ -1295,7 +1295,7 @@ public:
     XMLTabStopOOoTContext_Impl( XMLTransformerBase& rTransformer,
                            const OUString& rQName );
 
-    virtual ~XMLTabStopOOoTContext_Impl();
+    virtual ~XMLTabStopOOoTContext_Impl() override;
 
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
 };
@@ -1393,7 +1393,7 @@ public:
                                sal_uInt16 nPrefix,
                             XMLTokenEnum eToken );
 
-    virtual ~XMLTrackedChangesOOoTContext_Impl();
+    virtual ~XMLTrackedChangesOOoTContext_Impl() override;
 
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
 };
@@ -1431,8 +1431,7 @@ void XMLTrackedChangesOOoTContext_Impl::StartElement(
             OSL_ENSURE( rPropSet.is(), "no info property set" );
             if( rPropSet.is() )
             {
-                const sal_Char sRedlineProtectionKey[] = "RedlineProtectionKey";
-                OUString aPropName(sRedlineProtectionKey);
+                OUString aPropName("RedlineProtectionKey");
                 Reference< XPropertySetInfo > xPropSetInfo(
                             rPropSet->getPropertySetInfo() );
                 if( xPropSetInfo.is() &&
@@ -1462,7 +1461,7 @@ public:
     XMLTableOOoTransformerContext_Impl( XMLTransformerBase& rTransformer,
                            const OUString& rQName );
 
-    virtual ~XMLTableOOoTransformerContext_Impl();
+    virtual ~XMLTableOOoTransformerContext_Impl() override;
 
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
     virtual void EndElement() override;
@@ -1973,18 +1972,13 @@ namespace
     class theOOo2OasisTransformerUnoTunnelId : public rtl::Static< UnoTunnelIdInit, theOOo2OasisTransformerUnoTunnelId> {};
 }
 
-const Sequence< sal_Int8 > & OOo2OasisTransformer::getUnoTunnelId() throw()
-{
-    return theOOo2OasisTransformerUnoTunnelId::get().getSeq();
-}
-
 // XUnoTunnel
 sal_Int64 SAL_CALL OOo2OasisTransformer::getSomething( const Sequence< sal_Int8 >& rId )
     throw(RuntimeException, std::exception)
 {
     if( rId.getLength() == 16
-        && 0 == memcmp( getUnoTunnelId().getConstArray(),
-                                        rId.getConstArray(), 16 ) )
+        && 0 == memcmp( theOOo2OasisTransformerUnoTunnelId::get().getSeq().getConstArray(),
+                        rId.getConstArray(), 16 ) )
     {
         return reinterpret_cast< sal_Int64 >( this );
     }

@@ -83,7 +83,7 @@ sal_Int32           GetDiffDate360( sal_Int32 nNullDate, sal_Int32 nDate1, sal_I
 sal_Int32           GetDaysInYears( sal_uInt16 nYear1, sal_uInt16 nYear2 );
 inline sal_Int16    GetDayOfWeek( sal_Int32 nDate );
 sal_Int32           GetDiffDate( sal_Int32 nNullDate, sal_Int32 nStartDate, sal_Int32 nEndDate, sal_Int32 nMode,
-                                sal_Int32* pOptDaysIn1stYear = nullptr ) throw( css::uno::RuntimeException, css::lang::IllegalArgumentException );
+                                sal_Int32* pOptDaysIn1stYear ) throw( css::uno::RuntimeException, css::lang::IllegalArgumentException );
 double              GetYearDiff( sal_Int32 nNullDate, sal_Int32 nStartDate, sal_Int32 nEndDate, sal_Int32 nMode )
                                 throw( css::uno::RuntimeException, css::lang::IllegalArgumentException );
 sal_Int32           GetDaysInYear( sal_Int32 nNullDate, sal_Int32 nDate, sal_Int32 nMode ) throw( css::uno::RuntimeException, css::lang::IllegalArgumentException );
@@ -101,7 +101,7 @@ OUString              ConvertFromDec(
 double              Erf( double fX );
 double              Erfc( double fX );
 bool                ParseDouble( const sal_Unicode*& rpDoubleAsString, double& rReturn );
-OUString            GetString( double fNumber, bool bLeadingSign = false, sal_uInt16 nMaxNumOfDigits = 15 );
+OUString            GetString( double fNumber, bool bLeadingSign, sal_uInt16 nMaxNumOfDigits = 15 );
 
 double              GetAmordegrc( sal_Int32 nNullDate, double fCost, sal_Int32 nDate, sal_Int32 nFirstPer,
                                 double fRestVal, double fPer, double fRate, sal_Int32 nBase ) throw( css::uno::RuntimeException, css::lang::IllegalArgumentException );
@@ -168,7 +168,7 @@ struct FuncDataBase
 };
 
 
-class FuncData
+class FuncData final
 {
 private:
     OUString         aIntName;
@@ -185,7 +185,7 @@ private:
 
 public:
                             FuncData( const FuncDataBase& rBaseData, ResMgr& );
-    virtual                 ~FuncData();
+                            ~FuncData();
 
     inline sal_uInt16       GetUINameID() const;
     inline sal_uInt16       GetDescrID() const;
@@ -238,11 +238,11 @@ public:
 
 
 /// sorted list with unique sal_Int32 values
-class SortedIndividualInt32List
+class SortedIndividualInt32List final
 {
 private:
     std::vector<sal_Int32>      maVector;
-protected:
+
     void                        Insert( sal_Int32 nDay );
     void                        Insert( sal_Int32 nDay, sal_Int32 nNullDate, bool bInsertOnWeekend );
     void                        Insert( double fDay, sal_Int32 nNullDate, bool bInsertOnWeekend )
@@ -258,7 +258,7 @@ protected:
 
 public:
                                 SortedIndividualInt32List();
-    virtual                     ~SortedIndividualInt32List();
+                                ~SortedIndividualInt32List();
 
     inline sal_uInt32           Count() const
                                     { return maVector.size(); }
@@ -409,12 +409,12 @@ enum ComplListAppendHandl
 };
 
 
-class ComplexList
+class ComplexList final
 {
 private:
     std::vector<Complex*>  maVector;
 public:
-    virtual                 ~ComplexList();
+                           ~ComplexList();
 
     inline const Complex*   Get( sal_uInt32 nIndex ) const;
 
@@ -424,8 +424,8 @@ public:
                                 { return maVector.size(); }
 
     inline void             Append( Complex* pNew );
-    void                    Append( const css::uno::Sequence< css::uno::Sequence< OUString > >& rComplexNumList, ComplListAppendHandl eAH = AH_EmpyAs0 ) throw( css::uno::RuntimeException, css::lang::IllegalArgumentException );
-    void                    Append( const css::uno::Sequence< css::uno::Any >& aMultPars,ComplListAppendHandl eAH = AH_EmpyAs0 ) throw( css::uno::RuntimeException, css::lang::IllegalArgumentException );
+    void                    Append( const css::uno::Sequence< css::uno::Sequence< OUString > >& rComplexNumList, ComplListAppendHandl eAH ) throw( css::uno::RuntimeException, css::lang::IllegalArgumentException );
+    void                    Append( const css::uno::Sequence< css::uno::Any >& aMultPars,ComplListAppendHandl eAH ) throw( css::uno::RuntimeException, css::lang::IllegalArgumentException );
 };
 
 
@@ -473,7 +473,6 @@ public:
     virtual double          ConvertFromBase( double fVal, sal_Int16 nMatchLevel ) const;
 
     inline ConvertDataClass Class() const;
-    inline bool         IsPrefixSupport() const;
 };
 
 class ConvertDataLinear : public ConvertData
@@ -488,7 +487,7 @@ public:
                                 ConvertDataClass    eClass,
                                 bool            bPrefSupport = false );
 
-    virtual                 ~ConvertDataLinear();
+    virtual                 ~ConvertDataLinear() override;
 
     virtual double          Convert( double fVal, const ConvertData& rTo,
                                 sal_Int16 nMatchLevelFrom, sal_Int16 nMatchLevelTo ) const throw( css::uno::RuntimeException, css::lang::IllegalArgumentException ) override;
@@ -505,7 +504,7 @@ private:
     std::vector<ConvertData*> maVector;
 public:
                             ConvertDataList();
-    virtual                 ~ConvertDataList();
+                            ~ConvertDataList();
 
     double                  Convert( double fVal, const OUString& rFrom, const OUString& rTo ) throw( css::uno::RuntimeException, css::lang::IllegalArgumentException );
 };
@@ -657,11 +656,6 @@ inline void ComplexList::Append( Complex* p )
 inline ConvertDataClass ConvertData::Class() const
 {
     return eClass;
-}
-
-inline bool ConvertData::IsPrefixSupport() const
-{
-    return bPrefixSupport;
 }
 
 inline ConvertDataLinear::ConvertDataLinear( const sal_Char* p, double fC, double fO, ConvertDataClass e,

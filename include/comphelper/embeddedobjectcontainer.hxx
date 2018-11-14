@@ -30,6 +30,7 @@
 #include <comphelper/comphelperdllapi.h>
 
 #include <rtl/ustring.hxx>
+#include <memory>
 
 namespace comphelper
 {
@@ -52,11 +53,11 @@ namespace comphelper
 struct EmbedImpl;
 class COMPHELPER_DLLPUBLIC EmbeddedObjectContainer
 {
-    EmbedImpl*  pImpl;
+    std::unique_ptr<EmbedImpl>  pImpl;
 
     css::uno::Reference < css::embed::XEmbeddedObject > Get_Impl( const OUString&,
             const css::uno::Reference < css::embed::XEmbeddedObject >& xCopy,
-            OUString const* pBaseURL = nullptr);
+            OUString const* pBaseURL);
 
 public:
     // add an embedded object to the container storage
@@ -142,9 +143,6 @@ public:
 
     // move an embedded object to another container (keep the persistent name)
     bool            MoveEmbeddedObject( const OUString& rName, EmbeddedObjectContainer& );
-
-    // get the stored representation for the object
-    css::uno::Reference < css::io::XInputStream > GetObjectStream( const OUString& aName, OUString* pMediaType );
 
     // get the stored graphical representation for the object
     css::uno::Reference < css::io::XInputStream > GetGraphicStream( const css::uno::Reference < css::embed::XEmbeddedObject >&, OUString* pMediaType=nullptr );

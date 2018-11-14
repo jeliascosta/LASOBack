@@ -248,7 +248,7 @@ namespace svt { namespace table
         ,m_pAccessibleTable     ( nullptr                          )
     {
         m_pSelEngine = new SelectionEngine( m_pDataWindow.get(), m_pTableFunctionSet );
-        m_pSelEngine->SetSelectionMode(SINGLE_SELECTION);
+        m_pSelEngine->SetSelectionMode(SelectionMode::Single);
         m_pDataWindow->SetPosPixel( Point( 0, 0 ) );
         m_pDataWindow->Show();
     }
@@ -558,15 +558,15 @@ namespace svt { namespace table
 
     void TableControl_Impl::impl_ni_updateCachedTableMetrics()
     {
-        m_nRowHeightPixel = m_rAntiImpl.LogicToPixel( Size( 0, m_pModel->getRowHeight() ), MAP_APPFONT ).Height();
+        m_nRowHeightPixel = m_rAntiImpl.LogicToPixel( Size( 0, m_pModel->getRowHeight() ), MapUnit::MapAppFont ).Height();
 
         m_nColHeaderHeightPixel = 0;
         if ( m_pModel->hasColumnHeaders() )
-           m_nColHeaderHeightPixel = m_rAntiImpl.LogicToPixel( Size( 0, m_pModel->getColumnHeaderHeight() ), MAP_APPFONT ).Height();
+           m_nColHeaderHeightPixel = m_rAntiImpl.LogicToPixel( Size( 0, m_pModel->getColumnHeaderHeight() ), MapUnit::MapAppFont ).Height();
 
         m_nRowHeaderWidthPixel = 0;
         if ( m_pModel->hasRowHeaders() )
-            m_nRowHeaderWidthPixel = m_rAntiImpl.LogicToPixel( Size( m_pModel->getRowHeaderWidth(), 0 ), MAP_APPFONT).Width();
+            m_nRowHeaderWidthPixel = m_rAntiImpl.LogicToPixel( Size( m_pModel->getRowHeaderWidth(), 0 ), MapUnit::MapAppFont).Width();
     }
 
 
@@ -664,7 +664,7 @@ namespace svt { namespace table
             for the given row height. Partially fitting rows are counted, too, if the
             respective parameter says so.
         */
-        TableSize lcl_getRowsFittingInto( long _nOverallHeight, long _nRowHeightPixel, bool _bAcceptPartialRow = false )
+        TableSize lcl_getRowsFittingInto( long _nOverallHeight, long _nRowHeightPixel, bool _bAcceptPartialRow )
         {
             return  _bAcceptPartialRow
                 ?   ( _nOverallHeight + ( _nRowHeightPixel - 1 ) ) / _nRowHeightPixel
@@ -1094,7 +1094,7 @@ namespace svt { namespace table
             m_rAntiImpl,
             m_pVScroll,
             i_verticalScrollbar,
-            lcl_getRowsFittingInto( i_dataCellPlayground.GetHeight(), m_nRowHeightPixel ),
+            lcl_getRowsFittingInto( i_dataCellPlayground.GetHeight(), m_nRowHeightPixel, false ),
                                                                     // visible units
             m_nTopRow,                                              // current position
             1,                                                      // line size
@@ -1308,7 +1308,7 @@ namespace svt { namespace table
         switch ( _eAction )
         {
         case cursorDown:
-        if ( m_pSelEngine->GetSelectionMode() == SINGLE_SELECTION )
+        if ( m_pSelEngine->GetSelectionMode() == SelectionMode::Single )
         {
             //if other rows already selected, deselect them
             if(!m_aSelectedRows.empty())
@@ -1336,7 +1336,7 @@ namespace svt { namespace table
             break;
 
         case cursorUp:
-        if(m_pSelEngine->GetSelectionMode() == SINGLE_SELECTION)
+        if(m_pSelEngine->GetSelectionMode() == SelectionMode::Single)
         {
             if(!m_aSelectedRows.empty())
             {
@@ -1420,7 +1420,7 @@ namespace svt { namespace table
 
         case cursorSelectRow:
         {
-            if(m_pSelEngine->GetSelectionMode() == NO_SELECTION)
+            if(m_pSelEngine->GetSelectionMode() == SelectionMode::NONE)
                 return bSuccess = false;
             //pos is the position of the current row in the vector of selected rows, if current row is selected
             int pos = getRowSelectedNumber(m_aSelectedRows, m_nCurRow);
@@ -1441,9 +1441,9 @@ namespace svt { namespace table
             break;
         case cursorSelectRowUp:
         {
-            if(m_pSelEngine->GetSelectionMode() == NO_SELECTION)
+            if(m_pSelEngine->GetSelectionMode() == SelectionMode::NONE)
                 return bSuccess = false;
-            else if(m_pSelEngine->GetSelectionMode() == SINGLE_SELECTION)
+            else if(m_pSelEngine->GetSelectionMode() == SelectionMode::Single)
             {
                 //if there are other selected rows, deselect them
                 return false;
@@ -1526,9 +1526,9 @@ namespace svt { namespace table
         break;
         case cursorSelectRowDown:
         {
-            if(m_pSelEngine->GetSelectionMode() == NO_SELECTION)
+            if(m_pSelEngine->GetSelectionMode() == SelectionMode::NONE)
                 bSuccess = false;
-            else if(m_pSelEngine->GetSelectionMode() == SINGLE_SELECTION)
+            else if(m_pSelEngine->GetSelectionMode() == SelectionMode::Single)
             {
                 bSuccess = false;
             }
@@ -1608,9 +1608,9 @@ namespace svt { namespace table
 
         case cursorSelectRowAreaTop:
         {
-            if(m_pSelEngine->GetSelectionMode() == NO_SELECTION)
+            if(m_pSelEngine->GetSelectionMode() == SelectionMode::NONE)
                 bSuccess = false;
-            else if(m_pSelEngine->GetSelectionMode() == SINGLE_SELECTION)
+            else if(m_pSelEngine->GetSelectionMode() == SelectionMode::Single)
                 bSuccess = false;
             else
             {
@@ -1636,9 +1636,9 @@ namespace svt { namespace table
 
         case cursorSelectRowAreaBottom:
         {
-            if(m_pSelEngine->GetSelectionMode() == NO_SELECTION)
+            if(m_pSelEngine->GetSelectionMode() == SelectionMode::NONE)
                 return bSuccess = false;
-            else if(m_pSelEngine->GetSelectionMode() == SINGLE_SELECTION)
+            else if(m_pSelEngine->GetSelectionMode() == SelectionMode::Single)
                 return bSuccess = false;
             //select the region between the current and the last row
             RowPos iter = m_nCurRow;
@@ -1810,13 +1810,13 @@ namespace svt { namespace table
 
     long TableControl_Impl::pixelWidthToAppFont( long const i_pixels ) const
     {
-        return m_pDataWindow->PixelToLogic( Size( i_pixels, 0 ), MAP_APPFONT ).Width();
+        return m_pDataWindow->PixelToLogic( Size( i_pixels, 0 ), MapUnit::MapAppFont ).Width();
     }
 
 
     long TableControl_Impl::appFontWidthToPixel( long const i_appFontUnits ) const
     {
-        return m_pDataWindow->LogicToPixel( Size( i_appFontUnits, 0 ), MAP_APPFONT ).Width();
+        return m_pDataWindow->LogicToPixel( Size( i_appFontUnits, 0 ), MapUnit::MapAppFont ).Width();
     }
 
 
@@ -2265,7 +2265,7 @@ namespace svt { namespace table
         SelectionMode const eSelMode = getSelEngine()->GetSelectionMode();
         switch ( eSelMode )
         {
-        case SINGLE_SELECTION:
+        case SelectionMode::Single:
             if ( !m_aSelectedRows.empty() )
             {
                 OSL_ENSURE( m_aSelectedRows.size() == 1, "TableControl::markRowAsSelected: SingleSelection with more than one selected element?" );
@@ -2274,7 +2274,7 @@ namespace svt { namespace table
             }
             SAL_FALLTHROUGH;
 
-        case MULTIPLE_SELECTION:
+        case SelectionMode::Multiple:
             m_aSelectedRows.push_back( i_rowIndex );
             break;
 
@@ -2300,7 +2300,7 @@ namespace svt { namespace table
     bool TableControl_Impl::markAllRowsAsSelected()
     {
         SelectionMode const eSelMode = getSelEngine()->GetSelectionMode();
-        ENSURE_OR_RETURN_FALSE( eSelMode == MULTIPLE_SELECTION, "TableControl_Impl::markAllRowsAsSelected: unsupported selection mode!" );
+        ENSURE_OR_RETURN_FALSE( eSelMode == SelectionMode::Multiple, "TableControl_Impl::markAllRowsAsSelected: unsupported selection mode!" );
 
         if ( m_aSelectedRows.size() == size_t( m_pModel->getRowCount() ) )
         {
@@ -2379,7 +2379,7 @@ namespace svt { namespace table
     }
 
 
-    IMPL_LINK_NOARG_TYPED( TableControl_Impl, OnUpdateScrollbars, void*, void )
+    IMPL_LINK_NOARG( TableControl_Impl, OnUpdateScrollbars, void*, void )
     {
         // TODO: can't we simply use lcl_updateScrollbar here, so the scrollbars ranges are updated, instead of
         // doing a complete re-layout?
@@ -2387,7 +2387,7 @@ namespace svt { namespace table
     }
 
 
-    IMPL_LINK_TYPED( TableControl_Impl, OnScroll, ScrollBar*, _pScrollbar, void )
+    IMPL_LINK( TableControl_Impl, OnScroll, ScrollBar*, _pScrollbar, void )
     {
         DBG_ASSERT( ( _pScrollbar == m_pVScroll ) || ( _pScrollbar == m_pHScroll ),
             "TableControl_Impl::OnScroll: where did this come from?" );
@@ -2493,17 +2493,14 @@ namespace svt { namespace table
         }
         else if ( m_pTableControl->getAnchor() == m_pTableControl->getCurRow() )
         {
-            //selecting region,
-            int diff = m_pTableControl->getCurRow() - newRow;
             //selected region lies above the last selection
-            if( diff >= 0)
+            if( m_pTableControl->getCurRow() >= newRow)
             {
                 //put selected rows in vector
                 while ( m_pTableControl->getAnchor() >= newRow )
                 {
                     m_pTableControl->markRowAsSelected( m_pTableControl->getAnchor() );
                     m_pTableControl->setAnchor( m_pTableControl->getAnchor() - 1 );
-                    diff--;
                 }
                 m_pTableControl->setAnchor( m_pTableControl->getAnchor() + 1 );
             }
@@ -2514,7 +2511,6 @@ namespace svt { namespace table
                 {
                     m_pTableControl->markRowAsSelected( m_pTableControl->getAnchor() );
                     m_pTableControl->setAnchor( m_pTableControl->getAnchor() + 1 );
-                    diff++;
                 }
                 m_pTableControl->setAnchor( m_pTableControl->getAnchor() - 1 );
             }
@@ -2528,7 +2524,7 @@ namespace svt { namespace table
                 m_pTableControl->markRowAsSelected( newRow );
             else
             {
-                if ( m_pTableControl->getSelEngine()->GetSelectionMode() == SINGLE_SELECTION )
+                if ( m_pTableControl->getSelEngine()->GetSelectionMode() == SelectionMode::Single )
                 {
                     DeselectAll();
                     m_pTableControl->markRowAsSelected( newRow );
@@ -2538,7 +2534,7 @@ namespace svt { namespace table
                     m_pTableControl->markRowAsSelected( newRow );
                 }
             }
-            if ( m_pTableControl->getSelectedRowCount() > 1 && m_pTableControl->getSelEngine()->GetSelectionMode() != SINGLE_SELECTION )
+            if ( m_pTableControl->getSelectedRowCount() > 1 && m_pTableControl->getSelEngine()->GetSelectionMode() != SelectionMode::Single )
                 m_pTableControl->getSelEngine()->AddAlways(true);
 
             m_pTableControl->invalidateRow( newRow );

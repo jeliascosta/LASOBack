@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgio/svgreader/svggradientstopnode.hxx>
+#include <svggradientstopnode.hxx>
 
 namespace svgio
 {
@@ -67,7 +67,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            setOffset(aNum);
+                            maOffset = aNum;
                         }
                     }
                     break;

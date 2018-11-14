@@ -101,7 +101,7 @@ OUString getTextEngineText (ExtTextEngine& rEngine)
     aMemStream.SetStreamCharSet( RTL_TEXTENCODING_UTF8 );
     aMemStream.SetLineDelimiter( LINEEND_LF );
     rEngine.Write( aMemStream );
-    sal_Size nSize = aMemStream.Tell();
+    std::size_t nSize = aMemStream.Tell();
     OUString aText( static_cast<const sal_Char*>(aMemStream.GetData()),
         nSize, RTL_TEXTENCODING_UTF8 );
     return aText;
@@ -182,7 +182,7 @@ public:
     explicit ChangesListener(EditorWindow & editor): editor_(editor) {}
 
 private:
-    virtual ~ChangesListener() {}
+    virtual ~ChangesListener() override {}
 
     virtual void SAL_CALL disposing(lang::EventObject const &) throw (RuntimeException, std::exception) override
     {
@@ -222,12 +222,12 @@ EditorWindow::EditorWindow (vcl::Window* pParent, ModulWindow* pModulWindow) :
     rModulWindow(*pModulWindow),
     nCurTextWidth(0),
     aHighlighter(HighlighterLanguage::Basic),
-    bHighlightning(false),
+    bHighlighting(false),
     bDoSyntaxHighlight(true),
     bDelayHighlight(true),
     pCodeCompleteWnd(VclPtr<CodeCompleteWindow>::Create(this))
 {
-    SetBackground(Wallpaper(GetSettings().GetStyleSettings().GetFieldColor()));
+    SetBackground(Wallpaper(rModulWindow.GetLayout().GetBackgroundColor()));
     SetPointer( Pointer( PointerStyle::Text ) );
     SetHelpId( HID_BASICIDE_EDITORWINDOW );
 
@@ -239,10 +239,8 @@ EditorWindow::EditorWindow (vcl::Window* pParent, ModulWindow* pModulWindow) :
         osl::MutexGuard g(mutex_);
         notifier_ = n;
     }
-    Sequence< OUString > s(2);
-    s[0] = "FontHeight";
-    s[1] = "FontName";
-    n->addPropertiesChangeListener(s, listener_.get());
+    const Sequence<OUString> aPropertyNames{"FontHeight", "FontName"};
+    n->addPropertiesChangeListener(aPropertyNames, listener_.get());
 }
 
 
@@ -366,8 +364,7 @@ void EditorWindow::RequestHelp( const HelpEvent& rHEvt )
                             aHelpText = pVar->GetName();
                             if ( aHelpText.isEmpty() )     // name is not copied with the passed parameters
                                 aHelpText = aWord;
-                            aHelpText += "=";
-                            aHelpText += pVar->GetOUString();
+                            aHelpText += "=" + pVar->GetOUString();
                         }
                     }
                     if ( !aHelpText.isEmpty() )
@@ -648,7 +645,7 @@ void EditorWindow::HandleAutoCorrect()
         else
         {
             //autocorrect procedures
-            SbxArray* pArr = rModulWindow.GetSbModule()->GetMethods();
+            SbxArray* pArr = rModulWindow.GetSbModule()->GetMethods().get();
             for( sal_uInt32 i=0; i < pArr->Count32(); ++i )
             {
                 if( pArr->Get32(i)->GetName().equalsIgnoreAsciiCase( sStr ) )
@@ -957,7 +954,7 @@ void EditorWindow::CreateEditEngine()
         return;
 
     pEditEngine.reset(new ExtTextEngine);
-    pEditView.reset(new ExtTextView(pEditEngine.get(), this));
+    pEditView.reset(new TextView(pEditEngine.get(), this));
     pEditView->SetAutoIndentMode(true);
     pEditEngine->SetUpdateMode(false);
     pEditEngine->InsertView(pEditView.get());
@@ -1036,34 +1033,6 @@ void EditorWindow::CreateEditEngine()
         rModulWindow.SetReadOnly(true);
 }
 
-// virtual
-void EditorWindow::DataChanged(DataChangedEvent const & rDCEvt)
-{
-    Window::DataChanged(rDCEvt);
-    if (rDCEvt.GetType() == DataChangedEventType::SETTINGS
-        && (rDCEvt.GetFlags() & AllSettingsFlags::STYLE))
-    {
-        Color aColor(GetSettings().GetStyleSettings().GetFieldColor());
-        const AllSettings* pOldSettings = rDCEvt.GetOldSettings();
-        if (!pOldSettings || aColor != pOldSettings->GetStyleSettings().GetFieldColor())
-        {
-            SetBackground(Wallpaper(aColor));
-            Invalidate();
-        }
-        if (pEditEngine != nullptr)
-        {
-            aColor = GetSettings().GetStyleSettings().GetFieldTextColor();
-            if (!pOldSettings || aColor !=
-                    pOldSettings-> GetStyleSettings().GetFieldTextColor())
-            {
-                vcl::Font aFont(pEditEngine->GetFont());
-                aFont.SetColor(aColor);
-                pEditEngine->SetFont(aFont);
-            }
-        }
-    }
-}
-
 void EditorWindow::Notify( SfxBroadcaster& /*rBC*/, const SfxHint& rHint )
 {
     if (TextHint const* pTextHint = dynamic_cast<TextHint const*>(&rHint))
@@ -1139,8 +1108,7 @@ OUString EditorWindow::GetActualSubName( sal_uLong nLine )
     SbxArrayRef pMethods = rModulWindow.GetSbModule()->GetMethods();
     for( sal_uInt16 i=0; i < pMethods->Count(); i++ )
     {
-        SbxVariable* p = dynamic_cast<SbMethod*>( pMethods->Get( i )  );
-        SbMethod* pMeth = dynamic_cast<SbMethod*>( p  );
+        SbMethod* pMeth = dynamic_cast<SbMethod*>( pMethods->Get( i )  );
         if( pMeth )
         {
             sal_uInt16 l1,l2;
@@ -1210,6 +1178,16 @@ void EditorWindow::ImpDoHighlight( sal_uLong nLine )
     }
 }
 
+void EditorWindow::ChangeFontColor( Color aColor )
+{
+    if (pEditEngine)
+    {
+        vcl::Font aFont(pEditEngine->GetFont());
+        aFont.SetColor(aColor);
+        pEditEngine->SetFont(aFont);
+    }
+}
+
 void EditorWindow::UpdateSyntaxHighlighting ()
 {
     const sal_uInt32 nCount = pEditEngine->GetParagraphCount();
@@ -1229,7 +1207,7 @@ void EditorWindow::ImplSetFont()
     }
     Size aFontSize(0, officecfg::Office::Common::Font::SourceViewFont::FontHeight::get());
     vcl::Font aFont(sFontName, aFontSize);
-    aFont.SetColor(Application::GetSettings().GetStyleSettings().GetFieldTextColor());
+    aFont.SetColor(rModulWindow.GetLayout().GetFontColor());
     SetPointFont(*this, aFont); // FIXME RenderContext
     aFont = GetFont();
 
@@ -1264,7 +1242,7 @@ void EditorWindow::DoDelayedSyntaxHighlight( sal_uLong nPara )
     if ( pProgress )
         pProgress->StepProgress();
 
-    if ( !bHighlightning && bDoSyntaxHighlight )
+    if ( !bHighlighting && bDoSyntaxHighlight )
     {
         if ( bDelayHighlight )
         {
@@ -1276,14 +1254,14 @@ void EditorWindow::DoDelayedSyntaxHighlight( sal_uLong nPara )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(EditorWindow, SyntaxTimerHdl, Idle *, void)
+IMPL_LINK_NOARG(EditorWindow, SyntaxTimerHdl, Idle *, void)
 {
     DBG_ASSERT( pEditView, "Noch keine View, aber Syntax-Highlight ?!" );
 
     bool const bWasModified = pEditEngine->IsModified();
     //pEditEngine->SetUpdateMode(false);
 
-    bHighlightning = true;
+    bHighlighting = true;
     for ( std::set<sal_uInt16>::const_iterator it = aSyntaxLineTable.begin();
           it != aSyntaxLineTable.end(); ++it )
     {
@@ -1298,7 +1276,7 @@ IMPL_LINK_NOARG_TYPED(EditorWindow, SyntaxTimerHdl, Idle *, void)
     pEditEngine->SetModified( bWasModified );
 
     aSyntaxLineTable.clear();
-    bHighlightning = false;
+    bHighlighting = false;
 }
 
 void EditorWindow::ParagraphInsertedDeleted( sal_uLong nPara, bool bInserted )
@@ -1480,9 +1458,9 @@ void BreakPointWindow::Command( const CommandEvent& rCEvt )
         if ( pBrk )
         {
             // test if break point is enabled...
-            PopupMenu aBrkPropMenu( IDEResId( RID_POPUP_BRKPROPS ) );
-            aBrkPropMenu.CheckItem( RID_ACTIV, pBrk->bEnabled );
-            switch ( aBrkPropMenu.Execute( this, aPos ) )
+            ScopedVclPtrInstance<PopupMenu> aBrkPropMenu( IDEResId( RID_POPUP_BRKPROPS ) );
+            aBrkPropMenu->CheckItem( RID_ACTIV, pBrk->bEnabled );
+            switch ( aBrkPropMenu->Execute( this, aPos ) )
             {
                 case RID_ACTIV:
                 {
@@ -1503,8 +1481,8 @@ void BreakPointWindow::Command( const CommandEvent& rCEvt )
         }
         else
         {
-            PopupMenu aBrkListMenu( IDEResId( RID_POPUP_BRKDLG ) );
-            switch ( aBrkListMenu.Execute( this, aPos ) )
+            ScopedVclPtrInstance<PopupMenu> aBrkListMenu( IDEResId( RID_POPUP_BRKDLG ) );
+            switch ( aBrkListMenu->Execute( this, aPos ) )
             {
                 case RID_BRKDLG:
                 {
@@ -1563,16 +1541,19 @@ namespace
     const sal_uInt16 ITEM_ID_TYPE = 3;
 }
 
-WatchWindow::WatchWindow (Layout* pParent) :
-    DockingWindow(pParent),
-    aWatchStr( IDEResId( RID_STR_REMOVEWATCH ) ),
-    aXEdit( VclPtr<ExtendedEdit>::Create(this, IDEResId( RID_EDT_WATCHEDIT )) ),
-    aRemoveWatchButton( VclPtr<ImageButton>::Create(this, IDEResId( RID_IMGBTN_REMOVEWATCH )) ),
-    aTreeListBox( VclPtr<WatchTreeListBox>::Create(this, WB_BORDER | WB_3DLOOK | WB_HASBUTTONS | WB_HASLINES | WB_HSCROLL | WB_TABSTOP
-                                  | WB_HASLINESATROOT | WB_HASBUTTONSATROOT) ),
-    aHeaderBar( VclPtr<HeaderBar>::Create( this, WB_BUTTONSTYLE | WB_BORDER ) )
+WatchWindow::WatchWindow (Layout* pParent)
+    : DockingWindow(pParent)
+    , aWatchStr(IDEResId( RID_STR_REMOVEWATCH))
+    , aXEdit(VclPtr<ExtendedEdit>::Create(this, WB_BORDER | WB_3DLOOK))
+    , aRemoveWatchButton(VclPtr<ImageButton>::Create(this, WB_SMALLSTYLE))
+    , aTreeListBox(VclPtr<WatchTreeListBox>::Create(this, WB_BORDER | WB_3DLOOK | WB_HASBUTTONS |
+                                                          WB_HASLINES | WB_HSCROLL | WB_TABSTOP |
+                                                          WB_HASLINESATROOT | WB_HASBUTTONSATROOT))
+    , aHeaderBar(VclPtr<HeaderBar>::Create(this, WB_BUTTONSTYLE | WB_BORDER))
 {
     aXEdit->SetAccessibleName(IDEResId(RID_STR_WATCHNAME).toString());
+    aXEdit->SetHelpId(HID_BASICIDE_WATCHWINDOW_EDIT);
+    aXEdit->SetSizePixel(aXEdit->LogicToPixel(Size(80, 12), MapUnit::MapAppFont));
     aTreeListBox->SetAccessibleName(IDEResId(RID_STR_WATCHNAME).toString());
 
     long nTextLen = GetTextWidth( aWatchStr ) + DWBORDER + 3;
@@ -1585,6 +1566,9 @@ WatchWindow::WatchWindow (Layout* pParent) :
     aRemoveWatchButton->Disable();
     aRemoveWatchButton->SetClickHdl( LINK( this, WatchWindow, ButtonHdl ) );
     aRemoveWatchButton->SetPosPixel( Point( nTextLen + aXEdit->GetSizePixel().Width() + 4, 2 ) );
+    aRemoveWatchButton->SetHelpId(HID_BASICIDE_REMOVEWATCH);
+    aRemoveWatchButton->SetModeImage(Image(IDEResId(RID_IMG_REMOVEWATCH)));
+    aRemoveWatchButton->SetQuickHelpText(IDEResId(RID_STR_REMOVEWATCHTIP));
     Size aSz( aRemoveWatchButton->GetModeImage().GetSizePixel() );
     aSz.Width() += 6;
     aSz.Height() += 6;
@@ -1621,7 +1605,7 @@ WatchWindow::WatchWindow (Layout* pParent) :
     tabs[ 1 ] = 0;
     tabs[ 2 ] = nVarTabWidth;
     tabs[ 3 ] = nVarTabWidth + nValueTabWidth;
-    aTreeListBox->SvHeaderTabListBox::SetTabs( tabs, MAP_PIXEL );
+    aTreeListBox->SvHeaderTabListBox::SetTabs( tabs, MapUnit::MapPixel );
     aTreeListBox->InitHeaderBar( aHeaderBar.get() );
 
     aTreeListBox->SetNodeDefaultImages( );
@@ -1728,7 +1712,7 @@ SbxDimArray* WatchItem::GetRootArray()
     WatchItem* pRootItem = GetRootItem();
     SbxDimArray* pRet = nullptr;
     if( pRootItem )
-        pRet = pRootItem->mpArray;
+        pRet = pRootItem->mpArray.get();
     return pRet;
 }
 
@@ -1738,8 +1722,7 @@ void WatchWindow::AddWatch( const OUString& rVName )
     lcl_SeparateNameAndIndex( rVName, aVar, aIndex );
     WatchItem* pWatchItem = new WatchItem(aVar);
 
-    OUString aWatchStr_( aVar );
-    aWatchStr_ += "\t\t";
+    OUString aWatchStr_ = aVar + "\t\t";
     SvTreeListEntry* pNewEntry = aTreeListBox->InsertEntry( aWatchStr_, nullptr, true );
     pNewEntry->SetUserData( pWatchItem );
 
@@ -1747,7 +1730,7 @@ void WatchWindow::AddWatch( const OUString& rVName )
     aTreeListBox->MakeVisible(pNewEntry);
     aRemoveWatchButton->Enable();
 
-    UpdateWatches();
+    UpdateWatches(false);
 }
 
 void WatchWindow::RemoveSelectedWatch()
@@ -1767,21 +1750,21 @@ void WatchWindow::RemoveSelectedWatch()
 }
 
 
-IMPL_LINK_TYPED( WatchWindow, ButtonHdl, Button *, pButton, void )
+IMPL_LINK( WatchWindow, ButtonHdl, Button *, pButton, void )
 {
     if (pButton == aRemoveWatchButton.get())
         if (SfxDispatcher* pDispatcher = GetDispatcher())
             pDispatcher->Execute(SID_BASICIDE_REMOVEWATCH);
 }
 
-IMPL_LINK_NOARG_TYPED(WatchWindow, TreeListHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(WatchWindow, TreeListHdl, SvTreeListBox*, void)
 {
     SvTreeListEntry* pCurEntry = aTreeListBox->GetCurEntry();
     if ( pCurEntry && pCurEntry->GetUserData() )
         aXEdit->SetText( static_cast<WatchItem*>(pCurEntry->GetUserData())->maName );
 }
 
-IMPL_LINK_NOARG_TYPED( WatchWindow, implEndDragHdl, HeaderBar *, void )
+IMPL_LINK_NOARG( WatchWindow, implEndDragHdl, HeaderBar *, void )
 {
     const sal_Int32 TAB_WIDTH_MIN = 10;
     sal_Int32 nMaxWidth =
@@ -1807,11 +1790,11 @@ IMPL_LINK_NOARG_TYPED( WatchWindow, implEndDragHdl, HeaderBar *, void )
     for( sal_uInt16 i = 1 ; i < nTabs ; ++i )
     {
         nPos += aHeaderBar->GetItemSize( i );
-        aTreeListBox->SetTab( i, nPos, MAP_PIXEL );
+        aTreeListBox->SetTab( i, nPos, MapUnit::MapPixel );
     }
 }
 
-IMPL_LINK_TYPED( WatchWindow, EditAccHdl, Accelerator&, rAcc, void )
+IMPL_LINK( WatchWindow, EditAccHdl, Accelerator&, rAcc, void )
 {
     switch ( rAcc.GetCurKeyCode().GetCode() )
     {
@@ -1851,7 +1834,7 @@ StackWindow::StackWindow (Layout* pParent) :
     aTreeListBox->SetAccessibleName(IDEResId(RID_STR_STACKNAME).toString());
     aTreeListBox->SetPosPixel( Point( DWBORDER, nVirtToolBoxHeight ) );
     aTreeListBox->SetHighlightRange();
-    aTreeListBox->SetSelectionMode( NO_SELECTION );
+    aTreeListBox->SetSelectionMode( SelectionMode::NONE );
     aTreeListBox->InsertEntry( OUString() );
     aTreeListBox->Show();
 
@@ -1906,7 +1889,7 @@ void StackWindow::UpdateCalls()
     if (StarBASIC::IsRunning())
     {
         SbxError eOld = SbxBase::GetError();
-        aTreeListBox->SetSelectionMode( SINGLE_SELECTION );
+        aTreeListBox->SetSelectionMode( SelectionMode::Single );
 
         sal_Int32 nScope = 0;
         SbMethod* pMethod = StarBASIC::GetActiveMethod( nScope );
@@ -1966,7 +1949,7 @@ void StackWindow::UpdateCalls()
     }
     else
     {
-        aTreeListBox->SetSelectionMode( NO_SELECTION );
+        aTreeListBox->SetSelectionMode( SelectionMode::NONE );
         aTreeListBox->InsertEntry( OUString() );
     }
 
@@ -2033,7 +2016,7 @@ void ComplexEditorWindow::Resize()
     aEWVScrollBar->SetPosSizePixel( Point( aOutSz.Width() - DWBORDER - nSBWidth, DWBORDER ), Size( nSBWidth, aSz.Height() ) );
 }
 
-IMPL_LINK_TYPED(ComplexEditorWindow, ScrollHdl, ScrollBar *, pCurScrollBar, void )
+IMPL_LINK(ComplexEditorWindow, ScrollHdl, ScrollBar *, pCurScrollBar, void )
 {
     if (aEdtWindow->GetEditView())
     {
@@ -2137,7 +2120,7 @@ void WatchTreeListBox::RequestingChildren( SvTreeListEntry * pParent )
     SvTreeListEntry* pEntry = pParent;
     WatchItem* pItem = static_cast<WatchItem*>(pEntry->GetUserData());
 
-    SbxDimArray* pArray = pItem->mpArray;
+    SbxDimArray* pArray = pItem->mpArray.get();
     SbxDimArray* pRootArray = pItem->GetRootArray();
     bool bArrayIsRootArray = false;
     if( !pArray && pRootArray )
@@ -2146,7 +2129,7 @@ void WatchTreeListBox::RequestingChildren( SvTreeListEntry * pParent )
         bArrayIsRootArray = true;
     }
 
-    SbxObject* pObj = pItem->mpObject;
+    SbxObject* pObj = pItem->mpObject.get();
     if( pObj )
     {
         createAllObjectProperties( pObj );
@@ -2236,7 +2219,7 @@ SbxBase* WatchTreeListBox::ImplGetSBXForEntry( SvTreeListEntry* pEntry, bool& rb
     WatchItem* pParentItem = pParentEntry ? static_cast<WatchItem*>(pParentEntry->GetUserData()) : nullptr;
     if( pParentItem )
     {
-        SbxObject* pObj = pParentItem->mpObject;
+        SbxObject* pObj = pParentItem->mpObject.get();
         SbxDimArray* pArray;
         if( pObj )
         {
@@ -2277,7 +2260,7 @@ bool WatchTreeListBox::EditingEntry( SvTreeListEntry* pEntry, Selection& )
         if (IsSbxVariable(pSbx) || bArrayElement)
         {
             // Accept no objects and only end nodes of arrays for editing
-            if( !pItem->mpObject && (pItem->mpArray == nullptr || pItem->nDimLevel == pItem->nDimCount) )
+            if( !pItem->mpObject.Is() && ( !pItem->mpArray.Is() || pItem->nDimLevel == pItem->nDimCount ) )
             {
                 aEditingRes = SvHeaderTabListBox::GetEntryText( pEntry, ITEM_ID_VALUE-1 );
                 aEditingRes = comphelper::string::strip(aEditingRes, ' ');
@@ -2354,7 +2337,7 @@ OUString implCreateTypeStringForDimArray( WatchItem* pItem, SbxDataType eType )
 {
     OUString aRetStr = getBasicTypeName( eType );
 
-    SbxDimArray* pArray = pItem->mpArray;
+    SbxDimArray* pArray = pItem->mpArray.get();
     if( !pArray )
         pArray = pItem->GetRootArray();
     if( pArray )
@@ -2432,7 +2415,7 @@ void WatchTreeListBox::UpdateWatches( bool bBasicStopped )
                     // consider multidimensinal arrays!
                     if (SbxDimArray* pNewArray = dynamic_cast<SbxDimArray*>(pVar->GetObject()))
                     {
-                        SbxDimArray* pOldArray = pItem->mpArray;
+                        SbxDimArray* pOldArray = pItem->mpArray.get();
 
                         bool bArrayChanged = false;
                         if( pNewArray != nullptr && pOldArray != nullptr )
@@ -2499,7 +2482,7 @@ void WatchTreeListBox::UpdateWatches( bool bBasicStopped )
                 {
                     if (SbxObject* pObj = dynamic_cast<SbxObject*>(pVar->GetObject()))
                     {
-                        if (pItem->mpObject && !pItem->maMemberList.empty())
+                        if ( pItem->mpObject.Is() && !pItem->maMemberList.empty() )
                         {
                             bool bObjChanged = false; // Check if member list has changed
                             SbxArray* pProps = pObj->GetProperties();
@@ -2527,7 +2510,7 @@ void WatchTreeListBox::UpdateWatches( bool bBasicStopped )
                     else
                     {
                         aWatchStr = "Null";
-                        if( pItem->mpObject != nullptr )
+                        if( pItem->mpObject.Is() )
                         {
                             bCollapse = true;
                             pItem->clearWatchItem();
@@ -2538,7 +2521,7 @@ void WatchTreeListBox::UpdateWatches( bool bBasicStopped )
                 }
                 else
                 {
-                    if( pItem->mpObject != nullptr )
+                    if( pItem->mpObject.Is() )
                     {
                         bCollapse = true;
                         pItem->clearWatchItem();
@@ -2580,7 +2563,7 @@ void WatchTreeListBox::UpdateWatches( bool bBasicStopped )
         }
         else if( bBasicStopped )
         {
-            if( pItem->mpObject || pItem->mpArray )
+            if( pItem->mpObject.Is() || pItem->mpArray.Is() )
             {
                 implCollapseModifiedObjectEntry( pEntry, this );
                 pItem->mpObject = nullptr;
@@ -2621,17 +2604,17 @@ void CodeCompleteListBox::dispose()
     ListBox::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED(CodeCompleteListBox, ImplDoubleClickHdl, ListBox&, void)
+IMPL_LINK_NOARG(CodeCompleteListBox, ImplDoubleClickHdl, ListBox&, void)
 {
     InsertSelectedEntry();
 }
 
-IMPL_LINK_NOARG_TYPED(CodeCompleteListBox, ImplSelectHdl, ListBox&, void)
+IMPL_LINK_NOARG(CodeCompleteListBox, ImplSelectHdl, ListBox&, void)
 {//give back the focus to the parent
     pCodeCompleteWindow->pParent->GrabFocus();
 }
 
-ExtTextView* CodeCompleteListBox::GetParentEditView()
+TextView* CodeCompleteListBox::GetParentEditView()
 {
     return pCodeCompleteWindow->pParent->GetEditView();
 }

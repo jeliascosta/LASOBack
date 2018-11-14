@@ -22,7 +22,6 @@
 
 #include <map>
 #include <com/sun/star/awt/FontSlant.hpp>
-#include <com/sun/star/awt/FontUnderline.hpp>
 #include <com/sun/star/awt/FontStrikeout.hpp>
 #include <tools/color.hxx>
 #include <vcl/vclenum.hxx>
@@ -421,7 +420,7 @@ public:
                             ScfPropertySet& rPropSet, XclFontPropSetType eType,
                             const XclFontData& rFontData,
                             bool bHasWstrn, bool bHasAsian, bool bHasCmplx,
-                            const Color* pFontColor = nullptr );
+                            const Color* pFontColor );
 
 private:
     /** Returns a chart property set helper according to the passed script type. */

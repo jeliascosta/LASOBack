@@ -34,6 +34,10 @@
 #include "salframe.hxx"
 #include "svdata.hxx"
 
+//ADD LIBRAS
+#include "LASO.hxx"
+//END LIBRAS
+
 #define HELPWINSTYLE_QUICK      0
 #define HELPWINSTYLE_BALLOON    1
 
@@ -261,8 +265,8 @@ HelpTextWindow::HelpTextWindow( vcl::Window* pParent, const OUString& rText, sal
 
     if( mnStyle & QuickHelpFlags::BiDiRtl )
     {
-        ComplexTextLayoutMode nLayoutMode = GetLayoutMode();
-        nLayoutMode |= TEXT_LAYOUT_BIDI_RTL | TEXT_LAYOUT_TEXTORIGIN_LEFT;
+        ComplexTextLayoutFlags nLayoutMode = GetLayoutMode();
+        nLayoutMode |= ComplexTextLayoutFlags::BiDiRtl | ComplexTextLayoutFlags::TextOriginLeft;
         SetLayoutMode( nLayoutMode );
     }
     SetHelpText( rText );
@@ -383,7 +387,6 @@ void HelpTextWindow::Paint( vcl::RenderContext& rRenderContext, const Rectangle&
     bool bNativeOK = false;
     if (rRenderContext.IsNativeControlSupported(ControlType::Tooltip, ControlPart::Entire))
     {
-        // #i46472# workaround gcc3.3 temporary problem
         Rectangle aCtrlRegion(Point(0, 0), GetOutputSizePixel());
         ImplControlValue aControlValue;
         bNativeOK = rRenderContext.DrawNativeControl(ControlType::Tooltip, ControlPart::Entire, aCtrlRegion,
@@ -449,7 +452,7 @@ void HelpTextWindow::ShowHelp( sal_uInt16 nDelayMode )
     maShowTimer.Start();
 }
 
-IMPL_LINK_TYPED( HelpTextWindow, TimerHdl, Timer*, pTimer, void)
+IMPL_LINK( HelpTextWindow, TimerHdl, Timer*, pTimer, void)
 {
     if ( pTimer == &maShowTimer )
     {
@@ -464,7 +467,7 @@ IMPL_LINK_TYPED( HelpTextWindow, TimerHdl, Timer*, pTimer, void)
     }
     else
     {
-        DBG_ASSERT( pTimer == &maHideTimer, "HelpTextWindow::TimerHdl with bad Timer" );
+        SAL_WARN_IF( pTimer != &maHideTimer, "vcl", "HelpTextWindow::TimerHdl with bad Timer" );
           ImplDestroyHelpWindow( true );
     }
 }
@@ -493,12 +496,12 @@ void ImplShowHelpWindow( vcl::Window* pParent, sal_uInt16 nHelpWinStyle, QuickHe
                          const Point& rScreenPos, const Rectangle& rHelpArea )
 {
 	//ADD LIBRAS
-    LASO_PrintHelpTextToPipeFile(rHelpText,"");
+	LASO_PrintHelpTextToPipeFile(rHelpText,"");
 	return;
 	//END LIBRAS
 	
 	//ADD LIBRAS
-   /* if (pParent->ImplGetFrame()->ShowTooltip(rHelpText, rHelpArea))
+    /*if (pParent->ImplGetFrame()->ShowTooltip(rHelpText, rHelpArea))
     {
         //tooltips are handled natively, return early
         return;
@@ -513,7 +516,7 @@ void ImplShowHelpWindow( vcl::Window* pParent, sal_uInt16 nHelpWinStyle, QuickHe
     sal_uInt16 nDelayMode = HELPDELAY_NORMAL;
     if ( pHelpWin )
     {
-        DBG_ASSERT( pHelpWin != pParent, "HelpInHelp ?!" );
+        SAL_WARN_IF( pHelpWin == pParent, "vcl", "HelpInHelp ?!" );
 
         if  (   (   ( pHelpWin->GetHelpText() != rHelpText )
                 ||  ( pHelpWin->GetWinStyle() != nHelpWinStyle )
@@ -557,7 +560,6 @@ void ImplShowHelpWindow( vcl::Window* pParent, sal_uInt16 nHelpWinStyle, QuickHe
             )
             nDelayMode = HELPDELAY_NONE;
 
-        DBG_ASSERT( !pHelpWin, "Noch ein HelpWin ?!" );
         pHelpWin = VclPtr<HelpTextWindow>::Create( pParent, rHelpText, nHelpWinStyle, nStyle );
         pSVData->maHelpData.mpHelpWin = pHelpWin;
         pHelpWin->SetStatusText( rStatusText );
@@ -573,6 +575,7 @@ void ImplShowHelpWindow( vcl::Window* pParent, sal_uInt16 nHelpWinStyle, QuickHe
         pHelpWin->ShowHelp( nDelayMode );
     }*/
 	//END LIBRAS
+
 }
 
 void ImplDestroyHelpWindow( bool bUpdateHideTime )
@@ -704,18 +707,17 @@ void ImplSetHelpWindowPos( vcl::Window* pHelpWin, sal_uInt16 nHelpWinStyle, Quic
 //ADD LIBRAS
 void LASO_PrintHelpTextToPipeFile(const OUString& rHelpText, char *extra){
 	static OUString lastHelpText;
-    //char log_line[100];
-	
 	if (rHelpText != lastHelpText){
 		//Somente imprimir nova linha no LOG se texto de ajuda for diferente do imediatamente anterior, ou seja, uma nova tooltip.
 		lastHelpText = rHelpText;
 		//sprintf(log_line, "%s%s\n", OUStringToOString( lastHelpText, RTL_TEXTENCODING_UTF8 ).pData->buffer, extra);
      	//Caminho absoluto do log no Windows
-     	std::ofstream lasoLog ("C:\\ProgramData\\LASO.log", std::ofstream::app);
-	    lasoLog << rHelpText << std::endl;
+     	std::ofstream lasoLog (LASO_LOG_PATH, std::ofstream::app);
+	    lasoLog << "TOOLTIP : " << rHelpText << std::endl;
 	    lasoLog.close();
 	}
 }
 //END LIBRAS
+
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

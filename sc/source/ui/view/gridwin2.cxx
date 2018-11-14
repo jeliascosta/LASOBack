@@ -54,7 +54,6 @@ using namespace css;
 using namespace css::sheet;
 using css::sheet::DataPilotFieldOrientation;
 using std::vector;
-using std::unique_ptr;
 
 DataPilotFieldOrientation ScGridWindow::GetDPFieldOrientation( SCCOL nCol, SCROW nRow ) const
 {
@@ -207,7 +206,7 @@ void ScGridWindow::DoPushPivotButton( SCCOL nCol, SCROW nRow, const MouseEvent& 
             ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
             OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
 
-            const std::unique_ptr<AbstractScPivotFilterDlg> pDlg(
+            ScopedVclPtr<AbstractScPivotFilterDlg> pDlg(
                 pFact->CreateScPivotFilterDlg(
                     pViewData->GetViewShell()->GetDialogParent(), aArgSet, nSrcTab));
             OSL_ENSURE(pDlg, "Dialog create fail!");
@@ -435,7 +434,7 @@ private:
 void ScGridWindow::DPLaunchFieldPopupMenu(
     const Point& rScrPos, const Size& rScrSize, const ScAddress& rPos, ScDPObject* pDPObj)
 {
-    unique_ptr<DPFieldPopupData> pDPData(new DPFieldPopupData);
+    std::unique_ptr<DPFieldPopupData> pDPData(new DPFieldPopupData);
     sal_uInt16 nOrient;
     pDPData->mnDim = pDPObj->GetHeaderDim(rPos, nOrient);
 
@@ -555,29 +554,29 @@ void ScGridWindow::UpdateDPFromFieldPopupMenu()
     ScCheckListMenuWindow::ResultType aRawResult;
     mpDPFieldPopup->getResult(aRawResult);
 
-    ScCheckListMenuWindow::ResultType aResult;
+    std::unordered_map<OUString, bool, OUStringHash> aResult;
     ScCheckListMenuWindow::ResultType::const_iterator itr = aRawResult.begin(), itrEnd = aRawResult.end();
     for (; itr != itrEnd; ++itr)
     {
-        MemNameMapType::const_iterator itrNameMap = aMemNameMap.find(itr->first);
+        MemNameMapType::const_iterator itrNameMap = aMemNameMap.find(itr->aName);
         if (itrNameMap == aMemNameMap.end())
         {
             // This is an original member name.  Use it as-is.
-            OUString aName = itr->first;
+            OUString aName = itr->aName;
             if (aName.equals(ScGlobal::GetRscString(STR_EMPTYDATA)))
                 // Translate the special empty name into an empty string.
                 aName.clear();
 
             aResult.insert(
-                ScCheckListMenuWindow::ResultType::value_type(
-                    aName, itr->second));
+                std::unordered_map<OUString, bool, OUStringHash>::value_type(
+                    aName, itr->bValid));
         }
         else
         {
             // This is a layout name.  Get the original member name and use it.
             aResult.insert(
-                ScCheckListMenuWindow::ResultType::value_type(
-                    itrNameMap->second, itr->second));
+                std::unordered_map<OUString, bool, OUStringHash>::value_type(
+                    itrNameMap->second, itr->bValid));
         }
     }
     pDim->UpdateMemberVisibility(aResult);
@@ -961,13 +960,13 @@ void ScGridWindow::PagebreakMove( const MouseEvent& rMEvt, bool bUp )
                 if (bUndo)
                 {
                     OUString aUndo = ScGlobal::GetRscString( STR_UNDO_DRAG_BREAK );
-                    pDocSh->GetUndoManager()->EnterListAction( aUndo, aUndo );
+                    pDocSh->GetUndoManager()->EnterListAction( aUndo, aUndo, 0, pViewData->GetViewShell()->GetViewShellId() );
                 }
 
                 bool bGrow = !bHide && nNew > nPagebreakBreak;
                 if ( bColumn )
                 {
-                    if (rDoc.HasColBreak(static_cast<SCCOL>(nPagebreakBreak), nTab) & BREAK_MANUAL)
+                    if (rDoc.HasColBreak(static_cast<SCCOL>(nPagebreakBreak), nTab) & ScBreakType::Manual)
                     {
                         ScAddress aOldAddr( static_cast<SCCOL>(nPagebreakBreak), nPosY, nTab );
                         pViewFunc->DeletePageBreak( true, true, &aOldAddr, false );
@@ -980,7 +979,7 @@ void ScGridWindow::PagebreakMove( const MouseEvent& rMEvt, bool bUp )
                     if ( bGrow )
                     {
                         // change last break to hard, and change scaleing
-                        bool bManualBreak = (rDoc.HasColBreak(static_cast<SCCOL>(nPagebreakPrev), nTab) & BREAK_MANUAL);
+                        bool bManualBreak(rDoc.HasColBreak(static_cast<SCCOL>(nPagebreakPrev), nTab) & ScBreakType::Manual);
                         if ( static_cast<SCCOL>(nPagebreakPrev) > aPagebreakSource.aStart.Col() && !bManualBreak )
                         {
                             ScAddress aPrev( static_cast<SCCOL>(nPagebreakPrev), nPosY, nTab );
@@ -994,7 +993,7 @@ void ScGridWindow::PagebreakMove( const MouseEvent& rMEvt, bool bUp )
                 }
                 else
                 {
-                    if (rDoc.HasRowBreak(nPagebreakBreak, nTab) & BREAK_MANUAL)
+                    if (rDoc.HasRowBreak(nPagebreakBreak, nTab) & ScBreakType::Manual)
                     {
                         ScAddress aOldAddr( nPosX, nPagebreakBreak, nTab );
                         pViewFunc->DeletePageBreak( false, true, &aOldAddr, false );
@@ -1007,7 +1006,7 @@ void ScGridWindow::PagebreakMove( const MouseEvent& rMEvt, bool bUp )
                     if ( bGrow )
                     {
                         // change last break to hard, and change scaleing
-                        bool bManualBreak = (rDoc.HasRowBreak(nPagebreakPrev, nTab) & BREAK_MANUAL);
+                        bool bManualBreak(rDoc.HasRowBreak(nPagebreakPrev, nTab) & ScBreakType::Manual);
                         if ( nPagebreakPrev > aPagebreakSource.aStart.Row() && !bManualBreak )
                         {
                             ScAddress aPrev( nPosX, nPagebreakPrev, nTab );

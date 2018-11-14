@@ -36,7 +36,7 @@
 
 #include <unobaseclass.hxx>
 
-typedef ::std::deque<
+typedef std::deque<
     css::uno::Reference< css::text::XTextRange > >
     TextRangeList_t;
 
@@ -75,7 +75,7 @@ protected:
         throw (css::lang::IllegalArgumentException,
                 css::uno::RuntimeException);
 
-    virtual ~SwXMeta();
+    virtual ~SwXMeta() override;
 
     SwXMeta(SwXMeta const&) = delete;
     SwXMeta& operator=(SwXMeta const&) = delete;
@@ -93,7 +93,7 @@ public:
         CreateXMeta(
             ::sw::Meta & rMeta,
             css::uno::Reference< css::text::XText> const& xParentText = nullptr,
-            ::std::unique_ptr<TextRangeList_t const> && pPortions = ::std::unique_ptr<TextRangeList_t const>());
+            std::unique_ptr<TextRangeList_t const> && pPortions = std::unique_ptr<TextRangeList_t const>());
 
     static css::uno::Reference<css::rdf::XMetadatable>
         CreateXMeta(SwDoc & rDoc, bool isField);
@@ -224,12 +224,12 @@ class SwXMetaField
 
 private:
 
-    virtual ~SwXMetaField();
+    virtual ~SwXMetaField() override;
 
     friend css::uno::Reference< css::rdf::XMetadatable >
         SwXMeta::CreateXMeta(::sw::Meta &,
             css::uno::Reference< css::text::XText> const&,
-            ::std::unique_ptr<TextRangeList_t const> && pPortions);
+            std::unique_ptr<TextRangeList_t const> && pPortions);
 
     SwXMetaField(SwDoc *const pDoc, ::sw::Meta *const pMeta,
         css::uno::Reference< css::text::XText> const& xParentText,

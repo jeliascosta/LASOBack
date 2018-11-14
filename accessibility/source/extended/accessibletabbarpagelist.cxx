@@ -17,9 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/extended/accessibletabbarpagelist.hxx>
+#include <extended/accessibletabbarpagelist.hxx>
 #include <svtools/tabbar.hxx>
-#include <accessibility/extended/accessibletabbarpage.hxx>
+#include <extended/accessibletabbarpage.hxx>
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 #include <com/sun/star/accessibility/AccessibleRole.hpp>
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
@@ -378,8 +378,7 @@ namespace accessibility
 
     Sequence< OUString > AccessibleTabBarPageList::getSupportedServiceNames() throw (RuntimeException, std::exception)
     {
-        Sequence< OUString > aNames { "com.sun.star.awt.AccessibleTabBarPageList" };
-        return aNames;
+        return { "com.sun.star.awt.AccessibleTabBarPageList" };
     }
 
 

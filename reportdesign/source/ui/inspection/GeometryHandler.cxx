@@ -38,7 +38,7 @@
 #include <toolkit/helper/vclunohelper.hxx>
 #include <unotools/syslocale.hxx>
 #include <tools/diagnose_ex.h>
-#include <tools/StringListResource.hxx>
+#include <tools/resary.hxx>
 #include <com/sun/star/lang/XInitialization.hpp>
 #include <com/sun/star/form/inspection/FormComponentPropertyHandler.hpp>
 #include <com/sun/star/inspection/StringRepresentation.hpp>
@@ -213,8 +213,7 @@ OUString GeometryHandler::impl_convertToFormula( const uno::Any& _rControlValue 
     if ( aParser.isValid() )
         return sName;
 
-    aParser = ReportFormula( impl_isDataField(sName) ? ReportFormula::Field : ReportFormula::Expression, sName );
-    return aParser.getCompleteFormula();
+    return ReportFormula(impl_isDataField(sName) ? ReportFormula::Field : ReportFormula::Expression, sName).getCompleteFormula();
 }
 
 GeometryHandler::GeometryHandler(uno::Reference< uno::XComponentContext > const & context)
@@ -677,10 +676,12 @@ void GeometryHandler::implCreateListLikeControl(
         ,bool _bTrueIfListBoxFalseIfComboBox
     )
 {
-    ::std::vector< OUString > aList;
-    tools::StringListResource aRes(ModuleRes(_nResId),aList);
-
-    implCreateListLikeControl(_rxControlFactory,out_Descriptor,aList,_bReadOnlyControl,_bTrueIfListBoxFalseIfComboBox);
+    ModuleRes aRes(_nResId);
+    ResStringArray aResList(aRes);
+    std::vector<OUString> aList;
+    for (sal_uInt32 i = 0; i < aResList.Count(); ++i)
+        aList.push_back(aResList.GetString(i));
+    implCreateListLikeControl(_rxControlFactory, out_Descriptor, aList, _bReadOnlyControl, _bTrueIfListBoxFalseIfComboBox);
 }
 
 void GeometryHandler::implCreateListLikeControl(
@@ -932,9 +933,11 @@ beans::Property GeometryHandler::getProperty(const OUString & PropertyName)
 }
 uno::Any GeometryHandler::getConstantValue(bool _bToControlValue,sal_uInt16 _nResId,const uno::Any& _aValue,const OUString& _sConstantName,const OUString & PropertyName )
 {
-    ::std::vector< OUString > aList;
-    tools::StringListResource aRes(ModuleRes(_nResId),aList);
-    uno::Sequence< OUString > aSeq(comphelper::containerToSequence(aList));
+    ModuleRes aRes(_nResId);
+    ResStringArray aResList(aRes);
+    uno::Sequence< OUString > aSeq(aResList.Count());
+    for (sal_uInt32 i = 0; i < aResList.Count(); ++i)
+        aSeq[i] = aResList.GetString(i);
 
     uno::Reference< inspection::XStringRepresentation > xConversionHelper = inspection::StringRepresentation::createConstant( m_xContext,m_xTypeConverter,_sConstantName,aSeq);
     if ( _bToControlValue )
@@ -1069,11 +1072,19 @@ uno::Any SAL_CALL GeometryHandler::convertToPropertyValue(const OUString & Prope
             {
                 OUString sValue;
                 _rControlValue >>= sValue;
-                ::std::vector< OUString > aList;
-                tools::StringListResource aRes(ModuleRes(RID_STR_TYPE_CONST),aList);
-                ::std::vector< OUString >::const_iterator aFind = ::std::find(aList.begin(),aList.end(),sValue);
-                if ( aFind != aList.end() )
-                    aPropertyValue <<= static_cast<sal_uInt32>(aFind - aList.begin());
+                ModuleRes aRes(RID_STR_TYPE_CONST);
+                ResStringArray aResList(aRes);
+                sal_uInt32 nFound(RESARRAY_INDEX_NOTFOUND);
+                for (sal_uInt32 i = 0; i < aResList.Count(); ++i)
+                {
+                    if (aResList.GetString(i) == sValue)
+                    {
+                        nFound = i;
+                        break;
+                    }
+                }
+                if (nFound != RESARRAY_INDEX_NOTFOUND)
+                    aPropertyValue <<= nFound;
             }
             break;
         case PROPERTY_ID_MIMETYPE:
@@ -1083,22 +1094,38 @@ uno::Any SAL_CALL GeometryHandler::convertToPropertyValue(const OUString & Prope
             {
                 OUString sValue;
                 _rControlValue >>= sValue;
-                ::std::vector< OUString > aList;
-                tools::StringListResource aRes(ModuleRes(RID_STR_VERTICAL_ALIGN_CONST),aList);
-                ::std::vector< OUString >::const_iterator aFind = ::std::find(aList.begin(),aList.end(),sValue);
-                if ( aFind != aList.end() )
-                    aPropertyValue <<= static_cast<style::VerticalAlignment>(aFind - aList.begin());
+                ModuleRes aRes(RID_STR_VERTICAL_ALIGN_CONST);
+                ResStringArray aResList(aRes);
+                sal_uInt32 nFound(RESARRAY_INDEX_NOTFOUND);
+                for (sal_uInt32 i = 0; i < aResList.Count(); ++i)
+                {
+                    if (aResList.GetString(i) == sValue)
+                    {
+                        nFound = i;
+                        break;
+                    }
+                }
+                if (nFound != RESARRAY_INDEX_NOTFOUND)
+                    aPropertyValue <<= static_cast<style::VerticalAlignment>(nFound);
             }
             break;
         case PROPERTY_ID_PARAADJUST:
             {
                 OUString sValue;
                 _rControlValue >>= sValue;
-                ::std::vector< OUString > aList;
-                tools::StringListResource aRes(ModuleRes(RID_STR_PARAADJUST_CONST),aList);
-                ::std::vector< OUString >::const_iterator aFind = ::std::find(aList.begin(),aList.end(),sValue);
-                if ( aFind != aList.end() )
-                    aPropertyValue <<= static_cast<sal_Int16>(aFind - aList.begin());
+                ModuleRes aRes(RID_STR_PARAADJUST_CONST);
+                ResStringArray aResList(aRes);
+                sal_uInt32 nFound(RESARRAY_INDEX_NOTFOUND);
+                for (sal_uInt32 i = 0; i < aResList.Count(); ++i)
+                {
+                    if (aResList.GetString(i) == sValue)
+                    {
+                        nFound = i;
+                        break;
+                    }
+                }
+                if (nFound != RESARRAY_INDEX_NOTFOUND)
+                    aPropertyValue <<= static_cast<sal_Int16>(nFound);
             }
             break;
         default:
@@ -1212,30 +1239,30 @@ uno::Any SAL_CALL GeometryHandler::convertToControlValue(const OUString & Proper
             break;
         case PROPERTY_ID_TYPE:
             {
-                ::std::vector< OUString > aList;
-                tools::StringListResource aRes(ModuleRes(RID_STR_TYPE_CONST),aList);
-                if ( m_nDataFieldType < aList.size() )
-                    aControlValue <<= aList[m_nDataFieldType];
+                ModuleRes aRes(RID_STR_TYPE_CONST);
+                ResStringArray aResList(aRes);
+                if (m_nDataFieldType < aResList.Count())
+                    aControlValue <<= aResList.GetString(m_nDataFieldType);
             }
             break;
         case PROPERTY_ID_VERTICALALIGN:
             {
                 style::VerticalAlignment nParagraphVertAlign = style::VerticalAlignment_TOP;
                 aPropertyValue >>= nParagraphVertAlign;
-                ::std::vector< OUString > aList;
-                tools::StringListResource aRes(ModuleRes(RID_STR_VERTICAL_ALIGN_CONST),aList);
-                if ( static_cast<sal_Int16>(nParagraphVertAlign) < static_cast<sal_Int16>(aList.size()) )
-                    aControlValue <<= aList[nParagraphVertAlign];
+                ModuleRes aRes(RID_STR_VERTICAL_ALIGN_CONST);
+                ResStringArray aResList(aRes);
+                if (sal_uInt32(nParagraphVertAlign) < aResList.Count())
+                    aControlValue <<= aResList.GetString(nParagraphVertAlign);
             }
             break;
         case PROPERTY_ID_PARAADJUST:
             {
                 sal_Int16 nParagraphAdjust = style::ParagraphAdjust_LEFT;
                 aPropertyValue >>= nParagraphAdjust;
-                ::std::vector< OUString > aList;
-                tools::StringListResource aRes(ModuleRes(RID_STR_PARAADJUST_CONST),aList);
-                if ( nParagraphAdjust < static_cast<sal_Int16>(aList.size()) )
-                    aControlValue <<= aList[nParagraphAdjust];
+                ModuleRes aRes(RID_STR_PARAADJUST_CONST);
+                ResStringArray aResList(aRes);
+                if (static_cast<sal_uInt32>(nParagraphAdjust) < aResList.Count())
+                    aControlValue <<= aResList.GetString(nParagraphAdjust);
             }
             break;
         case PROPERTY_ID_BACKCOLOR:
@@ -1454,7 +1481,7 @@ inspection::InteractiveSelectionResult SAL_CALL GeometryHandler::onInteractivePr
             eResult = inspection::InteractiveSelectionResult_ObtainedValue;
             beans::PropertyChangeEvent aScopeEvent;
             aScopeEvent.PropertyName = PROPERTY_FILLCOLOR;
-            aScopeEvent.NewValue <<= xShape->getPropertyValue(PROPERTY_FILLCOLOR);
+            aScopeEvent.NewValue = xShape->getPropertyValue(PROPERTY_FILLCOLOR);
             m_aPropertyListeners.notify( aScopeEvent, &beans::XPropertyChangeListener::propertyChange );
         }
         return eResult;
@@ -1660,7 +1687,7 @@ OUString GeometryHandler::impl_ConvertUIToMimeType_nothrow(const OUString& _sUIN
     ::std::vector< OUString >::const_iterator aFind = ::std::find(aList.begin(),aList.end(),_sUIName);
     if ( aFind != aList.end() )
     {
-        const sal_Size nPos = aFind - aList.begin();
+        const std::size_t nPos = aFind - aList.begin();
         const uno::Reference< report::XReportDefinition> xReportDefinition(m_xReportComponent,uno::UNO_QUERY);
         if ( xReportDefinition.is() )
         {
@@ -1898,7 +1925,6 @@ void GeometryHandler::loadDefaultFunctions()
     if ( m_aDefaultFunctions.empty() )
     {
         m_aCounterFunction.m_bPreEvaluated = false;
-        m_aCounterFunction.m_bDeepTraversing = false;
         m_aCounterFunction.m_sName = ModuleRes(RID_STR_F_COUNTER);
         m_aCounterFunction.m_sFormula = "rpt:[%FunctionName] + 1";
         m_aCounterFunction.m_sSearchString = "rpt:\\[[:alpha:]+([:space:]*[:alnum:]*)*\\][:space:]*\\+[:space:]*[:digit:]*";
@@ -1906,7 +1932,6 @@ void GeometryHandler::loadDefaultFunctions()
         m_aCounterFunction.m_sInitialFormula.Value = "rpt:1";
 
         DefaultFunction aDefault;
-        aDefault.m_bDeepTraversing = false;
 
         aDefault.m_bPreEvaluated = true;
 
@@ -2045,7 +2070,7 @@ void GeometryHandler::impl_initFieldList_nothrow( uno::Sequence< OUString >& _rF
     try
     {
         uno::Reference< awt::XWindow> xInspectorWindow(m_xContext->getValueByName("DialogParentWindow") ,uno::UNO_QUERY);
-        vcl::Window* pInspectorWindow = VCLUnoHelper::GetWindow( xInspectorWindow );
+        VclPtr<vcl::Window> pInspectorWindow = VCLUnoHelper::GetWindow( xInspectorWindow );
         WaitObject aWaitCursor( pInspectorWindow );
 
         uno::Reference< sdbc::XPreparedStatement >  xStatement;
@@ -2124,7 +2149,7 @@ void GeometryHandler::impl_createFunction(const OUString& _sFunctionName,const O
 
     m_xFunction->setFormula(sFormula);
     m_xFunction->setPreEvaluated(_aFunction.m_bPreEvaluated);
-    m_xFunction->setDeepTraversing(_aFunction.m_bDeepTraversing);
+    m_xFunction->setDeepTraversing(false);
     if ( _aFunction.m_sInitialFormula.IsPresent )
     {
         beans::Optional< OUString> aInitialFormula = _aFunction.m_sInitialFormula;

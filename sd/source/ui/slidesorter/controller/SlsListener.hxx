@@ -72,7 +72,7 @@ class Listener
 {
 public:
     explicit Listener (SlideSorter& rSlideSorter);
-    virtual ~Listener();
+    virtual ~Listener() override;
 
     /** Connect to the current controller of the view shell as listener.
         This method is called once during initialization and every time a
@@ -170,13 +170,7 @@ private:
     */
     void HandleShapeModification (const SdrPage* pPage);
 
-    /** This method throws a DisposedException when the object has already been
-        disposed.
-    */
-    void ThrowIfDisposed()
-        throw (css::lang::DisposedException);
-
-    DECL_LINK_TYPED(EventMultiplexerCallback, tools::EventMultiplexerEvent&, void);
+    DECL_LINK(EventMultiplexerCallback, tools::EventMultiplexerEvent&, void);
 };
 
 } } } // end of namespace ::sd::slidesorter::controller

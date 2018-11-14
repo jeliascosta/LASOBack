@@ -188,7 +188,7 @@ public:
         maTempFile.EnableKillingFile();
     }
 
-    virtual ~SwModelTestBase()
+    virtual ~SwModelTestBase() override
     {}
 
     virtual void setUp() override
@@ -220,7 +220,6 @@ protected:
             header();
             std::unique_ptr<Resetter> const pChanges(preTest(filename));
             load(mpTestDocumentPath, filename);
-            postTest(filename);
             verify();
             finish();
             maTempFile.EnableKillingFile();
@@ -240,7 +239,6 @@ protected:
         load(mpTestDocumentPath, filename);
         postLoad(filename);
         reload(mpFilter, filename);
-        postTest(filename);
         verify();
         finish();
         maTempFile.EnableKillingFile();
@@ -260,7 +258,6 @@ protected:
         load(mpTestDocumentPath, filename);
         save(OUString::createFromAscii(mpFilter), maTempFile);
         maTempFile.EnableKillingFile(false);
-        postTest(filename);
         verify();
         finish();
         maTempFile.EnableKillingFile();
@@ -291,13 +288,6 @@ protected:
 
     /// Override this function if some special file-specific setup is needed during export test: after load, but before save.
     virtual void postLoad(const char* /*pFilename*/)
-    {
-    }
-
-    /**
-     * Override this function if some special filename-specific teardown is needed
-     */
-    virtual void postTest(const char* /*filename*/)
     {
     }
 
@@ -431,8 +421,8 @@ protected:
     T getProperty( const uno::Any& obj, const OUString& name ) const
     {
         uno::Reference< beans::XPropertySet > properties( obj, uno::UNO_QUERY_THROW );
-        T data = T();
-        if (!(properties->getPropertyValue(name) >>= data))
+        T data;
+        if (!css::uno::fromAny(properties->getPropertyValue(name), &data))
         {
             CPPUNIT_FAIL("the property is of unexpected type or void");
         }
@@ -457,7 +447,7 @@ protected:
         return properties->getPropertySetInfo()->hasPropertyByName(name);
     }
 
-    xml::AttributeData getUserDefineAttribute(const uno::Any& obj, const OUString& name, const OUString& rValue = OUString()) const
+    xml::AttributeData getUserDefineAttribute(const uno::Any& obj, const OUString& name, const OUString& rValue) const
     {
         uno::Reference<container::XNameContainer> attrsCnt(getProperty<uno::Any>(obj, "UserDefinedAttributes"), uno::UNO_QUERY_THROW);
 
@@ -484,7 +474,7 @@ protected:
         return nRet;
     }
 
-    uno::Reference<text::XTextContent> getParagraphOrTable(int number, uno::Reference<text::XText> xText = uno::Reference<text::XText>()) const
+    uno::Reference<text::XTextContent> getParagraphOrTable(int number, uno::Reference<text::XText> const & xText = uno::Reference<text::XText>()) const
     {
         assert(number != 0); // this thing is 1-based
         uno::Reference<container::XEnumerationAccess> paraEnumAccess;
@@ -515,7 +505,7 @@ protected:
         return xParagraph;
     }
 
-    uno::Reference<text::XTextRange> getParagraphOfText(int number, uno::Reference<text::XText> xText, const OUString& content = OUString()) const
+    uno::Reference<text::XTextRange> getParagraphOfText(int number, uno::Reference<text::XText> const & xText, const OUString& content = OUString()) const
     {
         uno::Reference<text::XTextRange> const xParagraph(getParagraphOrTable(number, xText), uno::UNO_QUERY_THROW);
         if (!content.isEmpty())
@@ -524,7 +514,7 @@ protected:
     }
 
     /// Get run (counted from 1) of a paragraph, optionally check it contains the given text.
-    uno::Reference<text::XTextRange> getRun(uno::Reference<text::XTextRange> xParagraph, int number, const OUString& content = OUString()) const
+    uno::Reference<text::XTextRange> getRun(uno::Reference<text::XTextRange> const & xParagraph, int number, const OUString& content = OUString()) const
     {
         uno::Reference<container::XEnumerationAccess> xRunEnumAccess(xParagraph, uno::UNO_QUERY);
         uno::Reference<container::XEnumeration> xRunEnum = xRunEnumAccess->createEnumeration();
@@ -537,7 +527,7 @@ protected:
     }
 
     /// Get math formula string of a run.
-    OUString getFormula(uno::Reference<text::XTextRange> xRun) const
+    OUString getFormula(uno::Reference<text::XTextRange> const & xRun) const
     {
         uno::Reference<container::XContentEnumerationAccess> xContentEnumAccess(xRun, uno::UNO_QUERY);
         uno::Reference<container::XEnumeration> xContentEnum(xContentEnumAccess->createContentEnumeration(""), uno::UNO_QUERY);
@@ -644,10 +634,24 @@ protected:
                 // too many validation errors right now
                 validate(maTempFile.GetFileName(), test::OOXML);
             }
-            else if(aFilterName == "writer8")
+            else if(aFilterName == "writer8"
+                || aFilterName == "OpenDocument Text Flat XML")
             {
                 // still a few validation errors
                 validate(maTempFile.GetFileName(), test::ODF);
+            }
+            else if(aFilterName == "MS Word 97")
+            {
+                validate(maTempFile.GetFileName(), test::MSBINARY);
+            }
+            else
+            {
+                OString aMessage("validation requested, but don't know how to validate ");
+                aMessage += filename;
+                aMessage += " (";
+                aMessage += OUStringToOString(aFilterName, RTL_TEXTENCODING_UTF8);
+                aMessage += ")";
+                CPPUNIT_FAIL(aMessage.getStr());
             }
         }
         discardDumpedLayout();

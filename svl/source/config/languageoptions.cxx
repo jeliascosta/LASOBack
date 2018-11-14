@@ -27,6 +27,7 @@
 #include <rtl/instance.hxx>
 #include <com/sun/star/i18n/ScriptType.hpp>
 #include <unotools/syslocale.hxx>
+#include "officecfg/System.hxx"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -225,17 +226,17 @@ bool SvtSystemLanguageOptions::isKeyboardLayoutTypeInstalled(sal_Int16 scriptTyp
 {
     bool isInstalled = false;
 #ifdef _WIN32
-    int nLayouts = GetKeyboardLayoutList(0, NULL);
+    int nLayouts = GetKeyboardLayoutList(0, nullptr);
     if (nLayouts > 0)
     {
-        HKL *lpList = (HKL*)LocalAlloc(LPTR, (nLayouts * sizeof(HKL)));
+        HKL *lpList = static_cast<HKL*>(LocalAlloc(LPTR, (nLayouts * sizeof(HKL))));
         if (lpList)
         {
             nLayouts = GetKeyboardLayoutList(nLayouts, lpList);
 
             for(int i = 0; i < nLayouts; ++i)
             {
-                LCID lang = MAKELCID((WORD)((DWORD_PTR)lpList[i] & 0xffff), SORT_DEFAULT);
+                LCID lang = MAKELCID((WORD)(reinterpret_cast<DWORD_PTR>(lpList[i]) & 0xffff), SORT_DEFAULT);
                 if (MsLangId::getScriptType(lang) == scriptType)
                 {
                     isInstalled = true;
@@ -262,6 +263,37 @@ bool SvtSystemLanguageOptions::isCTLKeyboardLayoutInstalled() const
 bool SvtSystemLanguageOptions::isCJKKeyboardLayoutInstalled() const
 {
     return isKeyboardLayoutTypeInstalled(css::i18n::ScriptType::ASIAN);
+}
+
+OUString getInstalledLocaleForLanguage(css::uno::Sequence<OUString> const & installed, OUString const & locale)
+{
+    if (locale.isEmpty())
+        return OUString();  // do not attempt to resolve anything
+
+    for (sal_Int32 i = 0; i != installed.getLength(); ++i) {
+        if (installed[i] == locale) {
+            return installed[i];
+        }
+    }
+    std::vector<OUString> fallbacks(LanguageTag(locale).getFallbackStrings(false));
+    for (OUString & rf : fallbacks) {
+        for (sal_Int32 i = 0; i != installed.getLength(); ++i) {
+            if (installed[i] == rf) {
+                return installed[i];
+            }
+        }
+    }
+    return OUString();
+}
+
+OUString getInstalledLocaleForSystemUILanguage(const css::uno::Sequence<OUString>& rLocaleElementNames)
+{
+    OUString locale = getInstalledLocaleForLanguage(rLocaleElementNames, officecfg::System::L10N::UILocale::get());
+    if (locale.isEmpty())
+        locale = getInstalledLocaleForLanguage(rLocaleElementNames, "en-US");
+    if (locale.isEmpty() && rLocaleElementNames.hasElements())
+        locale = rLocaleElementNames[0];
+    return locale;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

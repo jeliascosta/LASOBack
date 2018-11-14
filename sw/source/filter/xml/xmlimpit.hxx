@@ -38,13 +38,12 @@ protected:
     sal_uInt16 nUnknownWhich;
 
 public:
-    SvXMLImportItemMapper( SvXMLItemMapEntriesRef rMapEntries ,
-                           sal_uInt16 nUnknWhich=USHRT_MAX );
+    explicit SvXMLImportItemMapper( SvXMLItemMapEntriesRef const & rMapEntries );
     virtual ~SvXMLImportItemMapper();
 
     /** fills the given itemset with the attributes in the given list */
     void importXML( SfxItemSet& rSet,
-                    css::uno::Reference< css::xml::sax::XAttributeList > xAttrList,
+                    css::uno::Reference< css::xml::sax::XAttributeList > const & xAttrList,
                     const SvXMLUnitConverter& rUnitConverter,
                     const SvXMLNamespaceMap& rNamespaceMap );
 

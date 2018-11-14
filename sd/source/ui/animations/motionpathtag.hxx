@@ -39,7 +39,7 @@ class MotionPathTag : public SmartTag, public IPolyPolygonEditorController, publ
 {
 public:
     MotionPathTag( CustomAnimationPane& rPane, ::sd::View& rView, const CustomAnimationEffectPtr& pEffect );
-    virtual ~MotionPathTag();
+    virtual ~MotionPathTag() override;
 
     SdrPathObj* getPathObj() const { return mpPathObj; }
 
@@ -52,7 +52,7 @@ public:
     // callbacks from sdr view
     virtual sal_uLong GetMarkablePointCount() const override;
     virtual sal_uLong GetMarkedPointCount() const override;
-    virtual bool MarkPoint(SdrHdl& rHdl, bool bUnmark=false) override;
+    virtual bool MarkPoint(SdrHdl& rHdl, bool bUnmark) override;
     virtual void CheckPossibilities() override;
     virtual bool MarkPoints(const Rectangle* pRect, bool bUnmark) override;
 

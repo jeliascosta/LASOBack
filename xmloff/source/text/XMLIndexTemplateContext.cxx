@@ -47,18 +47,6 @@ using ::com::sun::star::uno::Any;
 using ::com::sun::star::xml::sax::XAttributeList;
 using ::com::sun::star::container::XIndexReplace;
 
-const sal_Char sAPI_TokenEntryNumber[] =    "TokenEntryNumber";
-const sal_Char sAPI_TokenEntryText[] =      "TokenEntryText";
-const sal_Char sAPI_TokenTabStop[] =        "TokenTabStop";
-const sal_Char sAPI_TokenText[] =           "TokenText";
-const sal_Char sAPI_TokenPageNumber[] =     "TokenPageNumber";
-const sal_Char sAPI_TokenChapterInfo[] =    "TokenChapterInfo";
-const sal_Char sAPI_TokenHyperlinkStart[] = "TokenHyperlinkStart";
-const sal_Char sAPI_TokenHyperlinkEnd[] =   "TokenHyperlinkEnd";
-const sal_Char sAPI_TokenBibliographyDataField[] =
-                                            "TokenBibliographyDataField";
-
-
 XMLIndexTemplateContext::XMLIndexTemplateContext(
     SvXMLImport& rImport,
     Reference<XPropertySet> & rPropSet,
@@ -79,15 +67,15 @@ XMLIndexTemplateContext::XMLIndexTemplateContext(
 ,   bOutlineLevelOK(false)
 ,   bTOC( bT )
 ,   rPropertySet(rPropSet)
-,   sTokenEntryNumber(sAPI_TokenEntryNumber)
-,   sTokenEntryText(sAPI_TokenEntryText)
-,   sTokenTabStop(sAPI_TokenTabStop)
-,   sTokenText(sAPI_TokenText)
-,   sTokenPageNumber(sAPI_TokenPageNumber)
-,   sTokenChapterInfo(sAPI_TokenChapterInfo)
-,   sTokenHyperlinkStart(sAPI_TokenHyperlinkStart)
-,   sTokenHyperlinkEnd(sAPI_TokenHyperlinkEnd)
-,   sTokenBibliographyDataField(sAPI_TokenBibliographyDataField)
+,   sTokenEntryNumber("TokenEntryNumber")
+,   sTokenEntryText("TokenEntryText")
+,   sTokenTabStop("TokenTabStop")
+,   sTokenText("TokenText")
+,   sTokenPageNumber("TokenPageNumber")
+,   sTokenChapterInfo("TokenChapterInfo")
+,   sTokenHyperlinkStart("TokenHyperlinkStart")
+,   sTokenHyperlinkEnd("TokenHyperlinkEnd")
+,   sTokenBibliographyDataField("TokenBibliographyDataField")
 
 ,   sCharacterStyleName("CharacterStyleName")
 ,   sTokenType("TokenType")
@@ -104,8 +92,8 @@ XMLIndexTemplateContext::XMLIndexTemplateContext(
     DBG_ASSERT( ((XML_TOKEN_INVALID != eLevelAttrName) &&  (nullptr != pLevelNameMap))
                 || ((XML_TOKEN_INVALID == eLevelAttrName) &&  (nullptr == pLevelNameMap)),
                 "need both, attribute name and value map, or neither" );
-    DBG_ASSERT( nullptr != pOutlineLevelStylePropMap, "need property name map" );
-    DBG_ASSERT( nullptr != pAllowedTokenTypes, "need allowed tokens map" );
+    SAL_WARN_IF( nullptr == pOutlineLevelStylePropMap, "xmloff", "need property name map" );
+    SAL_WARN_IF( nullptr == pAllowedTokenTypes, "xmloff", "need allowed tokens map" );
 
     // no map for outline-level? then use 1
     if (nullptr == pLevelNameMap)

@@ -83,21 +83,18 @@ namespace dbmm
         static Sequence< OUString > SAL_CALL getSupportedServiceNames_static() throw(RuntimeException);
 
     protected:
-        virtual ~MacroMigrationDialogService();
+        virtual ~MacroMigrationDialogService() override;
 
     protected:
         virtual VclPtr<Dialog> createDialog( vcl::Window* _pParent ) override;
-        virtual void destroyDialog() override;
 
     private:
-        Reference<XComponentContext>          m_aContext;
         Reference< XOfficeDatabaseDocument >    m_xDocument;
     };
 
     // MacroMigrationDialogService
     MacroMigrationDialogService::MacroMigrationDialogService( const Reference< XComponentContext >& _rxContext )
         :MacroMigrationDialogService_Base( _rxContext )
-        ,m_aContext( _rxContext )
     {
         m_bNeedInitialization = true;
     }
@@ -122,11 +119,6 @@ namespace dbmm
     VclPtr<Dialog> MacroMigrationDialogService::createDialog( vcl::Window* _pParent )
     {
         return VclPtr<MacroMigrationDialog>::Create( _pParent, m_aContext, m_xDocument );
-    }
-
-    void MacroMigrationDialogService::destroyDialog()
-    {
-        MacroMigrationDialogService_Base::destroyDialog();
     }
 
     Sequence< sal_Int8 > SAL_CALL MacroMigrationDialogService::getImplementationId() throw(RuntimeException, std::exception)

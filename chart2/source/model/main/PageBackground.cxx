@@ -22,7 +22,6 @@
 #include "LinePropertiesHelper.hxx"
 #include "FillProperties.hxx"
 #include "UserDefinedProperties.hxx"
-#include "ContainerHelper.hxx"
 #include "PropertyHelper.hxx"
 
 #include <com/sun/star/drawing/LineStyle.hpp>
@@ -39,8 +38,6 @@ using ::com::sun::star::beans::Property;
 
 namespace
 {
-
-static const char lcl_aServiceName[] = "com.sun.star.comp.chart2.PageBackground";
 
 struct StaticPageBackgroundDefaults_Initializer
 {
@@ -113,9 +110,8 @@ struct StaticPageBackgroundInfo : public rtl::StaticAggregate< uno::Reference< b
 namespace chart
 {
 
-PageBackground::PageBackground( const uno::Reference< uno::XComponentContext > & xContext ) :
-        ::property::OPropertySet( m_aMutex ),
-    m_xContext( xContext ),
+PageBackground::PageBackground() :
+    ::property::OPropertySet( m_aMutex ),
     m_xModifyEventForwarder( ModifyListenerHelper::createModifyEventForwarder())
 {}
 
@@ -123,7 +119,6 @@ PageBackground::PageBackground( const PageBackground & rOther ) :
         MutexContainer(),
         impl::PageBackground_Base(),
         ::property::OPropertySet( rOther, m_aMutex ),
-    m_xContext( rOther.m_xContext ),
     m_xModifyEventForwarder( ModifyListenerHelper::createModifyEventForwarder())
 {}
 
@@ -206,32 +201,13 @@ void SAL_CALL PageBackground::disposing( const lang::EventObject& /* Source */ )
 // ____ OPropertySet ____
 void PageBackground::firePropertyChangeEvent()
 {
-    fireModifyEvent();
-}
-
-void PageBackground::fireModifyEvent()
-{
     m_xModifyEventForwarder->modified( lang::EventObject( static_cast< uno::XWeak* >( this )));
 }
 
-uno::Sequence< OUString > PageBackground::getSupportedServiceNames_Static()
-{
-    uno::Sequence< OUString > aServices( 2 );
-    aServices[ 0 ] = "com.sun.star.chart2.PageBackground";
-    aServices[ 1 ] = "com.sun.star.beans.PropertySet";
-    return aServices;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL PageBackground::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString PageBackground::getImplementationName_Static()
-{
-    return OUString(lcl_aServiceName);
+    return OUString("com.sun.star.comp.chart2.PageBackground");
 }
 
 sal_Bool SAL_CALL PageBackground::supportsService( const OUString& rServiceName )
@@ -243,7 +219,9 @@ sal_Bool SAL_CALL PageBackground::supportsService( const OUString& rServiceName 
 css::uno::Sequence< OUString > SAL_CALL PageBackground::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return {
+        "com.sun.star.chart2.PageBackground",
+        "com.sun.star.beans.PropertySet" };
 }
 
 using impl::PageBackground_Base;
@@ -253,10 +231,10 @@ IMPLEMENT_FORWARD_XINTERFACE2( PageBackground, PageBackground_Base, ::property::
 } //  namespace chart
 
 extern "C" SAL_DLLPUBLIC_EXPORT css::uno::XInterface * SAL_CALL
-com_sun_star_comp_chart2_PageBackground_get_implementation(css::uno::XComponentContext *context,
+com_sun_star_comp_chart2_PageBackground_get_implementation(css::uno::XComponentContext *,
         css::uno::Sequence<css::uno::Any> const &)
 {
-    return cppu::acquire(new ::chart::PageBackground(context));
+    return cppu::acquire(new ::chart::PageBackground );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

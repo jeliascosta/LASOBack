@@ -50,7 +50,6 @@ using namespace ::com::sun::star;
 using namespace ::com::sun::star::accessibility;
 using namespace sw::access;
 
-const sal_Char sServiceName[] = "com.sun.star.table.AccessibleCellView";
 const sal_Char sImplementationName[] = "com.sun.star.comp.Writer.SwAccessibleCellView";
 
 bool SwAccessibleCell::IsSelected()
@@ -99,7 +98,7 @@ void SwAccessibleCell::GetStates( ::utl::AccessibleStateSetHelper& rStateSet )
     }
 }
 
-SwAccessibleCell::SwAccessibleCell( SwAccessibleMap *pInitMap,
+SwAccessibleCell::SwAccessibleCell(std::shared_ptr<SwAccessibleMap> const& pInitMap,
                                     const SwCellFrame *pCellFrame )
     : SwAccessibleContext( pInitMap, AccessibleRole::TABLE_CELL, pCellFrame )
     , aSelectionHelper( *this )
@@ -258,18 +257,18 @@ uno::Sequence< OUString > SAL_CALL SwAccessibleCell::getSupportedServiceNames()
 {
     uno::Sequence< OUString > aRet(2);
     OUString* pArray = aRet.getArray();
-    pArray[0] = sServiceName;
+    pArray[0] = "com.sun.star.table.AccessibleCellView";
     pArray[1] = sAccessibleServiceName;
     return aRet;
 }
 
-void SwAccessibleCell::Dispose( bool bRecursive )
+void SwAccessibleCell::Dispose(bool bRecursive, bool bCanSkipInvisible)
 {
     const SwFrame *pParent = GetParent( SwAccessibleChild(GetFrame()), IsInPagePreview() );
     ::rtl::Reference< SwAccessibleContext > xAccImpl(
             GetMap()->GetContextImpl( pParent, false ) );
     if( xAccImpl.is() )
-        xAccImpl->DisposeChild( SwAccessibleChild(GetFrame()), bRecursive );
+        xAccImpl->DisposeChild(SwAccessibleChild(GetFrame()), bRecursive, bCanSkipInvisible);
     SwAccessibleContext::Dispose( bRecursive );
 }
 

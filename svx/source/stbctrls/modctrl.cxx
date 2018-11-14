@@ -66,17 +66,6 @@ SvxModifyControl::SvxModifyControl( sal_uInt16 _nSlotId, sal_uInt16 _nId, Status
     SfxStatusBarControl( _nSlotId, _nId, rStb ),
     mxImpl(new ImplData)
 {
-//#ifndef MACOSX
-    if ( rStb.GetDPIScaleFactor() > 1 )
-    {
-        for (int i = 0; i < mxImpl->MODIFICATION_STATE_SIZE; i++)
-        {
-            BitmapEx b = mxImpl->maImages[i].GetBitmapEx();
-            b.Scale(rStb.GetDPIScaleFactor(), rStb.GetDPIScaleFactor(), BmpScaleFlag::Fast);
-            mxImpl->maImages[i] = Image(b);
-        }
-    }
-//#endif
     mxImpl->maIdle.SetIdleHdl( LINK(this, SvxModifyControl, OnTimer) );
 }
 
@@ -106,7 +95,7 @@ void SvxModifyControl::StateChanged( sal_uInt16, SfxItemState eState,
 }
 
 
-IMPL_LINK_TYPED( SvxModifyControl, OnTimer, Idle *, pTimer, void )
+IMPL_LINK( SvxModifyControl, OnTimer, Idle *, pTimer, void )
 {
     if (pTimer == nullptr)
         return;

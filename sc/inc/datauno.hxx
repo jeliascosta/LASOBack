@@ -44,6 +44,7 @@
 #include <com/sun/star/container/XNamed.hpp>
 #include <com/sun/star/util/XRefreshable.hpp>
 #include <cppuhelper/implbase.hxx>
+#include <rtl/ref.hxx>
 #include <svl/itemprop.hxx>
 #include <svl/lstner.hxx>
 
@@ -116,7 +117,7 @@ private:
 
 public:
                             ScSubTotalDescriptorBase();
-    virtual                 ~ScSubTotalDescriptorBase();
+    virtual                 ~ScSubTotalDescriptorBase() override;
 
                             // in derived classes:
                             // (Fields are within the range)
@@ -207,7 +208,7 @@ private:
 
 public:
                             ScSubTotalDescriptor();
-    virtual                 ~ScSubTotalDescriptor();
+    virtual                 ~ScSubTotalDescriptor() override;
 
                             // from ScSubTotalDescriptorBase:
     virtual void            GetData( ScSubTotalParam& rParam ) const override;
@@ -222,11 +223,11 @@ public:
 class ScRangeSubTotalDescriptor : public ScSubTotalDescriptorBase
 {
 private:
-    ScDatabaseRangeObj*     pParent;
+    rtl::Reference<ScDatabaseRangeObj>  mxParent;
 
 public:
                             ScRangeSubTotalDescriptor(ScDatabaseRangeObj* pPar);
-    virtual                 ~ScRangeSubTotalDescriptor();
+    virtual                 ~ScRangeSubTotalDescriptor() override;
 
                             // from ScSubTotalDescriptorBase:
     virtual void            GetData( ScSubTotalParam& rParam ) const override;
@@ -243,7 +244,7 @@ private:
 
 public:
                             ScSubTotalFieldObj( ScSubTotalDescriptorBase* pDesc, sal_uInt16 nP );
-    virtual                 ~ScSubTotalFieldObj();
+    virtual                 ~ScSubTotalFieldObj() override;
 
                             // XSubTotalField
     virtual sal_Int32 SAL_CALL getGroupColumn() throw(css::uno::RuntimeException, std::exception) override;
@@ -273,7 +274,7 @@ private:
 
 public:
                             ScConsolidationDescriptor();
-    virtual                 ~ScConsolidationDescriptor();
+    virtual                 ~ScConsolidationDescriptor() override;
 
     void                    SetParam( const ScConsolidateParam& rNew );
     const ScConsolidateParam& GetParam() const  { return aParam; }
@@ -330,7 +331,7 @@ private:
 
 public:
                             ScFilterDescriptorBase(ScDocShell* pDocShell);
-    virtual                 ~ScFilterDescriptorBase();
+    virtual                 ~ScFilterDescriptorBase() override;
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
@@ -419,7 +420,7 @@ private:
 
 public:
                             ScFilterDescriptor(ScDocShell* pDocSh);
-    virtual                 ~ScFilterDescriptor();
+    virtual                 ~ScFilterDescriptor() override;
 
                             // from ScFilterDescriptorBase:
     virtual void            GetData( ScQueryParam& rParam ) const override;
@@ -435,11 +436,11 @@ public:
 class ScRangeFilterDescriptor : public ScFilterDescriptorBase
 {
 private:
-    ScDatabaseRangeObj*     pParent;
+    rtl::Reference<ScDatabaseRangeObj>  mxParent;
 
 public:
                             ScRangeFilterDescriptor(ScDocShell* pDocSh, ScDatabaseRangeObj* pPar);
-    virtual                 ~ScRangeFilterDescriptor();
+    virtual                 ~ScRangeFilterDescriptor() override;
 
                             // from ScFilterDescriptorBase:
     virtual void            GetData( ScQueryParam& rParam ) const override;
@@ -451,11 +452,11 @@ public:
 class ScDataPilotFilterDescriptor : public ScFilterDescriptorBase
 {
 private:
-    ScDataPilotDescriptorBase*  pParent;
+    rtl::Reference<ScDataPilotDescriptorBase>  mxParent;
 
 public:
                             ScDataPilotFilterDescriptor(ScDocShell* pDocSh, ScDataPilotDescriptorBase* pPar);
-    virtual                 ~ScDataPilotFilterDescriptor();
+    virtual                 ~ScDataPilotFilterDescriptor() override;
 
                             // from ScFilterDescriptorBase:
     virtual void            GetData( ScQueryParam& rParam ) const override;
@@ -487,7 +488,7 @@ private:
 public:
     ScDatabaseRangeObj(ScDocShell* pDocSh, const OUString& rNm);
     SC_DLLPUBLIC ScDatabaseRangeObj(ScDocShell* pDocSh, const SCTAB nTab);
-    virtual ~ScDatabaseRangeObj();
+    virtual ~ScDatabaseRangeObj() override;
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
@@ -594,7 +595,7 @@ private:
 
 public:
                             ScDatabaseRangesObj(ScDocShell* pDocSh);
-    virtual                 ~ScDatabaseRangesObj();
+    virtual                 ~ScDatabaseRangesObj() override;
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
@@ -649,7 +650,7 @@ private:
 
 public:
                             ScUnnamedDatabaseRangesObj(ScDocShell* pDocSh);
-    virtual                 ~ScUnnamedDatabaseRangesObj();
+    virtual                 ~ScUnnamedDatabaseRangesObj() override;
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 

@@ -24,7 +24,6 @@
 #include <tools/urlobj.hxx>
 #include <svl/urihelper.hxx>
 #include <unotools/pathoptions.hxx>
-#include <svl/mailenum.hxx>
 #include <svx/svxdlg.hxx>
 #include <svx/dialogs.hrc>
 #include <helpid.h>
@@ -90,7 +89,7 @@ class SwXSelChgLstnr_Impl : public cppu::WeakImplHelper
     SwMailMergeDlg& rParent;
 public:
     explicit SwXSelChgLstnr_Impl(SwMailMergeDlg& rParentDlg);
-    virtual ~SwXSelChgLstnr_Impl();
+    virtual ~SwXSelChgLstnr_Impl() override;
 
     virtual void SAL_CALL selectionChanged( const EventObject& aEvent ) throw (RuntimeException, std::exception) override;
     virtual void SAL_CALL disposing( const EventObject& Source ) throw (RuntimeException, std::exception) override;
@@ -420,7 +419,7 @@ void SwMailMergeDlg::Apply()
 {
 }
 
-IMPL_LINK_TYPED( SwMailMergeDlg, ButtonHdl, Button *, pBtn, void )
+IMPL_LINK( SwMailMergeDlg, ButtonHdl, Button *, pBtn, void )
 {
     if (pBtn == m_pOkBTN) {
         if( ExecQryShell() )
@@ -428,7 +427,7 @@ IMPL_LINK_TYPED( SwMailMergeDlg, ButtonHdl, Button *, pBtn, void )
     }
 }
 
-IMPL_LINK_TYPED( SwMailMergeDlg, OutputTypeHdl, Button *, pBtn, void )
+IMPL_LINK( SwMailMergeDlg, OutputTypeHdl, Button *, pBtn, void )
 {
     bool bPrint = pBtn == m_pPrinterRB;
     m_pSingleJobsCB->Enable(bPrint);
@@ -451,7 +450,7 @@ IMPL_LINK_TYPED( SwMailMergeDlg, OutputTypeHdl, Button *, pBtn, void )
     }
 }
 
-IMPL_LINK_TYPED( SwMailMergeDlg, SaveTypeHdl, Button*,  pBtn, void )
+IMPL_LINK( SwMailMergeDlg, SaveTypeHdl, Button*,  pBtn, void )
 {
     bool bIndividual = pBtn == m_pSaveIndividualRB;
 
@@ -469,7 +468,7 @@ IMPL_LINK_TYPED( SwMailMergeDlg, SaveTypeHdl, Button*,  pBtn, void )
     }
 }
 
-IMPL_LINK_TYPED( SwMailMergeDlg, FilenameHdl, Button*, pBox, void )
+IMPL_LINK( SwMailMergeDlg, FilenameHdl, Button*, pBox, void )
 {
     bool bEnable = static_cast<CheckBox*>(pBox)->IsChecked();
     m_pColumnFT->Enable( bEnable );
@@ -481,7 +480,7 @@ IMPL_LINK_TYPED( SwMailMergeDlg, FilenameHdl, Button*, pBox, void )
     m_pFilterLB->Enable( bEnable );
 }
 
-IMPL_LINK_NOARG_TYPED(SwMailMergeDlg, ModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(SwMailMergeDlg, ModifyHdl, Edit&, void)
 {
     m_pFromRB->Check();
 }
@@ -599,7 +598,7 @@ OUString SwMailMergeDlg::GetTargetURL() const
     return sPath;
 }
 
-IMPL_LINK_NOARG_TYPED(SwMailMergeDlg, InsertPathHdl, Button*, void)
+IMPL_LINK_NOARG(SwMailMergeDlg, InsertPathHdl, Button*, void)
 {
     uno::Reference< XComponentContext > xContext( ::comphelper::getProcessComponentContext() );
     uno::Reference < XFolderPicker2 > xFP = FolderPicker::create(xContext);

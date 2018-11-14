@@ -57,11 +57,6 @@ BibSplitWindow::BibSplitWindow( vcl::Window* pParent, WinBits nStyle ) : SplitWi
 {
 }
 
-BibTabPage::BibTabPage( vcl::Window* pParent, const OString& rID, const OUString& rUIXMLDescription ) :
-                        TabPage( pParent, rID, rUIXMLDescription ), BibShortCutHandler( this )
-{
-}
-
 using namespace osl;
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
@@ -71,8 +66,8 @@ using namespace ::com::sun::star::frame;
 #define WIN_MIN_HEIGHT 10
 #define WIN_STEP_SIZE 5
 
-BibWindowContainer::BibWindowContainer( vcl::Window* pParent, BibShortCutHandler* pChildWin, WinBits nStyle ) :
-        BibWindow( pParent, nStyle ),
+BibWindowContainer::BibWindowContainer( vcl::Window* pParent, BibShortCutHandler* pChildWin ) :
+        BibWindow( pParent, WB_3DLOOK ),
         pChild( pChildWin )
 {
     if(pChild!=nullptr)
@@ -118,8 +113,8 @@ bool BibWindowContainer::HandleShortCutKey( const KeyEvent& rKeyEvent )
 }
 
 
-BibBookContainer::BibBookContainer(vcl::Window* pParent, WinBits nStyle):
-    BibSplitWindow(pParent,nStyle),
+BibBookContainer::BibBookContainer(vcl::Window* pParent):
+    BibSplitWindow(pParent,WB_3DLOOK),
     pTopWin(nullptr),
     pBottomWin(nullptr),
     aIdle("extensions BibBookContainer Split Idle")
@@ -165,7 +160,7 @@ void BibBookContainer::Split()
 {
     aIdle.Start();
 }
-IMPL_LINK_NOARG_TYPED( BibBookContainer, SplitHdl, Idle*, void)
+IMPL_LINK_NOARG( BibBookContainer, SplitHdl, Idle*, void)
 {
     long nSize= GetItemSize( TOP_WINDOW);
     BibConfig* pConfig = BibModul::GetConfig();

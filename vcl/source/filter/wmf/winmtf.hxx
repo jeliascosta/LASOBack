@@ -70,12 +70,14 @@ enum class BkMode
 #define ANSI_VAR_FONT           12
 #define SYSTEM_FIXED_FONT       16
 
-#define R2_BLACK                1
-#define R2_MASKNOTPEN           3
-#define R2_NOT                  6
-#define R2_XORPEN               7
-#define R2_NOP                  11
-#define R2_COPYPEN              13
+enum class WMFRasterOp {
+    NONE                 = 0,
+    Black                = 1,
+    Not                  = 6,
+    XorPen               = 7,
+    Nop                  = 11,
+    CopyPen              = 13
+};
 
 /* Mapping modes */
 #define MM_TEXT                 1
@@ -288,7 +290,7 @@ public:
 
 struct GDIObj
 {
-    virtual ~GDIObj(); // Polymorphic base class
+    virtual ~GDIObj() = default; // Polymorphic base class
 };
 
 struct WinMtfFontStyle : GDIObj
@@ -335,16 +337,6 @@ struct WinMtfFillStyle : GDIObj
             && bTransparent == rStyle.bTransparent
             && aType == rStyle.aType;
     }
-
-    WinMtfFillStyle& operator=(const WinMtfFillStyle& rStyle)
-    {
-        aFillColor = rStyle.aFillColor;
-        bTransparent = rStyle.bTransparent;
-        aBmp = rStyle.aBmp;
-        aType = rStyle.aType;
-        return *this;
-    }
-
 };
 
 struct WinMtfLineStyle : GDIObj
@@ -363,7 +355,7 @@ struct WinMtfLineStyle : GDIObj
         , bTransparent(bTrans)
     {}
 
-    WinMtfLineStyle( const Color& rColor, const LineInfo& rStyle, bool bTrans = false)
+    WinMtfLineStyle( const Color& rColor, const LineInfo& rStyle, bool bTrans)
         : aLineColor  (rColor)
         , aLineInfo   (rStyle)
         , bTransparent(bTrans)
@@ -374,22 +366,6 @@ struct WinMtfLineStyle : GDIObj
         return aLineColor == rStyle.aLineColor
             && bTransparent == rStyle.bTransparent
             && aLineInfo == rStyle.aLineInfo;
-    }
-
-    WinMtfLineStyle& operator=( const WinMtfLineStyle& rStyle )
-    {
-        aLineColor = rStyle.aLineColor;
-        bTransparent = rStyle.bTransparent;
-        aLineInfo = rStyle.aLineInfo;
-        return *this;
-    }
-
-    WinMtfLineStyle& operator=( WinMtfLineStyle* pStyle )
-    {
-        aLineColor = pStyle->aLineColor;
-        bTransparent = pStyle->bTransparent;
-        aLineInfo = pStyle->aLineInfo;
-        return *this;
     }
 };
 
@@ -416,7 +392,7 @@ struct SaveStruct
 {
     BkMode              nBkMode;
     sal_uInt32          nMapMode, nGfxMode;
-    ComplexTextLayoutMode nTextLayoutMode;
+    ComplexTextLayoutFlags nTextLayoutMode;
     sal_Int32           nWinOrgX, nWinOrgY, nWinExtX, nWinExtY;
     sal_Int32           nDevOrgX, nDevOrgY, nDevWidth, nDevHeight;
 
@@ -437,7 +413,6 @@ struct SaveStruct
     bool                bFillStyleSelected;
 };
 
-typedef std::shared_ptr<SaveStruct> SaveStructPtr;
 
 struct BSaveStruct
 {
@@ -458,9 +433,8 @@ struct BSaveStruct
     {}
 };
 
-typedef std::vector<std::unique_ptr<BSaveStruct>> BSaveStructList_impl;
 
-class WinMtfOutput
+class WinMtfOutput final
 {
     WinMtfPathObj       aPathObj;
     WinMtfClipPath      aClipPath;
@@ -479,8 +453,8 @@ class WinMtfOutput
     Color               maTextColor;
     Color               maLatestBkColor;
     Color               maBkColor;
-    ComplexTextLayoutMode  mnLatestTextLayoutMode;
-    ComplexTextLayoutMode  mnTextLayoutMode;
+    ComplexTextLayoutFlags  mnLatestTextLayoutMode;
+    ComplexTextLayoutFlags  mnTextLayoutMode;
     BkMode              mnLatestBkMode;
     BkMode              mnBkMode;
     RasterOp            meLatestRasterOp;
@@ -490,13 +464,13 @@ class WinMtfOutput
 
     Point               maActPos;
 
-    sal_uInt32          mnRop;
+    WMFRasterOp         mnRop;
     bool            mbNopMode;
     bool            mbFillStyleSelected;
     bool            mbClipNeedsUpdate;
     bool            mbComplexClip;
 
-    std::vector< SaveStructPtr > vSaveStack;
+    std::vector< std::shared_ptr<SaveStruct> > vSaveStack;
 
     sal_uInt32          mnGfxMode;
     sal_uInt32          mnMapMode;
@@ -558,7 +532,7 @@ public:
     void                Push();
     void                Pop();
 
-    sal_uInt32          SetRasterOp( sal_uInt32 nRasterOp );
+    WMFRasterOp         SetRasterOp( WMFRasterOp nRasterOp );
     void                StrokeAndFillPath( bool bStroke, bool bFill );
 
     void                SetGfxMode( sal_Int32 nGfxMode ){ mnGfxMode = nGfxMode; };
@@ -580,7 +554,7 @@ public:
     void                SelectObject( sal_Int32 nIndex );
     rtl_TextEncoding    GetCharSet(){ return maFont.GetCharSet(); };
     const vcl::Font&    GetFont() const { return maFont;}
-    void                SetTextLayoutMode( ComplexTextLayoutMode nLayoutMode );
+    void                SetTextLayoutMode( ComplexTextLayoutFlags nLayoutMode );
 
     void                ClearPath(){ aPathObj.Init(); };
     void                ClosePath(){ aPathObj.ClosePath(); };
@@ -620,8 +594,8 @@ public:
                                       bool bRecordPath = false
                         );
     void                DrawPolyBezier( tools::Polygon& rPolygin,
-                                        bool bDrawTo = false,
-                                        bool bRecordPath = false
+                                        bool bDrawTo,
+                                        bool bRecordPath
                         );
     void                DrawText( Point& rPosition,
                                   OUString& rString,
@@ -629,7 +603,7 @@ public:
                                   bool bRecordPath = false,
                                   sal_Int32 nGraphicsMode = GM_COMPATIBLE);
 
-    void                ResolveBitmapActions( BSaveStructList_impl& rSaveList );
+    void                ResolveBitmapActions( std::vector<std::unique_ptr<BSaveStruct>>& rSaveList );
 
     void                IntersectClipRect( const Rectangle& rRect );
     void                ExcludeClipRect( const Rectangle& rRect );
@@ -647,7 +621,7 @@ public:
     void                PassEMFPlusHeaderInfo();
 
     explicit            WinMtfOutput( GDIMetaFile& rGDIMetaFile );
-    virtual             ~WinMtfOutput();
+                        ~WinMtfOutput();
 };
 
 class WinMtf
@@ -658,7 +632,7 @@ protected:
     SvStream*               pWMF;               // the WMF/EMF file to be read
 
     sal_uInt32              nStartPos, nEndPos;
-    BSaveStructList_impl    aBmpSaveList;
+    std::vector<std::unique_ptr<BSaveStruct>>    aBmpSaveList;
 
     FilterConfigItem*   pFilterConfigItem;
 
@@ -672,7 +646,7 @@ protected:
                         WinMtf(
                             GDIMetaFile& rGDIMetaFile,
                             SvStream& rStreamWMF,
-                            FilterConfigItem* pConfigItem = nullptr
+                            FilterConfigItem* pConfigItem
                         );
                         ~WinMtf();
 };
@@ -723,7 +697,6 @@ private:
 
     sal_uInt32      nSkipActions;
     sal_uInt32      nCurrentAction;
-    sal_uInt32      nUnicodeEscapeAction;
 
     WMF_EXTERNALHEADER* pExternalHeader;
 
@@ -742,7 +715,7 @@ private:
 public:
 
     WMFReader(SvStream& rStreamWMF, GDIMetaFile& rGDIMetaFile,
-              FilterConfigItem* pConfigItem = nullptr,
+              FilterConfigItem* pConfigItem,
               WMF_EXTERNALHEADER* pExtHeader = nullptr);
 
     // read WMF file from stream and fill the GDIMetaFile

@@ -70,7 +70,7 @@ protected:
     void setRequest( const css::uno::Any & rRequest );
 
     InteractionRequest();
-    virtual ~InteractionRequest();
+    virtual ~InteractionRequest() override;
 
 public:
     /**
@@ -122,7 +122,7 @@ public:
       * @return the continuation chosen by an interaction handler or an empty
       *         reference, if the request was not (yet) handled.
       */
-    rtl::Reference< InteractionContinuation > getSelection() const;
+    rtl::Reference< InteractionContinuation > const & getSelection() const;
 
     /**
       * This method sets a continuation for the request. It also can be used
@@ -163,7 +163,7 @@ protected:
       * method the way that they call this method.
       */
     void recordSelection();
-    virtual ~InteractionContinuation();
+    virtual ~InteractionContinuation() override;
 
 public:
     InteractionContinuation( InteractionRequest * pRequest );
@@ -346,7 +346,6 @@ class UCBHELPER_DLLPUBLIC InteractionSupplyAuthentication :
     bool m_bCanSetPassword : 1;
     bool m_bCanSetAccount  : 1;
     bool m_bCanUseSystemCredentials     : 1;
-    bool m_bDefaultUseSystemCredentials : 1;
     bool m_bUseSystemCredentials        : 1;
 
 public:
@@ -530,7 +529,6 @@ inline InteractionSupplyAuthentication::InteractionSupplyAuthentication(
   m_bCanSetPassword( bCanSetPassword ),
   m_bCanSetAccount( bCanSetAccount ),
   m_bCanUseSystemCredentials( bCanUseSystemCredentials ),
-  m_bDefaultUseSystemCredentials( false ),
   m_bUseSystemCredentials( false )
 {
 }

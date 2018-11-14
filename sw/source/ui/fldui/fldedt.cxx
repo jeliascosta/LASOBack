@@ -239,7 +239,7 @@ void SwFieldEditDlg::InsertHdl()
 }
 
 // kick off changing of the field
-IMPL_LINK_NOARG_TYPED(SwFieldEditDlg, OKHdl, Button*, void)
+IMPL_LINK_NOARG(SwFieldEditDlg, OKHdl, Button*, void)
 {
     if (GetOKButton()->IsEnabled())
     {
@@ -257,7 +257,7 @@ short SwFieldEditDlg::Execute()
 }
 
 // Traveling between fields of the same type
-IMPL_LINK_TYPED( SwFieldEditDlg, NextPrevHdl, Button *, pButton, void )
+IMPL_LINK( SwFieldEditDlg, NextPrevHdl, Button *, pButton, void )
 {
     bool bNext = pButton == m_pNextBT;
 
@@ -291,7 +291,7 @@ IMPL_LINK_TYPED( SwFieldEditDlg, NextPrevHdl, Button *, pButton, void )
     Init();
 }
 
-IMPL_LINK_NOARG_TYPED(SwFieldEditDlg, AddressHdl, Button*, void)
+IMPL_LINK_NOARG(SwFieldEditDlg, AddressHdl, Button*, void)
 {
     SwFieldPage* pTabPage = static_cast<SwFieldPage*>(GetTabPage());
     SwFieldMgr& rMgr = pTabPage->GetFieldMgr();
@@ -328,7 +328,7 @@ IMPL_LINK_NOARG_TYPED(SwFieldEditDlg, AddressHdl, Button*, void)
     SwAbstractDialogFactory* pFact = swui::GetFactory();
     OSL_ENSURE(pFact, "SwAbstractDialogFactory fail!");
 
-    std::unique_ptr<SfxAbstractDialog> pDlg(pFact->CreateSfxDialog( this, aSet,
+    ScopedVclPtr<SfxAbstractDialog> pDlg(pFact->CreateSfxDialog( this, aSet,
         pSh->GetView().GetViewFrame()->GetFrame().GetFrameInterface(),
         RC_DLG_ADDR ));
     OSL_ENSURE(pDlg, "Dialog creation failed!");

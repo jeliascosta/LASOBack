@@ -47,7 +47,7 @@ namespace ftp
 
         explicit FTPContentProvider( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
 
-        virtual ~FTPContentProvider();
+        virtual ~FTPContentProvider() override;
 
         // XInterface
         virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
@@ -118,17 +118,11 @@ namespace ftp
         };
 
     private:
-
-        osl::Mutex m_aMutex;
         FTPLoaderThread *m_ftpLoaderThread;
         ucbhelper::InternetProxyDecider *m_pProxyDecider;
         std::vector<ServerInfo> m_ServerInfo;
 
         void init();
-
-        css::uno::Reference<css::ucb::XContentProvider> getHttpProvider()
-            throw(css::uno::RuntimeException);
-
     };  // end class FTPContentProvider
 
 }       // end namespace ftp

@@ -75,7 +75,7 @@ class SwLineInfo
 
     SvxTabStopItem* pRuler;
     const SvxLineSpacingItem *pSpace;
-    sal_uInt16 nVertAlign;
+    SvxParaVertAlignItem::Align nVertAlign;
     sal_uInt16 nDefTabStop;
     bool bListTabStopIncluded;
     long nListTabStopPosition;
@@ -95,12 +95,12 @@ public:
         { const_cast<SwLineInfo*>(this)->nDefTabStop = nNew; }
 
     // vertical alignment
-    inline sal_uInt16 GetVertAlign() const { return nVertAlign; }
+    inline SvxParaVertAlignItem::Align GetVertAlign() const { return nVertAlign; }
     inline bool HasSpecialAlign( bool bVert ) const
         { return bVert ?
-                 ( SvxParaVertAlignItem::BASELINE  != nVertAlign ) :
-                 ( SvxParaVertAlignItem::BASELINE  != nVertAlign &&
-                   SvxParaVertAlignItem::AUTOMATIC != nVertAlign ); }
+                 ( SvxParaVertAlignItem::Align::Baseline  != nVertAlign ) :
+                 ( SvxParaVertAlignItem::Align::Baseline  != nVertAlign &&
+                   SvxParaVertAlignItem::Align::Automatic != nVertAlign ); }
 
     sal_uInt16 NumberOfTabStops() const;
 
@@ -139,7 +139,7 @@ public:
 class SwTextSizeInfo : public SwTextInfo
 {
 private:
-    typedef ::std::map< sal_uIntPtr, sal_uInt16 > SwTextPortionMap;
+    typedef std::map< sal_uIntPtr, sal_uInt16 > SwTextPortionMap;
 
 protected:
     // during formatting, a small database is built, mapping portion pointers
@@ -187,19 +187,14 @@ protected:
     sal_uInt8 m_nDirection : 2; // writing direction: 0/90/180/270 degree
 
 protected:
-    void CtorInitTextSizeInfo( OutputDevice* pRenderContext, SwTextFrame *pFrame, SwFont *pFnt = nullptr,
-                   const sal_Int32 nIdx = 0,
-                   const sal_Int32 nLen = COMPLETE_STRING );
+    void CtorInitTextSizeInfo( OutputDevice* pRenderContext, SwTextFrame *pFrame,
+                   const sal_Int32 nIdx );
     SwTextSizeInfo();
 public:
     SwTextSizeInfo( const SwTextSizeInfo &rInf );
     SwTextSizeInfo( const SwTextSizeInfo &rInf, const OUString* pText,
-                   const sal_Int32 nIdx = 0,
-                   const sal_Int32 nLen = COMPLETE_STRING );
-
-    SwTextSizeInfo( SwTextFrame *pTextFrame, SwFont *pTextFnt = nullptr,
-                   const sal_Int32 nIndex = 0,
-                   const sal_Int32 nLength = COMPLETE_STRING );
+                   const sal_Int32 nIdx = 0 );
+    SwTextSizeInfo( SwTextFrame *pTextFrame, const sal_Int32 nIndex = 0 );
 
     // GetMultiAttr returns the text attribute of the multiportion,
     // if rPos is inside any multi-line part.
@@ -274,14 +269,14 @@ public:
     inline SwPosSize GetTextSize( const OUString &rText ) const;
 
     sal_Int32 GetTextBreak( const long nLineWidth,
-                                           const sal_Int32 nMaxLen,
-                                           const sal_uInt16 nComp,
-                           vcl::TextLayoutCache const* = nullptr) const;
+                            const sal_Int32 nMaxLen,
+                            const sal_uInt16 nComp,
+                            vcl::TextLayoutCache const*) const;
     sal_Int32 GetTextBreak( const long nLineWidth,
-                                           const sal_Int32 nMaxLen,
-                                           const sal_uInt16 nComp,
-                                           sal_Int32& rExtraCharPos,
-                           vcl::TextLayoutCache const* = nullptr) const;
+                            const sal_Int32 nMaxLen,
+                            const sal_uInt16 nComp,
+                            sal_Int32& rExtraCharPos,
+                            vcl::TextLayoutCache const*) const;
 
     sal_uInt16 GetAscent() const;
 
@@ -312,7 +307,7 @@ public:
     // stored in m_aMaxWidth and discarded after a line has been formatted.
     inline void SetMaxWidthDiff( const void *nKey, sal_uInt16 nVal )
     {
-        m_aMaxWidth.insert( ::std::make_pair( reinterpret_cast<sal_uIntPtr>(nKey), nVal ) );
+        m_aMaxWidth.insert( std::make_pair( reinterpret_cast<sal_uIntPtr>(nKey), nVal ) );
     };
     inline sal_uInt16 GetMaxWidthDiff( const void *nKey )
     {
@@ -489,7 +484,6 @@ class SwTextFormatInfo : public SwTextPaintInfo
     SwLineLayout    *m_pRoot;       // The Root of the current line (pCurr)
     SwLinePortion   *m_pLast;       // The last Portion
     SwFlyPortion    *m_pFly;        // The following FlyPortion
-    SwFieldPortion    *m_pLastField;    // Wrapped Field
     SwLinePortion   *m_pUnderflow;  // Underflow: Last Portion
     SwLinePortion   *m_pRest;       // The Rest is the start of the next Line
 
@@ -510,7 +504,6 @@ class SwTextFormatInfo : public SwTextPaintInfo
 
     sal_Int16  m_nMinLeading;     // minimum number of chars before hyphenation point
     sal_Int16  m_nMinTrailing;    // minimum number of chars after hyphenation point
-    sal_Int16  m_nMinWordLength;  // minimum length of word to be hyphenated
 
     bool m_bFull : 1;             // Line is full
     bool m_bFootnoteDone : 1;          // Footnote already formatted

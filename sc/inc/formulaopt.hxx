@@ -73,8 +73,6 @@ public:
 
     static void GetDefaultFormulaSeparators(OUString& rSepArg, OUString& rSepArrayCol, OUString& rSepArrayRow);
 
-    static const LocaleDataWrapper& GetLocaleDataWrapper();
-
     ScFormulaOptions&  operator=  ( const ScFormulaOptions& rCpy );
     bool               operator== ( const ScFormulaOptions& rOpt ) const;
     bool               operator!= ( const ScFormulaOptions& rOpt ) const;
@@ -88,7 +86,7 @@ public:
     ScTpFormulaItem( sal_uInt16 nWhich,
                    const ScFormulaOptions& rOpt );
     ScTpFormulaItem( const ScTpFormulaItem& rItem );
-    virtual ~ScTpFormulaItem();
+    virtual ~ScTpFormulaItem() override;
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;

@@ -89,7 +89,7 @@ public:
             ORptFilter& rImport, sal_uInt16 nPrfx,
             const OUString& rLName ,
             const uno::Reference< xml::sax::XAttributeList > & xAttrList );
-    virtual ~RptMLMasterStylesContext_Impl();
+    virtual ~RptMLMasterStylesContext_Impl() override;
     RptMLMasterStylesContext_Impl(const RptMLMasterStylesContext_Impl&) = delete;
     RptMLMasterStylesContext_Impl& operator=(const RptMLMasterStylesContext_Impl&) = delete;
     virtual void EndElement() override;
@@ -449,7 +449,7 @@ bool ORptFilter::implImport( const Sequence< PropertyValue >& rDescriptor )
         tools::SvRef<SfxMedium> pMedium = new SfxMedium(
                 sFileName, ( StreamMode::READ | StreamMode::NOCREATE ) );
 
-        if( pMedium )
+        if( pMedium.Is() )
         {
             try
             {
@@ -636,7 +636,7 @@ SvXMLImportContext* ORptFilter::CreateContext( sal_uInt16 nPrefix,
                         pAutoStyle->FillPropertySet(getReportDefinition().get());
                     }
                 }
-                pContext = new OXMLReport( *this, nPrefix, rLocalName,xAttrList,getReportDefinition(),nullptr );
+                pContext = new OXMLReport( *this, nPrefix, rLocalName,xAttrList,getReportDefinition() );
             }
             break;
         case XML_TOK_DOC_STYLES:

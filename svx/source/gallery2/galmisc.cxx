@@ -76,11 +76,12 @@ BitmapEx GalleryResGetBitmapEx( sal_uInt32 nId )
     return aBmpEx;
 }
 
-IMPL_STATIC_LINK_TYPED(
-    SgaUserDataFactory, MakeUserData, SdrObjFactory*, pObjFactory, void )
+IMPL_STATIC_LINK(
+    SgaUserDataFactory, MakeUserData, SdrObjUserDataCreatorParams, aParams, SdrObjUserData* )
 {
-    if ( pObjFactory->nInventor == IV_IMAPINFO && pObjFactory->nIdentifier == ID_IMAPINFO )
-        pObjFactory->pNewData = new SgaIMapInfo;
+    if ( aParams.nInventor == SdrInventor::SgaImap && aParams.nObjIdentifier == ID_IMAPINFO )
+        return new SgaIMapInfo;
+    return nullptr;
 }
 
 GalleryGraphicImportRet GalleryGraphicImport( const INetURLObject& rURL, Graphic& rGraphic,
@@ -138,7 +139,7 @@ bool GallerySvDrawImport( SvStream& rIStm, SdrModel& rModel )
         // read as XML
         uno::Reference< io::XInputStream > xInputStream( new utl::OInputStreamWrapper( rIStm ) );
 
-        rModel.GetItemPool().SetDefaultMetric( SFX_MAPUNIT_100TH_MM );
+        rModel.GetItemPool().SetDefaultMetric( MapUnit::Map100thMM );
         uno::Reference< lang::XComponent > xComponent;
 
         bRet = SvxDrawingLayerImport( &rModel, xInputStream, xComponent, "com.sun.star.comp.Draw.XMLOasisImporter" );
@@ -171,7 +172,7 @@ bool CreateIMapGraphic( const FmFormModel& rModel, Graphic& rGraphic, ImageMap& 
             {
                 const SdrObjUserData* pUserData = pObj->GetUserData( i );
 
-                if ( ( pUserData->GetInventor() == IV_IMAPINFO ) && ( pUserData->GetId() == ID_IMAPINFO ) )
+                if ( ( pUserData->GetInventor() == SdrInventor::SgaImap ) && ( pUserData->GetId() == ID_IMAPINFO ) )
                 {
                     rGraphic = static_cast<const SdrGrafObj*>( pObj )->GetGraphic();
                     rImageMap = static_cast<const SgaIMapInfo*>( pUserData )->GetImageMap();
@@ -203,17 +204,13 @@ OUString GetReducedString( const INetURLObject& rURL, sal_Int32 nMaxLen )
 
             if (nPathPrefixLen >= 0)
             {
-                aReduced = aPath.copy(0, nPathPrefixLen);
-                aReduced += "...";
-                aReduced += OUString(aDelimiter);
-                aReduced += aName;
+                aReduced = aPath.copy(0, nPathPrefixLen) + "..."
+                    + OUStringLiteral1(aDelimiter) + aName;
             }
             else
             {
-                aReduced += "...";
-                aReduced += OUString(aDelimiter);
-                aReduced += "...";
-                aReduced += aName.copy( aName.getLength() - (nMaxLen - 7) );
+                aReduced += "..." + OUStringLiteral1(aDelimiter) + "..."
+                    + aName.copy( aName.getLength() - (nMaxLen - 7) );
             }
         }
         else
@@ -418,7 +415,7 @@ void GalleryTransferable::InitData( bool bLazy )
 {
     switch( meObjectKind )
     {
-        case SGA_OBJ_SVDRAW:
+        case SgaObjKind::SvDraw:
         {
             if( !bLazy )
             {
@@ -444,10 +441,10 @@ void GalleryTransferable::InitData( bool bLazy )
         }
         break;
 
-        case SGA_OBJ_ANIM:
-        case SGA_OBJ_BMP:
-        case SGA_OBJ_INET:
-        case SGA_OBJ_SOUND:
+        case SgaObjKind::Animation:
+        case SgaObjKind::Bitmap:
+        case SgaObjKind::Inet:
+        case SgaObjKind::Sound:
         {
             if( !mpURL )
             {
@@ -460,7 +457,7 @@ void GalleryTransferable::InitData( bool bLazy )
                 }
             }
 
-            if( ( SGA_OBJ_SOUND != meObjectKind ) && !mpGraphicObject )
+            if( ( SgaObjKind::Sound != meObjectKind ) && !mpGraphicObject )
             {
                 Graphic aGraphic;
 
@@ -478,7 +475,7 @@ void GalleryTransferable::InitData( bool bLazy )
 
 void GalleryTransferable::AddSupportedFormats()
 {
-    if( SGA_OBJ_SVDRAW == meObjectKind )
+    if( SgaObjKind::SvDraw == meObjectKind )
     {
         AddFormat( SotClipboardFormatId::DRAWING );
         AddFormat( SotClipboardFormatId::SVXB );
@@ -494,7 +491,7 @@ void GalleryTransferable::AddSupportedFormats()
         {
             AddFormat( SotClipboardFormatId::SVXB );
 
-            if( mpGraphicObject->GetType() == GRAPHIC_GDIMETAFILE )
+            if( mpGraphicObject->GetType() == GraphicType::GdiMetafile )
             {
                 AddFormat( SotClipboardFormatId::GDIMETAFILE );
                 AddFormat( SotClipboardFormatId::BITMAP );
@@ -515,9 +512,9 @@ bool GalleryTransferable::GetData( const datatransfer::DataFlavor& rFlavor, cons
 
     InitData( false );
 
-    if( ( SotClipboardFormatId::DRAWING == nFormat ) && ( SGA_OBJ_SVDRAW == meObjectKind ) )
+    if( ( SotClipboardFormatId::DRAWING == nFormat ) && ( SgaObjKind::SvDraw == meObjectKind ) )
     {
-        bRet = ( mxModelStream.Is() && SetObject( &mxModelStream, SotClipboardFormatId::NONE, rFlavor ) );
+        bRet = ( mxModelStream.Is() && SetObject( mxModelStream.get(), SotClipboardFormatId::NONE, rFlavor ) );
     }
     else if( ( SotClipboardFormatId::SVIM == nFormat ) && mpImageMap )
     {
@@ -579,11 +576,6 @@ void GalleryTransferable::ObjectReleased()
     mpImageMap = nullptr;
     delete mpURL;
     mpURL = nullptr;
-}
-
-void GalleryTransferable::CopyToClipboard( vcl::Window* pWindow )
-{
-    TransferableHelper::CopyToClipboard( pWindow );
 }
 
 void GalleryTransferable::StartDrag( vcl::Window* pWindow, sal_Int8 nDragSourceActions )

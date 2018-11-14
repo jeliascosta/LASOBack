@@ -33,13 +33,14 @@
 #include <com/sun/star/lang/XComponent.hpp>
 #include <cppuhelper/implbase.hxx>
 #include <cppuhelper/implbase1.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <comphelper/sequence.hxx>
 #include <comphelper/uno3.hxx>
 #include <cppuhelper/interfacecontainer.hxx>
-#include <comphelper/broadcasthelper.hxx>
 #include <comphelper/accessibleeventnotifier.hxx>
 #include <comphelper/stl_types.hxx>
 #include <comphelper/comphelperdllapi.h>
+#include <rtl/ref.hxx>
 
 
 namespace comphelper
@@ -112,7 +113,7 @@ namespace comphelper
             );
 
     protected:
-        virtual ~OAccessibleWrapper( );
+        virtual ~OAccessibleWrapper( ) override;
 
     private:
         OAccessibleWrapper( const OAccessibleWrapper& ) = delete;
@@ -156,7 +157,7 @@ namespace comphelper
         css::uno::Reference< css::accessibility::XAccessible >
                                                             m_xParentAccessible;
 
-        OWrappedAccessibleChildrenManager*                  m_pChildMapper;         // for mapping children from our inner context to our callers
+        rtl::Reference<OWrappedAccessibleChildrenManager>   m_xChildMapper;     // for mapping children from our inner context to our callers
 
     protected:
         /** ctor
@@ -223,7 +224,7 @@ namespace comphelper
         virtual void notifyTranslatedEvent( const css::accessibility::AccessibleEventObject& _rEvent ) throw (css::uno::RuntimeException) = 0;
 
     protected:
-        virtual ~OAccessibleContextWrapperHelper( );
+        virtual ~OAccessibleContextWrapperHelper( ) override;
 
         OAccessibleContextWrapperHelper(const OAccessibleContextWrapperHelper&) = delete;
         OAccessibleContextWrapperHelper& operator=(const OAccessibleContextWrapperHelper&) = delete;
@@ -237,7 +238,7 @@ namespace comphelper
                                             >   OAccessibleContextWrapper_CBase;
 
     class COMPHELPER_DLLPUBLIC OAccessibleContextWrapper
-                    :public OBaseMutex
+                    :public cppu::BaseMutex
                     ,public OAccessibleContextWrapper_CBase
                     ,public OAccessibleContextWrapperHelper
     {
@@ -298,7 +299,7 @@ namespace comphelper
         virtual void SAL_CALL disposing()  throw (css::uno::RuntimeException) override;
 
     protected:
-        virtual ~OAccessibleContextWrapper();
+        virtual ~OAccessibleContextWrapper() override;
 
     private:
         OAccessibleContextWrapper( const OAccessibleContextWrapper& ) = delete;
@@ -338,7 +339,7 @@ namespace comphelper
         /** specifies if the children are to be considered transient (i.e.: not cached)
             <p>to be called only once per lifetime</p>
         */
-        void    setTransientChildren( bool _bSet = true );
+        void    setTransientChildren( bool _bSet );
 
         /** sets the XAccessible which belongs to the XAccessibleContext which we work for
             <p>to be called only once per lifetime</p>
@@ -384,7 +385,7 @@ namespace comphelper
         void    implTranslateChildEventValue( const css::uno::Any& _rInValue, css::uno::Any& _rOutValue );
 
     protected:
-        virtual ~OWrappedAccessibleChildrenManager( );
+        virtual ~OWrappedAccessibleChildrenManager( ) override;
 
     private:
         OWrappedAccessibleChildrenManager( const OWrappedAccessibleChildrenManager& ) = delete;

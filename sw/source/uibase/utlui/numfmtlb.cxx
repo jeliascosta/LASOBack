@@ -64,7 +64,7 @@ NumFormatListBox::NumFormatListBox(vcl::Window* pWin, WinBits nStyle) :
     bShowLanguageControl(false),
     bUseAutomaticLanguage(true)
 {
-    Init(css::util::NumberFormat::NUMBER);
+    Init();
 }
 
 VCL_BUILDER_DECL_FACTORY(NumFormatListBox)
@@ -86,7 +86,7 @@ VCL_BUILDER_DECL_FACTORY(NumFormatListBox)
     rRet = pListBox;
 }
 
-void NumFormatListBox::Init(short nFormatType)
+void NumFormatListBox::Init()
 {
     SwView *pView = GetView();
 
@@ -95,7 +95,7 @@ void NumFormatListBox::Init(short nFormatType)
     else
         eCurLanguage = SvtSysLocale().GetLanguageTag().getLanguageType();
 
-    SetFormatType(nFormatType);
+    SetFormatType(css::util::NumberFormat::NUMBER);
     SetDefFormat(nDefFormat);
 
     SetSelectHdl(LINK(this, NumFormatListBox, SelectHdl));
@@ -358,7 +358,7 @@ sal_uLong NumFormatListBox::GetFormat() const
     return reinterpret_cast<sal_uLong>(GetEntryData(nPos));
 }
 
-IMPL_LINK_TYPED( NumFormatListBox, SelectHdl, ListBox&, rBox, void )
+IMPL_LINK( NumFormatListBox, SelectHdl, ListBox&, rBox, void )
 {
     const sal_Int32 nPos = rBox.GetSelectEntryPos();
     OUString sDefine(SW_RES( STR_DEFINE_NUMBERFORMAT ));
@@ -395,7 +395,7 @@ IMPL_LINK_TYPED( NumFormatListBox, SelectHdl, ListBox&, rBox, void )
         SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
         OSL_ENSURE(pFact, "SwAbstractDialogFactory fail!");
 
-        std::unique_ptr<SfxAbstractDialog> pDlg(pFact->CreateSfxDialog( this, aCoreSet,
+        ScopedVclPtr<SfxAbstractDialog> pDlg(pFact->CreateSfxDialog( this, aCoreSet,
             GetView()->GetViewFrame()->GetFrame().GetFrameInterface(),
             RC_DLG_SWNUMFMTDLG ));
         OSL_ENSURE(pDlg, "Dialog creation failed!");
@@ -436,44 +436,44 @@ IMPL_LINK_TYPED( NumFormatListBox, SelectHdl, ListBox&, rBox, void )
     }
 }
 
-double NumFormatListBox::GetDefValue(const short nFormatType) const
+double NumFormatListBox::GetDefValue(const short nFormatType)
 {
-    double fDefValue = 0.0;
+    SvxNumValCategory nDefValue = SvxNumValCategory::Standard;
 
     switch (nFormatType)
     {
         case css::util::NumberFormat::DATE:
         case css::util::NumberFormat::DATE|css::util::NumberFormat::TIME:
-            fDefValue = SVX_NUMVAL_DATE;
+            nDefValue = SvxNumValCategory::Date;
             break;
 
         case css::util::NumberFormat::TIME:
-            fDefValue = SVX_NUMVAL_TIME;
+            nDefValue = SvxNumValCategory::Time;
             break;
 
         case css::util::NumberFormat::TEXT:
         case css::util::NumberFormat::UNDEFINED:
-            fDefValue = 0;
+            nDefValue = SvxNumValCategory::Standard;
             break;
 
         case css::util::NumberFormat::CURRENCY:
-            fDefValue = SVX_NUMVAL_CURRENCY;
+            nDefValue = SvxNumValCategory::Currency;
             break;
 
         case css::util::NumberFormat::PERCENT:
-            fDefValue = SVX_NUMVAL_PERCENT;
+            nDefValue = SvxNumValCategory::Percent;
             break;
 
         case css::util::NumberFormat::LOGICAL:
-            fDefValue = SVX_NUMVAL_BOOLEAN;
+            nDefValue = SvxNumValCategory::Boolean;
             break;
 
         default:
-            fDefValue = SVX_NUMVAL_STANDARD;
+            nDefValue = SvxNumValCategory::Standard;
             break;
     }
 
-    return fDefValue;
+    return fSvxNumValConst[nDefValue];
 }
 
 void NumFormatListBox::Clear()

@@ -21,6 +21,7 @@
 
 #include <basegfx/polygon/b2dpolypolygon.hxx>
 #include <svx/svxdllapi.h>
+#include <o3tl/cow_wrapper.hxx>
 
 class Point;
 class Rectangle;
@@ -36,12 +37,12 @@ class OutputDevice;
 
 
 // point-styles in XPolygon:
-// NORMAL : start-/endpoint of a curve or a line
-// SMOOTH : smooth transition between curves
-// SYMMTR : smooth and symmetrical transition between curves
-// CONTROL: control handles of a  Bezier curve
+// Normal : start-/endpoint of a curve or a line
+// Smooth : smooth transition between curves
+// Control: control handles of a Bezier curve
+// Symmetric : smooth and symmetrical transition between curves
 
-enum XPolyFlags { XPOLY_NORMAL, XPOLY_SMOOTH, XPOLY_CONTROL, XPOLY_SYMMTR };
+enum class XPolyFlags { Normal, Smooth, Control, Symmetric };
 
 // Class XPolygon;has a point-array and a flag-array, which contains information about a particular point
 
@@ -50,10 +51,7 @@ class ImpXPolygon;
 class SVX_DLLPUBLIC XPolygon
 {
 protected:
-    ImpXPolygon*    pImpXPolygon;
-
-    // check ImpXPolygon-ReferenceCount and decouple if necessary
-    void    CheckReference();
+    o3tl::cow_wrapper< ImpXPolygon > pImpXPolygon;
 
     // auxiliary functions for Bezier conversion
     void    SubdivideBezier(sal_uInt16 nPos, bool bCalcFirst, double fT);
@@ -63,8 +61,9 @@ protected:
     static bool CheckAngles(sal_uInt16& nStart, sal_uInt16 nEnd, sal_uInt16& nA1, sal_uInt16& nA2);
 
 public:
-    XPolygon( sal_uInt16 nSize=16, sal_uInt16 nResize=16 );
+    XPolygon( sal_uInt16 nSize=16 );
     XPolygon( const XPolygon& rXPoly );
+    XPolygon( XPolygon&& rXPoly );
     XPolygon( const tools::Polygon& rPoly );
     XPolygon( const Rectangle& rRect, long nRx = 0, long nRy = 0 );
     XPolygon( const Point& rCenter, long nRx, long nRy,
@@ -87,6 +86,7 @@ public:
     const Point&    operator[]( sal_uInt16 nPos ) const;
           Point&    operator[]( sal_uInt16 nPos );
     XPolygon&       operator=( const XPolygon& rXPoly );
+    XPolygon&       operator=( XPolygon&& rXPoly );
     bool            operator==( const XPolygon& rXPoly ) const;
 
     XPolyFlags  GetFlags( sal_uInt16 nPos ) const;
@@ -121,14 +121,12 @@ class ImpXPolyPolygon;
 class SVX_DLLPUBLIC XPolyPolygon
 {
 protected:
-    ImpXPolyPolygon* pImpXPolyPolygon;
-
-    // check ImpXPolyPolygon-ReferenceCount and decouple if necessary
-    void    CheckReference();
+    o3tl::cow_wrapper< ImpXPolyPolygon > pImpXPolyPolygon;
 
 public:
-                    XPolyPolygon( sal_uInt16 nInitSize = 16, sal_uInt16 nResize = 16 );
+                    XPolyPolygon();
                     XPolyPolygon( const XPolyPolygon& rXPolyPoly );
+                    XPolyPolygon( XPolyPolygon&& rXPolyPoly );
 
                     ~XPolyPolygon();
 
@@ -147,6 +145,7 @@ public:
     XPolygon&       operator[]( sal_uInt16 nPos );
 
     XPolyPolygon&   operator=( const XPolyPolygon& rXPolyPoly );
+    XPolyPolygon&   operator=( XPolyPolygon&& rXPolyPoly );
 
     // transformations
     void Distort(const Rectangle& rRefRect, const XPolygon& rDistortedRect);

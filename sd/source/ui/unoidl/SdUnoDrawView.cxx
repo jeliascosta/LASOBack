@@ -30,7 +30,6 @@
 #include "pres.hxx"
 
 #include <comphelper/processfactory.hxx>
-#include <cppuhelper/proptypehlp.hxx>
 #include <cppuhelper/supportsservice.hxx>
 #include <sfx2/dispatch.hxx>
 #include <sfx2/viewfrm.hxx>
@@ -65,15 +64,15 @@ SdUnoDrawView::~SdUnoDrawView() throw()
 
 bool SdUnoDrawView::getMasterPageMode() const throw()
 {
-    return (mrDrawViewShell.GetEditMode() == EM_MASTERPAGE);
+    return (mrDrawViewShell.GetEditMode() == EditMode::MasterPage);
 }
 
 void SdUnoDrawView::setMasterPageMode (bool bMasterPageMode) throw()
 {
-    if ((mrDrawViewShell.GetEditMode() == EM_MASTERPAGE) != bMasterPageMode)
+    if ((mrDrawViewShell.GetEditMode() == EditMode::MasterPage) != bMasterPageMode)
     {
         mrDrawViewShell.ChangeEditMode (
-            bMasterPageMode ? EM_MASTERPAGE : EM_PAGE,
+            bMasterPageMode ? EditMode::MasterPage : EditMode::Page,
             mrDrawViewShell.IsLayerModeActive());
     }
 }
@@ -551,9 +550,9 @@ Any SdUnoDrawView::getDrawViewMode() const
     Any aRet;
     switch( mrDrawViewShell.GetPageKind() )
     {
-    case PK_NOTES:  aRet <<= DrawViewMode_NOTES; break;
-    case PK_HANDOUT: aRet <<= DrawViewMode_HANDOUT; break;
-    case PK_STANDARD: aRet <<= DrawViewMode_DRAW; break;
+    case PageKind::Notes:  aRet <<= DrawViewMode_NOTES; break;
+    case PageKind::Handout: aRet <<= DrawViewMode_HANDOUT; break;
+    case PageKind::Standard: aRet <<= DrawViewMode_DRAW; break;
     }
     return aRet;
 }

@@ -250,12 +250,12 @@ void DrawViewShell::ReadFrameViewData(FrameView* pView)
         if ( pPageView->GetLockedLayers() != pView->GetLockedLayers() )
             pPageView->SetLockedLayers( pView->GetLockedLayers() );
 
-        if (mePageKind == PK_NOTES)
+        if (mePageKind == PageKind::Notes)
         {
             if (pPageView->GetHelpLines() != pView->GetNotesHelpLines())
                 pPageView->SetHelpLines( pView->GetNotesHelpLines() );
         }
-        else if (mePageKind == PK_HANDOUT)
+        else if (mePageKind == PageKind::Handout)
         {
             if (pPageView->GetHelpLines() != pView->GetHandoutHelpLines())
                 pPageView->SetHelpLines( pView->GetHandoutHelpLines() );
@@ -272,7 +272,7 @@ void DrawViewShell::ReadFrameViewData(FrameView* pView)
 
     sal_uInt16 nSelectedPage = 0;
 
-    if (mePageKind != PK_HANDOUT)
+    if (mePageKind != PageKind::Handout)
     {
         nSelectedPage = pView->GetSelectedPage();
     }
@@ -350,7 +350,7 @@ void DrawViewShell::WriteFrameViewData()
     Rectangle aVisArea = GetActiveWindow()->PixelToLogic( Rectangle( Point(0,0), aVisSizePixel) );
     mpFrameView->SetVisArea(aVisArea);
 
-    if( mePageKind == PK_HANDOUT )
+    if( mePageKind == PageKind::Handout )
         mpFrameView->SetSelectedPage(0);
     else
     {
@@ -373,11 +373,11 @@ void DrawViewShell::WriteFrameViewData()
         if ( mpFrameView->GetLockedLayers() != pPageView->GetLockedLayers() )
             mpFrameView->SetLockedLayers( pPageView->GetLockedLayers() );
 
-        if (mePageKind == PK_NOTES)
+        if (mePageKind == PageKind::Notes)
         {
             mpFrameView->SetNotesHelpLines( pPageView->GetHelpLines() );
         }
-        else if (mePageKind == PK_HANDOUT)
+        else if (mePageKind == PageKind::Handout)
         {
             mpFrameView->SetHandoutHelpLines( pPageView->GetHelpLines() );
         }
@@ -414,7 +414,7 @@ void DrawViewShell::Paint(const Rectangle& rRect, ::sd::Window* pWin)
     GetDoc()->GetDrawOutliner().SetDefaultLanguage( GetDoc()->GetLanguage( EE_CHAR_LANGUAGE ) );
 
     // Set Application Background color for usage in SdrPaintView(s)
-    mpDrawView->SetApplicationBackgroundColor(GetAppBackgroundColor());
+    mpDrawView->SetApplicationBackgroundColor( mnAppBackgroundColor );
 
     /* This is done before each text edit, so why not do it before every paint.
                 The default language is only used if the outliner only contains one
@@ -452,6 +452,9 @@ void DrawViewShell::WriteUserDataSequence ( css::uno::Sequence < css::beans::Pro
     rSequence.realloc( nIndex + 1 );
     rSequence[nIndex].Name = sUNO_View_ZoomOnPage ;
     rSequence[nIndex].Value <<= mbZoomOnPage;
+
+    // Common SdrModel processing
+    GetDocSh()->GetDoc()->WriteUserDataSequence(rSequence, bBrowse);
 }
 
 void DrawViewShell::ReadUserDataSequence ( const css::uno::Sequence < css::beans::PropertyValue >& rSequence, bool bBrowse )
@@ -472,18 +475,20 @@ void DrawViewShell::ReadUserDataSequence ( const css::uno::Sequence < css::beans
                 mbZoomOnPage = bZoomPage;
             }
         }
+        // Fallback to common SdrModel processing
+        else GetDocSh()->GetDoc()->ReadUserDataSequenceValue(pValue);
     }
 
     if( mpFrameView->GetPageKind() != mePageKind )
     {
         mePageKind = mpFrameView->GetPageKind();
 
-        if (mePageKind == PK_NOTES)
+        if (mePageKind == PageKind::Notes)
         {
             SetHelpId( SID_NOTES_MODE );
             GetActiveWindow()->SetHelpId( CMD_SID_NOTES_MODE );
         }
-        else if (mePageKind == PK_HANDOUT)
+        else if (mePageKind == PageKind::Handout)
         {
             SetHelpId( SID_HANDOUT_MASTER_MODE );
             GetActiveWindow()->SetHelpId( CMD_SID_HANDOUT_MASTER_MODE );
@@ -575,7 +580,7 @@ void DrawViewShell::SetActiveTabLayerIndex (int nIndex)
             // Tell the draw view and the tab control of the new active layer.
             mpDrawView->SetActiveLayer (pBar->GetPageText (pBar->GetPageId ((sal_uInt16)nIndex)));
             pBar->SetCurPageId (pBar->GetPageId ((sal_uInt16)nIndex));
-            css::uno::Reference<SdUnoDrawView> pUnoDrawView(new SdUnoDrawView (
+            rtl::Reference<SdUnoDrawView> pUnoDrawView(new SdUnoDrawView (
                 *this,
                 *GetView()));
             css::uno::Reference< css::drawing::XLayer> rLayer = pUnoDrawView->getActiveLayer();

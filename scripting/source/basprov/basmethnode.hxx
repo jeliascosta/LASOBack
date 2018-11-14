@@ -71,8 +71,8 @@ namespace basprov
     public:
         BasicMethodNodeImpl( const css::uno::Reference< css::uno::XComponentContext >& rxContext,
             const OUString& sScriptingContext,
-            SbMethod* pMethod, bool isAppScript = true );
-        virtual ~BasicMethodNodeImpl();
+            SbMethod* pMethod, bool isAppScript );
+        virtual ~BasicMethodNodeImpl() override;
 
         // XInterface
         DECLARE_XINTERFACE()

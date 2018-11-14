@@ -9,6 +9,7 @@
 #ifndef INCLUDED_SW_SOURCE_FILTER_WW8_WW8TOOLBAR_HXX
 #define INCLUDED_SW_SOURCE_FILTER_WW8_WW8TOOLBAR_HXX
 
+#include <com/sun/star/container/XIndexContainer.hpp>
 #include <filter/msfilter/mstoolbar.hxx>
 
 class Xst : public TBBase
@@ -34,7 +35,7 @@ class SwTBC : public TBBase
 
 public:
     SwTBC();
-    virtual ~SwTBC();
+    virtual ~SwTBC() override;
     bool Read(SvStream &rS) override;
 #if OSL_DEBUG_LEVEL > 1
     virtual void Print( FILE* ) override;
@@ -60,7 +61,7 @@ class SwCTB : public TBBase
 
 public:
     SwCTB();
-    virtual ~SwCTB();
+    virtual ~SwCTB() override;
     bool Read(SvStream &rS) override;
 #if OSL_DEBUG_LEVEL > 1
     virtual void Print( FILE* fp ) override;
@@ -84,7 +85,7 @@ class TBDelta : public TBBase
 
 public:
     TBDelta();
-    virtual ~TBDelta(){}
+    virtual ~TBDelta() override {}
     bool Read(SvStream &rS) override;
 #if OSL_DEBUG_LEVEL > 1
     virtual void Print( FILE* ) override;
@@ -99,7 +100,6 @@ class Tcg255SubStruct : public TBBase
 {
     friend class Tcg255;
 
-    bool mbReadId;
     Tcg255SubStruct(const Tcg255SubStruct&) = delete;
     Tcg255SubStruct& operator = ( const Tcg255SubStruct&) = delete;
 
@@ -107,8 +107,8 @@ protected:
     sal_uInt8 ch;
 
 public:
-    explicit Tcg255SubStruct( bool bReadId );
-    virtual ~Tcg255SubStruct(){}
+    explicit Tcg255SubStruct();
+    virtual ~Tcg255SubStruct() override {}
     sal_uInt8 id() const { return ch; }
     bool Read(SvStream &rS) override;
 };
@@ -129,14 +129,13 @@ class Customization : public TBBase
 
 public:
     explicit Customization( SwCTBWrapper* rapper );
-    virtual ~Customization();
+    virtual ~Customization() override;
     bool Read(SvStream &rS) override;
     bool ImportCustomToolBar( SwCTBWrapper&, CustomToolBarImportHelper& );
     bool ImportMenu( SwCTBWrapper&, CustomToolBarImportHelper& );
 #if OSL_DEBUG_LEVEL > 1
     virtual void Print( FILE* ) override;
 #endif
-    sal_Int32 GetTBIDForTB(){ return tbidForTBD; }
     SwCTB*  GetCustomizationData() { return customizationDataCTB.get(); };
 };
 
@@ -162,8 +161,8 @@ class SwCTBWrapper : public Tcg255SubStruct
     SwCTBWrapper& operator = ( const SwCTBWrapper&) = delete;
 
 public:
-    explicit SwCTBWrapper( bool bReadId = true );
-    virtual ~SwCTBWrapper();
+    explicit SwCTBWrapper();
+    virtual ~SwCTBWrapper() override;
     void InsertDropIndex( sal_Int32 aIndex ) { dropDownMenuIndices.push_back( aIndex ); }
     SwTBC* GetTBCAtOffset( sal_uInt32 nStreamOffset );
     bool Read(SvStream &rS) override;
@@ -206,7 +205,7 @@ class PlfMcd : public Tcg255SubStruct
     PlfMcd& operator = ( const PlfMcd&) = delete;
 
 public:
-    explicit PlfMcd( bool bReadId = true );
+    explicit PlfMcd();
     bool Read(SvStream &rS) override;
 #if OSL_DEBUG_LEVEL > 1
     virtual void Print( FILE* ) override;
@@ -222,7 +221,7 @@ class Acd : public TBBase
 
 public:
     Acd();
-    virtual ~Acd(){}
+    virtual ~Acd() override {}
     bool Read(SvStream &rS) override;
 #if OSL_DEBUG_LEVEL > 1
     virtual void Print( FILE* ) override;
@@ -237,8 +236,8 @@ class PlfAcd: public Tcg255SubStruct
     PlfAcd& operator = ( const PlfAcd&) = delete;
 
 public:
-    explicit PlfAcd( bool bReadId = true );
-    virtual ~PlfAcd();
+    explicit PlfAcd();
+    virtual ~PlfAcd() override;
     bool Read(SvStream &rS) override;
 #if OSL_DEBUG_LEVEL > 1
     virtual void Print(FILE*) override;
@@ -259,7 +258,7 @@ class Kme : public TBBase
 
 public:
     Kme();
-    virtual ~Kme();
+    virtual ~Kme() override;
     bool Read(SvStream &rS) override;
 #if OSL_DEBUG_LEVEL > 1
     virtual void Print( FILE* ) override;
@@ -274,8 +273,8 @@ class PlfKme : public Tcg255SubStruct
     PlfKme& operator = ( const PlfKme&) = delete;
 
 public:
-    explicit PlfKme( bool bReadId = true );
-    virtual ~PlfKme();
+    explicit PlfKme();
+    virtual ~PlfKme() override;
     bool Read(SvStream &rS) override;
 #if OSL_DEBUG_LEVEL > 1
     virtual void Print( FILE* ) override;
@@ -301,7 +300,7 @@ class TcgSttbfCore : public TBBase
 
 public:
     TcgSttbfCore();
-    virtual ~TcgSttbfCore();
+    virtual ~TcgSttbfCore() override;
     bool Read(SvStream &rS) override;
 #if OSL_DEBUG_LEVEL > 1
     virtual void Print( FILE* fp ) override;
@@ -315,8 +314,8 @@ class TcgSttbf : public Tcg255SubStruct
     TcgSttbf& operator = ( const TcgSttbf&) = delete;
 
 public:
-    explicit TcgSttbf( bool bReadId = true );
-    virtual ~TcgSttbf(){}
+    explicit TcgSttbf();
+    virtual ~TcgSttbf() override {}
     bool Read(SvStream &rS) override;
 #if OSL_DEBUG_LEVEL > 1
     virtual void Print( FILE* fp ) override;
@@ -333,7 +332,7 @@ class Xstz : public TBBase
 
 public:
     Xstz();
-    virtual ~Xstz(){}
+    virtual ~Xstz() override {}
     bool Read(SvStream &rS) override;
 #if OSL_DEBUG_LEVEL > 1
     virtual void Print( FILE* fp ) override;
@@ -349,7 +348,7 @@ class MacroName : public TBBase
 
 public:
     MacroName();
-    virtual ~MacroName(){}
+    virtual ~MacroName() override {}
     bool Read(SvStream &rS) override;
 #if OSL_DEBUG_LEVEL > 1
     virtual void Print( FILE* ) override;
@@ -365,8 +364,8 @@ class MacroNames : public Tcg255SubStruct
     MacroNames& operator = ( const MacroNames&) = delete;
 
 public:
-    explicit MacroNames( bool bReadId = true );
-    virtual ~MacroNames();
+    explicit MacroNames();
+    virtual ~MacroNames() override;
     bool Read(SvStream &rS) override;
 #if OSL_DEBUG_LEVEL > 1
     virtual void Print( FILE* ) override;
@@ -382,7 +381,7 @@ class Tcg255 : public TBBase
 
 public:
     Tcg255();
-    virtual ~Tcg255();
+    virtual ~Tcg255() override;
     bool Read(SvStream &rS) override;
 #if OSL_DEBUG_LEVEL > 1
     virtual void Print( FILE* ) override;
@@ -399,7 +398,7 @@ class Tcg: public TBBase
 
 public:
     Tcg();
-    virtual ~Tcg(){}
+    virtual ~Tcg() override {}
     bool Read(SvStream &rS) override;
     bool ImportCustomToolBar( SfxObjectShell& rDocSh );
 #if OSL_DEBUG_LEVEL > 1

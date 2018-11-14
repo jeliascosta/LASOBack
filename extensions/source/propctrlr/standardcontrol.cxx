@@ -122,7 +122,7 @@ namespace pcr
         pControlWindow->SetLast( ::Date( 1, 1, 9999 ) );
         pControlWindow->SetMax( ::Date( 1, 1, 9999 ) );
 
-        pControlWindow->SetExtDateFormat( XTDATEF_SYSTEM_SHORT_YYYY );
+        pControlWindow->SetExtDateFormat( ExtDateFieldFormat::SystemShortYYYY );
         pControlWindow->EnableEmptyFieldValue( true );
     }
 
@@ -459,7 +459,7 @@ namespace pcr
     }
 
 
-    IMPL_LINK_NOARG_TYPED( OHyperlinkControl, OnHyperlinkClicked, void*, void )
+    IMPL_LINK_NOARG( OHyperlinkControl, OnHyperlinkClicked, void*, void )
     {
         ActionEvent aEvent( *this, OUString( "clicked" ) );
         m_aActionListeners.forEach< XActionListener >(
@@ -642,155 +642,44 @@ namespace pcr
 
     #define LB_DEFAULT_COUNT 20
 
-    OUString MakeHexStr(sal_uInt32 nVal, sal_Int32 nLength)
-    {
-        OUStringBuffer aStr;
-        while (nVal>0)
-        {
-            char c = char(nVal & 0x000F);
-            nVal >>= 4;
-            if (c<=9) c += '0';
-            else c += 'A' - 10;
-            aStr.insert(0, c);
-        }
-        while (aStr.getLength() < nLength) aStr.insert(0, '0');
-        return aStr.makeStringAndClear();
-    }
-
-
     OColorControl::OColorControl(vcl::Window* pParent, WinBits nWinStyle)
-        :OColorControl_Base( PropertyControlType::ColorListBox, pParent, nWinStyle )
+        : OColorControl_Base(PropertyControlType::ColorListBox, pParent, nWinStyle)
     {
-        // initialize the color listbox
-        XColorListRef pColorList;
-        SfxObjectShell* pDocSh = SfxObjectShell::Current();
-        const SfxPoolItem* pItem = pDocSh ? pDocSh->GetItem( SID_COLOR_TABLE ) : nullptr;
-        if ( pItem )
-        {
-            DBG_ASSERT(dynamic_cast< const SvxColorListItem* >(pItem) !=  nullptr, "OColorControl::OColorControl: invalid color item!");
-            pColorList = static_cast<const SvxColorListItem*>( pItem )->GetColorList();
-        }
-
-        if ( !pColorList.is() )
-            pColorList = XColorList::GetStdColorList();
-
-
-        DBG_ASSERT(pColorList.is(), "OColorControl::OColorControl: no color table!");
-
-        if ( pColorList.is() )
-        {
-            for (long i = 0; i < pColorList->Count(); ++i)
-            {
-                XColorEntry* pEntry = pColorList->GetColor( i );
-                getTypedControlWindow()->InsertEntry( pEntry->GetColor(), pEntry->GetName() );
-            }
-        }
-
-        getTypedControlWindow()->SetDropDownLineCount( LB_DEFAULT_COUNT );
-        if ( ( nWinStyle & WB_READONLY ) != 0 )
-        {
-            getTypedControlWindow()->SetReadOnly();
-            getTypedControlWindow()->Enable();
-        }
+        getTypedControlWindow()->SetSlotId(SID_FM_CTL_PROPERTIES);
     }
-
 
     void SAL_CALL OColorControl::setValue( const Any& _rValue ) throw (IllegalTypeException, RuntimeException, std::exception)
     {
-        if ( _rValue.hasValue() )
-        {
-            css::util::Color nColor = COL_TRANSPARENT;
-            if ( _rValue >>= nColor )
-            {
-                ::Color aRgbCol((ColorData)nColor);
-
-                getTypedControlWindow()->SelectEntry( aRgbCol );
-                if ( !getTypedControlWindow()->IsEntrySelected( aRgbCol ) )
-                {   // the given color is not part of the list -> insert a new entry with the hex code of the color
-                    OUString aStr("0x");
-                    aStr += MakeHexStr(nColor,8);
-                    getTypedControlWindow()->InsertEntry( aRgbCol, aStr );
-                    getTypedControlWindow()->SelectEntry( aRgbCol );
-                }
-            }
-            else
-            {
-                OUString sNonColorValue;
-                if ( !( _rValue >>= sNonColorValue ) )
-                    throw IllegalTypeException();
-                getTypedControlWindow()->SelectEntry( sNonColorValue );
-                if ( !getTypedControlWindow()->IsEntrySelected( sNonColorValue ) )
-                    getTypedControlWindow()->SetNoSelection();
-            }
-        }
-        else
-            getTypedControlWindow()->SetNoSelection();
+        css::util::Color nColor = COL_TRANSPARENT;
+        if (_rValue.hasValue())
+            _rValue >>= nColor;
+        getTypedControlWindow()->SelectEntry(::Color((ColorData)nColor));
     }
-
 
     Any SAL_CALL OColorControl::getValue() throw (RuntimeException, std::exception)
     {
         Any aPropValue;
-        if ( getTypedControlWindow()->GetSelectEntryCount() > 0 )
-        {
-            OUString sSelectedEntry = getTypedControlWindow()->GetSelectEntry();
-            if ( m_aNonColorEntries.find( sSelectedEntry ) != m_aNonColorEntries.end() )
-                aPropValue <<= sSelectedEntry;
-            else
-            {
-                ::Color aRgbCol = getTypedControlWindow()->GetSelectEntryColor();
-                aPropValue <<= (css::util::Color)aRgbCol.GetColor();
-            }
-        }
+        ::Color aRgbCol = getTypedControlWindow()->GetSelectEntryColor();
+        if (aRgbCol == COL_TRANSPARENT)
+            return aPropValue;
+        aPropValue <<= (css::util::Color)aRgbCol.GetColor();
         return aPropValue;
     }
-
 
     Type SAL_CALL OColorControl::getValueType() throw (RuntimeException, std::exception)
     {
         return ::cppu::UnoType<sal_Int32>::get();
     }
 
-
-    void SAL_CALL OColorControl::clearList() throw (RuntimeException, std::exception)
-    {
-        getTypedControlWindow()->Clear();
-    }
-
-
-    void SAL_CALL OColorControl::prependListEntry( const OUString& NewEntry ) throw (RuntimeException, std::exception)
-    {
-        getTypedControlWindow()->InsertEntry( NewEntry, 0 );
-        m_aNonColorEntries.insert( NewEntry );
-    }
-
-
-    void SAL_CALL OColorControl::appendListEntry( const OUString& NewEntry ) throw (RuntimeException, std::exception)
-    {
-        getTypedControlWindow()->InsertEntry( NewEntry );
-        m_aNonColorEntries.insert( NewEntry );
-    }
-
-    Sequence< OUString > SAL_CALL OColorControl::getListEntries(  ) throw (RuntimeException, std::exception)
-    {
-        if ( !m_aNonColorEntries.empty() )
-            return Sequence< OUString >(&(*m_aNonColorEntries.begin()),m_aNonColorEntries.size());
-        return Sequence< OUString >();
-    }
-
-
     void OColorControl::setModified()
     {
         OColorControl_Base::setModified();
 
-        if ( !getTypedControlWindow()->IsTravelSelect() )
-            // fire a commit
-            notifyModifiedValue();
+        // fire a commit
+        notifyModifiedValue();
     }
 
-
     //= OListboxControl
-
 
     OListboxControl::OListboxControl( vcl::Window* pParent, WinBits nWinStyle)
         :OListboxControl_Base( PropertyControlType::ListBox, pParent, nWinStyle )
@@ -941,7 +830,7 @@ namespace pcr
     }
 
 
-    IMPL_LINK_NOARG_TYPED( OComboboxControl, OnEntrySelected, ComboBox&, void )
+    IMPL_LINK_NOARG( OComboboxControl, OnEntrySelected, ComboBox&, void )
     {
         if ( !getTypedControlWindow()->IsTravelSelect() )
             // fire a commit
@@ -961,7 +850,7 @@ namespace pcr
 
     public:
         explicit        OMultilineFloatingEdit(vcl::Window* _pParen);
-        virtual         ~OMultilineFloatingEdit();
+        virtual         ~OMultilineFloatingEdit() override;
         virtual void    dispose() override;
         MultiLineEdit&  getEdit() { return *m_aImplEdit.get(); }
 
@@ -1299,7 +1188,7 @@ namespace pcr
     }
 
 
-    IMPL_LINK_NOARG_TYPED( DropDownEditControl, ReturnHdl, FloatingWindow*, void)
+    IMPL_LINK_NOARG( DropDownEditControl, ReturnHdl, FloatingWindow*, void)
     {
         OUString aStr = m_pFloatingEdit->getEdit().GetText();
         OUString aStr2 = GetText();
@@ -1313,7 +1202,7 @@ namespace pcr
     }
 
 
-    IMPL_LINK_NOARG_TYPED( DropDownEditControl, DropDownHdl, Button*, void )
+    IMPL_LINK_NOARG( DropDownEditControl, DropDownHdl, Button*, void )
     {
         ShowDropDown(!m_bDropdown);
     }

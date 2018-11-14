@@ -60,14 +60,14 @@ private:
     sal_Int32           mnLastPosHatch;
     sal_Int32           mnLastPosBitmap;
 
-    DECL_LINK_TYPED(SelectFillTypeHdl, ListBox&, void);
-    DECL_LINK_TYPED(SelectFillAttrHdl, ListBox&, void);
+    DECL_LINK(SelectFillTypeHdl, ListBox&, void);
+    DECL_LINK(SelectFillAttrHdl, ListBox&, void);
 
 public:
     SFX_DECL_TOOLBOX_CONTROL();
 
     SvxFillToolBoxControl(sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx);
-    virtual ~SvxFillToolBoxControl();
+    virtual ~SvxFillToolBoxControl() override;
 
     virtual void StateChanged(sal_uInt16 nSID, SfxItemState eState, const SfxPoolItem* pState) override;
     void Update();
@@ -89,7 +89,7 @@ private:
 
 public:
     FillControl(vcl::Window* pParent);
-    virtual ~FillControl();
+    virtual ~FillControl() override;
     virtual void dispose() override;
 
     virtual void Resize() override;

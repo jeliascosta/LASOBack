@@ -191,7 +191,7 @@ void ScPrintFunc::Construct( const ScPrintOptions* pOptions )
 
     //  unified MapMode for all calls (e.g. Repaint!!!)
     //  else, EditEngine outputs different text heights
-    pDev->SetMapMode(MAP_PIXEL);
+    pDev->SetMapMode(MapUnit::MapPixel);
 
     pBorderItem = nullptr;
     pBackgroundItem = nullptr;
@@ -248,7 +248,7 @@ ScPrintFunc::ScPrintFunc( ScDocShell* pShell, SfxPrinter* pNewPrinter, SCTAB nTa
         pPageData           ( pData )
 {
     pDev = pPrinter.get();
-    aSrcOffset = pPrinter->PixelToLogic( pPrinter->GetPageOffsetPixel(), MAP_100TH_MM );
+    aSrcOffset = pPrinter->PixelToLogic( pPrinter->GetPageOffsetPixel(), MapUnit::Map100thMM );
     Construct( pOptions );
 }
 
@@ -547,7 +547,7 @@ void ScPrintFunc::DrawToDev( ScDocument* pDoc, OutputDevice* pDev, double /* nPr
     if ( bMetaFile && pDev->GetOutDevType() == OUTDEV_VIRDEV )
         aOutputData.SetSnapPixel();
 
-    Point aLogStart = pDev->PixelToLogic( Point(nScrX,nScrY), MAP_100TH_MM );
+    Point aLogStart = pDev->PixelToLogic( Point(nScrX,nScrY), MapUnit::Map100thMM );
     long nLogStX = aLogStart.X();
     long nLogStY = aLogStart.Y();
 
@@ -713,7 +713,7 @@ bool ScPrintFunc::AdjustPrintArea( bool bNew )
     if ( bChangeCol )
     {
         OutputDevice* pRefDev = pDoc->GetPrinter();     // use the printer also for Preview
-        pRefDev->SetMapMode( MAP_PIXEL );               // important for GetNeededSize
+        pRefDev->SetMapMode( MapUnit::MapPixel );               // important for GetNeededSize
 
         pDoc->ExtendPrintArea( pRefDev,
                             nPrintTab, nStartCol, nStartRow, nEndCol, nEndRow );
@@ -721,10 +721,10 @@ bool ScPrintFunc::AdjustPrintArea( bool bNew )
     }
 
     if ( nEndCol < MAXCOL && pDoc->HasAttrib(
-                    nEndCol,nStartRow,nPrintTab, nEndCol,nEndRow,nPrintTab, HASATTR_SHADOW_RIGHT ) )
+                    nEndCol,nStartRow,nPrintTab, nEndCol,nEndRow,nPrintTab, HasAttrFlags::ShadowRight ) )
         ++nEndCol;
     if ( nEndRow < MAXROW && pDoc->HasAttrib(
-                    nStartCol,nEndRow,nPrintTab, nEndCol,nEndRow,nPrintTab, HASATTR_SHADOW_DOWN ) )
+                    nStartCol,nEndRow,nPrintTab, nEndCol,nEndRow,nPrintTab, HasAttrFlags::ShadowDown ) )
         ++nEndRow;
 
     if (!bChangeCol) nEndCol = nOldEndCol;
@@ -1114,8 +1114,8 @@ static void lcl_DrawGraphic( const SvxBrushItem &rBrush, vcl::RenderContext *pOu
     SvxGraphicPosition ePos;
     if ( pGraphic && pGraphic->IsSupportedGraphic() )
     {
-        const MapMode aMapMM( MAP_100TH_MM );
-        if ( pGraphic->GetPrefMapMode().GetMapUnit() == MAP_PIXEL )
+        const MapMode aMapMM( MapUnit::Map100thMM );
+        if ( pGraphic->GetPrefMapMode().GetMapUnit() == MapUnit::MapPixel )
             aGrfSize = pRefDev->PixelToLogic( pGraphic->GetPrefSize(), aMapMM );
         else
             aGrfSize = OutputDevice::LogicToLogic( pGraphic->GetPrefSize(),
@@ -1173,7 +1173,7 @@ static void lcl_DrawGraphic( const SvxBrushItem &rBrush, vcl::RenderContext *pOu
                         GraphicObject aObject( *pGraphic );
 
                         if( pOut->GetPDFWriter() &&
-                            (aObject.GetType() == GRAPHIC_BITMAP || aObject.GetType() == GRAPHIC_DEFAULT) )
+                            (aObject.GetType() == GraphicType::Bitmap || aObject.GetType() == GraphicType::Default) )
                         {
                             // For PDF export, every draw
                             // operation for bitmaps takes a noticeable
@@ -1203,7 +1203,7 @@ static void lcl_DrawGraphic( const SvxBrushItem &rBrush, vcl::RenderContext *pOu
                             const double    Abitmap( k1/k2 * aSize.Width()*aSize.Height() );
 
                             aObject.DrawTiled( pOut, rOrg, aGrfSize, Size(0,0),
-                                               nullptr, GraphicManagerDrawFlags::STANDARD,
+                                               GraphicManagerDrawFlags::STANDARD,
                                                ::std::max( 128, static_cast<int>( sqrt(sqrt( Abitmap)) + .5 ) ) );
                         }
                         else
@@ -1519,7 +1519,7 @@ void ScPrintFunc::LocateArea( SCCOL nX1, SCROW nY1, SCCOL nX2, SCROW nY2,
     aMMOffset.X() = (long)(aMMOffset.X() * HMM_PER_TWIPS);
     aMMOffset.Y() = (long)(aMMOffset.Y() * HMM_PER_TWIPS);
     aMMOffset += Point( nLogStX, nLogStY );
-    MapMode aDrawMapMode( MAP_100TH_MM, aMMOffset, aLogicMode.GetScaleX(), aLogicMode.GetScaleY() );
+    MapMode aDrawMapMode( MapUnit::Map100thMM, aMMOffset, aLogicMode.GetScaleX(), aLogicMode.GetScaleY() );
 
     //  get pixel rectangle
 
@@ -1609,7 +1609,7 @@ void ScPrintFunc::PrintArea( SCCOL nX1, SCROW nY1, SCCOL nX2, SCROW nY2,
         OutputDevice* pRefDev = pDoc->GetPrinter();     // use the printer also for Preview
         Fraction aPrintFrac( nZoom, 100 );              // without nManualZoom
         //  MapMode, as it would arrive at the printer:
-        pRefDev->SetMapMode( MapMode( MAP_100TH_MM, Point(), aPrintFrac, aPrintFrac ) );
+        pRefDev->SetMapMode( MapMode( MapUnit::Map100thMM, Point(), aPrintFrac, aPrintFrac ) );
 
         //  when rendering (PDF), don't use printer as ref device, but printer's MapMode
         //  has to be set anyway, as charts still use it (#106409#)
@@ -1651,17 +1651,15 @@ void ScPrintFunc::PrintArea( SCCOL nX1, SCROW nY1, SCCOL nX2, SCROW nY2,
 
 bool ScPrintFunc::IsMirror( long nPageNo )          // Mirror margins?
 {
-    SvxPageUsage eUsage = (SvxPageUsage) ( nPageUsage & 0x000f );
-    return ( eUsage == SVX_PAGE_MIRROR && (nPageNo & 1) );
+    return nPageUsage == SvxPageUsage::Mirror && (nPageNo & 1);
 }
 
 bool ScPrintFunc::IsLeft( long nPageNo )            // left foot notes?
 {
-    SvxPageUsage eUsage = (SvxPageUsage) ( nPageUsage & 0x000f );
     bool bLeft;
-    if (eUsage == SVX_PAGE_LEFT)
+    if (nPageUsage == SvxPageUsage::Left)
         bLeft = true;
-    else if (eUsage == SVX_PAGE_RIGHT)
+    else if (nPageUsage == SvxPageUsage::Right)
         bLeft = false;
     else
         bLeft = (nPageNo & 1) != 0;
@@ -1701,9 +1699,12 @@ void ScPrintFunc::MakeEditEngine()
         rPattern.FillEditItemSet( pEditDefaults );
         //  FillEditItemSet adjusts font height to 1/100th mm,
         //  but for header/footer twips is needed, as in the PatternAttr:
-        pEditDefaults->Put( rPattern.GetItem(ATTR_FONT_HEIGHT), EE_CHAR_FONTHEIGHT );
-        pEditDefaults->Put( rPattern.GetItem(ATTR_CJK_FONT_HEIGHT), EE_CHAR_FONTHEIGHT_CJK );
-        pEditDefaults->Put( rPattern.GetItem(ATTR_CTL_FONT_HEIGHT), EE_CHAR_FONTHEIGHT_CTL );
+        std::unique_ptr<SfxPoolItem> pNewItem(rPattern.GetItem(ATTR_FONT_HEIGHT).CloneSetWhich(EE_CHAR_FONTHEIGHT));
+        pEditDefaults->Put( *pNewItem );
+        pNewItem.reset(rPattern.GetItem(ATTR_CJK_FONT_HEIGHT).CloneSetWhich(EE_CHAR_FONTHEIGHT_CJK));
+        pEditDefaults->Put( *pNewItem );
+        pNewItem.reset(rPattern.GetItem(ATTR_CTL_FONT_HEIGHT).CloneSetWhich(EE_CHAR_FONTHEIGHT_CTL));
+        pEditDefaults->Put( *pNewItem );
         //  don't use font color, because background color is not used
         //! there's no way to set the background for note pages
         pEditDefaults->ClearItem( EE_CHAR_COLOR );
@@ -2406,7 +2407,7 @@ bool ScPrintFunc::UpdatePages()
 
             //  set breaks
             ResetBreaks(nTab);
-            pDocShell->PostPaint(0,0,nTab, MAXCOL,MAXROW,nTab, PAINT_GRID);
+            pDocShell->PostPaint(0,0,nTab, MAXCOL,MAXROW,nTab, PaintPartFlags::Grid);
         }
 
     return true;
@@ -2566,13 +2567,13 @@ void ScPrintFunc::InitModes()               // set MapModes from  nZoom etc.
         aHorFract = Fraction( (long)( nEffZoom / nFact ), 10000 );
     }
 
-    aLogicMode = MapMode( MAP_100TH_MM, Point(), aHorFract, aZoomFract );
+    aLogicMode = MapMode( MapUnit::Map100thMM, Point(), aHorFract, aZoomFract );
 
     Point aLogicOfs( -aOffset.X(), -aOffset.Y() );
-    aOffsetMode = MapMode( MAP_100TH_MM, aLogicOfs, aHorFract, aZoomFract );
+    aOffsetMode = MapMode( MapUnit::Map100thMM, aLogicOfs, aHorFract, aZoomFract );
 
     Point aTwipsOfs( (long) ( -aOffset.X() / nScaleX + 0.5 ), (long) ( -aOffset.Y() / nScaleY + 0.5 ) );
-    aTwipMode = MapMode( MAP_TWIP, aTwipsOfs, aHorFract, aZoomFract );
+    aTwipMode = MapMode( MapUnit::MapTwip, aTwipsOfs, aHorFract, aZoomFract );
 }
 
 void ScPrintFunc::ApplyPrintSettings()
@@ -2584,7 +2585,7 @@ void ScPrintFunc::ApplyPrintSettings()
 
         Size aEnumSize = aPageSize;
 
-        pPrinter->SetOrientation( bLandscape ? ORIENTATION_LANDSCAPE : ORIENTATION_PORTRAIT );
+        pPrinter->SetOrientation( bLandscape ? Orientation::Landscape : Orientation::Portrait );
         if ( bLandscape )
         {
                 // landscape is always interpreted as a rotation by 90 degrees !
@@ -2594,14 +2595,14 @@ void ScPrintFunc::ApplyPrintSettings()
                 aEnumSize.Width() = aEnumSize.Height();
                 aEnumSize.Height() = nTemp;
         }
-        Paper ePaper = SvxPaperInfo::GetSvxPaper( aEnumSize, MAP_TWIP, true );
+        Paper ePaper = SvxPaperInfo::GetSvxPaper( aEnumSize, MapUnit::MapTwip, true );
         sal_uInt16 nPaperBin = static_cast<const SvxPaperBinItem&>(pParamSet->Get(ATTR_PAGE_PAPERBIN)).GetValue();
 
         pPrinter->SetPaper( ePaper );
         if ( PAPER_USER == ePaper )
         {
             MapMode aPrinterMode = pPrinter->GetMapMode();
-            MapMode aLocalMode( MAP_TWIP );
+            MapMode aLocalMode( MapUnit::MapTwip );
             pPrinter->SetMapMode( aLocalMode );
             pPrinter->SetPaperSizeUser( aEnumSize );
             pPrinter->SetMapMode( aPrinterMode );
@@ -3020,7 +3021,7 @@ void ScPrintFunc::CalcPages()               // calculates aPageRect and pages fr
     for (SCCOL i=nStartCol; i<=nEndCol; i++)
     {
         bool bHidden = pDoc->ColHidden(i, nPrintTab);
-        bool bPageBreak = (pDoc->HasColBreak(i, nPrintTab) & BREAK_PAGE);
+        bool bPageBreak(pDoc->HasColBreak(i, nPrintTab) & ScBreakType::Page);
         if ( i>nStartCol && bVisCol && bPageBreak )
         {
             OSL_ENSURE(nPagesX < maPageEndX.size(), "vector access error for maPageEndX (!)");

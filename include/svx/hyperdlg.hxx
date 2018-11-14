@@ -34,11 +34,12 @@ class AbstractSvxHpLinkDlg;
 class SVX_DLLPUBLIC SvxHlinkDlgWrapper : public SfxChildWindow
 {
 private:
-    AbstractSvxHpLinkDlg*   mpDlg;
+    VclPtr<AbstractSvxHpLinkDlg>   mpDlg;
 
 public:
     SvxHlinkDlgWrapper( vcl::Window*pParent, sal_uInt16 nId,
                         SfxBindings* pBindings, SfxChildWinInfo* pInfo );
+    virtual ~SvxHlinkDlgWrapper() override;
 
     SFX_DECL_CHILDWINDOW_WITHID(SvxHlinkDlgWrapper);
     virtual bool    QueryClose() override;

@@ -119,8 +119,6 @@ class DocTempl_EntryData_Impl
     OUString            maTitle;
     OUString            maOwnURL;
     OUString            maTargetURL;
-    bool            mbIsOwner   : 1;
-    bool            mbDidConvert: 1;
 
 private:
     RegionData_Impl*    GetParent() const { return mpParent; }
@@ -178,7 +176,7 @@ public:
 
     void                AddEntry( const OUString& rTitle,
                                   const OUString& rTargetURL,
-                                  size_t *pPos = nullptr );
+                                  size_t *pPos );
     void                DeleteEntry( size_t nIndex );
 
     int                 Compare( RegionData_Impl* pCompareWith ) const;
@@ -209,7 +207,7 @@ private:
 
 public:
                         SfxDocTemplate_Impl();
-                        virtual ~SfxDocTemplate_Impl();
+                        virtual ~SfxDocTemplate_Impl() override;
 
     void                IncrementLock();
     void                DecrementLock();
@@ -230,7 +228,7 @@ public:
     RegionData_Impl*    GetRegion( size_t nIndex ) const;
 
     bool            GetTitleFromURL( const OUString& rURL, OUString& aTitle );
-    bool            InsertRegion( RegionData_Impl *pData, size_t nPos = size_t(-1) );
+    bool            InsertRegion( RegionData_Impl *pData, size_t nPos );
     const OUString& GetRootURL() const { return maRootURL; }
 
     const uno::Reference< XDocumentTemplates >& getDocTemplates() { return mxTemplates; }
@@ -263,14 +261,14 @@ static bool getTextProperty_Impl( Content& rContent,
 
 OUString SfxDocumentTemplates::GetFullRegionName
 (
-    sal_uInt16 nIdx                     // vcl::Region Index
+    sal_uInt16 nIdx                     // Region Index
 )   const
 
 /*  [Description]
 
     Returns the logical name of a region and its path
 
-    [Return value]                 Reference to the vcl::Region name
+    [Return value]                 Reference to the Region name
 
 */
 
@@ -298,7 +296,7 @@ OUString SfxDocumentTemplates::GetFullRegionName
 
 OUString SfxDocumentTemplates::GetRegionName
 (
-    sal_uInt16 nIdx                 // vcl::Region Index
+    sal_uInt16 nIdx                 // Region Index
 )   const
 
 /*  [Description]
@@ -307,7 +305,7 @@ OUString SfxDocumentTemplates::GetRegionName
 
     [Return value]
 
-    const String&                   Reference to the vcl::Region name
+    const String&                   Reference to the Region name
 
 */
 {
@@ -343,15 +341,15 @@ sal_uInt16 SfxDocumentTemplates::GetRegionCount() const
     if ( !pImp->Construct() )
         return 0;
 
-    sal_uIntPtr nCount = pImp->GetRegionCount();
+    sal_uInt16 nCount = pImp->GetRegionCount();
 
-    return (sal_uInt16) nCount;
+    return nCount;
 }
 
 
 sal_uInt16 SfxDocumentTemplates::GetCount
 (
-    sal_uInt16 nRegion              /* vcl::Region index whose number is
+    sal_uInt16 nRegion              /* Region index whose number is
                                    to be determined */
 
 )   const
@@ -370,18 +368,18 @@ sal_uInt16 SfxDocumentTemplates::GetCount
         return 0;
 
     RegionData_Impl *pData = pImp->GetRegion( nRegion );
-    sal_uIntPtr            nCount = 0;
+    sal_uInt16            nCount = 0;
 
     if ( pData )
         nCount = pData->GetCount();
 
-    return (sal_uInt16) nCount;
+    return nCount;
 }
 
 
 OUString SfxDocumentTemplates::GetName
 (
-    sal_uInt16 nRegion,     //  vcl::Region Index, in which the entry lies
+    sal_uInt16 nRegion,     //  Region Index, in which the entry lies
     sal_uInt16 nIdx         //  Index of the entry
 )   const
 
@@ -417,7 +415,7 @@ OUString SfxDocumentTemplates::GetName
 
 OUString SfxDocumentTemplates::GetPath
 (
-    sal_uInt16  nRegion,    //  vcl::Region Index, in which the entry lies
+    sal_uInt16  nRegion,    //  Region Index, in which the entry lies
     sal_uInt16  nIdx        //  Index of the entry
 )   const
 
@@ -504,9 +502,9 @@ OUString SfxDocumentTemplates::ConvertResourceString (
 
 bool SfxDocumentTemplates::CopyOrMove
 (
-    sal_uInt16  nTargetRegion,      //  Target vcl::Region Index
+    sal_uInt16  nTargetRegion,      //  Target Region Index
     sal_uInt16  nTargetIdx,         //  Target position Index
-    sal_uInt16  nSourceRegion,      //  Source vcl::Region Index
+    sal_uInt16  nSourceRegion,      //  Source Region Index
     sal_uInt16  nSourceIdx,         /*  Index to be copied / to moved template */
     bool        bMove               //  Copy / Move
 )
@@ -609,9 +607,9 @@ bool SfxDocumentTemplates::CopyOrMove
 
 bool SfxDocumentTemplates::Move
 (
-    sal_uInt16 nTargetRegion,       //  Target vcl::Region Index
+    sal_uInt16 nTargetRegion,       //  Target Region Index
     sal_uInt16 nTargetIdx,          //  Target position Index
-    sal_uInt16 nSourceRegion,       //  Source vcl::Region Index
+    sal_uInt16 nSourceRegion,       //  Source Region Index
     sal_uInt16 nSourceIdx           /*  Index to be copied / to moved template */
 )
 
@@ -638,9 +636,9 @@ bool SfxDocumentTemplates::Move
 
 bool SfxDocumentTemplates::Copy
 (
-    sal_uInt16 nTargetRegion,       //  Target vcl::Region Index
+    sal_uInt16 nTargetRegion,       //  Target Region Index
     sal_uInt16 nTargetIdx,          //  Target position Index
-    sal_uInt16 nSourceRegion,       //  Source vcl::Region Index
+    sal_uInt16 nSourceRegion,       //  Source Region Index
     sal_uInt16 nSourceIdx           /*  Index to be copied / to moved template */
 )
 
@@ -668,7 +666,7 @@ bool SfxDocumentTemplates::Copy
 
 bool SfxDocumentTemplates::CopyTo
 (
-    sal_uInt16          nRegion,    //  vcl::Region of the template to be exported
+    sal_uInt16          nRegion,    //  Region of the template to be exported
     sal_uInt16          nIdx,       //  Index of the template to be exported
     const OUString&     rName       /*  File name under which the template is to
                                     be created */
@@ -739,7 +737,7 @@ bool SfxDocumentTemplates::CopyTo
 
 bool SfxDocumentTemplates::CopyFrom
 (
-    sal_uInt16      nRegion,        /*  vcl::Region in which the template is to be
+    sal_uInt16      nRegion,        /*  Region in which the template is to be
                                     imported */
     sal_uInt16      nIdx,           //  Index of the new template in this Region
     OUString&       rName           /*  File name of the template to be imported
@@ -867,12 +865,12 @@ bool SfxDocumentTemplates::CopyFrom
             }
             else
             {
-                DBG_ASSERT( false, "CopyFrom(): The content should contain target URL!" );
+                SAL_WARN( "sfx", "CopyFrom(): The content should contain target URL!" );
             }
         }
         else
         {
-            DBG_ASSERT( false, "CopyFrom(): The content just was created!" );
+            SAL_WARN( "sfx", "CopyFrom(): The content just was created!" );
         }
     }
 
@@ -882,7 +880,7 @@ bool SfxDocumentTemplates::CopyFrom
 
 bool SfxDocumentTemplates::Delete
 (
-    sal_uInt16 nRegion,             //  vcl::Region Index
+    sal_uInt16 nRegion,             //  Region Index
     sal_uInt16 nIdx                 /*  Index of the entry or USHRT_MAX,
                                     if a directory is meant. */
 )
@@ -946,7 +944,7 @@ bool SfxDocumentTemplates::Delete
 bool SfxDocumentTemplates::InsertDir
 (
     const OUString&     rText,      //  the logical name of the new Region
-    sal_uInt16          nRegion     //  vcl::Region Index
+    sal_uInt16          nRegion     //  Region Index
 )
 
 /*  [Description]
@@ -977,7 +975,7 @@ bool SfxDocumentTemplates::InsertDir
 
     if ( xTemplates->addGroup( rText ) )
     {
-        RegionData_Impl* pNewRegion = new RegionData_Impl( pImp, rText );
+        RegionData_Impl* pNewRegion = new RegionData_Impl( pImp.get(), rText );
 
         if ( ! pImp->InsertRegion( pNewRegion, nRegion ) )
         {
@@ -1064,7 +1062,7 @@ bool SfxDocumentTemplates::SetName( const OUString& rName, sal_uInt16 nRegion, s
 
 bool SfxDocumentTemplates::GetFull
 (
-    const OUString &rRegion,      // vcl::Region Name
+    const OUString &rRegion,      // Region Name
     const OUString &rName,        // Template Name
     OUString &rPath               // Out: Path + File name
 )
@@ -1120,7 +1118,7 @@ bool SfxDocumentTemplates::GetFull
 bool SfxDocumentTemplates::GetLogicNames
 (
     const OUString &rPath,            // Full Path to the template
-    OUString &rRegion,                // Out: vcl::Region name
+    OUString &rRegion,                // Out: Region name
     OUString &rName                   // Out: Template name
 ) const
 
@@ -1154,16 +1152,16 @@ bool SfxDocumentTemplates::GetLogicNames
     DocTempl_EntryData_Impl  *pEntry = nullptr;
     bool         bFound = false;
 
-    sal_uIntPtr nCount = GetRegionCount();
+    sal_uInt16 nCount = GetRegionCount();
 
-    for ( sal_uIntPtr i=0; !bFound && (i<nCount); i++ )
+    for ( sal_uInt16 i=0; !bFound && (i<nCount); i++ )
     {
         pData = pImp->GetRegion( i );
         if ( pData )
         {
-            sal_uIntPtr nChildCount = pData->GetCount();
+            sal_uInt16 nChildCount = pData->GetCount();
 
-            for ( sal_uIntPtr j=0; !bFound && (j<nChildCount); j++ )
+            for ( sal_uInt16 j=0; !bFound && (j<nChildCount); j++ )
             {
                 pEntry = pData->GetEntry( j );
                 if ( pEntry && pEntry->GetTargetURL() == aPath )
@@ -1231,8 +1229,6 @@ DocTempl_EntryData_Impl::DocTempl_EntryData_Impl( RegionData_Impl* pParent,
     mpParent    = pParent;
     maTitle     = SfxDocumentTemplates::ConvertResourceString(
                   STR_TEMPLATE_NAME1_DEF, STR_TEMPLATE_NAME1, NUM_TEMPLATE_NAMES, rTitle );
-    mbIsOwner   = false;
-    mbDidConvert= false;
 }
 
 
@@ -1519,7 +1515,7 @@ void SfxDocTemplate_Impl::DeleteRegion( size_t nIndex )
 }
 
 
-/*  AddRegion adds a vcl::Region to the RegionList
+/*  AddRegion adds a Region to the RegionList
 */
 void SfxDocTemplate_Impl::AddRegion( const OUString& rTitle,
                                      Content& rContent )
@@ -1527,7 +1523,7 @@ void SfxDocTemplate_Impl::AddRegion( const OUString& rTitle,
     RegionData_Impl* pRegion;
     pRegion = new RegionData_Impl( this, rTitle );
 
-    if ( ! InsertRegion( pRegion ) )
+    if ( ! InsertRegion( pRegion, (size_t)-1 ) )
     {
         delete pRegion;
         return;
@@ -1561,7 +1557,7 @@ void SfxDocTemplate_Impl::AddRegion( const OUString& rTitle,
                 OUString aTitle( xRow->getString( 1 ) );
                 OUString aTargetDir( xRow->getString( 2 ) );
 
-                pRegion->AddEntry( aTitle, aTargetDir );
+                pRegion->AddEntry( aTitle, aTargetDir, nullptr );
             }
         }
         catch ( Exception& ) {}

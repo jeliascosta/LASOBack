@@ -48,15 +48,10 @@ class SdrObjConnection
 protected:
     Point                       aObjOfs;       // Wird beim Draggen eines Knotens gesetzt
     SdrObject*                  pObj;          // Referenziertes Objekt
-    long                        nXDist;        // Hor. Objektabstand wenn bXDistOvr=TRUE
-    long                        nYDist;        // Vert. Objektabstand wenn bYDistOvr=TRUE
-    sal_uInt16                      nConId;        // Konnektornummer
+    sal_uInt16                  nConId;        // Konnektornummer
 
-    // bitfield
     bool                        bBestConn : 1;   // sal_True= es wird der guenstigste Konnektor gesucht
     bool                        bBestVertex : 1; // sal_True= es wird der guenstigste Scheitelpunkt zum konnekten gesucht
-    bool                        bXDistOvr : 1;   // sal_True= Hor. Objektabstand wurde gedragt (Overwrite)
-    bool                        bYDistOvr : 1;   // sal_True= Vert. Objektabstand wurde gedragt (Overwrite)
     bool                        bAutoVertex : 1; // AutoConnector am Scheitelpunkt nCon
     bool                        bAutoCorner : 1; // AutoConnector am Eckpunkt nCon
 
@@ -82,7 +77,7 @@ public:
 //   Hilfsklasse SdrEdgeInfoRec
 
 
-enum SdrEdgeLineCode {OBJ1LINE2,OBJ1LINE3,OBJ2LINE2,OBJ2LINE3,MIDDLELINE};
+enum class SdrEdgeLineCode { Obj1Line2, Obj1Line3, Obj2Line2, Obj2Line3, MiddleLine };
 
 class SdrEdgeInfoRec
 {
@@ -99,9 +94,9 @@ public:
     // Nachfolgende Werte werden von ImpCalcEdgeTrack gesetzt
     long                        nAngle1;           // Austrittswinkel am Obj1
     long                        nAngle2;           // Austrittswinkel am Obj2
-    sal_uInt16                      nObj1Lines;        // 1..3
-    sal_uInt16                      nObj2Lines;        // 1..3
-    sal_uInt16                      nMiddleLine;       // 0xFFFF=keine, sonst Punktnummer des Linienbeginns
+    sal_uInt16                  nObj1Lines;        // 1..3
+    sal_uInt16                  nObj2Lines;        // 1..3
+    sal_uInt16                  nMiddleLine;       // 0xFFFF=keine, sonst Punktnummer des Linienbeginns
     char                        cOrthoForm;        // Form des Ortho-Verbindes, z.B. 'Z','U',I','L','S',...
 
 public:
@@ -115,7 +110,6 @@ public:
     {}
 
     Point& ImpGetLineVersatzPoint(SdrEdgeLineCode eLineCode);
-    const Point& ImpGetLineVersatzPoint(SdrEdgeLineCode eLineCode) const { return const_cast<SdrEdgeInfoRec*>(this)->ImpGetLineVersatzPoint(eLineCode); }
     sal_uInt16 ImpGetPolyIdx(SdrEdgeLineCode eLineCode, const XPolygon& rXP) const;
     bool ImpIsHorzLine(SdrEdgeLineCode eLineCode, const XPolygon& rXP) const;
     void ImpSetLineVersatz(SdrEdgeLineCode eLineCode, const XPolygon& rXP, long nVal);
@@ -138,7 +132,7 @@ public:
 
 public:
     SdrEdgeObjGeoData();
-    virtual ~SdrEdgeObjGeoData();
+    virtual ~SdrEdgeObjGeoData() override;
 };
 
 
@@ -165,7 +159,6 @@ protected:
     sal_uInt16                  nNotifyingCount; // Verrieglung
     SdrEdgeInfoRec              aEdgeInfo;
 
-    // bitfield
     bool                        bEdgeTrackDirty : 1; // sal_True=Verbindungsverlauf muss neu berechnet werden.
     bool                        bEdgeTrackUserDefined : 1;
 
@@ -188,8 +181,6 @@ public:
     void SetSuppressDefaultConnect(bool bNew) { mbSuppressDefaultConnect = bNew; }
     bool GetSuppressDefaultConnect() const { return mbSuppressDefaultConnect; }
 
-    bool IsBoundRectCalculationRunning() const { return mbBoundRectCalculationRunning; }
-
 protected:
     virtual void Notify(SfxBroadcaster& rBC, const SfxHint& rHint) override;
 
@@ -210,7 +201,7 @@ protected:
 public:
 
     SdrEdgeObj();
-    virtual ~SdrEdgeObj();
+    virtual ~SdrEdgeObj() override;
 
     SdrObjConnection& GetConnection(bool bTail1) { return *(bTail1 ? &aCon1 : &aCon2); }
     virtual void TakeObjInfo(SdrObjTransformInfoRec& rInfo) const override;

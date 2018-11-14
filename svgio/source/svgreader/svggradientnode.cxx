@@ -17,9 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgio/svgreader/svggradientnode.hxx>
-#include <svgio/svgreader/svgdocument.hxx>
-#include <svgio/svgreader/svggradientstopnode.hxx>
+#include <svggradientnode.hxx>
+#include <svgdocument.hxx>
+#include <svggradientstopnode.hxx>
 
 namespace svgio
 {
@@ -95,7 +95,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setX1(aNum);
+                        maX1 = aNum;
                     }
                     break;
                 }
@@ -105,7 +105,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setY1(aNum);
+                        maY1 = aNum;
                     }
                     break;
                 }
@@ -115,7 +115,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setX2(aNum);
+                        maX2 = aNum;
                     }
                     break;
                 }
@@ -125,7 +125,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setY2(aNum);
+                        maY2 = aNum;
                     }
                     break;
                 }
@@ -135,7 +135,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setCx(aNum);
+                        maCx = aNum;
                     }
                     break;
                 }
@@ -145,7 +145,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setCy(aNum);
+                        maCy = aNum;
                     }
                     break;
                 }
@@ -155,7 +155,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setFx(aNum);
+                        maFx = aNum;
                     }
                     break;
                 }
@@ -165,7 +165,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setFy(aNum);
+                        maFy = aNum;
                     }
                     break;
                 }
@@ -177,7 +177,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            setR(aNum);
+                            maR = aNum;
                         }
                     }
                     break;

@@ -29,7 +29,7 @@ SfxPoolItem* SvxPagePosSizeItem::CreateDefault() { return new SvxPagePosSizeItem
 SfxPoolItem* SvxLongLRSpaceItem::CreateDefault() { return new SvxLongLRSpaceItem; }
 SfxPoolItem* SvxLongULSpaceItem::CreateDefault() { return new SvxLongULSpaceItem; }
 SfxPoolItem* SvxColumnItem::CreateDefault() { return new SvxColumnItem; }
-SfxPoolItem* SvxObjectItem::CreateDefault() { DBG_ASSERT(false, "No SvxObjectItem factory available"); return nullptr; }
+SfxPoolItem* SvxObjectItem::CreateDefault() { SAL_WARN( "svx", "No SvxObjectItem factory available"); return nullptr; }
 
 /* SvxLongLRSpaceItem */
 
@@ -117,8 +117,8 @@ bool SvxLongLRSpaceItem::PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberI
 
 bool SvxLongLRSpaceItem::GetPresentation(
                         SfxItemPresentation /*ePres*/,
-                        SfxMapUnit          /*eCoreUnit*/,
-                        SfxMapUnit          /*ePresUnit*/,
+                        MapUnit             /*eCoreUnit*/,
+                        MapUnit             /*ePresUnit*/,
                         OUString&           /*rText*/,
                         const IntlWrapper*  /*pWrapper*/) const
 {
@@ -243,8 +243,8 @@ bool SvxLongULSpaceItem::PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberI
 
 bool SvxLongULSpaceItem::GetPresentation(
                         SfxItemPresentation /*ePres*/,
-                        SfxMapUnit          /*eCoreUnit*/,
-                        SfxMapUnit          /*ePresUnit*/,
+                        MapUnit             /*eCoreUnit*/,
+                        MapUnit             /*ePresUnit*/,
                         OUString&           /*rText*/,
                         const IntlWrapper*  /*pWrapper*/ ) const
 {
@@ -364,8 +364,8 @@ bool SvxPagePosSizeItem::PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberI
 
 bool SvxPagePosSizeItem::GetPresentation(
                         SfxItemPresentation /*ePres*/,
-                        SfxMapUnit          /*eCoreUnit*/,
-                        SfxMapUnit          /*ePresUnit*/,
+                        MapUnit             /*eCoreUnit*/,
+                        MapUnit             /*ePresUnit*/,
                         OUString&           /*rText*/,
                         const IntlWrapper*  /*pWrapper*/ ) const
 {
@@ -455,8 +455,8 @@ SvxColumnItem::~SvxColumnItem()
 
 bool SvxColumnItem::GetPresentation(
                         SfxItemPresentation /*ePres*/,
-                        SfxMapUnit          /*eCoreUnit*/,
-                        SfxMapUnit          /*ePresUnit*/,
+                        MapUnit             /*eCoreUnit*/,
+                        MapUnit             /*ePresUnit*/,
                         OUString&           /*rText*/,
                         const IntlWrapper*  /*pWrapper*/ ) const
 {
@@ -589,14 +589,9 @@ const SvxColumnDescription& SvxColumnItem::operator[](sal_uInt16 index) const
     return aColumns[index];
 }
 
-void SvxColumnItem::Insert(const SvxColumnDescription &rDesc, sal_uInt16 nPos)
-{
-    aColumns.insert(aColumns.begin() + nPos, rDesc);
-}
-
 void SvxColumnItem::Append(const SvxColumnDescription &rDesc)
 {
-    Insert(rDesc, Count());
+    aColumns.push_back(rDesc);
 }
 
 void SvxColumnItem::SetLeft(long left)
@@ -695,8 +690,8 @@ bool SvxObjectItem::operator==( const SfxPoolItem& rCmp ) const
 
 bool SvxObjectItem::GetPresentation(
                         SfxItemPresentation /*ePres*/,
-                        SfxMapUnit          /*eCoreUnit*/,
-                        SfxMapUnit          /*ePresUnit*/,
+                        MapUnit             /*eCoreUnit*/,
+                        MapUnit             /*ePresUnit*/,
                         OUString&           /*rText*/,
                         const IntlWrapper*  /*pWrapper*/ ) const
 {

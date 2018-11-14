@@ -128,7 +128,7 @@ SdrObject* SwDoc::CloneSdrObj( const SdrObject& rObj, bool bMoveWithinDoc,
     }
 
     SdrObject *pObj = rObj.Clone();
-    if( bMoveWithinDoc && FmFormInventor == pObj->GetObjInventor() )
+    if( bMoveWithinDoc && SdrInventor::FmForm == pObj->GetObjInventor() )
     {
         // We need to preserve the Name for Controls
         uno::Reference< awt::XControlModel >  xModel = static_cast<SdrUnoObj*>(pObj)->GetUnoControlModel();
@@ -338,7 +338,7 @@ SwFlyFrameFormat* SwDoc::MakeFlySection( RndStdIds eAnchorType,
             SfxItemState::SET == pAnchorNode->GetSwAttrSet().
             GetItemState(RES_PARATR_ADJUST, true, &pItem))
         {
-            static_cast<SwContentNode *>(pNewTextNd)->SetAttr(*pItem);
+            pNewTextNd->SetAttr(*pItem);
         }
 
          pFormat = MakeFlySection_( *pAnchorPos, *pNewTextNd,
@@ -502,7 +502,7 @@ static bool lcl_TstFlyRange( const SwPaM* pPam, const SwPosition* pFlyPos,
                      (nPamEndContentIndex > nFlyContentIndex )));
         }
 
-    } while( !bOk && pPam != ( pTmp = static_cast<const SwPaM*>(pTmp->GetNext()) ));
+    } while( !bOk && pPam != ( pTmp = pTmp->GetNext() ));
     return bOk;
 }
 
@@ -922,7 +922,7 @@ lcl_InsertLabel(SwDoc & rDoc, SwTextFormatColls *const pTextFormatCollTable,
                 SwCharFormat* pCharFormat = rDoc.FindCharFormatByName(rCharacterStyle);
                 if( !pCharFormat )
                 {
-                    const sal_uInt16 nMyId = SwStyleNameMapper::GetPoolIdFromUIName(rCharacterStyle, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT);
+                    const sal_uInt16 nMyId = SwStyleNameMapper::GetPoolIdFromUIName(rCharacterStyle, SwGetPoolIdFromName::ChrFmt);
                     pCharFormat = rDoc.getIDocumentStylePoolAccess().GetCharFormatFromPool( nMyId );
                 }
                 if (pCharFormat)
@@ -971,7 +971,7 @@ SwDoc::InsertLabel(
     {
         pUndo = new SwUndoInsertLabel(
                         eType, rText, rSeparator, rNumberingSeparator,
-                        bBefore, nId, rCharacterStyle, bCpyBrd );
+                        bBefore, nId, rCharacterStyle, bCpyBrd, this );
     }
 
     SwFlyFrameFormat *const pNewFormat = lcl_InsertLabel(*this, mpTextFormatCollTable, pUndo,
@@ -1214,7 +1214,7 @@ lcl_InsertDrawLabel( SwDoc & rDoc, SwTextFormatColls *const pTextFormatCollTable
                 SwCharFormat * pCharFormat = rDoc.FindCharFormatByName(rCharacterStyle);
                 if ( !pCharFormat )
                 {
-                    const sal_uInt16 nMyId = SwStyleNameMapper::GetPoolIdFromUIName( rCharacterStyle, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT );
+                    const sal_uInt16 nMyId = SwStyleNameMapper::GetPoolIdFromUIName( rCharacterStyle, SwGetPoolIdFromName::ChrFmt );
                     pCharFormat = rDoc.getIDocumentStylePoolAccess().GetCharFormatFromPool( nMyId );
                 }
                 if ( pCharFormat )
@@ -1255,7 +1255,7 @@ SwFlyFrameFormat* SwDoc::InsertDrawLabel(
         GetIDocumentUndoRedo().ClearRedo();
         pUndo = new SwUndoInsertLabel(
             LTYPE_DRAW, rText, rSeparator, rNumberSeparator, false,
-            nId, rCharacterStyle, false );
+            nId, rCharacterStyle, false, this );
     }
 
     SwFlyFrameFormat *const pNewFormat = lcl_InsertDrawLabel(
@@ -1360,10 +1360,10 @@ OUString SwDoc::GetUniqueShapeName() const
 
 const SwFlyFrameFormat* SwDoc::FindFlyByName( const OUString& rName, sal_Int8 nNdTyp ) const
 {
-    const SwFrameFormats& rFormats = *GetSpzFrameFormats();
-    for( auto n = rFormats.size(); n; )
+    auto range = GetSpzFrameFormats()->rangeFind( RES_FLYFRMFMT, rName );
+    for( auto it = range.first; it != range.second; it++ )
     {
-        const SwFrameFormat* pFlyFormat = rFormats[ --n ];
+        const SwFrameFormat* pFlyFormat = *it;
         const SwNodeIndex* pIdx = nullptr;
         if( RES_FLYFRMFMT == pFlyFormat->Which() && pFlyFormat->GetName() == rName &&
             nullptr != ( pIdx = pFlyFormat->GetContent().GetContentIdx() ) &&
@@ -1423,7 +1423,7 @@ void SwDoc::SetAllUniqueFlyNames()
 
     if( 255 < ( n = GetSpzFrameFormats()->size() ))
         n = 255;
-    SwFrameFormats aArr;
+    SwFrameFormatsV aArr;
     aArr.reserve( n );
     SwFrameFormat* pFlyFormat;
     bool bContainsAtPageObjWithContentAnchor = false;

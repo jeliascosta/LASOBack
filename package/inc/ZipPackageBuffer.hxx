@@ -36,8 +36,8 @@ protected:
     sal_Int64 m_nBufferSize, m_nEnd, m_nCurrent;
     bool m_bMustInitBuffer;
 public:
-    ZipPackageBuffer(sal_Int64 nNewBufferSize);
-    virtual ~ZipPackageBuffer();
+    ZipPackageBuffer();
+    virtual ~ZipPackageBuffer() override;
 
     inline void realloc ( sal_Int32 nSize ) { m_aBuffer.realloc ( nSize ); }
     const css::uno::Sequence < sal_Int8>& getSequence () const { return m_aBuffer; }

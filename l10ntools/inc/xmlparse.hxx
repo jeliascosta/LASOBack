@@ -93,13 +93,12 @@ private:
 
 protected:
     XMLChildNode( XMLParentNode *pPar );
-    XMLChildNode(): m_pParent( nullptr ){};
     XMLChildNode( const XMLChildNode& rObj);
     XMLChildNode& operator=(const XMLChildNode& rObj);
 public:
     /// returns the parent of this node
     XMLParentNode *GetParent() { return m_pParent; }
-    virtual ~XMLChildNode(){};
+    virtual ~XMLChildNode() override {};
 };
 
 typedef std::vector< XMLChildNode* > XMLChildNodeList;
@@ -117,12 +116,11 @@ private:
 protected:
     XMLParentNode( XMLParentNode *pPar )
         : XMLChildNode( pPar ) {}
-    XMLParentNode() {}
 
     XMLParentNode( const XMLParentNode& );
 
     XMLParentNode& operator=(const XMLParentNode& rObj);
-    virtual ~XMLParentNode();
+    virtual ~XMLParentNode() override;
 
 public:
     /// returns child list of this node
@@ -154,9 +152,9 @@ public:
         const OString &rFileName // the file name, empty if created from memory stream
     );
     XMLFile( const XMLFile& rObj ) ;
-    virtual ~XMLFile();
+    virtual ~XMLFile() override;
 
-    void Print( XMLNode *pCur = nullptr, sal_uInt16 nLevel = 0 );
+    void Print( XMLNode *pCur, sal_uInt16 nLevel = 0 );
     void SearchL10NElements( XMLChildNode *pCur, int pos = 0 );
     void Extract();
 
@@ -204,11 +202,8 @@ class XMLElement : public XMLParentNode
 private:
     OString m_sElementName;
     std::unique_ptr<XMLAttributeList> m_pAttributes;
-    OString m_sProject;
-    OString m_sFilename;
     OString m_sId;
     OString m_sOldRef;
-    OString m_sResourceType;
     OString m_sLanguageId;
     int m_nPos;
 
@@ -221,7 +216,7 @@ public:
         XMLParentNode *pParent   // parent node of this element
     );
 
-    virtual ~XMLElement();
+    virtual ~XMLElement() override;
     XMLElement(const XMLElement&);
 
     XMLElement& operator=(const XMLElement& rObj);

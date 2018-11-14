@@ -84,7 +84,7 @@ class XclImpChRoot : public XclImpRoot
 {
 public:
     explicit            XclImpChRoot( const XclImpRoot& rRoot, XclImpChChart& rChartData );
-    virtual             ~XclImpChRoot();
+    virtual             ~XclImpChRoot() override;
 
     /** Returns this root instance - for code readability in derived classes. */
     inline const XclImpChRoot& GetChRoot() const { return *this; }
@@ -264,7 +264,7 @@ public:
     /** Converts and writes the contained data to the passed property set. */
     void                Convert( const XclImpChRoot& rRoot,
                             ScfPropertySet& rPropSet, XclChObjectType eObjType,
-                            sal_uInt16 nFormatIdx = EXC_CHDATAFORMAT_UNKNOWN ) const;
+                            sal_uInt16 nFormatIdx ) const;
 
 private:
     XclChAreaFormat     maData;             /// Contents of the CHAREAFORMAT record.
@@ -377,7 +377,7 @@ class XclImpChSourceLink : protected XclImpChRoot
 {
 public:
     explicit            XclImpChSourceLink( const XclImpChRoot& rRoot );
-    virtual             ~XclImpChSourceLink();
+    virtual             ~XclImpChSourceLink() override;
 
     /** Reads the CHSOURCELINK record (link to source data). */
     void                ReadChSourceLink( XclImpStream& rStrm );
@@ -724,8 +724,8 @@ public:
     void                ReadChSerErrorBar( XclImpStream& rStrm );
     /** Sets link and formatting information for the error bars. */
     void                SetSeriesData(
-                            XclImpChSourceLinkRef xValueLink,
-                            XclImpChDataFormatRef xDataFmt );
+                            XclImpChSourceLinkRef const & xValueLink,
+                            XclImpChDataFormatRef const & xDataFmt );
 
     /** Returns the type of this error bar (X/Y, plus/minus). */
     inline sal_uInt8    GetBarType() const { return maData.mnBarType; }
@@ -813,7 +813,7 @@ private:
     XclImpChDataFormatRef CreateDataFormat( sal_uInt16 nPointIdx, sal_uInt16 nFormatIdx );
 
     /** Converts all trend lines and inserts them into the passed API data series object. */
-    void                ConvertTrendLines( css::uno::Reference< css::chart2::XDataSeries > xDataSeries ) const;
+    void                ConvertTrendLines( css::uno::Reference< css::chart2::XDataSeries > const & xDataSeries ) const;
     /** Tries to create an error bar API object from the specified Excel error bars. */
     css::uno::Reference< css::beans::XPropertySet >
                         CreateErrorBar( sal_uInt8 nPosBarId, sal_uInt8 nNegBarId ) const;
@@ -869,7 +869,7 @@ public:
                         CreateCoordSystem( bool b3dChart ) const;
     /** Creates and returns an object that represents the contained chart type. */
     css::uno::Reference< css::chart2::XChartType >
-                        CreateChartType( css::uno::Reference< css::chart2::XDiagram > xDiagram, bool b3dChart ) const;
+                        CreateChartType( css::uno::Reference< css::chart2::XDiagram > const & xDiagram, bool b3dChart ) const;
 
 private:
     XclChType           maData;             /// Contents of the chart type record.
@@ -967,7 +967,7 @@ public:
     void                Finalize();
 
     /** Inserts a series attached to this chart type group.*/
-    void                AddSeries( XclImpChSeriesRef xSeries );
+    void                AddSeries( XclImpChSeriesRef const & xSeries );
     /** Marks the passed format index as used. PopUnusedFormatIndex() will not return this index. */
     void                SetUsedFormatIndex( sal_uInt16 nFormatIdx );
     /** Returns the next unused format index and marks it as used. */
@@ -1008,7 +1008,7 @@ public:
                         CreateCoordSystem() const;
     /** Creates and returns an object that represents the contained chart type. */
     css::uno::Reference< css::chart2::XChartType >
-                        CreateChartType( css::uno::Reference< css::chart2::XDiagram > xDiagram, sal_Int32 nApiAxesSetIdx ) const;
+                        CreateChartType( css::uno::Reference< css::chart2::XDiagram > const & xDiagram, sal_Int32 nApiAxesSetIdx ) const;
     /** Creates a labeled data sequence object for axis categories. */
     css::uno::Reference< css::chart2::data::XLabeledDataSequence >
                         CreateCategSequence() const;
@@ -1021,20 +1021,18 @@ private:
     /** Reads a CHDATAFORMAT record group (default series format). */
     void                ReadChDataFormat( XclImpStream& rStrm );
 
-    /** Returns true, if the chart type group contains a hi-lo line format. */
-    inline bool         HasHiLoLine() const { return m_ChartLines.find(EXC_CHCHARTLINE_HILO) != m_ChartLines.end(); }
     /** Returns true, if the chart type group contains drop bar formats. */
     inline bool         HasDropBars() const { return !m_DropBars.empty(); }
 
     /** Inserts the passed series into the chart type. Adds additional properties to the series. */
-    void                InsertDataSeries( css::uno::Reference< css::chart2::XChartType > xChartType,
-                                          css::uno::Reference< css::chart2::XDataSeries > xSeries,
+    void                InsertDataSeries( css::uno::Reference< css::chart2::XChartType > const & xChartType,
+                                          css::uno::Reference< css::chart2::XDataSeries > const & xSeries,
                                           sal_Int32 nApiAxesSetIdx ) const;
     /** Creates all data series of any chart type except stock charts. */
-    void                CreateDataSeries( css::uno::Reference< css::chart2::XChartType > xChartType,
+    void                CreateDataSeries( css::uno::Reference< css::chart2::XChartType > const & xChartType,
                                           sal_Int32 nApiAxesSetIdx ) const;
     /** Creates all data series of a stock chart. */
-    void                CreateStockSeries( css::uno::Reference< css::chart2::XChartType > xChartType,
+    void                CreateStockSeries( css::uno::Reference< css::chart2::XChartType > const & xChartType,
                                            sal_Int32 nApiAxesSetIdx ) const;
 
 private:
@@ -1149,14 +1147,6 @@ public:
     inline sal_uInt16   GetAxisType() const { return maData.mnType; }
     /** Returns the axis dimension index used by the chart API. */
     inline sal_Int32    GetApiAxisDimension() const { return maData.GetApiAxisDimension(); }
-    /** Returns true, if the axis is active. */
-    inline bool         IsActivated() const { return !mxAxisLine || mxAxisLine->IsShowAxis(); }
-    /** Returns true, if the axis contains caption labels. */
-    inline bool         HasLabels() const { return !mxTick || mxTick->HasLabels(); }
-    /** Returns true, if the axis shows its major grid lines. */
-    inline bool         HasMajorGrid() const { return static_cast< bool >(mxMajorGrid); }
-    /** Returns true, if the axis shows its minor grid lines. */
-    inline bool         HasMinorGrid() const { return static_cast< bool >(mxMinorGrid); }
 
     /** Creates an API axis object. */
     css::uno::Reference< css::chart2::XAxis >
@@ -1224,7 +1214,7 @@ public:
     OUString            GetSingleSeriesTitle() const;
 
     /** Creates a coordinate system and converts all series and axis settings. */
-    void                Convert( css::uno::Reference< css::chart2::XDiagram >  xDiagram ) const;
+    void                Convert( css::uno::Reference< css::chart2::XDiagram > const & xDiagram ) const;
     /** Converts the manual positions of all axis titles. */
     void                ConvertTitlePositions() const;
 
@@ -1240,16 +1230,16 @@ private:
 
     /** Creates a coordinate system that contains all chart types for this axes set. */
     css::uno::Reference< css::chart2::XCoordinateSystem >
-                        CreateCoordSystem( css::uno::Reference< css::chart2::XDiagram >  xDiagram ) const;
+                        CreateCoordSystem( css::uno::Reference< css::chart2::XDiagram > const & xDiagram ) const;
     /** Creates and inserts an axis into the container and registers the coordinate system. */
-    void                ConvertAxis( XclImpChAxisRef xChAxis, XclImpChTextRef xChAxisTitle,
-                                     css::uno::Reference< css::chart2::XCoordinateSystem > xCoordSystem,
+    void                ConvertAxis( XclImpChAxisRef const & xChAxis, XclImpChTextRef const & xChAxisTitle,
+                                     css::uno::Reference< css::chart2::XCoordinateSystem > const & xCoordSystem,
                                      const XclImpChAxis* pCrossingAxis ) const;
     /** Creates and returns an API axis object. */
     css::uno::Reference< css::chart2::XAxis >
                         CreateAxis( const XclImpChAxis& rChAxis, const XclImpChAxis* pCrossingAxis ) const;
     /** Writes all properties of the background area to the passed diagram. */
-    void                ConvertBackground( css::uno::Reference< css::chart2::XDiagram >  xDiagram ) const;
+    void                ConvertBackground( css::uno::Reference< css::chart2::XDiagram > const & xDiagram ) const;
 
 private:
     typedef ::std::map<sal_uInt16, XclImpChTypeGroupRef> XclImpChTypeGroupMap;
@@ -1280,7 +1270,7 @@ class XclImpChChart : public XclImpChGroupBase, protected XclImpChRoot
 {
 public:
     explicit            XclImpChChart( const XclImpRoot& rRoot );
-    virtual             ~XclImpChChart();
+    virtual             ~XclImpChChart() override;
 
     /** Reads the CHCHART record (called by base class). */
     virtual void        ReadHeaderRecord( XclImpStream& rStrm ) override;
@@ -1301,7 +1291,7 @@ public:
     /** Returns true, if the plot area has benn moved and/or resized manually. */
     bool                IsManualPlotArea() const;
     /** Returns the number of units on the progress bar needed for the chart. */
-    static inline sal_Size  GetProgressSize() { return 2 * EXC_CHART_PROGRESS_SIZE; }
+    static inline std::size_t GetProgressSize() { return 2 * EXC_CHART_PROGRESS_SIZE; }
 
     /** Converts and writes all properties to the passed chart. */
     void                Convert(
@@ -1382,7 +1372,7 @@ public:
     /** Constructs a new chart object.
         @param bOwnTab  True = chart is on an own sheet; false = chart is an embedded object. */
     explicit            XclImpChart( const XclImpRoot& rRoot, bool bOwnTab );
-    virtual             ~XclImpChart();
+    virtual             ~XclImpChart() override;
 
     /** Reads the complete chart substream (BOF/EOF block).
         @descr  The passed stream must be located in the BOF record of the chart substream. */
@@ -1391,12 +1381,12 @@ public:
     void                UpdateObjFrame( const XclObjLineData& rLineData, const XclObjFillData& rFillData );
 
     /** Returns the number of units on the progress bar needed for the chart. */
-    sal_Size            GetProgressSize() const;
+    std::size_t         GetProgressSize() const;
     /** Returns true, if the chart is based on a pivot table. */
     inline bool         IsPivotChart() const { return mbIsPivotChart; }
 
     /** Creates the chart object in the passed component. */
-    void                Convert( css::uno::Reference< css::frame::XModel > xModel,
+    void                Convert( css::uno::Reference< css::frame::XModel > const & xModel,
                             XclImpDffConverter& rDffConv,
                             const OUString& rObjName,
                             const Rectangle& rChartRect ) const;

@@ -70,12 +70,11 @@ namespace comphelper
         css::uno::Reference< css::view::XSelectionSupplier>  m_xSet;
         OSelectionChangeListener*                            m_pListener;
         sal_Int32                                            m_nLockCount;
-        bool                                                 m_bListening        : 1;
 
         OSelectionChangeMultiplexer(const OSelectionChangeMultiplexer&) = delete;
         OSelectionChangeMultiplexer& operator=(const OSelectionChangeMultiplexer&) = delete;
     protected:
-        virtual ~OSelectionChangeMultiplexer();
+        virtual ~OSelectionChangeMultiplexer() override;
     public:
         OSelectionChangeMultiplexer(OSelectionChangeListener* _pListener, const  css::uno::Reference< css::view::XSelectionSupplier>& _rxSet);
 
@@ -91,8 +90,6 @@ namespace comphelper
         void        unlock();
         /// get the lock count
         sal_Int32   locked() const { return m_nLockCount; }
-
-        void dispose();
     };
 
 

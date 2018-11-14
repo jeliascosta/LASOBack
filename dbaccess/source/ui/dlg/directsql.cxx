@@ -258,11 +258,9 @@ namespace dbaui
 
     void DirectSQLDialog::addOutputText(const OUString& _rMessage)
     {
-        OUString sAppendMessage = _rMessage;
-        sAppendMessage += "\n";
+        OUString sAppendMessage = _rMessage + "\n";
 
-        OUString sCompleteMessage = m_pOutput->GetText();
-        sCompleteMessage += sAppendMessage;
+        OUString sCompleteMessage = m_pOutput->GetText() + sAppendMessage;
         m_pOutput->SetText(sCompleteMessage);
     }
 
@@ -300,26 +298,26 @@ namespace dbaui
             OSL_FAIL("DirectSQLDialog::switchToHistory: invalid position!");
     }
 
-    IMPL_LINK_NOARG_TYPED( DirectSQLDialog, OnStatementModified, Edit&, void )
+    IMPL_LINK_NOARG( DirectSQLDialog, OnStatementModified, Edit&, void )
     {
         m_pExecute->Enable(!m_pSQL->GetText().isEmpty());
     }
 
-    IMPL_LINK_NOARG_TYPED( DirectSQLDialog, OnCloseClick, Button*, void )
+    IMPL_LINK_NOARG( DirectSQLDialog, OnCloseClick, Button*, void )
     {
         EndDialog( RET_OK );
     }
-    IMPL_LINK_NOARG_TYPED( DirectSQLDialog, OnClose, void*, void )
+    IMPL_LINK_NOARG( DirectSQLDialog, OnClose, void*, void )
     {
         EndDialog( RET_OK );
     }
 
-    IMPL_LINK_NOARG_TYPED( DirectSQLDialog, OnExecute, Button*, void )
+    IMPL_LINK_NOARG( DirectSQLDialog, OnExecute, Button*, void )
     {
         executeCurrent();
     }
 
-    IMPL_LINK_NOARG_TYPED( DirectSQLDialog, OnListEntrySelected, ListBox&, void )
+    IMPL_LINK_NOARG( DirectSQLDialog, OnListEntrySelected, ListBox&, void )
     {
         if (!m_pSQLHistory->IsTravelSelect())
         {

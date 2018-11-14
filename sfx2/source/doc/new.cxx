@@ -62,7 +62,7 @@ void SfxPreviewBase_Impl::Resize()
 
 Size SfxPreviewBase_Impl::GetOptimalSize() const
 {
-    return LogicToPixel(Size(127, 129), MAP_APPFONT);
+    return LogicToPixel(Size(127, 129), MapUnit::MapAppFont);
 }
 
 void SfxPreviewWin_Impl::ImpPaint(vcl::RenderContext& rRenderContext, const Rectangle& /*rRect*/, GDIMetaFile* pFile)
@@ -145,13 +145,13 @@ class SfxNewFileDialog_Impl
     SfxObjectShellLock xDocShell;
     VclPtr<SfxNewFileDialog> pAntiImpl;
 
-    DECL_LINK_TYPED( Update, Idle *, void );
+    DECL_LINK( Update, Idle *, void );
 
-    DECL_LINK_TYPED(RegionSelect, ListBox&, void);
-    DECL_LINK_TYPED(TemplateSelect, ListBox&, void);
-    DECL_LINK_TYPED(DoubleClick, ListBox&, void);
-    DECL_LINK_TYPED(Expand, VclExpander&, void);
-    DECL_LINK_TYPED(LoadFile, Button*, void);
+    DECL_LINK(RegionSelect, ListBox&, void);
+    DECL_LINK(TemplateSelect, ListBox&, void);
+    DECL_LINK(DoubleClick, ListBox&, void);
+    DECL_LINK(Expand, VclExpander&, void);
+    DECL_LINK(LoadFile, Button*, void);
     sal_uInt16  GetSelectedTemplatePos() const;
 
 public:
@@ -169,7 +169,7 @@ public:
     void             SetTemplateFlags(SfxTemplateFlags nSet);
 };
 
-IMPL_LINK_NOARG_TYPED(SfxNewFileDialog_Impl, Update, Idle*, void)
+IMPL_LINK_NOARG(SfxNewFileDialog_Impl, Update, Idle*, void)
 {
     if (xDocShell.Is())
     {
@@ -235,7 +235,7 @@ IMPL_LINK_NOARG_TYPED(SfxNewFileDialog_Impl, Update, Idle*, void)
     }
 }
 
-IMPL_LINK_TYPED( SfxNewFileDialog_Impl, RegionSelect, ListBox&, rBox, void )
+IMPL_LINK( SfxNewFileDialog_Impl, RegionSelect, ListBox&, rBox, void )
 {
     if (xDocShell.Is() && xDocShell->GetProgress())
         return;
@@ -259,12 +259,12 @@ IMPL_LINK_TYPED( SfxNewFileDialog_Impl, RegionSelect, ListBox&, rBox, void )
     TemplateSelect(*m_pTemplateLb);
 }
 
-IMPL_LINK_NOARG_TYPED(SfxNewFileDialog_Impl, Expand, VclExpander&, void)
+IMPL_LINK_NOARG(SfxNewFileDialog_Impl, Expand, VclExpander&, void)
 {
     TemplateSelect(*m_pTemplateLb);
 }
 
-IMPL_LINK_NOARG_TYPED(SfxNewFileDialog_Impl, TemplateSelect, ListBox&, void)
+IMPL_LINK_NOARG(SfxNewFileDialog_Impl, TemplateSelect, ListBox&, void)
 {
     // Still loading
     if ( xDocShell && xDocShell->GetProgress() )
@@ -277,14 +277,14 @@ IMPL_LINK_NOARG_TYPED(SfxNewFileDialog_Impl, TemplateSelect, ListBox&, void)
     aPrevIdle.Start();
 }
 
-IMPL_LINK_NOARG_TYPED( SfxNewFileDialog_Impl, DoubleClick, ListBox&, void )
+IMPL_LINK_NOARG( SfxNewFileDialog_Impl, DoubleClick, ListBox&, void )
 {
     // Still loading
     if ( !xDocShell.Is() || !xDocShell->GetProgress() )
         pAntiImpl->EndDialog(RET_OK);
 }
 
-IMPL_LINK_NOARG_TYPED(SfxNewFileDialog_Impl, LoadFile, Button*, void)
+IMPL_LINK_NOARG(SfxNewFileDialog_Impl, LoadFile, Button*, void)
 {
     pAntiImpl->EndDialog(RET_TEMPLATE_LOAD);
 }
@@ -350,7 +350,7 @@ SfxNewFileDialog_Impl::SfxNewFileDialog_Impl(
     pAntiImplP->get(m_pRegionLb, "categories");
     pAntiImplP->get(m_pTemplateLb, "templates");
 
-    Size aSize(m_pRegionLb->LogicToPixel(Size(127, 72), MAP_APPFONT));
+    Size aSize(m_pRegionLb->LogicToPixel(Size(127, 72), MapUnit::MapAppFont));
     m_pRegionLb->set_width_request(aSize.Width());
     m_pRegionLb->set_height_request(aSize.Height());
     m_pTemplateLb->set_width_request(aSize.Width());

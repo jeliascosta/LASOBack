@@ -131,14 +131,12 @@ namespace frm
     private:
         void    impl_notifyAll_nothrow();
 
-    private:
         OControlModel&                              m_rModel;
         bool                                        m_bLocked;
         std::vector< sal_Int32 >                    m_aHandles;
         std::vector< css::uno::Any >                m_aOldValues;
         std::vector< css::uno::Any >                m_aNewValues;
 
-    private:
         ControlModelLock( const ControlModelLock& ) = delete;
         ControlModelLock& operator=( const ControlModelLock& ) = delete;
     };
@@ -197,7 +195,7 @@ public:
     );
 
 protected:
-    virtual ~OControl();
+    virtual ~OControl() override;
 
     /** sets the control as delegator at the aggregate
 
@@ -234,9 +232,6 @@ protected:
     virtual sal_Bool SAL_CALL           supportsService(const OUString& ServiceName) throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence<OUString> SAL_CALL     getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception) override;
     virtual OUString SAL_CALL    getImplementationName() throw(css::uno::RuntimeException, std::exception) override = 0;
-
-// XServiceInfo - static version
-    static  css::uno::Sequence<OUString> SAL_CALL     getSupportedServiceNames_Static() throw(css::uno::RuntimeException);
 
 // XControl
     virtual void                                        SAL_CALL setContext(const css::uno::Reference<css::uno::XInterface>& Context) throw (css::uno::RuntimeException, std::exception) override;
@@ -276,7 +271,7 @@ public:
         const bool _bSetDelegator = true
     );
 
-    virtual ~OBoundControl();
+    virtual ~OBoundControl() override;
 
     DECLARE_UNO3_AGG_DEFAULTS(OBoundControl, OControl)
     virtual css::uno::Any SAL_CALL queryAggregation( const css::uno::Type& _rType ) throw(css::uno::RuntimeException, std::exception) override;
@@ -362,7 +357,7 @@ protected:
         const bool _bCloneAggregate = true,                             // should the aggregate of the original be cloned, too?
         const bool _bSetDelegator = true                                // set to sal_False if you want to call setDelegator later (after returning from this ctor)
     );
-    virtual ~OControlModel();
+    virtual ~OControlModel() override;
 
     /** to be called after a OBoundControlModel (a derivee, respectively) has been cloned
 
@@ -425,7 +420,7 @@ public:
     virtual void SAL_CALL getFastPropertyValue(css::uno::Any& rValue, sal_Int32 nHandle) const override;
     virtual sal_Bool SAL_CALL convertFastPropertyValue(
                 css::uno::Any& _rConvertedValue, css::uno::Any& _rOldValue, sal_Int32 _nHandle, const css::uno::Any& _rValue )
-                throw (css::lang::IllegalArgumentException) override;
+                throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const css::uno::Any& rValue )
                 throw (css::uno::Exception, std::exception) override;
     using ::cppu::OPropertySetHelper::getFastPropertyValue;
@@ -522,7 +517,7 @@ public:
         const classname* _pOriginal, \
         const css::uno::Reference< css::uno::XComponentContext>& _rxFactory \
     ); \
-    virtual ~classname() \
+    virtual ~classname() override \
 
 
 #define IMPLEMENT_DEFAULT_CLONING( classname ) \
@@ -657,7 +652,7 @@ protected:
         const css::uno::Reference< css::uno::XComponentContext>& _rxContext
                                                             // factory to create the aggregate with
     );
-    virtual ~OBoundControlModel();
+    virtual ~OBoundControlModel() override;
 
     /// late ctor after cloning
     virtual void clonedFrom( const OControlModel* _pOriginal ) override;
@@ -1002,7 +997,7 @@ public:
     virtual void SAL_CALL getFastPropertyValue(css::uno::Any& rValue, sal_Int32 nHandle) const override;
     virtual sal_Bool SAL_CALL convertFastPropertyValue(
                 css::uno::Any& _rConvertedValue, css::uno::Any& _rOldValue, sal_Int32 _nHandle, const css::uno::Any& _rValue )
-                throw (css::lang::IllegalArgumentException) override;
+                throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const css::uno::Any& rValue )
                 throw (css::uno::Exception, std::exception) override;
     using ::cppu::OPropertySetHelper::getFastPropertyValue;

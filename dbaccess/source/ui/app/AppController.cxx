@@ -51,6 +51,7 @@
 #include <com/sun/star/util/XModifiable.hpp>
 #include <com/sun/star/util/XModifyBroadcaster.hpp>
 #include <com/sun/star/util/XNumberFormatter.hpp>
+#include <com/sun/star/util/XURLTransformer.hpp>
 #include <com/sun/star/ui/dialogs/XExecutableDialog.hpp>
 #include <com/sun/star/document/XEmbeddedScripts.hpp>
 #include <com/sun/star/frame/XModel2.hpp>
@@ -276,7 +277,6 @@ OApplicationController::OApplicationController(const Reference< XComponentContex
     ,m_pSubComponentManager( new SubComponentManager( *this, getSharedMutex() ) )
     ,m_aTypeCollection( _rxORB )
     ,m_aTableCopyHelper(this)
-    ,m_pClipbordNotifier(nullptr)
     ,m_nAsyncDrop(nullptr)
     ,m_aSelectContainerEvent( LINK( this, OApplicationController, OnSelectContainer ) )
     ,m_ePreviewMode(E_PREVIEWNONE)
@@ -341,10 +341,9 @@ void SAL_CALL OApplicationController::disposing()
     if ( getView() )
     {
         getContainer()->showPreview(nullptr);
-        m_pClipbordNotifier->ClearCallbackLink();
-        m_pClipbordNotifier->AddRemoveListener( getView(), false );
-        m_pClipbordNotifier->release();
-        m_pClipbordNotifier = nullptr;
+        m_pClipboardNotifier->ClearCallbackLink();
+        m_pClipboardNotifier->RemoveListener( getView() );
+        m_pClipboardNotifier.clear();
     }
 
     disconnect();
@@ -446,9 +445,8 @@ bool OApplicationController::Construct(vcl::Window* _pParent)
     m_aSystemClipboard = TransferableDataHelper::CreateFromSystemClipboard( getView() );
     m_aSystemClipboard.StartClipboardListening( );
 
-    m_pClipbordNotifier = new TransferableClipboardListener( LINK( this, OApplicationController, OnClipboardChanged ) );
-    m_pClipbordNotifier->acquire();
-    m_pClipbordNotifier->AddRemoveListener( getView(), true );
+    m_pClipboardNotifier = new TransferableClipboardListener( LINK( this, OApplicationController, OnClipboardChanged ) );
+    m_pClipboardNotifier->AddListener( getView() );
 
     OGenericUnoController::Construct( _pParent );
     getView()->Show();
@@ -953,8 +951,8 @@ namespace
         Reference< XInteractionHandler > xHandler( aArgs.getOrDefault( "InteractionHandler", Reference< XInteractionHandler >() ) );
         if ( xHandler.is() )
         {
-            Reference< ::comphelper::OInteractionRequest > pRequest( new ::comphelper::OInteractionRequest( _rException ) );
-            Reference< ::comphelper::OInteractionApprove > pApprove( new ::comphelper::OInteractionApprove );
+            rtl::Reference< ::comphelper::OInteractionRequest > pRequest( new ::comphelper::OInteractionRequest( _rException ) );
+            rtl::Reference< ::comphelper::OInteractionApprove > pApprove( new ::comphelper::OInteractionApprove );
             pRequest->addContinuation( pApprove.get() );
 
             try
@@ -1054,7 +1052,7 @@ void OApplicationController::Execute(sal_uInt16 _nId, const Sequence< PropertyVa
                     if ( !aArgs.getLength() )
                     {
                         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-                        ::std::unique_ptr<SfxAbstractPasteDialog> pDlg(pFact->CreatePasteDialog( getView() ));
+                        ScopedVclPtr<SfxAbstractPasteDialog> pDlg(pFact->CreatePasteDialog( getView() ));
                         ::std::vector<SotClipboardFormatId> aFormatIds;
                         getSupportedFormats(getContainer()->getElementType(),aFormatIds);
                         const ::std::vector<SotClipboardFormatId>::const_iterator aEnd = aFormatIds.end();
@@ -1320,14 +1318,16 @@ void OApplicationController::Execute(sal_uInt16 _nId, const Sequence< PropertyVa
                 }
                 break;
             case SID_DB_APP_TABLEFILTER:
-                openTableFilterDialog();
+                // opens the table filter dialog for the selected data source
+                openDialog( "com.sun.star.sdb.TableFilterDialog" );
                 askToReconnect();
                 break;
             case SID_DB_APP_REFRESH_TABLES:
                 refreshTables();
                 break;
             case SID_DB_APP_DSPROPS:
-                openDataSourceAdminDialog();
+                // opens the administration dialog for the selected data source
+                openDialog( "com.sun.star.sdb.DatasourceAdministrationDialog" );
                 askToReconnect();
                 break;
             case SID_DB_APP_DSADVANCED_SETTINGS:
@@ -1342,7 +1342,8 @@ void OApplicationController::Execute(sal_uInt16 _nId, const Sequence< PropertyVa
                 {
                     SharedConnection xConnection( ensureConnection() );
                     if ( xConnection.is() )
-                        openDirectSQLDialog();
+                        // opens the DirectSQLDialog to execute hand made sql statements.
+                        openDialog( SERVICE_SDB_DIRECTSQLDIALOG );
                 }
                 break;
             case ID_MIGRATE_SCRIPTS:
@@ -1727,11 +1728,13 @@ bool OApplicationController::onEntryDoubleClick( SvTreeListBox& _rTree )
     {
         try
         {
-            openElement(
+            // opens a new frame with either the table or the query or report or form or view
+            openElementWithArguments(
                 getContainer()->getQualifiedName( _rTree.GetHdlEntry() ),
                 getContainer()->getElementType(),
-                E_OPEN_NORMAL
-            );
+                E_OPEN_NORMAL,
+                0,
+                ::comphelper::NamedValueCollection() );
             return true;    // handled
         }
         catch(const Exception&)
@@ -1765,12 +1768,6 @@ bool OApplicationController::impl_isAlterableView_nothrow( const OUString& _rTab
         DBG_UNHANDLED_EXCEPTION();
     }
     return bIsAlterableView;
-}
-
-Reference< XComponent > OApplicationController::openElement(const OUString& _sName, ElementType _eType,
-    ElementOpenMode _eOpenMode )
-{
-    return openElementWithArguments( _sName, _eType, _eOpenMode, 0, ::comphelper::NamedValueCollection() );
 }
 
 Reference< XComponent > OApplicationController::openElementWithArguments( const OUString& _sName, ElementType _eType,
@@ -1881,14 +1878,14 @@ Reference< XComponent > OApplicationController::openElementWithArguments( const 
     return xRet;
 }
 
-IMPL_LINK_TYPED( OApplicationController, OnSelectContainer, void*, _pType, void )
+IMPL_LINK( OApplicationController, OnSelectContainer, void*, _pType, void )
 {
     ElementType eType = (ElementType)reinterpret_cast< sal_IntPtr >( _pType );
     if (getContainer())
         getContainer()->selectContainer(eType);
 }
 
-IMPL_LINK_TYPED( OApplicationController, OnCreateWithPilot, void*, _pType, void )
+IMPL_LINK( OApplicationController, OnCreateWithPilot, void*, _pType, void )
 {
     ElementType eType = (ElementType)reinterpret_cast< sal_IntPtr >( _pType );
     newElementWithPilot( eType );
@@ -2235,7 +2232,7 @@ void OApplicationController::showPreviewFor(const ElementType _eType,const OUStr
     }
 }
 
-IMPL_LINK_NOARG_TYPED(OApplicationController, OnClipboardChanged, TransferableDataHelper*, void)
+IMPL_LINK_NOARG(OApplicationController, OnClipboardChanged, TransferableDataHelper*, void)
 {
     OnInvalidateClipboard();
 }
@@ -2283,59 +2280,14 @@ void OApplicationController::onDeleteEntry()
     executeChecked(nId,Sequence<PropertyValue>());
 }
 
-void OApplicationController::executeUnChecked(const URL& _rCommand, const Sequence< PropertyValue>& aArgs)
+OUString OApplicationController::getContextMenuResourceName( Control& /*_rControl*/ ) const
 {
-    OGenericUnoController::executeUnChecked( _rCommand, aArgs );
+    return OUString("edit");
 }
 
-void OApplicationController::executeChecked(const URL& _rCommand, const Sequence< PropertyValue>& aArgs)
+VclPtr<PopupMenu> OApplicationController::getContextMenu( Control& /*_rControl*/ ) const
 {
-    OGenericUnoController::executeChecked( _rCommand, aArgs );
-}
-
-void OApplicationController::executeUnChecked(sal_uInt16 _nCommandId, const Sequence< PropertyValue>& aArgs)
-{
-    OGenericUnoController::executeUnChecked( _nCommandId, aArgs );
-}
-
-void OApplicationController::executeChecked(sal_uInt16 _nCommandId, const Sequence< PropertyValue>& aArgs)
-{
-    OGenericUnoController::executeChecked( _nCommandId, aArgs );
-}
-
-bool OApplicationController::isCommandEnabled(sal_uInt16 _nCommandId) const
-{
-    return OGenericUnoController::isCommandEnabled( _nCommandId );
-}
-
-bool OApplicationController::isCommandEnabled( const OUString& _rCompleteCommandURL ) const
-{
-    return OGenericUnoController::isCommandEnabled( _rCompleteCommandURL );
-}
-
-sal_uInt16 OApplicationController::registerCommandURL( const OUString& _rCompleteCommandURL )
-{
-    return OGenericUnoController::registerCommandURL( _rCompleteCommandURL );
-}
-
-void OApplicationController::notifyHiContrastChanged()
-{
-    OGenericUnoController::notifyHiContrastChanged();
-}
-
-Reference< XController > OApplicationController::getXController() throw( RuntimeException )
-{
-    return OGenericUnoController::getXController();
-}
-
-bool OApplicationController::interceptUserInput( const NotifyEvent& _rEvent )
-{
-    return OGenericUnoController::interceptUserInput( _rEvent );
-}
-
-PopupMenu* OApplicationController::getContextMenu( Control& /*_rControl*/ ) const
-{
-    return new PopupMenu( ModuleRes( RID_MENU_APP_EDIT ) );
+    return nullptr;
 }
 
 IController& OApplicationController::getCommandController()
@@ -2474,7 +2426,7 @@ sal_Int8 OApplicationController::executeDrop( const ExecuteDropEvent& _rEvt )
 
         sal_Int8 nAction = _rEvt.mnAction;
         Reference<XContent> xContent;
-        m_aAsyncDrop.aDroppedData[daComponent] >>= xContent;
+        m_aAsyncDrop.aDroppedData[DataAccessDescriptorProperty::Component] >>= xContent;
         if ( xContent.is() )
         {
             OUString sName = xContent->getIdentifier()->getContentIdentifier();
@@ -2611,6 +2563,7 @@ void OApplicationController::OnFirstControllerConnected()
 
 void SAL_CALL OApplicationController::attachFrame( const Reference< XFrame > & i_rxFrame ) throw( RuntimeException, std::exception )
 {
+    SolarMutexGuard aSolarGuard; // avoid deadlock in XModel calls
     ::osl::MutexGuard aGuard( getMutex() );
 
     OGenericUnoController::attachFrame( i_rxFrame );

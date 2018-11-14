@@ -68,7 +68,7 @@ private:
                                             const ::std::vector< OUString >& rFormats,
                                             bool bRecursive );
 
-    virtual                     ~SearchThread();
+    virtual                     ~SearchThread() override;
     virtual void                execute() override;
 
 public:
@@ -88,15 +88,14 @@ private:
     INetURLObject startUrl_;
     rtl::Reference< SearchThread > maSearchThread;
 
-                        DECL_LINK_TYPED( ClickCancelBtn, Button*, void );
-    void                Terminate();
+                        DECL_LINK( ClickCancelBtn, Button*, void );
 
 public:
                         SearchProgress( vcl::Window* pParent, const INetURLObject& rStartURL );
-    virtual             ~SearchProgress();
+    virtual             ~SearchProgress() override;
     virtual void        dispose() override;
 
-                        DECL_LINK_TYPED( CleanUpHdl, void*, void );
+                        DECL_LINK( CleanUpHdl, void*, void );
 
     virtual short       Execute() override;
     virtual void        StartExecuteModal( const Link<Dialog&,void>& rEndDialogHdl ) override;
@@ -112,7 +111,7 @@ private:
     VclPtr<TPGalleryThemeProperties>   mpBrowser;
     TokenList_impl&             mrTakenList;
 
-    virtual                     ~TakeThread();
+    virtual                     ~TakeThread() override;
     virtual void                execute() override;
 
 public:
@@ -133,16 +132,15 @@ private:
     rtl::Reference< TakeThread > maTakeThread;
     TokenList_impl      maTakenList;
 
-    DECL_LINK_TYPED( ClickCancelBtn, Button*, void );
-    void                Terminate();
+    DECL_LINK( ClickCancelBtn, Button*, void );
 
 public:
 
     TakeProgress( vcl::Window* pWindow );
-    virtual ~TakeProgress();
+    virtual ~TakeProgress() override;
     virtual void dispose() override;
 
-    DECL_LINK_TYPED( CleanUpHdl, void*, void );
+    DECL_LINK( CleanUpHdl, void*, void );
 
     void                SetFile( const INetURLObject& rURL ) { m_pFtTakeFile->SetText( GetReducedString( rURL, 30 ) ); }
     virtual short       Execute() override;
@@ -158,13 +156,13 @@ private:
     GalleryTheme*       pTheme;
     GalleryProgress     aStatusProgress;
 
-                        DECL_LINK_TYPED( ClickCancelBtn, Button*, void );
-                        DECL_LINK_TYPED( TimeoutHdl, Idle*, void );
-                        DECL_LINK_TYPED( ActualizeHdl, const INetURLObject&, void );
+                        DECL_LINK( ClickCancelBtn, Button*, void );
+                        DECL_LINK( TimeoutHdl, Idle*, void );
+                        DECL_LINK( ActualizeHdl, const INetURLObject&, void );
 
 public:
                         ActualizeProgress( vcl::Window* pWindow, GalleryTheme* pThm );
-    virtual             ~ActualizeProgress();
+    virtual             ~ActualizeProgress() override;
     virtual void        dispose() override;
 
     virtual short       Execute() override;
@@ -176,7 +174,7 @@ private:
     VclPtr<Edit> m_pEdit;
 public:
     TitleDialog(vcl::Window* pParent, const OUString& rOldText);
-    virtual ~TitleDialog();
+    virtual ~TitleDialog() override;
     virtual void dispose() override;
     OUString GetTitle() const { return m_pEdit->GetText(); }
 };
@@ -188,10 +186,10 @@ private:
     VclPtr<ListBox> m_pLbResName;
     GalleryTheme*   pThm;
 
-    DECL_LINK_TYPED( ClickOkHdl, Button*, void );
+    DECL_LINK( ClickOkHdl, Button*, void );
 public:
     GalleryIdDialog( vcl::Window* pParent, GalleryTheme* pThm );
-    virtual ~GalleryIdDialog();
+    virtual ~GalleryIdDialog() override;
     virtual void dispose() override;
     sal_uLong GetId() const { return m_pLbResName->GetSelectEntryPos(); }
 };
@@ -228,7 +226,7 @@ private:
 public:
 
                         TPGalleryThemeGeneral( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual             ~TPGalleryThemeGeneral();
+    virtual             ~TPGalleryThemeGeneral() override;
     virtual void        dispose() override;
 
     void                SetXChgData( ExchangeData* pData );
@@ -265,7 +263,7 @@ class TPGalleryThemeProperties : public SfxTabPage
     bool                    bTakeAll;
     bool                    bSearchRecursive;
 
-    css::uno::Reference< ::svt::DialogClosedListener >      xDialogListener;
+    rtl::Reference< ::svt::DialogClosedListener >           xDialogListener;
     css::uno::Reference< css::media::XPlayer >              xMediaPlayer;
     css::uno::Reference< css::ui::dialogs::XFolderPicker2 > xFolderPicker;
 
@@ -278,20 +276,20 @@ class TPGalleryThemeProperties : public SfxTabPage
     void                TakeFiles();
     void                DoPreview();
 
-                        DECL_LINK_TYPED( ClickPreviewHdl, Button*, void );
-                        DECL_LINK_TYPED( ClickSearchHdl, Button*, void );
-                        DECL_LINK_TYPED( ClickTakeHdl, Button*, void );
-                        DECL_LINK_TYPED( ClickTakeAllHdl, Button*, void );
-                        DECL_LINK_TYPED( SelectFoundHdl, ListBox&, void );
-                        DECL_LINK_TYPED( SelectFileTypeHdl, ComboBox&, void );
-                        DECL_LINK_TYPED( DClickFoundHdl, ListBox&, void );
-                        DECL_LINK_TYPED( PreviewTimerHdl, Timer*, void );
-                        DECL_LINK_TYPED( EndSearchProgressHdl, Dialog&, void );
-                        DECL_LINK_TYPED( DialogClosedHdl, css::ui::dialogs::DialogClosedEvent*, void );
+                        DECL_LINK( ClickPreviewHdl, Button*, void );
+                        DECL_LINK( ClickSearchHdl, Button*, void );
+                        DECL_LINK( ClickTakeHdl, Button*, void );
+                        DECL_LINK( ClickTakeAllHdl, Button*, void );
+                        DECL_LINK( SelectFoundHdl, ListBox&, void );
+                        DECL_LINK( SelectFileTypeHdl, ComboBox&, void );
+                        DECL_LINK( DClickFoundHdl, ListBox&, void );
+                        DECL_LINK( PreviewTimerHdl, Timer*, void );
+                        DECL_LINK( EndSearchProgressHdl, Dialog&, void );
+                        DECL_LINK( DialogClosedHdl, css::ui::dialogs::DialogClosedEvent*, void );
 
 public:
                         TPGalleryThemeProperties( vcl::Window* pWindow, const SfxItemSet& rSet );
-                        virtual ~TPGalleryThemeProperties();
+                        virtual ~TPGalleryThemeProperties() override;
     virtual void        dispose() override;
 
     void                SetXChgData( ExchangeData* pData );

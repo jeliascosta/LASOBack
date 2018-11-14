@@ -33,6 +33,8 @@
 #include <svx/svxdlg.hxx>
 
 #include "charmapacc.hxx"
+#include "uiobject.hxx"
+
 #include <com/sun/star/accessibility/AccessibleEventObject.hpp>
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
@@ -653,8 +655,8 @@ void SvxShowCharSet::OutputIndex( int nNewIndex )
 
 void SvxShowCharSet::SelectCharacter( sal_UCS4 cNew )
 {
-    if (mxFontCharMap == nullptr)
-        RecalculateFont(*this);
+    if ( !mxFontCharMap.Is() )
+        RecalculateFont( *this );
 
     // get next available char of current font
     sal_UCS4 cNext = mxFontCharMap->GetNextChar( (cNew > 0) ? cNew - 1 : cNew );
@@ -667,7 +669,7 @@ void SvxShowCharSet::SelectCharacter( sal_UCS4 cNew )
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxShowCharSet, VscrollHdl, ScrollBar*, void)
+IMPL_LINK_NOARG(SvxShowCharSet, VscrollHdl, ScrollBar*, void)
 {
     if( nSelectedIndex < FirstInView() )
     {
@@ -745,10 +747,15 @@ sal_Int32 SvxShowCharSet::getMaxCharCount() const
     return mxFontCharMap->GetCharCount();
 }
 
+FactoryFunction SvxShowCharSet::GetUITestFactory() const
+{
+    return SvxShowCharSetUIObject::create;
+}
+
 // TODO: should be moved into Font Attributes stuff
 // we let it mature here though because it is currently the only use
 
-SubsetMap::SubsetMap( const FontCharMapPtr& rxFontCharMap )
+SubsetMap::SubsetMap( const FontCharMapRef& rxFontCharMap )
 :   Resource( SVX_RES(RID_SUBSETMAP) )
 {
     InitList();
@@ -1587,6 +1594,41 @@ void SubsetMap::InitList()
                     aAllSubsets.push_back( Subset( 0x1D800, 0x1DAAF, RID_SUBSETSTR_SUTTON_SIGNWRITING ) );
                     break;
 #endif
+#if (U_ICU_VERSION_MAJOR_NUM >= 58)
+                case UBLOCK_ADLAM:
+                    aAllSubsets.push_back( Subset( 0x1E900, 0x1E95F, RID_SUBSETSTR_ADLAM ) );
+                    break;
+                case UBLOCK_BHAIKSUKI:
+                    aAllSubsets.push_back( Subset( 0x11C00, 0x11C6F, RID_SUBSETSTR_BHAIKSUKI ) );
+                    break;
+                case UBLOCK_CYRILLIC_EXTENDED_C:
+                    aAllSubsets.push_back( Subset( 0x1C80, 0x1C8F, RID_SUBSETSTR_CYRILLIC_EXTENDED_C ) );
+                    break;
+                case UBLOCK_GLAGOLITIC_SUPPLEMENT:
+                    aAllSubsets.push_back( Subset( 0x1E000, 0x1E02F, RID_SUBSETSTR_GLAGOLITIC_SUPPLEMENT ) );
+                    break;
+                case UBLOCK_IDEOGRAPHIC_SYMBOLS_AND_PUNCTUATION:
+                    aAllSubsets.push_back( Subset( 0x16FE0, 0x16FFF, RID_SUBSETSTR_IDEOGRAPHIC_SYMBOLS_AND_PUNCTUATION ) );
+                    break;
+                case UBLOCK_MARCHEN:
+                    aAllSubsets.push_back( Subset( 0x11C70, 0x11CBF, RID_SUBSETSTR_MARCHEN ) );
+                    break;
+                case UBLOCK_MONGOLIAN_SUPPLEMENT:
+                    aAllSubsets.push_back( Subset( 0x11660, 0x1167F, RID_SUBSETSTR_MONGOLIAN_SUPPLEMENT ) );
+                    break;
+                case UBLOCK_NEWA:
+                    aAllSubsets.push_back( Subset( 0x11400, 0x1147F, RID_SUBSETSTR_NEWA ) );
+                    break;
+                case UBLOCK_OSAGE:
+                    aAllSubsets.push_back( Subset( 0x104B0, 0x104FF, RID_SUBSETSTR_OSAGE ) );
+                    break;
+                case UBLOCK_TANGUT:
+                    aAllSubsets.push_back( Subset( 0x17000, 0x187FF, RID_SUBSETSTR_TANGUT ) );
+                    break;
+                case UBLOCK_TANGUT_COMPONENTS:
+                    aAllSubsets.push_back( Subset( 0x18800, 0x18AFF, RID_SUBSETSTR_TANGUT_COMPONENTS ) );
+                    break;
+#endif
 
             }
 
@@ -1612,9 +1654,9 @@ void SubsetMap::InitList()
     maSubsets = aAllSubsets;
 }
 
-void SubsetMap::ApplyCharMap( const FontCharMapPtr& rxFontCharMap )
+void SubsetMap::ApplyCharMap( const FontCharMapRef& rxFontCharMap )
 {
-    if( !rxFontCharMap )
+    if( !rxFontCharMap.Is() )
         return;
 
     // remove subsets that are not matched in any range

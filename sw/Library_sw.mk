@@ -572,8 +572,6 @@ $(eval $(call gb_Library_add_exception_objects,sw,\
     sw/source/uibase/app/swmodule \
     sw/source/uibase/app/swwait \
     sw/source/uibase/cctrl/actctrl \
-    sw/source/uibase/cctrl/popbox \
-    sw/source/uibase/cctrl/swlbox \
     sw/source/uibase/chrdlg/ccoll \
     sw/source/uibase/config/StoredChapterNumbering \
     sw/source/uibase/config/barcfg \
@@ -677,16 +675,24 @@ $(eval $(call gb_Library_add_exception_objects,sw,\
     sw/source/uibase/shells/txtnum \
     sw/source/uibase/sidebar/StylePresetsPanel \
     sw/source/uibase/sidebar/PageOrientationControl \
+    sw/source/uibase/sidebar/PageOrientationPopup \
     sw/source/uibase/sidebar/PageMarginControl \
+    sw/source/uibase/sidebar/PageMarginPopup \
     sw/source/uibase/sidebar/PageSizeControl \
+    sw/source/uibase/sidebar/PageSizePopup \
     sw/source/uibase/sidebar/PageColumnControl \
-    sw/source/uibase/sidebar/PagePropertyPanel \
+    sw/source/uibase/sidebar/PageColumnPopup \
+    sw/source/uibase/sidebar/PageFormatPanel \
+    sw/source/uibase/sidebar/PageHeaderPanel \
+    sw/source/uibase/sidebar/PageFooterPanel \
+    sw/source/uibase/sidebar/PageStylesPanel \
     sw/source/uibase/sidebar/WrapPropertyPanel \
     sw/source/uibase/sidebar/ThemePanel \
     sw/source/uibase/sidebar/SwPanelFactory \
     sw/source/uibase/table/chartins \
     sw/source/uibase/table/swtablerep \
     sw/source/uibase/table/tablemgr \
+    sw/source/uibase/uitest/uiobject \
     sw/source/uibase/uiview/formatclipboard \
     sw/source/uibase/uiview/pview \
     sw/source/uibase/uiview/scroll \
@@ -729,6 +735,7 @@ $(eval $(call gb_Library_add_exception_objects,sw,\
     sw/source/uibase/utlui/initui \
     sw/source/uibase/utlui/navicfg \
     sw/source/uibase/utlui/navipi \
+    sw/source/uibase/utlui/gotodlg \
     sw/source/uibase/utlui/numfmtlb \
     sw/source/uibase/utlui/prcntfld \
     sw/source/uibase/utlui/shdwcrsr \

@@ -24,7 +24,7 @@
 
 #include <sal/main.h>
 #include <vcl/commandevent.hxx>
-#include <vcl/implimagetree.hxx>
+#include <vcl/ImageTree.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/window.hxx>
 
@@ -61,6 +61,8 @@
 {
     (void)pNotification;
 
+SAL_WNODEPRECATED_DECLARATIONS_PUSH
+        // 'NSApplicationDefined' is deprecated: first deprecated in macOS 10.12
     NSEvent* pEvent = [NSEvent otherEventWithType: NSApplicationDefined
                                location: NSZeroPoint
                                modifierFlags: 0
@@ -70,6 +72,7 @@
                                subtype: AquaSalInstance::AppExecuteSVMain
                                data1: 0
                                data2: 0 ];
+SAL_WNODEPRECATED_DECLARATIONS_POP
     if( pEvent )
         [NSApp postEvent: pEvent atStart: NO];
 }
@@ -77,6 +80,15 @@
 -(void)sendEvent:(NSEvent*)pEvent
 {
     NSEventType eType = [pEvent type];
+SAL_WNODEPRECATED_DECLARATIONS_PUSH
+        // 'NSAlternateKeyMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSApplicationDefined' is deprecated: first deprecated in macOS 10.12
+        // 'NSClosableWindowMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSCommandKeyMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSControlKeyMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSKeyDown' is deprecated: first deprecated in macOS 10.12
+        // 'NSMiniaturizableWindowMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSShiftKeyMask' is deprecated: first deprecated in macOS 10.12
     if( eType == NSApplicationDefined )
     {
         AquaSalInstance::handleAppDefinedEvent( pEvent );
@@ -224,6 +236,7 @@
             }
         }
     }
+SAL_WNODEPRECATED_DECLARATIONS_POP
     [super sendEvent: pEvent];
 }
 
@@ -323,7 +336,7 @@
     aFile.push_back( GetOUString( pFile ) );
     if( ! AquaSalInstance::isOnCommandLine( aFile[0] ) )
     {
-        const ApplicationEvent* pAppEvent = new ApplicationEvent(ApplicationEvent::TYPE_OPEN, aFile);
+        const ApplicationEvent* pAppEvent = new ApplicationEvent(ApplicationEvent::Type::Open, aFile);
         AquaSalInstance::aAppEventList.push_back( pAppEvent );
     }
     return YES;
@@ -351,7 +364,7 @@
         // we have no back channel here, we have to assume success, in which case
         // replyToOpenOrPrint does not need to be called according to documentation
         // [app replyToOpenOrPrint: NSApplicationDelegateReplySuccess];
-        const ApplicationEvent* pAppEvent = new ApplicationEvent(ApplicationEvent::TYPE_OPEN, aFileList);
+        const ApplicationEvent* pAppEvent = new ApplicationEvent(ApplicationEvent::Type::Open, aFileList);
         AquaSalInstance::aAppEventList.push_back( pAppEvent );
     }
 }
@@ -361,8 +374,8 @@
     (void)app;
     std::vector<OUString> aFile;
     aFile.push_back( GetOUString( pFile ) );
-	const ApplicationEvent* pAppEvent = new ApplicationEvent(ApplicationEvent::TYPE_PRINT, aFile);
-	AquaSalInstance::aAppEventList.push_back( pAppEvent );
+    const ApplicationEvent* pAppEvent = new ApplicationEvent(ApplicationEvent::Type::Print, aFile);
+    AquaSalInstance::aAppEventList.push_back( pAppEvent );
     return YES;
 }
 -(NSApplicationPrintReply)application: (NSApplication *) app printFiles:(NSArray *)files withSettings: (NSDictionary *)printSettings showPrintPanels:(BOOL)bShowPrintPanels
@@ -380,8 +393,8 @@
     {
         aFileList.push_back( GetOUString( pFile ) );
     }
-	const ApplicationEvent* pAppEvent = new ApplicationEvent(ApplicationEvent::TYPE_PRINT, aFileList);
-	AquaSalInstance::aAppEventList.push_back( pAppEvent );
+    const ApplicationEvent* pAppEvent = new ApplicationEvent(ApplicationEvent::Type::Print, aFileList);
+    AquaSalInstance::aAppEventList.push_back( pAppEvent );
     // we have no back channel here, we have to assume success
     // correct handling would be NSPrintingReplyLater and then send [app replyToOpenOrPrint]
     return NSPrintingSuccess;
@@ -410,9 +423,9 @@
 
         if( aReply == NSTerminateNow )
         {
-            ApplicationEvent aEv(ApplicationEvent::TYPE_PRIVATE_DOSHUTDOWN);
+            ApplicationEvent aEv(ApplicationEvent::Type::PrivateDoShutdown);
             GetpApp()->AppEvent( aEv );
-            ImplImageTree::get().shutDown();
+            ImageTree::get().shutdown();
             // DeInitVCL should be called in ImplSVMain - unless someon _exits first which
             // can occur in Desktop::doShutdown for example
         }
@@ -427,8 +440,8 @@
     SolarMutexGuard aGuard;
 
     const SalData* pSalData = GetSalData();
-	if( !pSalData->maFrames.empty() )
-		pSalData->maFrames.front()->CallCallback( SalEvent::SettingsChanged, nullptr );
+    if( !pSalData->maFrames.empty() )
+        pSalData->maFrames.front()->CallCallback( SalEvent::SettingsChanged, nullptr );
 }
 
 -(void)screenParametersChanged: (NSNotification*) pNotification

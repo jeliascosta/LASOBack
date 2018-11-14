@@ -50,9 +50,6 @@ public:
     virtual bool MouseButtonUp(const MouseEvent& rMEvt) override;
     virtual bool MouseButtonDown(const MouseEvent& rMEvt) override;
 
-    virtual void Activate() override;
-    virtual void Deactivate() override;
-
     /// Forward to the clipboard manager.
     virtual void DoCut() override;
 
@@ -86,8 +83,7 @@ public:
     {
         NormalMode,
         MultiSelectionMode,
-        DragAndDropMode,
-        ButtonMode
+        DragAndDropMode
     };
     void SwitchToNormalMode();
     void SwitchToDragAndDropMode(const Point& rMousePosition);
@@ -109,7 +105,7 @@ protected:
         SlideSorter& rSlideSorter,
         SfxRequest& rRequest);
 
-    virtual ~SelectionFunction();
+    virtual ~SelectionFunction() override;
 
 private:
     /** We use this flag to filter out the cases where MouseMotion() is called

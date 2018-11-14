@@ -43,38 +43,6 @@
 #define RSC_IMAGE               (RSC_NOTYPE + 0x23)
 #define RSC_IMAGELIST           (RSC_NOTYPE + 0x24)
 
-#define RSC_WINDOW              (RSC_NOTYPE + 0x35)
-
-#define RSC_CONTROL             (RSC_NOTYPE + 0x44)
-#define RSC_BUTTON              (RSC_NOTYPE + 0x45)
-#define RSC_PUSHBUTTON          (RSC_NOTYPE + 0x46)
-
-#define RSC_IMAGEBUTTON         (RSC_NOTYPE + 0x4a)
-
-#define RSC_SPINBUTTON          (RSC_NOTYPE + 0x4d)
-#define RSC_RADIOBUTTON         (RSC_NOTYPE + 0x4e)
-
-#define RSC_CHECKBOX            (RSC_NOTYPE + 0x50)
-
-#define RSC_EDIT                (RSC_NOTYPE + 0x52)
-
-#define RSC_COMBOBOX            (RSC_NOTYPE + 0x54)
-#define RSC_LISTBOX             (RSC_NOTYPE + 0x55)
-
-#define RSC_TEXT                (RSC_NOTYPE + 0x57)
-#define RSC_FIXEDLINE           (RSC_NOTYPE + 0x58)
-
-#define RSC_FIXEDIMAGE          (RSC_NOTYPE + 0x5a)
-
-#define RSC_SPINFIELD           (RSC_NOTYPE + 0x61)
-
-#define RSC_NUMERICFIELD        (RSC_NOTYPE + 0x63)
-#define RSC_METRICFIELD         (RSC_NOTYPE + 0x64)
-
-#define RSC_TOOLBOXITEM         (RSC_NOTYPE + 0x70)
-#define RSC_TOOLBOX             (RSC_NOTYPE + 0x71)
-#define RSC_DOCKINGWINDOW       (RSC_NOTYPE + 0x72)
-
 #define RSC_STRINGARRAY         (RSC_NOTYPE + 0x79)
 
 // (RSC_NOTYPE + 0x200) - (RSC_NOTYPE + 0x300) reserved for Sfx

@@ -38,8 +38,8 @@ private:
     static void InitInterface_Impl();
 
 public:
-    PresentationViewShell( SfxViewFrame* pFrame, ViewShellBase& rViewShellBase, vcl::Window* pParentWindow, FrameView* pFrameView = nullptr);
-    virtual ~PresentationViewShell();
+    PresentationViewShell( SfxViewFrame* pFrame, ViewShellBase& rViewShellBase, vcl::Window* pParentWindow, FrameView* pFrameView);
+    virtual ~PresentationViewShell() override;
 
     /** This method is used by a simple class that passes some
         arguments from the creator of the new view shell to the new view

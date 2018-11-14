@@ -307,7 +307,6 @@ namespace
         ucb::Lock                                   maLock;
         WebDAVResponseParserMode                    meWebDAVResponseParserMode;
 
-        // bitfield
         bool                                        mbResourceTypeCollection : 1;
         bool                                        mbLockScopeSet : 1;
         bool                                        mbLockTypeSet : 1;
@@ -717,6 +716,7 @@ namespace
                                 maLock.Scope = maLockScope;
                                 maResult_Lock.push_back(maLock);
                             }
+                            SAL_FALLTHROUGH; // I hope intentional?
                             case WebDAVName_propstat:
                             {
                                 // propstat end, check status

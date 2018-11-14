@@ -109,7 +109,7 @@ namespace sfx2
         void                    updateExportButton();
         void                    updateSelectionBox();
         void                    updateVersions();
-        void                    updatePreviewState( bool _bUpdatePreviewWindow = true );
+        void                    updatePreviewState( bool _bUpdatePreviewWindow );
         void                    dispose();
 
         void                    loadConfig();
@@ -128,13 +128,12 @@ namespace sfx2
 
         void                    setControlHelpIds( const sal_Int16* _pControlId, const char** _pHelpId );
 
-        bool                CheckFilterOptionsCapability( const std::shared_ptr<const SfxFilter>& _pFilter );
+        bool                    CheckFilterOptionsCapability( const std::shared_ptr<const SfxFilter>& _pFilter );
 
-        bool                isInOpenMode() const;
+        bool                    isInOpenMode() const;
         OUString                getCurrentFilterUIName() const;
 
         void                    LoadLastUsedFilter( const OUString& _rContextIdentifier );
-        void                    SaveLastUsedFilter( const OUString& _rContextIdentifier );
         void                    SaveLastUsedFilter();
 
         void                    implInitializeFileName( );
@@ -145,8 +144,8 @@ namespace sfx2
                                                       std::vector<OUString>&                   rpURLList,
                                                       const std::shared_ptr<const SfxFilter>&  pFilter  );
 
-        DECL_LINK_TYPED( TimeOutHdl_Impl, Idle *, void);
-        DECL_LINK_TYPED( InitControls, void*, void );
+        DECL_LINK( TimeOutHdl_Impl, Idle *, void);
+        DECL_LINK( InitControls, void*, void );
 
     public:
         // XFilePickerListener methods
@@ -179,7 +178,7 @@ namespace sfx2
                                     const OUString& sStandardDir = OUString(),
                                     const css::uno::Sequence< OUString >&   rBlackList = css::uno::Sequence< OUString >()
                                 );
-        virtual                 ~FileDialogHelper_Impl();
+        virtual                 ~FileDialogHelper_Impl() override;
 
         ErrCode                 execute( std::vector<OUString>& rpURLList,
                                          SfxItemSet *&   rpSet,

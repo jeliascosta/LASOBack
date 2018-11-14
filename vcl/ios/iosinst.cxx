@@ -23,7 +23,7 @@
 
 #include "ios/iosinst.hxx"
 #include "headless/svpdummies.hxx"
-#include "generic/gendata.hxx"
+#include "unx/gendata.hxx"
 #include "quartz/utils.h"
 #include <vcl/layout.hxx>
 #include <vcl/settings.hxx>
@@ -118,7 +118,6 @@ public:
         aStyleSet.SetMenuFont( aFont );
         aStyleSet.SetToolFont( aFont );
         aStyleSet.SetLabelFont( aFont );
-        aStyleSet.SetInfoFont( aFont );
         aStyleSet.SetRadioCheckFont( aFont );
         aStyleSet.SetPushButtonFont( aFont );
         aStyleSet.SetFieldFont( aFont );

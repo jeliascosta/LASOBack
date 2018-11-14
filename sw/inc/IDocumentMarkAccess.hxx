@@ -51,7 +51,7 @@ class IDocumentMarkAccess
         };
 
         typedef std::shared_ptr< ::sw::mark::IMark> pMark_t;
-        typedef ::std::vector< pMark_t > container_t;
+        typedef std::vector< pMark_t > container_t;
         typedef container_t::iterator iterator_t;
         typedef container_t::const_iterator const_iterator_t;
         typedef container_t::const_reverse_iterator const_reverse_iterator_t;
@@ -72,12 +72,15 @@ class IDocumentMarkAccess
            @param eMark
            [in] the type of the new mark.
 
+           @param eMode
+           [in] is the new mark part of a text copy operation
+
            @returns
            a pointer to the new mark (name might have changed).
         */
         virtual ::sw::mark::IMark* makeMark(const SwPaM& rPaM,
             const OUString& rProposedName,
-            MarkType eMark) = 0;
+            MarkType eMark, ::sw::mark::InsertMode eMode) = 0;
 
         virtual sw::mark::IFieldmark* makeFieldBookmark( const SwPaM& rPaM,
             const OUString& rName,
@@ -170,7 +173,7 @@ class IDocumentMarkAccess
         virtual void deleteMarks(
             const SwNodeIndex& rStt,
             const SwNodeIndex& rEnd,
-            ::std::vector< ::sw::mark::SaveBookmark>* pSaveBkmk, // Ugly: SaveBookmark is core-internal
+            std::vector< ::sw::mark::SaveBookmark>* pSaveBkmk, // Ugly: SaveBookmark is core-internal
             const SwIndex* pSttIdx,
             const SwIndex* pEndIdx) =0;
 

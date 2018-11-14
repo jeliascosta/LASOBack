@@ -198,7 +198,7 @@ class SwAttrSetChg: public SwMsgPoolItem
 public:
     SwAttrSetChg( const SwAttrSet& rTheSet, SwAttrSet& rSet );
     SwAttrSetChg( const SwAttrSetChg& );
-    virtual ~SwAttrSetChg();
+    virtual ~SwAttrSetChg() override;
 
     /// What has changed
     const SwAttrSet* GetChgSet() const     { return m_pChgSet; }
@@ -208,7 +208,7 @@ public:
     const SwAttrSet* GetTheChgdSet() const { return m_pTheChgdSet; }
 
     sal_uInt16 Count() const { return m_pChgSet->Count(); }
-    void ClearItem( sal_uInt16 nWhichL = 0 )
+    void ClearItem( sal_uInt16 nWhichL )
 #ifdef DBG_UTIL
         ;
 #else

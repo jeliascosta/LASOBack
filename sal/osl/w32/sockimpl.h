@@ -17,8 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#ifndef _OSL_SOCKETIMPL_H_
-#define _OSL_SOCKETIMPL_H_
+#ifndef INCLUDED_SAL_OSL_W32_SOCKIMPL_H
+#define INCLUDED_SAL_OSL_W32_SOCKIMPL_H
 
 #include <osl/socket.h>
 #include <osl/interlck.h>
@@ -44,39 +44,8 @@ struct oslSocketAddrImpl
     oslInterlockedCount m_nRefCount;
 };
 
-oslSocket __osl_createSocketImpl(SOCKET Socket);
-void __osl_destroySocketImpl(oslSocket pImpl);
-
-/*****************************************************************************/
-/* oslSocketDialupImpl */
-/*****************************************************************************/
-#define INTERNET_MODULE_NAME "wininet.dll"
-
-#define INTERNET_CONNECTION_HANGUP 0x80000000L
-
-typedef DWORD (WINAPI *INTERNETATTEMPTCONNECT) (
-    DWORD dwReserved);
-typedef BOOL (WINAPI *INTERNETAUTODIAL) (
-    DWORD dwFlags, DWORD dwReserved);
-typedef BOOL (WINAPI *INTERNETAUTODIALHANGUP) (
-    DWORD dwReserved);
-typedef BOOL (WINAPI *INTERNETGETCONNECTEDSTATE) (
-    LPDWORD lpdwFlags, DWORD dwReserved);
-
-typedef struct osl_socket_dialup_impl_st
-{
-    CRITICAL_SECTION          m_hMutex;
-    HINSTANCE                 m_hModule;
-    INTERNETATTEMPTCONNECT    m_pfnAttemptConnect;
-    INTERNETAUTODIAL          m_pfnAutodial;
-    INTERNETAUTODIALHANGUP    m_pfnAutodialHangup;
-    INTERNETGETCONNECTEDSTATE m_pfnGetConnectedState;
-    DWORD                     m_dwFlags;
-} oslSocketDialupImpl;
-
-/*****************************************************************************/
-/* The End */
-/*****************************************************************************/
+oslSocket osl_createSocketImpl_(SOCKET Socket);
+void osl_destroySocketImpl_(oslSocket pImpl);
 
 #ifdef __cplusplus
 }

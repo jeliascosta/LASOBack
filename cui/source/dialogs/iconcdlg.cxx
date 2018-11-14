@@ -75,9 +75,9 @@ void IconChoicePage::ActivatePage( const SfxItemSet& )
 }
 
 
-int IconChoicePage::DeactivatePage( SfxItemSet* )
+DeactivateRC IconChoicePage::DeactivatePage( SfxItemSet* )
 {
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 bool IconChoicePage::QueryClose()
@@ -155,20 +155,16 @@ VCL_BUILDER_FACTORY_ARGS(SvtIconChoiceCtrl,
                          WB_NODRAGSELECTION | WB_TABSTOP);
 
 IconChoiceDialog::IconChoiceDialog ( vcl::Window* pParent, const OUString& rID,
-                                     const OUString& rUIXMLDescription,
-                                     const SfxItemSet *pItemSet )
+                                     const OUString& rUIXMLDescription )
 :   ModalDialog         ( pParent, rID, rUIXMLDescription ),
     mnCurrentPageId ( USHRT_MAX ),
 
-    pSet            ( pItemSet ),
+    pSet            ( nullptr ),
     pOutSet         ( nullptr ),
     pExampleSet     ( nullptr ),
     pRanges         ( nullptr ),
 
-    bHideResetBtn   ( false ),
-    bModal          ( false ),
-    bInOK           ( false ),
-    bItemsReset     ( false )
+    bInOK           ( false )
 {
     get(m_pOKBtn, "ok");
     get(m_pApplyBtn, "apply");
@@ -182,7 +178,7 @@ IconChoiceDialog::IconChoiceDialog ( vcl::Window* pParent, const OUString& rID,
     m_pIconCtrl->SetClickHdl ( LINK ( this, IconChoiceDialog , ChosePageHdl_Impl ) );
     m_pIconCtrl->Show();
     m_pIconCtrl->SetChoiceWithCursor();
-    m_pIconCtrl->SetSelectionMode( SINGLE_SELECTION );
+    m_pIconCtrl->SetSelectionMode( SelectionMode::Single );
     m_pIconCtrl->SetHelpId( HID_ICCDIALOG_CHOICECTRL );
 
     // ItemSet
@@ -232,8 +228,6 @@ void IconChoiceDialog::dispose()
                 //SetViewOptUserItem( aTabPageOpt, aPageData );
             }
 
-            if ( pData->bOnDemand )
-                delete &pData->pPage->GetItemSet();
             pData->pPage.disposeAndClear();
         }
         delete pData;
@@ -278,12 +272,8 @@ SvxIconChoiceCtrlEntry* IconChoiceDialog::AddTabPage(
     CreatePage      pCreateFunc /* != 0 */
 )
 {
-    IconChoicePageData* pData = new IconChoicePageData ( nId, pCreateFunc,
-                                                         nullptr );
+    IconChoicePageData* pData = new IconChoicePageData ( nId, pCreateFunc );
     maPageList.push_back( pData );
-
-    pData->fnGetRanges = nullptr;
-    pData->bOnDemand = false;
 
     sal_uInt16 *pId = new sal_uInt16 ( nId );
     SvxIconChoiceCtrlEntry* pEntry = m_pIconCtrl->InsertEntry( rIconText, rChoiceIcon );
@@ -344,7 +334,7 @@ void IconChoiceDialog::ShowPage(sal_uInt16 nId)
 | select a page
 |
 \**********************************************************************/
-IMPL_LINK_NOARG_TYPED(IconChoiceDialog , ChosePageHdl_Impl, SvtIconChoiceCtrl*, void)
+IMPL_LINK_NOARG(IconChoiceDialog , ChosePageHdl_Impl, SvtIconChoiceCtrl*, void)
 {
     SvxIconChoiceCtrlEntry *pEntry = m_pIconCtrl->GetSelectedEntry();
     if ( !pEntry )
@@ -364,58 +354,41 @@ IMPL_LINK_NOARG_TYPED(IconChoiceDialog , ChosePageHdl_Impl, SvtIconChoiceCtrl*, 
 |
 \**********************************************************************/
 
-IMPL_LINK_NOARG_TYPED(IconChoiceDialog, OkHdl, Button*, void)
+IMPL_LINK_NOARG(IconChoiceDialog, OkHdl, Button*, void)
 {
     bInOK = true;
 
     if ( OK_Impl() )
     {
-        if ( bModal )
-            EndDialog( Ok() );
-        else
-        {
-            Ok();
-            Close();
-        }
+        Ok();
+        Close();
     }
 }
 
 
-IMPL_LINK_NOARG_TYPED(IconChoiceDialog, ApplyHdl, Button*, void)
+IMPL_LINK_NOARG(IconChoiceDialog, ApplyHdl, Button*, void)
 {
     bInOK = true;
 
     if ( OK_Impl() )
     {
-        if ( bModal )
-            EndDialog( Ok() );
-        else
-        {
-            Ok();
-            Close();
-        }
+        Ok();
+        Close();
     }
 }
 
-IMPL_LINK_NOARG_TYPED(IconChoiceDialog, ResetHdl, Button*, void)
+IMPL_LINK_NOARG(IconChoiceDialog, ResetHdl, Button*, void)
 {
     ResetPageImpl ();
 
     IconChoicePageData* pData = GetPageData ( mnCurrentPageId );
     DBG_ASSERT( pData, "Id nicht bekannt" );
 
-    if ( pData->bOnDemand )
-    {
-        // CSet on AIS has problems here, therefore separated
-        const SfxItemSet* _pSet = &( pData->pPage->GetItemSet() );
-        pData->pPage->Reset( *const_cast<SfxItemSet*>(_pSet) );
-    }
-    else
-        pData->pPage->Reset( *pSet );
+    pData->pPage->Reset( *pSet );
 }
 
 
-IMPL_LINK_NOARG_TYPED(IconChoiceDialog, CancelHdl, Button*, void)
+IMPL_LINK_NOARG(IconChoiceDialog, CancelHdl, Button*, void)
 {
     Close();
 }
@@ -431,7 +404,6 @@ void IconChoiceDialog::ActivatePageImpl ()
     DBG_ASSERT( !maPageList.empty(), "keine Pages angemeldet" );
     IconChoicePageData* pData = GetPageData ( mnCurrentPageId );
     DBG_ASSERT( pData, "Id nicht bekannt" );
-    bool bReadOnly = false;
     if ( pData )
     {
         if ( !pData->pPage )
@@ -440,21 +412,15 @@ void IconChoiceDialog::ActivatePageImpl ()
 
             if ( pSet )
             {
-                if ( bItemsReset && pSet->GetParent() )
-                    pTmpSet = pSet->GetParent();
-                else
-                    pTmpSet = pSet;
+                pTmpSet = pSet;
             }
 
-            if ( pTmpSet && !pData->bOnDemand )
+            if ( pTmpSet )
                 pData->pPage = (pData->fnCreatePage)( m_pTabContainer, this, *pTmpSet );
             else
                 pData->pPage = (pData->fnCreatePage)( m_pTabContainer, this, *CreateInputItemSet( mnCurrentPageId ) );
 
-            if ( pData->bOnDemand )
-                pData->pPage->Reset( (SfxItemSet &)pData->pPage->GetItemSet() );
-            else
-                pData->pPage->Reset( *pSet );
+            pData->pPage->Reset( *pSet );
 
             PageCreated( mnCurrentPageId, *pData->pPage );
         }
@@ -468,15 +434,9 @@ void IconChoiceDialog::ActivatePageImpl ()
         if ( pExampleSet )
             pData->pPage->ActivatePage( *pExampleSet );
         SetHelpId( pData->pPage->GetHelpId() );
-        bReadOnly = false;
     }
 
-
-    if ( bReadOnly || bHideResetBtn )
-        m_pResetBtn->Hide();
-    else
-        m_pResetBtn->Show();
-
+    m_pResetBtn->Show();
 }
 
 
@@ -484,7 +444,7 @@ void IconChoiceDialog::DeActivatePageImpl ()
 {
     IconChoicePageData *pData = GetPageData ( mnCurrentPageId );
 
-    int nRet = IconChoicePage::LEAVE_PAGE;
+    DeactivateRC nRet = DeactivateRC::LeavePage;
 
     if ( pData )
     {
@@ -500,7 +460,7 @@ void IconChoiceDialog::DeActivatePageImpl ()
             if ( pPage->HasExchangeSupport() )
                 nRet = pPage->DeactivatePage( &aTmp );
 
-            if ( ( IconChoicePage::LEAVE_PAGE & nRet ) == IconChoicePage::LEAVE_PAGE &&
+            if ( ( DeactivateRC::LeavePage & nRet ) &&
                  aTmp.Count() )
             {
                 pExampleSet->Put( aTmp );
@@ -523,9 +483,9 @@ void IconChoiceDialog::DeActivatePageImpl ()
                 nRet = pPage->DeactivatePage( nullptr );
         }
 
-        if ( nRet & IconChoicePage::REFRESH_SET )
+        if ( nRet & DeactivateRC::RefreshSet )
         {
-            RefreshInputSet();
+            // TODO refresh input set
             // flag all pages to be newly initialized
             for (IconChoicePageData* pObj : maPageList)
             {
@@ -545,14 +505,7 @@ void IconChoiceDialog::ResetPageImpl ()
 
     DBG_ASSERT( pData, "Id nicht bekannt" );
 
-    if ( pData->bOnDemand )
-    {
-        // CSet on AIS has problems here, therefore separated
-        const SfxItemSet* _pSet = &pData->pPage->GetItemSet();
-        pData->pPage->Reset( *const_cast<SfxItemSet*>(_pSet) );
-    }
-    else
-        pData->pPage->Reset( *pSet );
+    pData->pPage->Reset( *pSet );
 }
 
 /**********************************************************************
@@ -574,20 +527,6 @@ const sal_uInt16* IconChoiceDialog::GetInputRanges( const SfxItemPool& rPool )
     std::vector<sal_uInt16> aUS;
 
     size_t nCount = maPageList.size();
-    for ( size_t i = 0; i < nCount; ++i )
-    {
-        IconChoicePageData* pData = maPageList[ i ];
-        if ( pData->fnGetRanges )
-        {
-            const sal_uInt16* pTmpRanges = (pData->fnGetRanges)();
-            const sal_uInt16* pIter = pTmpRanges;
-
-            sal_uInt16 nLen;
-            for( nLen = 0; *pIter; ++nLen, ++pIter )
-                ;
-            aUS.insert( aUS.end(), pTmpRanges, pTmpRanges + nLen );
-        }
-    }
 
     // remove double Id's
     {
@@ -656,7 +595,6 @@ short IconChoiceDialog::Execute()
 void IconChoiceDialog::Start()
 {
     m_pCancelBtn->SetClickHdl( LINK( this, IconChoiceDialog, CancelHdl ) );
-    bModal = false;
 
     Start_Impl();
 }
@@ -680,11 +618,6 @@ void IconChoiceDialog::Start_Impl()
 {
     FocusOnIcon( mnCurrentPageId );
     ActivatePageImpl();
-}
-
-void IconChoiceDialog::RefreshInputSet()
-{
-    SAL_WARN( "cui.dialogs", "RefreshInputSet not implemented" );
 }
 
 /**********************************************************************
@@ -720,7 +653,7 @@ bool IconChoiceDialog::OK_Impl()
     bool bEnd = !pPage;
     if ( pPage )
     {
-        int nRet = IconChoicePage::LEAVE_PAGE;
+        DeactivateRC nRet = DeactivateRC::LeavePage;
         if ( pSet )
         {
             SfxItemSet aTmp( *pSet->GetPool(), pSet->GetRanges() );
@@ -728,7 +661,7 @@ bool IconChoiceDialog::OK_Impl()
             if ( pPage->HasExchangeSupport() )
                 nRet = pPage->DeactivatePage( &aTmp );
 
-            if ( ( IconChoicePage::LEAVE_PAGE & nRet ) == IconChoicePage::LEAVE_PAGE
+            if ( ( DeactivateRC::LeavePage & nRet )
                  && aTmp.Count() )
             {
                 pExampleSet->Put( aTmp );
@@ -737,14 +670,14 @@ bool IconChoiceDialog::OK_Impl()
         }
         else
             nRet = pPage->DeactivatePage( nullptr );
-        bEnd = nRet;
+        bEnd = nRet != DeactivateRC::KeepPage;
     }
 
     return bEnd;
 }
 
 
-short IconChoiceDialog::Ok()
+void IconChoiceDialog::Ok()
 {
     bInOK = true;
 
@@ -755,7 +688,6 @@ short IconChoiceDialog::Ok()
         else if ( pExampleSet )
             pOutSet = new SfxItemSet( *pExampleSet );
     }
-    bool _bModified = false;
 
     for ( size_t i = 0, nCount = maPageList.size(); i < nCount; ++i )
     {
@@ -765,30 +697,18 @@ short IconChoiceDialog::Ok()
 
         if ( pPage )
         {
-            if ( pData->bOnDemand )
-            {
-                SfxItemSet& rSet = (SfxItemSet&)pPage->GetItemSet();
-                rSet.ClearItem();
-                _bModified |= pPage->FillItemSet( &rSet );
-            }
-            else if ( pSet && !pPage->HasExchangeSupport() )
+            if ( pSet && !pPage->HasExchangeSupport() )
             {
                 SfxItemSet aTmp( *pSet->GetPool(), pSet->GetRanges() );
 
                 if ( pPage->FillItemSet( &aTmp ) )
                 {
-                    _bModified = true;
                     pExampleSet->Put( aTmp );
                     pOutSet->Put( aTmp );
                 }
             }
         }
     }
-
-    if ( _bModified || ( pOutSet && pOutSet->Count() > 0 ) )
-        _bModified = true;
-
-    return _bModified ? RET_OK : RET_CANCEL;
 }
 
 void IconChoiceDialog::FocusOnIcon( sal_uInt16 nId )

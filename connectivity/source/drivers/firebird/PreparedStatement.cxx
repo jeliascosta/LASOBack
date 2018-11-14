@@ -29,6 +29,7 @@
 #include <osl/diagnose.h>
 #include <propertyids.hxx>
 #include <time.h>
+#include <connectivity/dbtools.hxx>
 
 #include <com/sun/star/sdbc/DataType.hpp>
 #include <com/sun/star/lang/DisposedException.hpp>
@@ -82,7 +83,6 @@ void OPreparedStatement::ensurePrepared()
     prepareAndDescribeStatement(m_sSqlStatement,
                                m_pOutSqlda,
                                m_pInSqlda);
-
 
     aErr = isc_dsql_describe_bind(m_statusVector,
                                   &m_aStatementHandle,
@@ -151,7 +151,8 @@ Reference< XResultSetMetaData > SAL_CALL OPreparedStatement::getMetaData()
     ensurePrepared();
 
     if(!m_xMetaData.is())
-        m_xMetaData = new OResultSetMetaData(m_pConnection.get(), m_pOutSqlda);
+        m_xMetaData = new OResultSetMetaData(m_pConnection.get()
+                                           , m_pOutSqlda);
 
     return m_xMetaData;
 }
@@ -308,6 +309,41 @@ Reference< XResultSet > SAL_CALL OPreparedStatement::executeQuery()
     return m_xResultSet;
 }
 
+namespace {
+
+/**
+ * Take out the number part of a fix point decimal without
+ * the information of where is the fracional part from a
+ * string representation of a number. (e.g. 54.654 -> 54654)
+ */
+sal_Int64 toNumericWithoutDecimalPlace(const OUString& sSource)
+{
+    OUString sNumber(sSource);
+
+    // cut off leading 0 eventually ( eg. 0.567 -> .567)
+    (void)sSource.startsWith("0", &sNumber);
+
+    sal_Int32 nDotIndex = sNumber.indexOf((sal_Unicode)'.');
+
+    if( nDotIndex < 0)
+    {
+        return sNumber.toInt64(); // no dot -> it's an integer
+    }
+    else
+    {
+        // remove dot
+        OUStringBuffer sBuffer(15);
+        if(nDotIndex > 0)
+        {
+            sBuffer.append(sNumber.copy(0, nDotIndex));
+        }
+        sBuffer.append(sNumber.copy(nDotIndex + 1));
+        return sBuffer.makeStringAndClear().toInt64();
+    }
+}
+
+}
+
 //----- XParameters -----------------------------------------------------------
 void SAL_CALL OPreparedStatement::setNull(sal_Int32 nIndex, sal_Int32 /*nSqlType*/)
     throw(SQLException, RuntimeException, std::exception)
@@ -342,7 +378,7 @@ void OPreparedStatement::setValue(sal_Int32 nIndex, T& nValue, ISC_SHORT nType)
     if ((pVar->sqltype & ~1) != nType)
     {
        ::dbtools::throwSQLException(
-            "Incorrect type for setString",
+            "Incorrect type for setValue",
             ::dbtools::StandardSQLState::INVALID_SQL_DATA_TYPE,
             *this);
     }
@@ -391,8 +427,8 @@ void SAL_CALL OPreparedStatement::setDate(sal_Int32 nIndex, const Date& rDate)
 {
     struct tm aCTime;
     aCTime.tm_mday = rDate.Day;
-    aCTime.tm_mon = rDate.Month;
-    aCTime.tm_year = rDate.Year;
+    aCTime.tm_mon = rDate.Month -1;
+    aCTime.tm_year = rDate.Year -1900;
 
     ISC_DATE aISCDate;
     isc_encode_sql_date(&aCTime, &aISCDate);
@@ -422,8 +458,8 @@ void SAL_CALL OPreparedStatement::setTimestamp(sal_Int32 nIndex, const DateTime&
     aCTime.tm_min = rTimestamp.Minutes;
     aCTime.tm_hour = rTimestamp.Hours;
     aCTime.tm_mday = rTimestamp.Day;
-    aCTime.tm_mon = rTimestamp.Month;
-    aCTime.tm_year = rTimestamp.Year;
+    aCTime.tm_mon = rTimestamp.Month - 1;
+    aCTime.tm_year = rTimestamp.Year - 1900;
 
     ISC_TIMESTAMP aISCTimestamp;
     isc_encode_timestamp(&aCTime, &aISCTimestamp);
@@ -485,7 +521,11 @@ void SAL_CALL OPreparedStatement::setBlob(sal_Int32 nParameterIndex,
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(OStatementCommonBase_Base::rBHelper.bDisposed);
 
+#if SAL_TYPES_SIZEOFPOINTER == 8
     isc_blob_handle aBlobHandle = 0;
+#else
+    isc_blob_handle aBlobHandle = nullptr;
+#endif
     ISC_QUAD aBlobId;
 
     openBlobForWriting(aBlobHandle, aBlobId);
@@ -548,12 +588,84 @@ void SAL_CALL OPreparedStatement::setRef( sal_Int32 parameterIndex, const Refere
 
 void SAL_CALL OPreparedStatement::setObjectWithInfo( sal_Int32 parameterIndex, const Any& x, sal_Int32 sqlType, sal_Int32 scale ) throw(SQLException, RuntimeException, std::exception)
 {
-    (void) parameterIndex;
-    (void) x;
-    (void) sqlType;
-    (void) scale;
     checkDisposed(OStatementCommonBase_Base::rBHelper.bDisposed);
     ::osl::MutexGuard aGuard( m_aMutex );
+    ensurePrepared();
+
+    checkParameterIndex(parameterIndex);
+    setParameterNull(parameterIndex, false);
+
+    XSQLVAR* pVar = m_pInSqlda->sqlvar + (parameterIndex - 1);
+    int dType = (pVar->sqltype & ~1); // drop null flag
+
+    if(sqlType == DataType::DECIMAL || sqlType == DataType::NUMERIC)
+    {
+        double myDouble=0.0;
+        OUString myString;
+        if( x >>= myDouble )
+        {
+            myString = OUString::number( myDouble );
+        }
+        else
+        {
+            x >>= myString;
+        }
+
+        // fill in the number with nulls in fractional part.
+        // We need this because  e.g. 0.450 != 0.045 despite
+        // their scale is equal
+        OUStringBuffer sBuffer(15);
+        sBuffer.append(myString);
+        if(myString.indexOf('.') != -1) // there is a dot
+        {
+            for(sal_Int32 i=myString.copy(myString.indexOf('.')+1).getLength(); i<scale;i++)
+            {
+                sBuffer.append('0');
+            }
+        }
+        else
+        {
+            for (sal_Int32 i=0; i<scale; i++)
+            {
+                sBuffer.append('0');
+            }
+        }
+        myString = sBuffer.makeStringAndClear();
+        // set value depending on type
+        sal_Int16 n16Value = 0;
+        sal_Int32 n32Value = 0;
+        sal_Int64 n64Value = 0;
+        switch(dType)
+        {
+            case SQL_SHORT:
+                n16Value = (sal_Int16) toNumericWithoutDecimalPlace(myString);
+                setValue< sal_Int16 >(parameterIndex,
+                        n16Value,
+                        dType);
+                break;
+            case SQL_LONG:
+            case SQL_DOUBLE: // TODO FIXME 32 bits
+                n32Value = (sal_Int32) toNumericWithoutDecimalPlace(myString);
+                setValue< sal_Int32 >(parameterIndex,
+                        n32Value,
+                        dType);
+                break;
+            case SQL_INT64:
+                n64Value = (sal_Int64) toNumericWithoutDecimalPlace(myString);
+                setValue< sal_Int64 >(parameterIndex,
+                        n64Value,
+                        dType);
+                break;
+            default:
+                SAL_WARN("connectivity.firebird",
+                        "No Firebird sql type found for numeric or decimal types");
+                ::dbtools::setObjectWithInfo(this,parameterIndex,x,sqlType,scale);
+        }
+    }
+    else
+    {
+        ::dbtools::setObjectWithInfo(this,parameterIndex,x,sqlType,scale);
+    }
 
 }
 
@@ -585,7 +697,11 @@ void SAL_CALL OPreparedStatement::setBytes(sal_Int32 nParameterIndex,
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(OStatementCommonBase_Base::rBHelper.bDisposed);
 
+#if SAL_TYPES_SIZEOFPOINTER == 8
     isc_blob_handle aBlobHandle = 0;
+#else
+    isc_blob_handle aBlobHandle = nullptr;
+#endif
     ISC_QUAD aBlobId;
 
     openBlobForWriting(aBlobHandle, aBlobId);
@@ -623,7 +739,7 @@ void SAL_CALL OPreparedStatement::setBytes(sal_Int32 nParameterIndex,
 }
 
 
-void SAL_CALL OPreparedStatement::setCharacterStream( sal_Int32 parameterIndex, const Reference< ::com::sun::star::io::XInputStream >& x, sal_Int32 length ) throw(SQLException, RuntimeException, std::exception)
+void SAL_CALL OPreparedStatement::setCharacterStream( sal_Int32 parameterIndex, const Reference< css::io::XInputStream >& x, sal_Int32 length ) throw(SQLException, RuntimeException, std::exception)
 {
     (void) parameterIndex;
     (void) x;
@@ -634,7 +750,7 @@ void SAL_CALL OPreparedStatement::setCharacterStream( sal_Int32 parameterIndex, 
 }
 
 
-void SAL_CALL OPreparedStatement::setBinaryStream( sal_Int32 parameterIndex, const Reference< ::com::sun::star::io::XInputStream >& x, sal_Int32 length ) throw(SQLException, RuntimeException, std::exception)
+void SAL_CALL OPreparedStatement::setBinaryStream( sal_Int32 parameterIndex, const Reference< css::io::XInputStream >& x, sal_Int32 length ) throw(SQLException, RuntimeException, std::exception)
 {
     (void) parameterIndex;
     (void) x;

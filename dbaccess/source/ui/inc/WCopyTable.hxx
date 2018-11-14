@@ -208,7 +208,7 @@ namespace dbaui
 
     private:
         void    impl_ensureColumnInfo_throw();
-        ::utl::SharedUNOComponent< css::sdbc::XPreparedStatement >
+        ::utl::SharedUNOComponent< css::sdbc::XPreparedStatement > const &
                 impl_ensureStatement_throw();
     };
 
@@ -279,10 +279,10 @@ namespace dbaui
         bool                     m_bUseHeaderLine;
 
     private:
-        DECL_LINK_TYPED( ImplPrevHdl, Button*, void );
-        DECL_LINK_TYPED( ImplNextHdl, Button*, void);
-        DECL_LINK_TYPED( ImplOKHdl, Button*, void );
-        DECL_LINK_TYPED( ImplActivateHdl, WizardDialog*, void );
+        DECL_LINK( ImplPrevHdl, Button*, void );
+        DECL_LINK( ImplNextHdl, Button*, void);
+        DECL_LINK( ImplOKHdl, Button*, void );
+        DECL_LINK( ImplActivateHdl, WizardDialog*, void );
         bool CheckColumns(sal_Int32& _rnBreakPos);
         void loadData( const ICopyTableSourceObject& _rSourceObject,
                        ODatabaseExport::TColumns& _rColumns,
@@ -293,8 +293,6 @@ namespace dbaui
         static void appendKey(css::uno::Reference< css::sdbcx::XKeysSupplier>& _rxSup,const ODatabaseExport::TColumnVector* _pVec);
         // checks if the type is supported in the destination database
         bool supportsType(sal_Int32 _nDataType,sal_Int32& _rNewDataType);
-
-        void    impl_loadSourceData();
 
     public:
         // used for copy tables or queries
@@ -323,7 +321,7 @@ namespace dbaui
             const css::uno::Reference< css::uno::XComponentContext >& _rxContext
         );
 
-        virtual ~OCopyTableWizard();
+        virtual ~OCopyTableWizard() override;
         virtual void        dispose() override;
 
         virtual bool        DeactivatePage() override;

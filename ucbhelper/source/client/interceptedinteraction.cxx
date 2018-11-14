@@ -115,15 +115,11 @@ InterceptedInteraction::EInterceptionState InterceptedInteraction::impl_intercep
         css::uno::Type aInterceptedType = rInterception.Request.getValueType();
 
         // check the request
-        bool bMatch = false;
-        if (rInterception.MatchExact)
-            bMatch = aInterceptedType.equals(aRequestType);
-        else
-            bMatch = aInterceptedType.isAssignableFrom(aRequestType); // don't change intercepted and request type here -> it will check the wrong direction!
+        bool bMatch = aInterceptedType.isAssignableFrom(aRequestType); // don't change intercepted and request type here -> it will check the wrong direction!
 
         // intercepted ...
         // Call they might existing derived class, so they can handle that by its own.
-        // If its not interested on that (may be its not overwritten and the default implementation
+        // If it's not interested on that (maybe it's not overwritten and the default implementation
         // returns E_NOT_INTERCEPTED as default) -> break this loop and search for the right continuation.
         if (bMatch)
         {

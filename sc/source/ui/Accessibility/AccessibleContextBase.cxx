@@ -26,7 +26,7 @@
 #include <tools/gen.hxx>
 #include <unotools/accessiblestatesethelper.hxx>
 #include <toolkit/helper/convert.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <comphelper/sequence.hxx>
 #include <comphelper/servicehelper.hxx>
 #include <cppuhelper/supportsservice.hxx>
@@ -126,14 +126,10 @@ void SAL_CALL ScAccessibleContextBase::release()
 
 void ScAccessibleContextBase::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if (pSimpleHint)
+    if (rHint.GetId() == SFX_HINT_DYING)
     {
-        if (pSimpleHint->GetId() == SFX_HINT_DYING)
-        {
-            // it seems the Broadcaster is dying, since the view is dying
-            dispose();
-        }
+        // it seems the Broadcaster is dying, since the view is dying
+        dispose();
     }
 }
 
@@ -470,15 +466,8 @@ uno::Sequence< OUString> SAL_CALL
        ScAccessibleContextBase::getSupportedServiceNames()
     throw (uno::RuntimeException, std::exception)
 {
-    uno::Sequence<OUString> aServiceNames(2);
-    OUString* pServiceNames = aServiceNames.getArray();
-    if (pServiceNames)
-    {
-        pServiceNames[0] = "com.sun.star.accessibility.Accessible";
-        pServiceNames[1] = "com.sun.star.accessibility.AccessibleContext";
-    }
-
-    return aServiceNames;
+    return {"com.sun.star.accessibility.Accessible",
+            "com.sun.star.accessibility.AccessibleContext"};
 }
 
 //=====  XTypeProvider  =======================================================

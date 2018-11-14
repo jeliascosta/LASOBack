@@ -120,7 +120,7 @@ class GridWindow : public vcl::Window
 public:
     explicit GridWindow(vcl::Window* pParent);
     void Init(double* pXValues, double* pYValues, int nValues, bool bCutValues, const BitmapEx &rMarkerBitmap);
-    virtual ~GridWindow();
+    virtual ~GridWindow() override;
     virtual void dispose() override;
 
     void setBoundings( double fMinX, double fMinY, double fMaxX, double fMaxY );
@@ -153,7 +153,7 @@ GridWindow::GridWindow(vcl::Window* pParent)
     , m_aHandles()
     , m_nDragIndex(0xffffffff)
 {
-    SetMapMode(MapMode(MAP_PIXEL));
+    SetMapMode(MapMode(MapUnit::MapPixel));
 }
 
 void GridWindow::Init(double* pXValues, double* pYValues, int nValues, bool bCutValues, const BitmapEx &rMarkerBitmap)
@@ -197,7 +197,7 @@ void GridWindow::onResize()
 
 Size GridWindow::GetOptimalSize() const
 {
-    return LogicToPixel(Size(240, 200), MAP_APPFONT);
+    return LogicToPixel(Size(240, 200), MapUnit::MapAppFont);
 }
 
 GridDialog::GridDialog(double* pXValues, double* pYValues, int nValues, vcl::Window* pParent )
@@ -699,7 +699,7 @@ void GridWindow::ChangeMode(int nType)
     Invalidate();
 }
 
-IMPL_LINK_TYPED( GridDialog, ClickButtonHdl, Button*, pButton, void )
+IMPL_LINK( GridDialog, ClickButtonHdl, Button*, pButton, void )
 {
     if (pButton == m_pResetButton)
     {

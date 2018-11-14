@@ -41,14 +41,14 @@ class SwRenameXNamedDlg : public ModalDialog
     css::uno::Reference< css::container::XNameAccess >   xSecondAccess;
     css::uno::Reference< css::container::XNameAccess >   xThirdAccess;
 
-    DECL_LINK_TYPED(OkHdl, Button*, void);
-    DECL_LINK_TYPED(ModifyHdl, Edit&, void);
+    DECL_LINK(OkHdl, Button*, void);
+    DECL_LINK(ModifyHdl, Edit&, void);
 
 public:
     SwRenameXNamedDlg( vcl::Window* pParent,
                     css::uno::Reference< css::container::XNamed > & xNamed,
                     css::uno::Reference< css::container::XNameAccess > & xNameAccess );
-    virtual ~SwRenameXNamedDlg();
+    virtual ~SwRenameXNamedDlg() override;
     virtual void dispose() override;
 
     void SetForbiddenChars(const OUString& rSet)

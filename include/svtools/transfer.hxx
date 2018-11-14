@@ -26,6 +26,7 @@
 #include <tools/link.hxx>
 #include <tools/ref.hxx>
 #include <sot/formats.hxx>
+#include <sot/exchange.hxx>
 #include <cppuhelper/implbase1.hxx>
 #include <cppuhelper/implbase4.hxx>
 #include <com/sun/star/frame/XTerminateListener.hpp>
@@ -51,7 +52,6 @@ class INetBookmark;
 class INetImage;
 class FileList;
 class SotStorageStream;
-struct DataFlavorExVector;
 namespace vcl { class Window; }
 
 // Drag&Drop defines
@@ -74,12 +74,10 @@ struct TransferableObjectDescriptor
     sal_uInt32          mnOle2Misc;
     OUString            maTypeName;
     OUString            maDisplayName;
-    bool                mbCanLink;
 
     TransferableObjectDescriptor()
         : mnViewAspect(css::embed::Aspects::MSOLE_CONTENT)
         , mnOle2Misc(0)
-        , mbCanLink(false)
     {}
 
     SVT_DLLPUBLIC friend SvStream&  WriteTransferableObjectDescriptor( SvStream& rOStm, const TransferableObjectDescriptor& rObjDesc );
@@ -150,7 +148,7 @@ private:
     public:
 
                               TerminateListener( TransferableHelper& rDropTargetHelper );
-        virtual               ~TerminateListener();
+        virtual               ~TerminateListener() override;
     };
 
     friend class TransferableHelper::TerminateListener;
@@ -161,8 +159,8 @@ private:
     OUString                                                                  maLastFormat;
     mutable css::uno::Reference< css::datatransfer::clipboard::XClipboard >   mxClipboard;
     css::uno::Reference< css::frame::XTerminateListener >                     mxTerminateListener;
-    DataFlavorExVector*                                                       mpFormats;
-    TransferableObjectDescriptor*                                             mpObjDesc;
+    std::unique_ptr<DataFlavorExVector>                                       mxFormats;
+    std::unique_ptr<TransferableObjectDescriptor>                             mxObjDesc;
 
 protected:
     inline const css::uno::Reference< css::datatransfer::clipboard::XClipboard >&
@@ -213,8 +211,6 @@ private:
     SVT_DLLPRIVATE void             ImplFlush();
 
 protected:
-
-    virtual             ~TransferableHelper();
 
     void                AddFormat( SotClipboardFormatId nFormat );
     void                AddFormat( const css::datatransfer::DataFlavor& rFlavor );
@@ -273,9 +269,9 @@ private:
 
     css::uno::Reference< css::datatransfer::XTransferable >           mxTransfer;
     css::uno::Reference< css::datatransfer::clipboard::XClipboard >   mxClipboard;
-    DataFlavorExVector*                                               mpFormats;
-    TransferableObjectDescriptor*                                     mpObjDesc;
-    std::unique_ptr<TransferableDataHelper_Impl>                      mpImpl;
+    std::unique_ptr<DataFlavorExVector>                               mxFormats;
+    std::unique_ptr<TransferableObjectDescriptor>                     mxObjDesc;
+    std::unique_ptr<TransferableDataHelper_Impl>                      mxImpl;
 
 protected:
     void                        InitFormats();
@@ -287,10 +283,12 @@ public:
 
                                 TransferableDataHelper();
                                 TransferableDataHelper( const TransferableDataHelper& rDataHelper );
+                                TransferableDataHelper( TransferableDataHelper&& rDataHelper );
                                 TransferableDataHelper( const css::uno::Reference< css::datatransfer::XTransferable >& rxTransferable );
                                 ~TransferableDataHelper();
 
     TransferableDataHelper&     operator=( const TransferableDataHelper& rDataHelper );
+    TransferableDataHelper&     operator=( TransferableDataHelper&& rDataHelper );
 
     const css::uno::Reference< css::datatransfer::XTransferable >&    GetTransferable() const { return mxTransfer; }
     css::uno::Reference< css::datatransfer::XTransferable >           GetXTransferable() const;
@@ -303,7 +301,7 @@ public:
     SotClipboardFormatId           GetFormat( sal_uInt32 nFormat ) const;
     css::datatransfer::DataFlavor  GetFormatDataFlavor( sal_uInt32 nFormat ) const;
 
-    DataFlavorExVector&         GetDataFlavorExVector() const {return *mpFormats; }
+    DataFlavorExVector&         GetDataFlavorExVector() const {return *mxFormats; }
 
     bool                        StartClipboardListening( );
     void                        StopClipboardListening( );
@@ -389,14 +387,15 @@ private:
     public:
 
         DragGestureListener( DragSourceHelper& rDragSourceHelper );
-        virtual ~DragGestureListener();
+        virtual ~DragGestureListener() override;
     };
 
     friend class DragSourceHelper::DragGestureListener;
 
 private:
-
+    osl::Mutex                                                            maMutex;
     css::uno::Reference< css::datatransfer::dnd::XDragGestureRecognizer > mxDragGestureRecognizer;
+
     css::uno::Reference< css::datatransfer::dnd::XDragGestureListener >   mxDragGestureListener;
 
     DragSourceHelper&   operator=( const DragSourceHelper& rDragSourceHelper ) = delete;
@@ -408,6 +407,7 @@ public:
     virtual void        StartDrag( sal_Int8 nAction, const Point& rPosPixel );
 
                         DragSourceHelper( vcl::Window* pWindow );
+    void                dispose();
     virtual             ~DragSourceHelper();
 };
 
@@ -438,14 +438,15 @@ private:
     public:
 
         DropTargetListener( DropTargetHelper& rDropTargetHelper );
-        virtual ~DropTargetListener();
+        virtual ~DropTargetListener() override;
     };
 
     friend class DropTargetHelper::DropTargetListener;
 
 private:
-
+    osl::Mutex                                                            maMutex;
     css::uno::Reference< css::datatransfer::dnd::XDropTarget >            mxDropTarget;
+
     css::uno::Reference< css::datatransfer::dnd::XDropTargetListener >    mxDropTargetListener;
     DataFlavorExVector*                                                   mpFormats;
 
@@ -468,6 +469,7 @@ public:
                         DropTargetHelper( vcl::Window* pWindow );
                         DropTargetHelper( const css::uno::Reference< css::datatransfer::dnd::XDropTarget >& rxDropTarget );
 
+    void                dispose();
     virtual             ~DropTargetHelper();
 
                         // typically called by the application in ::AcceptDrop and ::ExecuteDrop and (see above)
@@ -481,7 +483,7 @@ struct TransferDataContainer_Impl;
 
 class SVT_DLLPUBLIC TransferDataContainer : public TransferableHelper
 {
-    TransferDataContainer_Impl* pImpl;
+    std::unique_ptr<TransferDataContainer_Impl> pImpl;
 
 protected:
 
@@ -492,7 +494,7 @@ protected:
 public:
 
                         TransferDataContainer();
-                        virtual ~TransferDataContainer();
+                        virtual ~TransferDataContainer() override;
 
     void                CopyINetBookmark( const INetBookmark& rBkmk );
     void                CopyINetImage( const INetImage& rINtImg );

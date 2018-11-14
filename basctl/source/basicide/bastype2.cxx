@@ -157,41 +157,16 @@ EntryDescriptor::EntryDescriptor (
     OSL_ENSURE( m_aDocument.isValid(), "EntryDescriptor::EntryDescriptor: invalid document!" );
 }
 
-EntryDescriptor::~EntryDescriptor()
-{ }
-
-// TreeListBox
-
-
-TreeListBox::TreeListBox (vcl::Window* pParent, ResId const& rRes)
-    : SvTreeListBox( pParent, IDEResId( sal::static_int_cast<sal_uInt16>( rRes.GetId() ) ) )
-    , m_aNotifier( *this )
-{
-    Init();
-}
-
 TreeListBox::TreeListBox (vcl::Window* pParent, WinBits nStyle)
     : SvTreeListBox(pParent, nStyle)
     , m_aNotifier( *this )
 {
-    Init();
-}
-
-void TreeListBox::Init()
-{
     SetNodeDefaultImages();
-    SetSelectionMode( SINGLE_SELECTION );
+    SetSelectionMode( SelectionMode::Single );
     nMode = 0xFF;   // everything
 }
 
-VCL_BUILDER_DECL_FACTORY(TreeListBox)
-{
-    WinBits nWinBits = WB_TABSTOP;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-       nWinBits |= WB_BORDER;
-    rRet = VclPtr<TreeListBox>::Create(pParent, nWinBits);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(TreeListBox, WB_TABSTOP)
 
 TreeListBox::~TreeListBox ()
 {

@@ -286,11 +286,11 @@ FontLineStyle XclFontData::GetScUnderline() const
 
 SvxEscapement XclFontData::GetScEscapement() const
 {
-    SvxEscapement eScEscapem = SVX_ESCAPEMENT_OFF;
+    SvxEscapement eScEscapem = SvxEscapement::Off;
     switch( mnEscapem )
     {
-        case EXC_FONTESC_SUPER: eScEscapem = SVX_ESCAPEMENT_SUPERSCRIPT;    break;
-        case EXC_FONTESC_SUB:   eScEscapem = SVX_ESCAPEMENT_SUBSCRIPT;      break;
+        case EXC_FONTESC_SUPER: eScEscapem = SvxEscapement::Superscript;    break;
+        case EXC_FONTESC_SUB:   eScEscapem = SvxEscapement::Subscript;      break;
     }
     return eScEscapem;
 }
@@ -710,7 +710,7 @@ void XclFontPropSetHelper::WriteFontProperties(
             lclWriteChartFont( rPropSet, maHlpChCmplx, maHlpChCmplxNoName, rFontData, bHasCmplx );
 
             // font escapement
-            if( rFontData.GetScEscapement() != SVX_ESCAPEMENT_OFF )
+            if( rFontData.GetScEscapement() != SvxEscapement::Off )
             {
                 maHlpChEscapement.InitializeWrite();
                 maHlpChEscapement << rFontData.GetApiEscapement() << EXC_API_ESC_HEIGHT;
@@ -829,8 +829,8 @@ static const XclBuiltInFormat spBuiltInFormats_DONTKNOW[] =
     EXC_NUMFMT_OFFSET(   9, NF_PERCENT_INT ),           // 0%
     EXC_NUMFMT_OFFSET(  10, NF_PERCENT_DEC2 ),          // 0.00%
     EXC_NUMFMT_OFFSET(  11, NF_SCIENTIFIC_000E00 ),     // 0.00E+00
-    EXC_NUMFMT_OFFSET(  12, NF_FRACTION_1 ),            // # ?/?
-    EXC_NUMFMT_OFFSET(  13, NF_FRACTION_2 ),            // # ??/??
+    EXC_NUMFMT_OFFSET(  12, NF_FRACTION_1D ),            // # ?/?
+    EXC_NUMFMT_OFFSET(  13, NF_FRACTION_2D ),            // # ??/??
 
     // 14...22 date and time formats
     EXC_NUMFMT_OFFSET(  14, NF_DATE_SYS_DDMMYYYY ),
@@ -1571,7 +1571,7 @@ SvxCellHorJustify XclCellAlign::GetScHorAlign() const
 
 SvxCellJustifyMethod XclCellAlign::GetScHorJustifyMethod() const
 {
-    return (mnHorAlign == EXC_XF_HOR_DISTRIB) ? SVX_JUSTIFY_METHOD_DISTRIBUTE : SVX_JUSTIFY_METHOD_AUTO;
+    return (mnHorAlign == EXC_XF_HOR_DISTRIB) ? SvxCellJustifyMethod::Distribute : SvxCellJustifyMethod::Auto;
 }
 
 SvxCellVerJustify XclCellAlign::GetScVerAlign() const
@@ -1591,7 +1591,7 @@ SvxCellVerJustify XclCellAlign::GetScVerAlign() const
 
 SvxCellJustifyMethod XclCellAlign::GetScVerJustifyMethod() const
 {
-    return (mnVerAlign == EXC_XF_VER_DISTRIB) ? SVX_JUSTIFY_METHOD_DISTRIBUTE : SVX_JUSTIFY_METHOD_AUTO;
+    return (mnVerAlign == EXC_XF_VER_DISTRIB) ? SvxCellJustifyMethod::Distribute : SvxCellJustifyMethod::Auto;
 }
 
 SvxFrameDirection XclCellAlign::GetScFrameDir() const

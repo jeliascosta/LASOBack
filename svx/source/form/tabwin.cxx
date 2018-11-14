@@ -21,7 +21,6 @@
 #include "tabwin.hxx"
 #include "svx/fmtools.hxx"
 #include "fmservs.hxx"
-#include "stringlistresource.hxx"
 
 #include <svx/svxids.hrc>
 #include <svx/dbaexchange.hxx>
@@ -51,6 +50,7 @@
 #include <sfx2/frame.hxx>
 #include <svx/dataaccessdescriptor.hxx>
 #include "svtools/treelistentry.hxx"
+#include <tools/resary.hxx>
 #include <vcl/settings.hxx>
 
 const long STD_WIN_SIZE_X = 120;
@@ -152,12 +152,12 @@ void FmFieldWinListBox::StartDrag( sal_Int8 /*_nAction*/, const Point& /*_rPosPi
         return;
 
     svx::ODataAccessDescriptor aDescriptor;
-    aDescriptor[ daDataSource ] <<= pTabWin->GetDatabaseName();
-    aDescriptor[ daConnection ] <<= pTabWin->GetConnection().getTyped();
-    aDescriptor[ daCommand ]    <<= pTabWin->GetObjectName();
-    aDescriptor[ daCommandType ]<<= pTabWin->GetObjectType();
+    aDescriptor[ DataAccessDescriptorProperty::DataSource ] <<= pTabWin->GetDatabaseName();
+    aDescriptor[ DataAccessDescriptorProperty::Connection ] <<= pTabWin->GetConnection().getTyped();
+    aDescriptor[ DataAccessDescriptorProperty::Command ]    <<= pTabWin->GetObjectName();
+    aDescriptor[ DataAccessDescriptorProperty::CommandType ]<<= pTabWin->GetObjectType();
     ColumnInfo* pInfo = static_cast<ColumnInfo*>(pSelected->GetUserData());
-    aDescriptor[ daColumnName ] <<= pInfo->sColumnName;
+    aDescriptor[ DataAccessDescriptorProperty::ColumnName ] <<= pInfo->sColumnName;
 
     TransferableHelper* pTransferColumn = new OColumnTransferable(
         aDescriptor, ColumnTransferFormatFlags::FIELD_DESCRIPTOR | ColumnTransferFormatFlags::CONTROL_EXCHANGE | ColumnTransferFormatFlags::COLUMN_DESCRIPTOR
@@ -172,7 +172,6 @@ FmFieldWin::FmFieldWin(SfxBindings* _pBindings, SfxChildWindow* _pMgr, vcl::Wind
             ,SfxControllerItem(SID_FM_FIELDS_CONTROL, *_pBindings)
             ,::comphelper::OPropertyChangeListener(m_aMutex)
             ,m_nObjectType(0)
-            ,m_pChangeListener(nullptr)
 {
     SetHelpId( HID_FIELD_SEL_WIN );
 
@@ -191,11 +190,10 @@ FmFieldWin::~FmFieldWin()
 
 void FmFieldWin::dispose()
 {
-    if (m_pChangeListener)
+    if (m_pChangeListener.is())
     {
         m_pChangeListener->dispose();
-        m_pChangeListener->release();
-        //  delete m_pChangeListener;
+        m_pChangeListener.clear();
     }
     pListBox.disposeAndClear();
     ::SfxControllerItem::dispose();
@@ -221,12 +219,12 @@ bool FmFieldWin::createSelectionControls( )
         ODataAccessDescriptor aDescr;
         aDescr.setDataSource(GetDatabaseName());
 
-        aDescr[ daConnection ]  <<= GetConnection().getTyped();
+        aDescr[ DataAccessDescriptorProperty::Connection ]  <<= GetConnection().getTyped();
 
-        aDescr[ daCommand ]     <<= GetObjectName();
-        aDescr[ daCommandType ] <<= GetObjectType();
+        aDescr[ DataAccessDescriptorProperty::Command ]     <<= GetObjectName();
+        aDescr[ DataAccessDescriptorProperty::CommandType ] <<= GetObjectType();
         ColumnInfo* pInfo = static_cast<ColumnInfo*>(pSelected->GetUserData());
-        aDescr[ daColumnName ]  <<= pInfo->sColumnName;//OUString( pListBox->GetEntryText( pSelected) );
+        aDescr[ DataAccessDescriptorProperty::ColumnName ]  <<= pInfo->sColumnName;//OUString( pListBox->GetEntryText( pSelected) );
 
         // transfer this to the SFX world
         SfxUnoAnyItem aDescriptorItem( SID_FM_DATACCESS_DESCRIPTOR, makeAny( aDescr.createPropertyValueSequence() ) );
@@ -256,12 +254,6 @@ bool FmFieldWin::PreNotify( NotifyEvent& _rNEvt )
     }
 
     return SfxFloatingWindow::PreNotify( _rNEvt );
-}
-
-
-bool FmFieldWin::Close()
-{
-    return SfxFloatingWindow::Close();
 }
 
 
@@ -342,29 +334,28 @@ void FmFieldWin::UpdateContent(const css::uno::Reference< css::form::XForm > & x
 
         // set prefix
         OUString  aPrefix;
-        StringListResource aPrefixes( SVX_RES( RID_RSC_TABWIN_PREFIX ) );
+        ResStringArray aPrefixes(SVX_RES(RID_RSC_TABWIN_PREFIX));
 
         switch (m_nObjectType)
         {
             case CommandType::TABLE:
-                aPrefix = aPrefixes[0];
+                aPrefix = aPrefixes.GetString(0);
                 break;
             case CommandType::QUERY:
-                aPrefix = aPrefixes[1];
+                aPrefix = aPrefixes.GetString(1);
                 break;
             default:
-                aPrefix = aPrefixes[2];
+                aPrefix = aPrefixes.GetString(2);
                 break;
         }
 
         // listen for changes at ControlSource in PropertySet
-        if (m_pChangeListener)
+        if (m_pChangeListener.is())
         {
             m_pChangeListener->dispose();
-            m_pChangeListener->release();
+            m_pChangeListener.clear();
         }
         m_pChangeListener = new ::comphelper::OPropertyChangeMultiplexer(this, xSet);
-        m_pChangeListener->acquire();
         m_pChangeListener->addProperty(FM_PROP_DATASOURCE);
         m_pChangeListener->addProperty(FM_PROP_COMMAND);
         m_pChangeListener->addProperty(FM_PROP_COMMANDTYPE);
